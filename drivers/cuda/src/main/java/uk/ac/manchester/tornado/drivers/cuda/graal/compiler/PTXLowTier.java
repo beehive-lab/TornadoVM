@@ -5,6 +5,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.*;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.PTXMulAddPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
@@ -44,10 +45,14 @@ public class PTXLowTier extends TornadoLowTier {
         appendPhase(new DeadCodeEliminationPhase(Required));
 
         appendPhase(new TornadoLoopCanonicalization());
+
+        appendPhase(new PTXMulAddPhase());
+
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {
             appendPhase(new TornadoFeatureExtraction());
         }
+
     }
 }

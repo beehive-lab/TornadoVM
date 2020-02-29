@@ -10,10 +10,10 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.*;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
@@ -24,7 +24,6 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        trace("emitAdd: %s + %s", a, b);
         return emitBinaryAssign(PTXBinaryOp.ADD, resultKind, a, b);
     }
 
@@ -108,7 +107,6 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShl(Value a, Value b) {
-        trace("emitShl: %s << %s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_LEFT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
@@ -150,7 +148,6 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
-        trace("emitZeroExtend: %s (from %d to %d)", inputVal, fromBits, toBits);
         PTXLIRKindTool kindTool = getGen().getLIRKindTool();
         PTXKind kind = (PTXKind) inputVal.getPlatformKind();
         LIRKind toKind;
@@ -211,7 +208,6 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        //TODO: This is probably not great
         getGen().append(new PTXLIRStmt.StoreStmt((PTXUnary.MemoryAccess) address, input));
     }
 
@@ -223,5 +219,13 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     public PTXLIROp genBinaryExpr(PTXBinaryOp op, LIRKind lirKind, Value x, Value y) {
         return new PTXBinary.Expr(op, lirKind, x, y);
+    }
+
+    public Value emitMultiplyAdd(Value op1, Value op2, Value op3) {
+        LIRKind resultKind = LIRKind.combine(op1, op2);
+        Variable result = getGen().newVariable(resultKind);
+        PTXTernaryOp op = ((PTXKind)resultKind.getPlatformKind()).isFloating() ? PTXTernaryOp.MAD : PTXTernaryOp.MAD_LO;
+        getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(op, resultKind, op1, op2, op3)));
+        return result;
     }
 }

@@ -486,6 +486,7 @@ public class PTXAssembler extends Assembler {
 
     public static class PTXTernaryOp extends PTXOp {
         public static final PTXTernaryOp MAD_LO = new PTXTernaryOp("mad.lo");
+        public static final PTXTernaryOp MAD = new PTXTernaryOp("mad");
 
         protected PTXTernaryOp(String opcode) {
             super(opcode);
@@ -495,6 +496,10 @@ public class PTXAssembler extends Assembler {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emitSymbol(DOT);
+            if (((PTXKind) dest.getPlatformKind()).isFloating()) {
+                asm.emit(PTXAssemblerConstants.ROUND_NEAREST_EVEN);
+                asm.emitSymbol(DOT);
+            }
             asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[] {dest, x, y, z});
