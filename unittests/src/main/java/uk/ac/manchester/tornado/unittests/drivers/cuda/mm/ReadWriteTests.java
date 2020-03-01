@@ -76,8 +76,8 @@ public class ReadWriteTests extends TornadoTestBase {
         char[] a = new char[NUM_ELEMENTS];
         char[] b = new char[NUM_ELEMENTS];
 
-        Arrays.fill(a, (char) 1);
-        Arrays.fill(b, (char) 2);
+        Arrays.fill(a, 'a');
+        Arrays.fill(b, 'b');
 
         CUDACharArrayWrapper arrayWrapper = new CUDACharArrayWrapper(context);
 
@@ -91,7 +91,7 @@ public class ReadWriteTests extends TornadoTestBase {
         arrayWrapper.enqueueRead(b, 0, null, false);
 
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            assertEquals(1, b[i]);
+            assertEquals('a', b[i]);
         }
     }
 

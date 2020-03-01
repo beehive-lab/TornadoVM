@@ -50,7 +50,7 @@ public class CUDADeviceContext
     }
 
     @Override public void setResetToFalse() {
-
+        wasReset = false;
     }
 
     @Override public boolean isInitialised() {

@@ -82,10 +82,8 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     protected void emitPrologue(StructuredGraph graph, boolean isKernel) {
         if (isKernel) {
             getGen().emitParameterAlloc();
-            int paramOffset = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, getGen().getPTXGenTool().emitParameterLoad(param, paramOffset));
-                paramOffset += gen.getLIRKind(param.stamp(NodeView.DEFAULT)).getPlatformKind().getSizeInBytes();
+                setResult(param, getGen().getPTXGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);

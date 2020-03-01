@@ -399,6 +399,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp MUL = new PTXBinaryOp("mul");
         public static final PTXBinaryOp MUL_LO = new PTXBinaryOp("mul.lo");
         public static final PTXBinaryOp SETP_LT = new PTXBinaryOp("setp.lt");
+        public static final PTXBinaryOp SUB = new PTXBinaryOp("sub");
 
         public PTXBinaryOp(String opcode) {
             super(opcode);

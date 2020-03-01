@@ -29,8 +29,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitSub(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        unimplemented();
-        return null;
+        return emitBinaryAssign(PTXBinaryOp.SUB, resultKind, a, b);
     }
 
     @Override
@@ -136,14 +135,26 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNarrow(Value inputVal, int bits) {
-        unimplemented();
-        return null;
+        PTXLIRKindTool kindTool = getGen().getLIRKindTool();
+        PTXKind kind = (PTXKind) inputVal.getPlatformKind();
+        LIRKind toKind;
+        if (kind.isInteger()) {
+            toKind = kindTool.getIntegerKind(bits);
+        } else if (kind.isFloating()) {
+            toKind = kindTool.getFloatingKind(bits);
+        } else {
+            throw shouldNotReachHere();
+        }
+
+        Variable result = getGen().newVariable(toKind);
+
+        getGen().emitMove(result, inputVal);
+        return result;
     }
 
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
-        unimplemented();
-        return null;
+        return emitZeroExtend(inputVal, fromBits, toBits);
     }
 
     @Override

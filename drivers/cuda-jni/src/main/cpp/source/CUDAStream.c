@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <cuda.h>
+#include <stdio.h>
 
 #include "CUDAModule.h"
 #include "../macros/data_copies.h"
@@ -126,7 +127,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
     const char *native_function_name = (*env)->GetStringUTFChars(env, function_name, 0);
     CUfunction kernel;
     CUresult result = cuModuleGetFunction(&kernel, native_module, native_function_name);
-    (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
     size_t arg_buffer_size = (*env)->GetArrayLength(env, args);
     char arg_buffer[arg_buffer_size];
@@ -146,8 +146,16 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
             NULL,
             arg_config
     );
+    if (result != 0) {
+        printf("Failed to launch kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
+    }
 
     result = cuCtxSynchronize();
+    if (result != 0) {
+        printf("Failure running kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
+    }
+
+    (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
     return (jint) -1;
 }

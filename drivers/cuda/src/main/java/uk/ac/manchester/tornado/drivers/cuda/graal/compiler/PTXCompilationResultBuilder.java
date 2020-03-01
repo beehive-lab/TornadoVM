@@ -154,18 +154,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         trace("block: %d", block.getId());
-        if (isMergeBlock(block)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[");
-            for (Block pred : block.getPredecessors()) {
-                sb.append(pred.getId()).append(" ");
-            }
-            sb.append("]");
-            ((PTXAssembler) asm).emitLine("// BLOCK %d MERGES %s", block.getId(), sb.toString());
-
-        } else {
-            ((PTXAssembler) asm).emitLine("// BLOCK %d", block.getId());
-        }
+        ((PTXAssembler) asm).eol();
 
         if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));

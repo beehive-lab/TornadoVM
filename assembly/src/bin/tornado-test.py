@@ -74,6 +74,8 @@ __TEST_THE_WORLD__ = [
 ## List of classes to be tested for the CUDA integration project. These should remain on this branch.
 __TEST_CUDA__ = [
     "uk.ac.manchester.tornado.unittests.drivers.cuda.mm.ReadWriteTests",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays",
+    "uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
 ]
 
 __TEST_THE_WORLD__ = __TEST_CUDA__
