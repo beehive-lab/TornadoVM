@@ -7,7 +7,7 @@ public class CUDAOccupancyCalculator {
     // maximal block sizes with minimal resource waste.
     // Based on: https://docs.nvidia.com/cuda/cuda-occupancy-calculator/index.html
 
-    private static int SUB_OPTIMAL_MAX_DISTANCE = 2;
+    private static double SUB_OPTIMAL_MAX_DISTANCE = 0.1;
 
     private int warpSize;
     private int maxRegisters;
@@ -26,7 +26,7 @@ public class CUDAOccupancyCalculator {
     }
 
     public int getMaximalBlockSize(int registersUsed, int maxBlockSize, int dimension) {
-        if (maxBlockSize < warpSize) {
+        if (maxBlockSize <= warpSize) {
             return maxBlockSize;
         }
 
@@ -39,9 +39,9 @@ public class CUDAOccupancyCalculator {
 
         int warpsUsed;
         // This loop will execute maximum maxThreadBlockSize/warpSize times. (currently max 1024/32 = 32)
-        while (currentBlocks < maxBlocks) {
+        while (currentBlocks <= maxBlocks) {
             warpsUsed = activeWarps(currentBlocks, processorRegisters, registersUsed);
-            if (warpsUsed >= maximumWarpsUsed - SUB_OPTIMAL_MAX_DISTANCE) {
+            if (warpsUsed >= maximumWarpsUsed - (maximumWarpsUsed * SUB_OPTIMAL_MAX_DISTANCE)) {
                 if (warpsUsed >= maximumWarpsUsed) maximumWarpsUsed = warpsUsed;
                 blocks = currentBlocks;
             }

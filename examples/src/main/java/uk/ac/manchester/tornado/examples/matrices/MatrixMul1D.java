@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.examples.matrices;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-import java.util.Random;
 import java.util.stream.IntStream;
 
 public class MatrixMul1D {
@@ -20,15 +19,14 @@ public class MatrixMul1D {
     }
 
     public static void main(String[] args) {
-        final int N = 8;
+        final int N = 64;
         float[] matrixA = new float[N * N];
         float[] matrixB = new float[N * N];
         float[] matrixC = new float[N * N];
 
-        //Random r = new Random();
         IntStream.range(0, N * N).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;//r.nextFloat();
-            matrixB[idx] = 3.5f;//r.nextFloat();
+            matrixA[idx] = 2.5f;
+            matrixB[idx] = 3.5f;
         });
 
         //@formatter:off

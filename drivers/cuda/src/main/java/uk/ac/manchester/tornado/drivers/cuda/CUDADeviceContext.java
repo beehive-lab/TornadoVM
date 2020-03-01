@@ -151,11 +151,12 @@ public class CUDADeviceContext
     private int[] calculateBlocks(CUDAModule module) {
         int[] defaultBlocks = {1, 1, 1};
         int dims = module.dims;
-        int threadLimitByModule = module.getNumberOfRegisters();
+        int registersUsed = module.getNumberOfRegisters();
+        int maxThreadsPerBlock = (int) Math.floor(Math.pow(module.maxThreadsPerBlock(), 1.0 / dims));
 
         for (int i = 0; i < dims && i < 3; i++) {
-            int maxBlocks = Math.min(module.maxThreadsPerBlock(), module.domain.get(i).cardinality());
-            defaultBlocks[i] = occupancyCalculator.getMaximalBlockSize(threadLimitByModule, maxBlocks, i);
+            int maxBlocks = Math.min(maxThreadsPerBlock, module.domain.get(i).cardinality());
+            defaultBlocks[i] = occupancyCalculator.getMaximalBlockSize(registersUsed, maxBlocks, i);
         }
 
         //System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
@@ -169,7 +170,7 @@ public class CUDADeviceContext
 
         for (int i = 0 ; i < dims && i < 3; i++) {
             int workSize = module.domain.get(i).cardinality();
-            defaultGrids[i] = Math.min(workSize / blocks[i], maxGridSizes[i]);
+            defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], maxGridSizes[i]), 1);
         }
 
         //System.out.println("Executing with grids: " + Arrays.toString(defaultGrids));
