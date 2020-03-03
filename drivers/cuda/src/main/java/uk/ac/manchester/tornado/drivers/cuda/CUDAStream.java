@@ -42,6 +42,8 @@ public class CUDAStream extends TornadoLogger {
 
     private native static int cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
 
+    private native static void cuCtxSynchronize();
+
     public int enqueueKernelLaunch(CUDAModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
         return cuLaunchKernel(module.nativeModule, module.kernelFunctionName,
                               gridDim[0], gridDim[1], gridDim[2],
@@ -164,5 +166,13 @@ public class CUDAStream extends TornadoLogger {
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
         return writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public void reset() {
+
+    }
+
+    public void sync() {
+        cuCtxSynchronize();
     }
 }

@@ -75,16 +75,23 @@ public class PTXControlFlow {
     public static class Branch extends AbstractInstruction {
         public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
         private final LabelRef destination;
+        private final boolean isConditional;
 
         public Branch(LabelRef destination) {
+            this(destination, true);
+        }
+
+        public Branch(LabelRef destination, boolean isConditional) {
             super(TYPE);
             this.destination = destination;
+            this.isConditional = isConditional;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
-            asm.emit("bra.uni");
+            asm.emit("bra");
+            if (!isConditional) asm.emit(".uni");
             asm.emitSymbol(TAB);
 
             emitBlockRef(destination.label().getBlockId(), asm);

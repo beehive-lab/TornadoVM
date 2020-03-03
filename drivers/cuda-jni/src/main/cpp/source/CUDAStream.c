@@ -150,12 +150,21 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
         printf("Failed to launch kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
     }
 
-    result = cuCtxSynchronize();
-    if (result != 0) {
-        printf("Failure running kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
-    }
-
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
     return (jint) -1;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    cuCtxSynchronize
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuCtxSynchronize
+  (JNIEnv *env, jclass clazz) {
+    CUresult result = cuCtxSynchronize();
+    if (result != 0) {
+        printf("Failure during synchronization! (%d)\n", result); fflush(stdout);
+    }
+    return;
 }

@@ -13,7 +13,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -116,8 +115,7 @@ public class CUDADeviceContext
     }
 
     public void sync() {
-        //TODO: Implement
-        //unimplemented();
+        stream.sync();
     }
 
     public void flush() {
@@ -126,8 +124,7 @@ public class CUDADeviceContext
     }
 
     public void reset() {
-        //TODO: Implement
-        //stream.reset();
+        stream.reset();
         memoryManager.reset();
         wasReset = true;
     }
