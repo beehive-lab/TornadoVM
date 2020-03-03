@@ -241,11 +241,27 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    cuCtxSynchronize
- * Signature: ()V
+ * Method:    cuCreateStream
+ * Signature: ()[B
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuCtxSynchronize
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuCreateStream
   (JNIEnv *, jclass);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    cuDestroyStream
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuDestroyStream
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    cuStreamSynchronize
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuStreamSynchronize
+  (JNIEnv *, jclass, jbyteArray);
 
 #ifdef __cplusplus
 }

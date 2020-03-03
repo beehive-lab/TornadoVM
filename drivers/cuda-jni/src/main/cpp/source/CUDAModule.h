@@ -10,8 +10,7 @@ extern "C" {
 #endif
 
 void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper) {
-    char *module = (char *) module_ptr;
-    (*env)->GetByteArrayRegion(env, javaWrapper, 0, sizeof(CUmodule), module);
+    (*env)->GetByteArrayRegion(env, javaWrapper, 0, sizeof(CUmodule), (void *) module_ptr);
 }
 
 /*

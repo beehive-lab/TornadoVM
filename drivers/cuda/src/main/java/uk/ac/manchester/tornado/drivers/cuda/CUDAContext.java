@@ -33,6 +33,7 @@ public class CUDAContext extends TornadoLogger {
     private native static void cuMemFree(int deviceIndex, long devicePtr);
 
     public void cleanup() {
+        deviceContext.cleanup();
 
         for (int i = 0; i < allocatedRegionCount; i++) {
             cuMemFree(device.getIndex(), allocatedRegions[i]);

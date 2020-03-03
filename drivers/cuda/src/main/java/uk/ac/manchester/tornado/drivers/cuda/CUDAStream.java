@@ -3,9 +3,10 @@ package uk.ac.manchester.tornado.drivers.cuda;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class CUDAStream extends TornadoLogger {
+    private final byte[] streamWrapper;
 
     public CUDAStream() {
-
+        streamWrapper = cuCreateStream();
     }
 
     private native static int writeArrayDtoH(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
@@ -42,13 +43,15 @@ public class CUDAStream extends TornadoLogger {
 
     private native static int cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
 
-    private native static void cuCtxSynchronize();
+    private native static byte[] cuCreateStream();
+    private native static void cuDestroyStream(byte[] streamWrapper);
+    private native static void cuStreamSynchronize(byte[] streamWrapper);
 
     public int enqueueKernelLaunch(CUDAModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
         return cuLaunchKernel(module.nativeModule, module.kernelFunctionName,
                               gridDim[0], gridDim[1], gridDim[2],
                               blockDim[0], blockDim[1], blockDim[2],
-                              0, null,
+                              0, streamWrapper,
                               kernelParams
         );
     }
@@ -173,6 +176,10 @@ public class CUDAStream extends TornadoLogger {
     }
 
     public void sync() {
-        cuCtxSynchronize();
+        cuStreamSynchronize(streamWrapper);
+    }
+
+    public void cleanup() {
+        cuDestroyStream(streamWrapper);
     }
 }

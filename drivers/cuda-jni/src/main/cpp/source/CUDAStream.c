@@ -7,6 +7,17 @@
 
 //TODO: Make async calls async (create stream, destroy stream, manage events)
 
+void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray *array) {
+    (*env)->GetByteArrayRegion(env, *array, 0, sizeof(CUstream), (void *) stream_ptr);
+}
+
+jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
+    jbyteArray array = (*env)->NewByteArray(env, sizeof(CUstream));
+
+    (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream);
+    return array;
+}
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH(Async)
@@ -118,7 +129,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
         jint gridDimX, jint gridDimY, jint gridDimZ,
         jint blockDimX, jint blockDimY, jint blockDimZ,
         jlong sharedMemBytes,
-        jbyteArray stream,
+        jbyteArray stream_wrapper,
         jbyteArray args) {
 
     CUmodule native_module;
@@ -139,10 +150,13 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
         CU_LAUNCH_PARAM_END
     };
 
+    CUstream stream;
+    stream_from_array(env, &stream, &stream_wrapper);
+
     result = cuLaunchKernel(kernel,
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
             (unsigned int) blockDimX, (unsigned int) blockDimY, (unsigned int) blockDimZ,
-            (unsigned int) sharedMemBytes, NULL,
+            (unsigned int) sharedMemBytes, stream,
             NULL,
             arg_config
     );
@@ -157,14 +171,55 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    cuCtxSynchronize
- * Signature: ()V
+ * Method:    cuCreateStream
+ * Signature: ()[B
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuCtxSynchronize
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuCreateStream
   (JNIEnv *env, jclass clazz) {
-    CUresult result = cuCtxSynchronize();
+    int lowestPriority, highestPriority;
+    CUresult result = cuCtxGetStreamPriorityRange (&lowestPriority, &highestPriority);
     if (result != 0) {
-        printf("Failure during synchronization! (%d)\n", result); fflush(stdout);
+        printf("Failed to get lowest and highest stream priorities! (%d)\n", result); fflush(stdout);
+    }
+
+    CUstream stream;
+    result = cuStreamCreateWithPriority(&stream, CU_STREAM_NON_BLOCKING, highestPriority);
+    if (result != 0) {
+        printf("Failed to create stream with priority: %d (%d)\n", highestPriority, result);
+    }
+
+    return array_from_stream(env, &stream);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    cuDestroyStream
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuDestroyStream
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, &stream_wrapper);
+
+    CUresult result = cuStreamDestroy(stream);
+    if (result != 0) {
+        printf("Failed to destroy stream! (%d)\n", result); fflush(stdout);
+    }
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    cuStreamSynchronize
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuStreamSynchronize
+  (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, &stream_wrapper);
+
+    CUresult result = cuStreamSynchronize(stream);
+    if (result != 0) {
+        printf("Failed to synchronize with stream! (%d)\n", result); fflush(stdout);
     }
     return;
 }

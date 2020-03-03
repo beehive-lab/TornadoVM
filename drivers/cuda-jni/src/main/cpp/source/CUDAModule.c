@@ -5,7 +5,7 @@
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUmodule));
 
-    (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUmodule), (char *) module);
+    (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUmodule), (void *) module);
     return array;
 }
 

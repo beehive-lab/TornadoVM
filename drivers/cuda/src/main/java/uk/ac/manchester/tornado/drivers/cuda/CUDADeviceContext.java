@@ -197,10 +197,13 @@ public class CUDADeviceContext
         return !codeCache.isCached(name);
     }
 
+    public void cleanup() {
+        stream.cleanup();
+    }
+
     /*
      * SYNC READS
      */
-
     public int readBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
     }
@@ -232,7 +235,6 @@ public class CUDADeviceContext
     /*
      * ASYNC READS
      */
-
     public int enqueueReadBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
     }
@@ -264,7 +266,6 @@ public class CUDADeviceContext
     /*
      * SYNC WRITES
      */
-
     public void writeBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }
@@ -296,7 +297,6 @@ public class CUDADeviceContext
     /*
      * ASYNC WRITES
      */
-
     public int enqueueWriteBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }

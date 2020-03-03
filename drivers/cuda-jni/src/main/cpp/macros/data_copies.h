@@ -12,7 +12,8 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
         char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
         jclass exception; \
         exception = (*env)->FindClass(env, className); \
-        return (*env)->ThrowNew(env, exception, "CUDA: Could not allocate memory. " + result); \
+        (*env)->ThrowNew(env, exception, "CUDA: Could not allocate memory. " + result); \
+        return; \
     } \
     result = cuMemcpyDtoH(native_array, start_ptr, (size_t) length); \
  \
