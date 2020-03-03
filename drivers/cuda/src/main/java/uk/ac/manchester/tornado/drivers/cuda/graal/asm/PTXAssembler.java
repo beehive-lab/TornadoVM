@@ -230,6 +230,10 @@ public class PTXAssembler extends Assembler {
         convertTabToSpace = true;
     }
 
+    public void emitBlock(int id) {
+        emit("BLOCK_%d", id);
+    }
+
     /**
      * Base class for PTX opcodes.
      */
@@ -312,7 +316,6 @@ public class PTXAssembler extends Assembler {
 
         public void emit(PTXCompilationResultBuilder crb, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
-            asm.emitSymbol(TAB);
             emitOpcode(asm);
 
             if (dest != null) {
@@ -389,17 +392,17 @@ public class PTXAssembler extends Assembler {
 
         public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl", true);
         public static final PTXBinaryOp ADD = new PTXBinaryOp("add");
-
-        public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
-        public static final PTXBinaryOp RELATIONAL_NE = new PTXBinaryOp("!=");
-        public static final PTXBinaryOp RELATIONAL_GT = new PTXBinaryOp(">");
-        public static final PTXBinaryOp RELATIONAL_LT = new PTXBinaryOp("<");
-        public static final PTXBinaryOp RELATIONAL_GTE = new PTXBinaryOp(">=");
-        public static final PTXBinaryOp RELATIONAL_LTE = new PTXBinaryOp("<=");
+        public static final PTXBinaryOp SUB = new PTXBinaryOp("sub");
         public static final PTXBinaryOp MUL = new PTXBinaryOp("mul");
         public static final PTXBinaryOp MUL_LO = new PTXBinaryOp("mul.lo");
+
+        public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
         public static final PTXBinaryOp SETP_LT = new PTXBinaryOp("setp.lt");
-        public static final PTXBinaryOp SUB = new PTXBinaryOp("sub");
+        public static final PTXBinaryOp SETP_EQ = new PTXBinaryOp("setp.eq");
+        public static final PTXBinaryOp SETP_LE = new PTXBinaryOp("setp.le");
+        public static final PTXBinaryOp SETP_GE = new PTXBinaryOp("setp.ge");
+        public static final PTXBinaryOp SETP_GT = new PTXBinaryOp("setp.gt");
+        public static final PTXBinaryOp SETP_NE = new PTXBinaryOp("setp.ne");
 
         public PTXBinaryOp(String opcode) {
             super(opcode);

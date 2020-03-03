@@ -8,6 +8,7 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,7 +34,14 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     }
 
     private void emitBeginBlockForElseStatement(Block dom, Block block) {
-        unimplemented("emitBeginBlockForElseStatement in CUDA-PTX");
+        asm.eol();
+
+        final IfNode ifNode = (IfNode) dom.getEndNode();
+        if (ifNode.falseSuccessor() == block.getBeginNode()) {
+            asm.emitBlock(block.getId());
+            asm.emitSymbol(PTXAssemblerConstants.COLON);
+            asm.eol();
+        }
     }
 
     private void emitBeginBlockForSwitchStatements(Block dom, Block beginBlockNode) {
@@ -104,10 +112,6 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
     }
 
-    private void closeIfBlock(Block block, Block dom) {
-        unimplemented("closeIfBlock in CUDA-PTX");
-    }
-
     private int getBlockIndexForSwitchStatement(Block block, IntegerSwitchNode switchNode) {
         Node beginNode = block.getBeginNode();
 
@@ -152,7 +156,7 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     private void closeBranchBlock(Block block) {
         final Block dom = block.getDominator();
         if (isIfBlockNode(block)) {
-            closeIfBlock(block, dom);
+            //closeIfBlock(block, dom);
         } else if (isSwitchBlockNode(block)) {
             closeSwitchBlock(block, dom);
         }

@@ -22,6 +22,7 @@ import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -212,10 +213,17 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         else if (node instanceof LoopExitNode) {
             emitLoopExit();
         }
+        else if (node instanceof IntegerSwitchNode) {
+            emitIntegerSwitch();
+        }
         else if (node instanceof ShortCircuitOrNode) {
             unimplemented("Unimplemented ShortCircuitOrNode");
         }
         super.emitNode(node);
+    }
+
+    private void emitIntegerSwitch() {
+
     }
 
     @Override
@@ -279,10 +287,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             append(new PTXControlFlow.LoopInitOp(getLIRBlock(x.trueSuccessor())));
 
         } else {
-            Value operand = operand(x.condition());
-            Variable newVariable = getGen().newVariable(operand.getValueKind());
-            append(new AssignStmt(newVariable, operand));
-            append(new PTXControlFlow.ConditionalBranchOp(newVariable));
+            getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, true);
         }
     }
 
@@ -297,13 +302,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             unimplemented("Logic: IntegerBelowNode");
-            //result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LE, intLirKind, x, y)));
         } else if (node instanceof IntegerEqualsNode) {
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            unimplemented("Logic: IntegerEqualsNode");
-            //result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, intLirKind, x, y)));
         } else if (node instanceof IntegerLessThanNode) {
             final IntegerLessThanNode condition = (IntegerLessThanNode) node;
             final Value x = operand(condition.getX());
@@ -317,39 +321,8 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
-        //setResult(node, result);
+        setResult(node, pred);
         return pred;
-    }
-
-    private Value emitNegatedLogicNode(final LogicNode node) {
-        Value result;
-        trace("emitLogicNode: %s", node);
-        LIRKind intLirKind = LIRKind.value(PTXKind.S32);
-        LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
-        if (node instanceof IntegerBelowNode) {
-            final IntegerBelowNode condition = (IntegerBelowNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
-        } else if (node instanceof IntegerEqualsNode) {
-            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_NE, boolLirKind, x, y);
-        } else if (node instanceof IntegerLessThanNode) {
-            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
-            final Value x = operand(condition.getX());
-            final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode condition = (IsNullNode) node;
-            final Value value = operand(condition.getValue());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
-        } else {
-            throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
-        }
-        setResult(node, result);
-        return result;
     }
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {

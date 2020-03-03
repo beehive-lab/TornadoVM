@@ -15,6 +15,8 @@ import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
@@ -169,24 +171,8 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitCompareBranch(PlatformKind cmpKind,
-                                  Value left,
-                                  Value right,
-                                  Condition cond,
-                                  boolean unorderedIsTrue,
-                                  LabelRef trueDestination,
-                                  LabelRef falseDestination,
-                                  double trueDestinationProbability) {
+    public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination, double trueDestinationProbability) {
         unimplemented();
-//        LIRKind lirKind = LIRKind.value(cmpKind);
-//        Variable isTrue = newVariable(LIRKind.value(PTXKind.PRED));
-//        ExprStmt compare = new ExprStmt(new PTXTernary.Expr(SETP, lirKind, isTrue, left, right));
-//        ExprStmt branchTrue = new ExprStmt(new PTXUnary.Branch(CONDITIONAL_BRA, lirKind, isTrue, trueDestination));
-//        ExprStmt branchFalse = new ExprStmt(new PTXUnary.Branch(BRA, lirKind, null, falseDestination));
-//
-//        append(compare);
-//        append(branchTrue);
-//        append(branchFalse);
     }
 
     @Override
@@ -202,9 +188,53 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitConditionalMove(PlatformKind cmpKind, Value leftVal, Value right, Condition cond,
-                                        boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        unimplemented(); return null;
+    public Variable emitConditionalMove(PlatformKind cmpKind,
+                                        Value left,
+                                        Value right,
+                                        Condition cond,
+                                        boolean unorderedIsTrue,
+                                        Value trueValue,
+                                        Value falseValue) {
+        trace("emitConditionalMove?");
+
+        LIRKind kind = LIRKind.combine(trueValue, falseValue);
+        Variable predicate = newVariable(LIRKind.value(PTXKind.PRED));
+        Variable result = newVariable(kind);
+
+        append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(getConditionalOp(cond), kind, left, right)));
+        append(new PTXLIRStmt.ConditionalStatement(new PTXLIRStmt.AssignStmt(result, trueValue), predicate, false));
+        append(new PTXLIRStmt.ConditionalStatement(new PTXLIRStmt.AssignStmt(result, falseValue), predicate, true));
+
+        return result;
+    }
+
+    public static PTXBinaryOp getConditionalOp(Condition condition) {
+        switch (condition) {
+            case AE:
+            case GE:
+                return PTXBinaryOp.SETP_GE;
+            case AT:
+            case GT:
+                return PTXBinaryOp.SETP_GT;
+
+            case EQ:
+                return PTXBinaryOp.SETP_EQ;
+
+            case BE:
+            case LE:
+                return PTXBinaryOp.SETP_LE;
+
+            case BT:
+            case LT:
+                return PTXBinaryOp.SETP_LT;
+            case NE:
+                return PTXBinaryOp.SETP_NE;
+            default:
+                shouldNotReachHere();
+                break;
+
+        }
+        return null;
     }
 
     @Override

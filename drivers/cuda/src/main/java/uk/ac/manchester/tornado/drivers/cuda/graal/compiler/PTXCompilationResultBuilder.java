@@ -59,30 +59,6 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         nonInlinedMethods = new HashSet<>();
     }
 
-    @Deprecated
-    private static class DepFinder implements InstructionValueProcedure {
-
-        private final Set<Value> dependencies;
-
-        DepFinder(final Set<Value> dependencies) {
-            this.dependencies = dependencies;
-        }
-
-        @Override
-        public Value doValue(LIRInstruction instruction, Value value, LIRInstruction.OperandMode mode, EnumSet<LIRInstruction.OperandFlag> flags) {
-            if (value instanceof Variable) {
-                dependencies.add(value);
-            }
-
-            return value;
-        }
-
-        public Set<Value> getDependencies() {
-            return dependencies;
-        }
-
-    }
-
     public PTXAssembler getAssembler() {
         return (PTXAssembler) asm;
     }
@@ -131,7 +107,6 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         trace("Finished traversing CFG");
         this.lir = null;
         this.currentBlockIndex = 0;
-
     }
 
     @Override
@@ -169,10 +144,8 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
                 breakInst = op;
                 continue;
             }
-            else if ((loops == 0) && (op instanceof PTXControlFlow.LoopInitOp || op instanceof PTXControlFlow.LoopConditionOp)) {
-                if (op instanceof PTXControlFlow.LoopInitOp) {
-                    loops++;
-                }
+            else if ((loops == 0) && (op instanceof PTXControlFlow.LoopInitOp)) {
+                loops++;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));

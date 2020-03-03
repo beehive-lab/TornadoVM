@@ -1,9 +1,7 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.cfg.Block;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
@@ -40,29 +38,6 @@ public class PTXControlFlow {
         }
     }
 
-    public static class LoopConditionOp extends AbstractInstruction {
-
-        public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
-        @Use
-        private final Value condition;
-
-        @Use
-        private Variable dest;
-
-        public LoopConditionOp(Value condition, Variable dest) {
-            super(TYPE);
-            this.condition = condition;
-            this.dest = dest;
-        }
-
-        @Override
-        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emit("LOOP_CONDITION_OP\t");
-            asm.emit(condition.toString());
-            asm.eol();
-        }
-    }
-
     public static class LoopBreakOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<LoopBreakOp> TYPE = LIRInstructionClass.create(LoopBreakOp.class);
@@ -76,23 +51,6 @@ public class PTXControlFlow {
             asm.loopBreak();
             asm.delimiter();
             asm.eol();
-        }
-
-    }
-
-    public static class ConditionalBranchOp extends AbstractInstruction {
-
-        public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass.create(ConditionalBranchOp.class);
-        @Use private final Value condition;
-
-        public ConditionalBranchOp(Value condition) {
-            super(TYPE);
-            this.condition = condition;
-        }
-
-        @Override
-        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emitLine("if " + condition);
         }
 
     }
@@ -126,7 +84,7 @@ public class PTXControlFlow {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
-            asm.emit("bra");
+            asm.emit("bra.uni");
             asm.emitSymbol(TAB);
 
             emitBlockRef(destination.label().getBlockId(), asm);

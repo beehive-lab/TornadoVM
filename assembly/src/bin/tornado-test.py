@@ -74,15 +74,26 @@ __TEST_THE_WORLD__ = [
 ## List of classes to be tested for the CUDA integration project. These should remain on this branch.
 __TEST_CUDA__ = [
     "uk.ac.manchester.tornado.unittests.drivers.cuda.mm.ReadWriteTests",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testInitNotParallel",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testInitParallel",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionDouble",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionFloat",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionInteger",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionLong",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionShort",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorChars",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage",
     "uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
+    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testIfStatement",
+    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testIfElseStatement",
+    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testTernaryCondition",
+    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
 ]
 
 __TEST_THE_WORLD__ = __TEST_CUDA__
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"",
 ]
 
 # ################################################################################################################
