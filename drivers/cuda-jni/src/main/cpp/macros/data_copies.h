@@ -1,25 +1,30 @@
 #ifndef TORNADO_CUDA_MACROS_DATA_COPIES
 #define TORNADO_CUDA_MACROS_DATA_COPIES
 
+#define CHECK_STAGING_AREA(LENGTH_VAR) \
+if (LENGTH_VAR > staging_area_length) {\
+    if (staging_area_length != 0) cuMemFreeHost(staging_area); \
+    CUresult allocate_result = cuMemAllocHost(&staging_area, (size_t) LENGTH_VAR); \
+    if (allocate_result != 0) { \
+        char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
+        jclass exception; \
+        exception = (*env)->FindClass(env, className); \
+        (*env)->ThrowNew(env, exception, "CUDA: Could not allocate host memory. " + allocate_result); \
+    } \
+}\
+
 #define COPY_ARRAY_D_TO_H(SIG,NATIVE_J_TYPE,J_TYPE) \
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3##SIG##J \
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, NATIVE_J_TYPE## Array array, jlong host_offset) { \
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset; \
 \
-    void *native_array; \
-    CUresult result = cuMemAllocHost(&native_array, (size_t) length); \
+    CHECK_STAGING_AREA(length) \
+    CUresult result = cuMemcpyDtoH(staging_area, start_ptr, (size_t) length); \
     if (result != 0) { \
-        char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
-        jclass exception; \
-        exception = (*env)->FindClass(env, className); \
-        (*env)->ThrowNew(env, exception, "CUDA: Could not allocate host memory. " + result); \
-        return -1; \
+        printf("Failed to copy memory from device to host! (%d)\n", result); fflush(stdout); \
     } \
-    result = cuMemcpyDtoH(native_array, start_ptr, (size_t) length); \
  \
-    (*env)->Set ## J_TYPE ## ArrayRegion(env, array, host_offset, length / sizeof(NATIVE_J_TYPE), native_array); \
- \
-    cuMemFreeHost(native_array); \
+    (*env)->Set ## J_TYPE ## ArrayRegion(env, array, host_offset, length / sizeof(NATIVE_J_TYPE), staging_area); \
  \
     return (jint) -1; \
 } \
@@ -31,7 +36,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
     void *native_array = (*env)->GetPrimitiveArrayCritical(env, array, 0); \
     CUstream stream; \
     stream_from_array(env, &stream, stream_wrapper); \
-    CUresult result = cuMemcpyDtoHAsync(&native_array[host_offset], start_ptr, (size_t) length, stream); \
+    CUresult result = cuMemcpyDtoHAsync(native_array + host_offset, start_ptr, (size_t) length, stream); \
  \
     cuMemFreeHost(native_array); \
     (*env)->ReleasePrimitiveArrayCritical(env, array, native_array, 0); \
@@ -44,20 +49,10 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, NATIVE_J_TYPE## Array array, jlong host_offset) { \
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset; \
  \
-    void *native_array; \
-    CUresult result = cuMemAllocHost(&native_array, (size_t) length); \
-    if (result != 0) { \
-        char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
-        jclass exception; \
-        exception = (*env)->FindClass(env, className); \
-        (*env)->ThrowNew(env, exception, "CUDA: Could not allocate host memory. " + result); \
-        return; \
-    } \
-    (*env)->Get##J_TYPE##ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), native_array); \
+    CHECK_STAGING_AREA(length) \
+    (*env)->Get##J_TYPE##ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), staging_area); \
  \
-    result = cuMemcpyHtoD(start_ptr, native_array, (size_t) length); \
- \
-    cuMemFreeHost(native_array); \
+    CUresult result = cuMemcpyHtoD(start_ptr, staging_area, (size_t) length); \
  \
     return; \
 } \
@@ -66,22 +61,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, NATIVE_J_TYPE## Array array, jlong host_offset, jbyteArray stream_wrapper) { \
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset; \
  \
-    void *native_array; \
-    CUresult result = cuMemAllocHost(&native_array, (size_t) length); \
-    if (result != 0) { \
-        char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
-        jclass exception; \
-        exception = (*env)->FindClass(env, className); \
-        (*env)->ThrowNew(env, exception, "CUDA: Could not allocate host memory. " + result); \
-        return -1; \
-    } \
-    (*env)->Get##J_TYPE##ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), native_array); \
+    CHECK_STAGING_AREA(length) \
+    (*env)->Get##J_TYPE##ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), staging_area); \
  \
     CUstream stream; \
     stream_from_array(env, &stream, stream_wrapper); \
-    result = cuMemcpyHtoDAsync(start_ptr, native_array, (size_t) length, stream); \
- \
-    cuMemFreeHost(native_array); \
+    CUresult result = cuMemcpyHtoDAsync(start_ptr, staging_area, (size_t) length, stream); \
  \
     return (jint) -1; \
 }

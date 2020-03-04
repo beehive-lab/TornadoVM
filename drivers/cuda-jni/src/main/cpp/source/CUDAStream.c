@@ -6,7 +6,8 @@
 #include "CUDAEvent.h"
 #include "../macros/data_copies.h"
 
-//TODO: Make async calls async (create stream, destroy stream, manage events)
+void *staging_area;
+size_t staging_area_length = 0;
 
 void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
     (*env)->GetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream_ptr);
@@ -204,6 +205,11 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuD
     CUresult result = cuStreamDestroy(stream);
     if (result != 0) {
         printf("Failed to destroy stream! (%d)\n", result); fflush(stdout);
+    }
+
+    result = cuMemFreeHost(staging_area);
+    if (result != 0) {
+        printf("Failed to free page locked memory! (%d)\n", result); fflush(stdout);
     }
 }
 
