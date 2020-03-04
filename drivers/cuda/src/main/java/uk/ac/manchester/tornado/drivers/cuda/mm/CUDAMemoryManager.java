@@ -50,27 +50,34 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
         );
     }
 
-    @Override public long getCallStackSize() { return callStackLimit; }
+    @Override
+    public long getCallStackSize() { return callStackLimit; }
 
-    @Override public long getCallStackAllocated() {
+    @Override
+    public long getCallStackAllocated() {
         return callStackPosition;
     }
 
-    @Override public long getCallStackRemaining() {
+    @Override
+    public long getCallStackRemaining() {
         return callStackLimit - callStackPosition;
     }
 
-    @Override public long getHeapSize() {
+    @Override
+    public long getHeapSize() {
         return heapLimit - callStackLimit;
     }
 
-    @Override public long getHeapRemaining() {
+    @Override
+    public long getHeapRemaining() {
         return heapLimit - heapPosition;
     }
 
-    @Override public long getHeapAllocated() { return heapPosition - callStackLimit; }
+    @Override
+    public long getHeapAllocated() { return heapPosition - callStackLimit; }
 
-    @Override public boolean isInitialised() {
+    @Override
+    public boolean isInitialised() {
         return initialised;
     }
 
@@ -114,8 +121,6 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getDevice().getContext().allocateMemory(numBytes);
-        //this.constantPointer = deviceContext.getDevice().getContext().allocateMemory(4);
-        //this.privatePointer = deviceContext.getDevice().getContext().allocateMemory(4);
     }
 
     private static long align(final long address, final long alignment) {

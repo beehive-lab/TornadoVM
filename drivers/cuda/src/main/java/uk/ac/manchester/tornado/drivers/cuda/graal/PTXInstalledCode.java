@@ -7,6 +7,8 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 public class PTXInstalledCode extends InstalledCode implements TornadoInstalledCode {
     private CUDAModule module;
     private CUDADeviceContext deviceContext;
@@ -17,12 +19,14 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
         this.deviceContext = deviceContext;
     }
 
-    @Override public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    @Override
+    public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+        unimplemented("launch with deps");
         return 0;
     }
 
-    @Override public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
+    @Override
+    public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
         return deviceContext.enqueueKernelLaunch(module, stack, batchThreads);
-        //return 0; //Turn off kernel execution until the compiler is stable enough to not generate infinite loops
     }
 }

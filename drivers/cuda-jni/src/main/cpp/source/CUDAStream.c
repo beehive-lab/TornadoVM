@@ -3,17 +3,17 @@
 #include <stdio.h>
 
 #include "CUDAModule.h"
+#include "CUDAEvent.h"
 #include "../macros/data_copies.h"
 
 //TODO: Make async calls async (create stream, destroy stream, manage events)
 
-void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray *array) {
-    (*env)->GetByteArrayRegion(env, *array, 0, sizeof(CUstream), (void *) stream_ptr);
+void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
+    (*env)->GetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream_ptr);
 }
 
 jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUstream));
-
     (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream);
     return array;
 }
@@ -23,98 +23,98 @@ jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
  * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[BJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3BJ_3I, jbyte, Byte)
+COPY_ARRAY_D_TO_H(B, jbyte, Byte)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[SJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3SJ_3I, jshort, Short)
+COPY_ARRAY_D_TO_H(S, jshort, Short)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoHAsync
  * Signature: (JJJ[CJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3CJ_3I, jchar, Char)
+COPY_ARRAY_D_TO_H(C, jchar, Char)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[IJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3IJ_3I, jint, Int)
+COPY_ARRAY_D_TO_H(I, jint, Int)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[JJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3JJ_3I, jlong, Long)
+COPY_ARRAY_D_TO_H(J, jlong, Long)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[FJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3FJ_3I, jfloat, Float)
+COPY_ARRAY_D_TO_H(F, jfloat, Float)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[DJ[I)I
  */
-COPY_ARRAY_D_TO_H(__JJJ_3DJ_3I, jdouble, Double)
+COPY_ARRAY_D_TO_H(D, jdouble, Double)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[BJ[I)V
  */
-COPY_ARRAY_H_TO_D(__JJJ_3BJ_3I, jbyte, Byte)
+COPY_ARRAY_H_TO_D(B, jbyte, Byte)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[SJ[I)V
  */
-COPY_ARRAY_H_TO_D(__JJJ_3SJ_3I, jshort, Short)
+COPY_ARRAY_H_TO_D(S, jshort, Short)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[CJ[I)I
  */
-COPY_ARRAY_H_TO_D(__JJJ_3CJ_3I, jchar, Char)
+COPY_ARRAY_H_TO_D(C, jchar, Char)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[IJ[I)V
  */
-COPY_ARRAY_H_TO_D(__JJJ_3IJ_3I, jint, Int)
+COPY_ARRAY_H_TO_D(I, jint, Int)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[JJ[I)V
  */
-COPY_ARRAY_H_TO_D(__JJJ_3JJ_3I, jlong, Long)
+COPY_ARRAY_H_TO_D(J, jlong, Long)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[FJ[I)V
  */
-COPY_ARRAY_H_TO_D(__JJJ_3FJ_3I, jfloat, Float)
+COPY_ARRAY_H_TO_D(F, jfloat, Float)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[DJ[I)V
  */
-COPY_ARRAY_H_TO_D(__JJJ_3DJ_3I, jdouble, Double)
+COPY_ARRAY_H_TO_D(D, jdouble, Double)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
@@ -151,7 +151,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
     };
 
     CUstream stream;
-    stream_from_array(env, &stream, &stream_wrapper);
+    stream_from_array(env, &stream, stream_wrapper);
 
     result = cuLaunchKernel(kernel,
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
@@ -199,7 +199,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStre
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuDestroyStream
   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
     CUstream stream;
-    stream_from_array(env, &stream, &stream_wrapper);
+    stream_from_array(env, &stream, stream_wrapper);
 
     CUresult result = cuStreamDestroy(stream);
     if (result != 0) {
@@ -215,11 +215,37 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuD
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuStreamSynchronize
   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
     CUstream stream;
-    stream_from_array(env, &stream, &stream_wrapper);
+    stream_from_array(env, &stream, stream_wrapper);
 
     CUresult result = cuStreamSynchronize(stream);
     if (result != 0) {
         printf("Failed to synchronize with stream! (%d)\n", result); fflush(stdout);
     }
     return;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    cuEventCreateAndRecord
+ * Signature: (Z[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuEventCreateAndRecord
+  (JNIEnv *env, jclass clazz, jboolean is_timing, jbyteArray stream_wrapper) {
+    unsigned int flags = CU_EVENT_DEFAULT;
+    if (!is_timing) flags |= CU_EVENT_DISABLE_TIMING;
+
+    CUevent event;
+    CUresult result = cuEventCreate(&event, flags);
+    if (result != 0) {
+        printf("Failed to create event! (%d)\n", result); fflush(stdout);
+    }
+
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    result = cuEventRecord(event, stream);
+    if (result != 0) {
+        printf("Failed to record event! (%d)\n", result); fflush(stdout);
+    }
+
+    return array_from_event(env, &event);
 }

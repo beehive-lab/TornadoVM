@@ -17,6 +17,7 @@ add_library(tornado-cuda SHARED
 	source/CUDAModule.c
 	source/CUDAStream.c
 	source/CUDADevice.c
+	source/CUDAEvent.c
 	source/CUDA.c
 )
 

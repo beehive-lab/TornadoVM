@@ -2,11 +2,17 @@
 #include <cuda.h>
 #include <stdio.h>
 
+#include "CUDAModule.h"
+
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUmodule));
 
     (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUmodule), (void *) module);
     return array;
+}
+
+void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper) {
+    (*env)->GetByteArrayRegion(env, javaWrapper, 0, sizeof(CUmodule), (void *) module_ptr);
 }
 
 /*

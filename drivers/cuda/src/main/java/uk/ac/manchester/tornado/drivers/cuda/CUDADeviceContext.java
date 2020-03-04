@@ -6,10 +6,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACallStack;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.Initialisable;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.*;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -73,15 +70,11 @@ public class CUDADeviceContext
     }
 
 
-    public Event resolveEvent(int event) {
-        //TODO: Implement
-        unimplemented();
-        return null;
+    public CUDAEvent resolveEvent(int event) {
+        return stream.resolveEvent(event);
     }
 
     public void flushEvents() {
-        //TODO: Implement
-        //unimplemented();
     }
 
     public void markEvent() {
@@ -119,8 +112,8 @@ public class CUDADeviceContext
     }
 
     public void flush() {
-        //TODO: Implement
-        //unimplemented();
+        // I don't think there is anything like this in CUDA so I am calling sync
+        sync();
     }
 
     public void reset() {
