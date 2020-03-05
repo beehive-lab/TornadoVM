@@ -4,6 +4,8 @@
 
 #include "CUDAModule.h"
 
+#define SUB_OPTIMAL_MAX_DISTANCE 0.1
+
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUmodule));
 
@@ -59,4 +61,25 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModule_cuF
     result = cuFuncGetAttribute(&return_value, (CUfunction_attribute) attribute, kernel);
 
     return (jint) return_value;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAModule
+ * Method:    calcMaximalBlockSize
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModule_calcMaximalBlockSize
+  (JNIEnv *env, jclass clazz, jint max_blocks, jbyteArray module_wrapper, jstring func_name) {
+    CUmodule module;
+    array_to_module(env, &module, module_wrapper);
+
+    const char *native_function_name = (*env)->GetStringUTFChars(env, func_name, 0);
+    CUfunction kernel;
+    CUresult result = cuModuleGetFunction(&kernel, module, native_function_name);
+    (*env)->ReleaseStringUTFChars(env, func_name, native_function_name);
+
+    int min_grid_size;
+    int block_size;
+    cuOccupancyMaxPotentialBlockSize (&min_grid_size, &block_size, kernel, 0, 0, max_blocks);
+    return block_size;
 }

@@ -4,13 +4,13 @@ import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class CUDAModule {
-    public final byte[] nativeModule;
+    public final byte[] moduleWrapper;
     public final String kernelFunctionName;
     public final DomainTree domain;
     public final int dims;
 
     public CUDAModule(byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
-        nativeModule = cuModuleLoadData(source);
+        moduleWrapper = cuModuleLoadData(source);
         this.kernelFunctionName = kernelFunctionName;
         domain = taskMetaData.getDomain();
         dims = taskMetaData.getDims();
@@ -18,18 +18,22 @@ public class CUDAModule {
 
     private native static byte[] cuModuleLoadData(byte[] source);
     private native static int cuFuncGetAttribute(String funcName, int attribute, byte[] module);
+    private native static int calcMaximalBlockSize(int maxBlockSize, byte[] module, String funcName);
 
+    public int getMaximalBlocks(int maxBlockSize) {
+        return calcMaximalBlockSize(maxBlockSize, moduleWrapper, kernelFunctionName);
+    }
 
     public int maxThreadsPerBlock() {
-        return cuFuncGetAttribute(kernelFunctionName, CUFunctionAttribute.MAX_THREADS_PER_BLOCK, nativeModule);
+        return cuFuncGetAttribute(kernelFunctionName, CUFunctionAttribute.MAX_THREADS_PER_BLOCK, moduleWrapper);
     }
 
     public int getNumberOfRegisters() {
-        return cuFuncGetAttribute(kernelFunctionName, CUFunctionAttribute.NUM_REGS, nativeModule);
+        return cuFuncGetAttribute(kernelFunctionName, CUFunctionAttribute.NUM_REGS, moduleWrapper);
     }
 
     public boolean getIsPTXJITSuccess() {
-        return nativeModule.length != 0;
+        return moduleWrapper.length != 0;
     }
 
     private static class CUFunctionAttribute {

@@ -1,12 +1,14 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACallStack;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.Initialisable;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -19,7 +21,6 @@ public class CUDADeviceContext
     private final CUDADevice device;
     private final CUDAMemoryManager memoryManager;
     private final CUDAStream stream;
-    private final CUDAOccupancyCalculator occupancyCalculator;
     private final CUDACodeCache codeCache;
     private boolean wasReset;
 
@@ -30,7 +31,6 @@ public class CUDADeviceContext
         codeCache = new CUDACodeCache(this);
         memoryManager = new CUDAMemoryManager(this);
         wasReset = false;
-        occupancyCalculator = new CUDAOccupancyCalculator(device);
     }
 
     @Override public CUDAMemoryManager getMemoryManager() {
@@ -141,15 +141,22 @@ public class CUDADeviceContext
     private int[] calculateBlocks(CUDAModule module) {
         int[] defaultBlocks = {1, 1, 1};
         int dims = module.dims;
-        int registersUsed = module.getNumberOfRegisters();
-        int maxThreadsPerBlock = (int) Math.floor(Math.pow(module.maxThreadsPerBlock(), 1.0 / dims));
+        int totalWorkItems = 1;
 
-        for (int i = 0; i < dims && i < 3; i++) {
-            int maxBlocks = Math.min(maxThreadsPerBlock, module.domain.get(i).cardinality());
-            defaultBlocks[i] = occupancyCalculator.getMaximalBlockSize(registersUsed, maxBlocks, i);
+        for (int i = 0; i < dims; i++) {
+            totalWorkItems *= Math.max(module.domain.get(i).cardinality(), 1);
         }
 
-        //System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
+        // This is the number of thread blocks in total, which is x*y*z
+        int blocks = module.getMaximalBlocks(totalWorkItems);
+
+        // For now give each dimension the same number of blocks
+        // Ideally these would be proportionate to the domain cardinality
+        for (int i = 0; i < dims; i++) {
+            defaultBlocks[i] = (int) Math.pow(blocks, 1/(double)dims);
+        }
+
+        // System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
         return defaultBlocks;
     }
 
