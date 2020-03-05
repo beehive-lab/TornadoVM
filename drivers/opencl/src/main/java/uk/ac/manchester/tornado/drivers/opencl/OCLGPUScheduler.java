@@ -29,15 +29,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLGPUScheduler extends OCLKernelScheduler {
 
-    public static final double GPU_COMPUTE_UNIT_COEFF = 1;
-    public static final double GPU_COMPUTE_UNIT_QUEUE_COEFF = 128;
-    public static final double GPU_WORK_GROUP_COEFF = .125;
-
-    @SuppressWarnings("unused")
     private long maxComputeUnits;
-    @SuppressWarnings("unused")
-    private double workGroupUtil;
-    @SuppressWarnings("unused")
     private long maxWorkGroupSize;
 
     private static final int WARP_SIZE = 32;
@@ -52,8 +44,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
         maxComputeUnits = device.getDeviceMaxComputeUnits();
         maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
-
-        workGroupUtil = GPU_WORK_GROUP_COEFF;
     }
 
     @Override
@@ -62,7 +52,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
 
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
-            // adjust for irregular problem sizes
             if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
                 value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
             }
@@ -73,31 +62,57 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
+
         switch (meta.getDims()) {
             case 3:
-                /// XXX: Support 3D
-                localWork[2] = calculateGroupSize(maxWorkItemSizes[2], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[2]);
+                localWork[2] = 1;
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
             case 2:
-                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
                 break;
             default:
                 break;
         }
     }
 
-    private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;
         }
 
-        int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
         while (globalWorkSize % value != 0) {
             value--;
         }
         return value;
+    }
+
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+        long[] intermediates = new long[] { 1, 1, 1 };
+
+        switch (metaData.getDims()) {
+            case 3:
+                intermediates[2] = (long) Math.sqrt(maxWorkItemSizes[2]);
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 2:
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 1:
+                intermediates[0] = maxWorkItemSizes[0];
+                break;
+            default:
+                break;
+
+        }
+        return intermediates;
     }
 }
