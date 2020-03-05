@@ -6,7 +6,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import java.util.stream.IntStream;
 
 public class MatrixMul1D {
-    public static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+
+    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
@@ -15,6 +16,15 @@ public class MatrixMul1D {
                 }
                 C[(i * size) + j] = sum;
             }
+        }
+    }
+
+    private static void printMatrix(final int N, float[] matrixC) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                System.out.printf(" %f |", matrixC[i * N + j]);
+            }
+            System.out.println();
         }
     }
 
@@ -29,18 +39,11 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N)
-                .streamOut(matrixC);
-        //@formatter:on
-        t.execute();
+        new TaskSchedule("s0") //
+                .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N) //
+                .streamOut(matrixC) //
+                .execute();
 
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                System.out.printf(" %f |", matrixC[i * N + j]);
-            }
-            System.out.println();
-        }
+        printMatrix(N, matrixC);
     }
 }
