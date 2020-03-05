@@ -176,7 +176,6 @@ public class OCLCodeCache {
             fpgaSourceDir = DIRECTORY_BITSTREAM;
             directoryBitstream = DIRECTORY_BITSTREAM;
             compilationFlags = (deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? XILINX_COMPILER_FLAGS : INTEL_ALTERA_COMPILER_FLAGS;
-            System.out.println("name: " + fpgaName);
         }
     }
 
