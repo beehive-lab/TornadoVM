@@ -10,10 +10,10 @@ We have currently tested with an Intel Nallatech-A385 FPGA (Intel Arria 10 GT115
 We have also tested it on the AWS EC2 F1 instance with xilinx_aws-vu9p-f1-04261818_dynamic_5_0 device.
 
 * HLS Versions: Intel Quartus 17.1.0 Build 240, Xilinx SDAccel 2018.2, Xilinx SDAccel 2018.3
-* Tornado Version: > 0.4
+* TornadoVM Version: > 0.4
 * AWS AMI Version: 1.6.0
 
-If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it shoudl be the following:  
+If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it should be the following:  
 ```bash
 $ clinfo
    Number of platforms                               1
