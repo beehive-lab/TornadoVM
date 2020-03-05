@@ -4,6 +4,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 import java.util.Random;
@@ -79,7 +80,8 @@ public class MatrixMul2D {
                 .streamOut(matrixCCUDA); //
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
-        cudaTask.mapAllTo(cudaDriver.getDevice(0));
+        TornadoDevice cudaDevice = cudaDriver.getDevice(0);
+        cudaTask.mapAllTo(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -96,7 +98,18 @@ public class MatrixMul2D {
                 .streamOut(matrixCOCL); //
 
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        oclTask.mapAllTo(oclDriver.getDevice(0));
+        TornadoDevice oclDevice = null;
+        for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
+            TornadoDevice device = oclDriver.getDevice(i);
+            if (device.getDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getDevice().getDeviceName())) {
+                oclDevice = device;
+            }
+        }
+        if (oclDevice == null) {
+            System.err.println("There is no device with both OpenCL and CUDA-PTX support");
+            System.exit(1);
+        }
+        oclTask.mapAllTo(oclDevice);
 
         // Warmup OPENCL
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
