@@ -25,13 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCPUScheduler extends OCLKernelScheduler {
-
-    private final double CPU_COMPUTE_UNIT_COEFF = Double.parseDouble(getProperty("tornado.opencl.cpu.coeff", "1.0"));
 
     public OCLCPUScheduler(final OCLDeviceContext context) {
         super(context);
@@ -46,14 +42,13 @@ public class OCLCPUScheduler extends OCLKernelScheduler {
             if (meta.enableThreadCoarsener()) {
                 globalWork[i] = maxItems[i] > 1 ? (long) (meta.getDomain().get(i).cardinality()) : 1;
             } else {
-                globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits() * CPU_COMPUTE_UNIT_COEFF) : 1;
+                globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits()) : 1;
             }
         }
     }
 
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
-        final long[] localWork = meta.getLocalWork();
         meta.setLocalWorkToNull();
     }
 
