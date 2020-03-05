@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 
@@ -80,7 +78,6 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
         if (!backend.isInitialised()) {
             backend.init();
         }
-
         return backend;
     }
 
@@ -96,10 +93,10 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
 
     @Override
     public TornadoAcceleratorDevice getDevice(int index) {
-        try {
+        if (index < backends.length) {
             return backends[index].getDeviceContext().asMapping();
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + backends.length);
+        } else {
+            throw new TornadoRuntimeException("[ERROR]-[CUDA-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
         }
     }
 
