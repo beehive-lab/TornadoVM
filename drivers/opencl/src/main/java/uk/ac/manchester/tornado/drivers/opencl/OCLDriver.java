@@ -79,9 +79,9 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public TornadoAcceleratorDevice getDevice(int index) {
-        try {
+        if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } else {
             throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
         }
     }
