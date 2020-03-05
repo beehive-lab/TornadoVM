@@ -38,6 +38,7 @@ List of tested drivers for running OpenCL with TornadoVM
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+* 440.64: OK
 * 440.59: OK
 * 440.40: OK
 * 440.36: OK 
