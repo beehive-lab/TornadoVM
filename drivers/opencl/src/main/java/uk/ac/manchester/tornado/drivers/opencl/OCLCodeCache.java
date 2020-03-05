@@ -64,7 +64,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLCodeCache {
 
     public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
-    private static final String DIRECTORY_BITSTREAM = "fpga-source-comp-default/";
+    private static final String DIRECTORY_BITSTREAM = "fpga-source-comp/";
     public static String FPGA_BIN_LOCATION = "./" + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME;
 
     private static final String FALSE = "False";
@@ -144,7 +144,6 @@ public class OCLCodeCache {
     private void parseFPGAConfigurationFile() {
         FileReader fileReader;
         BufferedReader bufferedReader;
-        System.out.println("[parseFPGAConfigurationFile]");
         try {
             fileReader = new FileReader(new File("").getAbsolutePath() + "/etc/fpga.conf");
             bufferedReader = new BufferedReader(fileReader);
@@ -172,11 +171,12 @@ public class OCLCodeCache {
             }
         } catch (IOException e) {
             System.out.println("Wrong configuration file, proceed with default configuration. If you target FPGA in the cloud, please ensure that you have configured the etc/fpga.conf file!");
-            fpgaName = deviceContext.getDevice().getDeviceName();
+            fpgaName = deviceContext.getDevice().getDeviceName().split(":")[0];
             fpgaBinLocation = FPGA_BIN_LOCATION;
             fpgaSourceDir = DIRECTORY_BITSTREAM;
             directoryBitstream = DIRECTORY_BITSTREAM;
             compilationFlags = (deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? XILINX_COMPILER_FLAGS : INTEL_ALTERA_COMPILER_FLAGS;
+            System.out.println("name: " + fpgaName);
         }
     }
 
