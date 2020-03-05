@@ -19,6 +19,22 @@ jbyteArray array_from_event(JNIEnv *env, CUevent *event);
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventDestroy
   (JNIEnv *, jclass, jbyteArray);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent
+ * Method:    cuEventSynchronize
+ * Signature: ([[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventSynchronize
+  (JNIEnv *, jclass, jobjectArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent
+ * Method:    cuEventQuery
+ * Signature: ([B)V
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventQuery
+  (JNIEnv *, jclass, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

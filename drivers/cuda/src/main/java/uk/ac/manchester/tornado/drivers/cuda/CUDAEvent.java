@@ -8,23 +8,37 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 public class CUDAEvent extends TornadoLogger implements Event {
 
-    private byte[] eventWrapper;
+    private final byte[] eventWrapper;
+    private boolean isCompleted;
+    private final EventDescription description;
 
-    public CUDAEvent(byte[] bytes) {
+    public CUDAEvent(byte[] bytes, EventDescription description) {
         eventWrapper = bytes;
+        this.description = description;
+        isCompleted = false;
     }
 
     private native static void cuEventDestroy(byte[] eventWrapper);
+    private native static void cuEventSynchronize(byte[][] wrappers);
+    private native static boolean cuEventQuery(byte[] eventWrapper);
+
+    public static void waitForEventArray(CUDAEvent[] events) {
+        byte[][] wrappers = new byte[events.length][];
+        for (int i = 0; i < events.length; i++) {
+            wrappers[i] = events[i].eventWrapper;
+        }
+
+        cuEventSynchronize(wrappers);
+    }
 
     @Override
     public void waitForEvents() {
-        unimplemented();
+        waitForEventArray(new CUDAEvent[] {this});
     }
 
     @Override
     public String getName() {
-        unimplemented();
-        return null;
+        return description.name();
     }
 
     @Override
@@ -59,8 +73,9 @@ public class CUDAEvent extends TornadoLogger implements Event {
 
     @Override
     public TornadoExecutionStatus getStatus() {
-        unimplemented();
-        return null;
+        if (!isCompleted) isCompleted = cuEventQuery(eventWrapper);
+
+        return isCompleted ? TornadoExecutionStatus.COMPLETE : TornadoExecutionStatus.QUEUED;
     }
 
     @Override
@@ -71,10 +86,28 @@ public class CUDAEvent extends TornadoLogger implements Event {
 
     @Override
     public void waitOn() {
-        unimplemented();
+        waitForEvents();
     }
 
     public void destroy() {
         cuEventDestroy(eventWrapper);
+    }
+
+    public enum EventDescription {
+        KERNEL,
+        MEMCPY_D_TO_H_BYTE,
+        MEMCPY_D_TO_H_SHORT,
+        MEMCPY_D_TO_H_CHAR,
+        MEMCPY_D_TO_H_INT,
+        MEMCPY_D_TO_H_LONG,
+        MEMCPY_D_TO_H_FLOAT,
+        MEMCPY_D_TO_H_DOUBLE,
+        MEMCPY_H_TO_D_BYTE,
+        MEMCPY_H_TO_D_SHORT,
+        MEMCPY_H_TO_D_CHAR,
+        MEMCPY_H_TO_D_INT,
+        MEMCPY_H_TO_D_LONG,
+        MEMCPY_H_TO_D_FLOAT,
+        MEMCPY_H_TO_D_DOUBLE,
     }
 }

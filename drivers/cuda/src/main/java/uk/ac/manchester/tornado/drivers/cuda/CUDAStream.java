@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.drivers.cuda.CUDAEvent.EventDescription;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -8,12 +9,12 @@ import java.util.Map;
 
 public class CUDAStream extends TornadoLogger {
     private final byte[] streamWrapper;
-    private Map<Integer, CUDAEvent> events;
+    private Map<Integer, CUDAEvent> recordedEvents;
     private int eventCount;
 
     public CUDAStream() {
         streamWrapper = cuCreateStream();
-        events = new HashMap<>();
+        recordedEvents = new HashMap<>();
         eventCount = 0;
     }
 
@@ -57,18 +58,18 @@ public class CUDAStream extends TornadoLogger {
 
     private native static byte[] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
-    private int recordEvent() {
-        CUDAEvent event = new CUDAEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamWrapper));
-        events.put(eventCount, event);
+    private int recordEvent(EventDescription description) {
+        CUDAEvent event = new CUDAEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamWrapper), description);
+        recordedEvents.put(eventCount, event);
         eventCount++;
         return eventCount - 1;
     }
 
 
     public void reset() {
-        events.forEach((key, event) -> {
-            event.destroy();
-        });
+        recordedEvents.forEach((key, event) -> event.destroy());
+        recordedEvents.clear();
+        eventCount = 0;
     }
 
     public void sync() {
@@ -80,7 +81,16 @@ public class CUDAStream extends TornadoLogger {
     }
 
     public CUDAEvent resolveEvent(int event) {
-        return events.get(event);
+        return recordedEvents.get(event);
+    }
+
+    private void waitForEvents(int[] eventIds) {
+        if (eventIds == null) return;
+        CUDAEvent[] events = new CUDAEvent[eventIds.length];
+        for (int i = 0; i < eventIds.length; i++) {
+            events[i] = recordedEvents.get(eventIds[i]);
+        }
+        CUDAEvent.waitForEventArray(events);
     }
 
     public int enqueueKernelLaunch(CUDAModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
@@ -90,142 +100,170 @@ public class CUDAStream extends TornadoLogger {
                               0, streamWrapper,
                               kernelParams
         );
-        return recordEvent();
+        return recordEvent(EventDescription.KERNEL);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_BYTE);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_SHORT);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_CHAR);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_INT);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_LONG);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_FLOAT);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_DOUBLE);
     }
 
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_BYTE);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_SHORT);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_CHAR);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_INT);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_LONG);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_FLOAT);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_D_TO_H_DOUBLE);
     }
 
 
     public void enqueueWrite(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, long[] array, int hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, float[] array, int hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, double[] array, int hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoD(bufferId, offset, length, array, hostOffset);
     }
 
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_BYTE);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_CHAR);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_SHORT);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_INT);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_LONG);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_FLOAT);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
         writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, streamWrapper);
-        return recordEvent();
+        return recordEvent(EventDescription.MEMCPY_H_TO_D_DOUBLE);
     }
 }
