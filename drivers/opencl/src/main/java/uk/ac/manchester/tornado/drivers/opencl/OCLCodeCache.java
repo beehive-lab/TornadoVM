@@ -80,7 +80,7 @@ public class OCLCodeCache {
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
     private final String XILINX_OPENCL_COMPILER = "xocc";
-    private final String INTEL_ALTERA_COMPILER_FLAGS = "FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile";
+    private final String INTEL_ALTERA_COMPILER_FLAGS = "-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile";
     private final String XILINX_COMPILER_FLAGS = "-O3 -j12";
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private String fpgaName;
@@ -297,7 +297,7 @@ public class OCLCodeCache {
         bufferCommand.add(inputFile);
 
         bufferCommand.add(compilationFlags);
-        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-march=" + fpgaName) : ("-board=" + fpgaName));
+        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-march=emulator") : ("-board=" + fpgaName));
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
     }
