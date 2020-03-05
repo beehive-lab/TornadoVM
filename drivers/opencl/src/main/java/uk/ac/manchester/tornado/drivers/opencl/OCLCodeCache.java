@@ -172,7 +172,6 @@ public class OCLCodeCache {
             }
         } catch (IOException e) {
             System.out.println("Wrong configuration file, proceed with default configuration. If you target FPGA in the cloud, please ensure that you have configured the etc/fpga.conf file!");
-            //return;
             fpgaName = deviceContext.getDevice().getDeviceName();
             fpgaBinLocation = FPGA_BIN_LOCATION;
             fpgaSourceDir = DIRECTORY_BITSTREAM;
