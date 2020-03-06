@@ -58,8 +58,9 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
-        unimplemented();
-        return null;
+        LIRKind resultKind = LIRKind.combine(a, b);
+        PTXBinaryOp op = resultKind.getPlatformKind() == PTXKind.F32 ? PTXBinaryOp.DIV_APPROX : PTXBinaryOp.DIV;
+        return emitBinaryAssign(op, resultKind, a, b);
     }
 
     @Override

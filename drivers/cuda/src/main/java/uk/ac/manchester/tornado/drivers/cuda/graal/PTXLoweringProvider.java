@@ -7,13 +7,17 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.nodes.CompressionNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.FloatConvertNode;
+import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
+import org.graalvm.compiler.nodes.calc.RemNode;
+import org.graalvm.compiler.nodes.java.*;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -85,5 +89,28 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     public boolean supportsBulkZeroing() {
         unimplemented();
         return false;
+    }
+
+    @Override
+    public void lower(Node node, LoweringTool tool) {
+        if (node instanceof IntegerDivRemNode) {
+            lowerIntegerDivRemNode((IntegerDivRemNode) node);
+        } else {
+            super.lower(node, tool);
+        }
+    }
+
+    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
+        StructuredGraph graph = integerDivRemNode.graph();
+        switch (integerDivRemNode.getOp()) {
+            case DIV:
+                ValueNode div = graph.addOrUnique(DivNode.create(integerDivRemNode.getX(), integerDivRemNode.getY()));
+                graph.replaceFixedWithFloating(integerDivRemNode, div);
+                break;
+            case REM:
+                ValueNode rem = graph.addOrUnique(RemNode.create(integerDivRemNode.getX(), integerDivRemNode.getY(), NodeView.DEFAULT));
+                graph.replaceFixedWithFloating(integerDivRemNode, rem);
+                break;
+        }
     }
 }

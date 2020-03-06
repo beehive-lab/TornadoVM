@@ -89,6 +89,7 @@ __TEST_CUDA__ = [
     "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testIfElseStatement",
     "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testTernaryCondition",
     "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
+    "uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations",
 ]
 
 __TEST_THE_WORLD__ = __TEST_CUDA__

@@ -18,7 +18,7 @@ public enum PTXKind implements PlatformKind {
 
     S16(2, Short.TYPE),
     F16(2, null),
-    U16(2, null),
+    U16(2, Character.TYPE),
     B16(2, null),
 
     S32(4, Integer.TYPE),

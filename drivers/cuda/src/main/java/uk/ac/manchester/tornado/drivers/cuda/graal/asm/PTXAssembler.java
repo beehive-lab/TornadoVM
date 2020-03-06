@@ -390,11 +390,13 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXBinaryOp extends PTXOp {
 
-        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl", true);
+        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl",true, false);
         public static final PTXBinaryOp ADD = new PTXBinaryOp("add");
         public static final PTXBinaryOp SUB = new PTXBinaryOp("sub");
         public static final PTXBinaryOp MUL = new PTXBinaryOp("mul");
         public static final PTXBinaryOp MUL_LO = new PTXBinaryOp("mul.lo");
+        public static final PTXBinaryOp DIV = new PTXBinaryOp("div");
+        public static final PTXBinaryOp DIV_APPROX = new PTXBinaryOp("div.approx", false);
 
         public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
         public static final PTXBinaryOp SETP_LT = new PTXBinaryOp("setp.lt");
@@ -404,19 +406,32 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp SETP_GT = new PTXBinaryOp("setp.gt");
         public static final PTXBinaryOp SETP_NE = new PTXBinaryOp("setp.ne");
 
+        private final boolean needsRounding;
+
         public PTXBinaryOp(String opcode) {
-            super(opcode);
+            this(opcode, true);
         }
 
-        public PTXBinaryOp(String opcode, boolean isWeaklyTyped) {
+        public PTXBinaryOp(String opcode, boolean needsRounding) {
+            super(opcode);
+            this.needsRounding = needsRounding;
+        }
+
+        public PTXBinaryOp(String opcode, boolean isWeaklyTyped, boolean needsRounding) {
             super(opcode, isWeaklyTyped);
+            this.needsRounding = needsRounding;
         }
 
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
+            PTXKind type = (PTXKind) dest.getPlatformKind();
+            if (needsRounding && type.isFloating()) {
+                asm.emitSymbol(DOT);
+                asm.emit(ROUND_NEAREST_EVEN);
+            }
+
             if (isTyped){
-                PTXKind type = (PTXKind) dest.getPlatformKind();
                 if (type == PTXKind.PRED) type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
                 if (isWeaklyTyped) type = type.toUntyped();
                 asm.emit("." + type);
