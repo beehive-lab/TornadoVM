@@ -16,9 +16,20 @@ $ tornado --devices
 ```
 
 ### 2. Enter a bash shell as root user, in order to get access to the Xilinx FPGA.
+a. Load the environment variables for Xilinx HLS and runtime.
 ```
 $ sudo -E /bin/bash
 $ source /home/centos/scripts/sudo_tornado_aws_setup.sh
+$ cd $AWS_FPGA_REPO_DIR
+$ source sdaccel_setup.sh
+$ source /opt/Xilinx/SDx/2018.3.op2405991/settings64.sh
+$ source /opt/Xilinx/Vivado/2018.3.op2405991/.settings64-Vivado.sh
+```
+b. Load the environment variables for TornadoVM
+```
+$ cd /home/centos/repositories/TornadoVM
+$ source etc/sources.env
+
 $ tornado --devices
 ```
 ### 3. Update the *_etc/fpga.conf_* file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
