@@ -209,7 +209,6 @@
                 <cmake.generator>Unix Makefiles</cmake.generator>
             </properties>
         </profile>
-
         <profile>
             <id>mac-amd64-debug</id>
             <properties>
