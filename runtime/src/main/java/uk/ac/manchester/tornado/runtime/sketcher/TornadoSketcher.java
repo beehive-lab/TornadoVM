@@ -59,7 +59,6 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
@@ -75,16 +74,16 @@ public class TornadoSketcher {
 
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
 
-    private static HashSet<String> openclTokens = new HashSet<>();
+    private static HashSet<String> openCLTokens = new HashSet<>();
     static {
         // XXX: To be completed
-        openclTokens.add("kernel");
-        openclTokens.add("__global");
-        openclTokens.add("global");
-        openclTokens.add("local");
-        openclTokens.add("__local");
-        openclTokens.add("private");
-        openclTokens.add("__private");
+        openCLTokens.add("kernel");
+        openCLTokens.add("__global");
+        openCLTokens.add("global");
+        openCLTokens.add("local");
+        openCLTokens.add("__local");
+        openCLTokens.add("private");
+        openCLTokens.add("__private");
     }
 
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod) {
@@ -101,11 +100,11 @@ public class TornadoSketcher {
             return;
         }
         cache.put(request.resolvedMethod, request);
-            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
-                request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
-            } catch (Throwable e) {
-                throw getDebugContext().handle(e);
-            }
+        try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
+            request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
+        } catch (Throwable e) {
+            throw getDebugContext().handle(e);
+        }
     }
 
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
@@ -118,7 +117,7 @@ public class TornadoSketcher {
         final StructuredGraph graph = builder.build();
 
         // Check legal Kernel Name
-        if (openclTokens.contains(resolvedMethod.getName())) {
+        if (openCLTokens.contains(resolvedMethod.getName())) {
             throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + resolvedMethod.getName());
         }
 
@@ -139,7 +138,7 @@ public class TornadoSketcher {
             // @formatter:off
             graph.getInvokes()
                  .forEach(invoke -> {
-                     if (openclTokens.contains(invoke.callTarget().targetMethod().getName())) {
+                     if (openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
                          throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
                      }
                      getTornadoExecutor().execute(new SketchRequest(meta,invoke.callTarget().targetMethod(),providers,graphBuilderSuite,sketchTier));

@@ -45,15 +45,12 @@ public class MultipleReductions extends TornadoTestBase {
             input[i] = i;
         });
 
-        //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-                .streamIn(input)
-                .task("t0", MultipleReductions::test, input, result1, result2)
-                .streamOut(result1, result2);
-        //@formatter:on
+        TaskSchedule task = new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", MultipleReductions::test, input, result1, result2) //
+                .streamOut(result1, result2); //
 
         task.execute();
-
     }
 
 }

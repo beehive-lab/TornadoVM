@@ -120,12 +120,20 @@ public class ReduceCodeAnalysis {
         return operations;
     }
 
+    private static boolean shouldSkip(int index, StructuredGraph graph) {
+        return graph.method().isStatic() && index >= getNumberOfParameterNodes(graph);
+    }
+
     public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
         ArrayList<ValueNode> reduceOperation = new ArrayList<>();
         for (Integer paramIndex : reduceIndices) {
 
             if (!graph.method().isStatic()) {
                 paramIndex++;
+            }
+
+            if (shouldSkip(paramIndex, graph)) {
+                continue;
             }
 
             ParameterNode parameterNode = graph.getParameter(paramIndex);
@@ -203,12 +211,22 @@ public class ReduceCodeAnalysis {
         return arrayLengthNode;
     }
 
+    private static int getNumberOfParameterNodes(StructuredGraph graph) {
+        int numParameters = 0;
+        for (Node n : graph.getNodes()) {
+            if (n instanceof ParameterNode) {
+                numParameters++;
+            }
+        }
+        return numParameters;
+    }
+
     /**
      * A method can apply multiple reduction variables. We return a list of all its
      * loop bounds.
      *
      * @param graph
-     *            Graal-IR graph to analyze
+     *            Graal-IR graph to be analyzed
      * @param reduceIndexes
      *            List of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
@@ -219,6 +237,10 @@ public class ReduceCodeAnalysis {
 
             if (!graph.method().isStatic()) {
                 paramIndex++;
+            }
+
+            if (shouldSkip(paramIndex, graph)) {
+                continue;
             }
 
             ParameterNode parameterNode = graph.getParameter(paramIndex);
