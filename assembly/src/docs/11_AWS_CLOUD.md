@@ -15,17 +15,20 @@ $ make
 $ tornado --devices
 ```
 
-### 2. Enter a bash shell as root user, in order to get access to the Xilinx FPGA.
-a. Load the environment variables for Xilinx HLS and runtime.
+### 2. Follow these steps to get access to the Xilinx FPGA.
+a. Enter a bash shell as root.
 ```
 $ sudo -E /bin/bash
-$ source /home/centos/scripts/sudo_tornado_aws_setup.sh
+```
+
+b. Load the environment variables for Xilinx HLS and runtime.
+```
 $ cd $AWS_FPGA_REPO_DIR
 $ source sdaccel_setup.sh
 $ source /opt/Xilinx/SDx/2018.3.op2405991/settings64.sh
 $ source /opt/Xilinx/Vivado/2018.3.op2405991/.settings64-Vivado.sh
 ```
-b. Load the environment variables for TornadoVM
+c. Load the environment variables for TornadoVM
 ```
 $ cd /home/centos/repositories/TornadoVM
 $ source etc/sources.env
@@ -58,6 +61,8 @@ Read the *_output.log_* file in order to monitor the outcome of the compilation.
 
 ### 4. Exit from root user and return to the centos shell. The following script will start the generation of an Amazon FPGA Image (AFI) associated with the Xilinx binary. This step may take 30 minutes.
 Be aware you need to clear the *_to_aws/_* directory.
+
+Follow again steps 2b and 2c this time as centos user, prior to the generation of AFI.
 ```
 $ source aws_post_processing.sh
 ```
