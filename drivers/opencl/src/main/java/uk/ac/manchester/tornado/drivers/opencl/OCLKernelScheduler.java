@@ -61,7 +61,6 @@ public abstract class OCLKernelScheduler {
     }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
-
         if (!meta.isGlobalWorkDefined()) {
             calculateGlobalWork(meta, batchThreads);
         }
@@ -75,15 +74,9 @@ public abstract class OCLKernelScheduler {
         }
 
         final int taskEvent;
-        if (meta.shouldUseDefaultOpenCLScheduling()) {
-            if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) { //TODO Isolate this check in the Xilinx backend as the driver throws error if localWorkSize is null
-                taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-            } else {
-                taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
-            }
-        } else {
-            taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-        }
+
+        taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
+                waitEvents);
 
         updateProfiler(taskEvent, meta);
         return taskEvent;

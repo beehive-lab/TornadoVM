@@ -189,8 +189,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclEnableBifs;
     }
 
-    public boolean shouldUseDefaultOpenCLScheduling() {
-        return openclUseScheduling;
+    public boolean shouldUseOpenCLDriverScheduling() {
+        return openclUseDriverScheduling;
     }
 
     public boolean shouldUseOpenclWaitActive() {
@@ -266,7 +266,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /*
      * Allows the OpenCL driver to select the size of local work groups
      */
-    private final boolean openclUseScheduling;
+    private final boolean openclUseDriverScheduling;
     private final boolean openclWaitActive;
     private final boolean vmWaitEvent;
     private final boolean enableExceptions;
@@ -402,7 +402,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         /*
          * Allows the OpenCL driver to select the size of local work groups
          */
-        openclUseScheduling = parseBoolean(getDefault("opencl.schedule", id, "True"));
+        openclUseDriverScheduling = parseBoolean(getDefault("opencl.usedriver.schedule", id, "false"));
         vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, "False"));
         enableExceptions = parseBoolean(getDefault("exceptions.enable", id, "False"));
         enableProfiling = parseBoolean(getDefault("profiling.enable", id, "False"));
