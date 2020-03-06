@@ -41,6 +41,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -605,16 +606,31 @@ class ReduceTaskSchedule {
      */
     private static int obtainSizeArrayResult(int driverIndex, int device, int inputSize) {
         TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(device).getDeviceType();
+        TornadoDevice deviceToRun = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(device);
         switch (deviceType) {
             case CPU:
                 return Runtime.getRuntime().availableProcessors() + 1;
             case GPU:
             case ACCELERATOR:
-                return inputSize > DEFAULT_GPU_WORK_GROUP ? (inputSize / DEFAULT_GPU_WORK_GROUP) + 1 : 2;
+                return inputSize > calculateGroupSize(deviceToRun, inputSize) ? (inputSize / calculateGroupSize(deviceToRun, inputSize)) + 1 : 2;
             default:
                 break;
         }
         return 0;
+    }
+
+    private static int calculateGroupSize(TornadoDevice device, long globalWorkSize) {
+        int maxBlockSize = (int) device.getDeviceMaxWorkgroupDimensions()[0];
+
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        return value;
     }
 
     private ArrayList<Thread> getHostThreadReduction() {

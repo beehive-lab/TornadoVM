@@ -72,7 +72,7 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
         while (context.getMeta().getDomain().get(0).cardinality() % value != 0) {
             value--;
         }
-        return 256; // TODO: In a second iteration we need to change this with the value. This due
-                    // to hardcoded behaviour of 256 LWG for reductions
+        return value;
     }
+
 }
