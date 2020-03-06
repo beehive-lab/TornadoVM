@@ -64,8 +64,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLCodeCache {
 
     public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
-    private static final String DIRECTORY_BITSTREAM = "fpga-source-comp/";
-    public static String FPGA_BIN_LOCATION = "./" + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME;
 
     private static final String FALSE = "False";
     private static final String TRUE = "True";
@@ -80,8 +78,6 @@ public class OCLCodeCache {
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
     private final String XILINX_OPENCL_COMPILER = "xocc";
-    private final String INTEL_ALTERA_COMPILER_FLAGS = "-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile";
-    private final String XILINX_COMPILER_FLAGS = "-O3 -j12";
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private String fpgaName;
     private String compilationFlags;
@@ -145,7 +141,7 @@ public class OCLCodeCache {
         FileReader fileReader;
         BufferedReader bufferedReader;
         try {
-            fileReader = new FileReader(new File("").getAbsolutePath() + "/etc/fpga.conf");
+            fileReader = new FileReader(new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
             bufferedReader = new BufferedReader(fileReader);
             String line;
             try {
@@ -170,12 +166,8 @@ public class OCLCodeCache {
                 e.printStackTrace();
             }
         } catch (IOException e) {
-            System.out.println("Wrong configuration file, proceed with default configuration. If you target FPGA in the cloud, please ensure that you have configured the etc/fpga.conf file!");
-            fpgaName = deviceContext.getDevice().getDeviceName().split(":")[0];
-            fpgaBinLocation = FPGA_BIN_LOCATION;
-            fpgaSourceDir = DIRECTORY_BITSTREAM;
-            directoryBitstream = DIRECTORY_BITSTREAM;
-            compilationFlags = (deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? XILINX_COMPILER_FLAGS : INTEL_ALTERA_COMPILER_FLAGS;
+            System.out.println("Wrong configuration file, please ensure that you have configured the file with valid settings!");
+            System.exit(1);
         }
     }
 
