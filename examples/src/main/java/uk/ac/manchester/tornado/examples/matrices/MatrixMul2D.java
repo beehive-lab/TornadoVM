@@ -56,9 +56,6 @@ public class MatrixMul2D {
             }
         }
 
-        // Enable profiler
-        // System.setProperty("tornado.profiler", "True");
-
         System.out.println("Computing MxM of " + size + "x" + size);
         System.out.println();
 
@@ -79,7 +76,7 @@ public class MatrixMul2D {
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, size) //
                 .streamOut(matrixCCUDA); //
 
-        TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
+        TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
         cudaTask.mapAllTo(cudaDevice);
 
@@ -97,7 +94,7 @@ public class MatrixMul2D {
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
                 .streamOut(matrixCOCL); //
 
-        TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);
@@ -154,17 +151,5 @@ public class MatrixMul2D {
         System.out.println("OPENCL   Execution: " + nsecOCLElapsedTime + " ns");
         System.out.println("           Speedup: " + (double) nsecOCLElapsedTime / nsecCUDAElapsedTime);
         System.out.println();
-
-        // System.out.println("=================================================");
-        // System.out.println("CUDA:");
-        // System.out.println("\t Kernel time: " + cudaTask.getDeviceKernelTime());
-        // System.out.println("\tData transfer time: " +
-        // cudaTask.getDataTransfersTime());
-        // System.out.println();
-        // System.out.println("OPENCL:");
-        // System.out.println("\t Kernel time: " + oclTask.getDeviceKernelTime());
-        // System.out.println("\tData transfer time: " +
-        // oclTask.getDataTransfersTime());
-
     }
 }

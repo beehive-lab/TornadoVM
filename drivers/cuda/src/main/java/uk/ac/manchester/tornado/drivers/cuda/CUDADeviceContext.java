@@ -12,8 +12,10 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.runtime.TornadoRuntime.getProperty;
 
 public class CUDADeviceContext
         extends TornadoLogger implements Initialisable, TornadoDeviceContext {
@@ -140,11 +142,17 @@ public class CUDADeviceContext
 
     private int[] calculateBlocks(CUDAModule module) {
         int[] defaultBlocks = {1, 1, 1};
-        int dims = module.dims;
+
+        if (module.metaData.isLocalWorkDefined()) {
+            return Arrays.stream(module.metaData.getLocalWork()).mapToInt(l -> (int) l).toArray();
+        }
+
+        // Otherwise calculate our own
+        int dims = module.metaData.getDims();
         int totalWorkItems = 1;
 
         for (int i = 0; i < dims; i++) {
-            totalWorkItems *= Math.max(module.domain.get(i).cardinality(), 1);
+            totalWorkItems *= Math.max(module.metaData.getDomain().get(i).cardinality(), 1);
         }
 
         // This is the number of thread blocks in total, which is x*y*z
@@ -161,11 +169,11 @@ public class CUDADeviceContext
 
     private int[] calculateGrids(CUDAModule module, int[] blocks) {
         int[] defaultGrids = {1, 1, 1};
-        int dims = module.dims;
+        int dims = module.metaData.getDims();
         int[] maxGridSizes = device.getDeviceMaxGridSizes();
 
         for (int i = 0 ; i < dims && i < 3; i++) {
-            int workSize = module.domain.get(i).cardinality();
+            int workSize = module.metaData.getDomain().get(i).cardinality();
             defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], maxGridSizes[i]), 1);
         }
 

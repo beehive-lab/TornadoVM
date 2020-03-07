@@ -6,15 +6,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class CUDAModule {
     public final byte[] moduleWrapper;
     public final String kernelFunctionName;
-    public final DomainTree domain;
-    public final int dims;
+    public final TaskMetaData metaData;
     private int maximalBlockSize;
 
     public CUDAModule(byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
         moduleWrapper = cuModuleLoadData(source);
         this.kernelFunctionName = kernelFunctionName;
-        domain = taskMetaData.getDomain();
-        dims = taskMetaData.getDims();
+        metaData = taskMetaData;
         maximalBlockSize = -1;
     }
 
