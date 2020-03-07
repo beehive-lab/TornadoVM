@@ -156,7 +156,6 @@ public class CUDADeviceContext
             defaultBlocks[i] = (int) Math.pow(blocks, 1/(double)dims);
         }
 
-        // System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
         return defaultBlocks;
     }
 
@@ -170,7 +169,6 @@ public class CUDADeviceContext
             defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], maxGridSizes[i]), 1);
         }
 
-        //System.out.println("Executing with grids: " + Arrays.toString(defaultGrids));
         return defaultGrids;
     }
 

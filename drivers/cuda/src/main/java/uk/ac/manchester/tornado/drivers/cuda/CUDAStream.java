@@ -4,8 +4,11 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAEvent.EventDescription;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 
 public class CUDAStream extends TornadoLogger {
     private final byte[] streamWrapper;
@@ -94,6 +97,12 @@ public class CUDAStream extends TornadoLogger {
     }
 
     public int enqueueKernelLaunch(CUDAModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
+        if (DEBUG) {
+            System.out.println("Executing: " + module.kernelFunctionName);
+            System.out.println("   Blocks: " + Arrays.toString(blockDim));
+            System.out.println("    Grids: " + Arrays.toString(gridDim));
+        }
+
         cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName,
                        gridDim[0], gridDim[1], gridDim[2],
                        blockDim[0], blockDim[1], blockDim[2],
