@@ -141,13 +141,13 @@ public class CUDADeviceContext
     }
 
     private int[] calculateBlocks(CUDAModule module) {
-        int[] defaultBlocks = {1, 1, 1};
 
         if (module.metaData.isLocalWorkDefined()) {
             return Arrays.stream(module.metaData.getLocalWork()).mapToInt(l -> (int) l).toArray();
         }
 
         // Otherwise calculate our own
+        int[] defaultBlocks = {1, 1, 1};
         int dims = module.metaData.getDims();
         int totalWorkItems = 1;
 

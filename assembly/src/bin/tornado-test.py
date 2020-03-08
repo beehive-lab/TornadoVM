@@ -75,24 +75,32 @@ __TEST_THE_WORLD__ = [
 ## List of classes to be tested for the CUDA integration project. These should remain on this branch.
 __TEST_CUDA__ = [
     "uk.ac.manchester.tornado.unittests.drivers.cuda.mm.ReadWriteTests",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testInitNotParallel",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testInitParallel",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionDouble",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionFloat",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionInteger",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionLong",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionShort",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorChars",
-    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays",
     "uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
+    "uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
     "uk.ac.manchester.tornado.unittests.branching.TestConditionals",
     "uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations",
+    "uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer",
+    "uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice",
+    "uk.ac.manchester.tornado.unittests.loops.TestLoops",
+    "uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions",
+    "uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
+    "uk.ac.manchester.tornado.unittests.fails.TestFails",
 ]
 
 __TEST_THE_WORLD__ = __TEST_CUDA__
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
+    ## These seem to be failing in OpenCL on the master branch as well.
+    "uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes#testMatrix03",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testWarmUp",
+    "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testAdd",
+
+    ## These need more than one device (rare with CUDA)
+    "uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testDevices",
+    "uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
+    "uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testTaskMigration",
 ]
 
 # ################################################################################################################
