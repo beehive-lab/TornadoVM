@@ -202,8 +202,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         Variable result = newVariable(kind);
 
         append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(getConditionalOp(cond), kind, left, right)));
-        append(new PTXLIRStmt.ConditionalStatement(new PTXLIRStmt.AssignStmt(result, trueValue), predicate, false));
-        append(new PTXLIRStmt.ConditionalStatement(new PTXLIRStmt.AssignStmt(result, falseValue), predicate, true));
+        append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind,trueValue, falseValue, predicate)));
 
         return result;
     }
@@ -249,9 +248,23 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets,
-                           LabelRef defaultTarget) {
-        unimplemented();
+    public void emitStrategySwitch(SwitchStrategy strategy,
+                                   Variable key,
+                                   LabelRef[] keyTargets,
+                                   LabelRef defaultTarget) {
+        LIRKind kind = LIRKind.value(PTXKind.PRED);
+        Variable predicate = newVariable(kind);
+        Constant[] constants = strategy.getKeyConstants();
+        for (int i = 0; i < keyTargets.length; i++) {
+            append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(
+                    PTXBinaryOp.SETP_EQ,
+                    kind,
+                    key,
+                    new ConstantValue(LIRKind.value(PTXKind.S32), constants[i])
+            )));
+            emitConditionalBranch(keyTargets[i], predicate, false);
+        }
+        append(new PTXControlFlow.Branch(defaultTarget, false));
     }
 
     @Override

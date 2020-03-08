@@ -38,14 +38,15 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
         final IfNode ifNode = (IfNode) dom.getEndNode();
         if (ifNode.falseSuccessor() == block.getBeginNode()) {
-            asm.emitBlock(block.getId());
-            asm.emitSymbol(PTXAssemblerConstants.COLON);
-            asm.eol();
+            asm.emitBlockLabel(block.getId());
         }
     }
 
-    private void emitBeginBlockForSwitchStatements(Block dom, Block beginBlockNode) {
-        unimplemented("emitBeginBlockForSwitchStatements in CUDA-PTX");
+    private void emitBeginBlockForSwitchStatements(Block beginBlockNode) {
+        switches.add(beginBlockNode);
+
+        asm.emitBlock(beginBlockNode.getId());
+        asm.emitSymbol(PTXAssemblerConstants.COLON);
     }
 
     @Override
@@ -64,33 +65,31 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
                 emitBeginBlockForElseStatement(dom, block);
             } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
-                emitBeginBlockForSwitchStatements(dom, block);
+                emitBeginBlockForSwitchStatements(block);
             }
             crb.emitBlock(block);
         }
         return null;
     }
 
-    private void checkClosingBlockInsideIf(Block b, Block pdom) {
-        if (pdom.isLoopHeader() && b.getDominator() != null && isIfBlock(b.getDominator())) {
-            if ((b.getDominator().getDominator() != null) && (isIfBlock(b.getDominator().getDominator()))) {
-                asm.emitLine("END_SCOPE");
-            }
-        }
-    }
-
     private void closeSwitchStatement(Block b) {
-        unimplemented("closeSwitchStatement in CUDA-PTX");
-    }
+        final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();
+        int blockNumber = getBlockIndexForSwitchStatement(b, switchNode);
+        int numCases = getNumberOfCasesForSwitch(switchNode);
 
-    private boolean wasBlockAlreadyClosed(Block b) {
-        Block[] successors = b.getSuccessors();
-        for (Block s : successors) {
-            if (closedLoops.contains(s)) {
-                return true;
-            }
+        asm.emitSymbol(PTXAssemblerConstants.TAB);
+        asm.emit("bra.uni");
+        asm.emitSymbol(PTXAssemblerConstants.TAB);
+        asm.emitBlock(b.getFirstSuccessor().getId());
+        asm.delimiter();
+        asm.eol();
+
+        if ((numCases - 1) == blockNumber) {
+            switchClosed.add(switchNode);
+            asm.eol();
+            asm.emitBlock(b.getFirstSuccessor().getId());
+            asm.emitSymbol(PTXAssemblerConstants.COLON);
         }
-        return false;
     }
 
     @Override
@@ -104,11 +103,7 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             Block pdom = b.getPostdominator();
             if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
                 closeSwitchStatement(b);
-            } else {
-                checkClosingBlockInsideIf(b, pdom);
             }
-        } else {
-            closeBranchBlock(b);
         }
     }
 
@@ -130,36 +125,6 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private int getNumberOfCasesForSwitch(IntegerSwitchNode switchNode) {
         return switchNode.successors().count();
-    }
-
-    private void closeSwitchBlock(Block block, Block dom) {
-        final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
-        int blockNumber = getBlockIndexForSwitchStatement(block, switchNode);
-        int numCases = getNumberOfCasesForSwitch(switchNode);
-        if ((numCases - 1) == blockNumber) {
-            switchClosed.add(switchNode);
-        }
-    }
-
-    private boolean isIfBlockNode(Block block) {
-        final Block dom = block.getDominator();
-        boolean isMerge = block.getBeginNode() instanceof MergeNode;
-        return dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom);
-    }
-
-    private boolean isSwitchBlockNode(Block block) {
-        final Block dom = block.getDominator();
-        boolean isMerge = block.getBeginNode() instanceof MergeNode;
-        return dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom);
-    }
-
-    private void closeBranchBlock(Block block) {
-        final Block dom = block.getDominator();
-        if (isIfBlockNode(block)) {
-            //closeIfBlock(block, dom);
-        } else if (isSwitchBlockNode(block)) {
-            closeSwitchBlock(block, dom);
-        }
     }
 
     private static boolean isMergeBlock(Block block) {

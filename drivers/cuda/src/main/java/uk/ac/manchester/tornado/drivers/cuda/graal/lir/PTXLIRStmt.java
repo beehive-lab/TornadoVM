@@ -124,6 +124,7 @@ public class PTXLIRStmt {
 
             this.dest = dest;
             this.address = address;
+            address.assignTo(dest);
         }
 
         public LoadStmt(PTXUnary.MemoryAccess address, Variable dest, ConstantValue index) {

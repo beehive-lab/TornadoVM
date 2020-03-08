@@ -70,6 +70,7 @@ public class PTXUnary {
         private final PTXMemoryBase base;
         private ConstantValue index;
         private String name;
+        private Variable assignedTo;
 
         MemoryAccess(PTXMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
@@ -107,6 +108,14 @@ public class PTXUnary {
 
         public PTXMemoryBase getBase() {
             return base;
+        }
+
+        public void assignTo(Variable loadedTo) {
+            assignedTo = loadedTo;
+        }
+
+        public Variable assignedTo() {
+            return assignedTo;
         }
 
         @Override

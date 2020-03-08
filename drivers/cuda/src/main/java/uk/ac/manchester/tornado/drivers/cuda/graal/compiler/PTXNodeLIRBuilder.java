@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -213,17 +212,10 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         else if (node instanceof LoopExitNode) {
             emitLoopExit();
         }
-        else if (node instanceof IntegerSwitchNode) {
-            emitIntegerSwitch();
-        }
         else if (node instanceof ShortCircuitOrNode) {
             unimplemented("Unimplemented ShortCircuitOrNode");
         }
         super.emitNode(node);
-    }
-
-    private void emitIntegerSwitch() {
-
     }
 
     @Override
@@ -234,7 +226,14 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
         for (ValuePhiNode phi : phis) {
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
-            Value src = operand(phi.valueAt(node));
+            Node valueAt = phi.valueAt(node);
+            Value src;
+            if (valueAt instanceof ValuePhiNode) {
+                src = operandForPhi((ValuePhiNode) valueAt);
+            }
+            else {
+                src = operand(valueAt);
+            }
 
             if (!dest.equals(src)) {
                 append(new PTXLIRStmt.AssignStmt(dest, src));
@@ -367,6 +366,38 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 append(new PTXLIRStmt.AssignStmt(result, operand(value)));
             }
+        }
+
+        Iterator<? extends Node> predecessors = end.cfgPredecessors().iterator();
+        Node dominator = null;
+        BeginNode beginNode = null;
+        while (predecessors.hasNext() && dominator == null) {
+            Node predecessor = predecessors.next();
+            if (predecessor instanceof BeginNode) {
+                beginNode = (BeginNode) predecessor;
+                dominator = predecessor.predecessor();
+            }
+        }
+
+        if (dominator != null) {
+            if (dominator instanceof IfNode) {
+                emitElseBranch((IfNode) dominator, beginNode, end);
+            }
+        }
+    }
+
+    private void emitElseBranch(IfNode dominator, BeginNode beginNode, AbstractEndNode node) {
+        boolean isElse = dominator.trueSuccessor().equals(beginNode);
+        boolean hasElse = dominator.falseSuccessor() instanceof BeginNode;
+
+        if (isElse && hasElse) {
+            append(new PTXControlFlow.Branch(
+                    LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0),
+                    false
+            ));
+        }
+        else if (hasElse) {
+            append(new PTXControlFlow.BlockRef(getLIRBlock(node.merge())));
         }
     }
 

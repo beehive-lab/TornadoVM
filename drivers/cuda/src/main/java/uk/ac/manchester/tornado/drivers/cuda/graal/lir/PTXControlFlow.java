@@ -18,8 +18,7 @@ public class PTXControlFlow {
     }
 
     protected static void emitBlockRef(int blockId, PTXAssembler asm) {
-        asm.emit("BLOCK_");
-        asm.emit(Integer.toString(blockId));
+        asm.emitBlock(blockId);
     }
 
     public static class LoopInitOp extends AbstractInstruction {
@@ -97,6 +96,21 @@ public class PTXControlFlow {
             emitBlockRef(destination.label().getBlockId(), asm);
             asm.delimiter();
             asm.eol();
+        }
+    }
+
+    public static class BlockRef extends AbstractInstruction {
+        public static final LIRInstructionClass<BlockRef> TYPE = LIRInstructionClass.create(BlockRef.class);
+        private final LabelRef ref;
+
+        public BlockRef(LabelRef lirBlock) {
+            super(TYPE);
+            this.ref = lirBlock;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            emitBlock(ref.label().getBlockId(), asm);
         }
     }
 }

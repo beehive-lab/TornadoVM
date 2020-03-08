@@ -85,10 +85,7 @@ __TEST_CUDA__ = [
     "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorChars",
     "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage",
     "uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testIfStatement",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testIfElseStatement",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testTernaryCondition",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
+    "uk.ac.manchester.tornado.unittests.branching.TestConditionals",
     "uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations",
 ]
 

@@ -220,7 +220,14 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        getGen().append(new PTXLIRStmt.StoreStmt((PTXUnary.MemoryAccess) address, input));
+        PTXUnary.MemoryAccess access = (PTXUnary.MemoryAccess) address;
+        getGen().append(new PTXLIRStmt.StoreStmt(access, input));
+
+        // Store back to register if it was loaded to a register first
+        Variable valueHolder = access.assignedTo();
+        if (valueHolder != null) {
+            getGen().append(new PTXLIRStmt.AssignStmt(valueHolder, input));
+        }
     }
 
     public Variable emitBinaryAssign(PTXBinaryOp op, LIRKind lirKind, Value x, Value y) {

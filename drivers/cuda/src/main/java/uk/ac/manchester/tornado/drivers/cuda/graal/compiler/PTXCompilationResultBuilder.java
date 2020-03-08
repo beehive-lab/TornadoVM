@@ -35,6 +35,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isParallel;
     private int loops = 0;
     private Set<ResolvedJavaMethod> nonInlinedMethods;
+    private PTXAssembler asm;
 
     public PTXCompilationResultBuilder(CodeCacheProvider codeCache,
                                        ForeignCallsProvider foreignCalls,
@@ -57,10 +58,11 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         );
 
         nonInlinedMethods = new HashSet<>();
+        this.asm = (PTXAssembler) asm;
     }
 
     public PTXAssembler getAssembler() {
-        return (PTXAssembler) asm;
+        return asm;
     }
 
     public void setKernel(boolean value) {
@@ -129,7 +131,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         trace("block: %d", block.getId());
-        ((PTXAssembler) asm).eol();
+        asm.eol();
 
         if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
