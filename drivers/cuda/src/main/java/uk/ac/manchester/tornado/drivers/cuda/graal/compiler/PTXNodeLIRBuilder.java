@@ -21,6 +21,7 @@ import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -376,22 +377,25 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
-        Iterator<? extends Node> predecessors = end.cfgPredecessors().iterator();
-        Node dominator = null;
-        BeginNode beginNode = null;
-        while (predecessors.hasNext() && dominator == null) {
-            Node predecessor = predecessors.next();
-            if (predecessor instanceof BeginNode) {
-                beginNode = (BeginNode) predecessor;
-                dominator = predecessor.predecessor();
-            }
+        Node beginNode = end.predecessor();
+        while (beginNode != null && beginNode.predecessor() != null && !(beginNode instanceof BeginNode)) {
+            beginNode = beginNode.predecessor();
         }
+        assert beginNode != null;
+        Node dominator = beginNode.predecessor();
 
         if (dominator != null) {
             if (dominator instanceof IfNode) {
-                emitElseBranch((IfNode) dominator, beginNode, end);
+                emitElseBranch((IfNode) dominator, (BeginNode) beginNode, end);
+            }
+            if (dominator instanceof IntegerSwitchNode) {
+                emitSwitchBreak(end);
             }
         }
+    }
+
+    private void emitSwitchBreak(AbstractEndNode end) {
+        append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false));
     }
 
     private void emitElseBranch(IfNode dominator, BeginNode beginNode, AbstractEndNode node) {

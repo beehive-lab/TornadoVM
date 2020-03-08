@@ -96,7 +96,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         trace("Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
-        traverseControlFlowGraph(cfg, new PTXBlockVisitor(this));
+        traverseControlFlowGraph(cfg, new PTXBlockVisitor(this, asm));
 
         trace("Finished traversing CFG");
         this.lir = null;
