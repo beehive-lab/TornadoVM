@@ -12,6 +12,7 @@ import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.cfg.Block;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXParam;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
@@ -234,10 +235,14 @@ public class PTXAssembler extends Assembler {
         emit("BLOCK_%d", id);
     }
 
-    public void emitBlockLabel(int id) {
+    private void emitBlockLabel(int id) {
         emitBlock(id);
         emitSymbol(COLON);
         eol();
+    }
+
+    public void emitBlockLabel(Block b) {
+        emitBlockLabel(b.getId());
     }
 
     /**

@@ -245,6 +245,49 @@ public class TestConditionals extends TornadoTestBase {
         }
     }
 
+    public static void switchStatement6(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            int value = a[i];
+            switch (value) {
+                case 12:
+                case 22:
+                    a[i] = 10;
+                    break;
+                case 42:
+                    a[i] = 30;
+                    break;
+            }
+        }
+    }
+
+    @Test
+    public void testSwitch6() {
+        final int size = 10;
+        int[] a = new int[size];
+        int[] b = new int[size];
+
+        Arrays.fill(a, 12);
+        Arrays.fill(b, 22);
+
+        new TaskSchedule("s0") //
+                               .task("t0", TestConditionals::switchStatement6, a) //
+                               .streamOut(a) //
+                               .execute();//
+
+        new TaskSchedule("s0") //
+                               .task("t0", TestConditionals::switchStatement6, b) //
+                               .streamOut(b) //
+                               .execute();//
+
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+
+        for (int value : b) {
+            assertEquals(10, value);
+        }
+    }
+
     public static void ternaryCondition(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (a[i] == 20) ? 10 : 5;

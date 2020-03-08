@@ -33,20 +33,8 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         closedLoops = new HashSet<>();
     }
 
-    private void emitBeginBlockForElseStatement(Block dom, Block block) {
-        asm.eol();
-
-        final IfNode ifNode = (IfNode) dom.getEndNode();
-        if (ifNode.falseSuccessor() == block.getBeginNode()) {
-            asm.emitBlockLabel(block.getId());
-        }
-    }
-
     private void emitBeginBlockForSwitchStatements(Block beginBlockNode) {
         switches.add(beginBlockNode);
-
-        asm.emitBlock(beginBlockNode.getId());
-        asm.emitSymbol(PTXAssemblerConstants.COLON);
     }
 
     @Override
@@ -56,19 +44,15 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             merges.add(block);
         }
 
-        if (block.isLoopHeader()) {
-            crb.emitLoopHeader(block);
-
-        } else {
-            // We emit either an ELSE statement or a SWITCH statement
+        if (!block.isLoopHeader()) {
             final Block dom = block.getDominator();
-            if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
-                emitBeginBlockForElseStatement(dom, block);
-            } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
+            if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
                 emitBeginBlockForSwitchStatements(block);
             }
-            crb.emitBlock(block);
         }
+
+        asm.emitBlockLabel(block);
+        crb.emitBlock(block);
         return null;
     }
 
@@ -86,19 +70,11 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
         if ((numCases - 1) == blockNumber) {
             switchClosed.add(switchNode);
-            asm.eol();
-            asm.emitBlock(b.getFirstSuccessor().getId());
-            asm.emitSymbol(PTXAssemblerConstants.COLON);
         }
     }
 
     @Override
     public void exit(Block b, Block value) {
-        if (b.isLoopEnd()) {
-            // Temporary fix to remove the end scope of the most outer loop
-            // without changing the loop schematics in IR level.
-            closedLoops.add(b);
-        }
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
             if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
@@ -129,10 +105,6 @@ public class PTXBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private static boolean isMergeBlock(Block block) {
         return block.getBeginNode() instanceof MergeNode;
-    }
-
-    private static boolean isIfBlock(Block block) {
-        return block.getEndNode() instanceof IfNode;
     }
 
     private static boolean isSwitchBlock(Block block) {

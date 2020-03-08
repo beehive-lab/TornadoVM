@@ -21,7 +21,6 @@ import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -209,9 +208,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         }
-        else if (node instanceof LoopExitNode) {
-            emitLoopExit();
-        }
         else if (node instanceof ShortCircuitOrNode) {
             unimplemented("Unimplemented ShortCircuitOrNode");
         }
@@ -220,26 +216,19 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(LoopEndNode node) {
-        // Get first IfNode after loop begin to get the loop exit condition
         LoopBeginNode begin  = node.loopBegin();
         final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
 
         for (ValuePhiNode phi : phis) {
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
-            Node valueAt = phi.valueAt(node);
-            Value src;
-            if (valueAt instanceof ValuePhiNode) {
-                src = operandForPhi((ValuePhiNode) valueAt);
-            }
-            else {
-                src = operand(valueAt);
-            }
+            Value src  = operand(phi.valueAt(node));
 
             if (!dest.equals(src)) {
                 append(new PTXLIRStmt.AssignStmt(dest, src));
             }
         }
 
+        // Get first IfNode after loop begin to get the loop exit condition
         IfNode ifNode = null;
         Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
         while (nodesIterator.hasNext() && ifNode == null) {
@@ -257,8 +246,31 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         );
     }
 
-    private void emitLoopExit() {
-        append(new PTXControlFlow.LoopExit((Block) gen.getCurrentBlock()));
+    @Override
+    public void visitMerge(final AbstractMergeNode mergeNode) {
+        trace("visitMerge: ", mergeNode);
+
+        boolean loopExitMerge = true;
+        for (EndNode end : mergeNode.forwardEnds()) {
+            loopExitMerge &= end.predecessor() instanceof LoopExitNode;
+        }
+
+        for (ValuePhiNode phi : mergeNode.valuePhis()) {
+            final ValueNode value = phi.singleValueOrThis();
+            if (value != phi) {
+                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+                Value src = operand(value);
+
+                if (!dest.equals(src)) {
+                    append(new PTXLIRStmt.AssignStmt(dest, src));
+                }
+            } else if (loopExitMerge) {
+                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+                Value src = operand(phi.valueAt(1));
+
+                append(new PTXLIRStmt.AssignStmt(dest, src));
+            }
+        }
     }
 
     @Override
@@ -283,7 +295,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         if (isLoop) {
             // Branch away if already
             getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, !invertedLoop);
-            append(new PTXControlFlow.LoopInitOp(getLIRBlock(x.trueSuccessor())));
 
         } else {
             getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, true);
@@ -329,7 +340,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         trace("visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
-        //final Block currentBlockDominator = block.getDominator();
         final LIR lir = getGen().getResult().getLIR();
         final StandardOp.LabelOp label = (StandardOp.LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -346,8 +356,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 append(new PTXLIRStmt.AssignStmt(result, value));
             }
         }
-        //emitPragmaLoopUnroll(currentBlockDominator);
-
         label.clearIncomingValues();
     }
 
@@ -395,9 +403,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                     LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0),
                     false
             ));
-        }
-        else if (hasElse) {
-            append(new PTXControlFlow.BlockRef(getLIRBlock(node.merge())));
         }
     }
 
