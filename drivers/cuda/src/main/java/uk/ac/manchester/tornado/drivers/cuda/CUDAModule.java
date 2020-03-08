@@ -8,12 +8,14 @@ public class CUDAModule {
     public final String kernelFunctionName;
     public final TaskMetaData metaData;
     private int maximalBlockSize;
+    public final String javaName;
 
-    public CUDAModule(byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
+    public CUDAModule(String name, byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
         moduleWrapper = cuModuleLoadData(source);
         this.kernelFunctionName = kernelFunctionName;
         metaData = taskMetaData;
         maximalBlockSize = -1;
+        javaName = name;
     }
 
     private native static byte[] cuModuleLoadData(byte[] source);

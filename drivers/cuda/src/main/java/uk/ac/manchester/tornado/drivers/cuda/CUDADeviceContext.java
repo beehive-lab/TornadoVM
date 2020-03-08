@@ -15,7 +15,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.api.runtime.TornadoRuntime.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 
 public class CUDADeviceContext
         extends TornadoLogger implements Initialisable, TornadoDeviceContext {
@@ -59,8 +59,8 @@ public class CUDADeviceContext
         return new CUDATornadoDevice(device.getIndex());
     }
 
-    public TornadoInstalledCode installCode(PTXCompilationResult result) {
-        return codeCache.installSource(result);
+    public TornadoInstalledCode installCode(PTXCompilationResult result, String name) {
+        return codeCache.installSource(result, name);
     }
 
     public CUDADevice getDevice() {
@@ -147,21 +147,30 @@ public class CUDADeviceContext
         }
 
         // Otherwise calculate our own
-        int[] defaultBlocks = {1, 1, 1};
-        int dims = module.metaData.getDims();
-        int totalWorkItems = 1;
+        int[] defaultBlocks = { 1, 1, 1 };
+        try {
+            int dims = module.metaData.getDims();
+            int totalWorkItems = 1;
 
-        for (int i = 0; i < dims; i++) {
-            totalWorkItems *= Math.max(module.metaData.getDomain().get(i).cardinality(), 1);
+            for (int i = 0; i < dims; i++) {
+                totalWorkItems *= Math.max(module.metaData.getDomain().get(i).cardinality(), 1);
+            }
+
+            // This is the number of thread blocks in total, which is x*y*z
+            int blocks = module.getMaximalBlocks(totalWorkItems);
+
+            // For now give each dimension the same number of blocks
+            // Ideally these would be proportionate to the domain cardinality
+            for (int i = 0; i < dims; i++) {
+                defaultBlocks[i] = (int) Math.pow(blocks, 1 / (double) dims);
+            }
         }
-
-        // This is the number of thread blocks in total, which is x*y*z
-        int blocks = module.getMaximalBlocks(totalWorkItems);
-
-        // For now give each dimension the same number of blocks
-        // Ideally these would be proportionate to the domain cardinality
-        for (int i = 0; i < dims; i++) {
-            defaultBlocks[i] = (int) Math.pow(blocks, 1/(double)dims);
+        catch (Exception e) {
+            warn("[CUDA-PTX] Failed to calculate blocks for " + module.javaName);
+            warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
+            if (DEBUG) {
+                e.printStackTrace();
+            }
         }
 
         return defaultBlocks;
@@ -169,12 +178,22 @@ public class CUDADeviceContext
 
     private int[] calculateGrids(CUDAModule module, int[] blocks) {
         int[] defaultGrids = {1, 1, 1};
-        int dims = module.metaData.getDims();
-        int[] maxGridSizes = device.getDeviceMaxGridSizes();
 
-        for (int i = 0 ; i < dims && i < 3; i++) {
-            int workSize = module.metaData.getDomain().get(i).cardinality();
-            defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], maxGridSizes[i]), 1);
+        try {
+            int dims = module.metaData.getDims();
+            int[] maxGridSizes = device.getDeviceMaxGridSizes();
+
+            for (int i = 0; i < dims && i < 3; i++) {
+                int workSize = module.metaData.getDomain().get(i).cardinality();
+                defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], maxGridSizes[i]), 1);
+            }
+        }
+        catch (Exception e) {
+            warn("[CUDA-PTX] Failed to calculate grids for " + module.javaName);
+            warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
+            if (DEBUG) {
+                e.printStackTrace();
+            }
         }
 
         return defaultGrids;

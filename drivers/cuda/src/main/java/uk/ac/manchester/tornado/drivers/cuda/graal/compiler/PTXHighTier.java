@@ -12,6 +12,7 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoParallelScheduler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.*;
 

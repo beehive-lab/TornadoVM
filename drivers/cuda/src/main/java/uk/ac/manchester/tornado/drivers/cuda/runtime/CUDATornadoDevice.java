@@ -90,7 +90,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
             result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
         }
 
-        return deviceContext.installCode(result);
+        return deviceContext.installCode(result, resolvedMethod.getName());
     }
 
     @Override

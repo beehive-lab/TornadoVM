@@ -1,0 +1,266 @@
+package uk.ac.manchester.tornado.drivers.cuda.graal.phases;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.graph.Graph;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
+import org.graalvm.compiler.nodes.java.ArrayLengthNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.phases.TornadoTaskSpecialisation.MAX_ITERATIONS;
+
+public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
+    private final CanonicalizerPhase canonicalizer;
+    private final TornadoValueTypeReplacement valueTypeReplacement;
+    private final DeadCodeEliminationPhase deadCodeElimination;
+    private final TornadoLoopUnroller loopUnroll;
+    private long batchThreads;
+
+    public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
+        this.canonicalizer = canonicalizer;
+        this.valueTypeReplacement = new TornadoValueTypeReplacement();
+        this.deadCodeElimination = new DeadCodeEliminationPhase();
+        this.loopUnroll = new TornadoLoopUnroller(canonicalizer);
+    }
+
+    private Field lookupField(Class<?> type, String field) {
+        Field f = null;
+        try {
+            f = type.getDeclaredField(field);
+            if (!f.isAccessible()) {
+                f.setAccessible(true);
+            }
+        } catch (NoSuchFieldException | SecurityException e) {
+            if (type.getSuperclass() != null) {
+                f = lookupField(type.getSuperclass(), field);
+            } else {
+                e.printStackTrace();
+            }
+        }
+        return f;
+    }
+
+    @FunctionalInterface
+    private interface FunctionThatThrows<T, R> {
+        R apply(T t) throws IllegalArgumentException, IllegalAccessException;
+    }
+
+    private <T> T lookup(Object object, FunctionThatThrows<Object, T> function) throws IllegalArgumentException, IllegalAccessException {
+        return function.apply(object);
+    }
+
+    private Object lookupRefField(StructuredGraph graph, Node node, Object obj, String field) {
+        final Class<?> type = obj.getClass();
+        final Field f = lookupField(type, field);
+        Object result;
+        try {
+            result = f.get(obj);
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    private ConstantNode lookupPrimField(StructuredGraph graph, Node node, Object obj, String field, JavaKind kind) {
+        final Class<?> type = obj.getClass();
+        final Field f = lookupField(type, field);
+        ConstantNode constant = null;
+        try {
+            switch (kind) {
+                case Boolean:
+                    constant = ConstantNode.forBoolean(lookup(obj, f::getBoolean));
+                    break;
+                case Byte:
+                    constant = ConstantNode.forByte(lookup(obj, f::getByte), graph);
+                    break;
+                case Char:
+                    constant = ConstantNode.forChar(lookup(obj, f::getChar), graph);
+                    break;
+                case Double:
+                    constant = ConstantNode.forDouble(lookup(obj, f::getDouble));
+                    break;
+                case Float:
+                    constant = ConstantNode.forFloat(lookup(obj, f::getFloat));
+                    break;
+                case Int:
+                    constant = ConstantNode.forInt(lookup(obj, f::getInt));
+                    break;
+                case Long:
+                    constant = ConstantNode.forLong(lookup(obj, f::getLong));
+                    break;
+                case Short:
+                    constant = ConstantNode.forShort(lookup(obj, f::getShort), graph);
+                    break;
+                case Object:
+                    /*
+                     * propagate all constants from connected final fields
+                     */
+                    if (Modifier.isFinal(f.getModifiers())) {
+                        final Object value = lookup(obj, f::get);
+                        node.usages().filter(LoadFieldNode.class).forEach(load -> evaluate(graph, load, value));
+                        node.usages().filter(ArrayLengthNode.class).forEach(arrayLength -> evaluate(graph, arrayLength, value));
+                    }
+                    break;
+                case Illegal:
+                case Void:
+                default:
+                    break;
+            }
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return constant;
+    }
+
+    private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
+        if (node instanceof ArrayLengthNode) {
+            ArrayLengthNode arrayLength = (ArrayLengthNode) node;
+            int length = Array.getLength(value);
+            final ConstantNode constant;
+            if (batchThreads <= 0) {
+                constant = ConstantNode.forInt(length);
+            } else {
+                constant = ConstantNode.forInt((int) batchThreads);
+            }
+            node.replaceAtUsages(graph.addOrUnique(constant));
+            arrayLength.clearInputs();
+            GraphUtil.removeFixedWithUnusedInputs(arrayLength);
+        } else if (node instanceof LoadFieldNode) {
+            final LoadFieldNode loadField = (LoadFieldNode) node;
+            final ResolvedJavaField field = loadField.field();
+            if (field.getType().getJavaKind().isPrimitive()) {
+                ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                constant = graph.addOrUnique(constant);
+                node.replaceAtUsages(constant);
+                loadField.clearInputs();
+                graph.removeFixed(loadField);
+            } else if (field.isFinal()) {
+                Object object = lookupRefField(graph, node, value, field.getName());
+                node.usages().forEach(n -> evaluate(graph, n, object));
+            }
+        } else if (node instanceof IsNullNode) {
+            final IsNullNode isNullNode = (IsNullNode) node;
+            final boolean isNull = (value == null);
+            if (isNull) {
+                isNullNode.replaceAtUsages(LogicConstantNode.tautology(graph));
+            } else {
+                isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
+            }
+            isNullNode.safeDelete();
+        } else if (node instanceof PiNode) {
+            PiNode piNode = (PiNode) node;
+            piNode.replaceAtUsages(piNode.getOriginalNode());
+            piNode.safeDelete();
+        }
+    }
+
+    private ConstantNode createConstantFromObject(Object obj) {
+        ConstantNode result = null;
+        if (obj instanceof Float) {
+            result = ConstantNode.forFloat((float) obj);
+        } else if (obj instanceof Integer) {
+            result = ConstantNode.forInt((int) obj);
+        } else if (obj instanceof Double) {
+            result = ConstantNode.forDouble((double) obj);
+        } else {
+            unimplemented("createConstantFromObject: %s", obj);
+        }
+        return result;
+    }
+
+    private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
+        if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
+            ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
+            graph.addWithoutUnique(constant);
+            parameterNode.replaceAtUsages(constant);
+        } else {
+            parameterNode.usages().snapshot().forEach(n -> evaluate(graph, n, args[parameterNode.index()]));
+        }
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+        int iterations = 0;
+        int lastNodeCount = graph.getNodeCount();
+        boolean hasWork = true;
+        this.batchThreads = context.getBatchThreads();
+
+        while (hasWork) {
+            final Graph.Mark mark = graph.getMark();
+            if (context.hasArgs()) {
+                for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                    propagateParameters(graph, param, context.getArgs());
+                }
+                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
+            } else {
+                for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                    assumeNonNull(param);
+                }
+                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase assume non null Parameters");
+            }
+
+            canonicalizer.apply(graph, context);
+
+            graph.getNewNodes(mark).filter(PiNode.class).forEach(pi -> {
+                if (pi.stamp(NodeView.DEFAULT) instanceof ObjectStamp && pi.object().stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+                    pi.replaceAtUsages(pi.object());
+                    pi.clearInputs();
+                    pi.safeDelete();
+                }
+            });
+
+            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Pi Node Removal");
+
+            loopUnroll.execute(graph, context);
+
+            valueTypeReplacement.execute(graph, context);
+
+            canonicalizer.apply(graph, context);
+
+            deadCodeElimination.run(graph);
+
+            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
+
+            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
+                    // hasGuardingPiNodes)
+                    && (iterations < MAX_ITERATIONS);
+            lastNodeCount = graph.getNodeCount();
+            iterations++;
+        }
+
+        if (iterations == MAX_ITERATIONS) {
+            Tornado.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
+        }
+        Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
+        Tornado.debug("valid graph? %s", graph.verify());
+    }
+
+    private void assumeNonNull(ParameterNode param) {
+        if (param.getStackKind().isObject() && param.usages().filter(IsNullNode.class).count() > 0) {
+            final IsNullNode isNullNode = (IsNullNode) param.usages().filter(IsNullNode.class).first();
+            // for (final GuardingPiNode guardingPiNode :
+            // isNullNode.usages().filter(GuardingPiNode.class).distinct()) {
+            // guardingPiNode.replaceAtUsages(param);
+            // }
+        }
+    }
+}

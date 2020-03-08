@@ -92,8 +92,7 @@ __TEST_THE_WORLD__ = __TEST_CUDA__
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-    ## These seem to be failing in OpenCL on the master branch as well.
-    "uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes#testMatrix03",
+    ## These seem to be failing in OpenCL on the GPU on the master branch as well.
     "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testWarmUp",
     "uk.ac.manchester.tornado.unittests.arrays.TestArrays#testAdd",
 

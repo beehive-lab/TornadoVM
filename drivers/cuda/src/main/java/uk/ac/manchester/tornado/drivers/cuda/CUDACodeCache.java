@@ -20,7 +20,7 @@ public class CUDACodeCache {
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(PTXCompilationResult result) {
+    public PTXInstalledCode installSource(PTXCompilationResult result, String name) {
         String cacheKey = result.getName();
 
         if (!cache.containsKey(cacheKey)) {
@@ -29,7 +29,7 @@ public class CUDACodeCache {
                 System.out.println(source);
             }
 
-            CUDAModule module = new CUDAModule(result.getTargetCode(), result.getName(), result.getTaskMeta());
+            CUDAModule module = new CUDAModule(name, result.getTargetCode(), result.getName(), result.getTaskMeta());
 
             if (module.getIsPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(result.getName(), module, deviceContext);
