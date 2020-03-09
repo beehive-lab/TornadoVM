@@ -89,6 +89,7 @@ __TEST_CUDA__ = [
     "uk.ac.manchester.tornado.unittests.fails.TestFails",
 	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation",
+	"uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice",
 ]
 
 __TEST_THE_WORLD__ = __TEST_CUDA__

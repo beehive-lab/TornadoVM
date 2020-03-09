@@ -112,6 +112,15 @@ public class CUDAStream extends TornadoLogger {
         return recordEvent(EventDescription.KERNEL);
     }
 
+    public int enqueueBarrier() {
+        return recordEvent(EventDescription.BARRIER);
+    }
+
+    public int enqueueBarrier(int[] events) {
+        waitForEvents(events);
+        return enqueueBarrier();
+    }
+
     public int enqueueRead(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
         writeArrayDtoH(bufferId, offset, length, array, hostOffset);

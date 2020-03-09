@@ -77,6 +77,8 @@ public class CUDADeviceContext
     }
 
     public void flushEvents() {
+        // I don't think there is anything like this in CUDA so I am calling sync
+        sync();
     }
 
     public void markEvent() {
@@ -85,28 +87,24 @@ public class CUDADeviceContext
     }
 
     public int enqueueBarrier() {
-        //TODO: Implement
-        unimplemented();
-        return 0;
+        return stream.enqueueBarrier();
     }
 
     public int enqueueBarrier(int[] events) {
-        //TODO: Implement
-        unimplemented();
-        return 0;
+        return stream.enqueueBarrier(events);
     }
 
 
     public int enqueueMarker() {
-        //TODO: Implement
-        unimplemented();
-        return 0;
+        // Since streams are always in-order in CUDA there is no difference
+        // between marker and barrier
+        return stream.enqueueBarrier();
     }
 
     public int enqueueMarker(int[] events) {
-        //TODO: Implement
-        unimplemented();
-        return 0;
+        // Since streams are always in-order in CUDA there is no difference
+        // between marker and barrier
+        return stream.enqueueBarrier(events);
     }
 
     public void sync() {
@@ -127,7 +125,6 @@ public class CUDADeviceContext
     public void dumpEvents() {
         // TODO: Implement
         // This prints out all the current events
-        //unimplemented();
     }
 
     public int enqueueKernelLaunch(CUDAModule module, CallStack stack, long batchThreads) {

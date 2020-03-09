@@ -109,5 +109,6 @@ public class CUDAEvent extends TornadoLogger implements Event {
         MEMCPY_H_TO_D_LONG,
         MEMCPY_H_TO_D_FLOAT,
         MEMCPY_H_TO_D_DOUBLE,
+        BARRIER,
     }
 }
