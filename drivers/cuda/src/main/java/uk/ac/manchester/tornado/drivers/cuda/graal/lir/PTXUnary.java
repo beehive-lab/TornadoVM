@@ -100,7 +100,7 @@ public class PTXUnary {
             asm.emitSymbol(SQUARE_BRACKETS_OPEN);
             if (name != null) asm.emit(name);
             if (value != null) asm.emitValue(value);
-            if (index != null) {
+            if (index != null && index.getJavaConstant().asInt() != 0) {
                 asm.emitConstant(index);
             }
             asm.emitSymbol(SQUARE_BRACKETS_CLOSE);

@@ -25,7 +25,6 @@ public class PTXArchitecture extends Architecture {
     public static final PTXMemoryBase globalSpace = new PTXMemoryBase(0, PTXMemorySpace.GLOBAL);
     public static final PTXMemoryBase paramSpace = new PTXMemoryBase(1, PTXMemorySpace.PARAM);
 
-    public static PTXParam HEAP_POINTER;
     public static PTXParam STACK_POINTER;
     public static PTXParam[] abiRegisters;
 
@@ -56,10 +55,9 @@ public class PTXArchitecture extends Architecture {
                 0
         );
 
-        HEAP_POINTER = new PTXParam(PTXAssemblerConstants.HEAP_PTR_NAME, wordKind);
         STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, wordKind);
 
-        abiRegisters = new PTXParam[]{HEAP_POINTER, STACK_POINTER};
+        abiRegisters = new PTXParam[]{STACK_POINTER};
     }
 
     @Override

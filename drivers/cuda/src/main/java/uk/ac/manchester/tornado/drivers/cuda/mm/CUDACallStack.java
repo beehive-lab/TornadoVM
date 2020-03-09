@@ -15,24 +15,14 @@ public class CUDACallStack extends CUDAByteBuffer implements CallStack {
     public final static int RESERVED_SLOTS = 6;
     public final static int RETURN_VALUE_INDEX = 0;
 
-    private final int numArgs;
     private boolean onDevice;
     private byte argStart;
 
     public CUDACallStack(long offset, int numArgs, CUDADeviceContext deviceContext) {
         super((numArgs + RESERVED_SLOTS) << 3, offset, deviceContext);
 
-        this.numArgs = numArgs;
-
         // clear the buffer and set the mark at the beginning of the arguments
         buffer.clear();
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(toAbsoluteAddress());
-        buffer.putInt(0);
-        buffer.putInt(numArgs);
         setArgStart(buffer);
 
         onDevice = false;

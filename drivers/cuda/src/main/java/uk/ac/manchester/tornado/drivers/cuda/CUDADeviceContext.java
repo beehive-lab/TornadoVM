@@ -200,20 +200,13 @@ public class CUDADeviceContext
     }
 
     private byte[] getKernelParams(CUDACallStack stack) {
-        ByteBuffer args = ByteBuffer.allocate(17);
+        ByteBuffer args = ByteBuffer.allocate(8);
         args.order(getByteOrder());
-
-        // Heap pointer
-        args.putLong(memoryManager.toBuffer());
 
         // Stack pointer
         if (!stack.isOnDevice()) stack.write();
         long address = stack.getAddress();
         args.putLong(address);
-
-        // Arg start
-        args.put(stack.getArgPos());
-
 
         return args.array();
     }

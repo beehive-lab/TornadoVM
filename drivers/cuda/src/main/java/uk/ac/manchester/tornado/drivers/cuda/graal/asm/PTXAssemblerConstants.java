@@ -20,7 +20,7 @@ public class PTXAssemblerConstants {
     public static final String SQUARE_BRACKETS_OPEN = "[";
     public static final String SQUARE_BRACKETS_CLOSE = "]";
 
-    public static final int STACK_BASE_OFFSET = 48;
+    public static final int STACK_BASE_OFFSET = 0;
     public static final String COMPUTE_VERSION = ".version";
     public static final String TARGET_ARCH = ".target";
     public static final String ADDRESS_HEADER = ".address_size";
