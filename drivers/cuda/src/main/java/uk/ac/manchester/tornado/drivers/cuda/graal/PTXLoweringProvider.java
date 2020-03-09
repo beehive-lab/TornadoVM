@@ -12,12 +12,11 @@ import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.java.*;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -95,7 +94,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     public void lower(Node node, LoweringTool tool) {
         if (node instanceof IntegerDivRemNode) {
             lowerIntegerDivRemNode((IntegerDivRemNode) node);
-        } else {
+        }
+        else if (node instanceof FloatConvertNode) {
+            lowerFloatConvertNode((FloatConvertNode) node);
+        }
+        else {
             super.lower(node, tool);
         }
     }
@@ -112,5 +115,12 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 graph.replaceFixedWithFloating(integerDivRemNode, rem);
                 break;
         }
+    }
+
+    private void lowerFloatConvertNode(FloatConvertNode floatConvert) {
+        final StructuredGraph graph = floatConvert.graph(); // TODO should probably create a specific float-convert node?
+        final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(NodeView.DEFAULT), floatConvert.getFloatConvert(), floatConvert.getValue()));
+        floatConvert.replaceAtUsages(asFloat);
+        floatConvert.safeDelete();
     }
 }

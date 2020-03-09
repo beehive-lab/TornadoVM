@@ -7,7 +7,6 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
-import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.paramSpace;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
 
 public class PTXLIRStmt {
@@ -56,6 +55,10 @@ public class PTXLIRStmt {
                 }
                 else {
                     asm.emit("cvt.");
+                    if (lhsKind.isFloating() || rhsKind.isFloating()) {
+                        asm.emit(ROUND_NEAREST_EVEN);
+                        asm.emitSymbol(DOT);
+                    }
                     asm.emit(lhsKind.toString());
                     asm.emitSymbol(DOT);
                     asm.emit(rhsKind.toString());
