@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <cuda.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "CUDAModule.h"
@@ -7,6 +8,9 @@
 #include "../macros/data_copies.h"
 
 void *staging_area;
+void *staging_area1;
+void *staging_area2;
+bool is_staging_1_used = false;
 size_t staging_area_length = 0;
 
 void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
@@ -207,7 +211,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuD
         printf("Failed to destroy stream! (%d)\n", result); fflush(stdout);
     }
 
-    result = cuMemFreeHost(staging_area);
+    result = cuMemFreeHost(staging_area1);
+    if (result != 0) {
+        printf("Failed to free page locked memory! (%d)\n", result); fflush(stdout);
+    }
+
+    result = cuMemFreeHost(staging_area2);
     if (result != 0) {
         printf("Failed to free page locked memory! (%d)\n", result); fflush(stdout);
     }

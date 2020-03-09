@@ -4,7 +4,14 @@
 #define CHECK_STAGING_AREA(LENGTH_VAR) \
 if (LENGTH_VAR > staging_area_length) {\
     if (staging_area_length != 0) cuMemFreeHost(staging_area); \
-    CUresult allocate_result = cuMemAllocHost(&staging_area, (size_t) LENGTH_VAR); \
+    CUresult allocate_result = cuMemAllocHost(&staging_area1, (size_t) LENGTH_VAR); \
+    if (allocate_result != 0) { \
+        char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
+        jclass exception; \
+        exception = (*env)->FindClass(env, className); \
+        (*env)->ThrowNew(env, exception, "CUDA: Could not allocate host memory. " + allocate_result); \
+    } \
+    allocate_result = cuMemAllocHost(&staging_area2, (size_t) LENGTH_VAR); \
     if (allocate_result != 0) { \
         char *className = "uk/ac/manchester/tornado/drivers/cuda/mm/NativeMemoryException"; \
         jclass exception; \
@@ -12,6 +19,14 @@ if (LENGTH_VAR > staging_area_length) {\
         (*env)->ThrowNew(env, exception, "CUDA: Could not allocate host memory. " + allocate_result); \
     } \
 }\
+if (is_staging_1_used) { \
+    staging_area = staging_area1; \
+    is_staging_1_used = true; \
+} \
+else { \
+    staging_area = staging_area2; \
+    is_staging_1_used = false; \
+}
 
 #define COPY_ARRAY_D_TO_H(SIG,NATIVE_J_TYPE,J_TYPE) \
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3##SIG##J \
