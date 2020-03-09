@@ -27,13 +27,28 @@ import java.util.stream.IntStream;
 
 public class MultipleReductions extends TornadoTestBase {
 
+    /**
+     * Check multiple-reduce parameters can generate a correct OpenCL kernel. Note
+     * that output2 variable is not used, but passed. This stresses the analysis
+     * phase when using reductions, even if it is not used.
+     * 
+     * @param input
+     *            input data
+     * @param output1
+     *            reduce variable 1
+     * @param output2
+     *            reduce variable 2
+     */
     public static void test(int[] input, @Reduce int[] output1, @Reduce int[] output2) {
         for (@Parallel int i = 0; i < input.length; i++) {
             output1[0] += input[i];
-            // output2[0] += input[i];
         }
     }
 
+    /**
+     * Check if TornadoVM can generate OpenCL code the the input expression. Note
+     * that fusion of multiple reductions is not supported yet.
+     */
     @Test
     public void test() {
         final int size = 128;
@@ -52,5 +67,4 @@ public class MultipleReductions extends TornadoTestBase {
 
         task.execute();
     }
-
 }
