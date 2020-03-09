@@ -316,8 +316,8 @@ public class PTXCompiler {
             assert startBlock.getPredecessorCount() == 0;
 
             LIR lir = null;
-            AbstractBlockBase<?>[] codeEmittingOrder = null;
-            AbstractBlockBase<?>[] linearScanOrder = null;
+            AbstractBlockBase<?>[] codeEmittingOrder;
+            AbstractBlockBase<?>[] linearScanOrder;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
                 codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
                 linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
@@ -531,8 +531,8 @@ public class PTXCompiler {
             sb.append('_');
             Class<?> argClass = arg.getClass();
             if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-                // Only need to append type
-                sb.append(arg);
+                // Only need to append value
+                sb.append(arg.toString().replace('.', '_'));
             }
             else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
                 // Need to append type and length
@@ -541,6 +541,11 @@ public class PTXCompiler {
             }
             else {
                 sb.append(argClass.getName().replace('.', '_'));
+
+                // Since with objects there is no way to know what will be a
+                // constant differentiate using the hashcode of the object
+                sb.append('_');
+                sb.append(arg.hashCode());
             }
         }
 
