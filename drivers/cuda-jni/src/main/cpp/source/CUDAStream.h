@@ -10,58 +10,58 @@ extern "C" {
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[BJ)I
+ * Signature: (JJJ[BJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3BJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jbyteArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3BJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jbyteArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[SJ)I
+ * Signature: (JJJ[SJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3SJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jshortArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3SJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jshortArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[CJ)I
+ * Signature: (JJJ[CJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3CJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jcharArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3CJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jcharArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[IJ)I
+ * Signature: (JJJ[IJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3IJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jintArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3IJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jintArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[JJ)I
+ * Signature: (JJJ[JJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3JJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jlongArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3JJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlongArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[FJ)I
+ * Signature: (JJJ[FJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3FJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jfloatArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3FJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jfloatArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayDtoH
- * Signature: (JJJ[DJ)I
+ * Signature: (JJJ[DJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3DJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jdoubleArray, jlong);
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoH__JJJ_3DJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jdoubleArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
@@ -122,121 +122,121 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[BJ)V
+ * Signature: (JJJ[BJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3BJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jbyteArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3BJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jbyteArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[SJ)V
+ * Signature: (JJJ[SJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3SJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jshortArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3SJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jshortArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[CJ)V
+ * Signature: (JJJ[CJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3CJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jcharArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3CJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jcharArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[IJ)V
+ * Signature: (JJJ[IJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3IJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jintArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3IJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jintArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[JJ)V
+ * Signature: (JJJ[JJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3JJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jlongArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3JJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlongArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[FJ)V
+ * Signature: (JJJ[FJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3FJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jfloatArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3FJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jfloatArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoD
- * Signature: (JJJ[DJ)V
+ * Signature: (JJJ[DJ[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3DJ
-  (JNIEnv *, jclass, jlong, jlong, jlong, jdoubleArray, jlong);
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoD__JJJ_3DJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jdoubleArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[BJ[B)I
+ * Signature: (JJJ[BJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3BJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3BJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jbyteArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[SJ[B)I
+ * Signature: (JJJ[SJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3SJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3SJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jshortArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[CJ[B)I
+ * Signature: (JJJ[CJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3CJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3CJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jcharArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[IJ[B)I
+ * Signature: (JJJ[IJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3IJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3IJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jintArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[JJ[B)I
+ * Signature: (JJJ[JJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3JJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3JJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jlongArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[FJ[B)I
+ * Signature: (JJJ[FJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3FJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3FJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jfloatArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[DJ[B)I
+ * Signature: (JJJ[DJ[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3DJ_3B
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3DJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlong, jdoubleArray, jlong, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
  * Method:    cuLaunchKernel
- * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)I
+ * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)[B
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel
   (JNIEnv *, jclass, jbyteArray, jstring, jint, jint, jint, jint, jint, jint, jlong, jbyteArray, jbyteArray);
 
 /*

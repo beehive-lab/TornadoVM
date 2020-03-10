@@ -56,7 +56,7 @@ StagingAreaList *get_first_free_staging_area(size_t size) {
     StagingAreaList *list = head;
     bool found_first = false;
     while (list != NULL && !found_first) {
-        if ((list->is_used)) {
+        if (!(list->is_used)) {
             found_first = true;
         }
         else {
@@ -197,7 +197,7 @@ COPY_ARRAY_H_TO_D(D, jdouble, Double)
  * Method:    cuLaunchKernel
  * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel(
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel(
         JNIEnv *env,
         jclass clazz,
         jbyteArray module,
@@ -242,7 +242,18 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
 
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
-    return (jint) -1;
+    CUevent event;
+    result = cuEventCreate(&event, CU_EVENT_DEFAULT);
+    if (result != 0) {
+        printf("Failed to create event! (%d)\n", result); fflush(stdout);
+    }
+
+    result = cuEventRecord(event, stream);
+    if (result != 0) {
+        printf("Failed to record event! (%d)\n", result); fflush(stdout);
+    }
+
+    return array_from_event(env, &event);
 }
 
 /*
