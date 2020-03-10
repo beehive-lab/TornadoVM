@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Juan Fumero
- *
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
@@ -349,13 +347,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     private int getNumberOfParameterNodes(StructuredGraph graph) {
-        int numParameters = 0;
-        for (Node n : graph.getNodes()) {
-            if (n instanceof ParameterNode) {
-                numParameters++;
-            }
-        }
-        return numParameters;
+        return graph.getNodes().filter(ParameterNode.class).count();
     }
 
     private void findParametersWithReduceAnnotations(StructuredGraph graph) {

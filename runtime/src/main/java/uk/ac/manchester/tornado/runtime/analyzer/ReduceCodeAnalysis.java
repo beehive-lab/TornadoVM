@@ -212,13 +212,7 @@ public class ReduceCodeAnalysis {
     }
 
     private static int getNumberOfParameterNodes(StructuredGraph graph) {
-        int numParameters = 0;
-        for (Node n : graph.getNodes()) {
-            if (n instanceof ParameterNode) {
-                numParameters++;
-            }
-        }
-        return numParameters;
+        return graph.getNodes().filter(ParameterNode.class).count();
     }
 
     /**
