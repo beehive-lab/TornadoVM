@@ -109,6 +109,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 JavaConstant keyAt = switchNode.keyAt(idx);
                 asm.emit(keyAt.toValueString());
                 asm.emit(OCLAssemblerConstants.COLON);
+                asm.emitLine("");
+                asm.indent();
             }
         }
     }
@@ -161,7 +163,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         final IntegerSwitchNode switchNode = (IntegerSwitchNode) block.getDominator().getEndNode();
         int blockNumber = getBlockIndexForSwitchStatement(block, switchNode);
         int numCases = getNumberOfCasesForSwitch(switchNode);
-        asm.emitLine("// BN: " + blockNumber + " numCases: " + numCases);
 
         if ((numCases - 1) == blockNumber) {
             asm.endScope();
