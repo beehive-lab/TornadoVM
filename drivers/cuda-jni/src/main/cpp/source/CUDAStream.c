@@ -7,11 +7,82 @@
 #include "CUDAEvent.h"
 #include "../macros/data_copies.h"
 
-void *staging_area;
-void *staging_area1;
-void *staging_area2;
-bool is_staging_1_used = false;
-size_t staging_area_length = 0;
+typedef struct area_list {
+    void *staging_area;
+    size_t length;
+    bool is_used;
+    struct area_list *next;
+    struct area_list *prev;
+} StagingAreaList;
+
+StagingAreaList *head = NULL;
+StagingAreaList *last = NULL;
+
+StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) {
+    // Create
+    if (list == NULL) {
+        list = malloc(sizeof(StagingAreaList));
+        CUresult result = cuMemAllocHost(&(list->staging_area), size);
+        if (result != 0) {
+            printf("Failed to allocate staging area! (%d)\n", result); fflush(stdout);
+        }
+        list->length = size;
+        list->is_used = false;
+        list->prev = last;
+        list->next = NULL;
+
+        // Since this is the newest list that was created update last
+        if (last != NULL) last->next = list;
+        last = list;
+    }
+
+    // Update
+    else if (list->length < size) {
+        CUresult result = cuMemFreeHost(list->staging_area);
+        if (result != 0) {
+            printf("Failed to free staging area! (%d)\n", result); fflush(stdout);
+        }
+        result = cuMemAllocHost(&(list->staging_area), size);
+        if (result != 0) {
+            printf("Failed to allocate staging area! (%d)\n", result); fflush(stdout);
+        }
+        list->length = size;
+    }
+    return list;
+}
+
+StagingAreaList *get_first_free_staging_area(size_t size) {
+    // Look for first free list
+    StagingAreaList *list = head;
+    bool found_first = false;
+    while (list != NULL && !found_first) {
+        if ((list->is_used)) {
+            found_first = true;
+        }
+        else {
+            list = list->next;
+        }
+    }
+
+    list = check_or_init_staging_area(size, list);
+    if (head == NULL) head = list;
+
+    list->is_used = true;
+    return list;
+}
+
+void set_to_unused(CUstream hStream,  CUresult status, void *list) {
+    ((StagingAreaList *) list)->is_used = false;
+}
+
+void free_staging_area_list() {
+    while(last != NULL) {
+        cuMemFreeHost(last->staging_area);
+        StagingAreaList *list = last;
+        last = last->prev;
+        free(list);
+    }
+}
 
 void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
     (*env)->GetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream_ptr);
@@ -211,15 +282,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuD
         printf("Failed to destroy stream! (%d)\n", result); fflush(stdout);
     }
 
-    result = cuMemFreeHost(staging_area1);
-    if (result != 0) {
-        printf("Failed to free page locked memory! (%d)\n", result); fflush(stdout);
-    }
-
-    result = cuMemFreeHost(staging_area2);
-    if (result != 0) {
-        printf("Failed to free page locked memory! (%d)\n", result); fflush(stdout);
-    }
+    free_staging_area_list();
 }
 
 /*
