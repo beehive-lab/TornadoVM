@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018 - 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -92,13 +93,23 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             }
         }
 
+        // Add all cases that go to the same block
+        ArrayList<Integer> commonCases = new ArrayList<>();
+        for (int i = 0; i <= defaultSuccessorIndex; i++) {
+            if (caseIndex == switchNode.keySuccessorIndex(i)) {
+                commonCases.add(i);
+            }
+        }
+
         if (defaultSuccessorIndex == caseIndex) {
             asm.emit(OCLAssemblerConstants.DEFAULT_CASE + OCLAssemblerConstants.COLON);
         } else {
-            asm.emit(OCLAssemblerConstants.CASE + " ");
-            JavaConstant keyAt = switchNode.keyAt(caseIndex);
-            asm.emit(keyAt.toValueString());
-            asm.emit(OCLAssemblerConstants.COLON);
+            for (Integer idx : commonCases) {
+                asm.emit(OCLAssemblerConstants.CASE + " ");
+                JavaConstant keyAt = switchNode.keyAt(idx);
+                asm.emit(keyAt.toValueString());
+                asm.emit(OCLAssemblerConstants.COLON);
+            }
         }
     }
 
@@ -144,12 +155,13 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
     }
 
-    private void closeSwitchStatement(Block b) {
+    private void closeSwitchStatement(Block block) {
         asm.emitLine(OCLAssemblerConstants.BREAK + OCLAssemblerConstants.STMT_DELIMITER);
 
-        final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();
-        int blockNumber = getBlockIndexForSwitchStatement(b, switchNode);
+        final IntegerSwitchNode switchNode = (IntegerSwitchNode) block.getDominator().getEndNode();
+        int blockNumber = getBlockIndexForSwitchStatement(block, switchNode);
         int numCases = getNumberOfCasesForSwitch(switchNode);
+        asm.emitLine("// BN: " + blockNumber + " numCases: " + numCases);
 
         if ((numCases - 1) == blockNumber) {
             asm.endScope();
