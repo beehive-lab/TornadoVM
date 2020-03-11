@@ -44,7 +44,7 @@ You can also run TornadoVM with your configuration file, by using the `-Dtornado
 ```
 [device]
 DEVICE_NAME=p385a_sch_ax115
-[flags]
+[options]
 FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
@@ -55,7 +55,7 @@ DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
 [device]
 DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
-[flags]
+[options]
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
@@ -65,7 +65,7 @@ DIRECTORY_BITSTREAM=fpga-source-comp/
 
 ```
 DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
-[flags]
+[options]
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
