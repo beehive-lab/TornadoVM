@@ -29,7 +29,7 @@ $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices:
 
 ```bash
-tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+$ tornado --devices
 ```
 Tornado device output corresponds to:
 ```bash

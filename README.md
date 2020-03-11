@@ -14,6 +14,8 @@ TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker
 
 ## What can I do with TornadoVM?
 
+TornadoVM can currently accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
+
 We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs.
 
 We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
