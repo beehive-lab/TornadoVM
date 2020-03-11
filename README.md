@@ -7,7 +7,7 @@ For a quick introduction please read the following [FAQ](assembly/src/docs/14_FA
 
 **Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
 
-Previous Releases can be found [here](pages/Releases.md)
+Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 # 2. Installation
 
@@ -33,22 +33,17 @@ Selected publications and citations can be found [here](assembly/src/docs/13_PUB
 
 This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and [AnyScale Apps EP/L000725/1](http://anyscale.org), and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
 
-# 8. Collaborations
+# 8. Contributions and Collaborations
 
-We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](CONTRIBUTIONS.md).
-
-For academic collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
-
-
-# 9. Contributing to TornadoVM
-
-You may use Github issues or PRs to report any issues or contribute your code.
+We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](assembly/src/docs/CONTRIBUTIONS.md).
 
 A mailing list is also available to discuss Tornado related issues:
 
 tornado-support@googlegroups.com
 
-# 10. TornadoVM Team
+For collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
+
+# 9. TornadoVM Team
 
 This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
 Currently, this project is maintained and updated by the following contributors:
@@ -60,7 +55,7 @@ Currently, this project is maintained and updated by the following contributors:
 * [Florin Blanaru](https://github.com/gigiblender)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
-# 11. License
+# 10. License
 
 To use TornadoVM, you can link the Tornado API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
