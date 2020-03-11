@@ -3,22 +3,27 @@
 🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
 heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs.
 
+For a quick introduction please read the following [FAQ](assembly/src/docs/14_FAQ.md).
+
 **Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
 
 Previous Releases can be found [here](pages/Releases.md)
 
 # 2. Installation
 
-TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/docs/12_INSTALL_WITH_DOCKER.md).
+TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
-
-## What can I do with TornadoVM?
+# 3. Usage Instructions
 
 TornadoVM can currently accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
 
 We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs.
 
 We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
+
+# 4. Programming Model
+
+# 5. Dynamic Reconfiguration
 
 # 6. Publications
 
