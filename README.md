@@ -1,21 +1,18 @@
-# TornadoVM 
+# 1. TornadoVM
 
-🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on 
-heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs. 
+🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
+heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs.
 
-### Releases
-  * TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
-  * TornadoVM 0.5  - 16/12/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-05)
-  * TornadoVM 0.4  - 14/10/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-04)
-  * TornadoVM 0.3  - 22/07/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-03)
-  * TornadoVM 0.2  - 25/02/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-02)
-  * Tornado 0.1.0  - 07/09/2018 : See [CHANGELOG](CHANGELOG.md#tornadovm-010)
+**Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
 
-## How to start? 
+Previous Releases can be found [here](pages/Releases.md)
+
+
+## How to start?
 
 #### A) From scratch:
 
-The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [EXAMPLES](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs. 
+The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [EXAMPLES](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs.
 
 We also maintain a live TornadoVM whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
 
@@ -27,7 +24,7 @@ _We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We cur
 
 ##### TornadoVM Docker for NVIDIA GPUs:
 
-Note that this requires the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) runtime. 
+Note that this requires the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) runtime.
 
 Using TornadoVM with OpenJDK 8 for NVIDIA GPUs:
 
@@ -37,7 +34,7 @@ $ docker pull beehivelab/tornado-gpu:latest
 $ git clone https://github.com/beehive-lab/docker-tornado
 $ cd docker-tornado
 $ ./run_nvidia.sh javac.py example/MatrixMultiplication.java
-$ ./run_nvidia.sh tornado example/MatrixMultiplication 
+$ ./run_nvidia.sh tornado example/MatrixMultiplication
 ```
 
 Using TornadoVM with GraalVM for NVIDIA GPUs:
@@ -54,8 +51,8 @@ In our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repositor
 
 ```bash
 # example of running graal images
-./run_nvidia_graalvm-jdk8.sh tornado ... 
-./run_nvidia_graalvm-jdk11.sh tornado ... 
+./run_nvidia_graalvm-jdk8.sh tornado ...
+./run_nvidia_graalvm-jdk11.sh tornado ...
 ```
 
 Example for running the TornadoVM with OpenJDK 8:
@@ -66,7 +63,7 @@ $ ./run_nvidia.sh tornado example/MatrixMultiplication 2048   ## Running on NVID
 Computing MxM of 2048x2048
 	CPU Execution: 0.36 GFlops, Total time = 48254 ms
 	GPU Execution: 277.09 GFlops, Total Time = 62 ms
-	Speedup: 778x 
+	Speedup: 778x
 ```
 
 ##### TornadoVM Docker for Intel Integrated GPUs:
@@ -79,7 +76,7 @@ $ docker pull beehivelab/tornado-intel-gpu:latest
 $ git clone https://github.com/beehive-lab/docker-tornado
 $ cd docker-tornado
 $ ./run_intel.sh javac.py example/MatrixMultiplication.java
-$ ./run_intel.sh tornado example/MatrixMultiplication 
+$ ./run_intel.sh tornado example/MatrixMultiplication
 ```
 
 Using TornadoVM with GraalVM for Intel Integrated Graphics:
@@ -87,20 +84,20 @@ Using TornadoVM with GraalVM for Intel Integrated Graphics:
 ```bash
 ## GraalVM with JDK 8
 $ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk8:latest
-$ run_intel_graalvm_jdk8.sh tornado ... 
+$ run_intel_graalvm_jdk8.sh tornado ...
 ## GraalVM with JDK 11
 $ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk11:latest
-$ run_intel_graalvm_jdk11.sh tornado ... 
+$ run_intel_graalvm_jdk11.sh tornado ...
 ```
 
 See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
 
 
-## What can I do with TornadoVM? 
+## What can I do with TornadoVM?
 
-We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs. 
+We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs.
 
-We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations. 
+We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
 
 
 ## Selected Publications
@@ -126,7 +123,7 @@ If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguratio
  series = {VEE '19},
  year = {2019},
  publisher = {ACM},
-} 
+}
 ```
 
 
@@ -150,7 +147,7 @@ If you are using **Tornado 0.1** (Initial release), please use the following cit
  publisher = {ACM},
  address = {New York, NY, USA},
  keywords = {Java, graal, heterogeneous hardware, openCL, virtual machine},
-} 
+}
 
 ```
 
@@ -171,9 +168,9 @@ A mailing list is also available to discuss Tornado related issues:
 
 tornado-support@googlegroups.com
 
-## Contributors 
+## Contributors
 
-This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net). 
+This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
 Currently, this project is maintained and updated by the following contributors:
 
 * [Juan Fumero](https://jjfumero.github.io/)
@@ -202,4 +199,3 @@ Each TornadoVM module is licensed as follows:
 | Tornado-Benchmarks | [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)  |
 | Tornado-Examples |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
-
