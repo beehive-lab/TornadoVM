@@ -2,11 +2,11 @@
 
 ## 1. What can TornadoVM do?
 
-TornadoVM can accelerate parts of your application on heterogeneous co-processors such as multicore CPUs, GPUs, and FPGAs.
+TornadoVM can accelerate parts of your applications on heterogeneous co-processors such as multicore CPUs, GPUs, and FPGAs.
 
 ## 2. How can I use it?
 
-For installation and usage instructions please refer to the following pages: Installation, Usage Instructions.
+For installation and usage instructions please refer to the following pages: [Installation](INSTALL.md), [Usage Instructions] ().
 
 ## 3. Which programming languages does TornadoVM support?
 
@@ -46,3 +46,8 @@ No, TornadoVM has been developed in the Beehive Lab of the APT Group at The Univ
 ## 10. Does TornadoVM support only OpenCL devices?
 
 Currently, yes. However, due to its decoupled archtiecture we are adding support for other back-ends also, so the users can decide which one to use.
+
+## 11. Finally, why is it called a VM?
+Although TornadoVM requires a host VM to operate with, since it is a plugin, it uses its internal bytecodes to handle compilation, execution, data management, and other operations on heterogeneous devices.
+
+Practically, this means that we have a VM-in-a-VM where TornadoVM executed on top of the host VM its own bytecodes.
