@@ -25,15 +25,19 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
 
 # 5. Dynamic Reconfiguration
 
-# 6. Publications
+# 6. Additional Resources
+
+[Here](assembly/src/docs/15_RESOURCES.md) you can find video, presentations, and articles describing TornadoVM.
+
+# 7. Publications
 
 Selected publications and citations can be found [here](assembly/src/docs/13_PUBLICATIONS.md).
 
-# 7. Acknowledgments
+# 8. Acknowledgments
 
 This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and [AnyScale Apps EP/L000725/1](http://anyscale.org), and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
 
-# 8. Contributions and Collaborations
+# 9. Contributions and Collaborations
 
 We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](assembly/src/docs/CONTRIBUTIONS.md).
 
@@ -43,7 +47,7 @@ tornado-support@googlegroups.com
 
 For collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
 
-# 9. TornadoVM Team
+# 10. TornadoVM Team
 
 This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
 Currently, this project is maintained and updated by the following contributors:
@@ -55,7 +59,7 @@ Currently, this project is maintained and updated by the following contributors:
 * [Florin Blanaru](https://github.com/gigiblender)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
-# 10. License
+# 11. License
 
 To use TornadoVM, you can link the Tornado API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
