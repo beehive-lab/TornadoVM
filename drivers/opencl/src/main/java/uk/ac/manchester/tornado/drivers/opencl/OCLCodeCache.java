@@ -76,6 +76,7 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
     private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
     private final String XILINX_OPENCL_COMPILER = "xocc";
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
@@ -141,7 +142,7 @@ public class OCLCodeCache {
         FileReader fileReader;
         BufferedReader bufferedReader;
         try {
-            fileReader = new FileReader(new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
+            fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
             bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line=bufferedReader.readLine()) != null) {
