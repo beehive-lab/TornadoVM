@@ -36,7 +36,7 @@ $ source etc/sources.env
 $ tornado --devices
 ```
 ### 3. Update the *etc/xilinx_fpga.conf* file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
-```$ vim etc/xilinx_fpga.conf```
+```$ vim etc/aws_fpga.conf```
 
 ## Example of configuration file: 
 ```
@@ -52,7 +52,7 @@ You can also run TornadoVM with your configuration file, by using the `-Dtornado
 as the compilation may take a few hours and the connection may be terminated with a broken pipe
 (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
 ```
-$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1 >> output.log
+$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1 >> output.log
 $ Ctrl-Z (^Z)
 $ bg
 $ disown
