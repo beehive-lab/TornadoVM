@@ -35,8 +35,8 @@ $ source etc/sources.env
 
 $ tornado --devices
 ```
-### 3. Update the *_etc/fpga.conf_* file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
-```$ vim etc/fpga.conf```
+### 3. Update the *etc/xilinx_fpga.conf* file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
+```$ vim etc/xilinx_fpga.conf```
 
 ## Example of configuration file: 
 ```
@@ -46,12 +46,13 @@ DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_a
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
+You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. 
 
 ## Run a program that offloads a task on the FPGA. Be aware to log the terminal output to a file (*_output.log_*), 
 as the compilation may take a few hours and the connection may be terminated with a broken pipe
 (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
 ```
-$ tornado -Ds0.t0.device=0:0 --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1 >> output.log
+$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1 >> output.log
 $ Ctrl-Z (^Z)
 $ bg
 $ disown
@@ -99,7 +100,7 @@ When the state change from pending to available, the awsxlcbin binary code can b
 ```
 $ sudo -E /bin/bash
 $ source etc/sources.env
-$ tornado -Ds0.t0.device=0:0 --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1
+$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1
 ```
 
 The output should be like this: 
