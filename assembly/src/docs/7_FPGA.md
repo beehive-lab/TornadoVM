@@ -36,6 +36,7 @@ $ clinfo
 ```
 ## Step 1: Update the "etc/vendor_fpga.conf" file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
 TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device. 
+You can also run TornadoVM with your own configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. 
 
 ### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150): 
 ```$ vim etc/intel-fpga.conf```
