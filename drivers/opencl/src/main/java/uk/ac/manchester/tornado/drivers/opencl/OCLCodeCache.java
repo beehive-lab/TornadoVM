@@ -144,29 +144,25 @@ public class OCLCodeCache {
             fileReader = new FileReader(new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
             bufferedReader = new BufferedReader(fileReader);
             String line;
-            try {
-                while ((line=bufferedReader.readLine()) != null) {
-                    switch (line.split("=")[0]) {
-                        case "DEVICE_NAME":
-                            fpgaName = line.split("=")[1];
-                            break;
-                        case "DIRECTORY_BITSTREAM":
-                            directoryBitstream = line.split("=")[1];
-                            fpgaBinLocation = "./" + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
-                            fpgaSourceDir = directoryBitstream;
-                            break;
-                        case "FLAGS":
-                            compilationFlags = line.split("=")[1];
-                            break;
-                        default:
-                            break;
-                    }
+            while ((line=bufferedReader.readLine()) != null) {
+                switch (line.split("=")[0]) {
+                    case "DEVICE_NAME":
+                        fpgaName = line.split("=")[1];
+                        break;
+                    case "DIRECTORY_BITSTREAM":
+                        directoryBitstream = line.split("=")[1];
+                        fpgaBinLocation = "./" + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
+                        fpgaSourceDir = directoryBitstream;
+                        break;
+                    case "FLAGS":
+                        compilationFlags = line.split("=")[1];
+                        break;
+                    default:
+                        break;
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         } catch (IOException e) {
-            System.out.println("Wrong configuration file, please ensure that you have configured the file with valid settings!");
+            System.out.println("Wrong configuration file or invalid settings. Please ensure that you have configured the configuration file with valid options!");
             System.exit(1);
         }
     }
