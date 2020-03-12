@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,7 +86,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:on
 
         int[] sequential = new int[1];
-        reductionAnnotation(input, sequential);
+        reductionAnnotationLarge(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0]);
@@ -102,6 +102,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
     private static void reductionAnnotation(int[] input, @Reduce int[] result) {
         result[0] = 0;
         for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    private static void reductionAnnotationConstant(int[] input, @Reduce int[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < SMALL_SIZE; i++) {
             result[0] += input[i];
         }
     }
@@ -137,9 +144,29 @@ public class TestReductionsIntegers extends TornadoTestBase {
 		//@formatter:on
 
         int[] sequential = new int[1];
-        reductionAnnotation(input, sequential);
+        reductionAnnotation2(input, sequential);
 
         // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
+    @Test
+    public void testReductionConstant() {
+        int[] input = new int[SMALL_SIZE];
+        int[] result = new int[] { 0 };
+
+        IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
+            input[i] = 2;
+        });
+
+        new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", TestReductionsIntegers::reductionAnnotationConstant, input, result) //
+                .streamOut(result) //
+                .execute(); //
+
+        int[] sequential = new int[1];
+        reductionAnnotationConstant(input, sequential);
         assertEquals(sequential[0], result[0]);
     }
 
