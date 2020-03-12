@@ -1,4 +1,4 @@
-# Tornado FPGA Support #
+# Tornado FPGA Support 
 
 Tornado supports execution and prototyping with OpenCL compatible Intel and Xilinx FPGAs. For debugging you can use common IDEs from Java ecosystem. 
 
@@ -34,36 +34,50 @@ $ clinfo
    Device OpenCL C Version                         OpenCL C 1.0
    Device Type                                     Accelerator
 ```
-## Step 1: Update the "etc/vendor_fpga.conf" file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
-TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device. 
-You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. 
+
+## Step 1: Update/Create the FPGA's configuration file
+
+Update the "etc/vendor_fpga.conf" file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device.  You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. 
 
 ### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150): 
-```$ vim etc/intel-fpga.conf```
 
+Edit/create the configuration file fo the FPGA:
+
+```bash
+$ vim etc/intel-fpga.conf
 ```
+
+```conf
 [device]
 DEVICE_NAME=p385a_sch_ax115
+
 [options]
 FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
 
 ### Example of configuration file for Xilinx KCU1500: 
-```$ vim etc/xilinx-fpga.conf```
 
+```bash
+$ vim etc/xilinx-fpga.conf
 ```
+
+```conf
 [device]
 DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
+
 [options]
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
 
 ### Example of configuration file for AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0: 
-```$ vim etc/xilinx-fpga.conf```
 
+```bash
+$ vim etc/xilinx-fpga.conf
 ```
+
+```conf
 DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
 [options]
 FLAGS=-O3 -j12
