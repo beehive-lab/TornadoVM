@@ -334,7 +334,7 @@ public class TornadoVMGraphCompiler {
                             result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                         } catch (BufferOverflowException e) {
                             throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
-                                    + TornadoVMGraphCompilationResult.MAX_TORNADOVM_BYTECODE_SIZE + " to increase the buffer code size");
+                                    + TornadoVMGraphCompilationResult.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
                         }
 
                         for (int j = 0; j < deps.length; j++) {

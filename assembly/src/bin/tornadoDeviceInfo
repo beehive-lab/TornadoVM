@@ -4,9 +4,9 @@ option=$1
 
 case "$1" in 
 		verbose)
-			tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput verbose
+			tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceQuery verbose
 			;;
 
 		*)
-			tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+			tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceQuery
 esac	
