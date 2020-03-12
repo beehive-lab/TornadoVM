@@ -14,7 +14,7 @@ TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker
 
 # 3. Usage Instructions
 
-TornadoVM can currently accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
+TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
 
 We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs.
 
@@ -51,16 +51,16 @@ public class Compute {
 ```
 
 
+# 5. Dynamic Reconfiguration
+
+Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. With the task-migration, the TornadoVM's approach is to only switch device if it detects an application can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on the CPU using the default compilers (C2 or Graal).
+
 To use the dynamic reconfiguration, you can execute using TornadoVM policies. For example:
 
 ```java
 // TornadoVM will execute the code in the best accelerator. 
 ts.execute(Policy.PERFORMANCE);
 ```
-
-# 5. Dynamic Reconfiguration
-
-Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. With the task-migration, the TornadoVM's approach is to only switch device if it detects application can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on CPU using the default compilers (C2 or Graal).
 
 Further details and instructions on how to enable this feature can be found here.
 
