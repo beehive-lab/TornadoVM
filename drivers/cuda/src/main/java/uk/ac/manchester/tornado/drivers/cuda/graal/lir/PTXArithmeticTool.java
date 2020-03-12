@@ -9,6 +9,7 @@ import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
@@ -214,7 +215,11 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
         Variable dest = getGen().newVariable(kind);
-        getGen().append(new PTXLIRStmt.LoadStmt((PTXUnary.MemoryAccess) address, dest));
+        getGen().append(new PTXLIRStmt.LoadStmt(
+                (PTXUnary.MemoryAccess) address,
+                dest,
+                PTXAssembler.PTXNullaryOp.LD
+        ));
         return dest;
     }
 

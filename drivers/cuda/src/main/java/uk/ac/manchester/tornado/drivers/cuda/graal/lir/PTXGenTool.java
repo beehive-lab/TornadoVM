@@ -11,6 +11,7 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXUnary.MemoryAccess;
 
@@ -65,7 +66,8 @@ public class PTXGenTool {
         );
         gen.append(new PTXLIRStmt.LoadStmt(
                 new MemoryAccess(globalSpace, gen.getParameterAllocation(PTXArchitecture.STACK_POINTER), stackIndex),
-                (Variable) dst
+                (Variable) dst,
+                PTXAssembler.PTXNullaryOp.LDU
         ));
     }
 

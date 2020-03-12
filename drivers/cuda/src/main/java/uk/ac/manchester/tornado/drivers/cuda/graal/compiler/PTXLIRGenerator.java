@@ -345,7 +345,8 @@ public class PTXLIRGenerator extends LIRGenerator {
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(
                 new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME),
-                stackPointer
+                stackPointer,
+                PTXNullaryOp.LD
         ));
     }
 

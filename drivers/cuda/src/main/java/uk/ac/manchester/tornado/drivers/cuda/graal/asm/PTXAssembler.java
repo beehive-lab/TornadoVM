@@ -317,9 +317,13 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXNullaryOp extends PTXOp {
 
-        // @formatter:off
-        public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret", false);
-        // @formatter:on
+        public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
+        public static final PTXNullaryOp LD = new PTXNullaryOp("ld");
+        public static final PTXNullaryOp LDU = new PTXNullaryOp("ldu");
+
+        protected  PTXNullaryOp(String opcode) {
+            this(opcode, false);
+        }
 
         protected PTXNullaryOp(String opcode, boolean isWeaklyTyped) {
             super(opcode, isWeaklyTyped);
@@ -367,34 +371,6 @@ public class PTXAssembler extends Assembler {
             emitOpcode(asm);
         }
     }
-
-    public static class PTXUnaryTemplate extends PTXUnaryOp {
-
-        public static final PTXUnaryTemplate CAST_TO_POINTER = new PTXUnaryTemplate("cast ptr", "(%s *)");
-
-        private final String template;
-
-        protected PTXUnaryTemplate(String opcode, String template) {
-            super(opcode);
-            this.template = template;
-        }
-
-        @Override
-        public void emit(PTXCompilationResultBuilder crb, Value value) {
-            final PTXAssembler asm = crb.getAssembler();
-            asm.emit(opcode);
-            asm.emit(
-                    template,
-                    asm.getVarForParam(PTXArchitecture.STACK_POINTER),
-                    PTXAssembler.toString(value)
-            );
-        }
-
-        public String getTemplate() {
-            return template;
-        }
-    }
-
 
     /**
      * Binary opcodes

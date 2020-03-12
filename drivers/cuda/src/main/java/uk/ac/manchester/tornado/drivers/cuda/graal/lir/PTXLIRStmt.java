@@ -5,6 +5,7 @@ import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
@@ -120,29 +121,22 @@ public class PTXLIRStmt {
         PTXUnary.MemoryAccess address;
 
         @Use
-        protected ConstantValue index;
+        PTXNullaryOp loadOp;
 
-        public LoadStmt(PTXUnary.MemoryAccess address, Variable dest) {
+        public LoadStmt(PTXUnary.MemoryAccess address, Variable dest, PTXNullaryOp op) {
             super(TYPE);
 
             this.dest = dest;
+            this.loadOp = op;
             this.address = address;
             address.assignTo(dest);
-        }
-
-        public LoadStmt(PTXUnary.MemoryAccess address, Variable dest, ConstantValue index) {
-            super(TYPE);
-
-            this.address = address;
-            this.dest = dest;
-            this.index = index;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             //ld.u64 	%rd9, [%rd8];
-            asm.emitSymbol(TAB);
-            asm.emit("ld.");
+            loadOp.emit(crb, null);
+            asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.name());
             asm.emitSymbol(DOT);
             asm.emit(dest.getPlatformKind().toString());
@@ -152,9 +146,6 @@ public class PTXLIRStmt {
             asm.emitSymbol(COMMA);
             asm.space();
             address.emit(crb, asm, null);
-            if (index != null) {
-                asm.emitConstant(index);
-            }
             asm.delimiter();
             asm.eol();
         }
@@ -169,20 +160,11 @@ public class PTXLIRStmt {
         protected Value rhs;
         @Use
         protected PTXUnary.MemoryAccess address;
-        @Use
-        protected Value index;
 
         public StoreStmt(PTXUnary.MemoryAccess address, Value rhs) {
             super(TYPE);
             this.rhs = rhs;
             this.address = address;
-        }
-
-        public StoreStmt(PTXUnary.MemoryAccess address, Value rhs, Value index) {
-            super(TYPE);
-            this.rhs = rhs;
-            this.address = address;
-            this.index = index;
         }
 
         public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {

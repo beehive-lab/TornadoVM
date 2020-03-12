@@ -86,6 +86,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getPTXGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
+            unimplemented("Function calls are not implemented in CUDA-PTX yet");
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
