@@ -13,7 +13,7 @@ TornadoVM is currently being used to currently accelerate machine learning and d
 
 TornadoVM can be currently executed with the following two configurations:
 
-  * TornadoVM with JDK 8 with JVMCI-8 support: see the installation guide [here](11_INSTALL_WITH_JDK8.md)
+  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md)
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md)
 
 
@@ -31,9 +31,9 @@ TornadoVM primarily supports Java. However, with the integration with GraalVM yo
 
 ## 4. Is TornadoVM a DSL?
 
-No, TornadoVM is not a DSL. It executes nominal Java code. 
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL. 
 
-TornadoVM only provides two Java annotations (`@Parallel` and `@Reduce`) plus a light API to create task-schedules (group of Java methods to be accelerated by TornadoVM).
+The TornadoVM API only provides two Java annotations (`@Parallel` and `@Reduce`) plus a light API to create task-schedules (groups of Java methods to be accelerated by TornadoVM).
 
 ## 5. Does it support the whole Java Language?
 

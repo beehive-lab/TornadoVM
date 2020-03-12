@@ -1,6 +1,6 @@
-# Tornado FPGA Support 
+# TornadoVM FPGA Support 
 
-Tornado supports execution and prototyping with OpenCL compatible Intel and Xilinx FPGAs. For debugging you can use common IDEs from Java ecosystem. 
+TornadoVM supports execution and prototyping with OpenCL compatible Intel and Xilinx FPGAs. For debugging you can use common IDEs from Java ecosystem. 
 
 **IMPORTANT NOTE:** The minimum input size to run on the FPGA is 64 elements (which correspondonds internally with the local work size in OpenCL). 
 

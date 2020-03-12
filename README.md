@@ -1,6 +1,6 @@
 # 1. TornadoVM
 
-🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs.
+🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and FPGAs (Intel and Xilinx).
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/14_FAQ.md).
 
@@ -82,7 +82,7 @@ This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http
 
 We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](assembly/src/docs/CONTRIBUTIONS.md).
 
-A mailing list is also available to discuss Tornado related issues:
+A mailing list is also available to discuss TornadoVM related issues:
 
 tornado-support@googlegroups.com
 
@@ -102,7 +102,7 @@ Currently, this project is maintained and updated by the following contributors:
 
 # 11. License
 
-To use TornadoVM, you can link the Tornado API to your application which is under the CLASSPATH Exception of GPLv2.0.
+To use TornadoVM, you can link the TornadoVM API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
 Each TornadoVM module is licensed as follows:
 
