@@ -355,9 +355,9 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
                 if (annotation instanceof Reduce) {
-                    // If the number of arguments do not match, then we increase the index to obtain
-                    // the correct one when indexing from getParameters. This is an issue when
-                    // having inheritance with interfaces from Apache Flink. See issue
+                    // If the number of arguments does not match, then we increase the index to
+                    // obtain the correct one when indexing from getParameters. This is an issue
+                    // when having inheritance with interfaces from Apache Flink. See issue
                     // #185 on Github
                     if (!graph.method().isStatic() || getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
                         index++;
