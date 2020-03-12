@@ -5,7 +5,7 @@ heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices an
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/14_FAQ.md).
 
-**Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
+**Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-06)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
@@ -25,11 +25,17 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
 
 # 5. Dynamic Reconfiguration
 
+Dynamic reconfiguration is the ability of TornadoVM to live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. With the task-migration, the TornadoVM's approach is to only switch device if it detects application can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on CPU using the default compilers (C2 or Graal).
+
+Further details and instructions on how to enable this feature can be found here.
+
+* Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
+
 # 6. Additional Resources
 
-[Here](assembly/src/docs/15_RESOURCES.md) you can find video, presentations, and articles describing TornadoVM.
+[Here](assembly/src/docs/15_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing TornadoVM and how to use it.
 
-# 7. Publications
+# 7. Academic Publications
 
 Selected publications and citations can be found [here](assembly/src/docs/13_PUBLICATIONS.md).
 
