@@ -7,6 +7,8 @@ List of tested drivers for running OpenCL with TornadoVM
 
 [Link](https://github.com/intel/compute-runtime/releases)
 
+* 20.09.15980: OK
+* 20.08.15750: OK
 * 20.07.15711: OK
 * 20.06.15619: OK
 * 20.04.15428: OK
@@ -38,6 +40,7 @@ List of tested drivers for running OpenCL with TornadoVM
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+* 440.64: OK
 * 440.59: OK
 * 440.40: OK
 * 440.36: OK 
