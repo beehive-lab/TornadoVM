@@ -38,6 +38,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cu
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuDriverGetVersion
   (JNIEnv *, jclass);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDADevice
+ * Method:    cuMemGetInfo
+ * Signature: (I)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuMemGetInfo
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif

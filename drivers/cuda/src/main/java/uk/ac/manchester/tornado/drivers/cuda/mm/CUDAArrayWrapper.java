@@ -77,12 +77,12 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+                return readArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
     }
@@ -114,7 +114,7 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
         }
         buildArrayHeader(Array.getLength(array)).write();
         // TODO: Writing with offset != 0
-        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
+        writeArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
         onDevice = true;
     }
 
@@ -138,9 +138,9 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
         }
         final int returnEvent;
         if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            returnEvent = enqueueReadArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            returnEvent = enqueueReadArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return useDeps ? returnEvent : -1;
     }
@@ -155,7 +155,7 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
         }
         final int returnEvent;
         if (isFinal && onDevice) {
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            returnEvent = enqueueWriteArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
             // We first write the header for the object and then we write actual
             // buffer
@@ -165,7 +165,7 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
             } else {
                 headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
             }
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            returnEvent = enqueueWriteArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             onDevice = true;
             // returnEvent = deviceContext.enqueueMarker(internalEvents);
 
@@ -259,10 +259,8 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
     /**
      * Copy data from the device to the main host.
      *
-     * @param bufferId
-     *            Device Buffer ID
-     * @param offset
-     *            Offset within the device buffer
+     * @param address
+     *            Device Buffer address
      * @param bytes
      *            Bytes to be copied back to the host
      * @param value
@@ -271,17 +269,15 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
      *            List of events to wait for.
      * @return Event information
      */
-    protected abstract int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueReadArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    protected abstract int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int readArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
     /**
      * Copy data that resides in the host to the target device.
      *
-     * @param bufferId
-     *            Device Buffer ID
-     * @param offset
-     *            Offset within the device buffer
+     * @param address
+     *            Device Buffer address
      * @param bytes
      *            Bytes to be copied
      * @param value
@@ -291,7 +287,7 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
      *            List of events to wait for.
      * @return Event information
      */
-    protected abstract int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    protected abstract void writeArrayData(long bufferId, long offset, long bytes, T value, int hostOffset, int[] waitEvents);
+    protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
 }

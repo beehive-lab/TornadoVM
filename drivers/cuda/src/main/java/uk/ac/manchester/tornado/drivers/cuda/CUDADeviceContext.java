@@ -219,124 +219,124 @@ public class CUDADeviceContext
     /*
      * SYNC READS
      */
-    public int readBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int readBuffer(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int readBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
 
     /*
      * ASYNC READS
      */
-    public int enqueueReadBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueReadBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
 
     /*
      * SYNC WRITES
      */
-    public void writeBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long length, long[] array, int hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, long[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long length, float[] array, int hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, float[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long length, double[] array, int hostOffset, int[] waitEvents) {
-        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public void writeBuffer(long address, long length, double[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
     /*
      * ASYNC WRITES
      */
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
-        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    public int enqueueWriteBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
 }

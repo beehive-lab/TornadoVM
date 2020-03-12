@@ -9,10 +9,8 @@ public class CUDAFloatArrayWrapper extends CUDAArrayWrapper<float[]> {
     }
 
     /**
-     * Copy data from the device to the main host.
-     *
-     * @param bufferId   Device Buffer ID
-     * @param offset     Offset within the device buffer
+     * Copy data from the device to the main host
+     * @param address    Device Buffer ID
      * @param bytes      Bytes to be copied back to the host
      * @param value      Host array that resides the final data
      * @param hostOffset
@@ -20,20 +18,19 @@ public class CUDAFloatArrayWrapper extends CUDAArrayWrapper<float[]> {
      * @return Event information
      */
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueReadArrayData(long address, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueReadBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int readArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int readArrayData(long address, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.readBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 
     /**
      * Copy data that resides in the host to the target device.
      *
-     * @param bufferId   Device Buffer ID
-     * @param offset     Offset within the device buffer
+     * @param address    Device Buffer ID
      * @param bytes      Bytes to be copied
      * @param value      Host array to be copied
      * @param hostOffset
@@ -41,12 +38,12 @@ public class CUDAFloatArrayWrapper extends CUDAArrayWrapper<float[]> {
      * @return Event information
      */
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueWriteArrayData(long address, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueWriteBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, float[] value, int hostOffset, int[] waitEvents) {
-        deviceContext.writeBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected void writeArrayData(long address, long bytes, float[] value, int hostOffset, int[] waitEvents) {
+        deviceContext.writeBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 }

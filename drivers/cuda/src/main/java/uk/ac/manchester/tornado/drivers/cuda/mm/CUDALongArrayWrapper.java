@@ -9,22 +9,22 @@ public class CUDALongArrayWrapper extends CUDAArrayWrapper<long[]> {
     }
 
     @Override
-    protected int readArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int readArrayData(long address, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.readBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, long[] value, int hostOffset, int[] waitEvents) {
-        deviceContext.writeBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected void writeArrayData(long address, long bytes, long[] value, int hostOffset, int[] waitEvents) {
+        deviceContext.writeBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueReadArrayData(long address, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueReadBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int enqueueWriteArrayData(long address, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueWriteBuffer(address, bytes, value, hostOffset, waitEvents);
     }
 }

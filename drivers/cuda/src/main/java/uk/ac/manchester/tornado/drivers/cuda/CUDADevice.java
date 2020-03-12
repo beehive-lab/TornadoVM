@@ -40,11 +40,8 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
     private native static String cuDeviceGetName(int deviceId);
     private native static int cuDeviceGetAttribute(int deviceId, int attribute);
     private native static long cuDeviceTotalMem(int deviceId);
+    private native static long cuMemGetInfo(int deviceId);
     private native static int cuDriverGetVersion();
-
-    public long getId() {
-        return 1;
-    }
 
     @Override
     public String getDeviceName() {
@@ -131,7 +128,7 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     @Override
     public long getDeviceMaxAllocationSize() {
-        return 0;
+        return cuMemGetInfo(index);
     }
 
     @Override

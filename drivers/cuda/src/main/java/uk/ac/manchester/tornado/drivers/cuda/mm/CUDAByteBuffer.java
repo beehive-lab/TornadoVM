@@ -29,7 +29,7 @@ public class CUDAByteBuffer {
     }
 
     private void read(int[] events) {
-        deviceContext.readBuffer(heapPointer(), offset, bytes, buffer.array(), 0, events);
+        deviceContext.readBuffer(heapPointer() + offset, bytes, buffer.array(), 0, events);
     }
 
     public int getInt(int offset) {
@@ -65,7 +65,7 @@ public class CUDAByteBuffer {
     }
 
     public void write(int[] events) {
-        deviceContext.writeBuffer(heapPointer(), offset, bytes, buffer.array(), 0, events);
+        deviceContext.writeBuffer(heapPointer() + offset, bytes, buffer.array(), 0, events);
     }
 
     private long heapPointer() {
@@ -77,7 +77,7 @@ public class CUDAByteBuffer {
     }
 
     public int enqueueWrite(int[] events) {
-        return deviceContext.enqueueWriteBuffer(heapPointer(), offset, bytes, buffer.array(), 0, events);
+        return deviceContext.enqueueWriteBuffer(heapPointer() + offset, bytes, buffer.array(), 0, events);
     }
 
     public ByteBuffer buffer() {

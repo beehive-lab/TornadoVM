@@ -300,7 +300,7 @@ public class CUDAObjectWrapper implements ObjectBuffer {
             if (!valid) {
                 serialise(object);
                 // XXX: Offset 0
-                deviceContext.writeBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), 0, null);
+                deviceContext.writeBuffer(toBuffer() + bufferOffset, bytesToAllocate, buffer.array(), 0, null);
             }
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
@@ -325,7 +325,7 @@ public class CUDAObjectWrapper implements ObjectBuffer {
             event = fieldBuffer.read(object, events, useDeps);
         } else {
             buffer.position(buffer.capacity());
-            event = deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
+            event = deviceContext.readBuffer(toBuffer() + bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
                     wrappedFields[i].read(object);
@@ -406,7 +406,7 @@ public class CUDAObjectWrapper implements ObjectBuffer {
             }
 
             if (!isFinal) {
-                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
+                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer() + bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
                 index++;
 
                 // TODO this needs to run asynchronously
@@ -445,7 +445,7 @@ public class CUDAObjectWrapper implements ObjectBuffer {
             // TODO this needs to run asynchronously
             if (!valid || (valid && !isFinal)) {
                 serialise(ref);
-                eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null));
+                eventList.add(deviceContext.enqueueWriteBuffer(toBuffer() + bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null));
                 valid = true;
             }
             for (final FieldBuffer field : wrappedFields) {

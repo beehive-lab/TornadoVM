@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -106,12 +108,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
      * size.
      */
     public void allocateHeapMemoryOnDevice() {
-        //long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
-        //if (memorySize < DEFAULT_HEAP_ALLOCATION) {
-            //Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
-        //}
-        //Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
-        deviceContext.getMemoryManager().allocateRegion(DEFAULT_HEAP_ALLOCATION);
+        long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
+        if (memorySize < DEFAULT_HEAP_ALLOCATION) {
+            Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
+        }
+        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
+        deviceContext.getMemoryManager().allocateRegion(memorySize);
     }
 
     public CUDADeviceContext getDeviceContext() {
