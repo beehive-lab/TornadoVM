@@ -44,12 +44,18 @@ A list of unsupported features along with the reasoning behind it can be found [
 
 Although TornadoVM shares some similarities with APARAPI and IBM J9, it has a number of key advantages which are listed below:
 
-* Aparapi is a direct translation from Java bytecode to OpenCL. To do so, Aparapi provides a compiler and a runtime system to automatically handle data and execute the generated OpenCL Kernel.
+###### Aparapi
+Aparapi is a direct translation from Java bytecodes to OpenCL. To do so, Aparapi provides a compiler and a runtime system to automatically handle data and execute the generated OpenCL Kernel.
 
-* IBM J9 accelerates the `forEach` method within the Java Stream API to run on NVIDIA GPUs by offloading Java code to NVIDIA PTX. IBM J9 also provides pre-compiled CUDA kernels for some common operations, such as sorting. 
+###### IBM J9
+IBM J9 accelerates the `forEach` method within the Java Stream API to run on NVIDIA GPUs by offloading Java code to NVIDIA PTX. IBM J9 also provides pre-compiled CUDA kernels for some common operations, such as sorting. 
 
-* TornadoVM also compiles from Java bytecode to OpenCL. But additionally, it optimizes and specializes the code by interleaving Graal compiler optimizations, such as partial escape analysis, canonicalization, loop unrolling, constant propagation, etc) with GPU/CPU/FPGA specific optimizations (e.g., parallel loop exploration, automatic use of local memory, parallel skeletons exploration such as reductions). TornadoVM generates different OpenCL code depending on the target device, which means that the code generated for GPUs is different for FPGAs and multi-cores. This is because of OpenCL code is portable across devices, but performance is not portable. TornadoVM addresses this challenge by applying compiler specialization depending on the device.
-Additionally, TornadoVM performs live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. As far as we know, this is not available in Aparapi (in which device selection is static). With the task-migration, the TornadoVM's approach is to only switch device if it detects applications can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on the CPU using the default compilers (C2 or Graal).
+
+###### TornadoVM
+
+TornadoVM also compiles from Java bytecodes to OpenCL. But additionally, it optimizes and specializes the code by interleaving Graal compiler optimizations, such as partial escape analysis, canonicalization, loop unrolling, constant propagation, etc) with GPU/CPU/FPGA specific optimizations (e.g., parallel loop exploration, automatic use of local memory, parallel skeletons exploration such as reductions). TornadoVM generates different OpenCL code depending on the target device, which means that the code generated for GPUs is different for FPGAs and multi-cores. This is because although OpenCL is portable across devices, its performance is not. TornadoVM addresses this challenge by applying compiler specializations depending on the device.
+
+Additionally, TornadoVM performs live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. As far as we know, this is not available in Aparapi (in which device selection is static). With the task-migration, the TornadoVM's approach is to only switch device if it detects applications can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise it will stay on the CPU using the default compilers (C2 or Graal).
 
 Some references:
 * Compiler specializations: [https://dl.acm.org/doi/10.1145/3237009.3237016](https://dl.acm.org/doi/10.1145/3237009.3237016)
@@ -66,8 +72,8 @@ Also with the **Dynamic Reconfiguration**, TornadoVM discovers the fastest possi
 
 ## 8. Dynamic Reconfiguration? What is this?
 
-It is a novel feature of TornadoVM, in which the user selected a metric on which the system decides how to map a specific computation on particular device.
-Further details and instructions on how to enable this feature can be found here.
+It is a novel feature of TornadoVM, in which the user selects a metric on which the system decides how to map a specific computation on particular device.
+Further details and instructions on how to enable this feature can be found here:
 
 * Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
 
