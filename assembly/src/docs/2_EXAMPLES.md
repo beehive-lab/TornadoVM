@@ -8,23 +8,15 @@ This document describes how to program and run a full example in Tornado.
 ## 1. Run a simple example within TornadoVM: Vector Addition
 
 
-Below you can find a snapshot of the `TestArrays` example code in Tornado (full code listing can be found in the `examples` directory). 
-In this example, we will run the `vectorAdd` method on a heterogeneous device.
-Tornado will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device.
-During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
+Below you can find a snapshot of the `TestArrays` example code in Tornado (full code listing can be found in the `examples` directory).  
 
-As you can see in the example below, the accelerated `vectorAdd` method performs a double vector addition.
-Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method.
-The only difference is the addition of the `@Parallel` annotation that instructs Tornado that the loop 
-has to be computed in parallel (i.e. using the global identifier in OpenCL).
+In this example, we will run the `vectorAdd` method on a heterogeneous device. Tornado will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device.During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
 
-The `testVectorAddition` method prepares the input data and creates a Tornado `task`.
-Tornado `tasks` can not execute directly; instead they must be part of a `TaskSchedule`.
-This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed.
-Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
+As you can see in the example below, the accelerated `vectorAdd` method performs a double vector addition. Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method. The only difference is the addition of the `@Parallel` annotation that instructs Tornado that the loop has to be computed in parallel (i.e. using the global identifier in OpenCL).
+
+The `testVectorAddition` method prepares the input data and creates a Tornado `task`. Tornado `tasks` can not execute directly; instead they must be part of a `TaskSchedule`. This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed.Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
 
 Once the method `execute` is invoked, Tornado builds the data dependency graph, compiles the referenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
-
 
 
 ```java
