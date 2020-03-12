@@ -1,17 +1,19 @@
 # Tornado FPGA Support #
 
-Tornado supports execution and prototyping with OpenCL compatible Intel/Altera FPGAs. For debuging you can use common IDEs from Java ecosystem. 
+Tornado supports execution and prototyping with OpenCL compatible Intel and Xilinx FPGAs. For debugging you can use common IDEs from Java ecosystem. 
 
 **IMPORTANT NOTE:** The minimum input size to run on the FPGA is 64 elements (which correspondonds internally with the local work size in OpenCL). 
 
 ### Pre-requisites
 
-We have currently tested with a Nallatech-A385 FPGA (Intel Arria 10 GT1150).
+We have currently tested with an Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150) and a Xilinx KCU1500 FPGA card.
+We have also tested it on the AWS EC2 F1 instance with xilinx_aws-vu9p-f1-04261818_dynamic_5_0 device.
 
-* Quartus Version: 17.1.0 Build 240
-* Tornado Version: 0.4
+* HLS Versions: Intel Quartus 17.1.0 Build 240, Xilinx SDAccel 2018.2, Xilinx SDAccel 2018.3
+* TornadoVM Version: > 0.4
+* AWS AMI Version: 1.6.0
 
-If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it shoudl be the following:  
+If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it should be the following:  
 ```bash
 $ clinfo
    Number of platforms                               1
@@ -32,8 +34,43 @@ $ clinfo
    Device OpenCL C Version                         OpenCL C 1.0
    Device Type                                     Accelerator
 ```
+## Step 1: Update the "etc/vendor_fpga.conf" file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
+TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device. 
+You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. 
 
-## Execution Modes  
+### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150): 
+```$ vim etc/intel-fpga.conf```
+
+```
+[device]
+DEVICE_NAME=p385a_sch_ax115
+[options]
+FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
+### Example of configuration file for Xilinx KCU1500: 
+```$ vim etc/xilinx-fpga.conf```
+
+```
+[device]
+DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
+[options]
+FLAGS=-O3 -j12
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
+### Example of configuration file for AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0: 
+```$ vim etc/xilinx-fpga.conf```
+
+```
+DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
+[options]
+FLAGS=-O3 -j12
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
+## Step 2: Select one of the three FPGA Execution Modes  
 
 ### Full JIT Mode  
 
@@ -47,7 +84,6 @@ Example:
 tornado \
     -Ds0.t0.device=0:1 \
     -Dtornado.opencl.accelerator.fpga=true \
-    -Dtornado.fpga.flags=-v,-report,-fp-relaxed  \
     -Dtornado.opencl.userelative=True \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
@@ -57,7 +93,6 @@ tornado \
 Ahead of time execution mode allows the user to generate a pre-generated bitstream of the Tornado tasks and then load it in a separated execution. The FPGA bitstream file should be named as `lookupBufferAddress`. 
 
 Example:  
-
 
 ```bash
 tornado \
@@ -69,7 +104,7 @@ tornado \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
-### Emulation Mode [on Intel-Altera FPGAs]
+### Emulation Mode [on Intel FPGAs]
 
 Emulation mode can be used for fast-prototying and ensuring program functional correctness before going through the full JIT process (HLS).
 
@@ -84,7 +119,6 @@ Example:
 ```bash
 env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.fpga.flags=-v,-report,-fp-relaxed  \
     -Dtornado.opencl.userelative=True \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
