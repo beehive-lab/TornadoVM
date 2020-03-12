@@ -28,7 +28,7 @@ Note that other alternatives, such as Aparapi, cannot perform these type of oper
 
 On GPUs there is little support for exceptions. For example, on CPUs, if there is division by 0, the CPU sets a flag in one of the special registers. Then the Operating System can query those special registers and pass that value to the application runtime (in this case, the Java runtime). Then Java runtime is free to handle the exception. 
 
-However, there is no such as mechanism for GPUs, which means that TornadoVM must insert extra control-flow to guarateee those exceptions never happen. Currently, since TornadoVM compiles at runtime, many of those checks can be assured at runtime. However, we plan to integrate exception support for TornadoVM in the future. 
+However, there is no such as mechanism for GPUs ([link](https://docs.nvidia.com/cuda/floating-point/index.html#differences-from-x86)), which means that TornadoVM must insert extra control-flow to guarateee those exceptions never happen. Currently, since TornadoVM compiles at runtime, many of those checks can be assured at runtime. However, we plan to integrate exception support for TornadoVM in the future. 
 
 
 ### Note
