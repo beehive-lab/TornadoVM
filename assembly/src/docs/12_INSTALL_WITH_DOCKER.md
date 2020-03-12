@@ -1,12 +1,10 @@
-
-# Using Docker
-
+# Using Docker with TornadoVM
 
 _We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We currently have docker images for NVIDIA and Intel Integrated GPUs using OpenJDK 8 and GraalVM for JDK 8 and 11:
-* TornadoVM docker images for NVIDIA GPUs
-* TornadoVM docker images for Intel Integrated Graphics
+* TornadoVM docker images for **NVIDIA GPUs**
+* TornadoVM docker images for **Intel Integrated Graphics**
 
-##### TornadoVM Docker for NVIDIA GPUs:
+#### TornadoVM Docker for NVIDIA GPUs
 
 Note that this requires the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) runtime.
 
@@ -50,7 +48,7 @@ Computing MxM of 2048x2048
 	Speedup: 778x
 ```
 
-##### TornadoVM Docker for Intel Integrated GPUs:
+#### TornadoVM Docker for Intel Integrated GPUs
 
 Using TornadoVM with OpenJDK 8 for Intel Integrated Graphics:
 
