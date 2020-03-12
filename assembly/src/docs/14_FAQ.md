@@ -82,4 +82,4 @@ Currently, yes. However, due to its decoupled software architecture, we are addi
 
 The VM name came because TornadoVM implements its own set of bytecodes for handling heterogeneous execution. These bytecodes are used for handling JIT compilation, device exploration, data management and live task-migration for heterogeneous devices (multi-core CPUs, GPUs, and FPGAs). We sometimes refer to a VM inside a VM (nested VM). The main VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 
-You can find more information here: https://dl.acm.org/doi/10.1145/3313808.3313819
+You can find more information here: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
