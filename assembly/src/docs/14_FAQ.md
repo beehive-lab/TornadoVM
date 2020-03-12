@@ -13,8 +13,8 @@ TornadoVM can currently accelerate machine learning and deep learning applicatio
 
 TornadoVM can be currently executed with the following two configurations:
 
-  * TornadoVM with JDK 8 with JVMCI-8 support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md)
-  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md)
+  * TornadoVM with JDK 8 with JVMCI-8 support: see the installation guide [here](11_INSTALL_WITH_JDK8.md)
+  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md)
 
 
 ###### Usage
@@ -36,7 +36,7 @@ TornadoVM only provides two Java annotations (`@Parallel` and `@Reduce`) plus a 
 ## 5. Does it support the whole Java Language?
 
 No, TornadoVM supports a subset of the Java programming language.
-A list of unsupported features along with the reasoning behind it can be found here.
+A list of unsupported features along with the reasoning behind it can be found [here](Unsupported.md).
 
 ## 6. How does TornadoVM compares to APARAPI and IBM J9?
 
