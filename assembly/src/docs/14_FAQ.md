@@ -9,14 +9,23 @@ TornadoVM can currently accelerate machine learning and deep learning applicatio
 
 ## 2. How can I use it?
 
-For installation and usage instructions please refer to the following pages: [Installation](1_INSTALL.md). 
-Here you can find how to use it: [usage instructions](2_EXAMPLES.md).
+###### Installation
+
+TornadoVM can be currently executed with the following two configurations:
+
+  * TornadoVM with JDK 8 with JVMCI-8 support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md)
+  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md)
+
+
+###### Usage
+
+* [Examples of how to use TornadoVM](1_INSTALL.md#2.-Running-Examples)
+* [Code examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples)
 
 ## 3. Which programming languages does TornadoVM support?
 
-TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other programming languages supported by GraalVM's polyglot runtime.
+TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, Ruby, Javascript, Node.js, etc). [Here](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot) you can find examples of how to use TornadoVM with GraalVM Polyglot.
 
-A usage example can be found here.
 
 ## 4. Is TornadoVM a DSL?
 
