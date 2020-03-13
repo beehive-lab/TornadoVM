@@ -7,12 +7,14 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
+import java.util.Arrays;
 import java.util.Random;
 
 public class MatrixMul2D {
 
-    private static final int WARMING_UP_ITERATIONS = 15;
-    private static final boolean CHECK_RESULT = true;
+    private static final int WARMING_UP_ITERATIONS = 20;
+    private static final int TIMING_ITERATIONS = 50;
+    private static final boolean CHECK_RESULT = false;
     private static final float DELTA = 0.01f;
 
     private static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
@@ -56,13 +58,14 @@ public class MatrixMul2D {
             }
         }
 
-        System.out.println("Computing MxM of " + size + "x" + size);
-        System.out.println();
+        //System.out.println("Computing MxM of " + size + "x" + size);
+        //System.out.println();
 
         Matrix2DFloat matrixA = new Matrix2DFloat(size, size);
         Matrix2DFloat matrixB = new Matrix2DFloat(size, size);
         Matrix2DFloat matrixCCUDA = new Matrix2DFloat(size, size);
         Matrix2DFloat matrixCOCL = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixCSeq = new Matrix2DFloat(size, size);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {
@@ -86,9 +89,15 @@ public class MatrixMul2D {
         }
 
         // Time CUDA
-        long cudaStart = System.nanoTime();
-        cudaTask.execute();
-        long cudaEnd = System.nanoTime();
+        long start, stop;
+        long[] execTimesCUDA = new long[TIMING_ITERATIONS];
+
+        for (int i = 0; i < TIMING_ITERATIONS; i++) {
+            start = System.nanoTime();
+            cudaTask.execute();
+            stop = System.nanoTime();
+            execTimesCUDA[i] = stop - start;
+        }
 
         TaskSchedule oclTask = new TaskSchedule("ocl_s0") //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
@@ -114,13 +123,33 @@ public class MatrixMul2D {
         }
 
         // Time OPENCL
-        long oclStart = System.nanoTime();
-        oclTask.execute();
-        long oclEnd = System.nanoTime();
+        long[] execTimesOCL = new long[TIMING_ITERATIONS];
+
+        for (int i = 0; i < TIMING_ITERATIONS; i++) {
+            start = System.nanoTime();
+            oclTask.execute();
+            stop = System.nanoTime();
+            execTimesOCL[i] = stop - start;
+        }
+
+        // Warmup sequential
+        for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+            matrixMultiplication(matrixA, matrixB, matrixCSeq, size);
+        }
+
+        // Time sequential
+        long[] execTimesSequential = new long[TIMING_ITERATIONS];
+        for (int i = 0; i < TIMING_ITERATIONS; i++) {
+            start = System.nanoTime();
+            matrixMultiplication(matrixA, matrixB, matrixCSeq, size);
+            stop = System.nanoTime();
+            execTimesSequential[i] = stop - start;
+        }
 
         // Compute execution times
-        long nsecCUDAElapsedTime = (cudaEnd - cudaStart);
-        long nsecOCLElapsedTime = (oclEnd - oclStart);
+        double nsecCUDAElapsedTime = Arrays.stream(execTimesCUDA).average().orElse(Double.NaN);
+        double nsecOCLElapsedTime = Arrays.stream(execTimesOCL).average().orElse(Double.NaN);
+        double nsecSeqElapsedTime = Arrays.stream(execTimesSequential).average().orElse(Double.NaN);
 
         boolean correctResult = true;
         if (CHECK_RESULT) {
@@ -143,13 +172,15 @@ public class MatrixMul2D {
             }
         }
 
-        if (size < 10) {
+        if (size < 5) {
             printMatrices(size, matrixCCUDA, matrixCOCL);
         }
 
-        System.out.println("CUDA-PTX Execution: " + nsecCUDAElapsedTime + " ns");
-        System.out.println("OPENCL   Execution: " + nsecOCLElapsedTime + " ns");
-        System.out.println("           Speedup: " + (double) nsecOCLElapsedTime / nsecCUDAElapsedTime);
-        System.out.println();
+        //System.out.println("CUDA-PTX Execution: " + nsecCUDAElapsedTime + " ns");
+        //System.out.println("OPENCL   Execution: " + nsecOCLElapsedTime + " ns");
+        //System.out.println("           Speedup: " + (double) nsecOCLElapsedTime / nsecCUDAElapsedTime);
+        //System.out.println();
+
+        System.out.printf("%d, %f, %f\n", size, nsecSeqElapsedTime/nsecOCLElapsedTime, nsecSeqElapsedTime/nsecCUDAElapsedTime);
     }
 }
