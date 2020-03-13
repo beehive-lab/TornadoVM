@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.examples.bufet;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ public class BufetTornadoBigIndex {
     private static final int genes_population = 25000;          //maximum amount of Genes
     private static final int miRNA_groups = 10000;             //the amount of random miRNAs target groups
     private static final byte chunks = 4;
+    private static final int warming_up_iterations = 15;
 
 
     //------Methods definition segment------
@@ -127,7 +129,7 @@ public class BufetTornadoBigIndex {
     public static void getRandomTargetGroup(int size, byte[] onlyGeneVector, int[] randID, int[] array,
                                             final int miRNA_groups_l, final int genes_population_l, int[] bounds, byte[] randNum) {
 
-        for (int k = 0; k < bounds[0]; k++) {                                   //miRNA_groups_l
+        for (@Parallel int k = 0; k < miRNA_groups_l; k++) {                    //bounds[0]
             for (int i = 0; i < bounds[2]; i++) {                               //size
                 int randIdx = randID[(k * size) + i] * genes_population_l;
                 int product = k * genes_population_l;
@@ -346,7 +348,13 @@ public class BufetTornadoBigIndex {
             s0.task("t0", BufetTornadoBigIndex::getRandomTargetGroup, getMiRNAsretVal[0], onlyGeneVector, randID, map_all_split,
                     chunkElements, genes_population, bounds, randNum);
             s0.streamOut(map_all_split);
-            s0.execute();
+
+            for (int z = 0; z < warming_up_iterations; z++) {
+                long start = System.nanoTime();
+                s0.execute();
+                long stop = System.nanoTime();
+                System.out.println("Total Time X: " + (stop - start) + " (ns)");
+            }
 
             System.out.println("Count ones in each miRNA target group.");
             calculateCounts(chunkElements, genes_population, map_all_split, countOnes);
