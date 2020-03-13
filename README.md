@@ -12,6 +12,8 @@ Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
+You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/16_AWS.md).
+
 # 3. Usage Instructions
 
 TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
@@ -20,11 +22,23 @@ We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-t
 
 We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
 
+**Additional Information**
+
+[Benchmarks](assembly/src/docs/4_BENCHMARKS.md)
+
+[Reductions](assembly/src/docs/5_REDUCTIONS.md)
+
+[Execution Flags](assembly/src/docs/6_TORNADO_FLAGS.md)
+
+[FPGA execution](assembly/src/docs/7_FPGA.md)
+
+[Profiler Usage](assembly/src/docs/9_PROFILER.md)
+
 # 4. Programming Model
 
-TornadoVM exposes to the programmer task-level, data-level and pipeline-level parallelism via a light Application Programming Interface (API). TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program. 
+TornadoVM exposes to the programmer task-level, data-level and pipeline-level parallelism via a light Application Programming Interface (API). TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program.
 
-The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM. 
+The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM.
 
 ```java
 public class Compute {
@@ -44,7 +58,7 @@ public class Compute {
         TaskSchedule ts = new TaskSchedule("s0")
                 .streamIn(A, B)                            // Stream data from host to device
                 .task("t0", Compute::mxm, A, B,  C, size)  // Each task points to an existing Java method
-                .streamOut(C);                             // sync arrays with the host side 
+                .streamOut(C);                             // sync arrays with the host side
         ts.execute();   // It will execute the code on the default device (e.g. a GPU)
     }
 }
@@ -58,7 +72,7 @@ Dynamic reconfiguration is the ability of TornadoVM to perform live task migrati
 To use the dynamic reconfiguration, you can execute using TornadoVM policies. For example:
 
 ```java
-// TornadoVM will execute the code in the best accelerator. 
+// TornadoVM will execute the code in the best accelerator.
 ts.execute(Policy.PERFORMANCE);
 ```
 

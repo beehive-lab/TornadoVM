@@ -1,13 +1,19 @@
-# Running TornadoVM in the AWS EC2 F1 Xilinx FPGAs
+# Running TornadoVM in AWS
+
+# 1. Running on CPUs and GPUs
+
+The installation and execution instructions for running on AWS CPUs and GPUs is identical to those for [running locally](1_INSTALL.md).
+
+# 2. Running on AWS EC2 F1 Xilinx FPGAs
 
 ### Pre-requisites:
-  * You need to have a storage bucket with: (s3_bucket, s3_dcp_key and s3_loogs_key) for Step 4. 
+  * You need to have a storage bucket with: (s3_bucket, s3_dcp_key and s3_loogs_key) for Step 4.
 
 The following come with the AWS EC2 F1 instance:
   * FPGA DEV AMI: 1.6.0
   * Xilinx SDx Tools: 2018.3
 
-### 1. Install TornadoVM as a CentOS user. The Xilinx FPGA is not exposed to simple users. 
+### 1. Install TornadoVM as a CentOS user. The Xilinx FPGA is not exposed to simple users.
 
 ```bash
 $ cd TornadoVM
@@ -47,7 +53,7 @@ Update the `etc/xilinx_fpga.conf` file with the necessary information (i.e. fpga
 $ vim etc/aws_fpga.conf
 ```
 
-## Example of configuration file: 
+## Example of configuration file:
 
 ```bash
 [device]
@@ -56,9 +62,9 @@ DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_a
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
-You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. 
+You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag.
 
-## Run a program that offloads a task on the FPGA. Be aware to log the terminal output to a file (*_output.log_*), 
+## Run a program that offloads a task on the FPGA. Be aware to log the terminal output to a file (*_output.log_*),
 as the compilation may take a few hours and the connection may be terminated with a broken pipe
 (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
 
@@ -91,17 +97,17 @@ This command will return the following message:
 {
     "FpgaImages": [
         {
-            "UpdateTime": "2019-09-23T13:06:54.000Z", 
-            "Name": "vector_addition.hw.xilinx_aws-vu9p-f1-04261818_dynamic_5_0", 
-            "Tags": [], 
-            "FpgaImageGlobalId": "agfi-0353e0d0ddf14970c", 
-            "Public": false, 
+            "UpdateTime": "2019-09-23T13:06:54.000Z",
+            "Name": "vector_addition.hw.xilinx_aws-vu9p-f1-04261818_dynamic_5_0",
+            "Tags": [],
+            "FpgaImageGlobalId": "agfi-0353e0d0ddf14970c",
+            "Public": false,
             "State": {
                 "Code": "pending"
-            }, 
-            "OwnerId": "305492597385", 
-            "FpgaImageId": "afi-0011ed541fb695fdd", 
-            "CreateTime": "2019-09-23T13:06:54.000Z", 
+            },
+            "OwnerId": "305492597385",
+            "FpgaImageId": "afi-0011ed541fb695fdd",
+            "CreateTime": "2019-09-23T13:06:54.000Z",
             "Description": "vector_addition.hw.xilinx_aws-vu9p-f1-04261818_dynamic_5_0"
         }
     ]
@@ -117,7 +123,7 @@ $ source etc/sources.env
 $ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1
 ```
 
-The output should be like this: 
+The output should be like this:
 
 ```OpenCL
 xclProbe found 1 FPGA slots with xocl driver running
@@ -137,10 +143,10 @@ Initialization time:  1166006276 ns
 __attribute__((reqd_work_group_size(64,1,1)))
 __kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
-  int i_8, i_9, i_38, i_4, i_5, i_37; 
-  ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2; 
-  float f_14, f_13, f_12, f_11, f_10, f_7, f_6, f_31, f_30, f_29, f_28, f_27, f_26, f_25, f_24, f_22, f_21, f_20, f_15; 
-  long l_16, l_32, l_17, l_33, l_18, l_34; 
+  int i_8, i_9, i_38, i_4, i_5, i_37;
+  ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2;
+  float f_14, f_13, f_12, f_11, f_10, f_7, f_6, f_31, f_30, f_29, f_28, f_27, f_26, f_25, f_24, f_22, f_21, f_20, f_15;
+  long l_16, l_32, l_17, l_33, l_18, l_34;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -209,10 +215,10 @@ ERROR: Failed to load xclbin.
 __attribute__((reqd_work_group_size(64,1,1)))
 __kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
-  int i_8, i_9, i_38, i_4, i_5, i_37; 
-  ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2; 
-  float f_14, f_13, f_12, f_11, f_10, f_7, f_6, f_31, f_30, f_29, f_28, f_27, f_26, f_25, f_24, f_22, f_21, f_20, f_15; 
-  long l_16, l_32, l_17, l_33, l_18, l_34; 
+  int i_8, i_9, i_38, i_4, i_5, i_37;
+  ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2;
+  float f_14, f_13, f_12, f_11, f_10, f_7, f_6, f_31, f_30, f_29, f_28, f_27, f_26, f_25, f_24, f_22, f_21, f_20, f_15;
+  long l_16, l_32, l_17, l_33, l_18, l_34;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -284,7 +290,7 @@ task info: s0.t0
 	global work offset: [0]
 	global work size  : [512]
 	local  work size  : [64]
-Total time:  5242666512 ns 
+Total time:  5242666512 ns
 
 Is valid?: true
 
