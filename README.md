@@ -12,7 +12,7 @@ Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
-You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/16_AWS_FPGA.md).
+You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/16_AWS.md).
 
 # 3. Usage Instructions
 
