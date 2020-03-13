@@ -4,7 +4,7 @@
 
 TornadoVM accelerates parts of your Java applications on heterogeneous hardware devices such as multicore CPUs, GPUs, and FPGAs.
 
-TornadoVM is currently being used to currently accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, natural language processing and signal processing. 
+TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, natural language processing and signal processing. 
 
 
 ## 2. How can I use it?
@@ -24,14 +24,14 @@ TornadoVM can be currently executed with the following two configurations:
 
 ## 3. Which programming languages does TornadoVM support?
 
-TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, Ruby, Javascript, Node.js, etc). 
+TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, Ruby, Javascript, Node.js, etc).
 
 [Here](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot) you can find examples of how to use TornadoVM with GraalVM Polyglot.
 
 
 ## 4. Is TornadoVM a DSL?
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL. 
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL.
 
 The TornadoVM API only provides two Java annotations (`@Parallel` and `@Reduce`) plus a light API to create task-schedules (groups of Java methods to be accelerated by TornadoVM).
 
@@ -48,7 +48,7 @@ Although TornadoVM shares some similarities with APARAPI and IBM J9, it has a nu
 Aparapi is a direct translation from Java bytecodes to OpenCL. To do so, Aparapi provides a compiler and a runtime system to automatically handle data and execute the generated OpenCL Kernel.
 
 ###### IBM J9
-IBM J9 accelerates the `forEach` method within the Java Stream API to run on NVIDIA GPUs by offloading Java code to NVIDIA PTX. IBM J9 also provides pre-compiled CUDA kernels for some common operations, such as sorting. 
+IBM J9 accelerates the `forEach` method within the Java Stream API to run on NVIDIA GPUs by offloading Java code to NVIDIA PTX. IBM J9 also provides pre-compiled CUDA kernels for some common operations, such as sorting.
 
 
 ###### TornadoVM
@@ -65,7 +65,7 @@ Some references:
 
 ## 7. Can TornadoVM degrade the performance of my application?
 
-No, TornadoVM can only increase the performance of your application because it can dynamically change the execution of a program at runtime to another device. 
+No, TornadoVM can only increase the performance of your application because it can dynamically change the execution of a program at runtime to another device.
 If a particular code segment cannot be accelerated, then execution falls back to the host JVM which will execute your code on the CPU as it would normally do.
 
 Also with the **Dynamic Reconfiguration**, TornadoVM discovers the fastest possible device for a particular code segment completely transparently to the user.
@@ -79,7 +79,7 @@ Further details and instructions on how to enable this feature can be found here
 
 ## 9. Is TornadoVM supported by a company?
 
-No, TornadoVM has been developed in the Beehive-Lab of the Advanced Processor Technology Group ([APT](http://apt.cs.manchester.ac.uk/)) at The University of Manchester. 
+No, TornadoVM has been developed in the Beehive-Lab of the Advanced Processor Technology Group ([APT](http://apt.cs.manchester.ac.uk/)) at The University of Manchester.
 
 
 ## 10. Does TornadoVM support only OpenCL devices?
