@@ -1,12 +1,12 @@
 #!/usr/bin/env python2.7
 
 #
-# This file is part of Tornado: A heterogeneous programming framework: 
-# https://github.com/beehive-lab/tornado
+# This file is part of Tornado: A heterogeneous programming framework:
+# https://github.com/beehive-lab/tornadovm
 #
 # Copyright (c) 2020, APT Group, Department of Computer Science,
-# School of Engineering, The University of Manchester. All rights reserved.
-# Copyright (c) 2013-2019, APT Group, School of Computer Science,
+# Department of Engineering, The University of Manchester. All rights reserved.
+# Copyright (c) 2013-2019, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -69,6 +69,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
 	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
 	"uk.ac.manchester.tornado.unittests.fails.TestFails",
 ]
 

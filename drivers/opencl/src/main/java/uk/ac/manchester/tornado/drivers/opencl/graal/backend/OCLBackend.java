@@ -324,7 +324,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         if (deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
             lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         } else {
-            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), Paths.get(OCLCodeCache.fpgaBinLocation), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         }
 
         if (lookupCode != null) {

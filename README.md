@@ -1,179 +1,110 @@
-# TornadoVM 
+# 1. TornadoVM
 
-🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on 
-heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs. 
+🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and FPGAs (Intel and Xilinx).
 
-### Releases
-  * TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
-  * TornadoVM 0.5  - 16/12/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-05)
-  * TornadoVM 0.4  - 14/10/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-04)
-  * TornadoVM 0.3  - 22/07/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-03)
-  * TornadoVM 0.2  - 25/02/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-02)
-  * Tornado 0.1.0  - 07/09/2018 : See [CHANGELOG](CHANGELOG.md#tornadovm-010)
+For a quick introduction please read the following [FAQ](assembly/src/docs/14_FAQ.md).
 
-## How to start? 
+**Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-06)
 
-#### A) From scratch:
+Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
-The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [EXAMPLES](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs. 
+# 2. Installation
 
-We also maintain a live TornadoVM whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
+TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
-#### B) Using Docker
+You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/16_AWS.md).
 
-_We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We currently have docker images for NVIDIA and Intel Integrated GPUs using OpenJDK 8 and GraalVM for JDK 8 and 11:
-* TornadoVM docker images for NVIDIA GPUs
-* TornadoVM docker images for Intel Integrated Graphics
+# 3. Usage Instructions
 
-##### TornadoVM Docker for NVIDIA GPUs:
+TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
 
-Note that this requires the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) runtime. 
+We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs.
 
-Using TornadoVM with OpenJDK 8 for NVIDIA GPUs:
+We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
 
-```bash
-## Docker image for TornadoVM and OpenJDK 8
-$ docker pull beehivelab/tornado-gpu:latest
-$ git clone https://github.com/beehive-lab/docker-tornado
-$ cd docker-tornado
-$ ./run_nvidia.sh javac.py example/MatrixMultiplication.java
-$ ./run_nvidia.sh tornado example/MatrixMultiplication 
-```
+**Additional Information**
 
-Using TornadoVM with GraalVM for NVIDIA GPUs:
+[Benchmarks](assembly/src/docs/4_BENCHMARKS.md)
 
-```bash
-## GraalVM with JDK 8
-$ docker pull beehivelab/tornado-gpu-graalvm-jdk8:latest
+[Reductions](assembly/src/docs/5_REDUCTIONS.md)
 
-## GraalVM with JDK 11
-$ docker pull beehivelab/tornado-gpu-graalvm-jdk11:latest
-```
+[Execution Flags](assembly/src/docs/6_TORNADO_FLAGS.md)
 
-In our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository we have all runner scripts for each configuration.
+[FPGA execution](assembly/src/docs/7_FPGA.md)
 
-```bash
-# example of running graal images
-./run_nvidia_graalvm-jdk8.sh tornado ... 
-./run_nvidia_graalvm-jdk11.sh tornado ... 
-```
+[Profiler Usage](assembly/src/docs/9_PROFILER.md)
 
-Example for running the TornadoVM with OpenJDK 8:
+# 4. Programming Model
 
-```bash
-## Run with TornadoVM on an NVIDIA GPU using OpenJDK 8
-$ ./run_nvidia.sh tornado example/MatrixMultiplication 2048   ## Running on NVIDIA GP100
-Computing MxM of 2048x2048
-	CPU Execution: 0.36 GFlops, Total time = 48254 ms
-	GPU Execution: 277.09 GFlops, Total Time = 62 ms
-	Speedup: 778x 
-```
+TornadoVM exposes to the programmer task-level, data-level and pipeline-level parallelism via a light Application Programming Interface (API). TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program.
 
-##### TornadoVM Docker for Intel Integrated GPUs:
+The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM.
 
-Using TornadoVM with OpenJDK 8 for Intel Integrated Graphics:
+```java
+public class Compute {
+    private static void mxm(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < size; k++) {
+                    sum += A.get(i, k) * B.get(k, j);
+                }
+                C.set(i, j, sum);
+            }
+        }
+    }
 
-```bash
-# TornadoVM image with OpenJDK 8
-$ docker pull beehivelab/tornado-intel-gpu:latest
-$ git clone https://github.com/beehive-lab/docker-tornado
-$ cd docker-tornado
-$ ./run_intel.sh javac.py example/MatrixMultiplication.java
-$ ./run_intel.sh tornado example/MatrixMultiplication 
-```
-
-Using TornadoVM with GraalVM for Intel Integrated Graphics:
-
-```bash
-## GraalVM with JDK 8
-$ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk8:latest
-$ run_intel_graalvm_jdk8.sh tornado ... 
-## GraalVM with JDK 11
-$ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk11:latest
-$ run_intel_graalvm_jdk11.sh tornado ... 
-```
-
-See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
-
-
-## What can I do with TornadoVM? 
-
-We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs. 
-
-We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations. 
-
-
-## Selected Publications
-
-* Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis. [**Dynamic Application Reconfiguration on Heterogeneous Hardware.**](https://dl.acm.org/citation.cfm?id=3313819) _In Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments._
-* Juan Fumero, Christos Kotselidis. [**Using Compiler Snippets to Exploit Parallelism on Heterogeneous Hardware: A Java Reduction Case Study**](https://dl.acm.org/citation.cfm?id=3281292) In _Proceedings of the 10th ACM SIGPLAN International Workshop on Virtual Machines and Intermediate Languages (VMIL'18)_
-* James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Luján (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *Proceedings of the 15th International Conference on Managed Languages & Runtime.* [Preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
-
-* Sajad Saeedi, Bruno Bodin, Harry Wagstaff, Andy Nisbet, Luigi Nardi, John Mawer, Nicolas Melot, Oscar Palomar, Emanuele Vespa, Tom Spink, Cosmin Gorgovan, Andrew Webb, James Clarkson, Erik Tomusk, Thomas Debrunner, Kuba Kaszyk, Pablo Gonzalez-de-Aledo, Andrey Rodchenko, Graham Riley, Christos Kotselidis, Björn Franke, Michael FP O'Boyle, Andrew J Davison, Paul HJ Kelly, Mikel Luján, Steve Furber. **Navigating the Landscape for Real-Time Localization and Mapping for Robotics and Virtual and Augmented Reality.** In Proceedings of the IEEE, 2018.
-
-* C. Kotselidis, J. Clarkson, A. Rodchenko, A. Nisbet, J. Mawer, and M. Luján. [**Heterogeneous Managed Runtime Systems: A Computer Vision Case Study.**](https://dl.acm.org/citation.cfm?id=3050764) In Proceedings of the 13th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments, VEE ’17, [link](https://dl.acm.org/citation.cfm?doid=3050748.3050764)
-
-
-### Citation
-
-If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the initial FPGA support and CPU/GPU reductions), please use the following citation:
-
-```bibtex
-@inproceedings{Fumero:DARHH:VEE:2019,
- author = {Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis},
- title = {{Dynamic Application Reconfiguration on Heterogeneous Hardware.}},
- booktitle = {Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments},
- series = {VEE '19},
- year = {2019},
- publisher = {ACM},
-} 
+    public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
+        TaskSchedule ts = new TaskSchedule("s0")
+                .streamIn(A, B)                            // Stream data from host to device
+                .task("t0", Compute::mxm, A, B,  C, size)  // Each task points to an existing Java method
+                .streamOut(C);                             // sync arrays with the host side
+        ts.execute();   // It will execute the code on the default device (e.g. a GPU)
+    }
+}
 ```
 
 
-If you are using **Tornado 0.1** (Initial release), please use the following citation in your work.
+# 5. Dynamic Reconfiguration
 
-```bibtex
-@inproceedings{Clarkson:2018:EHH:3237009.3237016,
- author = {Clarkson, James and Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and Xekalaki, Maria and Kotselidis, Christos and Luj\'{a}n, Mikel},
- title = {{Exploiting High-performance Heterogeneous Hardware for Java Programs Using Graal}},
- booktitle = {Proceedings of the 15th International Conference on Managed Languages \& Runtimes},
- series = {ManLang '18},
- year = {2018},
- isbn = {978-1-4503-6424-9},
- location = {Linz, Austria},
- pages = {4:1--4:13},
- articleno = {4},
- numpages = {13},
- url = {http://doi.acm.org/10.1145/3237009.3237016},
- doi = {10.1145/3237009.3237016},
- acmid = {3237016},
- publisher = {ACM},
- address = {New York, NY, USA},
- keywords = {Java, graal, heterogeneous hardware, openCL, virtual machine},
-} 
+Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. With the task-migration, the TornadoVM's approach is to only switch device if it detects an application can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on the CPU using the default compilers (C2 or Graal).
 
+To use the dynamic reconfiguration, you can execute using TornadoVM policies. For example:
+
+```java
+// TornadoVM will execute the code in the best accelerator.
+ts.execute(Policy.PERFORMANCE);
 ```
 
-## Acknowledgments
+Further details and instructions on how to enable this feature can be found here.
+
+* Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
+
+# 6. Additional Resources
+
+[Here](assembly/src/docs/15_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing TornadoVM and how to use it.
+
+# 7. Academic Publications
+
+Selected publications and citations can be found [here](assembly/src/docs/13_PUBLICATIONS.md).
+
+# 8. Acknowledgments
 
 This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and [AnyScale Apps EP/L000725/1](http://anyscale.org), and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
 
-## Collaborations
+# 9. Contributions and Collaborations
 
-We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](CONTRIBUTIONS.md).
+We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](assembly/src/docs/CONTRIBUTIONS.md).
 
-For academic collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
-
-
-## Users Mailing list
-
-A mailing list is also available to discuss Tornado related issues:
+A mailing list is also available to discuss TornadoVM related issues:
 
 tornado-support@googlegroups.com
 
-## Contributors 
+For collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
 
-This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net). 
+# 10. TornadoVM Team
+
+This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
 Currently, this project is maintained and updated by the following contributors:
 
 * [Juan Fumero](https://jjfumero.github.io/)
@@ -183,9 +114,9 @@ Currently, this project is maintained and updated by the following contributors:
 * [Florin Blanaru](https://github.com/gigiblender)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
-## License
+# 11. License
 
-To use TornadoVM, you can link the Tornado API to your application which is under the CLASSPATH Exception of GPLv2.0.
+To use TornadoVM, you can link the TornadoVM API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
 Each TornadoVM module is licensed as follows:
 
@@ -202,4 +133,3 @@ Each TornadoVM module is licensed as follows:
 | Tornado-Benchmarks | [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)  |
 | Tornado-Examples |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
-

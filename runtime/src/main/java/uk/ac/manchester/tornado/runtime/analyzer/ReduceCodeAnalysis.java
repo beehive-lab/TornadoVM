@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -58,6 +58,7 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.type.annotations.Constant;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
@@ -120,12 +121,20 @@ public class ReduceCodeAnalysis {
         return operations;
     }
 
+    private static boolean shouldSkip(int index, StructuredGraph graph) {
+        return graph.method().isStatic() && index >= getNumberOfParameterNodes(graph);
+    }
+
     public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
         ArrayList<ValueNode> reduceOperation = new ArrayList<>();
         for (Integer paramIndex : reduceIndices) {
 
             if (!graph.method().isStatic()) {
                 paramIndex++;
+            }
+
+            if (shouldSkip(paramIndex, graph)) {
+                continue;
             }
 
             ParameterNode parameterNode = graph.getParameter(paramIndex);
@@ -203,12 +212,34 @@ public class ReduceCodeAnalysis {
         return arrayLengthNode;
     }
 
+    private static ValueNode inspectConstantNode(Node aux) {
+        ConstantNode constantNode = null;
+        aux = aux.successors().first();
+        if (aux instanceof IfNode) {
+            IfNode ifNode = (IfNode) aux;
+            LogicNode condition = ifNode.condition();
+            if (condition instanceof IntegerLessThanNode) {
+                IntegerLessThanNode iln = (IntegerLessThanNode) condition;
+                if (iln.getX() instanceof ConstantNode) {
+                    constantNode = (ConstantNode) iln.getX();
+                } else if (iln.getY() instanceof ConstantNode) {
+                    constantNode = (ConstantNode) iln.getY();
+                }
+            }
+        }
+        return constantNode;
+    }
+
+    private static int getNumberOfParameterNodes(StructuredGraph graph) {
+        return graph.getNodes().filter(ParameterNode.class).count();
+    }
+
     /**
      * A method can apply multiple reduction variables. We return a list of all its
      * loop bounds.
      *
      * @param graph
-     *            Graal-IR graph to analyze
+     *            Graal-IR graph to be analyzed
      * @param reduceIndexes
      *            List of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
@@ -221,6 +252,10 @@ public class ReduceCodeAnalysis {
                 paramIndex++;
             }
 
+            if (shouldSkip(paramIndex, graph)) {
+                continue;
+            }
+
             ParameterNode parameterNode = graph.getParameter(paramIndex);
             NodeIterable<Node> usages = parameterNode.usages();
 
@@ -229,7 +264,7 @@ public class ReduceCodeAnalysis {
                 if (node instanceof StoreIndexedNode) {
                     Node aux = node;
                     LoopBeginNode loopBegin = null;
-                    ArrayLengthNode arrayLength = null;
+                    ValueNode loopBoundNode = null;
 
                     while (!(aux instanceof LoopBeginNode)) {
                         // Move reference to predecessor (bottom-up traversal)
@@ -245,19 +280,29 @@ public class ReduceCodeAnalysis {
                         } else if (aux instanceof LoopBeginNode) {
                             loopBegin = (LoopBeginNode) aux;
                         } else if (aux instanceof ArrayLengthNode) {
-                            arrayLength = (ArrayLengthNode) aux;
+                            loopBoundNode = (ArrayLengthNode) aux;
                         }
                     }
 
-                    if (arrayLength == null) {
+                    if (loopBoundNode == null) {
                         // XXX: Patch to support PE when using ArrayLength at the beginning of the
                         // method.
                         // TODO: Find a better way to PE loop bounds
-                        arrayLength = inspectArrayLengthNode(aux);
+                        loopBoundNode = inspectArrayLengthNode(aux);
+                    }
+
+                    // If the loopBoundNode is still null, we look for ConstantNode as a loop bound
+                    // instead of ArrayLength
+                    if (loopBoundNode == null) {
+                        loopBoundNode = inspectConstantNode(aux);
                     }
 
                     if (loopBegin != null) {
-                        loopBound.add(Objects.requireNonNull(arrayLength).array());
+                        if (loopBoundNode instanceof ArrayLengthNode) {
+                            loopBound.add(((ArrayLengthNode) Objects.requireNonNull(loopBoundNode)).array());
+                        } else {
+                            loopBound.add(Objects.requireNonNull(loopBoundNode));
+                        }
                     }
                 }
             }
@@ -306,6 +351,9 @@ public class ReduceCodeAnalysis {
                     if (valueNode.equals(graph.getParameter(position))) {
                         Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
                         inputSize = Array.getLength(object);
+                    } else if (valueNode instanceof ConstantNode) {
+                        ConstantNode constant = (ConstantNode) valueNode;
+                        inputSize = Integer.parseInt(constant.getValue().toValueString());
                     }
                 }
             }

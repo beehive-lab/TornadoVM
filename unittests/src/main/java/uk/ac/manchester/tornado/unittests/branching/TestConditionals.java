@@ -367,4 +367,67 @@ public class TestConditionals extends TornadoTestBase {
             assertEquals(50, value);
         }
     }
+
+    private static void switchStatement5(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            int value = a[i];
+            switch (value) {
+                case 12:
+                case 22:
+                    a[i] = 10;
+                    break;
+                case 42:
+                    a[i] = 30;
+                    break;
+            }
+        }
+    }
+
+    @Test
+    public void testSwitch5() {
+        final int size = 8192;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 42);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestConditionals::switchStatement5, a) //
+                .streamOut(a).execute(); //
+
+        for (int value : a) {
+            assertEquals(30, value);
+        }
+    }
+
+    @Test
+    public void testSwitch6() {
+        final int size = 8192;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 12);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestConditionals::switchStatement5, a) //
+                .streamOut(a).execute(); //
+
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
+    @Test
+    public void testSwitch7() {
+        final int size = 8192;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 22);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestConditionals::switchStatement5, a) //
+                .streamOut(a).execute(); //
+
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
 }

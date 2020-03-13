@@ -70,5 +70,4 @@ public class InstanceReduction extends TornadoTestBase {
 
         assertEquals(expected[0], result[0], 0.1f);
     }
-
 }
