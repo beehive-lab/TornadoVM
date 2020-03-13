@@ -325,15 +325,15 @@ public class BufetTornadoBigIndex {
         int[] map_all_split = new int[chunkElements * genes_population];
 
         //Sanity check #1
-        if ((miRNA_groups * genes_population) >= Integer.MAX_VALUE) {
+        if ((chunkElements * genes_population) >= Integer.MAX_VALUE) {
             System.out.println("Number of array elements is too big. Update the amount of chunks.");
             System.exit(0);
         }
 
         //Sanity Check #2
-        double maxDeviceMemory = (TornadoRuntime.getTornadoRuntime().getDriver(0).getDefaultDevice().getMaxAllocMemory()) * 1E-6;
-        if ((miRNA_groups * genes_population) >= (maxDeviceMemory / 4)) {
-            System.out.println("Maximum alloc device memory: " + maxDeviceMemory + " (MB) for default device. Either update device or the amount of chunks.");
+        double maxDeviceMemory = (TornadoRuntime.getTornadoRuntime().getDriver(0).getDefaultDevice().getMaxAllocMemory());
+        if (((chunkElements * genes_population) * 4) >= maxDeviceMemory) {
+            System.out.println("Maximum alloc device memory: " + maxDeviceMemory  * 1E-6 + " (MB) for default device. Either update device or the amount of chunks.");
             System.exit(0);
         }
 
