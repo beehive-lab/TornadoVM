@@ -22,6 +22,18 @@ We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-t
 
 We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
 
+**Additional Information**
+
+[Benchmarks](assembly/src/docs/4_BENCHMARKS.md)
+
+[Reductions](assembly/src/docs/5_REDUCTIONS.md)
+
+[Execution Flags](assembly/src/docs/6_TORNADO_FLAGS.md)
+
+[FPGA execution](assembly/src/docs/7_FPGA.md)
+
+[Profiler Usage](assembly/src/docs/9_PROFILER.md)
+
 # 4. Programming Model
 
 TornadoVM exposes to the programmer task-level, data-level and pipeline-level parallelism via a light Application Programming Interface (API). TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program.
