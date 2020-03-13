@@ -8,7 +8,8 @@ The following come with the AWS EC2 F1 instance:
   * Xilinx SDx Tools: 2018.3
 
 ### 1. Install TornadoVM as a CentOS user. The Xilinx FPGA is not exposed to simple users. 
-```
+
+```bash
 $ cd TornadoVM
 $ source etc/sources.env
 $ make
@@ -17,29 +18,38 @@ $ tornado --devices
 
 ### 2. Follow these steps to get access to the Xilinx FPGA.
 a. Enter a bash shell as root.
-```
+
+```bash
 $ sudo -E /bin/bash
 ```
 
 b. Load the environment variables for Xilinx HLS and runtime.
-```
+
+```bash
 $ cd $AWS_FPGA_REPO_DIR
 $ source sdaccel_setup.sh
 $ source /opt/Xilinx/SDx/2018.3.op2405991/settings64.sh
 $ source /opt/Xilinx/Vivado/2018.3.op2405991/.settings64-Vivado.sh
 ```
 c. Load the environment variables for TornadoVM
-```
+
+```bash
 $ cd /home/centos/repositories/TornadoVM
 $ source etc/sources.env
 
 $ tornado --devices
 ```
-### 3. Update the *etc/xilinx_fpga.conf* file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
-```$ vim etc/aws_fpga.conf```
+### 3. Update the the FPGA Conguration file
+
+Update the `etc/xilinx_fpga.conf` file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
+
+```bash
+$ vim etc/aws_fpga.conf
+```
 
 ## Example of configuration file: 
-```
+
+```bash
 [device]
 DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
 [options]
@@ -51,7 +61,8 @@ You can also run TornadoVM with your configuration file, by using the `-Dtornado
 ## Run a program that offloads a task on the FPGA. Be aware to log the terminal output to a file (*_output.log_*), 
 as the compilation may take a few hours and the connection may be terminated with a broken pipe
 (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
-```
+
+```bash
 $ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1 >> output.log
 $ Ctrl-Z (^Z)
 $ bg
@@ -64,16 +75,19 @@ Read the *_output.log_* file in order to monitor the outcome of the compilation.
 Be aware you need to clear the *_to_aws/_* directory.
 
 Follow again steps 2b and 2c this time as centos user, prior to the generation of AFI.
-```
+
+```bash
 $ source aws_post_processing.sh
 ```
+
 You can use the following command to check the state of your Amazon FPGA image.
-```
+
+```bash
 $ aws ec2 describe-fpga-images --fpga-image-ids <FPGAImageId>
 ```
 
 This command will return the following message:
-```
+```json
 {
     "FpgaImages": [
         {
@@ -97,14 +111,15 @@ When the state change from pending to available, the awsxlcbin binary code can b
 
 ### 5. Now that the AFI is available, enter as the root user to a bash shell, and run the program.
 
-```
+```bash
 $ sudo -E /bin/bash
 $ source etc/sources.env
 $ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1
 ```
 
 The output should be like this: 
-```
+
+```OpenCL
 xclProbe found 1 FPGA slots with xocl driver running
 __kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
