@@ -76,6 +76,41 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
+    private static void reductionAddFloatsConstant(float[] input, @Reduce float[] result) {
+        result[0] = 0.0f;
+        for (@Parallel int i = 0; i < SIZE; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    @Test
+    public void testSumFloatsConstant() {
+        float[] input = new float[SIZE];
+        float[] result = new float[1];
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
+
+        Random r = new Random();
+        IntStream.range(0, input.length).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsFloats::reductionAddFloatsConstant, input, result)
+                .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        float[] sequential = new float[1];
+        reductionAddFloatsConstant(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.1f);
+    }
+
     private static void reductionAddFloatsLarge(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];

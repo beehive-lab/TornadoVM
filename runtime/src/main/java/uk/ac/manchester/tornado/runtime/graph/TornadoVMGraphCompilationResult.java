@@ -31,14 +31,14 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
 public class TornadoVMGraphCompilationResult {
 
-    public static final int MAX_TORNADOVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
+    public static final int MAX_TORNADO_VM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
 
     private byte[] code;
     private TornadoGraphAssembler bitcodeASM;
     private int globalTaskID;
 
     public TornadoVMGraphCompilationResult() {
-        code = new byte[MAX_TORNADOVM_BYTECODE_SIZE];
+        code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
         bitcodeASM = new TornadoGraphAssembler(code);
         globalTaskID = 0;
     }
@@ -69,7 +69,10 @@ public class TornadoVMGraphCompilationResult {
         } else if (node instanceof AllocateNode) {
             bitcodeASM.allocate(((AllocateNode) node).getValue().getIndex(), contextID, batchSize);
         } else if (node instanceof CopyOutNode) {
-            bitcodeASM.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            ObjectNode value = ((CopyOutNode) node).getValue().getValue();
+            if (value != null) {
+                bitcodeASM.streamOutOfContext(value.getIndex(), contextID, dependencyBC, offset, batchSize);
+            }
         } else if (node instanceof StreamInNode) {
             bitcodeASM.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof TaskNode) {
