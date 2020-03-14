@@ -62,7 +62,7 @@ public class DgemmJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         dgemm(m, n, m, a, b, c);
     }
 

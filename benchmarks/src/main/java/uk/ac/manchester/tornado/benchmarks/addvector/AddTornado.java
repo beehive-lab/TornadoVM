@@ -71,7 +71,7 @@ public class AddTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -80,7 +80,7 @@ public class AddTornado extends BenchmarkDriver {
 
         final VectorFloat4 result = new VectorFloat4(numElements);
 
-        code();
+        benchmarkMethod();
         graph.syncObject(c);
         graph.clearProfiles();
 

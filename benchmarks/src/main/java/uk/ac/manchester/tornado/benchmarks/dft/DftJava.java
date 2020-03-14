@@ -58,7 +58,7 @@ public class DftJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         ComputeKernels.computeDft(inReal, inImag, outReal, outImag);
     }
 }

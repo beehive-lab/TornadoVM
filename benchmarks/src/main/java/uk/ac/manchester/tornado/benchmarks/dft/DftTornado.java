@@ -91,7 +91,7 @@ public class DftTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
 
     }

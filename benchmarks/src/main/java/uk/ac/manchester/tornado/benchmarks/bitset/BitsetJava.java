@@ -66,7 +66,7 @@ public class BitsetJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         ComputeKernels.intersectionCount(numWords, a, b, result);
     }
 }

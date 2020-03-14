@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,11 +52,8 @@ public class ComputeKernels {
      *
      */
     public static void monteCarlo(float[] result, int size) {
-
         final int iter = 25000;
-
         for (@Parallel int idx = 0; idx < size; idx++) {
-
             long seed = idx;
             float sum = 0.0f;
 
@@ -81,30 +78,6 @@ public class ComputeKernels {
             }
             sum = sum * 4;
             result[idx] = sum / (float) iter;
-        }
-    }
-
-    public static void computeMontecarlo(float[] output, final int size) {
-        for (@Parallel int j = 0; j < size; j++) {
-            long seed = j;
-            // generate a pseudo random number (you do need it twice)
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-
-            // this generates a number between 0 and 1 (with an awful entropy)
-            float x = (seed & 0x0FFFFFFF) / 268435455f;
-
-            // repeat for y
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            float y = (seed & 0x0FFFFFFF) / 268435455f;
-
-            float dist = (float) Math.sqrt(x * x + y * y);
-            if (dist <= 1.0f) {
-                output[j] = 1.0f;
-            } else {
-                output[j] = 0.0f;
-            }
         }
     }
 
@@ -144,7 +117,7 @@ public class ComputeKernels {
      * @param X
      *            input value
      */
-    final static float phi(final float X) {
+    static float phi(final float X) {
         final float c1 = 0.319381530f;
         final float c2 = -0.356563782f;
         final float c3 = 1.781477937f;

@@ -71,7 +71,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -80,7 +80,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
         final float[] result = new float[imageSizeX * imageSizeY];
 
-        code();
+        benchmarkMethod();
         graph.syncObject(output);
         graph.clearProfiles();
 

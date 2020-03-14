@@ -51,7 +51,7 @@ public class VectorMulJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         ComputeKernels.vectorMultiply(a, b, c);
     }
 }

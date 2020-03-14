@@ -105,7 +105,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 }

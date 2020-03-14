@@ -69,14 +69,14 @@ public class BandwidthTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
     @Override
     public boolean validate() {
         final long[] result = new long[numElements];
-        code();
+        benchmarkMethod();
         graph.clearProfiles();
         ladd(a, b, result);
         int errors = 0;

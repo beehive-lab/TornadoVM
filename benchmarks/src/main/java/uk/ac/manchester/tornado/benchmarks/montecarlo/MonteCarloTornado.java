@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,9 +28,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 public class MonteCarloTornado extends BenchmarkDriver {
 
     private float[] output;
-
     private int size;
-
     private TaskSchedule graph;
 
     public MonteCarloTornado(int iterations, int size) {
@@ -41,9 +39,9 @@ public class MonteCarloTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         output = new float[size];
-
-        graph = new TaskSchedule("benchmark").task("montecarlo", ComputeKernels::monteCarlo, output, size).streamOut(output);
-
+        graph = new TaskSchedule("benchmark") //
+                .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
+                .streamOut(output);
         graph.warmup();
     }
 
@@ -58,14 +56,14 @@ public class MonteCarloTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
     @Override
     public boolean validate() {
         float[] result;
-        boolean val = true;
+        boolean isCorrect = true;
 
         result = new float[size];
 
@@ -79,14 +77,12 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {
-                val = false;
+                isCorrect = false;
                 break;
             }
         }
-
-        System.out.printf("Number validation: " + val + "\n");
-
-        return val;
+        System.out.printf("Number validation: " + isCorrect + "\n");
+        return isCorrect;
     }
 
     public void printSummary() {

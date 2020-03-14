@@ -56,7 +56,7 @@ public class BandwidthJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         ladd(a, b, c);
     }
 

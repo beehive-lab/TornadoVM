@@ -56,7 +56,7 @@ public class ConvolveImageStreams extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         convolveImageStreams(input, filter, output);
     }
 

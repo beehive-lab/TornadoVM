@@ -49,7 +49,7 @@ public class BlackScholesJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         blackscholes(randArray, call, put);
     }
 }

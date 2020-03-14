@@ -57,7 +57,7 @@ public class AddJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         addVector(a, b, c);
     }
 

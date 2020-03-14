@@ -73,7 +73,7 @@ public class AddTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -82,7 +82,7 @@ public class AddTornado extends BenchmarkDriver {
 
         final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
-        code();
+        benchmarkMethod();
         graph.syncObject(c);
         graph.clearProfiles();
 

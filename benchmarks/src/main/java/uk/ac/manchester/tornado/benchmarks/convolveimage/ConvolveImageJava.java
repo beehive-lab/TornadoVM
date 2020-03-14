@@ -58,7 +58,7 @@ public class ConvolveImageJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         convolveImage(input, filter, output);
     }
 

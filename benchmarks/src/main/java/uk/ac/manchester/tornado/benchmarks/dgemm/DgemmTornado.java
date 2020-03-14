@@ -80,7 +80,7 @@ public class DgemmTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -89,7 +89,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
         final double[] result = new double[m * n];
 
-        code();
+        benchmarkMethod();
         graph.clearProfiles();
 
         dgemm(m, n, m, a, b, result);

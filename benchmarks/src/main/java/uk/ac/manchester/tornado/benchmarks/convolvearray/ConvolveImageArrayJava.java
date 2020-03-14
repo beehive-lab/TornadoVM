@@ -56,7 +56,7 @@ public class ConvolveImageArrayJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         convolveImageArray(input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize);
     }
 

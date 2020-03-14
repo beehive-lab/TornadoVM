@@ -59,7 +59,7 @@ public class VectorMulTornado extends BenchmarkDriver {
 
         Arrays.fill(result, 0);
 
-        code();
+        benchmarkMethod();
         graph.syncObject(c);
         graph.clearProfiles();
 
@@ -88,7 +88,7 @@ public class VectorMulTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 }
