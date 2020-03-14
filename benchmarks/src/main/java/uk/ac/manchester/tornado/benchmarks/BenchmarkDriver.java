@@ -35,7 +35,7 @@ public abstract class BenchmarkDriver {
     protected final long iterations;
     private double elapsed;
     private boolean validResult;
-    private double[] time;
+    private double[] timers;
     private int startingIndex = 30;
 
     public BenchmarkDriver(long iterations) {
@@ -82,7 +82,7 @@ public abstract class BenchmarkDriver {
 
         int size = toIntExact(iterations);
 
-        time = new double[size];
+        timers = new double[size];
 
         if (validResult) {
 
@@ -95,7 +95,7 @@ public abstract class BenchmarkDriver {
                 final long start = System.nanoTime();
                 code();
                 final long end = System.nanoTime();
-                time[toIntExact(i)] = end - start;
+                timers[toIntExact(i)] = (end - start);
             }
             barrier();
         }
@@ -103,21 +103,21 @@ public abstract class BenchmarkDriver {
     }
 
     public double getBestExecution() {
-        double minValue = time[0];
-        for (int i = 1; i < time.length; i++) {
-            if (time[i] < minValue) {
-                minValue = time[i];
+        double minValue = timers[0];
+        for (int i = 1; i < timers.length; i++) {
+            if (timers[i] < minValue) {
+                minValue = timers[i];
             }
         }
         return minValue;
     }
 
     public double getFirstIteration() {
-        return time[0];
+        return timers[0];
     }
 
     public double getMedian() {
-        double[] temp = time.clone();
+        double[] temp = timers.clone();
         sort(temp);
         if (temp.length % 2 == 0) {
             return ((temp[temp.length / 2] + temp[temp.length / 2 - 1]) / 2);
@@ -127,21 +127,21 @@ public abstract class BenchmarkDriver {
     }
 
     public double getMean() {
-
         double sum = 0.0;
-
-        for (int i = startingIndex; i < time.length; i++) {
-            sum += time[i];
+        if (timers.length <= startingIndex) {
+            startingIndex = 0;
+        }
+        for (int i = startingIndex; i < timers.length; i++) {
+            sum += timers[i];
         }
         return sum / (iterations - startingIndex);
-
     }
 
     public double getVariance() {
         double mean = getMean();
         double temp = 0;
-        for (int i = startingIndex; i < time.length; i++) {
-            temp += (time[i] - mean) * (time[i] - mean);
+        for (int i = startingIndex; i < timers.length; i++) {
+            temp += (timers[i] - mean) * (timers[i] - mean);
         }
         return (temp / (iterations - startingIndex));
     }

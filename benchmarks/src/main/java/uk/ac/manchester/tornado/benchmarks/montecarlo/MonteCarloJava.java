@@ -55,7 +55,6 @@ public class MonteCarloJava extends BenchmarkDriver {
 
     @Override
     public boolean validate() {
-
         return true;
     }
 
