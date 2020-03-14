@@ -203,7 +203,7 @@ public class ComputeKernels {
         }
     }
 
-    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, int[] result) {
+    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, long[] result) {
         final long[] aBits = a.getBits();
         final long[] bBits = b.getBits();
         for (@Parallel int i = 0; i < numWords; i++) {

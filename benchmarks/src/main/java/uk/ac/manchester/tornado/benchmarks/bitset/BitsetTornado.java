@@ -48,11 +48,12 @@ public class BitsetTornado extends BenchmarkDriver {
 
         final LongBitSet a = new LongBitSet(aBits, numWords * 8);
         final LongBitSet b = new LongBitSet(bBits, numWords * 8);
-        int[] result = new int[numWords];
+        long[] result = new long[numWords];
 
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::intersectionCount, numWords, a, b, result).streamOut(result);
-
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(a, b) //
+                .task("t0", ComputeKernels::intersectionCount, numWords, a, b, result) //
+                .streamOut(result);
         graph.warmup();
     }
 

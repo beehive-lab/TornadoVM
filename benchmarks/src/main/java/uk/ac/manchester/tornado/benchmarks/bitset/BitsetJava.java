@@ -31,7 +31,7 @@ public class BitsetJava extends BenchmarkDriver {
     private TaskSchedule graph;
     private LongBitSet a;
     private LongBitSet b;
-    private int[] result;
+    private long[] result;
 
     public BitsetJava(int size, int iterations) {
         super(iterations);
@@ -51,7 +51,7 @@ public class BitsetJava extends BenchmarkDriver {
 
         a = new LongBitSet(aBits, numWords * 8);
         b = new LongBitSet(bBits, numWords * 8);
-        result = new int[numWords];
+        result = new long[numWords];
 
     }
 
