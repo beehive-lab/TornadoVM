@@ -25,7 +25,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cu
 
     CUcontext *ctx = malloc(sizeof(CUcontext));
     CUresult result = cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, dev);
-    g_contexts[device_index] = ctx; // For now I assume there is one context created for each device
+    g_contexts[device_index] = ctx; // I assume there is one context created for each device
 
     g_contexts_length++;
 

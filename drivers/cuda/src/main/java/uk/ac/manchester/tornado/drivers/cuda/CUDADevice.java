@@ -14,9 +14,10 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
     private String name;
     private int[] maxGridSizes;
     private CUDAContext context;
+    private PTXVersion ptxVersion;
     private long[] maxWorkItemSizes;
-    private String computeCapability;
     private String targetArchitecture;
+    private CUDAComputeCapability computeCapability;
 
     private int index;
     private int maxFrequency;
@@ -24,13 +25,9 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
     private long localMemorySize;
     private long totalDeviceMemory;
     private long constantBufferSize;
-    private int computeCapabilityMajor;
-    private int computeCapabilityMinor;
 
     public CUDADevice(int index) {
         this.index = index;
-        computeCapabilityMajor = INIT_VAL;
-        computeCapabilityMinor = INIT_VAL;
         constantBufferSize = INIT_VAL;
         totalDeviceMemory = INIT_VAL;
         localMemorySize = INIT_VAL;
@@ -40,11 +37,10 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
         context = new CUDAContext(this);
     }
 
-    native static String cuDeviceGetName(int deviceId);
-
-    native static int cuDeviceGetAttribute(int deviceId, int attribute);
-
-    native static long cuDeviceTotalMem(int deviceId);
+    private native static String cuDeviceGetName(int deviceId);
+    private native static int cuDeviceGetAttribute(int deviceId, int attribute);
+    private native static long cuDeviceTotalMem(int deviceId);
+    private native static int cuDriverGetVersion();
 
     public long getId() {
         return 1;
@@ -56,20 +52,18 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
         return name;
     }
 
-    private void ensureComputeCapabilityAvailable() {
-        if (computeCapabilityMajor == INIT_VAL)
-            computeCapabilityMajor = cuDeviceGetAttribute(index, CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR.value());
-
-        if (computeCapabilityMinor == INIT_VAL)
-            computeCapabilityMinor = cuDeviceGetAttribute(index, CUDADeviceAttribute.COMPUTE_CAPABILITY_MINOR.value());
+    private void ensurePTXVersionAvailable() {
+        if (ptxVersion == null) {
+            ptxVersion = CUDAVersion.getMaxPTXVersion(cuDriverGetVersion());
+        }
     }
 
-    public String getDeviceComputeCapability() {
+    private void ensureComputeCapabilityAvailable() {
         if (computeCapability == null) {
-            ensureComputeCapabilityAvailable();
-            computeCapability = String.format("%d.%d",computeCapabilityMajor ,computeCapabilityMinor);
+            int major = cuDeviceGetAttribute(index, CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR.value());
+            int minor = cuDeviceGetAttribute(index, CUDADeviceAttribute.COMPUTE_CAPABILITY_MINOR.value());
+            computeCapability = new CUDAComputeCapability(major, minor);
         }
-        return computeCapability;
     }
 
     @Override
@@ -163,10 +157,18 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     public String getTargetArchitecture() {
         if (targetArchitecture == null) {
+            ensurePTXVersionAvailable();
             ensureComputeCapabilityAvailable();
-            targetArchitecture = String.format("sm_%d%d", computeCapabilityMajor, computeCapabilityMinor);
+
+            // TODO: Maybe this should be in a separate class?
+            CUDAComputeCapability archVersion = ptxVersion.getArch(computeCapability);
+            targetArchitecture = String.format("sm_%d%d", archVersion.major, archVersion.minor);
         }
         return targetArchitecture;
     }
 
+    public String getTargetPTXVersion() {
+        ensurePTXVersionAvailable();
+        return ptxVersion.toString();
+    }
 }

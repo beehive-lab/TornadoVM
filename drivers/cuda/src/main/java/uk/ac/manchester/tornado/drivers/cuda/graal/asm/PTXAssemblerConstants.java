@@ -13,8 +13,6 @@ public class PTXAssemblerConstants {
     public static final String EXTERNALLY_VISIBLE = ".visible";
     public static final String KERNEL_ENTRYPOINT = ".entry";
 
-    public static final String SUPPORTED_PTX_VERSION = "6.1";
-
     public static final String ROUND_NEAREST_EVEN = "rn";
 
     public static final String TAB = "\t";

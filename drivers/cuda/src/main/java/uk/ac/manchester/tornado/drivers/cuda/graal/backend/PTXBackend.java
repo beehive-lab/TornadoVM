@@ -213,7 +213,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     private void emitPTXHeader(PTXAssembler asm) {
         CUDADevice device = deviceContext.getDevice();
         String headerFormat = "%s %s";
-        asm.emitLine(headerFormat, PTXAssemblerConstants.COMPUTE_VERSION, PTXAssemblerConstants.SUPPORTED_PTX_VERSION);
+        asm.emitLine(headerFormat, PTXAssemblerConstants.COMPUTE_VERSION, device.getTargetPTXVersion());
         asm.emitLine(headerFormat, PTXAssemblerConstants.TARGET_ARCH, device.getTargetArchitecture());
         asm.emitLine(headerFormat, PTXAssemblerConstants.ADDRESS_HEADER, arch.getWordSize() * 8);
         asm.emitLine("");
