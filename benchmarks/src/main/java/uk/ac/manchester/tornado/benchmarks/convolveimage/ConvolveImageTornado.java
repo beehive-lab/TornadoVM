@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,20 +52,10 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         createFilter(filter);
 
         graph = new TaskSchedule("benchmark");
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(input);
-        }
-
+        graph.streamIn(input);
         graph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(output);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(output);
+        graph.warmup();
     }
 
     @Override

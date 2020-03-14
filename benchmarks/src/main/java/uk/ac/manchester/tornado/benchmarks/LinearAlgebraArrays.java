@@ -44,19 +44,6 @@ public class LinearAlgebraArrays {
         }
     }
 
-    public static void reduce2(float[] output, float[] input) {
-        final int numThreads = output.length;
-        for (@Parallel int thread = 0; thread < numThreads; thread++) {
-
-            float sum = 0f;
-            for (int i = 0; i < input.length; i += numThreads) {
-                sum += input[i];
-            }
-
-            output[thread] = sum;
-        }
-    }
-
     public static void ladd(long[] a, long[] b, long[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];

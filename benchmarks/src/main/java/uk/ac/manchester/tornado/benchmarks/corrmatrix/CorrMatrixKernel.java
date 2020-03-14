@@ -38,13 +38,11 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 public class CorrMatrixKernel {
 
     public static void run(final long[] matrixA, final int matrixA_NumTerms, final long[] matrixB, final int matrixB_NumTerms, final int numLongs, final int[] resultMatrix) {
-
         for (@Parallel int i = 0; i < matrixA_NumTerms; i++) {
             for (@Parallel int j = 0; j < matrixB_NumTerms; j++) {
                 resultMatrix[(i * matrixB_NumTerms) + j] = naive_pop_intersect(matrixA, i * numLongs, matrixB, j * numLongs, numLongs);
             }
         }
-
     }
 
     /**
@@ -52,25 +50,23 @@ public class CorrMatrixKernel {
      */
     private static int naive_pop_intersect(final long matrixA[], final int aStart, final long matrixB[], final int bStart, final int numWords) {
         int sum = 0;
-
         for (int i = 0; i < numWords; i++) {
             sum += Long.bitCount(matrixA[aStart + i] & matrixB[bStart + i]);
         }
-
         return sum;
     }
 
     /**
-     * Returns the popcount or cardinality of the two sets after an
-     * intersection. Neither array is modified.
+     * Returns the popcount or cardinality of the two sets after an intersection.
+     * Neither array is modified.
      *
      * Modified for the purposes of this kernel from its original version
      */
     private static int pop_intersect(final long matrixA[], final int aStart, final long matrixB[], final int bStart, final int numWords) {
 
         /*
-         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/
-         * lucene -core/3.1.0/org/apache/lucene/util/BitUtil.java
+         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/ lucene
+         * -core/3.1.0/org/apache/lucene/util/BitUtil.java
          */
         // generated from pop_array via sed 's/A\[\([^]]*\)\]/\(A[\1] \&
         // B[\1]\)/g'
@@ -218,17 +214,16 @@ public class CorrMatrixKernel {
     private static int pop(long x) {
 
         /*
-         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/
-         * lucene -core/3.1.0/org/apache/lucene/util/BitUtil.java
+         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/ lucene
+         * -core/3.1.0/org/apache/lucene/util/BitUtil.java
          */
 
         /*
          * Hacker's Delight 32 bit pop function:
          * http://www.hackersdelight.org/HDcode/newCode/pop_arrayHS.c.txt int
-         * pop(unsigned x) { x = x - ((x >> 1) & 0x55555555); x = (x &
-         * 0x33333333) + ((x >> 2) & 0x33333333); x = (x + (x >> 4)) &
-         * 0x0F0F0F0F; x = x + (x >> 8); x = x + (x >> 16); return x &
-         * 0x0000003F; } *
+         * pop(unsigned x) { x = x - ((x >> 1) & 0x55555555); x = (x & 0x33333333) + ((x
+         * >> 2) & 0x33333333); x = (x + (x >> 4)) & 0x0F0F0F0F; x = x + (x >> 8); x = x
+         * + (x >> 16); return x & 0x0000003F; } *
          */
         // 64 bit java version of the C function from above
         x = x - ((x >>> 1) & 0x5555555555555555L);

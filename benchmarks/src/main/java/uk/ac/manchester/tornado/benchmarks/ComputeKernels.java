@@ -45,8 +45,8 @@ public class ComputeKernels {
     public static final float SIGMA_UPPER_LIMIT = 0.10f;
 
     /**
-     * Parallel Implementation of the MonteCarlo computation: this is based on
-     * the Marawacc compiler framework.
+     * Parallel Implementation of the MonteCarlo computation: this is based on the
+     * Marawacc compiler framework.
      * 
      * @author Juan Fumero
      *
@@ -203,14 +203,12 @@ public class ComputeKernels {
         }
     }
 
-    public static final int intersectionCount(int numWords, LongBitSet a, LongBitSet b) {
+    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, int[] result) {
         final long[] aBits = a.getBits();
         final long[] bBits = b.getBits();
-        int sum = 0;
         for (@Parallel int i = 0; i < numWords; i++) {
-            Long.bitCount(aBits[i] & bBits[i]);
+            result[i] = Long.bitCount(aBits[i] & bBits[i]);
         }
-        return sum;
     }
 
     public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +47,7 @@ public class DftTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
+        graph.streamIn(inReal, inImag);
         graph.task("t0", ComputeKernels::computeDft, inReal, inImag, outReal, outImag);
         graph.streamOut(outReal, outImag);
         graph.warmup();

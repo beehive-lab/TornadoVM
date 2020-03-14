@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,9 +29,12 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 public class DgemmTornado extends BenchmarkDriver {
 
-    private final int m,n;
+    private final int m;
+    private final int n;
 
-    private double[] a,b,c;
+    private double[] a;
+    private double[] b;
+    private double[] c;
 
     private TaskSchedule graph;
 
@@ -57,8 +60,10 @@ public class DgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        graph = new TaskSchedule("benchmark").task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c).streamOut(c);
-
+        graph = new TaskSchedule("benchmark")//
+                .streamIn(a, b) //
+                .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
+                .streamOut(c);
         graph.warmup();
     }
 
