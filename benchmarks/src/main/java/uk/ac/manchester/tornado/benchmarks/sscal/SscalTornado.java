@@ -38,35 +38,27 @@ public class SscalTornado extends BenchmarkDriver {
         this.numElements = numElements;
     }
 
-    @Override
-    public void setUp() {
+    private void initData() {
         x = new float[numElements];
-
         for (int i = 0; i < numElements; i++) {
             x[i] = i;
         }
+    }
 
-        graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(x);
-        }
-        graph.task("sscal", LinearAlgebraArrays::sscal, alpha, x);
-
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(x);
-        }
-
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+    @Override
+    public void setUp() {
+        initData();
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(x) //
+                .task("sscal", LinearAlgebraArrays::sscal, alpha, x) //
+                .streamOut(x);
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
         graph.dumpProfiles();
-
         x = null;
-
         graph.getDevice().reset();
         super.tearDown();
     }
@@ -78,15 +70,11 @@ public class SscalTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate() {
-
         final float[] result = new float[numElements];
-
         benchmarkMethod();
         graph.syncObjects(x);
         graph.clearProfiles();
-
         sscal(alpha, result);
-
         final float ulp = findULPDistance(x, result);
         return ulp < MAX_ULP;
     }

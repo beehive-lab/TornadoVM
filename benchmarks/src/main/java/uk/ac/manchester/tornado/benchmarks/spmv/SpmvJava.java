@@ -39,7 +39,7 @@ public class SpmvJava extends BenchmarkDriver {
         v = new float[matrix.size];
         y = new float[matrix.size];
 
-        Benchmark.populateVector(v);
+        Benchmark.initData(v);
 
     }
 

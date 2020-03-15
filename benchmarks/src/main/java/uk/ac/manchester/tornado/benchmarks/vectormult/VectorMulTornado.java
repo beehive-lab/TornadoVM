@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,8 +28,11 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class VectorMulTornado extends BenchmarkDriver {
+
     private int numElements;
-    private float[] a,b,c;
+    private float[] a;
+    private float[] b;
+    private float[] c;
     private TaskSchedule graph;
 
     public VectorMulTornado(int iterations, int numElements) {
@@ -42,13 +45,12 @@ public class VectorMulTornado extends BenchmarkDriver {
         a = new float[numElements];
         b = new float[numElements];
         c = new float[numElements];
-
         Arrays.fill(a, 3);
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
-
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::vectorMultiply, a, b, c);
+        graph = new TaskSchedule("benchmark") //
+                .task("t0", ComputeKernels::vectorMultiply, a, b, c) //
+                .streamOut(c);
         graph.warmup();
     }
 
@@ -56,9 +58,7 @@ public class VectorMulTornado extends BenchmarkDriver {
     public boolean validate() {
         boolean val = true;
         float[] result = new float[numElements];
-
         Arrays.fill(result, 0);
-
         benchmarkMethod();
         graph.syncObject(c);
         graph.clearProfiles();

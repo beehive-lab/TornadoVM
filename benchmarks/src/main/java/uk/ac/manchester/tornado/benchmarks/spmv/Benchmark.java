@@ -29,7 +29,7 @@ public class Benchmark extends BenchmarkRunner {
     private CSRMatrix<float[]> matrix;
     private String path;
 
-    public static void populateVector(final float[] v) {
+    public static void initData(final float[] v) {
         final Random rand = new Random();
         rand.setSeed(7);
         for (int i = 0; i < v.length; i++) {
@@ -41,9 +41,9 @@ public class Benchmark extends BenchmarkRunner {
     public void parseArgs(String[] args) {
         if (args.length == 2) {
             iterations = Integer.parseInt(args[0]);
-            final String fullpath = args[1];
-            path = fullpath.substring(fullpath.lastIndexOf("/") + 1);
-            matrix = SparseMatrixUtils.loadMatrixF(fullpath);
+            final String fullPath = args[1];
+            path = fullPath.substring(fullPath.lastIndexOf("/") + 1);
+            matrix = SparseMatrixUtils.loadMatrixF(fullPath);
         } else {
             path = System.getProperty("spmv.matrix", "/bcsstk32.mtx");
             matrix = SparseMatrixUtils.loadMatrixF(Benchmark.class.getResourceAsStream(path));

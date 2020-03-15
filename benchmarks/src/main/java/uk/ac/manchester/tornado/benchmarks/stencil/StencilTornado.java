@@ -30,11 +30,12 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class StencilTornado extends BenchmarkDriver {
 
-    private final int sz,n;
+    private final int sz;
+    private final int n;
     private final float FAC = 1 / 26;
-    private float[] a0,a1,ainit;
-
-    private static final double TOLERANCE = 1.0e-15;
+    private float[] a0;
+    private float[] a1;
+    private float[] ainit;
 
     private TaskSchedule graph;
     private SchedulableTask stencilTask;
@@ -61,26 +62,21 @@ public class StencilTornado extends BenchmarkDriver {
                 }
             }
         }
-
         copy(sz, ainit, a0);
-
-        graph = new TaskSchedule("benchmark").task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC).task("copy", Stencil::copy, sz, a1, a0);
-        // .streamOut(a0);
-
+        graph = new TaskSchedule("benchmark") //
+                .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
+                .task("copy", Stencil::copy, sz, a1, a0) //
+                .streamOut(a0);
         stencilTask = graph.getTask("stencil");
-
         graph.warmup();
     }
 
     @Override
     public void tearDown() {
         graph.dumpProfiles();
-
         a0 = null;
         a1 = null;
         ainit = null;
-
-        // graph.getDefaultDevice().reset();
         super.tearDown();
     }
 

@@ -29,10 +29,10 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 public class StriadTornado extends BenchmarkDriver {
 
     private final int numElements;
-
-    private float[] x,y,z;
+    private float[] x;
+    private float[] y;
+    private float[] z;
     private final float alpha = 2f;
-
     private TaskSchedule graph;
 
     public StriadTornado(int iterations, int numElements) {
@@ -45,14 +45,12 @@ public class StriadTornado extends BenchmarkDriver {
         x = new float[numElements];
         y = new float[numElements];
         z = new float[numElements];
-
         Arrays.fill(x, 1);
         Arrays.fill(y, 2);
-
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(x, y);
-        graph.task("striad", LinearAlgebraArrays::striad, alpha, x, y, z);
-        graph.streamOut(z);
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(x, y) //
+                .task("striad", LinearAlgebraArrays::striad, alpha, x, y, z) //
+                .streamOut(z);
         graph.warmup();
     }
 

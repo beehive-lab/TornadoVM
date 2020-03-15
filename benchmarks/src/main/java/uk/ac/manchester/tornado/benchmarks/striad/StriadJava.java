@@ -26,8 +26,9 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 public class StriadJava extends BenchmarkDriver {
 
     private final int numElements;
-
-    private float[] x,y,z;
+    private float[] x;
+    private float[] y;
+    private float[] z;
     private final float alpha = 2f;
 
     public StriadJava(int iterations, int numElements) {
@@ -40,10 +41,8 @@ public class StriadJava extends BenchmarkDriver {
         x = new float[numElements];
         y = new float[numElements];
         z = new float[numElements];
-
         Arrays.fill(x, 1);
         Arrays.fill(y, 2);
-
     }
 
     @Override

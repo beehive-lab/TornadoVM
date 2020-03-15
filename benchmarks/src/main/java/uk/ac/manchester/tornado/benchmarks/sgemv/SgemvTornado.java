@@ -57,10 +57,10 @@ public class SgemvTornado extends BenchmarkDriver {
             x[i] = random.nextFloat();
         }
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(a, x);
-        graph.task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y);
-        graph.streamOut(y);
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(a, x) //
+                .task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y) //
+                .streamOut(y);
         graph.warmup();
     }
 
