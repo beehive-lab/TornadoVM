@@ -631,7 +631,7 @@ public class TornadoVM extends TornadoLogger {
                     TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventset.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(),
+                        System.out.printf("task: %s %s %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(),
                                 profile.getEndTime());
                     }
                 }
