@@ -154,7 +154,7 @@ public abstract class BenchmarkRunner {
             benchmarkRunner.run();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
-            System.exit(-1);
+            System.exit(0);
         }
 
     }

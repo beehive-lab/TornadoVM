@@ -9,7 +9,7 @@ module tornado.benchmarks {
     requires transitive tornado.matrices;
 
     exports uk.ac.manchester.tornado.benchmarks;
-    exports uk.ac.manchester.tornado.benchmarks.addimage;
+    exports uk.ac.manchester.tornado.benchmarks.addImage;
     exports uk.ac.manchester.tornado.benchmarks.addvector;
     exports uk.ac.manchester.tornado.benchmarks.bandwidth;
     exports uk.ac.manchester.tornado.benchmarks.bitset;

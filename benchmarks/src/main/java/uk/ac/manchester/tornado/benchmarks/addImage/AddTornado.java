@@ -15,28 +15,32 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.benchmarks.addimage;
+package uk.ac.manchester.tornado.benchmarks.addImage;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
-public class AddJava extends BenchmarkDriver {
+public class AddTornado extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
     private ImageFloat4 a,b,c;
 
-    public AddJava(int iterations, int numElementsX, int numElementsY) {
+    private TaskSchedule graph;
+
+    public AddTornado(int iterations, int numElementsX, int numElementsY) {
         super(iterations);
         this.numElementsX = numElementsX;
         this.numElementsY = numElementsY;
     }
 
-    @Override
-    public void setUp() {
+    private void initData() {
         a = new ImageFloat4(numElementsX, numElementsY);
         b = new ImageFloat4(numElementsX, numElementsY);
         c = new ImageFloat4(numElementsX, numElementsY);
@@ -52,30 +56,60 @@ public class AddJava extends BenchmarkDriver {
     }
 
     @Override
+    public void setUp() {
+        initData();
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(a, b) //
+                .task("addImage", GraphicsKernels::addImage, a, b, c) //
+                .streamOut(c);
+        graph.warmup();
+    }
+
+    @Override
     public void tearDown() {
+        graph.dumpProfiles();
         a = null;
         b = null;
         c = null;
+        graph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod() {
-        GraphicsKernels.addImage(a, b, c);
-    }
-
-    @Override
-    public void barrier() {
-
+        graph.execute();
     }
 
     @Override
     public boolean validate() {
-        return true;
+
+        final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
+
+        benchmarkMethod();
+        graph.syncObject(c);
+        graph.clearProfiles();
+
+        GraphicsKernels.addImage(a, b, result);
+
+        float maxULP = 0f;
+        for (int i = 0; i < c.Y(); i++) {
+            for (int j = 0; j < c.X(); j++) {
+                final float ulp = FloatOps.findMaxULP(c.get(j, i), result.get(j, i));
+
+                if (ulp > maxULP) {
+                    maxULP = ulp;
+                }
+            }
+        }
+        return Float.compare(maxULP, MAX_ULP) <= 0;
     }
 
     public void printSummary() {
-        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+        if (isValid()) {
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
+        } else {
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
+        }
     }
 
 }

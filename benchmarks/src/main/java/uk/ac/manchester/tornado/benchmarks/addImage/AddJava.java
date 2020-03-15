@@ -15,26 +15,21 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.benchmarks.addimage;
+package uk.ac.manchester.tornado.benchmarks.addImage;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
-public class AddTornado extends BenchmarkDriver {
+public class AddJava extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
     private ImageFloat4 a,b,c;
 
-    private TaskSchedule graph;
-
-    public AddTornado(int iterations, int numElementsX, int numElementsY) {
+    public AddJava(int iterations, int numElementsX, int numElementsY) {
         super(iterations);
         this.numElementsX = numElementsX;
         this.numElementsY = numElementsY;
@@ -54,59 +49,33 @@ public class AddTornado extends BenchmarkDriver {
                 b.set(i, j, valueB);
             }
         }
-
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(a, b);
-        graph.task("addvector", GraphicsKernels::addImage, a, b, c);
-        graph.streamOut(c);
-        graph.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
         a = null;
         b = null;
         c = null;
-        graph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod() {
-        graph.execute();
+        GraphicsKernels.addImage(a, b, c);
+    }
+
+    @Override
+    public void barrier() {
+
     }
 
     @Override
     public boolean validate() {
-
-        final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
-
-        benchmarkMethod();
-        graph.syncObject(c);
-        graph.clearProfiles();
-
-        GraphicsKernels.addImage(a, b, result);
-
-        float maxULP = 0f;
-        for (int i = 0; i < c.Y(); i++) {
-            for (int j = 0; j < c.X(); j++) {
-                final float ulp = FloatOps.findMaxULP(c.get(j, i), result.get(j, i));
-
-                if (ulp > maxULP) {
-                    maxULP = ulp;
-                }
-            }
-        }
-        return Float.compare(maxULP, MAX_ULP) <= 0;
+        return true;
     }
 
     public void printSummary() {
-        if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
-        } else {
-            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
-        }
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
     }
 
 }

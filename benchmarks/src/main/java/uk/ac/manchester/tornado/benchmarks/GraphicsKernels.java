@@ -127,7 +127,6 @@ public final class GraphicsKernels {
                 float sum = 0.0f;
                 for (v = 0; v < filter.Y(); v++) {
                     for (u = 0; u < filter.X(); u++) {
-
                         if ((((y - filterY2) + v) >= 0) && ((y + v) < output.Y())) {
                             if ((((x - filterX2) + u) >= 0) && ((x + u) < output.X())) {
                                 sum += filter.get(u, v) * input.get(x - filterX2 + u, y - filterY2 + v);

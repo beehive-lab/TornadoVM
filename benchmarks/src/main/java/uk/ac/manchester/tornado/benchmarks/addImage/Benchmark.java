@@ -15,7 +15,7 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.benchmarks.addimage;
+package uk.ac.manchester.tornado.benchmarks.addImage;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkRunner;

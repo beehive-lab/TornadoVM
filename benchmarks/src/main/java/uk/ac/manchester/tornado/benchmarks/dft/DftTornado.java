@@ -27,35 +27,40 @@ public class DftTornado extends BenchmarkDriver {
 
     private int size;
     private TaskSchedule graph;
-    private double[] inReal,inImag,outReal,outImag;
+    private double[] inReal;
+    private double[] inImag;
+    private double[] outReal;
+    private double[] outImag;
 
     public DftTornado(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
 
-    @Override
-    public void setUp() {
+    private void initData() {
         inReal = new double[size];
         inImag = new double[size];
         outReal = new double[size];
         outImag = new double[size];
-
         for (int i = 0; i < size; i++) {
             inReal[i] = 1 / (double) (i + 2);
             inImag[i] = 1 / (double) (i + 2);
         }
+    }
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(inReal, inImag);
-        graph.task("t0", ComputeKernels::computeDft, inReal, inImag, outReal, outImag);
-        graph.streamOut(outReal, outImag);
+    @Override
+    public void setUp() {
+        initData();
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(inReal, inImag) //
+                .task("t0", ComputeKernels::computeDft, inReal, inImag, outReal, outImag) //
+                .streamOut(outReal, outImag);
         graph.warmup();
     }
 
     @Override
     public boolean validate() {
-        boolean val = true;
+        boolean validation = true;
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
@@ -67,16 +72,16 @@ public class DftTornado extends BenchmarkDriver {
 
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor[i] - outImag[i]) > 0.01) {
-                val = false;
+                validation = false;
                 break;
             }
             if (abs(outReal[i] - outRealTor[i]) > 0.01) {
-                val = false;
+                validation = false;
                 break;
             }
         }
-        System.out.printf("Number validation: " + val + "\n");
-        return val;
+        System.out.print("Is correct?: " + validation + "\n");
+        return validation;
     }
 
     @Override
