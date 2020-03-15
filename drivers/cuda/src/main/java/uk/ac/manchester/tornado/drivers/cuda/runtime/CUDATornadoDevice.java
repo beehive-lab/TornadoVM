@@ -430,6 +430,6 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public String toString() {
 
-        return device.getDeviceName();
+        return getPlatformName() + " -- " + device.getDeviceName();
     }
 }
