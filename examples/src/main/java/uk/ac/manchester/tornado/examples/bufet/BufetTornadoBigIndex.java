@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.examples.bufet;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 import java.io.IOException;
@@ -15,8 +16,8 @@ public class BufetTornadoBigIndex {
     //------Const definition segment------
     private static final int genes_population = 25000;          //maximum amount of Genes
     private static final int miRNA_groups = 10000;             //the amount of random miRNAs target groups
-    private static final byte chunks = 4;
-    private static final int warming_up_iterations = 15;
+    private static final byte chunks = 4;                       //virtual batching; break data transfer to X chunks
+    private static final int warming_up_iterations = 15;        //warm up iterations
 
 
     //------Methods definition segment------
@@ -126,13 +127,13 @@ public class BufetTornadoBigIndex {
 
 
     //Generate the miRNAs target groups
-    public static void getRandomTargetGroup(int size, byte[] onlyGeneVector, int[] randID, int[] array,
-                                            final int miRNA_groups_l, final int genes_population_l, int[] bounds, byte[] randNum) {
+    public static void getRandomTargetGroup(byte[] onlyGeneVector, int[] randID, int[] array,
+                                            final int miRNA_groups_l, int[] bounds, byte[] randNum) {
 
         for (@Parallel int k = 0; k < miRNA_groups_l; k++) {                    //bounds[0]
             for (int i = 0; i < bounds[2]; i++) {                               //size
-                int randIdx = randID[(k * size) + i] * genes_population_l;
-                int product = k * genes_population_l;
+                int randIdx = randID[(k * bounds[2]) + i] * bounds[1];
+                int product = k * bounds[1];
                 for (int j = 0; j < bounds[1]; j++) {                           //gene_population_l
                     array[(product + j)] |= onlyGeneVector[(randIdx + j)];
                 }
@@ -140,16 +141,15 @@ public class BufetTornadoBigIndex {
         }
     }
 
-
     //Calculate the number of genes targeted by each random miRNA group
-    public static void calculateCounts(int sizeA, final int sizeB, int[] map_all, short[] countOnes) {
+    public static void calculateCounts(int[] map_all, int[] countOnes, int[] bounds) {
 
-        short value = 0;
+        int value = 0;
 
-        for (int i = 0; i < sizeA; i++) {                                               //population
+        for (@Parallel int i = 0; i < bounds[0]; i++) {                                     //miRNA_groups
             value = 0;
-            for (int j = 0; j < sizeB; j++) {                                           //miRNA_groups
-                value = (short) (value + (map_all[(i * sizeB) + j] & 1));
+            for (int j = 0; j < bounds[1]; j++) {                                           //population
+                value = (short) (value + (map_all[(i * bounds[1]) + j] & 1));
             }
             countOnes[i] = value;
         }
@@ -157,8 +157,9 @@ public class BufetTornadoBigIndex {
 
 
     //Calculate the intersections of all random miRNA sets
-    // for the candidate GO category and calculate the sets with greater overlap
-    public static void findIntersections(int[] map_all, short[] countOnes, long[] pValues, final int miRNA_groups_l, final int genes_population_l,
+    //for the candidate GO category and calculate the sets with greater overlap
+    //@TODO: This method could also be re-structured for acceleration
+    public static void findIntersections(int[] map_all, int[] countOnes, long[] pValues, final int miRNA_groups_l, final int genes_population_l,
                                          HashMap<String, ArrayList<String>> checkGO, HashMap<String, ArrayList<Integer>> goCatUniqueGenes) {
 
         int idx = 0;
@@ -320,7 +321,7 @@ public class BufetTornadoBigIndex {
         int[] randID = generateRandom(miRNA_Genes.size(), (getMiRNAsretVal[0] * miRNA_groups));
         int chunkElements = miRNA_groups / chunks;
         int checkGoSize = checkGO.size();                                                   //get the number of unique categories
-        short[] countOnes = new short[chunkElements];                                       //store the number of Ones per miRNA group
+        int[] countOnes = new int[chunkElements];                                       //store the number of Ones per miRNA group
         long[] pValues = new long[checkGoSize];
         byte[] randNum = new byte[] {0,0};                                                  //aux array to block unrolling in getRandomTargetGroup method
         int[] bounds = new int[] {chunkElements, genes_population, getMiRNAsretVal[0]};     //aux array to block unrolling in getRandomTargetGroup method
@@ -343,11 +344,13 @@ public class BufetTornadoBigIndex {
 
             System.out.println("Generate the miRNAs target groups for chunk " + i);
             TaskSchedule s0 = new TaskSchedule("x" + i);
-            //getRandomTargetGroup(getMiRNAsretVal[0], onlyGeneVector, randID, map_all_split,
-            //                    chunkElements, genes_population, bounds);
-            s0.task("t0", BufetTornadoBigIndex::getRandomTargetGroup, getMiRNAsretVal[0], onlyGeneVector, randID, map_all_split,
-                    chunkElements, genes_population, bounds, randNum);
+            s0.task("t0", BufetTornadoBigIndex::getRandomTargetGroup, onlyGeneVector, randID, map_all_split,
+                    chunkElements, bounds, randNum);
             s0.streamOut(map_all_split);
+
+            System.out.println("Count ones in each miRNA target group.");
+            s0.task("t1", BufetTornadoBigIndex::calculateCounts, map_all_split, countOnes, bounds);
+            s0.streamOut(countOnes);
 
             for (int z = 0; z < warming_up_iterations; z++) {
                 long start = System.nanoTime();
@@ -355,9 +358,6 @@ public class BufetTornadoBigIndex {
                 long stop = System.nanoTime();
                 System.out.println("Total Time X: " + (stop - start) + " (ns)");
             }
-
-            System.out.println("Count ones in each miRNA target group.");
-            calculateCounts(chunkElements, genes_population, map_all_split, countOnes);
 
             System.out.println("Calculate the intersections for all random miRNA sets");
             findIntersections(map_all_split, countOnes, pValues, chunkElements, genes_population, checkGO, goCatUniqueGenes);
