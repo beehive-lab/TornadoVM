@@ -13,7 +13,6 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.cfg.Block;
-import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXParam;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerationResult;
@@ -279,47 +278,14 @@ public class PTXAssembler extends Assembler {
         }
     }
 
-    public static class PTXGuardedOp extends PTXOp {
-        protected final boolean isGuarded;
-        protected final boolean isNegated;
-
-        protected PTXGuardedOp(String opcode) {
-            this(opcode, false, false);
-        }
-
-        protected PTXGuardedOp(String opcode, boolean isGuarded, boolean isNegated) {
-            super(opcode);
-            this.isGuarded = isGuarded;
-            this.isNegated = isNegated;
-        }
-
-        protected final void emitOpcode(PTXAssembler asm, Value pred) {
-            asm.emitSymbol(TAB);
-            if (isGuarded && pred != null) {
-                asm.emitSymbol(OP_GUARD);
-                if (isNegated) {
-                    asm.emitSymbol(NEGATION);
-                }
-                asm.emitValue(pred);
-            }
-            super.emitOpcode(asm);
-
-            if (!isGuarded && pred != null) {
-                asm.emitSymbol(TAB);
-                asm.emitValue(pred);
-            }
-
-        }
-    }
-
     /**
      * Nullary opcodes
      */
     public static class PTXNullaryOp extends PTXOp {
 
-        public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
         public static final PTXNullaryOp LD = new PTXNullaryOp("ld");
         public static final PTXNullaryOp LDU = new PTXNullaryOp("ldu");
+        public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
 
         protected  PTXNullaryOp(String opcode) {
             this(opcode, false);
@@ -362,8 +328,10 @@ public class PTXAssembler extends Assembler {
      * Unary opcodes
      */
     public static class PTXUnaryOp extends PTXOp {
-        protected PTXUnaryOp(String opcode) {
-            super(opcode);
+        public static final PTXUnaryOp NOT = new PTXUnaryOp("not", true);
+
+        protected PTXUnaryOp(String opcode, boolean isWeaklyTyped) {
+            super(opcode, isWeaklyTyped);
         }
 
         public void emit(PTXCompilationResultBuilder crb, Value value) {
@@ -378,6 +346,10 @@ public class PTXAssembler extends Assembler {
     public static class PTXBinaryOp extends PTXOp {
 
         public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl",true, false);
+        public static final PTXBinaryOp BITWISE_RIGHT_SHIFT = new PTXBinaryOp("shr", true, false);
+        public static final PTXBinaryOp BITWISE_AND = new PTXBinaryOp("and", true, false);
+        public static final PTXBinaryOp BITWISE_OR = new PTXBinaryOp("or", true, false);
+        public static final PTXBinaryOp BITWISE_XOR = new PTXBinaryOp("xor", true, false);
         public static final PTXBinaryOp ADD = new PTXBinaryOp("add");
         public static final PTXBinaryOp SUB = new PTXBinaryOp("sub");
         public static final PTXBinaryOp MUL = new PTXBinaryOp("mul");

@@ -84,26 +84,22 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNot(Value input) {
-        unimplemented();
-        return null;
+        return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NOT, LIRKind.value(input.getPlatformKind()), input);
     }
 
     @Override
     public Value emitAnd(Value a, Value b) {
-        unimplemented();
-        return null;
+        return emitBinaryAssign(PTXBinaryOp.BITWISE_AND, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitOr(Value a, Value b) {
-        unimplemented();
-        return null;
+        return emitBinaryAssign(PTXBinaryOp.BITWISE_OR, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitXor(Value a, Value b) {
-        unimplemented();
-        return null;
+        return emitBinaryAssign(PTXBinaryOp.BITWISE_XOR, LIRKind.combine(a, b), a, b);
     }
 
     @Override
@@ -113,8 +109,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShr(Value a, Value b) {
-        unimplemented();
-        return null;
+        return emitBinaryAssign(PTXBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
     @Override
@@ -233,6 +228,12 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         if (valueHolder != null) {
             getGen().append(new PTXLIRStmt.AssignStmt(valueHolder, input));
         }
+    }
+
+    public Variable emitUnaryAssign(PTXAssembler.PTXUnaryOp op, LIRKind lirKind, Value x) {
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(op, lirKind, x)));
+        return result;
     }
 
     public Variable emitBinaryAssign(PTXBinaryOp op, LIRKind lirKind, Value x, Value y) {
