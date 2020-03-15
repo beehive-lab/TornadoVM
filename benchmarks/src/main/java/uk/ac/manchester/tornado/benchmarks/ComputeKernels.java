@@ -193,15 +193,15 @@ public class ComputeKernels {
     public static void computeDft(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
-            double sumreal = 0;
-            double sumimag = 0;
+            double sumReal = 0;
+            double simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 double angle = (2 * Math.PI * t * k) / n;
-                sumreal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
-                sumimag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+                sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
+                simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
             }
-            outreal[k] = sumreal;
-            outimag[k] = sumimag;
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
         }
     }
 
@@ -215,31 +215,24 @@ public class ComputeKernels {
     public static void mandelbrot(int size, short[] output) {
         final int iterations = 10000;
         float space = 2.0f / size;
-
         for (@Parallel int i = 0; i < size; i++) {
-            int indexIDX = i;
             for (@Parallel int j = 0; j < size; j++) {
-
-                int indexJDX = j;
-
                 float Zr = 0.0f;
                 float Zi = 0.0f;
-                float Cr = (1 * indexJDX * space - 1.5f);
-                float Ci = (1 * indexIDX * space - 1.0f);
-
+                float Cr = (1 * j * space - 1.5f);
+                float Ci = (1 * i * space - 1.0f);
                 float ZrN = 0;
                 float ZiN = 0;
                 int y = 0;
-
-                for (y = 0; y < iterations; y++) {
-                    float s = ZiN + ZrN;
-                    if (s > 4.0f) {
-                        break;
-                    } else {
+                for (int ii = 0; ii < iterations; ii++) {
+                    if (ZiN + ZrN <= 4.0f) {
                         Zi = 2.0f * Zr * Zi + Ci;
                         Zr = 1 * ZrN - ZiN + Cr;
                         ZiN = Zi * Zi;
                         ZrN = Zr * Zr;
+                        y++;
+                    } else {
+                        ii = iterations;
                     }
 
                 }

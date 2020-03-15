@@ -27,7 +27,7 @@ public class Benchmark extends BenchmarkRunner {
     public void parseArgs(String[] args) {
         if (args.length == 2) {
             iterations = Integer.parseInt(args[0]);
-            size = 2 * Integer.parseInt(args[1]);
+            size = Integer.parseInt(args[1]);
         } else if (args.length == 1) {
             System.out.printf("Two arguments are needed: iterations size");
         } else {
