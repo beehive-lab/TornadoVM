@@ -32,7 +32,7 @@ public class Benchmark extends BenchmarkRunner {
             System.out.printf("Two arguments are needed: iterations size");
         } else {
             iterations = 131;
-            size = 10240;
+            size = 512;
         }
     }
 

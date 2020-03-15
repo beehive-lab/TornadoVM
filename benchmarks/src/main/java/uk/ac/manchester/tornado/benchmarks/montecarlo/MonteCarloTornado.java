@@ -48,9 +48,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
     @Override
     public void tearDown() {
         graph.dumpProfiles();
-
         output = null;
-
         graph.getDevice().reset();
         super.tearDown();
     }

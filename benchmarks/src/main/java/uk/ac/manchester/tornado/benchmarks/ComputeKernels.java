@@ -234,7 +234,6 @@ public class ComputeKernels {
                     } else {
                         ii = iterations;
                     }
-
                 }
                 short r = (short) ((y * 255) / iterations);
                 output[i * size + j] = r;
