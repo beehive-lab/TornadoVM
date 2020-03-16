@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,10 +29,11 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 public class SgemmTornado extends BenchmarkDriver {
 
-    private final int m,n;
-
-    private float[] a,b,c;
-
+    private final int m;
+    private final int n;
+    private float[] a;
+    private float[] b;
+    private float[] c;
     private TaskSchedule graph;
 
     public SgemmTornado(int iterations, int m, int n) {
@@ -58,18 +59,10 @@ public class SgemmTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
-        }
+        graph.streamIn(a, b);
         graph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(c);
+        graph.warmup();
     }
 
     @Override
@@ -85,7 +78,7 @@ public class SgemmTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -95,7 +88,7 @@ public class SgemmTornado extends BenchmarkDriver {
         final float[] result = new float[m * n];
         boolean val = true;
 
-        code();
+        benchmarkMethod();
         graph.syncObjects(c);
         graph.clearProfiles();
 

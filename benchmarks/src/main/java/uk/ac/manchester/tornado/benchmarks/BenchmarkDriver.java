@@ -56,7 +56,7 @@ public abstract class BenchmarkDriver {
 
     public abstract boolean validate();
 
-    public abstract void code();
+    public abstract void benchmarkMethod();
 
     protected void barrier() {
 
@@ -93,7 +93,7 @@ public abstract class BenchmarkDriver {
                     System.gc();
                 }
                 final long start = System.nanoTime();
-                code();
+                benchmarkMethod();
                 final long end = System.nanoTime();
                 timers[toIntExact(i)] = (end - start);
             }

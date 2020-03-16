@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.benchmarks.addimage;
+package uk.ac.manchester.tornado.benchmarks.addImage;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
@@ -40,8 +40,7 @@ public class AddTornado extends BenchmarkDriver {
         this.numElementsY = numElementsY;
     }
 
-    @Override
-    public void setUp() {
+    private void initData() {
         a = new ImageFloat4(numElementsX, numElementsY);
         b = new ImageFloat4(numElementsX, numElementsY);
         c = new ImageFloat4(numElementsX, numElementsY);
@@ -54,35 +53,30 @@ public class AddTornado extends BenchmarkDriver {
                 b.set(i, j, valueB);
             }
         }
+    }
 
-        graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
-        }
-        graph.task("addvector", GraphicsKernels::addImage, a, b, c);
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+    @Override
+    public void setUp() {
+        initData();
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(a, b) //
+                .task("addImage", GraphicsKernels::addImage, a, b, c) //
+                .streamOut(c);
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
         graph.dumpProfiles();
-
         a = null;
         b = null;
         c = null;
-
         graph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -91,7 +85,7 @@ public class AddTornado extends BenchmarkDriver {
 
         final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
-        code();
+        benchmarkMethod();
         graph.syncObject(c);
         graph.clearProfiles();
 

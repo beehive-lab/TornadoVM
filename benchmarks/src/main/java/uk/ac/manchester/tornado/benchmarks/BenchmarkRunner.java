@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -154,7 +154,7 @@ public abstract class BenchmarkRunner {
             benchmarkRunner.run();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
-            System.exit(-1);
+            System.exit(0);
         }
 
     }

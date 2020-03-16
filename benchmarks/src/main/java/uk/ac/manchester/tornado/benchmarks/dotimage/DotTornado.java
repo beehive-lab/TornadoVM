@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,8 @@ public class DotTornado extends BenchmarkDriver {
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat3 a,b;
+    private ImageFloat3 a;
+    private ImageFloat3 b;
     private ImageFloat c;
 
     private TaskSchedule graph;
@@ -58,37 +59,25 @@ public class DotTornado extends BenchmarkDriver {
                 b.set(i, j, valueB);
             }
         }
-
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
-        }
-
+        graph.streamIn(a, b);
         graph.task("dotVector", GraphicsKernels::dotImage, a, b, c);
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(c);
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
         graph.dumpProfiles();
-
         a = null;
         b = null;
         c = null;
-
         graph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -97,7 +86,7 @@ public class DotTornado extends BenchmarkDriver {
 
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
-        code();
+        benchmarkMethod();
         graph.syncObjects(c);
         graph.clearProfiles();
 

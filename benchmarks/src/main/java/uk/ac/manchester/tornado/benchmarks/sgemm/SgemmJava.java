@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,12 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SgemmJava extends BenchmarkDriver {
 
-    private final int m,n;
+    private final int m;
+    private final int n;
 
-    private float[] a,b,c;
+    private float[] a;
+    private float[] b;
+    private float[] c;
 
     public SgemmJava(int iterations, int m, int n) {
         super(iterations);
@@ -62,7 +65,7 @@ public class SgemmJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         sgemm(m, n, m, a, b, c);
     }
 

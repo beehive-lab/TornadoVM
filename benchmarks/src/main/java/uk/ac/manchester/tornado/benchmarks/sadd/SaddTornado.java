@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,9 @@ public class SaddTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private float[] a,b,c;
+    private float[] a;
+    private float[] b;
+    private float[] c;
 
     private TaskSchedule graph;
 
@@ -51,20 +53,10 @@ public class SaddTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
-        }
-
+        graph.streamIn(a, b);
         graph.task("sadd", LinearAlgebraArrays::sadd, a, b, c);
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(c);
+        graph.warmup();
     }
 
     @Override
@@ -81,7 +73,7 @@ public class SaddTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -90,7 +82,7 @@ public class SaddTornado extends BenchmarkDriver {
 
         final float[] result = new float[numElements];
 
-        code();
+        benchmarkMethod();
         graph.syncObjects(c);
         graph.clearProfiles();
 

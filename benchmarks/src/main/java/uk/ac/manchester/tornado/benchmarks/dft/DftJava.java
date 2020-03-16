@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +21,12 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class DftJava extends BenchmarkDriver {
+
     private int size;
-    private double[] inReal,inImag,outReal,outImag;
+    private double[] inReal;
+    private double[] inImag;
+    private double[] outReal;
+    private double[] outImag;
 
     public DftJava(int iterations, int size) {
         super(iterations);
@@ -54,7 +58,7 @@ public class DftJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         ComputeKernels.computeDft(inReal, inImag, outReal, outImag);
     }
 }

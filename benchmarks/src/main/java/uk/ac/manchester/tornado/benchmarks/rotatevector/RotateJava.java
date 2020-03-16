@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,8 @@ public class RotateJava extends BenchmarkDriver {
 
     private final int numElements;
 
-    private VectorFloat3 input,output;
+    private VectorFloat3 input;
+    private VectorFloat3 output;
     private Matrix4x4Float m;
 
     public RotateJava(int iterations, int numElements) {
@@ -60,7 +61,7 @@ public class RotateJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         rotateVector(output, m, input);
     }
 

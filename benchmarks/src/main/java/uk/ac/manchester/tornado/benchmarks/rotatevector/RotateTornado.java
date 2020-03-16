@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,10 +31,9 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 public class RotateTornado extends BenchmarkDriver {
 
     private final int numElements;
-
-    private VectorFloat3 input,output;
+    private VectorFloat3 input;
+    private VectorFloat3 output;
     private Matrix4x4Float m;
-
     private TaskSchedule graph;
 
     public RotateTornado(int iterations, int numElements) {
@@ -56,33 +55,24 @@ public class RotateTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(input);
-        }
+        graph.streamIn(input);
         graph.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(output);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(output);
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
         graph.dumpProfiles();
-
         input = null;
         output = null;
         m = null;
-
         graph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -91,7 +81,7 @@ public class RotateTornado extends BenchmarkDriver {
 
         final VectorFloat3 result = new VectorFloat3(numElements);
 
-        code();
+        benchmarkMethod();
         graph.syncObjects(output);
         graph.clearProfiles();
 

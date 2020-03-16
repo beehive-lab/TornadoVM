@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,8 +27,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  * GPU calculations using OpenBitSet Intersection for OpenBitSets
  *
  * Based on code from: <br/>
- * null {@link http
- * ://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
+ * 
+ * {@link http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
  * -core/3.1.0/org/apache/lucene/util/BitUtil.java}
  *
  * @author ryan.lamothe at gmail.com
