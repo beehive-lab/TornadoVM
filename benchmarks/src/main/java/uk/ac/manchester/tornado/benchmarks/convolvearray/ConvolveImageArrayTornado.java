@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,18 +52,10 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createFilter(filter, filterSize, filterSize);
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(input);
-        }
+        graph.streamIn(input);
         graph.task("convolveImageArray", GraphicsKernels::convolveImageArray, input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize);
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(output);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
-
+        graph.streamOut(output);
+        graph.warmup();
     }
 
     @Override
@@ -79,7 +71,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -88,7 +80,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
         final float[] result = new float[imageSizeX * imageSizeY];
 
-        code();
+        benchmarkMethod();
         graph.syncObject(output);
         graph.clearProfiles();
 

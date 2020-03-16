@@ -65,7 +65,7 @@ public class Mandelbrot {
 
                     float ZrN = 0;
                     float ZiN = 0;
-                    int y = 0;
+                    int y;
 
                     for (y = 0; y < iterations && ZiN + ZrN <= 4.0f; y++) {
                         Zi = 2.0f * Zr * Zi + Ci;
@@ -85,20 +85,14 @@ public class Mandelbrot {
             float space = 2.0f / size;
 
             for (@Parallel int i = 0; i < size; i++) {
-                int indexIDX = i;
                 for (@Parallel int j = 0; j < size; j++) {
-
-                    int indexJDX = j;
-
                     float Zr = 0.0f;
                     float Zi = 0.0f;
-                    float Cr = (1 * indexJDX * space - 1.5f);
-                    float Ci = (1 * indexIDX * space - 1.0f);
-
+                    float Cr = (1 * j * space - 1.5f);
+                    float Ci = (1 * i * space - 1.0f);
                     float ZrN = 0;
                     float ZiN = 0;
                     int y = 0;
-
                     for (int ii = 0; ii < iterations; ii++) {
                         if (ZiN + ZrN <= 4.0f) {
                             Zi = 2.0f * Zr * Zi + Ci;
@@ -109,7 +103,6 @@ public class Mandelbrot {
                         } else {
                             ii = iterations;
                         }
-
                     }
                     short r = (short) ((y * 255) / iterations);
                     output[i * size + j] = r;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.benchmarks.spmv;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
-import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.populateVector;
+import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.initData;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -43,11 +43,10 @@ public class SpmvTornado extends BenchmarkDriver {
     public void setUp() {
         v = new float[matrix.size];
         y = new float[matrix.size];
-
-        populateVector(v);
-
-        graph = new TaskSchedule("benchmark").task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y).streamOut(y);
-
+        initData(v);
+        graph = new TaskSchedule("benchmark") //
+                .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
+                .streamOut(y);
         graph.warmup();
     }
 
@@ -63,7 +62,7 @@ public class SpmvTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -72,7 +71,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
         final float[] ref = new float[matrix.size];
 
-        code();
+        benchmarkMethod();
         graph.clearProfiles();
 
         spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, ref);

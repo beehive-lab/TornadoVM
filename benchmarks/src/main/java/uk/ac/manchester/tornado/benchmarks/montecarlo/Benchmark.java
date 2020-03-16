@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,8 @@ package uk.ac.manchester.tornado.benchmarks.montecarlo;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkRunner;
 
+import java.util.Arrays;
+
 public class Benchmark extends BenchmarkRunner {
 
     private int size;
@@ -31,10 +33,11 @@ public class Benchmark extends BenchmarkRunner {
             iterations = Integer.parseInt(args[0]);
             size = Integer.parseInt(args[1]);
         } else if (args.length == 1) {
-            System.out.printf("Two arguments are needed: iterations size");
+            System.out.println("Two arguments are needed: iterations size");
+            System.exit(0);
         } else {
-            iterations = 100;
-            size = 10240;
+            iterations = 131;
+            size = 8192;
         }
     }
 

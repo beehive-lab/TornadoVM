@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,41 +21,6 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 
 public class LinearAlgebraArrays {
-
-    public static void reduceInt(@Atomic int[] result, int[] input) {
-        int sum = 0;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            sum += input[i];
-        }
-        result[0] = sum;
-    }
-
-    public static void reduce1(float[] output, float[] input) {
-        final int numThreads = output.length;
-        for (@Parallel int thread = 0; thread < numThreads; thread++) {
-
-            float sum = 0f;
-            for (int i = thread; i < input.length; i += numThreads) {
-                sum += input[i];
-            }
-
-            output[thread] = sum;
-
-        }
-    }
-
-    public static void reduce2(float[] output, float[] input) {
-        final int numThreads = output.length;
-        for (@Parallel int thread = 0; thread < numThreads; thread++) {
-
-            float sum = 0f;
-            for (int i = 0; i < input.length; i += numThreads) {
-                sum += input[i];
-            }
-
-            output[thread] = sum;
-        }
-    }
 
     public static void ladd(long[] a, long[] b, long[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
@@ -94,7 +59,6 @@ public class LinearAlgebraArrays {
     }
 
     public static void sgemv(int M, int N, float[] A, float[] X, float[] Y) {
-
         for (@Parallel int i = 0; i < M; i++) {
             float y0 = 0f;
             for (int j = 0; j < N; j++) {
@@ -105,7 +69,6 @@ public class LinearAlgebraArrays {
     }
 
     public static void sgemm(final int M, final int N, final int K, final float A[], final float B[], final float C[]) {
-
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 float sum = 0.0f;
@@ -119,7 +82,6 @@ public class LinearAlgebraArrays {
     }
 
     public static void dgemm(final int M, final int N, final int K, final double A[], final double B[], final double C[]) {
-
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 double sum = 0.0;
@@ -133,7 +95,6 @@ public class LinearAlgebraArrays {
     }
 
     public static void spmv(final float[] val, final int[] cols, final int[] rowDelimiters, final float[] vec, final int dim, final float[] out) {
-
         for (@Parallel int i = 0; i < dim; i++) {
             float t = 0.0f;
             for (int j = rowDelimiters[i]; j < rowDelimiters[i + 1]; j++) {

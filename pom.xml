@@ -189,6 +189,25 @@
                 <cmake.classifier>linux-amd64</cmake.classifier>
                 <cmake.generator>Unix Makefiles</cmake.generator>
             </properties>
+    	</profile>
+	<profile>
+            <id>linux-aarch64-release</id>
+            <activation>
+                <property>
+                    <name>osDetection</name>
+                    <value>!false</value>
+                </property>
+                <os>
+                    <family>linux</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <platform>linux-aarch64</platform>
+                <build.type>release</build.type>
+                <cmake.classifier>linux-arm</cmake.classifier>
+                <cmake.generator>Unix Makefiles</cmake.generator>
+            </properties>
         </profile>
         <profile>
             <id>mac-amd64-debug</id>
@@ -669,7 +688,7 @@
                 <configuration>
                     <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
                     <doCheck>false</doCheck>
-                    <doUpdate>true</doUpdate>
+                    <doUpdate>false</doUpdate>
                     <shortRevisionLength>7</shortRevisionLength>
                 </configuration>
             </plugin>

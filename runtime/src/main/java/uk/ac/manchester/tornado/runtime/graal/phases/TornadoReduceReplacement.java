@@ -20,13 +20,10 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Juan Fumero
- *
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import java.lang.annotation.Annotation;
-import java.util.Iterator;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -61,7 +58,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        findParametersWithReduceAnnotations(graph, context);
+        findParametersWithReduceAnnotations(graph);
 
         // TODO: Pending, if it is local variable
     }
@@ -71,12 +68,17 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * reductions. It assumes that the value to store is a binary arithmetic and
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
+     * 
      * <p>
      * Cover all the cases here as soon as we discover more reductions use-cases.
+     * </p>
      *
      * @param arrayToStore
+     *            Array to store
      * @param indexToStore
+     *            Index used in the store array
      * @param currentNode
+     *            Current node to be inspected
      * @return boolean
      */
     private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
@@ -173,8 +175,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     private ReductionMetadataNode createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray, ValueNode startNode) {
-        ValueNode value = null;
-        ValueNode accumulator = null;
+        ValueNode value;
+        ValueNode accumulator;
 
         ValueNode storeValue = store.value();
 
@@ -250,19 +252,23 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         atomicStoreNode.setNext(store.next());
         pred.replaceFirstSuccessor(store, atomicStoreNode);
         store.replaceAndDelete(atomicStoreNode);
+    }
 
+    private boolean shouldSkip(int index, StructuredGraph graph) {
+        return graph.method().isStatic() && index >= getNumberOfParameterNodes(graph);
     }
 
     private void processReduceAnnotation(StructuredGraph graph, int index) {
+
+        if (shouldSkip(index, graph)) {
+            return;
+        }
+
         final ParameterNode reduceParameter = graph.getParameter(index);
-
+        assert (reduceParameter != null);
         NodeIterable<Node> usages = reduceParameter.usages();
-        Iterator<Node> iterator = usages.iterator();
 
-        while (iterator.hasNext()) {
-
-            Node node = iterator.next();
-
+        for (Node node : usages) {
             if (node instanceof StoreIndexedNode) {
                 StoreIndexedNode store = (StoreIndexedNode) node;
 
@@ -292,7 +298,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     private ValueNode obtainStartLoopNode(StoreIndexedNode store) {
         boolean startFound = false;
         ValueNode startNode = null;
-        IfNode ifNode = null;
+        IfNode ifNode;
         Node node = store.predecessor();
         while (!startFound) {
             if (node instanceof IfNode) {
@@ -341,24 +347,17 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     private int getNumberOfParameterNodes(StructuredGraph graph) {
-        int numParameters = 0;
-        for (Node n : graph.getNodes()) {
-            if (n instanceof ParameterNode) {
-                numParameters++;
-            }
-        }
-        return numParameters;
+        return graph.getNodes().filter(ParameterNode.class).count();
     }
 
-    private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
+    private void findParametersWithReduceAnnotations(StructuredGraph graph) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
                 if (annotation instanceof Reduce) {
-                    // If the number of arguments do not match, then we
-                    // increase the index to obtain the correct one when
-                    // indexing from getParameters. This is an issue when having
-                    // inheritance with interfaces from Apache Flink. See issue
+                    // If the number of arguments does not match, then we increase the index to
+                    // obtain the correct one when indexing from getParameters. This is an issue
+                    // when having inheritance with interfaces from Apache Flink. See issue
                     // #185 on Github
                     if (!graph.method().isStatic() || getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
                         index++;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,10 +29,10 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 public class StriadTornado extends BenchmarkDriver {
 
     private final int numElements;
-
-    private float[] x,y,z;
+    private float[] x;
+    private float[] y;
+    private float[] z;
     private final float alpha = 2f;
-
     private TaskSchedule graph;
 
     public StriadTornado(int iterations, int numElements) {
@@ -45,24 +45,13 @@ public class StriadTornado extends BenchmarkDriver {
         x = new float[numElements];
         y = new float[numElements];
         z = new float[numElements];
-
         Arrays.fill(x, 1);
         Arrays.fill(y, 2);
-
-        graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(x, y);
-        }
-
-        graph.task("striad", LinearAlgebraArrays::striad, alpha, x, y, z);
-
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(z);
-        }
-
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(x, y) //
+                .task("striad", LinearAlgebraArrays::striad, alpha, x, y, z) //
+                .streamOut(z);
+        graph.warmup();
     }
 
     @Override
@@ -78,7 +67,7 @@ public class StriadTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -87,7 +76,7 @@ public class StriadTornado extends BenchmarkDriver {
 
         final float[] result = new float[numElements];
 
-        code();
+        benchmarkMethod();
         graph.syncObjects(z);
         graph.clearProfiles();
 

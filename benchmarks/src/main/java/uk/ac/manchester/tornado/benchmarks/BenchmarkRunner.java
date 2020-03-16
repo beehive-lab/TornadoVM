@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,7 +46,7 @@ public abstract class BenchmarkRunner {
         return null;
     }
 
-    protected int iterations = 0;
+    protected int iterations;
 
     public void run() {
         final String id = getIdString();
@@ -143,18 +143,18 @@ public abstract class BenchmarkRunner {
     public static void main(String[] args) {
         try {
             final String canonicalName = String.format("%s.%s.Benchmark", BenchmarkRunner.class.getPackage().getName(), args[0]);
-            final BenchmarkRunner bm = (BenchmarkRunner) Class.forName(canonicalName).newInstance();
-            final String[] bmArgs = Arrays.copyOfRange(args, 1, args.length);
+            final BenchmarkRunner benchmarkRunner = (BenchmarkRunner) Class.forName(canonicalName).newInstance();
+            final String[] benchmarkArgs = Arrays.copyOfRange(args, 1, args.length);
 
             if (System.getProperty("config") != null) {
                 TornadoRuntime.loadSettings(System.getProperty("config"));
             }
 
-            bm.parseArgs(bmArgs);
-            bm.run();
+            benchmarkRunner.parseArgs(benchmarkArgs);
+            benchmarkRunner.run();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
-            System.exit(-1);
+            System.exit(0);
         }
 
     }

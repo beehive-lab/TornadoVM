@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,9 +26,11 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class RotateJava extends BenchmarkDriver {
 
-    private final int numElementsX,numElementsY;
+    private final int numElementsX;
+    private final int numElementsY;
 
-    private ImageFloat3 input,output;
+    private ImageFloat3 input;
+    private ImageFloat3 output;
     private Matrix4x4Float m;
 
     public RotateJava(int iterations, int numElementsX, int numElementsY) {
@@ -41,10 +43,8 @@ public class RotateJava extends BenchmarkDriver {
     public void setUp() {
         input = new ImageFloat3(numElementsX, numElementsY);
         output = new ImageFloat3(numElementsX, numElementsY);
-
         m = new Matrix4x4Float();
         m.identity();
-
         final Float3 value = new Float3(1f, 2f, 3f);
         for (int i = 0; i < input.Y(); i++) {
             for (int j = 0; j < input.X(); j++) {
@@ -62,7 +62,7 @@ public class RotateJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         rotateImage(output, m, input);
     }
 

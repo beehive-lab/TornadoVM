@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,9 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 public class VectorMulJava extends BenchmarkDriver {
 
     private int numElements;
-    private float[] a,b,c;
+    private float[] a;
+    private float[] b;
+    private float[] c;
 
     public VectorMulJava(int iterations, int numElements) {
         super(iterations);
@@ -51,7 +53,7 @@ public class VectorMulJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         ComputeKernels.vectorMultiply(a, b, c);
     }
 }
