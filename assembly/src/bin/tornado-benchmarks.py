@@ -188,17 +188,17 @@ def runMediumConfiguration(args):
 
 def parseArguments():
 	parser = argparse.ArgumentParser(description="""Tool to execute benchmarks in TornadoVM. With no options, it runs the medium sizes""")
-	parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
-	parser.add_argument('--sizes', action="store_true", dest="size", default=False, help="Run for all problem sizes")
-	parser.add_argument('--benchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
-	parser.add_argument('--full', action="store_true", dest="full", default=False, help="Run for all sizes in all devices. Including big data sizes")
-	parser.add_argument('--skipSeq', action="store_true", dest="skip_serial", default=False, help="Skip java version")
-	parser.add_argument('--skipDevices', action="store", dest="skip_devices", default=None, help="Skip devices. Provide a list of devices (e.g., 0,1)")
 	parser.add_argument('--validate', action="store_true", dest="validate", default=False, help="Enable result validation")
-	parser.add_argument('--skipPar', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
 	parser.add_argument('--default', action="store_true", dest="default", default=False, help="Run default benchmark configuration")
 	parser.add_argument('--iterations', action="store", type=int, dest="iterations", default=0, help="Set the number of iterations")
+	parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
+	parser.add_argument('--sizes', action="store_true", dest="size", default=False, help="Run for all problem sizes")
+	parser.add_argument('--full', action="store_true", dest="full", default=False, help="Run for all sizes in all devices. Including big data sizes")
+	parser.add_argument('--skipSequential', action="store_true", dest="skip_serial", default=False, help="Skip java version")
+	parser.add_argument('--skipParallel', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
+	parser.add_argument('--skipDevices', action="store", dest="skip_devices", default=None, help="Skip devices. Provide a list of devices (e.g., 0,1)")
 	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Enable verbose")
+	parser.add_argument('--printBenchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
 	args = parser.parse_args()
 	return args
 
