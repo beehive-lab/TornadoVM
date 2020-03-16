@@ -36,18 +36,18 @@ try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
 	print "[ERROR] JAVA_HOME is not defined"
-	sys.exit(-1)
+	sys.exit(0)
 
 JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 # Get java version
-javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+__JAVA_VERSION__ = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 ## ========================================================================================
 ## Script Options
 ## ========================================================================================
 __RUNNER__ = ""
-if (javaVersion == JDK_11_VERSION):
+if (__JAVA_VERSION__ == JDK_11_VERSION):
     __RUNNER__ = " -m tornado.benchmarks/"
 __RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
@@ -57,10 +57,11 @@ __DEVICES__ = [
 	"-Ddevices=0:1",
 ]
 __TORNADO_COMMAND__ = "tornado "
-__SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
-__SKIP_PARALLEL = " -Dtornado.enable=False "
-__VALIDATE__    = " -Dtornado.benchmarks.validate=True "
-__VERBOSE__     = " -Dtornado.verbose=True "
+__SKIP_SERIAL__   = " -Dtornado.benchmarks.skipserial=True "
+__SKIP_PARALLEL__ = " -Dtornado.enable=False "
+__SKIP_DEVICES__  = " -Dtornado.blacklist.devices="
+__VALIDATE__      = " -Dtornado.benchmarks.validate=True "
+__VERBOSE__       = " -Dtornado.verbose=True "
 ## ========================================================================================
 
 ## Include here benchmarks to run
@@ -120,16 +121,20 @@ mediumSizes = {
 	"dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
 }
 
+## ========================================================================================
+
 def composeAllOptions(args):
 	options = __JVM_FLAGS__
 	if args.skip_serial:
 		options = options + __SKIP_SERIAL__
 	if args.skip_parallel:
-		options = options + __SKIP_PARALLEL
+		options = options + __SKIP_PARALLEL__
 	if args.validate:
 		options = options + __VALIDATE__
 	if args.verbose:
 		options = options + __VERBOSE__
+	if args.skip_devices != None:
+		options = options + __SKIP_DEVICES__ + args.skip_devices  + " "
 	return options
 
 def printBenchmakrks():
@@ -171,7 +176,8 @@ def runBenchmarksFullCoverage(args):
 			os.system(command)
 
 def runMediumConfiguration(args):
-        options = composeAllOptions(args)
+	options = composeAllOptions(args)
+	print options
 	for key in mediumSizes.keys():
 		for size in mediumSizes[key][0]:
 			numIterations = eval(mediumSizes[key][1][0])
@@ -184,9 +190,10 @@ def parseArguments():
 	parser = argparse.ArgumentParser(description="""Tool to execute benchmarks in TornadoVM. With no options, it runs the medium sizes""")
 	parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
 	parser.add_argument('--sizes', action="store_true", dest="size", default=False, help="Run for all problem sizes")
-	parser.add_argument('--benchmarks', action="store_true", dest="benchmarks", default=False, help="Print list of benchmarks")
+	parser.add_argument('--benchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
 	parser.add_argument('--full', action="store_true", dest="full", default=False, help="Run for all sizes in all devices. Including big data sizes")
 	parser.add_argument('--skipSeq', action="store_true", dest="skip_serial", default=False, help="Skip java version")
+	parser.add_argument('--skipDevices', action="store", dest="skip_devices", default=None, help="Skip devices. Provide a list of devices (e.g., 0,1)")
 	parser.add_argument('--validate', action="store_true", dest="validate", default=False, help="Enable result validation")
 	parser.add_argument('--skipPar', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
 	parser.add_argument('--default', action="store_true", dest="default", default=False, help="Run default benchmark configuration")
@@ -200,7 +207,7 @@ def main():
 	global ITERATIONS
 	if (args.iterations > 0):
 		ITERATIONS = args.iterations
-	
+
 	if args.device:
 		runAllDevices(args)
 	elif args.size:
