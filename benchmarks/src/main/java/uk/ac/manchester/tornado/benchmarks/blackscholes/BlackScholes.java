@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,9 +30,9 @@ public class BlackScholes {
     /*
      * For a description of the algorithm and the terms used, please see the
      * documentation for this sample. On invocation of kernel blackScholes, each
-     * work thread calculates call price and put price values for given stock
-     * price, option strike price, time to expiration date, risk free interest
-     * and volatility factor.
+     * work thread calculates call price and put price values for given stock price,
+     * option strike price, time to expiration date, risk free interest and
+     * volatility factor.
      */
     public static void main(final String[] args) {
 
@@ -45,8 +45,7 @@ public class BlackScholes {
 
         final BlackScholes bs = new BlackScholes(size);
 
-        final TaskSchedule tasks = new TaskSchedule("benchmark").task("blackscholes", BlackScholes::blackscholes, bs.randArray, bs.put, bs.call);
-
+        final TaskSchedule tasks = new TaskSchedule("benchmark").task("blackscholes", BlackScholes::blackscholes, bs.randArray, bs.put, bs.call).streamOut(bs.put, bs.call);
         tasks.warmup();
 
         final long start = System.nanoTime();
@@ -152,15 +151,15 @@ public class BlackScholes {
      * @brief Calculates the call and put prices by using Black Scholes model
      * 
      * @param s
-     *            Array of random values of current option price @param sigma
-     *            Array of random values sigma @param k Array of random values
-     *            strike price
+     *            Array of random values of current option price @param sigma Array
+     *            of random values sigma @param k Array of random values strike
+     *            price
      * 
      * @param t
-     *            Array of random values of expiration time @param r Array of
-     *            random values of risk free interest rate @param width Width of
-     *            call price or put price array @param call Array of calculated
-     *            call price values
+     *            Array of random values of expiration time @param r Array of random
+     *            values of risk free interest rate @param width Width of call price
+     *            or put price array @param call Array of calculated call price
+     *            values
      * 
      * @param put
      *            Array of calculated put price values

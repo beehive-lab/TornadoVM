@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,8 @@ public class ScopyTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private float[] x,y;
+    private float[] x;
+    private float[] y;
 
     private TaskSchedule graph;
 
@@ -48,18 +49,10 @@ public class ScopyTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(x);
-        }
+        graph.streamIn(x);
         graph.task("scopy", LinearAlgebraArrays::scopy, x, y);
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(y);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(y);
+        graph.warmup();
     }
 
     @Override
@@ -74,7 +67,7 @@ public class ScopyTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -83,7 +76,7 @@ public class ScopyTornado extends BenchmarkDriver {
 
         final float[] result = new float[numElements];
 
-        code();
+        benchmarkMethod();
         graph.syncObjects(y);
         graph.clearProfiles();
 

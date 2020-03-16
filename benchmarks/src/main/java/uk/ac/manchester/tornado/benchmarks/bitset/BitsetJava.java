@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,9 @@ public class BitsetJava extends BenchmarkDriver {
 
     private int numWords;
     private TaskSchedule graph;
-    private LongBitSet a,b;
+    private LongBitSet a;
+    private LongBitSet b;
+    private long[] result;
 
     public BitsetJava(int size, int iterations) {
         super(iterations);
@@ -49,6 +51,7 @@ public class BitsetJava extends BenchmarkDriver {
 
         a = new LongBitSet(aBits, numWords * 8);
         b = new LongBitSet(bBits, numWords * 8);
+        result = new long[numWords];
 
     }
 
@@ -63,7 +66,7 @@ public class BitsetJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
-        ComputeKernels.intersectionCount(numWords, a, b);
+    public void benchmarkMethod() {
+        ComputeKernels.intersectionCount(numWords, a, b, result);
     }
 }

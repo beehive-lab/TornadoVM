@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,18 +45,15 @@ public class ComputeKernels {
     public static final float SIGMA_UPPER_LIMIT = 0.10f;
 
     /**
-     * Parallel Implementation of the MonteCarlo computation: this is based on
-     * the Marawacc compiler framework.
+     * Parallel Implementation of the MonteCarlo computation: this is based on the
+     * Marawacc compiler framework.
      * 
      * @author Juan Fumero
      *
      */
     public static void monteCarlo(float[] result, int size) {
-
         final int iter = 25000;
-
         for (@Parallel int idx = 0; idx < size; idx++) {
-
             long seed = idx;
             float sum = 0.0f;
 
@@ -81,30 +78,6 @@ public class ComputeKernels {
             }
             sum = sum * 4;
             result[idx] = sum / (float) iter;
-        }
-    }
-
-    public static void computeMontecarlo(float[] output, final int size) {
-        for (@Parallel int j = 0; j < size; j++) {
-            long seed = j;
-            // generate a pseudo random number (you do need it twice)
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-
-            // this generates a number between 0 and 1 (with an awful entropy)
-            float x = (seed & 0x0FFFFFFF) / 268435455f;
-
-            // repeat for y
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            float y = (seed & 0x0FFFFFFF) / 268435455f;
-
-            float dist = (float) Math.sqrt(x * x + y * y);
-            if (dist <= 1.0f) {
-                output[j] = 1.0f;
-            } else {
-                output[j] = 0.0f;
-            }
         }
     }
 
@@ -144,7 +117,7 @@ public class ComputeKernels {
      * @param X
      *            input value
      */
-    final static float phi(final float X) {
+    static float phi(final float X) {
         final float c1 = 0.319381530f;
         final float c2 = -0.356563782f;
         final float c3 = 1.781477937f;
@@ -203,14 +176,12 @@ public class ComputeKernels {
         }
     }
 
-    public static final int intersectionCount(int numWords, LongBitSet a, LongBitSet b) {
+    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, long[] result) {
         final long[] aBits = a.getBits();
         final long[] bBits = b.getBits();
-        int sum = 0;
         for (@Parallel int i = 0; i < numWords; i++) {
-            Long.bitCount(aBits[i] & bBits[i]);
+            result[i] = Long.bitCount(aBits[i] & bBits[i]);
         }
-        return sum;
     }
 
     public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {
@@ -222,15 +193,15 @@ public class ComputeKernels {
     public static void computeDft(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
-            double sumreal = 0;
-            double sumimag = 0;
+            double sumReal = 0;
+            double simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 double angle = (2 * Math.PI * t * k) / n;
-                sumreal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
-                sumimag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+                sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
+                simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
             }
-            outreal[k] = sumreal;
-            outimag[k] = sumimag;
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
         }
     }
 
@@ -244,33 +215,25 @@ public class ComputeKernels {
     public static void mandelbrot(int size, short[] output) {
         final int iterations = 10000;
         float space = 2.0f / size;
-
         for (@Parallel int i = 0; i < size; i++) {
-            int indexIDX = i;
             for (@Parallel int j = 0; j < size; j++) {
-
-                int indexJDX = j;
-
                 float Zr = 0.0f;
                 float Zi = 0.0f;
-                float Cr = (1 * indexJDX * space - 1.5f);
-                float Ci = (1 * indexIDX * space - 1.0f);
-
+                float Cr = (1 * j * space - 1.5f);
+                float Ci = (1 * i * space - 1.0f);
                 float ZrN = 0;
                 float ZiN = 0;
                 int y = 0;
-
-                for (y = 0; y < iterations; y++) {
-                    float s = ZiN + ZrN;
-                    if (s > 4.0f) {
-                        break;
-                    } else {
+                for (int ii = 0; ii < iterations; ii++) {
+                    if (ZiN + ZrN <= 4.0f) {
                         Zi = 2.0f * Zr * Zi + Ci;
                         Zr = 1 * ZrN - ZiN + Cr;
                         ZiN = Zi * Zi;
                         ZrN = Zr * Zr;
+                        y++;
+                    } else {
+                        ii = iterations;
                     }
-
                 }
                 short r = (short) ((y * 255) / iterations);
                 output[i * size + j] = r;

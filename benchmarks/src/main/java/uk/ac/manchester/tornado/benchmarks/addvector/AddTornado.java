@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,17 +52,10 @@ public class AddTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
-        }
+        graph.streamIn(a, b);
         graph.task("addvector", GraphicsKernels::addVector, a, b, c);
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(c);
+        graph.warmup();
     }
 
     @Override
@@ -78,7 +71,7 @@ public class AddTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -87,7 +80,7 @@ public class AddTornado extends BenchmarkDriver {
 
         final VectorFloat4 result = new VectorFloat4(numElements);
 
-        code();
+        benchmarkMethod();
         graph.syncObject(c);
         graph.clearProfiles();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,9 +27,11 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class StencilJava extends BenchmarkDriver {
 
-    private final int sz,n;
+    private final int sz;
+    private final int n;
     private final float FAC = 1 / 26;
-    private float[] a0,a1;
+    private float[] a0;
+    private float[] a1;
 
     public StencilJava(int iterations, int dataSize) {
         super(iterations);
@@ -63,7 +65,7 @@ public class StencilJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         stencil3d(n, sz, a0, a1, FAC);
         copy(sz, a0, a1);
     }

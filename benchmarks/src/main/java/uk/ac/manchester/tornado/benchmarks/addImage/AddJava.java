@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.benchmarks.addimage;
+package uk.ac.manchester.tornado.benchmarks.addImage;
 
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
@@ -60,7 +60,7 @@ public class AddJava extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         GraphicsKernels.addImage(a, b, c);
     }
 

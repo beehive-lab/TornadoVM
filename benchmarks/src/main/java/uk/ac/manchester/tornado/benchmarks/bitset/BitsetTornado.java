@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class BitsetTornado extends BenchmarkDriver {
+
     private int numWords;
     private TaskSchedule graph;
 
@@ -47,9 +48,12 @@ public class BitsetTornado extends BenchmarkDriver {
 
         final LongBitSet a = new LongBitSet(aBits, numWords * 8);
         final LongBitSet b = new LongBitSet(bBits, numWords * 8);
+        long[] result = new long[numWords];
 
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::intersectionCount, numWords, a, b);
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(a, b) //
+                .task("t0", ComputeKernels::intersectionCount, numWords, a, b, result) //
+                .streamOut(result);
         graph.warmup();
     }
 
@@ -67,7 +71,7 @@ public class BitsetTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 }
