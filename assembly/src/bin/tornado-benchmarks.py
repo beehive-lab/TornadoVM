@@ -31,9 +31,10 @@ import argparse
 import os
 import subprocess
 import textwrap
+import sys
 
 try:
-	javaHome = os.environ["JAVA_HOME"]
+	__JAVA_HOME__ = os.environ["JAVA_HOME"]
 except:
 	print "[ERROR] JAVA_HOME is not defined"
 	sys.exit(0)
@@ -41,7 +42,7 @@ except:
 JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 # Get java version
-__JAVA_VERSION__ = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+__JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 ## ========================================================================================
 ## Script Options
