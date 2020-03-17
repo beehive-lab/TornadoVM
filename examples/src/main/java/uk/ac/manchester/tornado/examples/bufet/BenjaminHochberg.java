@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 public class BenjaminHochberg {
 
-    private ArrayList<Double> pvalueList = new ArrayList<>();
+    private ArrayList<Double> pValueList = new ArrayList<>();
     private ArrayList<Double> indexList = new ArrayList<>();
     private ArrayList<String> fdrList = new ArrayList<>();
 
@@ -36,23 +36,23 @@ public class BenjaminHochberg {
         double star = 0.05, doubleStar = 0.01;
 
         for (int i = 0; i < totalGo; i++) {
-            pvalueList.add((double)pvalues[i] / (double)miRNA_groups);
+            pValueList.add((double)pvalues[i] / (double)miRNA_groups);
             indexList.add((double)pvalues[i] / (double)miRNA_groups);
             fdrList.add("");
         }
 
         for (int i = 0; i < totalNoGo; i++) {
-            pvalueList.add(1.0);
+            pValueList.add(1.0);
             indexList.add(1.0);
             fdrList.add("");
         }
 
-        Collections.sort(pvalueList);
-        int pNodeListSize = pvalueList.size();
+        Collections.sort(pValueList);
+        int pNodeListSize = pValueList.size();
 
         for (int i = 0; i < pNodeListSize; i++) {
             double starcheck = (double)(((i + 1) * star)) / (double)pNodeListSize;
-            if (pvalueList.get(i) <= starcheck) {
+            if (pValueList.get(i) <= starcheck) {
                 maxI = i;
             }
         }
@@ -67,7 +67,7 @@ public class BenjaminHochberg {
 
         for (int i = 0; i < pNodeListSize; i++) {
             double starcheck = (double)((i + 1) * doubleStar) /  (double)pNodeListSize;
-            if (pvalueList.get(i) <= starcheck) {
+            if (pValueList.get(i) <= starcheck) {
                 maxI = i;
             }
         }
@@ -80,12 +80,12 @@ public class BenjaminHochberg {
             fdrList.set(i,"**");
         }
 
-        pvalueList = indexList;
+        pValueList = indexList;
     }
 
     public ArrayList<Double> returnPvalueList() {
 
-        return pvalueList;
+        return pValueList;
     }
 
     public ArrayList<String> returnFdrList() {
