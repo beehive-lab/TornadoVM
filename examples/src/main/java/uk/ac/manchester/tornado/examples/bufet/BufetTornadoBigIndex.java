@@ -34,7 +34,7 @@ public class BufetTornadoBigIndex {
     private static final int genes_population = 25000;          //maximum amount of Genes
     private static final int miRNA_groups = 10000;             //the amount of random miRNAs target groups
     private static final byte chunks = 4;                       //virtual batching; break data transfer to X chunks
-    private static final int warming_up_iterations = 15;        //warm up iterations
+    private static final int warming_up_iterations = 3;        //warm up iterations
 
 
     //------Methods definition segment------
@@ -51,85 +51,7 @@ public class BufetTornadoBigIndex {
         }
         return map;
     }
-
-
-    //Read the differentially expressed miRNAs provided by the user
-    public static int[] getMiRNAsPhaseA(String filename, String delimiter, HashMap<String, byte[]> map, HashMap<String, ArrayList<Integer>> goCatGenesUnq) throws IOException {
-
-        ArrayList<String> list = new ArrayList<>(InputScanner.getString(filename, delimiter));
-        byte[] array = new byte[genes_population];
-        int [] retArray = new int[(2 + goCatGenesUnq.size())]; //temporary store of return values
-        int target_genes = 0;                                  //Count ones in array (gene_map)
-        int group_found = 0;                                   //miRNA matches between the user-defined miRNA sequence and the Database of miRNAs
-        int idx = 2;                                           //Avoid the first two positions for target_genes and group_found
-
-        for (String token : list) {
-            if (map.containsKey(token)) {
-                group_found++;
-                for (int i = 0; i < genes_population; i++) {
-                    array[i] |= map.get(token)[i];
-                }
-            }
-        }
-        retArray[0] = group_found; //Position 0: First return value
-
-        for (int i = 0; i < genes_population; i++) {
-            if (array[i] == 1) {
-                target_genes++;
-            }
-        }
-        retArray[1] = target_genes; //Position 1: Second return value
-
-        for (HashMap.Entry<String,ArrayList<Integer>> entry: goCatGenesUnq.entrySet()) {
-            //how many Genes are associated to the specific goCategory
-            int intersection = 0;
-            for (Integer token : entry.getValue()) {
-                if (array[token] == 1) {
-                    intersection++;
-                }
-            }
-            retArray[idx] = intersection;
-            idx++;
-        }
-        return retArray;
-    }
-
-    //Read the differentially expressed miRNAs provided by the user
-    //Generate the checkGO and nocheckGO data structures
-    public static HashMap<String, ArrayList<String>> getMiRNAsPhaseB(HashMap<String, ArrayList<Integer>> goCatGenesUnq, HashMap<String,
-            ArrayList<String>> goCategories, int[] phaseAarr, boolean goOrNogo) {
-
-        HashMap<String, ArrayList<String>> map = new HashMap<>();
-        int idx = 2;
-
-        for (HashMap.Entry<String,ArrayList<Integer>> entry: goCatGenesUnq.entrySet()) {
-            if ((phaseAarr[idx] > 0) && (goOrNogo == true)) {                           //Generate checkGO
-                map.put(entry.getKey(), new ArrayList<String>());
-                map.get(entry.getKey()).add(entry.getKey());                            //goCategory
-                map.get(entry.getKey()).add(Integer.toString(entry.getValue().size())); //Amount of Genes for the goCategory
-                map.get(entry.getKey()).add(Integer.toString(phaseAarr[idx]));          //intersection
-                map.get(entry.getKey()).add(Double.toString((double)phaseAarr[idx]/(double) phaseAarr[1])); //overall_proportion
-                map.get(entry.getKey()).add(Double.toString(0.0));                   //mean_overlap
-                for (String token:goCategories.get(entry.getKey())) {
-                    map.get(entry.getKey()).add(token);
-                }
-            }
-
-            if ((phaseAarr[idx] <= 0) && (goOrNogo == false)) {                         //Generate nocheckGO
-                map.put(entry.getKey(), new ArrayList<String>());
-                map.get(entry.getKey()).add(entry.getKey());                            //goCategory
-                map.get(entry.getKey()).add(Integer.toString(entry.getValue().size())); //Amount of Genes for the goCategory
-                map.get(entry.getKey()).add(Integer.toString(0));                    //intersection
-                map.get(entry.getKey()).add(Double.toString(0.0));                   //overall_proportion
-                for (String token:goCategories.get(entry.getKey())) {
-                    map.get(entry.getKey()).add(token);
-                }
-            }
-            idx++;
-        }
-        return map;
-    }
-
+    
 
     //Generate a random index
     public static int[] generateRandom(int upperBound, int size) {
@@ -311,13 +233,14 @@ public class BufetTornadoBigIndex {
         //Store the miRNA target group for the user-defined miRNA sequence
         System.out.println("Generate miRNA target group for the user-defined miRNA sequence (Phase A, and B).");
         int[] getMiRNAsretVal;
-        getMiRNAsretVal = getMiRNAsPhaseA(args[4],args[1],interactions, goCatUniqueGenes);
+        BufetBigIndex bI = new BufetBigIndex();                                             //Exploit methods from BufetBigIndex class
+        getMiRNAsretVal = bI.getMiRNAsPhaseA(args[4],args[1],interactions, goCatUniqueGenes);
 
         HashMap<String, ArrayList<String>> checkGO;
-        checkGO = getMiRNAsPhaseB(goCatUniqueGenes, goCategories, getMiRNAsretVal, true);
+        checkGO = bI.getMiRNAsPhaseB(goCatUniqueGenes, goCategories, getMiRNAsretVal, true);
 
         HashMap<String, ArrayList<String>> nocheckGO;
-        nocheckGO = getMiRNAsPhaseB(goCatUniqueGenes, goCategories, getMiRNAsretVal, false);
+        nocheckGO = bI.getMiRNAsPhaseB(goCatUniqueGenes, goCategories, getMiRNAsretVal, false);
 
         //prepareRandom() --> Not implemented (performs a sanity check)
 
@@ -338,7 +261,7 @@ public class BufetTornadoBigIndex {
         int[] randID = generateRandom(miRNA_Genes.size(), (getMiRNAsretVal[0] * miRNA_groups));
         int chunkElements = miRNA_groups / chunks;
         int checkGoSize = checkGO.size();                                                   //get the number of unique categories
-        int[] countOnes = new int[chunkElements];                                       //store the number of Ones per miRNA group
+        int[] countOnes = new int[chunkElements];                                           //store the number of Ones per miRNA group
         long[] pValues = new long[checkGoSize];
         byte[] randNum = new byte[] {0,0};                                                  //aux array to block unrolling in getRandomTargetGroup method
         int[] bounds = new int[] {chunkElements, genes_population, getMiRNAsretVal[0]};     //aux array to block unrolling in getRandomTargetGroup method
