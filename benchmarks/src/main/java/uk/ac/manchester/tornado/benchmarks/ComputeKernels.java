@@ -240,4 +240,12 @@ public class ComputeKernels {
             }
         }
     }
+
+    public static void hilbertComputation(float[] output, int rows, int cols) {
+        for (@Parallel int i = 0; i < rows; i++) {
+            for (@Parallel int j = 0; j < cols; j++) {
+                output[i * rows + j] = (float) 1 / (float) ((i + 1) + (j + 1) - 1);
+            }
+        }
+    }
 }

@@ -111,7 +111,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoExecutionContext graphContext;
 
-    private byte[] highLevelCode = new byte[2048];
+    private byte[] highLevelCode = new byte[8192];
     private ByteBuffer hlBuffer;
     private TornadoVMGraphCompilationResult result;
     private long batchSizeBytes = -1;
