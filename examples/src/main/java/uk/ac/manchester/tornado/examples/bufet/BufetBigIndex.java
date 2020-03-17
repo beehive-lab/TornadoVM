@@ -262,9 +262,6 @@ public class BufetBigIndex {
             System.out.println("Error: Argument(s) is(are) missing (" + args.length + " out of 5)!");
         }
 
-        //System.out.println("Reading " + args[0] + " and generate a Hashmap for unique miRNAs.");
-        //HashMap<String, Integer> miRNAs = new HashMap<>(getUniqueInstances(InputScanner.getString(args[0], args[1])));
-
         //Store interactions between miRNAs and Genes
         System.out.println("Reading " + args[0] + " and generate a Hashmap for miRNA-Gene interactions.");
         HashMap<String, ArrayList<String>> miRNA_Genes = new HashMap<>(InputScanner.readString(args[0], args[1], 0, 1, false));
@@ -320,8 +317,6 @@ public class BufetBigIndex {
 
         HashMap<String, ArrayList<String>> nocheckGO;
         nocheckGO = getMiRNAsPhaseB(goCatUniqueGenes, goCategories, getMiRNAsretVal, false);
-
-        //prepareRandom() --> Not implemented (performs a sanity check)
 
         //Cast Hash table to an array of byte values
         byte[] onlyGeneVector = new byte[genes_population * interactions.size()];

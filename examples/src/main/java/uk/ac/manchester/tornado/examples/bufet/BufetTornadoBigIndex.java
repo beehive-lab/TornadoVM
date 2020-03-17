@@ -242,8 +242,6 @@ public class BufetTornadoBigIndex {
         HashMap<String, ArrayList<String>> nocheckGO;
         nocheckGO = bI.getMiRNAsPhaseB(goCatUniqueGenes, goCategories, getMiRNAsretVal, false);
 
-        //prepareRandom() --> Not implemented (performs a sanity check)
-
         //Cast Hash table to an array of byte values
         byte[] onlyGeneVector = new byte[genes_population * interactions.size()];
         int j = 0;                                                          //aux index to parse array
