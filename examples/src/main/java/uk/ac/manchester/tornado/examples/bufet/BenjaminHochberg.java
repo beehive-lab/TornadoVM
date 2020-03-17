@@ -37,14 +37,12 @@ public class BenjaminHochberg {
 
         for (int i = 0; i < totalGo; i++) {
             pvalueList.add((double)pvalues[i] / (double)miRNA_groups);
-            //indexList.add(i);
             indexList.add((double)pvalues[i] / (double)miRNA_groups);
             fdrList.add("");
         }
 
         for (int i = 0; i < totalNoGo; i++) {
             pvalueList.add(1.0);
-            //indexList.add(i + totalGo);
             indexList.add(1.0);
             fdrList.add("");
         }
