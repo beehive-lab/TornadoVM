@@ -47,9 +47,8 @@ public class ComputeKernels {
     /**
      * Parallel Implementation of the MonteCarlo computation: this is based on the
      * Marawacc compiler framework.
-     * 
-     * @author Juan Fumero
      *
+     * @author Juan Fumero
      */
     public static void monteCarlo(float[] result, int size) {
         final int iter = 25000;
@@ -112,10 +111,10 @@ public class ComputeKernels {
     }
 
     /**
-     * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
-     *        Distribution Function)
      * @param X
      *            input value
+     * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
+     *        Distribution Function)
      */
     static float phi(final float X) {
         final float c1 = 0.319381530f;
@@ -141,11 +140,11 @@ public class ComputeKernels {
 
     /*
      * @brief Computes the call and put prices by using Black Scholes model
-     * 
+     *
      * @param randArray input array of random values of current option price
-     * 
+     *
      * @param out output array of calculated put price values
-     * 
+     *
      * @param call output array of calculated call price values
      */
     public static void blackscholes(final float[] randArray, final float[] put, final float[] call) {
@@ -208,9 +207,8 @@ public class ComputeKernels {
     /**
      * Parallel Implementation of the Mandelbrot: this is based on the Marawacc
      * compiler framework.
-     * 
-     * @author Juan Fumero
      *
+     * @author Juan Fumero
      */
     public static void mandelbrot(int size, short[] output) {
         final int iterations = 10000;
@@ -245,6 +243,33 @@ public class ComputeKernels {
         for (@Parallel int i = 0; i < rows; i++) {
             for (@Parallel int j = 0; j < cols; j++) {
                 output[i * rows + j] = (float) 1 / (float) ((i + 1) + (j + 1) - 1);
+            }
+        }
+    }
+
+    public static void channelConvolution(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+        // Dealing with an even width filter is trickier
+        assert (filterWidth % 2 == 1);
+        // For every pixel in the image
+        for (@Parallel int r = 0; r < numRows; ++r) {
+            for (@Parallel int c = 0; c < numCols; ++c) {
+                float result = 0.0f;
+                // For every value in the filter around the pixel (c, r)
+                for (int filter_r = -filterWidth / 2; filter_r <= filterWidth / 2; ++filter_r) {
+                    for (int filter_c = -filterWidth / 2; filter_c <= filterWidth / 2; ++filter_c) {
+                        // Find the global image position for this filter
+                        // position
+                        // clamp to boundary of the image
+                        int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
+                        int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
+
+                        float image_value = (channel[image_r * numCols + image_c]);
+                        float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
+
+                        result += image_value * filter_value;
+                    }
+                }
+                channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
             }
         }
     }
