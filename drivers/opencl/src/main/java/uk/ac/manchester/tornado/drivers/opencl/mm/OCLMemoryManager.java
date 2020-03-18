@@ -110,7 +110,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         } else {
             throw new TornadoOutOfMemoryException("Out of memory on the target device -> " + deviceContext.getDevice().getDeviceName() + ". [Heap Limit is: "
                     + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true)
-                    + "]\nUse flag -Dtornado.heap.allocation=<XGB> to tune the device heap. E.g., -Dtornado.heap.allocation=2GB");
+                    + "]\nUse flag -Dtornado.heap.allocation=<XGB> to tune the device heap. E.g., -Dtornado.heap.allocation=2GB\n");
         }
         return headerStart;
     }
