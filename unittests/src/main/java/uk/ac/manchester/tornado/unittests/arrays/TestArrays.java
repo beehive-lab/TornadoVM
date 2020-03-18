@@ -96,7 +96,7 @@ public class TestArrays extends TornadoTestBase {
     public void testWarmUp() {
 
         final int N = 128;
-        int numKernels = 128;
+        int numKernels = 16;
 
         int[] data = new int[N];
 

@@ -61,7 +61,7 @@ public class OCLByteBuffer {
     public void allocate(final long numBytes) throws TornadoOutOfMemoryException {
         bytes = numBytes;
 
-        offset = deviceContext.getMemoryManager().tryAllocate(byte[].class, numBytes, 0, getAlignment());
+        offset = deviceContext.getMemoryManager().tryAllocate(numBytes, 0, getAlignment());
 
         buffer = ByteBuffer.allocate((int) numBytes);
         buffer.order(deviceContext.getByteOrder());

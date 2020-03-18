@@ -182,7 +182,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         }
 
         if (bufferOffset == -1) {
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(reference.getClass(), bytesToAllocate, 32, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, 32, getAlignment());
         }
 
         if (DEBUG) {

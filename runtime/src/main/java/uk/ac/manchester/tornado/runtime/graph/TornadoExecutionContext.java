@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 public class TornadoExecutionContext {
 
     private final String name;
-    private final int MAX_TASKS = 1024;
+    private final int MAX_TASKS = 128;
     private final ScheduleMetaData meta;
 
     private final List<SchedulableTask> tasks;

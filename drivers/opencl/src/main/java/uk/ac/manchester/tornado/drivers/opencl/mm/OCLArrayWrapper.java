@@ -39,7 +39,6 @@ import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -117,7 +116,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             if (bytesToAllocate <= 0) {
                 throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
             }
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(hostArray.getClass(), bytesToAllocate, arrayHeaderSize, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
 
             if (Tornado.FULL_DEBUG) {
                 info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,
