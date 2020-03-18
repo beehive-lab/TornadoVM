@@ -22,7 +22,6 @@ import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.benchmarks.bitset.BitsetTornado;
 
 public abstract class BenchmarkDriver {
 
@@ -71,7 +70,7 @@ public abstract class BenchmarkDriver {
     }
 
     private boolean skipGC() {
-        return this instanceof BitsetTornado;
+        return false;
     }
 
     public void benchmark() {
