@@ -28,16 +28,16 @@ public class BenjaminHochberg {
     private ArrayList<Double> indexList = new ArrayList<>();
     private ArrayList<String> fdrList = new ArrayList<>();
 
-    public void benjaminHochberg (HashMap<String, ArrayList<String>> checkGO, HashMap<String, ArrayList<String>>  nocheckGO, long[] pvalues, int miRNA_groups) {
+    public void benjaminHochberg(HashMap<String, ArrayList<String>> checkGO, HashMap<String, ArrayList<String>> nocheckGO, long[] pvalues, int miRNA_groups) {
 
         int totalGo = checkGO.size();
         int totalNoGo = nocheckGO.size();
         int maxI = 0;
-        double star = 0.05, doubleStar = 0.01;
+        double star = 0.05,doubleStar = 0.01;
 
         for (int i = 0; i < totalGo; i++) {
-            pValueList.add((double)pvalues[i] / (double)miRNA_groups);
-            indexList.add((double)pvalues[i] / (double)miRNA_groups);
+            pValueList.add((double) pvalues[i] / (double) miRNA_groups);
+            indexList.add((double) pvalues[i] / (double) miRNA_groups);
             fdrList.add("");
         }
 
@@ -51,7 +51,7 @@ public class BenjaminHochberg {
         int pNodeListSize = pValueList.size();
 
         for (int i = 0; i < pNodeListSize; i++) {
-            double starcheck = (double)(((i + 1) * star)) / (double)pNodeListSize;
+            double starcheck = (double) (((i + 1) * star)) / (double) pNodeListSize;
             if (pValueList.get(i) <= starcheck) {
                 maxI = i;
             }
@@ -62,11 +62,11 @@ public class BenjaminHochberg {
         }
 
         for (int i = 0; i < maxI; i++) {
-            fdrList.set(i,"*");
+            fdrList.set(i, "*");
         }
 
         for (int i = 0; i < pNodeListSize; i++) {
-            double starcheck = (double)((i + 1) * doubleStar) /  (double)pNodeListSize;
+            double starcheck = (double) ((i + 1) * doubleStar) / (double) pNodeListSize;
             if (pValueList.get(i) <= starcheck) {
                 maxI = i;
             }
@@ -77,7 +77,7 @@ public class BenjaminHochberg {
         }
 
         for (int i = 0; i < maxI; i++) {
-            fdrList.set(i,"**");
+            fdrList.set(i, "**");
         }
 
         pValueList = indexList;

@@ -18,7 +18,6 @@
 
 package uk.ac.manchester.tornado.examples.bufet;
 
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import java.util.Scanner;
 
 public class InputScanner {
 
-    // Read file. A string per line.
     public static ArrayList<String> getString(String fileName, String delimiter) throws IOException {
 
         ArrayList<String> list = new ArrayList<>();
@@ -48,11 +46,9 @@ public class InputScanner {
         return list;
     }
 
-
-    //Read file. Specific tokens in a line.
     public static HashMap<String, ArrayList<String>> readString(String fileName, String delimiter, int StrPosA, int StrPosB, boolean UniqueOccur) throws IOException {
 
-        HashMap<String,ArrayList<String>> map = new HashMap<>();
+        HashMap<String, ArrayList<String>> map = new HashMap<>();
         Scanner scanner = null;
 
         try {
@@ -67,12 +63,11 @@ public class InputScanner {
                     map.put(key, new ArrayList<String>());
                 }
 
-                if (UniqueOccur) {                                      //special case for goCategories data structure
+                if (UniqueOccur) { // special case for goCategories data structure
                     if (!(map.get(key).contains(value))) {
                         map.get(key).add(value);
                     }
-                }
-                else {
+                } else {
                     map.get(key).add(value);
                 }
             }
@@ -84,13 +79,11 @@ public class InputScanner {
         return map;
     }
 
-
-    //Write to file.
     public static void writeString(String fileName, ArrayList<String> text) {
 
         try {
             FileWriter writer = new FileWriter(fileName);
-            for(String token: text) {
+            for (String token : text) {
                 writer.write(token);
             }
             writer.close();
