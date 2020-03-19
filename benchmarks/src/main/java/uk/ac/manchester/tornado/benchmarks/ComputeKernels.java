@@ -21,6 +21,9 @@ import org.apache.lucene.util.LongBitSet;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.Byte3;
+import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
 public class ComputeKernels {
 
@@ -266,6 +269,39 @@ public class ComputeKernels {
                     }
                 }
                 channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+            }
+        }
+    }
+
+    public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
+        for (@Parallel int y = 0; y < input.Y(); y++) {
+            for (@Parallel int x = 0; x < input.X(); x++) {
+                Byte3 pixel = null;
+                final int result = (int) input.get(x, y).getS2();
+                switch (result) {
+                    case 1: // ok GREY
+                        pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);
+                        break;
+                    case -1: // no input BLACK
+                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 0);
+                        break;
+                    case -2: // not in image RED
+                        pixel = new Byte3((byte) 255, (byte) 0, (byte) 0);
+                        break;
+                    case -3: // no correspondence GREEN
+                        pixel = new Byte3((byte) 0, (byte) 255, (byte) 0);
+                        break;
+                    case -4: // too far away BLUE
+                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 255);
+                        break;
+                    case -5: // wrong normal YELLOW
+                        pixel = new Byte3((byte) 255, (byte) 255, (byte) 0);
+                        break;
+                    default:
+                        pixel = new Byte3((byte) 255, (byte) 128, (byte) 128);
+                        break;
+                }
+                output.set(x, y, pixel);
             }
         }
     }

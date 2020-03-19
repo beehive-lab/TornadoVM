@@ -84,6 +84,7 @@ __BENCHMARKS__ = [
 	"blackscholes",
 	"montecarlo",
 	"blurFilter",
+	"renderTrack",
 	"nbody",
 	"sgemm",
 	"dgemm",
