@@ -137,11 +137,10 @@ def composeAllOptions(args):
 		options = options + __SKIP_DEVICES__ + args.skip_devices  + " "
 	return options
 
-def printBenchmakrks():
-	print "List of benchmarks: "
-	wrapper = textwrap.TextWrapper(initial_indent="* ")
+def printBenchmarks(indent=""):
+	print Colors.GREEN + indent + "List of benchmarks: " + Colors.RESET
 	for b in __BENCHMARKS__:
-		print wrapper.fill(b)
+		print Colors.BOLD + indent + "\t*" + b + Colors.RESET
 
 def runBenchmarksFullCoverage(args):
 	options = composeAllOptions(args)
@@ -164,6 +163,7 @@ def runMediumConfiguration(args):
 			os.system(command)
 
 def runDefaultSizePerBenchmark(args):
+	printBenchmarks(indent="\t")
 	options = composeAllOptions(args)
 	print Colors.CYAN + "\t[INFO] TornadoVM options: " + options + Colors.RESET
 	for b in __BENCHMARKS__:
@@ -192,7 +192,7 @@ def main():
 		ITERATIONS = args.iterations
 
 	if args.benchmarks:
-		printBenchmakrks()
+		printBenchmarks()
 	elif args.default:
 		runDefaultSizePerBenchmark(args)
 	elif args.full:
