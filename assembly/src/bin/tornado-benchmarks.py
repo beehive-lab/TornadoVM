@@ -71,7 +71,7 @@ __BENCHMARKS__ = [
 	"addImage",
 	"stencil",
 	"convolvearray",
-	"convolvimage",
+	"convolveimage",
 	"montecarlo",
 	"mandelbrot",
 	"blurFilter",
