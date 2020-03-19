@@ -37,7 +37,7 @@ pipeline {
 		stage('tornado-benchmarks') {
         	steps {
 				timeout(time: 10, unit: 'MINUTES') {
-                	sh 'python assembly/src/bin/tornado-benchmarks.py --skipSequential --iterations 5 '
+                	sh 'python assembly/src/bin/tornado-benchmarks.py --medium --skipSequential --iterations 5 '
             	}
 			}
         }

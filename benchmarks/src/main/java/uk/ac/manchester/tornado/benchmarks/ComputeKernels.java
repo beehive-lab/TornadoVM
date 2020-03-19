@@ -55,21 +55,17 @@ public class ComputeKernels {
         for (@Parallel int idx = 0; idx < size; idx++) {
             long seed = idx;
             float sum = 0.0f;
-
             for (int j = 0; j < iter; ++j) {
                 // generate a pseudo random number (you do need it twice)
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-
                 // this generates a number between 0 and 1 (with an awful
                 // entropy)
                 float x = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
-
                 // repeat for y
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 float y = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
-
                 float dist = TornadoMath.sqrt(x * x + y * y);
                 if (dist <= 1.0f) {
                     sum += 1.0f;
