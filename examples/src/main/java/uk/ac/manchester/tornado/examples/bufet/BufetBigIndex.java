@@ -21,6 +21,33 @@ package uk.ac.manchester.tornado.examples.bufet;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ *
+ * Description: Java version-1 of the Boosting the Unbiased Functional
+ * Enrichment Analysis (BUFET) algorithm. This version focuses on reducing the
+ * memory requirements of the application. Not accelerated through TornadoVM.
+ *
+ * Konstantinos Zagganas, Thanasis Vergoulis, Ioannis S. Vlachos, Maria D.
+ * Paraskevopoulou, Spiros Skiadopoulos and Theodore Dalamagas. BUFET: boosting
+ * the unbiased miRNA functional enrichment analysis using bitsets. BMC
+ * Bioinformatics volume 18, page 399, doi 10.1186/s12859-017-1812-8, 2017.
+ * https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1812-8
+ *
+ * C++ bufetApp version: git clone https://github.com/diwis/BUFET.git
+ * 
+ * Command-line arguments format:
+ *
+ * tornado uk.ac.manchester.tornado.examples.bufet.BufetBigIndex
+ * miRanda_dataset.csv "\\n|\|" annotation_dataset.csv "\\n|\|" miRNA-5.txt
+ * output_file.txt
+ *
+ * Download and unzip input data-set:
+ * http://carolina.imis.athena-innovation.gr/bufet/reproduction_files.zip
+ *
+ * tornado uk.ac.manchester.tornado.examples.bufet.BufetBigIndex help
+ *
+ */
+
 public class BufetBigIndex {
 
     // ------Const definition segment------
@@ -248,10 +275,16 @@ public class BufetBigIndex {
     public static void main(String[] args) throws IOException {
 
         if (args.length < 5) {
-            // Command-line arguments sequence:
-            // miRanda_dataset.csv, delimiter, annotation_dataset.csv, delimiter,
-            // miRNA_sequence, output_file
-            System.out.println("Error: Argument(s) is(are) missing (" + args.length + " out of 5)!");
+            if (args[0].equals("help")) {
+                System.out.println("BufetApp Usage");
+                System.out.println("Usage tornado [options] class [arg0 ... argN]");
+                System.out.println(
+                        "Command: tornado uk.ac.manchester.tornado.examples.bufet.BufetBigIndex miRanda_dataset.csv \"\\\\n|\\|\" annotation_dataset.csv \"\\\\n|\\|\" miRNA-5.txt output_file.txt");
+
+            } else {
+                System.out.println("Error: Arguments are missing (Pass " + args.length + " out of 5)!");
+            }
+            System.exit(0);
         }
 
         // Store interactions between miRNAs and Genes
