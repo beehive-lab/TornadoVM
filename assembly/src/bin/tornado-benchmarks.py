@@ -62,10 +62,6 @@ if (__JAVA_VERSION__ == JDK_11_VERSION):
 __RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms24G -Xmx24G -server "
-__DEVICES__ = [
-	"-Ddevices=0:0",
-	"-Ddevices=0:1",
-]
 __TORNADO_COMMAND__ = "tornado "
 __SKIP_SERIAL__   = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL__ = " -Dtornado.enable=False "
@@ -103,10 +99,9 @@ allSizes = {
 	"nbody": [[512, 1024, 2048, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
 	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304], [__MAX_ITERATIONS__]],
 	"sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [__MAX_ITERATIONS__]],
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
 	"dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
+	"blurFilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
 }
 
 mediumSizes = {
@@ -115,15 +110,12 @@ mediumSizes = {
 	"nbody": [[512, 1024, 2048, 4096], ["getSize()"]],
 	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576, 2097152], ["getSize()"]],
 	"sgemm": [[128, 256, 512, 1024, 2048], ["getSize()"]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], ["getSize()"]],
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], ["getSize()"]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576], ["getSize()"]],
 	"dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
 	"blurFilter": [[256, 512, 1024, 2048], ["getSize()"]],
 }
 
 ## ========================================================================================
-
 def composeAllOptions(args):
 	options = __JVM_FLAGS__
 	if args.skip_serial:
@@ -199,7 +191,6 @@ def main():
 	elif args.full:
 		runBenchmarksFullCoverage(args)
 	elif args.medium:
-		## Default option. It runs with medium size
 		print "[INFO] Running small and medium sizes"
 		runMediumConfiguration(args)
 	else:

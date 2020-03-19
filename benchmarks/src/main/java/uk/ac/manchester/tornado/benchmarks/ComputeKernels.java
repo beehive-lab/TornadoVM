@@ -174,20 +174,6 @@ public class ComputeKernels {
         }
     }
 
-    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, long[] result) {
-        final long[] aBits = a.getBits();
-        final long[] bBits = b.getBits();
-        for (@Parallel int i = 0; i < numWords; i++) {
-            result[i] = Long.bitCount(aBits[i] & bBits[i]);
-        }
-    }
-
-    public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] * b[i];
-        }
-    }
-
     public static void computeDft(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
