@@ -30,7 +30,7 @@ public class Benchmark extends BenchmarkRunner {
             iterations = Integer.parseInt(args[0]);
             size = Integer.parseInt(args[1]);
         } else if (args.length == 1) {
-            System.out.printf("Two arguments are needed: iterations size");
+            System.out.println("[ERROR] Two arguments are needed: <iterations> <size>");
         } else {
             iterations = 51;
             size = 8192;
@@ -39,7 +39,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getName() {
-        return "nbody";
+        return "renderTrack";
     }
 
     @Override
