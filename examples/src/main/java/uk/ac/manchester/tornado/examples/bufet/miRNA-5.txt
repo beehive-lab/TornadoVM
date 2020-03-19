@@ -1,5 +1,0 @@
-hsa-miR-4484
-hsa-miR-548l
-hsa-miR-1277-5p
-hsa-miR-30c-5p
-hsa-miR-1299
