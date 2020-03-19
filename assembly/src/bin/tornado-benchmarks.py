@@ -68,7 +68,7 @@ __VERBOSE__       = " -Dtornado.verbose=True "
 ## Include here benchmarks to run
 __BENCHMARKS__ = [
 	"saxpy",
-	"addimage",
+	"addImage",
 	"stencil",
 	"convolvearray",
 	"convolvimage",
