@@ -156,9 +156,9 @@ def runMediumConfiguration(args):
 			os.system(command)
 
 def runDefaultSizePerBenchmark(args):
-	printBenchmarks(indent="\t")
+	printBenchmarks()
 	options = composeAllOptions(args)
-	print Colors.CYAN + "\t[INFO] TornadoVM options: " + options + Colors.RESET
+	print Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET
 	for b in __BENCHMARKS__:
 		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b 
 		os.system(command)
@@ -195,7 +195,7 @@ def main():
 		runMediumConfiguration(args)
 	else:
 		print Colors.BLUE + "Running TornadoVM Benchmarks" + Colors.RESET
-		print Colors.CYAN + " \t[INFO] This process takes between 30-60 minutes" + Colors.RESET
+		print Colors.CYAN + "[INFO] This process takes between 30-60 minutes" + Colors.RESET
 		runDefaultSizePerBenchmark(args)
 
 if __name__ == '__main__':
