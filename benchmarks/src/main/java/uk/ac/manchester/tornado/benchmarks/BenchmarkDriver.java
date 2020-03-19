@@ -70,7 +70,7 @@ public abstract class BenchmarkDriver {
     }
 
     private boolean skipGC() {
-        return false;
+        return true;
     }
 
     public void benchmark() {
@@ -84,9 +84,6 @@ public abstract class BenchmarkDriver {
         timers = new double[size];
 
         if (validResult) {
-
-            System.gc();
-
             for (long i = 0; i < iterations; i++) {
                 if (!skipGC()) {
                     System.gc();
@@ -147,7 +144,6 @@ public abstract class BenchmarkDriver {
 
     public double getStdDev() {
         return Math.sqrt(getVariance());
-
     }
 
     public double getCV() {
@@ -173,5 +169,4 @@ public abstract class BenchmarkDriver {
     public String getSummary() {
         return String.format("elapsed=%6e, per iteration=%6e", getElapsed(), getElapsedPerIteration());
     }
-
 }
