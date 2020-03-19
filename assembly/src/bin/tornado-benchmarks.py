@@ -67,27 +67,19 @@ __VERBOSE__       = " -Dtornado.verbose=True "
 
 ## Include here benchmarks to run
 __BENCHMARKS__ = [
-	"montecarlo",
-	"nbody",
 	"saxpy",
+	"addimage",
+	"stencil",
+	"convolvearray",
+	"convolvimage",
+	"montecarlo",
+	"mandelbrot",
+	"blurFilter",
+	"nbody",
 	"sgemm",
-	"scopy",
+	"dgemm",
 	"blackscholes",
-	"vectormult",
 	"dft",
-]
-
-__PROBLEM_SIZES__ = [
-	"1024",
-	"2048",
-	"4096",
-	"8192",
-	"16384",
-	"32798",
-	"65536",
-	"262144"
-	"1048576",
-	"4194304",
 ]
 
 def getSize():
@@ -117,6 +109,7 @@ mediumSizes = {
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], ["getSize()"]],
 	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576], ["getSize()"]],
 	"dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
+	"blurFilter": [[256, 512, 1024, 2048], ["getSize()"]],
 }
 
 ## ========================================================================================
@@ -141,29 +134,6 @@ def printBenchmakrks():
 	for b in __BENCHMARKS__:
 		print wrapper.fill(b)
 
-def runForAllSizes(args):
-	options = composeAllOptions(args)
-	for size in __PROBLEM_SIZES__:
-		for bench in __BENCHMARKS__:
-			command = __TORNADO_COMMAND__ + options + __RUNNER__ + bench + " " + str(ITERATIONS) + " " + str(size)
-			os.system(command)
-
-def runAllDevices(args):
-	options = composeAllOptions(args)
-	index = 0
-	for d in __DEVICES__:
-		print "Currently executing on device: device=0:", index
-		for b in __BENCHMARKS__:
-			command = __TORNADO_COMMAND__ + options + d + __RUNNER__ + b
-			os.system(command)
-		index += 1
-
-def runBenchmarks(args):
-	options = composeAllOptions(args)
-	for b in __BENCHMARKS__:
-		command = __TORNADO_COMMAND__ + options + __RUNNER__ + b
-		os.system(command)
-
 def runBenchmarksFullCoverage(args):
 	options = composeAllOptions(args)
 	for key in allSizes.keys():
@@ -184,13 +154,19 @@ def runMediumConfiguration(args):
 				command = command + " " + str(size)
 			os.system(command)
 
+def runDefaultSizePerBenchmark(args):
+	options = composeAllOptions(args)
+	print options
+	for b in __BENCHMARKS__:
+		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b 
+		os.system(command)
+
 def parseArguments():
-	parser = argparse.ArgumentParser(description="""Tool to execute benchmarks in TornadoVM. With no options, it runs the medium sizes""")
+	parser = argparse.ArgumentParser(description="""Tool to execute benchmarks in TornadoVM. With no options, it runs all benchmarks with the default size""")
 	parser.add_argument('--validate', action="store_true", dest="validate", default=False, help="Enable result validation")
 	parser.add_argument('--default', action="store_true", dest="default", default=False, help="Run default benchmark configuration")
+	parser.add_argument('--medium', action="store_true", dest="medium", default=False, help="Run benchmarks with medium sizes")
 	parser.add_argument('--iterations', action="store", type=int, dest="iterations", default=0, help="Set the number of iterations")
-	parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
-	parser.add_argument('--sizes', action="store_true", dest="size", default=False, help="Run for all problem sizes")
 	parser.add_argument('--full', action="store_true", dest="full", default=False, help="Run for all sizes in all devices. Including big data sizes")
 	parser.add_argument('--skipSequential', action="store_true", dest="skip_serial", default=False, help="Skip java version")
 	parser.add_argument('--skipParallel', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
@@ -206,20 +182,18 @@ def main():
 	if (args.iterations > 0):
 		ITERATIONS = args.iterations
 
-	if args.device:
-		runAllDevices(args)
-	elif args.size:
-		runForAllSizes(args)
-	elif args.benchmarks:
+	if args.benchmarks:
 		printBenchmakrks()
 	elif args.default:
-		runBenchmarks(args)
+		runDefaultSizePerBenchmark(args)
 	elif args.full:
 		runBenchmarksFullCoverage(args)
-	else:
+	elif args.medium:
 		## Default option. It runs with medium size
 		print "[INFO] Running small and medium sizes"
 		runMediumConfiguration(args)
+	else:
+		runDefaultSizePerBenchmark(args)
 		
 if __name__ == '__main__':
 	main()
