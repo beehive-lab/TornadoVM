@@ -101,7 +101,7 @@ allSizes = {
 	"sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
 	"dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
-	"blurFilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
+	"blurFilter": [[256, 512, 1024, 2048, 8192, 16384], [__MAX_ITERATIONS__]],
 }
 
 mediumSizes = {
