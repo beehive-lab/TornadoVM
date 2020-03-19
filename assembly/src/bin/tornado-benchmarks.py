@@ -203,7 +203,7 @@ def main():
 		runMediumConfiguration(args)
 	else:
 		print Colors.BLUE + "Running TornadoVM Benchmarks" + Colors.RESET
-		print Colors.CYAN + " \t[Info] This process takes between 30-60 minutes" + Colors.RESET
+		print Colors.CYAN + " \t[INFO] This process takes between 30-60 minutes" + Colors.RESET
 		runDefaultSizePerBenchmark(args)
 
 if __name__ == '__main__':
