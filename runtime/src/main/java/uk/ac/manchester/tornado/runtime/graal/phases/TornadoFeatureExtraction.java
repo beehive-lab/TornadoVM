@@ -23,11 +23,29 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.AndNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.LeftShiftNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.OrNode;
+import org.graalvm.compiler.nodes.calc.RightShiftNode;
+import org.graalvm.compiler.nodes.calc.ShiftNode;
+import org.graalvm.compiler.nodes.calc.SignedDivNode;
+import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
+import org.graalvm.compiler.nodes.memory.FloatingReadNode;
+import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.WriteNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
@@ -37,6 +55,12 @@ public class TornadoFeatureExtraction extends Phase {
     protected void run(StructuredGraph graph) {
 
         HashMap<String, Integer> features = new HashMap<String, Integer>();
+        HashMap<String, Integer> IRfeatures = new HashMap<>();
+
+        // IRfeatures = createMap();
+        IRfeatures = irExtract(graph, createMap());
+
+        System.out.println(Arrays.toString(IRfeatures.entrySet().toArray()));
 
         for (Node node : graph.getNodes()) {
             Integer j = features.get(node.asNode().getNodeClass().shortName());
@@ -47,5 +71,90 @@ public class TornadoFeatureExtraction extends Phase {
             }
         }
         FeatureExtractionUtilities.emitJsonToFile(FeatureExtractionUtilities.prettyFormatFeatures(features), graph.name);
+    }
+
+    private HashMap<String, Integer> irExtract(StructuredGraph graph, HashMap<String, Integer> map) {
+        HashMap<String, Integer> irFeatures = map;
+        int count;
+        for (Node node : graph.getNodes().snapshot()) {
+            System.out.println("Node " + node.toString());
+            if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode || node instanceof SignedDivNode) {
+                count = irFeatures.get("Integer Operations");
+                irFeatures.put("Integer Operations,", count++);
+            } else if (node instanceof WriteNode) {
+                for (Node nodee : node.inputs().snapshot()) {
+                    if (nodee instanceof AddressNode) {
+                        for (Node nodeee : nodee.inputs()) {
+                            if (nodeee instanceof MarkLocalArray) {
+                                count = irFeatures.get("Local Memory Stores");
+                                irFeatures.put("Local Memory Stores", count++);
+                            } else {
+                                count = irFeatures.get("Global Memory Stores");
+                                irFeatures.put("Global Memory Stores", count++);
+                            }
+                        }
+                    }
+                }
+            } else if (node instanceof FloatingReadNode || node instanceof ReadNode) {
+                for (Node nodee : node.inputs().snapshot()) {
+                    if (nodee instanceof AddressNode) {
+                        for (Node nodeee : nodee.inputs()) {
+                            if (nodeee instanceof MarkLocalArray) {
+                                count = irFeatures.get("Local Memory Loads");
+                                irFeatures.put("Local Memory Loads", count++);
+                            } else {
+                                count = irFeatures.get("Global Memory Loads");
+                                irFeatures.put("Global Memory Loads", count++);
+                            }
+                        }
+                    }
+                }
+            } else if (node instanceof LoopBeginNode) {
+                count = irFeatures.get("Total Loops");
+                irFeatures.put("Total Loops", count++);
+            } else if (node instanceof IfNode) {
+                count = irFeatures.get("If Statements");
+                irFeatures.put("If Statements", count++);
+            } else if (node instanceof IntegerSwitchNode) {
+                count = irFeatures.get("Switch Statements");
+                irFeatures.put("Switch Statements", count++);
+                int countCases = irFeatures.get("Switch Cases");
+                irFeatures.put("Switch Cases", (countCases + ((IntegerSwitchNode) node).getSuccessorCount()));
+            } else if (node.toString().toLowerCase().equals("vectorload")) {
+                count = irFeatures.get("Vector Operations");
+                irFeatures.put("Vector Operations", count++);
+            } else if (node instanceof IntegerLessThanNode) {
+                count = irFeatures.get("Integer Comparison");
+                irFeatures.put("Integer Comparison", count++);
+            } else if (node instanceof OrNode || node instanceof AndNode || node instanceof LeftShiftNode || node instanceof RightShiftNode || node instanceof ShiftNode || node instanceof XorNode) {
+                count = irFeatures.get("Binary Operations");
+                irFeatures.put("Binary Operations", count++);
+            }
+        }
+        return irFeatures;
+    }
+
+    private static HashMap<String, Integer> createMap() {
+        HashMap<String, Integer> myMap = new HashMap<String, Integer>();
+        myMap.put("Global Memory Loads", 0);
+        myMap.put("Global Memory Stores", 0);
+        myMap.put("Constant Memory Loads", 0);
+        myMap.put("Constant Memory Stores", 0);
+        myMap.put("Local Memory Loads", 0);
+        myMap.put("Local Memory Stores", 0);
+        myMap.put("Private Memory Loads", 0);
+        myMap.put("Private Memory Stores", 0);
+        myMap.put("Total Loops", 0);
+        myMap.put("Parallel Loops", 0);
+        myMap.put("If Statements", 0);
+        myMap.put("Switch Statements", 0);
+        myMap.put("Switch Cases", 0);
+        myMap.put("Vector Operations", 0);
+        myMap.put("Integer Operations", 0);
+        myMap.put("Floating Operations", 0);
+        myMap.put("Binary Operations", 0);
+        myMap.put("Integer Comparison", 0);
+        myMap.put("Floating Comparison", 0);
+        return myMap;
     }
 }
