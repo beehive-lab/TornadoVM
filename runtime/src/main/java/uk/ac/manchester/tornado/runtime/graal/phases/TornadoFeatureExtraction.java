@@ -44,9 +44,9 @@ import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
-import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.Phase;
+import org.graalvm.compiler.replacements.nodes.WriteRegisterNode;
 
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 
@@ -75,19 +75,19 @@ public class TornadoFeatureExtraction extends Phase {
 
     private HashMap<String, Integer> irExtract(StructuredGraph graph, HashMap<String, Integer> map) {
         HashMap<String, Integer> irFeatures = map;
-        int count;
+        Integer count;
         for (Node node : graph.getNodes().snapshot()) {
             System.out.println("Node " + node.toString());
             if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode || node instanceof SignedDivNode) {
                 count = irFeatures.get("Integer Operations");
-                irFeatures.put("Integer Operations,", count++);
-            } else if (node instanceof WriteNode) {
+                irFeatures.put("Integer Operations,", (count + 1));
+            } else if (node instanceof WriteRegisterNode) {
                 for (Node nodee : node.inputs().snapshot()) {
                     if (nodee instanceof AddressNode) {
                         for (Node nodeee : nodee.inputs()) {
                             if (nodeee instanceof MarkLocalArray) {
                                 count = irFeatures.get("Local Memory Stores");
-                                irFeatures.put("Local Memory Stores", count++);
+                                irFeatures.put("Local Memory Stores", (count + 1));
                             } else {
                                 count = irFeatures.get("Global Memory Stores");
                                 irFeatures.put("Global Memory Stores", count++);
@@ -101,34 +101,34 @@ public class TornadoFeatureExtraction extends Phase {
                         for (Node nodeee : nodee.inputs()) {
                             if (nodeee instanceof MarkLocalArray) {
                                 count = irFeatures.get("Local Memory Loads");
-                                irFeatures.put("Local Memory Loads", count++);
+                                irFeatures.put("Local Memory Loads", (count + 1));
                             } else {
                                 count = irFeatures.get("Global Memory Loads");
-                                irFeatures.put("Global Memory Loads", count++);
+                                irFeatures.put("Global Memory Loads", (count + 1));
                             }
                         }
                     }
                 }
             } else if (node instanceof LoopBeginNode) {
                 count = irFeatures.get("Total Loops");
-                irFeatures.put("Total Loops", count++);
+                irFeatures.put("Total Loops", (count + 1));
             } else if (node instanceof IfNode) {
                 count = irFeatures.get("If Statements");
-                irFeatures.put("If Statements", count++);
+                irFeatures.put("If Statements", (count + 1));
             } else if (node instanceof IntegerSwitchNode) {
                 count = irFeatures.get("Switch Statements");
-                irFeatures.put("Switch Statements", count++);
+                irFeatures.put("Switch Statements", (count + 1));
                 int countCases = irFeatures.get("Switch Cases");
                 irFeatures.put("Switch Cases", (countCases + ((IntegerSwitchNode) node).getSuccessorCount()));
             } else if (node.toString().toLowerCase().equals("vectorload")) {
                 count = irFeatures.get("Vector Operations");
-                irFeatures.put("Vector Operations", count++);
+                irFeatures.put("Vector Operations", (count + 1));
             } else if (node instanceof IntegerLessThanNode) {
                 count = irFeatures.get("Integer Comparison");
-                irFeatures.put("Integer Comparison", count++);
+                irFeatures.put("Integer Comparison", (count + 1));
             } else if (node instanceof OrNode || node instanceof AndNode || node instanceof LeftShiftNode || node instanceof RightShiftNode || node instanceof ShiftNode || node instanceof XorNode) {
                 count = irFeatures.get("Binary Operations");
-                irFeatures.put("Binary Operations", count++);
+                irFeatures.put("Binary Operations", (count + 1));
             }
         }
         return irFeatures;
