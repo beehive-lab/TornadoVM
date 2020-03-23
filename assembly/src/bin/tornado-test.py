@@ -70,6 +70,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
+	"uk.ac.manchester.tornado.unittests.bitsets.BitSetTests",
 	"uk.ac.manchester.tornado.unittests.fails.TestFails",
 ]
 
@@ -81,15 +82,15 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 # ################################################################################################################
 ## Options
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
-__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT_MODULE__ 		 = " junit/"
-__MAIN_TORNADO_JUNIT__ 		 = "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
-__PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
-__DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
-__IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
-__PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
-__GC__                       = "-Xmx6g "
+__MAIN_TORNADO_TEST_RUNNER__ 		= "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_JUNIT_MODULE__ 		= " junit/"
+__MAIN_TORNADO_JUNIT__ 		 		= "org.junit.runner.JUnitCore "
+__IGV_OPTIONS__ 			 		= "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
+__PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.opencl.source.print=True "
+__DEBUG_TORNADO__ 			 		= "-Dtornado.debug=True "
+__IGNORE_INTEL_PLATFORM__    		= "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
+__PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
+__GC__                       		= "-Xmx6g "
 # ################################################################################################################
 
 __VERSION__ = "0.8_04022020"

@@ -29,11 +29,9 @@ public class Benchmark extends BenchmarkRunner {
         if (args.length == 2) {
             iterations = Integer.parseInt(args[0]);
             size = Integer.parseInt(args[1]);
-
         } else {
-            iterations = 100;
+            iterations = 101;
             size = 16777216;
-
         }
     }
 

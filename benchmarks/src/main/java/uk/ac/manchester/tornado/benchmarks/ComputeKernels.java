@@ -21,6 +21,9 @@ import org.apache.lucene.util.LongBitSet;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.Byte3;
+import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
 public class ComputeKernels {
 
@@ -47,30 +50,25 @@ public class ComputeKernels {
     /**
      * Parallel Implementation of the MonteCarlo computation: this is based on the
      * Marawacc compiler framework.
-     * 
-     * @author Juan Fumero
      *
+     * @author Juan Fumero
      */
     public static void monteCarlo(float[] result, int size) {
         final int iter = 25000;
         for (@Parallel int idx = 0; idx < size; idx++) {
             long seed = idx;
             float sum = 0.0f;
-
             for (int j = 0; j < iter; ++j) {
                 // generate a pseudo random number (you do need it twice)
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-
                 // this generates a number between 0 and 1 (with an awful
                 // entropy)
                 float x = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
-
                 // repeat for y
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 float y = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
-
                 float dist = TornadoMath.sqrt(x * x + y * y);
                 if (dist <= 1.0f) {
                     sum += 1.0f;
@@ -112,10 +110,10 @@ public class ComputeKernels {
     }
 
     /**
-     * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
-     *        Distribution Function)
      * @param X
      *            input value
+     * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
+     *        Distribution Function)
      */
     static float phi(final float X) {
         final float c1 = 0.319381530f;
@@ -141,11 +139,11 @@ public class ComputeKernels {
 
     /*
      * @brief Computes the call and put prices by using Black Scholes model
-     * 
+     *
      * @param randArray input array of random values of current option price
-     * 
+     *
      * @param out output array of calculated put price values
-     * 
+     *
      * @param call output array of calculated call price values
      */
     public static void blackscholes(final float[] randArray, final float[] put, final float[] call) {
@@ -176,20 +174,6 @@ public class ComputeKernels {
         }
     }
 
-    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, long[] result) {
-        final long[] aBits = a.getBits();
-        final long[] bBits = b.getBits();
-        for (@Parallel int i = 0; i < numWords; i++) {
-            result[i] = Long.bitCount(aBits[i] & bBits[i]);
-        }
-    }
-
-    public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] * b[i];
-        }
-    }
-
     public static void computeDft(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
@@ -208,9 +192,8 @@ public class ComputeKernels {
     /**
      * Parallel Implementation of the Mandelbrot: this is based on the Marawacc
      * compiler framework.
-     * 
-     * @author Juan Fumero
      *
+     * @author Juan Fumero
      */
     public static void mandelbrot(int size, short[] output) {
         final int iterations = 10000;
@@ -237,6 +220,74 @@ public class ComputeKernels {
                 }
                 short r = (short) ((y * 255) / iterations);
                 output[i * size + j] = r;
+            }
+        }
+    }
+
+    public static void hilbertComputation(float[] output, int rows, int cols) {
+        for (@Parallel int i = 0; i < rows; i++) {
+            for (@Parallel int j = 0; j < cols; j++) {
+                output[i * rows + j] = (float) 1 / (float) ((i + 1) + (j + 1) - 1);
+            }
+        }
+    }
+
+    public static void channelConvolution(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+        // Dealing with an even width filter is trickier
+        assert (filterWidth % 2 == 1);
+        // For every pixel in the image
+        for (@Parallel int r = 0; r < numRows; ++r) {
+            for (@Parallel int c = 0; c < numCols; ++c) {
+                float result = 0.0f;
+                // For every value in the filter around the pixel (c, r)
+                for (int filter_r = -filterWidth / 2; filter_r <= filterWidth / 2; ++filter_r) {
+                    for (int filter_c = -filterWidth / 2; filter_c <= filterWidth / 2; ++filter_c) {
+                        // Find the global image position for this filter
+                        // position
+                        // clamp to boundary of the image
+                        int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
+                        int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
+
+                        float image_value = (channel[image_r * numCols + image_c]);
+                        float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
+
+                        result += image_value * filter_value;
+                    }
+                }
+                channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+            }
+        }
+    }
+
+    public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
+        for (@Parallel int y = 0; y < input.Y(); y++) {
+            for (@Parallel int x = 0; x < input.X(); x++) {
+                Byte3 pixel = null;
+                final int result = (int) input.get(x, y).getS2();
+                switch (result) {
+                    case 1: // ok GREY
+                        pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);
+                        break;
+                    case -1: // no input BLACK
+                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 0);
+                        break;
+                    case -2: // not in image RED
+                        pixel = new Byte3((byte) 255, (byte) 0, (byte) 0);
+                        break;
+                    case -3: // no correspondence GREEN
+                        pixel = new Byte3((byte) 0, (byte) 255, (byte) 0);
+                        break;
+                    case -4: // too far away BLUE
+                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 255);
+                        break;
+                    case -5: // wrong normal YELLOW
+                        pixel = new Byte3((byte) 255, (byte) 255, (byte) 0);
+                        break;
+                    default:
+                        pixel = new Byte3((byte) 255, (byte) 128, (byte) 128);
+                        break;
+                }
+                output.set(x, y, pixel);
             }
         }
     }
