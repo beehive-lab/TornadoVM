@@ -1,12 +1,14 @@
 open module tornado.unittests {
     requires transitive junit;
     requires transitive tornado.api;
+    requires lucene.core;
 
     exports uk.ac.manchester.tornado.unittests;
     exports uk.ac.manchester.tornado.unittests.api;
     exports uk.ac.manchester.tornado.unittests.arrays;
     exports uk.ac.manchester.tornado.unittests.atomics;
     exports uk.ac.manchester.tornado.unittests.batches;
+    exports uk.ac.manchester.tornado.unittests.bitsets;
     exports uk.ac.manchester.tornado.unittests.branching;
     exports uk.ac.manchester.tornado.unittests.common;
     exports uk.ac.manchester.tornado.unittests.dynamic;
