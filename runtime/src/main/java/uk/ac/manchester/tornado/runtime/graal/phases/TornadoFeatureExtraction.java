@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -55,32 +55,21 @@ public class TornadoFeatureExtraction extends Phase {
 
     protected void run(StructuredGraph graph) {
 
-        HashMap<String, Integer> features = new HashMap<String, Integer>();
-        HashMap<String, Integer> IRfeatures;
+        LinkedHashMap<String, Integer> IRFeatures;
 
-        IRfeatures = irExtract(graph, createMap());
+        IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.createMap());
 
-        System.out.println(Arrays.toString(IRfeatures.entrySet().toArray()));
-
-        for (Node node : graph.getNodes()) {
-            Integer j = features.get(node.asNode().getNodeClass().shortName());
-            features.put(node.asNode().getNodeClass().shortName(), (j == null) ? 1 : j + 1);
-
-            if (node instanceof IntegerSwitchNode) {
-                features.put("SwitchCases", ((IntegerSwitchNode) node).getSuccessorCount());
-            }
-        }
-        FeatureExtractionUtilities.emitJsonToFile(FeatureExtractionUtilities.prettyFormatFeatures(features), graph.name);
+        FeatureExtractionUtilities.emitJsonToFile(IRFeatures, graph.name);
     }
 
-    private HashMap<String, Integer> irExtract(StructuredGraph graph, HashMap<String, Integer> map) {
-        HashMap<String, Integer> irFeatures = map;
+    private LinkedHashMap<String, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<String, Integer> map) {
+        LinkedHashMap<String, Integer> irFeatures = map;
         Integer count;
         for (Node node : graph.getNodes().snapshot()) {
             System.out.println("Node " + node.toString());
-            if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode || node instanceof SignedDivNode) {
+            if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode || node instanceof SignedDivNode || node instanceof org.graalvm.compiler.nodes.calc.AddNode) {
                 count = irFeatures.get("Integer Operations");
-                irFeatures.put("Integer Operations,", (count + 1));
+                irFeatures.put("Integer Operations", (count + 1));
             } else if (node instanceof WriteRegisterNode || node instanceof MarkOCLWriteNode || node instanceof WriteNode) {
                 System.out.println("Write -- - - -Node " + node.toString());
                 for (Node nodee : node.inputs().snapshot()) {
@@ -121,7 +110,7 @@ public class TornadoFeatureExtraction extends Phase {
                 irFeatures.put("Switch Statements", (count + 1));
                 int countCases = irFeatures.get("Switch Cases");
                 irFeatures.put("Switch Cases", (countCases + ((IntegerSwitchNode) node).getSuccessorCount()));
-            } else if (node.toString().toLowerCase().equals("vectorload")) {
+            } else if (node instanceof MarkVectorLoad || node instanceof MarkVectorValueNode) {
                 count = irFeatures.get("Vector Operations");
                 irFeatures.put("Vector Operations", (count + 1));
             } else if (node instanceof IntegerLessThanNode) {
@@ -133,32 +122,12 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof MarkGlobalThreadID) {
                 count = irFeatures.get("Parallel Loops");
                 irFeatures.put("Parallel Loops", (count + 1));
+            } else if (node instanceof ConstantNode) {
+                count = irFeatures.get("Private Memory Loads");
+                irFeatures.put("Private Memory Loads", (count + 1));
             }
         }
         return irFeatures;
     }
 
-    private static HashMap<String, Integer> createMap() {
-        HashMap<String, Integer> myMap = new HashMap<String, Integer>();
-        myMap.put("Global Memory Loads", 0);
-        myMap.put("Global Memory Stores", 0);
-        myMap.put("Constant Memory Loads", 0);
-        myMap.put("Constant Memory Stores", 0);
-        myMap.put("Local Memory Loads", 0);
-        myMap.put("Local Memory Stores", 0);
-        myMap.put("Private Memory Loads", 0);
-        myMap.put("Private Memory Stores", 0);
-        myMap.put("Total Loops", 0);
-        myMap.put("Parallel Loops", 0);
-        myMap.put("If Statements", 0);
-        myMap.put("Switch Statements", 0);
-        myMap.put("Switch Cases", 0);
-        myMap.put("Vector Operations", 0);
-        myMap.put("Integer Operations", 0);
-        myMap.put("Floating Operations", 0);
-        myMap.put("Binary Operations", 0);
-        myMap.put("Integer Comparison", 0);
-        myMap.put("Floating Comparison", 0);
-        return myMap;
-    }
 }
