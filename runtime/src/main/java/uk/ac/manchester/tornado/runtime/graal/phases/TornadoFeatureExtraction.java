@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018 - 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -62,8 +62,8 @@ public class TornadoFeatureExtraction extends Phase {
         FeatureExtractionUtilities.emitJsonToFile(IRFeatures, graph.name);
     }
 
-    private LinkedHashMap<String, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<String, Integer> map) {
-        LinkedHashMap<String, Integer> irFeatures = map;
+    private LinkedHashMap<String, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<String, Integer> initMap) {
+        LinkedHashMap<String, Integer> irFeatures = initMap;
         Integer count;
         for (Node node : graph.getNodes().snapshot()) {
             System.out.println("Node " + node.toString());
@@ -125,6 +125,9 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof ConstantNode) {
                 count = irFeatures.get("Private Memory Loads");
                 irFeatures.put("Private Memory Loads", (count + 1));
+            } else if (node instanceof MarkCastNode) {
+                count = irFeatures.get("Cast Operations");
+                irFeatures.put("Cast Operations", (count + 1));
             }
         }
         return irFeatures;

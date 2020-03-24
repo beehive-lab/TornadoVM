@@ -107,6 +107,7 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.INTEGER.toString(), 0);
         myMap.put(ProfilerCodeFeatures.FLOATS.toString(), 0);
         myMap.put(ProfilerCodeFeatures.BINARY.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.CAST.toString(), 0);
         myMap.put(ProfilerCodeFeatures.I_CMP.toString(), 0);
         myMap.put(ProfilerCodeFeatures.F_CMP.toString(), 0);
         return myMap;

@@ -40,6 +40,7 @@ public enum ProfilerCodeFeatures {
     IFS ("If Statements"),
     SWITCH ("Switch Statements"),
     CASE ("Switch Cases"),
+    CAST ("Cast Operations"),
     VECTORS ("Vector Operations"),
     INTEGER ("Integer Operations"),
     BINARY ("Binary Operations"),
