@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,29 +48,10 @@ public class FeatureExtractionUtilities {
     private FeatureExtractionUtilities() {
     }
 
-    public static LinkedHashMap<String, Integer> prettyFormatFeatures(HashMap<String, Integer> feat) {
-        LinkedHashMap<String, Integer> newFeat = new LinkedHashMap<>();
-
-        newFeat.put("Global Memory Reads", (feat.get("FloatingRead") != null ? (feat.get("FloatingRead")) : 0));
-        newFeat.put("Global Memory Writes", (feat.get("Write") != null ? (feat.get("Write")) : 0));
-        newFeat.put("Local Memory Reads", 0);
-        newFeat.put("Local Memory Writes", 0);
-        newFeat.put("Total number of Loops", (feat.get("LoopBegin") != null ? (feat.get("LoopBegin")) : 0));
-        newFeat.put("Parallel Loops", (feat.get("GlobalThreadId") != null ? (feat.get("GlobalThreadId")) : 0));
-        newFeat.put("If Statements", ((feat.get("LoopBegin") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
-        newFeat.put("Switch Statements", (feat.get("IntegerSwitch") != null ? (feat.get("IntegerSwitch")) : 0));
-        newFeat.put("Switch Cases", (feat.get("IntegerSwitch") != null ? (feat.get("SwitchCases")) : 0));
-        newFeat.put("Vector Loads", (feat.get("VectorLoadElement") != null ? (feat.get("VectorLoadElement")) : 0));
-        newFeat.put("Arithmetic Operations", arithmeticOperations(feat));
-        newFeat.put("Math Operations", mathOperations(feat));
-
-        return newFeat;
-    }
-
     private static Integer mathOperations(HashMap<String, Integer> feat) {
         Integer sumMathOperations;
         if ((feat.get("OCLFPUnaryIntrinsic") != null) && feat.get("OCLIntBinaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLFPUnaryIntrinsic") + feat.get("OCLFPUnaryIntrinsic");
+            sumMathOperations = feat.get("OCLFPUnaryIntrinsic") + feat.get("OCLFPUnary  Intrinsic");
         } else if (feat.get("OCLFPUnaryIntrinsic") != null) {
             sumMathOperations = feat.get("OCLFPUnaryIntrinsic");
         } else if (feat.get("OCLIntBinaryIntrinsic") != null) {
@@ -105,5 +86,29 @@ public class FeatureExtractionUtilities {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static LinkedHashMap<String, Integer> createMap() {
+        LinkedHashMap<String, Integer> myMap = new LinkedHashMap<>();
+        myMap.put(ProfilerCodeFeatures.GLOBAL_LOADS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.GLOBAL_STORES.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.CONSTANT_LOADS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.CONSTANT_STORES.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_LOADS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_STORES.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.PRIVATE_LOADS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_STORES.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.LOOPS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.IFS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.SWITCH.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.CASE.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.VECTORS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.INTEGER.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.FLOATS.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.BINARY.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.I_CMP.toString(), 0);
+        myMap.put(ProfilerCodeFeatures.F_CMP.toString(), 0);
+        return myMap;
     }
 }
