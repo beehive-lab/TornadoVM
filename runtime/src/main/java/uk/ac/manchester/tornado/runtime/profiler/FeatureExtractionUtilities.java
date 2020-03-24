@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 public class FeatureExtractionUtilities {
 
     private static final String FEATURE_FILE = "tornado-features.json";
+    private static final String LOOKUP_BUFFER_ADDRESS_NAME = "compile-kernellookupBufferAddress";
 
     private static List<String> arithmeticOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<", "%"));
 
@@ -73,7 +74,8 @@ public class FeatureExtractionUtilities {
     }
 
     public static void emitJsonToFile(LinkedHashMap<String, Integer> entry, String name) {
-        if (!name.equals("compile-kernellookupBufferAddress")) {
+        name = name.split("-")[1];
+        if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
             task.put(name, entry);
             JsonHandler jsonHandler = new JsonHandler();
