@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.replacements.nodes.WriteRegisterNode;
@@ -55,9 +56,8 @@ public class TornadoFeatureExtraction extends Phase {
     protected void run(StructuredGraph graph) {
 
         HashMap<String, Integer> features = new HashMap<String, Integer>();
-        HashMap<String, Integer> IRfeatures = new HashMap<>();
+        HashMap<String, Integer> IRfeatures;
 
-        // IRfeatures = createMap();
         IRfeatures = irExtract(graph, createMap());
 
         System.out.println(Arrays.toString(IRfeatures.entrySet().toArray()));
@@ -81,7 +81,8 @@ public class TornadoFeatureExtraction extends Phase {
             if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode || node instanceof SignedDivNode) {
                 count = irFeatures.get("Integer Operations");
                 irFeatures.put("Integer Operations,", (count + 1));
-            } else if (node instanceof WriteRegisterNode) {
+            } else if (node instanceof WriteRegisterNode || node instanceof MarkOCLWriteNode || node instanceof WriteNode) {
+                System.out.println("Write -- - - -Node " + node.toString());
                 for (Node nodee : node.inputs().snapshot()) {
                     if (nodee instanceof AddressNode) {
                         for (Node nodeee : nodee.inputs()) {
@@ -90,7 +91,7 @@ public class TornadoFeatureExtraction extends Phase {
                                 irFeatures.put("Local Memory Stores", (count + 1));
                             } else {
                                 count = irFeatures.get("Global Memory Stores");
-                                irFeatures.put("Global Memory Stores", count++);
+                                irFeatures.put("Global Memory Stores", (count + 1));
                             }
                         }
                     }
@@ -129,6 +130,9 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof OrNode || node instanceof AndNode || node instanceof LeftShiftNode || node instanceof RightShiftNode || node instanceof ShiftNode || node instanceof XorNode) {
                 count = irFeatures.get("Binary Operations");
                 irFeatures.put("Binary Operations", (count + 1));
+            } else if (node instanceof MarkGlobalThreadID) {
+                count = irFeatures.get("Parallel Loops");
+                irFeatures.put("Parallel Loops", (count + 1));
             }
         }
         return irFeatures;
