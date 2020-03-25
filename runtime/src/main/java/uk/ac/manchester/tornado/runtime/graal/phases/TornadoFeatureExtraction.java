@@ -58,7 +58,7 @@ public class TornadoFeatureExtraction extends Phase {
 
         LinkedHashMap<ProfilerCodeFeatures, Integer> IRFeatures;
 
-        IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.createMap2());
+        IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.createMap());
 
         FeatureExtractionUtilities.emitFeatureProfiletoJsonFile(IRFeatures, graph.name);
     }

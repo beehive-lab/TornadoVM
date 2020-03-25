@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
@@ -73,13 +74,13 @@ public class FeatureExtractionUtilities {
         return sumOperations;
     }
 
-    public static void emitJsonToFile(LinkedHashMap<String, Integer> entry, String name) {
+    public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name) {
         name = name.split("-")[1];
         if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
-            task.put(name, entry);
+            task.put(name, encodeMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(entry, name);
+            String json = jsonHandler.createJSon(encodeMap(entry), name);
             File fileLog = new File(FEATURE_FILE);
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);
@@ -90,28 +91,38 @@ public class FeatureExtractionUtilities {
         }
     }
 
-    public static LinkedHashMap<String, Integer> createMap() {
-        LinkedHashMap<String, Integer> myMap = new LinkedHashMap<>();
-        myMap.put(ProfilerCodeFeatures.GLOBAL_LOADS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.GLOBAL_STORES.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.CONSTANT_LOADS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.CONSTANT_STORES.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.LOCAL_LOADS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.LOCAL_STORES.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.PRIVATE_LOADS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.LOCAL_STORES.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.LOOPS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.IFS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.SWITCH.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.CASE.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.VECTORS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.INTEGER.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.FLOATS.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.BINARY.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.CAST.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.I_CMP.toString(), 0);
-        myMap.put(ProfilerCodeFeatures.F_CMP.toString(), 0);
+    private static LinkedHashMap<String, Integer> encodeMap(LinkedHashMap<ProfilerCodeFeatures, Integer> entry) {
+        LinkedHashMap<String, Integer> endcodeMap = new LinkedHashMap<>();
+
+        for (Map.Entry<ProfilerCodeFeatures, Integer> ent : entry.entrySet()) {
+            endcodeMap.put(ent.getKey().toString(), ent.getValue());
+        }
+
+        return endcodeMap;
+    }
+
+    public static LinkedHashMap<ProfilerCodeFeatures, Integer> createMap() {
+        LinkedHashMap<ProfilerCodeFeatures, Integer> myMap = new LinkedHashMap<>();
+        myMap.put(ProfilerCodeFeatures.GLOBAL_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.GLOBAL_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.CONSTANT_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.CONSTANT_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.PRIVATE_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.LOOPS, 0);
+        myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS, 0);
+        myMap.put(ProfilerCodeFeatures.IFS, 0);
+        myMap.put(ProfilerCodeFeatures.SWITCH, 0);
+        myMap.put(ProfilerCodeFeatures.CASE, 0);
+        myMap.put(ProfilerCodeFeatures.VECTORS, 0);
+        myMap.put(ProfilerCodeFeatures.INTEGER, 0);
+        myMap.put(ProfilerCodeFeatures.FLOATS, 0);
+        myMap.put(ProfilerCodeFeatures.BINARY, 0);
+        myMap.put(ProfilerCodeFeatures.CAST, 0);
+        myMap.put(ProfilerCodeFeatures.I_CMP, 0);
+        myMap.put(ProfilerCodeFeatures.F_CMP, 0);
         return myMap;
     }
 }
