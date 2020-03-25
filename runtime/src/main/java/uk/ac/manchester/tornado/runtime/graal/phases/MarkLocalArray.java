@@ -31,5 +31,4 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
  * scope of opencl-driver package
  */
 public interface MarkLocalArray {
-
 }
