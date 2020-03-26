@@ -61,7 +61,7 @@ Example of running all benchmark for all devices available in your system with t
 
 
 ```bash
- tornado-benchmarks.py
+$ tornado-benchmarks.py
 Running TornadoVM Benchmarks
 [INFO] This process takes between 30-60 minutes
 [INFO] TornadoVM options: -Xms24G -Xmx24G -server 
