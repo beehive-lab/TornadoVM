@@ -45,33 +45,7 @@ public class FeatureExtractionUtilities {
     private static final String FEATURE_FILE = "tornado-features.json";
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "compile-kernellookupBufferAddress";
 
-    private static List<String> arithmeticOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<", "%"));
-
     private FeatureExtractionUtilities() {
-    }
-
-    private static Integer mathOperations(HashMap<String, Integer> feat) {
-        Integer sumMathOperations;
-        if ((feat.get("OCLFPUnaryIntrinsic") != null) && feat.get("OCLIntBinaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLFPUnaryIntrinsic") + feat.get("OCLFPUnary  Intrinsic");
-        } else if (feat.get("OCLFPUnaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLFPUnaryIntrinsic");
-        } else if (feat.get("OCLIntBinaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLIntBinaryIntrinsic");
-        } else {
-            sumMathOperations = 0;
-        }
-        return sumMathOperations;
-    }
-
-    private static Integer arithmeticOperations(HashMap<String, Integer> feat) {
-        Integer sumOperations = 0;
-        for (String key : feat.keySet()) {
-            if (arithmeticOps.contains(key)) {
-                sumOperations += feat.get(key);
-            }
-        }
-        return sumOperations;
     }
 
     public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name) {
