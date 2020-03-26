@@ -61,6 +61,7 @@ public class TornadoFeatureExtraction extends Phase {
         IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.createMap());
 
         FeatureExtractionUtilities.emitFeatureProfiletoJsonFile(IRFeatures, graph.name);
+
     }
 
     private LinkedHashMap<ProfilerCodeFeatures, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<ProfilerCodeFeatures, Integer> initMap) {
@@ -127,6 +128,11 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof MarkCastNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.CAST);
                 irFeatures.put(ProfilerCodeFeatures.CAST, (count + 1));
+            } else if (node instanceof MarkFPUUnaryInstristicsNode) {
+                count = irFeatures.get(ProfilerCodeFeatures.BINARY);
+                irFeatures.put(ProfilerCodeFeatures.BINARY, (count + 1));
+            } else if (node instanceof MarkOCLIntBinaryIntrinsicNode) {
+                ;
             }
         }
         return irFeatures;
