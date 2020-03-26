@@ -30,11 +30,8 @@ package uk.ac.manchester.tornado.runtime.profiler;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -52,9 +49,9 @@ public class FeatureExtractionUtilities {
         name = name.split("-")[1];
         if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
-            task.put(name, encodeMap(entry));
+            task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeMap(entry), name);
+            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name);
             File fileLog = new File(FEATURE_FILE);
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);
@@ -65,7 +62,7 @@ public class FeatureExtractionUtilities {
         }
     }
 
-    private static LinkedHashMap<String, Integer> encodeMap(LinkedHashMap<ProfilerCodeFeatures, Integer> entry) {
+    private static LinkedHashMap<String, Integer> encodeFeatureMap(LinkedHashMap<ProfilerCodeFeatures, Integer> entry) {
         LinkedHashMap<String, Integer> endcodeMap = new LinkedHashMap<>();
 
         for (Map.Entry<ProfilerCodeFeatures, Integer> ent : entry.entrySet()) {
@@ -75,7 +72,7 @@ public class FeatureExtractionUtilities {
         return endcodeMap;
     }
 
-    public static LinkedHashMap<ProfilerCodeFeatures, Integer> createMap() {
+    public static LinkedHashMap<ProfilerCodeFeatures, Integer> initializeFeatureMap() {
         LinkedHashMap<ProfilerCodeFeatures, Integer> myMap = new LinkedHashMap<>();
         myMap.put(ProfilerCodeFeatures.GLOBAL_LOADS, 0);
         myMap.put(ProfilerCodeFeatures.GLOBAL_STORES, 0);
