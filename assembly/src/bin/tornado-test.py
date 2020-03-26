@@ -36,7 +36,6 @@ import time
 
 ## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
-	"uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
 	"uk.ac.manchester.tornado.unittests.TestHello",
 	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
 	"uk.ac.manchester.tornado.unittests.functional.TestLambdas",
@@ -72,6 +71,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
 	"uk.ac.manchester.tornado.unittests.fails.TestFails",
+	"uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
