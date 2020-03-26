@@ -56,8 +56,8 @@ public class Benchmark extends BenchmarkRunner {
         } else if (args.length == 1) {
             System.out.printf("Two arguments are needed: iterations size");
         } else {
-            iterations = 131;
-            size = 4194304;
+            iterations = 15;
+            size = 8192;
         }
     }
 }

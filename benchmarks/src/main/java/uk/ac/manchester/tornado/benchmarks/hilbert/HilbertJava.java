@@ -1,50 +1,38 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
-
-package uk.ac.manchester.tornado.benchmarks.vectormult;
-
-import java.util.Arrays;
+package uk.ac.manchester.tornado.benchmarks.hilbert;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-public class VectorMulJava extends BenchmarkDriver {
+public class HilbertJava extends BenchmarkDriver {
 
-    private int numElements;
-    private float[] a;
-    private float[] b;
-    private float[] c;
+    private int size;
+    private float[] hilbertMatrix;
 
-    public VectorMulJava(int iterations, int numElements) {
+    public HilbertJava(int size, int iterations) {
         super(iterations);
-        this.numElements = numElements;
+        this.size = size;
     }
 
     @Override
     public void setUp() {
-        a = new float[numElements];
-        b = new float[numElements];
-        c = new float[numElements];
-
-        Arrays.fill(a, 3);
-        Arrays.fill(b, 2);
-        Arrays.fill(c, 0);
-
+        hilbertMatrix = new float[size * size];
     }
 
     @Override
@@ -54,6 +42,6 @@ public class VectorMulJava extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod() {
-        ComputeKernels.vectorMultiply(a, b, c);
+        ComputeKernels.hilbertComputation(hilbertMatrix, size, size);
     }
 }

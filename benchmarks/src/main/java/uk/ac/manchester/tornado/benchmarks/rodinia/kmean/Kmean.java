@@ -137,32 +137,25 @@ public class Kmean {
     }
 
     public static void mapToNearestCluster(final float[] data, final int numPoints, final int numFeatures, final float[] clusters, final int numClusters, final int[] membership, IntResult result) {
-
         for (@Parallel int i = 0; i < numPoints; i++) {
             int index = -1;
             float minDist = Float.MAX_VALUE;
             int membershipChanges = 0;
-
             for (int j = 0; j < numClusters; j++) {
                 float dist = 0f;
-
                 final float diff = euclidDist(numFeatures, data, i * numFeatures, clusters, j * numFeatures);
                 dist += diff * diff;
-
                 if (dist < minDist) {
                     minDist = dist;
                     index = j;
                 }
             }
-
             if (membership[i] != index) {
                 membershipChanges++;
             }
-
             membership[i] = index;
             result.value = membershipChanges;
         }
-
     }
 
     public static void updateClusters(final float[] data, final int numPoints, final int numFeatures, final int[] membership, final float[] clusters, final int[] clusterSizes) {

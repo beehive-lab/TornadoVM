@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 public class TornadoExecutionContext {
 
     private final String name;
-    private final int MAX_TASKS = 100;
+    private final int MAX_TASKS = 128;
     private final ScheduleMetaData meta;
 
     private final List<SchedulableTask> tasks;
