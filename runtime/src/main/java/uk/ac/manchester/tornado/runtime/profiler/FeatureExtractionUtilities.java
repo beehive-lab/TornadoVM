@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 public class FeatureExtractionUtilities {
 
     private static final String FEATURE_FILE = "tornado-features.json";
-    private static final String LOOKUP_BUFFER_ADDRESS_NAME = "compile-kernellookupBufferAddress";
+    private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
     }

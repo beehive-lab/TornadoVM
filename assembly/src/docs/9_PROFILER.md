@@ -162,19 +162,27 @@ Example:
 $ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.VectorAddInt 4096
 $ cat tornado-features.json 
 {
-    "sketch-vectorAdd": { 
-        "Global Memory Reads":  "2",
-        "Global Memory Writes":  "1",
-        "Local Memory Reads":  "0",
-        "Local Memory Writes":  "0",
-        "Total number of Loops":  "1",
+    "vectorAdd": { 
+        "Global Memory Loads":  "4",
+        "Global Memory Stores":  "2",
+        "Constant Memory Loads":  "0",
+        "Constant Memory Stores":  "0",
+        "Local Memory Loads":  "0",
+        "Local Memory Stores":  "0",
+        "Private Memory Loads":  "4",
+        "Private Memory Stores":  "4",
+        "Total Loops":  "1",
         "Parallel Loops":  "1",
-        "If Statements":  "0",
+        "If Statements":  "1",
         "Switch Statements":  "0",
         "Switch Cases":  "0",
-        "Vector Loads":  "0",
-        "Arithmetic Operations":  "4",
-        "Math Operations":  "0"
+        "Vector Operations":  "0",
+        "Integer Operations":  "3",
+        "Floating Operations":  "0",
+        "Binary Operations":  "1",
+        "Cast Operations":  "0",
+        "Integer Comparison":  "1",
+        "Floating Comparison":  "0"
     }
 }
 ```
