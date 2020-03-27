@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
-package uk.ac.manchester.tornado.benchmarks.bandwidth;
+package uk.ac.manchester.tornado.benchmarks.renderTrack;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkRunner;
@@ -29,15 +29,17 @@ public class Benchmark extends BenchmarkRunner {
         if (args.length == 2) {
             iterations = Integer.parseInt(args[0]);
             size = Integer.parseInt(args[1]);
+        } else if (args.length == 1) {
+            System.out.println("[ERROR] Two arguments are needed: <iterations> <size>");
         } else {
-            iterations = 100;
-            size = 16777216;
+            iterations = 51;
+            size = 8192;
         }
     }
 
     @Override
     protected String getName() {
-        return "bandwidth";
+        return "renderTrack";
     }
 
     @Override
@@ -47,17 +49,16 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getConfigString() {
-        return String.format("num elements=%d", size);
+        return String.format("size=%d", size);
     }
 
     @Override
     protected BenchmarkDriver getJavaDriver() {
-        return new BandwidthJava(iterations, size);
+        return new RenderTrackJava(size, iterations);
     }
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new BandwidthTornado(iterations, size);
+        return new RenderTrackTornado(size, iterations);
     }
-
 }

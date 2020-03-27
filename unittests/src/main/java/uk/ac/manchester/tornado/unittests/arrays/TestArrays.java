@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,7 +96,7 @@ public class TestArrays extends TornadoTestBase {
     public void testWarmUp() {
 
         final int N = 128;
-        int numKernels = 8;
+        int numKernels = 16;
 
         int[] data = new int[N];
 
@@ -326,14 +326,17 @@ public class TestArrays extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals('f', c[i]);
+        for (char value : c) {
+            assertEquals('f', value);
         }
     }
 
     /**
      * Inspired by the CUDA Hello World from Computer Graphics:
-     * {@link http://computer-graphics.se/hello-world-for-cuda.html}
+     * 
+     * 
+     * @see <a href=
+     *      "http://computer-graphics.se/hello-world-for-cuda.html">http://computer-graphics.se/hello-world-for-cuda.html</a>
      */
     @Test
     public void testVectorCharsMessage() {

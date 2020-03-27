@@ -56,12 +56,10 @@ public class Benchmark extends BenchmarkRunner {
             iterations = Integer.parseInt(args[0]);
             width = Integer.parseInt(args[1]);
             height = Integer.parseInt(args[1]);
-
         } else {
-            iterations = 100;
+            iterations = 101;
             width = 2048;
             height = 2048;
         }
     }
-
 }

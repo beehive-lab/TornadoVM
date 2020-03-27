@@ -22,36 +22,6 @@ import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 
 public class LinearAlgebraArrays {
 
-    public static void ladd(long[] a, long[] b, long[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
-
-    public static void sadd(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
-
-    public static void striad(float alpha, float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = (alpha * a[i]) + b[i];
-        }
-    }
-
-    public static void scopy(float[] x, float[] y) {
-        for (@Parallel int i = 0; i < x.length; i++) {
-            y[i] = x[i];
-        }
-    }
-
-    public static void sscal(float alpha, float[] x) {
-        for (@Parallel int i = 0; i < x.length; i++) {
-            x[i] *= alpha;
-        }
-    }
-
     public static void saxpy(float alpha, float[] x, float[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
             y[i] += alpha * x[i];

@@ -62,4 +62,3 @@ There are a set of limitations with the current implementation of batch processi
 1. We only support arrays of primitives that are passed as arguments. This means that scope arrays in batches are not currently supported.
 1. All bytecodes make use of the same OpenCL command queue.
 1. Matrix or non-regular batch distributions. (E.g., MxM would need to be split by rows in matrix-A and columns in matrix-B).
-
