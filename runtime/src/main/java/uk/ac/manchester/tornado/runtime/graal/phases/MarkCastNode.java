@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -27,8 +27,8 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**
- * This interface is used for accessing the Cast node type outside the
- * scope of opencl-driver package
+ * This interface is used for accessing the Cast node type outside the scope of
+ * opencl-driver package
  */
 public interface MarkCastNode {
 }

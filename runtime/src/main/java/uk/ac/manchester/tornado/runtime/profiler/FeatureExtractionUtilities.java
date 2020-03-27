@@ -81,7 +81,7 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.LOCAL_LOADS, 0);
         myMap.put(ProfilerCodeFeatures.LOCAL_STORES, 0);
         myMap.put(ProfilerCodeFeatures.PRIVATE_LOADS, 0);
-        myMap.put(ProfilerCodeFeatures.LOCAL_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.PRIVATE_STORES, 0);
         myMap.put(ProfilerCodeFeatures.LOOPS, 0);
         myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS, 0);
         myMap.put(ProfilerCodeFeatures.IFS, 0);
