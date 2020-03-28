@@ -528,6 +528,9 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.opencl
+                                </arg>    
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.nodes=tornado.runtime
                                 </arg>
                             </compilerArgs>
                         </configuration>
