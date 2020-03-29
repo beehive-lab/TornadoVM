@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.AndNode;
+import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
@@ -93,7 +94,7 @@ public class TornadoFeatureExtraction extends Phase {
                             if (nodeee instanceof MarkLocalArray) {
                                 count = irFeatures.get(ProfilerCodeFeatures.LOCAL_LOADS);
                                 irFeatures.put(ProfilerCodeFeatures.LOCAL_LOADS, (count + 1));
-                            } else if (nodeee instanceof ParameterNode){
+                            } else if (nodeee instanceof ParameterNode) {
                                 count = irFeatures.get(ProfilerCodeFeatures.GLOBAL_LOADS);
                                 irFeatures.put(ProfilerCodeFeatures.GLOBAL_LOADS, (count + 1));
                             }
@@ -117,13 +118,18 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof IntegerLessThanNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.I_CMP);
                 irFeatures.put(ProfilerCodeFeatures.I_CMP, (count + 1));
-            } else if (node instanceof OrNode || node instanceof AndNode || node instanceof LeftShiftNode || node instanceof RightShiftNode || node instanceof ShiftNode || node instanceof XorNode) {
+            } else if (node instanceof OrNode //
+                    || node instanceof AndNode //
+                    || node instanceof LeftShiftNode //
+                    || node instanceof RightShiftNode //
+                    || node instanceof ShiftNode //
+                    || node instanceof XorNode) { //
                 count = irFeatures.get(ProfilerCodeFeatures.BINARY);
                 irFeatures.put(ProfilerCodeFeatures.BINARY, (count + 1));
             } else if (node instanceof MarkGlobalThreadID) {
                 count = irFeatures.get(ProfilerCodeFeatures.PARALLEL_LOOPS);
                 irFeatures.put(ProfilerCodeFeatures.PARALLEL_LOOPS, (count + 1));
-            } else if (node instanceof ConstantNode) {
+            } else if (node instanceof ConstantNode || node instanceof ParameterNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.PRIVATE_LOADS);
                 irFeatures.put(ProfilerCodeFeatures.PRIVATE_LOADS, (count + 1));
                 count = irFeatures.get(ProfilerCodeFeatures.PRIVATE_STORES);
@@ -136,6 +142,9 @@ public class TornadoFeatureExtraction extends Phase {
                 irFeatures.put(ProfilerCodeFeatures.BINARY, (count + 1));
             } else if (node instanceof MarkOCLIntBinaryIntrinsicNode) {
                 ;
+            } else if (node instanceof FloatLessThanNode) {
+                count = irFeatures.get(ProfilerCodeFeatures.F_CMP);
+                irFeatures.put(ProfilerCodeFeatures.F_CMP, (count + 1));
             }
         }
         return irFeatures;
