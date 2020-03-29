@@ -72,7 +72,8 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
 	"uk.ac.manchester.tornado.unittests.bitsets.BitSetTests",
 	"uk.ac.manchester.tornado.unittests.fails.TestFails",
-        "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
+  "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
+	"uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
