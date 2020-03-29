@@ -29,6 +29,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.AndNode;
@@ -78,7 +79,7 @@ public class TornadoFeatureExtraction extends Phase {
                             if (nodeee instanceof MarkLocalArray) {
                                 count = irFeatures.get(ProfilerCodeFeatures.LOCAL_STORES);
                                 irFeatures.put(ProfilerCodeFeatures.LOCAL_STORES, (count + 1));
-                            } else {
+                            } else if (nodeee instanceof ParameterNode) {
                                 count = irFeatures.get(ProfilerCodeFeatures.GLOBAL_STORES);
                                 irFeatures.put(ProfilerCodeFeatures.GLOBAL_STORES, (count + 1));
                             }
@@ -92,7 +93,7 @@ public class TornadoFeatureExtraction extends Phase {
                             if (nodeee instanceof MarkLocalArray) {
                                 count = irFeatures.get(ProfilerCodeFeatures.LOCAL_LOADS);
                                 irFeatures.put(ProfilerCodeFeatures.LOCAL_LOADS, (count + 1));
-                            } else {
+                            } else if (nodeee instanceof ParameterNode){
                                 count = irFeatures.get(ProfilerCodeFeatures.GLOBAL_LOADS);
                                 irFeatures.put(ProfilerCodeFeatures.GLOBAL_LOADS, (count + 1));
                             }
