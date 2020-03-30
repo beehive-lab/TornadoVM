@@ -51,9 +51,6 @@ Notice that we repeat the sequence `COPY_IN`, `ALLOCATE`, `LAUNCH` and `STREAM_O
 
 All copies and launches are executed asynchronously between the host and the target device. Only the last copy is synchronous. We also use the same OpenCL command queue for running all the commands. Future work might include here support for multiple command queues. 
 
-Notice also that to accommodate this change, we updated the OpenCL-JNI calls of of Tornado to receive a host-offset.
-
-
 ### Current Limitations
 
 There are a set of limitations with the current implementation of batch processing. 
