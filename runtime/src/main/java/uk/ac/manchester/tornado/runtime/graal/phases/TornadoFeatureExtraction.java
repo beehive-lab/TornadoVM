@@ -49,7 +49,6 @@ import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.Phase;
-import org.graalvm.compiler.replacements.nodes.WriteRegisterNode;
 
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
@@ -77,8 +76,7 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof org.graalvm.compiler.nodes.calc.AddNode) { //
                 count = irFeatures.get(ProfilerCodeFeatures.INTEGER);
                 irFeatures.put(ProfilerCodeFeatures.INTEGER, (count + 1));
-            } else if (node instanceof WriteRegisterNode //
-                    || node instanceof MarkOCLWriteNode //
+            } else if (node instanceof MarkOCLWriteNode //
                     || node instanceof WriteNode) { //
                 for (Node nodee : node.inputs().snapshot()) {
                     if (nodee instanceof AddressNode) {
