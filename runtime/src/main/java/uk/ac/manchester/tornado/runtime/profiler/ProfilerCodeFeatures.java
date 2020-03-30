@@ -44,6 +44,7 @@ public enum ProfilerCodeFeatures {
     VECTORS ("Vector Operations"),
     INTEGER ("Integer Operations"),
     BINARY ("Binary Operations"),
+    BOOLEAN ("Boolean Operations"),
     FLOATS ("Floating Operations"),
     I_CMP ("Integer Comparison"),
     F_CMP ("Floating Comparison");

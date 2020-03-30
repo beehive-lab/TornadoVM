@@ -70,10 +70,16 @@ public class TornadoFeatureExtraction extends Phase {
         LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures = initMap;
         Integer count;
         for (Node node : graph.getNodes().snapshot()) {
-            if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode || node instanceof SignedDivNode || node instanceof org.graalvm.compiler.nodes.calc.AddNode) {
+            if (node instanceof MulNode //
+                    || node instanceof AddNode //
+                    || node instanceof SubNode //
+                    || node instanceof SignedDivNode //
+                    || node instanceof org.graalvm.compiler.nodes.calc.AddNode) { //
                 count = irFeatures.get(ProfilerCodeFeatures.INTEGER);
                 irFeatures.put(ProfilerCodeFeatures.INTEGER, (count + 1));
-            } else if (node instanceof WriteRegisterNode || node instanceof MarkOCLWriteNode || node instanceof WriteNode) {
+            } else if (node instanceof WriteRegisterNode //
+                    || node instanceof MarkOCLWriteNode //
+                    || node instanceof WriteNode) { //
                 for (Node nodee : node.inputs().snapshot()) {
                     if (nodee instanceof AddressNode) {
                         for (Node nodeee : nodee.inputs()) {
@@ -124,8 +130,8 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof RightShiftNode //
                     || node instanceof ShiftNode //
                     || node instanceof XorNode) { //
-                count = irFeatures.get(ProfilerCodeFeatures.BINARY);
-                irFeatures.put(ProfilerCodeFeatures.BINARY, (count + 1));
+                count = irFeatures.get(ProfilerCodeFeatures.BOOLEAN);
+                irFeatures.put(ProfilerCodeFeatures.BOOLEAN, (count + 1));
             } else if (node instanceof MarkGlobalThreadID) {
                 count = irFeatures.get(ProfilerCodeFeatures.PARALLEL_LOOPS);
                 irFeatures.put(ProfilerCodeFeatures.PARALLEL_LOOPS, (count + 1));
@@ -149,5 +155,4 @@ public class TornadoFeatureExtraction extends Phase {
         }
         return irFeatures;
     }
-
 }

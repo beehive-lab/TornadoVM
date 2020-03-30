@@ -63,13 +63,13 @@ public class FeatureExtractionUtilities {
     }
 
     private static LinkedHashMap<String, Integer> encodeFeatureMap(LinkedHashMap<ProfilerCodeFeatures, Integer> entry) {
-        LinkedHashMap<String, Integer> endcodeMap = new LinkedHashMap<>();
+        LinkedHashMap<String, Integer> encodeMap = new LinkedHashMap<>();
 
         for (Map.Entry<ProfilerCodeFeatures, Integer> ent : entry.entrySet()) {
-            endcodeMap.put(ent.getKey().toString(), ent.getValue());
+            encodeMap.put(ent.getKey().toString(), ent.getValue());
         }
 
-        return endcodeMap;
+        return encodeMap;
     }
 
     public static LinkedHashMap<ProfilerCodeFeatures, Integer> initializeFeatureMap() {
@@ -89,6 +89,7 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.CASE, 0);
         myMap.put(ProfilerCodeFeatures.VECTORS, 0);
         myMap.put(ProfilerCodeFeatures.INTEGER, 0);
+        myMap.put(ProfilerCodeFeatures.BOOLEAN, 0);
         myMap.put(ProfilerCodeFeatures.FLOATS, 0);
         myMap.put(ProfilerCodeFeatures.BINARY, 0);
         myMap.put(ProfilerCodeFeatures.CAST, 0);
