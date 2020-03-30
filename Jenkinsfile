@@ -34,7 +34,7 @@ pipeline {
             	}
 			}
         }
-        stage('GPU Reductions') {
+        stage('Test GPU Reductions') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
                		sh 'tornado-test.py -V -J"-Ds0.t0.device=0:1 -Ds0.t1.device=0:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats'
@@ -65,12 +65,11 @@ pipeline {
             	}
 			}
         }
-       
     }
     post {
         success {
             slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
-            deleteDir() /* clean up our workspace */
+            deleteDir()
         }   
        failure {
             slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
