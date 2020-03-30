@@ -143,14 +143,15 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof MarkCastNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.CAST);
                 irFeatures.put(ProfilerCodeFeatures.CAST, (count + 1));
-            } else if (node instanceof MarkFPUnaryInstristicsNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.BINARY);
-                irFeatures.put(ProfilerCodeFeatures.BINARY, (count + 1));
-            } else if (node instanceof MarkOCLIntBinaryIntrinsicNode) {
-                ;
             } else if (node instanceof FloatLessThanNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.F_CMP);
                 irFeatures.put(ProfilerCodeFeatures.F_CMP, (count + 1));
+            } else if (node instanceof MarkOCLFPIntrinsicsNode) {
+                count = irFeatures.get(ProfilerCodeFeatures.F_MATH);
+                irFeatures.put(ProfilerCodeFeatures.F_MATH, (count + 1));
+            } else if (node instanceof MarkOCLIntIntrinsicNode) {
+                count = irFeatures.get(ProfilerCodeFeatures.I_MATH);
+                irFeatures.put(ProfilerCodeFeatures.I_MATH, (count + 1));
             }
         }
         return irFeatures;

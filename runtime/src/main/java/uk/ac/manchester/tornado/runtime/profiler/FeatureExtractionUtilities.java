@@ -85,16 +85,17 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.LOOPS, 0);
         myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS, 0);
         myMap.put(ProfilerCodeFeatures.IFS, 0);
+        myMap.put(ProfilerCodeFeatures.I_CMP, 0);
+        myMap.put(ProfilerCodeFeatures.F_CMP, 0);
         myMap.put(ProfilerCodeFeatures.SWITCH, 0);
         myMap.put(ProfilerCodeFeatures.CASE, 0);
         myMap.put(ProfilerCodeFeatures.VECTORS, 0);
         myMap.put(ProfilerCodeFeatures.INTEGER, 0);
         myMap.put(ProfilerCodeFeatures.BOOLEAN, 0);
-        myMap.put(ProfilerCodeFeatures.FLOATS, 0);
-        myMap.put(ProfilerCodeFeatures.BINARY, 0);
         myMap.put(ProfilerCodeFeatures.CAST, 0);
-        myMap.put(ProfilerCodeFeatures.I_CMP, 0);
-        myMap.put(ProfilerCodeFeatures.F_CMP, 0);
+        myMap.put(ProfilerCodeFeatures.F_MATH, 0);
+        myMap.put(ProfilerCodeFeatures.I_MATH, 0);
+
         return myMap;
     }
 }
