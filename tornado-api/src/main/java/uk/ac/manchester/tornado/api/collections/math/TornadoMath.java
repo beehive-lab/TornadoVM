@@ -300,6 +300,10 @@ public class TornadoMath {
         return (float) Math.PI;
     }
 
+    public static double PI() {
+        return Math.PI;
+    }
+
     public static float floatSqrt(float value) {
         return (float) Math.sqrt(value);
     }

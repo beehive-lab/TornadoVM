@@ -50,9 +50,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable {
+public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
 
     protected OCLIntTernaryIntrinsicNode(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y, z);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -37,13 +37,15 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
 
 @NodeInfo
-public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable {
+public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, MarkGlobalThreadID {
 
     public static final NodeClass<GlobalThreadIdNode> TYPE = NodeClass.create(GlobalThreadIdNode.class);
 
-    @Input protected ConstantNode index;
+    @Input
+    protected ConstantNode index;
 
     public GlobalThreadIdNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

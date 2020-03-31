@@ -27,8 +27,8 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**
- * This interface is used for accessing the local array node type outside the
- * scope of opencl-driver package
+ * This interface is used for accessing the Cast node type outside the scope of
+ * opencl-driver package
  */
-public interface MarkLocalArray {
+public interface MarkCastNode {
 }
