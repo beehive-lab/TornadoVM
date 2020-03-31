@@ -105,7 +105,7 @@ $ make graal-jdk-11
 
 and done!!
 
-## Know issues
+## Known issues
 
 ##### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
 
