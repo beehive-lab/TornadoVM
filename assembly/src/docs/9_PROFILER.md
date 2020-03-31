@@ -1,4 +1,4 @@
-# Tornado Profiler
+# TornadoVM Profiler
 
 To enable the TornadoVM profiler use `-Dtornado.profiler=True`.
 
@@ -97,7 +97,7 @@ MEDIANS    ### Print median values for each timer
 ```
 
 
-### Task-Schedule API augmented with profile calls
+### Task-Schedule API augmented with profiling calls
 
 TornadoVM Task-Schedules have a set of methods to query profile metrics such as kernel time, data transfers and compilation time. 
 
