@@ -159,30 +159,32 @@ Example:
 
 
 ```bash
-$ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.VectorAddInt 4096
+$ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.compute.NBody 1024 1
 $ cat tornado-features.json 
 {
-    "vectorAdd": { 
-        "Global Memory Loads":  "4",
-        "Global Memory Stores":  "2",
+    "nBody": { 
+        "Global Memory Loads":  "15",
+        "Global Memory Stores":  "6",
         "Constant Memory Loads":  "0",
         "Constant Memory Stores":  "0",
         "Local Memory Loads":  "0",
         "Local Memory Stores":  "0",
-        "Private Memory Loads":  "4",
-        "Private Memory Stores":  "4",
-        "Total Loops":  "1",
+        "Private Memory Loads":  "20",
+        "Private Memory Stores":  "20",
+        "Total Loops":  "2",
         "Parallel Loops":  "1",
-        "If Statements":  "1",
+        "If Statements":  "2",
+        "Integer Comparison":  "2",
+        "Float Comparison":  "0",
         "Switch Statements":  "0",
         "Switch Cases":  "0",
         "Vector Operations":  "0",
-        "Integer Operations":  "3",
-        "Floating Operations":  "0",
-        "Binary Operations":  "1",
-        "Cast Operations":  "0",
-        "Integer Comparison":  "1",
-        "Floating Comparison":  "0"
+        "Integer & Float Operations":  "57",
+        "Boolean Operations":  "9",
+        "Cast Operations":  "2",
+        "Float Math Functions":  "1",
+        "Integer Math Functions":  "0"
     }
 }
+
 ```

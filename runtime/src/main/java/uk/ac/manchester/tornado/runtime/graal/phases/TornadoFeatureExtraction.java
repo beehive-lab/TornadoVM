@@ -33,15 +33,23 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.AndNode;
+import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
 import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
+import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
+import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.OrNode;
+import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.calc.RightShiftNode;
 import org.graalvm.compiler.nodes.calc.ShiftNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.SignedDivNode;
+import org.graalvm.compiler.nodes.calc.SignedRemNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.calc.UnaryArithmeticNode;
+import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
@@ -73,7 +81,13 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof AddNode //
                     || node instanceof SubNode //
                     || node instanceof SignedDivNode //
-                    || node instanceof org.graalvm.compiler.nodes.calc.AddNode) { //
+                    || node instanceof org.graalvm.compiler.nodes.calc.AddNode //
+                    || node instanceof IntegerDivRemNode //
+                    || node instanceof RemNode //
+                    || node instanceof SignedRemNode //
+                    || node instanceof FloatEqualsNode //
+                    || node instanceof IntegerEqualsNode //
+            ) {
                 count = irFeatures.get(ProfilerCodeFeatures.INTEGER);
                 irFeatures.put(ProfilerCodeFeatures.INTEGER, (count + 1));
             } else if (node instanceof MarkOCLWriteNode //
@@ -126,6 +140,7 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof AndNode //
                     || node instanceof LeftShiftNode //
                     || node instanceof RightShiftNode //
+                    || node instanceof UnsignedRightShiftNode //
                     || node instanceof ShiftNode //
                     || node instanceof XorNode) { //
                 count = irFeatures.get(ProfilerCodeFeatures.BOOLEAN);
@@ -133,7 +148,7 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof MarkGlobalThreadID) {
                 count = irFeatures.get(ProfilerCodeFeatures.PARALLEL_LOOPS);
                 irFeatures.put(ProfilerCodeFeatures.PARALLEL_LOOPS, (count + 1));
-            } else if (node instanceof ConstantNode || node instanceof ParameterNode) {
+            } else if (node instanceof ConstantNode || node instanceof ParameterNode || node instanceof SignExtendNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.PRIVATE_LOADS);
                 irFeatures.put(ProfilerCodeFeatures.PRIVATE_LOADS, (count + 1));
                 count = irFeatures.get(ProfilerCodeFeatures.PRIVATE_STORES);
@@ -144,7 +159,8 @@ public class TornadoFeatureExtraction extends Phase {
             } else if (node instanceof FloatLessThanNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.F_CMP);
                 irFeatures.put(ProfilerCodeFeatures.F_CMP, (count + 1));
-            } else if (node instanceof MarkOCLFPIntrinsicsNode) {
+            } else if (node instanceof MarkOCLFPIntrinsicsNode //
+                    || node instanceof UnaryArithmeticNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.F_MATH);
                 irFeatures.put(ProfilerCodeFeatures.F_MATH, (count + 1));
             } else if (node instanceof MarkOCLIntIntrinsicNode) {
