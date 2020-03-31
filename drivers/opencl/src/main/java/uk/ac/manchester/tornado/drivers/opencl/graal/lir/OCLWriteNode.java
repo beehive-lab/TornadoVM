@@ -39,9 +39,10 @@ import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLWriteNode;
 
 @NodeInfo(nameTemplate = "OCLWrite#{p#location/s}")
-public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAccess {
+public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAccess, MarkOCLWriteNode {
 
     private JavaKind type;
 

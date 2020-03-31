@@ -60,18 +60,8 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new RemoveValueProxyPhase());
 
-        // appendPhase(new ExpandLogicPhase());
-
-        /*
-         * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
-         * ExpandLogic phase.
-         */
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
-            /*
-             * Canonicalizer may create some new ShortCircuitOrNodes so clean them up.
-             */
-            // appendPhase(new ExpandLogicPhase());
         }
 
         appendPhase(new AddressLoweringPhase(addressLowering));
@@ -81,6 +71,7 @@ public class OCLLowTier extends TornadoLowTier {
         appendPhase(new DeadCodeEliminationPhase(Required));
 
         appendPhase(new TornadoLoopCanonicalization());
+
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {

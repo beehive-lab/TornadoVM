@@ -13,7 +13,7 @@ pipeline {
         KFUSION_ROOT="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor"
     }
     stages {
-        stage('checkout-branch') {
+        stage('Checkout Current Branch') {
             steps {
                 step([$class: 'WsCleanup'])
                 checkout scm
@@ -21,46 +21,55 @@ pipeline {
                 checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/TornadoVM-Internal.git']]])
            }
         }
-        stage('build') {
+        stage('Build with JDK-8') {
             steps {
                 sh 'make'
                 sh 'bash bin/bin/tornadoLocalInstallMaven'
             }
         }
-        stage('tornado-unittests') {
+        stage('Unit Tests') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
                		sh 'make tests'
             	}
 			}
+        }
+        stage('Test GPU Reductions') {
+        	steps {
+				timeout(time: 5, unit: 'MINUTES') {
+               		sh 'tornado-test.py -V -J"-Ds0.t0.device=0:1 -Ds0.t1.device=0:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats'
+               		sh 'tornado-test.py -V -J"-Ds0.t0.device=0:1 -Ds0.t1.device=0:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles'
+               		sh 'tornado-test.py -V -J"-Ds0.t0.device=0:1 -Ds0.t1.device=0:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers'
+               		sh 'tornado-test.py -V -J"-Ds0.t0.device=0:1 -Ds0.t1.device=0:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats'
+            	}
+			}
         }       
-		stage('tornado-benchmarks') {
+		stage('Benchmarks') {
         	steps {
 				timeout(time: 10, unit: 'MINUTES') {
                 	sh 'python assembly/src/bin/tornado-benchmarks.py --medium --skipSequential --iterations 5 '
             	}
 			}
         }
-         stage('clone-n-build-kfusion') {
+         stage('Clone & Build KFusion') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
                 	sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && git fetch && git pull origin master && mvn clean install -DskipTests'
             	}
 			}
         }
-        stage('run-kfusion') {
+        stage('Run KFusion') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
                 	sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
             	}
 			}
         }
-       
     }
     post {
         success {
             slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
-            deleteDir() /* clean up our workspace */
+            deleteDir()
         }   
        failure {
             slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"

@@ -20,23 +20,46 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Michalis Papadimitriou
- *
  *
  */
 package uk.ac.manchester.tornado.runtime.profiler;
 
 public enum ProfilerCodeFeatures {
+
     // @formatter:off
-    FLOATING_READ,
-    GLOBAL_THREAD_ID,
-    IF,
-    INTEGER_SWITCH,
-    LOOP_BEGIN,
-    OCL_FPU_BINARY_INTRINSIC,
-    OCL_INT_BINARY_INTRINSIC, 
-    SWITCH_CASES,
-    VECTOR_LOAD_ELEMENT,
-    WRITE,
+    GLOBAL_LOADS ("Global Memory Loads"),
+    GLOBAL_STORES ("Global Memory Stores"),
+    LOCAL_LOADS ("Local Memory Loads"),
+    LOCAL_STORES ("Local Memory Stores"),
+    CONSTANT_LOADS ("Constant Memory Loads"),
+    CONSTANT_STORES ("Constant Memory Stores"),
+    PRIVATE_LOADS ("Private Memory Loads"),
+    PRIVATE_STORES ("Private Memory Stores"),
+    LOOPS ("Total Loops"),
+    PARALLEL_LOOPS ("Parallel Loops"),
+    IFS ("If Statements"),
+    SWITCH ("Switch Statements"),
+    CASE ("Switch Cases"),
+    CAST ("Cast Operations"),
+    VECTORS ("Vector Operations"),
+    INTEGER ("Integer & Float Operations"),
+    BINARY ("Binary Operations"),
+    BOOLEAN ("Boolean Operations"),
+    F_MATH ("Float Math Functions"),
+    I_MATH ("Integer Math Functions"),
+    FLOATS ("Float Operations"),
+    I_CMP ("Integer Comparison"),
+    F_CMP ("Float Comparison");
     // @formatter:on
+
+    private String feature;
+
+    ProfilerCodeFeatures(String featureType) {
+        this.feature = featureType;
+    }
+
+    @Override
+    public String toString() {
+        return feature;
+    }
 }

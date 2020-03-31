@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,14 +20,13 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
+package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-
-public interface OCLValue {
-
-    public String toValueString(OCLAssembler asm);
+/**
+ * This interface is used for accessing the Global thread ID node type outside
+ * the scope of opencl-driver package
+ */
+public interface MarkGlobalThreadID {
 }

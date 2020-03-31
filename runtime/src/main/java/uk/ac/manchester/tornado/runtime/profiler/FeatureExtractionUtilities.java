@@ -30,11 +30,9 @@ package uk.ac.manchester.tornado.runtime.profiler;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Map;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
@@ -42,61 +40,18 @@ import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 public class FeatureExtractionUtilities {
 
     private static final String FEATURE_FILE = "tornado-features.json";
-
-    private static List<String> arithmeticOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<", "%"));
+    private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
     }
 
-    public static LinkedHashMap<String, Integer> prettyFormatFeatures(HashMap<String, Integer> feat) {
-        LinkedHashMap<String, Integer> newFeat = new LinkedHashMap<>();
-
-        newFeat.put("Global Memory Reads", (feat.get("FloatingRead") != null ? (feat.get("FloatingRead")) : 0));
-        newFeat.put("Global Memory Writes", (feat.get("Write") != null ? (feat.get("Write")) : 0));
-        newFeat.put("Local Memory Reads", 0);
-        newFeat.put("Local Memory Writes", 0);
-        newFeat.put("Total number of Loops", (feat.get("LoopBegin") != null ? (feat.get("LoopBegin")) : 0));
-        newFeat.put("Parallel Loops", (feat.get("GlobalThreadId") != null ? (feat.get("GlobalThreadId")) : 0));
-        newFeat.put("If Statements", ((feat.get("LoopBegin") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
-        newFeat.put("Switch Statements", (feat.get("IntegerSwitch") != null ? (feat.get("IntegerSwitch")) : 0));
-        newFeat.put("Switch Cases", (feat.get("IntegerSwitch") != null ? (feat.get("SwitchCases")) : 0));
-        newFeat.put("Vector Loads", (feat.get("VectorLoadElement") != null ? (feat.get("VectorLoadElement")) : 0));
-        newFeat.put("Arithmetic Operations", arithmeticOperations(feat));
-        newFeat.put("Math Operations", mathOperations(feat));
-
-        return newFeat;
-    }
-
-    private static Integer mathOperations(HashMap<String, Integer> feat) {
-        Integer sumMathOperations;
-        if ((feat.get("OCLFPUnaryIntrinsic") != null) && feat.get("OCLIntBinaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLFPUnaryIntrinsic") + feat.get("OCLFPUnaryIntrinsic");
-        } else if (feat.get("OCLFPUnaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLFPUnaryIntrinsic");
-        } else if (feat.get("OCLIntBinaryIntrinsic") != null) {
-            sumMathOperations = feat.get("OCLIntBinaryIntrinsic");
-        } else {
-            sumMathOperations = 0;
-        }
-        return sumMathOperations;
-    }
-
-    private static Integer arithmeticOperations(HashMap<String, Integer> feat) {
-        Integer sumOperations = 0;
-        for (String key : feat.keySet()) {
-            if (arithmeticOps.contains(key)) {
-                sumOperations += feat.get(key);
-            }
-        }
-        return sumOperations;
-    }
-
-    public static void emitJsonToFile(LinkedHashMap<String, Integer> entry, String name) {
-        if (!name.equals("compile-kernellookupBufferAddress")) {
+    public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name) {
+        name = name.split("-")[1];
+        if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
-            task.put(name, entry);
+            task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(entry, name);
+            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name);
             File fileLog = new File(FEATURE_FILE);
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);
@@ -105,5 +60,42 @@ public class FeatureExtractionUtilities {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static LinkedHashMap<String, Integer> encodeFeatureMap(LinkedHashMap<ProfilerCodeFeatures, Integer> entry) {
+        LinkedHashMap<String, Integer> encodeMap = new LinkedHashMap<>();
+
+        for (Map.Entry<ProfilerCodeFeatures, Integer> ent : entry.entrySet()) {
+            encodeMap.put(ent.getKey().toString(), ent.getValue());
+        }
+
+        return encodeMap;
+    }
+
+    public static LinkedHashMap<ProfilerCodeFeatures, Integer> initializeFeatureMap() {
+        LinkedHashMap<ProfilerCodeFeatures, Integer> myMap = new LinkedHashMap<>();
+        myMap.put(ProfilerCodeFeatures.GLOBAL_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.GLOBAL_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.CONSTANT_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.CONSTANT_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.LOCAL_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.PRIVATE_LOADS, 0);
+        myMap.put(ProfilerCodeFeatures.PRIVATE_STORES, 0);
+        myMap.put(ProfilerCodeFeatures.LOOPS, 0);
+        myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS, 0);
+        myMap.put(ProfilerCodeFeatures.IFS, 0);
+        myMap.put(ProfilerCodeFeatures.I_CMP, 0);
+        myMap.put(ProfilerCodeFeatures.F_CMP, 0);
+        myMap.put(ProfilerCodeFeatures.SWITCH, 0);
+        myMap.put(ProfilerCodeFeatures.CASE, 0);
+        myMap.put(ProfilerCodeFeatures.VECTORS, 0);
+        myMap.put(ProfilerCodeFeatures.INTEGER, 0);
+        myMap.put(ProfilerCodeFeatures.BOOLEAN, 0);
+        myMap.put(ProfilerCodeFeatures.CAST, 0);
+        myMap.put(ProfilerCodeFeatures.F_MATH, 0);
+        myMap.put(ProfilerCodeFeatures.I_MATH, 0);
+
+        return myMap;
     }
 }
