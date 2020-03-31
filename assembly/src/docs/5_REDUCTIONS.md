@@ -1,6 +1,6 @@
 # Reductions support
 
-TornadoVM now supports basic reductions for `int`, `float` and `double` data types for the operators `+` and `*`, `max` and `min`. This wiki shows how to program with reductions in TornadoVM. More examples can be found in the `examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions` directory on Github.
+TornadoVM now supports basic reductions for `int`, `long`,`float` and `double` data types for the operators `+` and `*`, `max` and `min`. This wiki shows how to program with reductions in TornadoVM. More examples can be found in the `examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions` directory on Github.
 
 ## Example
 
