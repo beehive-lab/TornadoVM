@@ -6,6 +6,7 @@
 
 [Link](https://github.com/intel/compute-runtime/releases)
 
+* 20.12.16259: OK
 * 20.11.16158: OK
 * 20.10.16087: OK
 * 20.09.15980: OK
