@@ -28,10 +28,11 @@ package uk.ac.manchester.tornado.runtime;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 
-public interface TornadoDriverProvider {
+public interface TornadoDriverProvider extends Comparable<TornadoDriverProvider> {
 
     String getName();
 
     TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
 
+    int getPriority();
 }

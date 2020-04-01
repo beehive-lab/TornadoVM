@@ -29,6 +29,8 @@ autom4te.cache
 *.a
 /drivers/opencl/target/
 /drivers/opencl-jni/target/
+/drivers/cuda/target/
+/drivers/cuda-jni/target/
 /assemly/target/
 /collections/target/
 /benchmarks/target/

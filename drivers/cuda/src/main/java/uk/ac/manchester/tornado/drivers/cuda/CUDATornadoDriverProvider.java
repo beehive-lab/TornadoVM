@@ -33,6 +33,9 @@ import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class CUDATornadoDriverProvider implements TornadoDriverProvider {
+
+    private final int priority = 1;
+
     @Override
     public String getName() {
         return "CUDA Driver Provider";
@@ -41,5 +44,15 @@ public class CUDATornadoDriverProvider implements TornadoDriverProvider {
     @Override
     public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config) {
         return new CUDADriver(options, hostRuntime, config);
+    }
+
+    @Override
+    public int getPriority() {
+        return priority;
+    }
+
+    @Override
+    public int compareTo(TornadoDriverProvider o) {
+        return o.getPriority() - priority;
     }
 }

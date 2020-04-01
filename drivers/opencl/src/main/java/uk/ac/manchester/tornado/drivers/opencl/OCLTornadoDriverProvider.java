@@ -34,6 +34,8 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class OCLTornadoDriverProvider implements TornadoDriverProvider {
 
+    private final int priority = 0;
+
     @Override
     public String getName() {
         return "OpenCL Driver";
@@ -44,4 +46,13 @@ public class OCLTornadoDriverProvider implements TornadoDriverProvider {
         return new OCLDriver(options, vmRuntime, vmConfig);
     }
 
+    @Override
+    public int getPriority() {
+        return priority;
+    }
+
+    @Override
+    public int compareTo(TornadoDriverProvider o) {
+        return o.getPriority() - priority;
+    }
 }
