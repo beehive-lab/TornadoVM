@@ -126,11 +126,11 @@ public class Euler {
 
     private static void runParallel(int size) {
         long[] input = init(size);
-        long[] outputA = new long[size + 1];
-        long[] outputB = new long[size + 1];
-        long[] outputC = new long[size + 1];
-        long[] outputD = new long[size + 1];
-        long[] outputE = new long[size + 1];
+        long[] outputA = new long[size];
+        long[] outputB = new long[size];
+        long[] outputC = new long[size];
+        long[] outputD = new long[size];
+        long[] outputE = new long[size];
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("s0", Euler::solve, size, input, outputA, outputB, outputC, outputD, outputE) //

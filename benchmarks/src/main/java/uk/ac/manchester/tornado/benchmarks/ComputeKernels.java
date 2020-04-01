@@ -291,4 +291,29 @@ public class ComputeKernels {
             }
         }
     }
+
+    public static void euler(int size, long[] five, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
+        for (@Parallel int e = 1; e < five.length; e++) {
+            long e5 = five[e];
+            for (@Parallel int a = 1; a < five.length; a++) {
+                long a5 = five[a];
+                for (int b = a; b < size; b++) {
+                    long b5 = five[b];
+                    for (int c = b; c < size; c++) {
+                        long c5 = five[c];
+                        for (int d = c; d < size; d++) {
+                            long d5 = five[d];
+                            if (a5 + b5 + c5 + d5 == e5) {
+                                outputA[e] = a;
+                                outputB[e] = b;
+                                outputC[e] = c;
+                                outputD[e] = d;
+                                outputE[e] = e;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

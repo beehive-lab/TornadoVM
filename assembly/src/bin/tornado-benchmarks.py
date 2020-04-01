@@ -81,6 +81,7 @@ __BENCHMARKS__ = [
 	"montecarlo",
 	"blurFilter",
 	"renderTrack",
+	"euler",
 	"nbody",
 	"sgemm",
 	"dgemm",

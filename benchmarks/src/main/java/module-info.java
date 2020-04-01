@@ -19,6 +19,7 @@ module tornado.benchmarks {
     exports uk.ac.manchester.tornado.benchmarks.dgemm;
     exports uk.ac.manchester.tornado.benchmarks.dotimage;
     exports uk.ac.manchester.tornado.benchmarks.dotvector;
+    exports uk.ac.manchester.tornado.benchmarks.euler;
     exports uk.ac.manchester.tornado.benchmarks.hilbert;
     exports uk.ac.manchester.tornado.benchmarks.mandelbrot;
     exports uk.ac.manchester.tornado.benchmarks.montecarlo;
