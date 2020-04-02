@@ -1,0 +1,26 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+	https://maven.apache.org/xsd/settings-1.0.0.xsd">
+ <interactiveMode/>
+ <usePluginRegistry/>
+ 	<offline/>
+		 <pluginGroups/>
+	 <servers/>
+ 	<mirrors/>
+	 <proxies/>
+	 <profiles>
+	 <profile>
+		 <id>tornado-jvmci</id>
+		 <activation>
+		 <activeByDefault>true</activeByDefault>
+		 </activation>
+		 <properties>
+			<!-- Your PATH TO JDK with JVMCI Support -->
+			<jvmci.root>$$JDKPATH$$</jvmci.root>  
+			<jvmci.version>$$JDKVERSION$$</jvmci.version> 
+		 </properties>
+	 </profile>
+	 </profiles>
+	 <activeProfiles/>
+</settings>

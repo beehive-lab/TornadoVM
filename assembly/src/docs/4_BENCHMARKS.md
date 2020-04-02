@@ -13,6 +13,7 @@ Currently the benchmark runner script extends to the following benchmarks:
 	*blackscholes
 	*montecarlo
 	*blurFilter
+  *euler
 	*renderTrack
 	*nbody
 	*sgemm

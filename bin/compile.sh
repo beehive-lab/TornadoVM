@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+python scripts/updateMavenSettings.py
 mvn clean
 
 if [[ $2 == "OFFLINE" ]]
