@@ -26,6 +26,15 @@
 import os
 import re
 
+class Colors:
+	RED   = "\033[1;31m"  
+	BLUE  = "\033[1;34m"
+	CYAN  = "\033[1;36m"	
+	GREEN = "\033[0;32m"
+	RESET = "\033[0;0m"
+	BOLD    = "\033[;1m"
+	REVERSE = "\033[;7m"
+
 def updateMavenSettingsFile():
 
     f = open("scripts/templates/settings.xml", "r")
@@ -33,13 +42,11 @@ def updateMavenSettingsFile():
     
     javaHome = os.environ["JAVA_HOME"]
     settingsXML = settingsXML.replace("$$JDKPATH$$", javaHome)
+    print Colors.BLUE + "JAVA_HOME    : " + Colors.GREEN +  javaHome  + Colors.RESET
 
-    print "JAVA_HOME  : " + javaHome
-
-    ## Get the JDK Version
     javaVersion = re.search(r"1\.(?:([\d._])+)", javaHome).group(0)
     if javaVersion:
-        print "JVM_VERSION: " + javaVersion
+        print Colors.BLUE + "JVM_VERSION  : " + Colors.GREEN +  javaVersion  + Colors.RESET
     settingsXML = settingsXML.replace("$$JDKVERSION$$", javaVersion)    
     
     ## Store the file in ~/.m2/settings.xml
