@@ -59,6 +59,17 @@ public class EulerTornado extends BenchmarkDriver {
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
     }
 
+    @Override
+    public void tearDown() {
+        input = null;
+        outputA = null;
+        outputB = null;
+        outputC = null;
+        outputD = null;
+        outputE = null;
+        super.tearDown();
+    }
+
     private void runSequential(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
         ComputeKernels.euler(size, input, outputA, outputB, outputC, outputD, outputE);
         for (int i = 0; i < outputA.length; i++) {
