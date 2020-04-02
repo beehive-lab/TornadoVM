@@ -61,8 +61,14 @@ public class BlackScholesMT {
         int balk = callResult.length / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
+            int lowBound = current * balk;
+            int upperBound = (current + 1) * balk;
+            if(current==threads-1) {
+                upperBound = callResult.length;
+            }
+            int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
-                for (int idx = current * balk; idx < (current + 1) * balk; idx++) {
+                for (int idx = lowBound; idx < finalUpperBound; idx++) {
                     float rand = input[idx];
                     final float S_LOWER_LIMIT = 10.0f;
                     final float S_UPPER_LIMIT = 100.0f;
