@@ -29,7 +29,7 @@ public class MatrixMultiplication2D {
 
     private static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
-            for (@Parallel int j = 0; j < size; j++) {
+            for (int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
                     sum += A.get(i, k) * B.get(k, j);
@@ -106,6 +106,19 @@ public class MatrixMultiplication2D {
         System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");
+        System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }
 
+    private static boolean verify(Matrix2DFloat par, Matrix2DFloat seq, int size) {
+        boolean check = true;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (Math.abs(par.get(i, j) - seq.get(i, j)) > 0.1f) {
+                    check = false;
+                    break;
+                }
+            }
+        }
+        return check;
+    }
 }
