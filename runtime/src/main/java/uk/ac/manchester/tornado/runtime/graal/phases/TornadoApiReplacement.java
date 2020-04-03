@@ -23,24 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.loop.InductionVariable;
-import org.graalvm.compiler.loop.LoopEx;
-import org.graalvm.compiler.loop.LoopsData;
-import org.graalvm.compiler.nodes.*;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.phases.BasePhase;
-import uk.ac.manchester.tornado.api.type.annotations.Atomic;
-import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
-import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.graal.nodes.AtomicAccessNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -50,7 +33,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.loop.InductionVariable;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.phases.BasePhase;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.type.annotations.Atomic;
+import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
+import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.nodes.AtomicAccessNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -127,13 +133,11 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         Map<Node, ParallelAnnotationProvider> parallelNodes = new HashMap<>();
 
         graph.getNodes().filter(FrameState.class).forEach((fs) -> {
-            // Tornado.trace("framestate: method=%s,",fs.method().getName());
             if (methodToAnnotations.containsKey(fs.getMethod())) {
                 for (ParallelAnnotationProvider an : methodToAnnotations.get(fs.getMethod())) {
                     if (fs.bci >= an.getStart() && fs.bci < an.getStart() + an.getLength()) {
                         Node localNode = fs.localAt(an.getIndex());
                         if (!parallelNodes.containsKey(localNode)) {
-                            // Tornado.info("found parallel node: %s",localNode);
                             parallelNodes.put(localNode, an);
                         }
                     }
@@ -149,8 +153,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             if (TORNADO_LOOPS_REVERSE) {
                 Collections.reverse(loops);
             }
-            // final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ? data.innerFirst() :
-            // data.outerFirst() Collections.reverse(loops);
+
             for (LoopEx loop : loops) {
                 for (InductionVariable iv : loop.getInductionVariables().getValues()) {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
@@ -185,8 +188,6 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                         if (oldStride.usages().count() > 1) {
                             final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
                             oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
-                            // duplicateStride.removeUsage(phi);
-                            // oldStride.removeUsage(node)
                         }
 
                         iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
