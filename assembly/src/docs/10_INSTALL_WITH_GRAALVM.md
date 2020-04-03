@@ -123,6 +123,11 @@ To run benchmarks:
 $ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dft
 ```
 
+To run individual tests:
+
+```bash
+tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
+```
 
 
 ## Known issues
