@@ -77,6 +77,18 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    public static void matrixMultiplicationParallelInduction(final float[] A, final float[] B, final float[] C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < i; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < size; k++) {
+                    sum += A[(i * size) + k] * B[(k * size) + j];
+                }
+                C[(i * size) + j] = sum;
+            }
+        }
+    }
+
     @Ignore
     @Test
     public void testFillMatrix() {
@@ -238,6 +250,44 @@ public class TestMatrices extends TornadoTestBase {
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 assertEquals(resultSeq[i * N + j], matrixC[i * N + j], 0.1);
+            }
+        }
+    }
+
+    @Test
+    public void testMatrixMultiplicationWithParallelInductionVariables() {
+        final int N = 64;
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] matrixC = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        Random r = new Random();
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = r.nextFloat();
+            matrixB[idx] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestMatrices::matrixMultiplicationParallelInduction, matrixA, matrixB, matrixC, N)
+                .streamOut(matrixC);
+        //@formatter:on
+        t.execute();
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < i; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < N; k++) {
+                    sum += matrixA[(i * N) + k] * matrixB[(k * N) + j];
+                }
+                resultSeq[(i * N) + j] = sum;
+            }
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                assertEquals(resultSeq[i * N + j], matrixC[i * N + j], 0.1f);
             }
         }
     }
