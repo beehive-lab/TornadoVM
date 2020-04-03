@@ -161,13 +161,10 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     }
                     ValueNode maxIterations;
                     List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
-                    if (conditions.size() == 1) {
-                        final IntegerLessThanNode lessThan = conditions.get(0);
-                        maxIterations = lessThan.getY();
-                    } else {
-                        Tornado.debug("Unable to parallelise: multiple uses of iv");
-                        continue;
-                    }
+
+                    // Allow multiple uses of parallel indices when parallelizing loops
+                    final IntegerLessThanNode lessThan = conditions.get(0);
+                    maxIterations = lessThan.getY();
 
                     if (iv.isConstantInit() && iv.isConstantStride()) {
 
