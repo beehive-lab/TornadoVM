@@ -54,43 +54,7 @@ This file should be loaded once after opening the command prompt for the setup o
 $ source ./etc/sources.env
 ```
 
-
-### 3. Setting the default maven configuration
-
-Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that you built in step 1 and the `jvmci.version` with the corresponding version.
-
-```bash
-<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-	https://maven.apache.org/xsd/settings-1.0.0.xsd">
- <interactiveMode/>
- <usePluginRegistry/>
- 	<offline/>
-	<pluginGroups/>
-	<servers/>
- 	<mirrors/>
-	<proxies/>
-	<profiles>
-	  <profile>
-		<id>tornado-jvmci</id>
-		<activation>
-		 	<activeByDefault>true</activeByDefault>
-		</activation>
-		<properties>
-			<!-- Your PATH TO YOUR JDK1.8-JVMCI-->
-			<jvmci.root>/home/user/jdk1.8.0_<your_version>/product</jvmci.root>
-			<!-- Your JDK1.8-JVMCI version-->
-		 	<jvmci.version>1.8.0_<your_version></jvmci.version>
-		</properties>
-	   </profile>
-	 </profiles>
-	 <activeProfiles/>
-</settings>
-```
-
-
-### 4. Install CMAKE (if cmake < 3.6)
+### 3. Install CMAKE (if cmake < 3.6)
 
 ```
 $ cmake -version
@@ -120,7 +84,9 @@ Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to t
 export CMAKE_ROOT=/opt/cmake-3.10.1
 ```
 
-### 5. Compile TornadoVM
+### 4. Compile TornadoVM
+
+**Important:** The build process in TornadoVM will override the file in `~/.m2/settings.xml`. 
 
 ```bash
 $ cd ~/tornadovm
