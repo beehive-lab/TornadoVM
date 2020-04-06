@@ -24,13 +24,10 @@
  * */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import java.util.List;
-
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
