@@ -18,10 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
+import java.util.Arrays;
+
+import org.junit.Ignore;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -89,5 +94,28 @@ public class TestFails extends TornadoTestBase {
 
         // How to provoke the failure
         ts.execute();
+    }
+
+    public static void reverseLoop(int[] a) {
+        for (@Parallel int i = a.length - 1; i >= 0; i--) {
+            a[i] = 10;
+        }
+    }
+
+    @Ignore
+    @Test(expected = TornadoCompilationException.class)
+    public void testCompilationException() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFails::reverseLoop, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
     }
 }

@@ -49,10 +49,10 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
 import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AtomicAccessNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -117,7 +117,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         }
     }
 
-    private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
+    private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {
         // build node -> annotation mapping
         Map<ResolvedJavaMethod, ParallelAnnotationProvider[]> methodToAnnotations = new HashMap<>();
 
@@ -162,44 +162,53 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     ValueNode maxIterations;
                     List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
 
-                    // Allow multiple uses of parallel indices when parallelizing loops
                     final IntegerLessThanNode lessThan = conditions.get(0);
+
                     maxIterations = lessThan.getY();
 
-                    if (iv.isConstantInit() && iv.isConstantStride()) {
-
-                        final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
-
-                        final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
-
-                        final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(loopIndex, newInit));
-
-                        final ParallelStrideNode stride = graph.addWithoutUnique(new ParallelStrideNode(loopIndex, newStride));
-
-                        final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(loopIndex, maxIterations, offset, stride));
-
-                        final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-
-                        final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
-
-                        if (oldStride.usages().count() > 1) {
-                            final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
-                            oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
-                        }
-
-                        iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
-                        iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
-
-                        // only replace this node in the loop condition
-                        maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
-
-                    } else {
-                        Tornado.debug("Unable to parallelise: non-constant stride or offset");
+                    try {
+                        parallelizationReplacement(graph, iv, loopIndex, maxIterations, conditions);
+                    } catch (TornadoCompilationException compE) {
+                        System.out.println(compE.getMessage());
                         continue;
                     }
                     loopIndex++;
                 }
             }
+        }
+    }
+
+    private void parallelizationReplacement(StructuredGraph graph, InductionVariable iv, int loopIndex, ValueNode maxIterations, List<IntegerLessThanNode> conditions)
+            throws TornadoCompilationException {
+        if (iv.isConstantInit() && iv.isConstantStride()) {
+
+            final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+
+            final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
+
+            final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(loopIndex, newInit));
+
+            final ParallelStrideNode stride = graph.addWithoutUnique(new ParallelStrideNode(loopIndex, newStride));
+
+            final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(loopIndex, maxIterations, offset, stride));
+
+            final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
+
+            final ValueNode oldStride = phi.singleBackValueOrThis();
+
+            if (oldStride.usages().count() > 1) {
+                final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
+                oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
+            }
+
+            iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
+            iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
+
+            // only replace this node in the loop condition
+            maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
+
+        } else {
+            throw new TornadoCompilationException("Failed to parallelize due to non-constant loop strides. \nSequential code will run on the device!");
         }
     }
 }
