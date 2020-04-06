@@ -287,15 +287,7 @@ public class TestMatrices extends TornadoTestBase {
         //@formatter:on
         t.execute();
 
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < i; j++) {
-                float sum = 0.0f;
-                for (int k = 0; k < N; k++) {
-                    sum += matrixA[(i * N) + k] * matrixB[(k * N) + j];
-                }
-                resultSeq[(i * N) + j] = sum;
-            }
-        }
+        matrixMultiplicationParallelInduction(matrixA, matrixB, resultSeq, N);
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -325,15 +317,7 @@ public class TestMatrices extends TornadoTestBase {
         //@formatter:on
         t.execute();
 
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < i; j++) {
-                float sum = 0.0f;
-                for (int k = 0; k < i; k++) {
-                    sum += matrixA[(i * N) + k] * matrixB[(k * N) + j];
-                }
-                resultSeq[(i * N) + j] = sum;
-            }
-        }
+        matrixUsageOfParallelInduction(matrixA, matrixB, resultSeq, N);
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
