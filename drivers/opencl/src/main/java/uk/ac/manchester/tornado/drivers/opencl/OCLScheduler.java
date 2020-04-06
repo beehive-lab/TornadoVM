@@ -28,9 +28,10 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLScheduler {
 
+    private static final String AMD_VENDOR = "Advanced Micro Devices";
+
     private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
-        System.out.println("GPU Vendor: " + context.getDevice().getDeviceVendor());
-        if (context.getDevice().getDeviceVendor().contains("AMD")) {
+        if (context.getDevice().getDeviceVendor().contains(AMD_VENDOR)) {
             return new OCLAMDScheduler(context);
         } else {
             return new OCLGPUScheduler(context);

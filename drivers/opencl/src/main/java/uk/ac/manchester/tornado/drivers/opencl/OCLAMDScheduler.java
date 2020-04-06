@@ -27,16 +27,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLAMDScheduler extends OCLKernelScheduler {
 
-    public static final double GPU_WORK_GROUP_COEFF = .125;
-
-    @SuppressWarnings("unused")
-    private long maxComputeUnits;
-    @SuppressWarnings("unused")
-    private double workGroupUtil;
-    @SuppressWarnings("unused")
-    private long maxWorkGroupSize;
-
-    private static final int WARP_SIZE = 32;
+    private static final int WARP_SIZE = 64;
     private boolean ADJUST_IRREGULAR = false;
 
     private final long[] maxWorkItemSizes;
@@ -44,18 +35,17 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
     public OCLAMDScheduler(final OCLDeviceContext context) {
         super(context);
         OCLDevice device = context.getDevice();
-
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
-        maxComputeUnits = device.getDeviceMaxComputeUnits();
-        maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
+    }
 
-        workGroupUtil = GPU_WORK_GROUP_COEFF;
+    @Override
+    public int launch(OCLKernel kernel, TaskMetaData meta, int[] waitEvents, long batchThreads) {
+        return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
     }
 
     @Override
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
-
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
             // adjust for irregular problem sizes
@@ -89,7 +79,6 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;
         }
-
         int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
         while (globalWorkSize % value != 0) {
             value--;

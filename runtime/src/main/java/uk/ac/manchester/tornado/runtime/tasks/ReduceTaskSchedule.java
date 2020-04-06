@@ -620,6 +620,11 @@ class ReduceTaskSchedule {
     }
 
     private static int calculateGroupSize(TornadoDevice device, long globalWorkSize) {
+
+        if (device.getPlatformName().contains("AMD")) {
+            return DEFAULT_GPU_WORK_GROUP;
+        }
+
         int maxBlockSize = (int) device.getDeviceMaxWorkgroupDimensions()[0];
 
         if (maxBlockSize == globalWorkSize) {
