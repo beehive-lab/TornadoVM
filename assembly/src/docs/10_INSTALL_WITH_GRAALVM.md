@@ -105,6 +105,31 @@ $ make graal-jdk-11
 
 and done!!
 
+
+## Running with Graal JDK 11
+
+
+TornadoVM uses modules:
+
+To run examples:
+
+```bash
+$ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
+```
+
+To run benchmarks:
+
+```bash
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dft
+```
+
+To run individual tests:
+
+```bash
+tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
+```
+
+
 ## Known issues
 
 ##### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
@@ -114,3 +139,4 @@ In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (
 ```bash
 $ apt-get install ocl-icd-opencl-dev
 ```
+
