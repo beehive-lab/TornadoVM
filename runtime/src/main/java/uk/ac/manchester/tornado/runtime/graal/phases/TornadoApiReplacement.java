@@ -170,7 +170,6 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                         parallelizationReplacement(graph, iv, loopIndex, maxIterations, conditions);
                     } catch (TornadoCompilationException compE) {
                         System.out.println(compE.getMessage());
-                        continue;
                     }
                     loopIndex++;
                 }
@@ -208,7 +207,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
 
         } else {
-            throw new TornadoCompilationException("Failed to parallelize due to non-constant loop strides. \nSequential code will run on the device!");
+            throw new TornadoCompilationException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device!");
         }
     }
 }
