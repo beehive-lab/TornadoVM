@@ -21,20 +21,39 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
-import uk.ac.manchester.tornado.api.type.annotations.Constant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFMANode;
 
 public class OCLFMAPhase extends Phase {
 
-    private boolean isConstant(ValueNode value) {
-        return value instanceof ConstantNode;
+    /**
+     * Instrinsics in OpenCL:
+     * https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/fma.html
+     * 
+     * 
+     * From the OpenCL documentation:
+     * 
+     * The generic type name gentype is used to indicate that the function can take
+     * float, float2, float4, float8, or float16 as the type for the arguments. For
+     * any specific use of these function, the actual type has to be the same for
+     * all arguments and the return type.
+     *
+     * If extended with cl_khr_fp64, generic type name gentype may indicate double
+     * and double{2|4|8|16} as arguments and return values. If extended with
+     * cl_khr_fp16, generic type name gentype may indicate half and half{2|4|8|16}
+     * as arguments and return values.
+     * 
+     * @param x
+     *            valueNode
+     * @return returns true if ValueNode is either Float of Double
+     */
+    private boolean isValidType(ValueNode x) {
+        return (x.getStackKind() == JavaKind.Float || x.getStackKind() == JavaKind.Double);
     }
 
     @Override
@@ -50,18 +69,11 @@ public class OCLFMAPhase extends Phase {
             if (mulNode != null) {
                 ValueNode x = mulNode.getX();
                 ValueNode y = mulNode.getY();
-                if (!isConstant(x) && !isConstant(y)) {
-
+                if (isValidType(x) && isValidType(y)) {
                     MulNode finalMulNode = mulNode;
                     ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(finalMulNode)).first();
-
-                    System.out.println("X: " + x);
-                    System.out.println("Y: " + y);
-                    System.out.println("Z: " + z);
-
                     OCLFMANode oclFMA = new OCLFMANode(x, y, z);
-                    graph.addWithoutUnique(oclFMA);
-
+                    graph.addOrUnique(oclFMA);
                     mulNode.removeUsage(addNode);
                     if (mulNode.hasNoUsages()) {
                         mulNode.safeDelete();
