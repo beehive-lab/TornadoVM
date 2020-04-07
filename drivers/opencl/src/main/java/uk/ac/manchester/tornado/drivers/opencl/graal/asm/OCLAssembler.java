@@ -516,6 +516,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLTernaryIntrinsic VSTORE8 = new OCLTernaryIntrinsic("vstore8");
         public static final OCLTernaryIntrinsic VSTORE16 = new OCLTernaryIntrinsic("vstore16");
         public static final OCLTernaryIntrinsic CLAMP = new OCLTernaryIntrinsic("clamp");
+        public static final OCLTernaryIntrinsic FMA = new OCLTernaryIntrinsic("fma");
         // @formatter:on
 
         protected OCLTernaryIntrinsic(String opcode) {

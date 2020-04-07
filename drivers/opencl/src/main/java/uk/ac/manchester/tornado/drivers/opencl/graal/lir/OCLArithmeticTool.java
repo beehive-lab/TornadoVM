@@ -42,6 +42,7 @@ import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
@@ -438,4 +439,13 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         }
         return result;
     }
+
+    public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
+        LIRKind resultKind = LIRKind.combine(op1, op2);
+        Variable result = getGen().newVariable(resultKind);
+        OCLAssembler.OCLTernaryOp operation = OCLTernaryIntrinsic.FMA;
+        getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLTernary.Expr(operation, resultKind, op1, op2, op3)));
+        return result;
+    }
+
 }
