@@ -34,8 +34,6 @@ public class OCLFMAPhase extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
 
-        System.out.println("OCL-FMA PHASE");
-
         graph.getNodes().filter(AddNode.class).forEach(addNode -> {
             NodeIterable<MulNode> mulNodes = addNode.inputs().filter(MulNode.class);
 
