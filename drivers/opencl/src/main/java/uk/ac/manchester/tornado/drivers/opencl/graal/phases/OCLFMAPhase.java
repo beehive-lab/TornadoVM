@@ -35,14 +35,18 @@ public class OCLFMAPhase extends Phase {
     protected void run(StructuredGraph graph) {
 
         graph.getNodes().filter(AddNode.class).forEach(addNode -> {
-            NodeIterable<MulNode> mulNodes = addNode.inputs().filter(MulNode.class);
-
-            if (mulNodes.count() > 0) {
-                MulNode mulNode = mulNodes.first();
-
+            MulNode mulNode = null;
+            System.out.println("ADD NODE: " + addNode);
+            if (addNode.getX() instanceof MulNode) {
+                mulNode = (MulNode) addNode.getX();
+            } else if (addNode.getY() instanceof MulNode) {
+                mulNode = (MulNode) addNode.getY();
+            }
+            if (mulNode != null) {
                 ValueNode x = mulNode.getX();
                 ValueNode y = mulNode.getY();
-                ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(mulNode)).first();
+                MulNode finalMulNode = mulNode;
+                ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(finalMulNode)).first();
 
                 System.out.println("X: " + x);
                 System.out.println("Y: " + y);
