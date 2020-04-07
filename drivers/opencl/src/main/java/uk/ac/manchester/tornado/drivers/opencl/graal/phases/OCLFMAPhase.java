@@ -22,21 +22,26 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
+import uk.ac.manchester.tornado.api.type.annotations.Constant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFMANode;
 
 public class OCLFMAPhase extends Phase {
+
+    private boolean isConstant(ValueNode value) {
+        return value instanceof ConstantNode;
+    }
 
     @Override
     protected void run(StructuredGraph graph) {
 
         graph.getNodes().filter(AddNode.class).forEach(addNode -> {
             MulNode mulNode = null;
-            System.out.println("ADD NODE: " + addNode);
             if (addNode.getX() instanceof MulNode) {
                 mulNode = (MulNode) addNode.getX();
             } else if (addNode.getY() instanceof MulNode) {
@@ -45,22 +50,25 @@ public class OCLFMAPhase extends Phase {
             if (mulNode != null) {
                 ValueNode x = mulNode.getX();
                 ValueNode y = mulNode.getY();
-                MulNode finalMulNode = mulNode;
-                ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(finalMulNode)).first();
+                if (!isConstant(x) && !isConstant(y)) {
 
-                System.out.println("X: " + x);
-                System.out.println("Y: " + y);
-                System.out.println("Z: " + z);
+                    MulNode finalMulNode = mulNode;
+                    ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(finalMulNode)).first();
 
-                OCLFMANode oclFMA = new OCLFMANode(x, y, z);
-                graph.addOrUniqueWithInputs(oclFMA);
+                    System.out.println("X: " + x);
+                    System.out.println("Y: " + y);
+                    System.out.println("Z: " + z);
 
-                mulNode.removeUsage(addNode);
-                if (mulNode.hasNoUsages()) {
-                    mulNode.safeDelete();
+                    OCLFMANode oclFMA = new OCLFMANode(x, y, z);
+                    graph.addWithoutUnique(oclFMA);
+
+                    mulNode.removeUsage(addNode);
+                    if (mulNode.hasNoUsages()) {
+                        mulNode.safeDelete();
+                    }
+                    addNode.replaceAtUsages(oclFMA);
+                    addNode.safeDelete();
                 }
-                addNode.replaceAtUsages(oclFMA);
-                addNode.safeDelete();
             }
         });
 
