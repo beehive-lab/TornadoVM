@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
@@ -30,10 +28,20 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLScheduler {
 
-    public static final OCLKernelScheduler instanceScheduler(OCLDeviceType type, final OCLDeviceContext context) {
+    private static final String AMD_VENDOR = "Advanced Micro Devices";
+
+    private static OCLKernelScheduler getInstanceGPUScheduler(final OCLDeviceContext context) {
+        if (context.getDevice().getDeviceVendor().contains(AMD_VENDOR)) {
+            return new OCLAMDScheduler(context);
+        } else {
+            return new OCLGPUScheduler(context);
+        }
+    }
+
+    public static OCLKernelScheduler instanceScheduler(OCLDeviceType type, final OCLDeviceContext context) {
         switch (type) {
             case CL_DEVICE_TYPE_GPU:
-                return new OCLGPUScheduler(context);
+                return getInstanceGPUScheduler(context);
             case CL_DEVICE_TYPE_ACCELERATOR:
                 return (Tornado.ACCELERATOR_IS_FPGA) ? new OCLFPGAScheduler(context) : new OCLCPUScheduler(context);
             case CL_DEVICE_TYPE_CPU:
@@ -45,9 +53,9 @@ public class OCLScheduler {
         return null;
     }
 
-    public static final OCLKernelScheduler create(final OCLDeviceContext context) {
+    public static OCLKernelScheduler create(final OCLDeviceContext context) {
         if (Tornado.FORCE_ALL_TO_GPU) {
-            return new OCLGPUScheduler(context);
+            return getInstanceGPUScheduler(context);
         }
         if (context.getDevice().getDeviceType() != null) {
             OCLDeviceType type = context.getDevice().getDeviceType();
