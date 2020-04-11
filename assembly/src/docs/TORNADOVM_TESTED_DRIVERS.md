@@ -6,6 +6,7 @@
 
 [Link](https://github.com/intel/compute-runtime/releases)
 
+* 20.13.16352: OK
 * 20.12.16259: OK
 * 20.11.16158: OK
 * 20.10.16087: OK
@@ -42,6 +43,7 @@
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+* 440.82: OK
 * 440.64: OK
 * 440.59: OK
 * 440.40: OK
