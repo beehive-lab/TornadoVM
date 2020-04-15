@@ -25,6 +25,7 @@
 
 import os
 import re
+import subprocess
 
 class Colors:
 	RED   = "\033[1;31m"  
@@ -44,7 +45,12 @@ def updateMavenSettingsFile():
     settingsXML = settingsXML.replace("$$JDKPATH$$", javaHome)
     print Colors.BLUE + "JAVA_HOME    : " + Colors.GREEN +  javaHome  + Colors.RESET
 
-    javaVersion = re.search(r"1\.(?:([\d._])+)", javaHome).group(0)
+    command = javaHome + "/bin/java"
+    p = subprocess.Popen([command, "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+    (output, err) = p.communicate()
+    p.wait()
+    javaVersion = re.search(r"1\.?(?:([\d._])+)", err).group(0)
+
     if javaVersion:
         print Colors.BLUE + "JVM_VERSION  : " + Colors.GREEN +  javaVersion  + Colors.RESET
     settingsXML = settingsXML.replace("$$JDKVERSION$$", javaVersion)    

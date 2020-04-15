@@ -17,8 +17,8 @@ The following table includes the platforms that TornadoVM can be executed.
 
 TornadoVM can be currently executed with the following two configurations:
 
-  * TornadoVM with JDK 8 with JVMCI-8 support: see the installation guide [here](11_INSTALL_WITH_JDK8.md)
-  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md)
+  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
+  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
 
 ## 2. Running Examples
 
@@ -38,14 +38,39 @@ Tornado device=<driverNumber>:<deviceNumber>
 Example output:
 ```bash
 Number of Tornado drivers: 1
-Number of devices: 3
-
+Total number of devices  : 4
 Tornado device=0:0
-  NVIDIA CUDA -- GeForce GTX 1050
+	NVIDIA CUDA -- GeForce GTX 1050
+		Global Memory Size: 3.9 GB
+		Local Memory Size: 48.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [1024, 1024, 64]
+		Device OpenCL C version: OpenCL C 1.2
+
 Tornado device=0:1
-  Intel(R) OpenCL -- Intel(R) HD Graphics
+	Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+		Global Memory Size: 31.0 GB
+		Local Memory Size: 32.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [8192, 8192, 8192]
+		Device OpenCL C version: OpenCL C 1.2
+
 Tornado device=0:2
-  Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+	AMD Accelerated Parallel Processing -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+		Global Memory Size: 31.0 GB
+		Local Memory Size: 32.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [1024, 1024, 1024]
+		Device OpenCL C version: OpenCL C 1.2
+
+Tornado device=0:3
+	Intel(R) OpenCL HD Graphics -- Intel(R) Gen9 HD Graphics NEO
+		Global Memory Size: 24.8 GB
+		Local Memory Size: 64.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [256, 256, 256]
+		Device OpenCL C version: OpenCL C 2.0
+
 ```
 
 **The output might vary depending on your OpenCL installation. To run TornadoVM, you should see at least one device.**
@@ -69,7 +94,7 @@ The command above will run the HelloWorld example on the integrated GPU (Intel H
 ## 3. Running Benchmarks
 
 ```bash
-$ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
+$ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
 ```
 
 
@@ -162,6 +187,12 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
+         <version>0.6</version>
+      </dependency>
+      
+      <dependency>
+         <groupId>tornado</groupId>
+         <artifactId>tornado-matrices</artifactId>
          <version>0.6</version>
       </dependency>
    </dependencies>
