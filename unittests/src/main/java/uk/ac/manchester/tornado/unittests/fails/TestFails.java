@@ -18,10 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
+import java.util.Arrays;
+
+import org.junit.Ignore;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -90,4 +95,5 @@ public class TestFails extends TornadoTestBase {
         // How to provoke the failure
         ts.execute();
     }
+
 }
