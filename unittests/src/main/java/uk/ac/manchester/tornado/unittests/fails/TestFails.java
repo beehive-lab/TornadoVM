@@ -96,26 +96,4 @@ public class TestFails extends TornadoTestBase {
         ts.execute();
     }
 
-    public static void reverseLoop(int[] a) {
-        for (@Parallel int i = a.length - 1; i >= 0; i--) {
-            a[i] = 10;
-        }
-    }
-
-    @Ignore
-    @Test(expected = TornadoCompilationException.class)
-    public void testCompilationException() {
-        final int size = 10;
-
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
-
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestFails::reverseLoop, a)
-                .streamOut(a)
-                .execute();
-        //formatter:on
-    }
 }

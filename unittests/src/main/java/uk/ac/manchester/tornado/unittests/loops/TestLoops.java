@@ -671,4 +671,28 @@ public class TestLoops extends TornadoTestBase {
             assertEquals(2, c[i]);
         }
     }
+
+    public static void reverseLoop(int[] a) {
+        for (@Parallel int i = a.length - 1; i >= 0; i--) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testReverseOrderLoops() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::reverseLoop, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        for (int j = 0; j < size; j++) {
+            assertEquals(10, a[j]);
+        }
+    }
 }
