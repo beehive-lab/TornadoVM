@@ -20,12 +20,11 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.common.exceptions;
+package uk.ac.manchester.tornado.api.exceptions;
 
-public class TornadoCompilationException extends Exception {
+public class TornadoCompilationException extends RuntimeException {
 
     private static final long serialVersionUID = -7515308573010965892L;
     private final String message;
