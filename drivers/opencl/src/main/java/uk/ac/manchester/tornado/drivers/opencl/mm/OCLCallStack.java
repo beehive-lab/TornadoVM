@@ -49,15 +49,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
         this.numArgs = numArgs;
 
-        // clear the buffer and set the mark at the beginning of the arguments
+        // clear the buffer and set the mark position
         buffer.clear();
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(toAbsoluteAddress());
-        buffer.putInt(0);
-        buffer.putInt(numArgs);
         buffer.mark();
 
         onDevice = false;
