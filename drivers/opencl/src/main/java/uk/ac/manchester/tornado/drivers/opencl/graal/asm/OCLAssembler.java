@@ -35,6 +35,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.FLOAT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack.RESERVED_SLOTS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1118,7 +1119,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void loadParam(Variable result, int index) {
-        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, index);
+        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, RESERVED_SLOTS + index);
     }
 
     @Deprecated
