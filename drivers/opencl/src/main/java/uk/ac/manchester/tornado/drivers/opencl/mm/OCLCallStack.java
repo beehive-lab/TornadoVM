@@ -38,8 +38,8 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
-    public final static int RESERVED_SLOTS = 6;
     public final static int RETURN_VALUE_INDEX = 0;
+    public final static int RESERVED_SLOTS = 1;
 
     private final int numArgs;
 
@@ -51,6 +51,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
         // clear the buffer and set the mark position
         buffer.clear();
+        buffer.putLong(0);
         buffer.mark();
 
         onDevice = false;
@@ -83,20 +84,13 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         return super.enqueueWrite(events);
     }
 
-    public int getReservedSlots() {
-        return RESERVED_SLOTS;
-    }
-
     public int getSlotCount() {
         return (int) bytes >> 3;
     }
 
     @Override
     public void reset() {
-        for (int i = 0; i < 2; i++) {
-            buffer.putLong(i, 0);
-        }
-
+        buffer.putLong(0, 0);
         buffer.reset();
         onDevice = false;
     }
