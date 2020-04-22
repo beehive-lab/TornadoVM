@@ -20,6 +20,8 @@ Once the method `execute` is invoked, TornadoVM builds the data dependency graph
 
 
 ```java
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
