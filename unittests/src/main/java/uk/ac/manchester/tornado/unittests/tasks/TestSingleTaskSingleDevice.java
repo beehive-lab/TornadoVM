@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  */
 public class TestSingleTaskSingleDevice {
 
-    public static void simpleTask(double[] a, double[] b, double[] c) {
+    public static void simpleTask(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
@@ -46,9 +46,9 @@ public class TestSingleTaskSingleDevice {
     @Test
     public void testSimpleTask() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
             a[i] = (float) Math.random();
@@ -71,9 +71,9 @@ public class TestSingleTaskSingleDevice {
     @Test
     public void testSimpleTaskOnDevice0() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
             a[i] = (float) Math.random();
@@ -101,9 +101,9 @@ public class TestSingleTaskSingleDevice {
     @Test
     public void testSimpleTaskOnDevice1() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
             a[i] = (float) Math.random();
