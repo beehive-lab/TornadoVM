@@ -7,6 +7,10 @@
   * Intel(R) HD Graphics 630
   * Intel(R) Core(TM) i7-7820HQ CPU 
 
+* 1.2 (Jan 23 2020)
+   * Intel(R) Core(TM) i5-5257U CPU
+   * Intel(R) Iris(TM) Graphics 6100
+
 ## List of supported drivers for Linux
 
 ### Intel 
