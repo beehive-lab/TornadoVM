@@ -64,6 +64,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.math.TestMath",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
 	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
+	"uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap",
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
@@ -72,7 +73,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
 	"uk.ac.manchester.tornado.unittests.bitsets.BitSetTests",
 	"uk.ac.manchester.tornado.unittests.fails.TestFails",
-  "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
+    "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
 	"uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
 ]
 
