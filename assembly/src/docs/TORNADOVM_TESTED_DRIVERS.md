@@ -1,6 +1,15 @@
 # List of Tested OpenCL Drivers for TornadoVM
 
-## Intel 
+## OpenCL supported drivers for OSx
+
+* 1.2 (Mar 15 2020)
+  * AMD Radeon Pro 560 Compute Engine
+  * Intel(R) HD Graphics 630
+  * Intel(R) Core(TM) i7-7820HQ CPU 
+
+## List of supported drivers for Linux
+
+### Intel 
 
 ##### Drivers from Intel Compute HD Graphics (Intel Compute Runtime) - NEO
 
@@ -39,7 +48,7 @@
 * 18.1.0.0920 : OK 
 * 1.2.0.37  (Old version for CentOS) : OK
 
-## NVIDIA 
+### NVIDIA 
 
 ##### NVIDIA GPUs
 
@@ -52,13 +61,13 @@
 * 440.36: OK 
 * 435.21: OK 
 
-## AMD
+### AMD
 
 [Link](https://www.amd.com/en/support)
 
 * 2766.4 (PAL,HSAIL) OK
 
-## Xilinx
+### Xilinx
 
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 
