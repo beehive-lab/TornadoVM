@@ -41,7 +41,13 @@ def updateMavenSettingsFile():
     f = open("scripts/templates/settings.xml", "r")
     settingsXML = f.read()
     
-    javaHome = os.environ["JAVA_HOME"]
+    try:
+        javaHome = os.environ["JAVA_HOME"]
+    except:
+        print Colors.RED + "[ERROR] JAVA_HOME is not defined. Plese export JAVA_HOME" + Colors.RESET
+        import sys
+        sys.exit(1)
+
     settingsXML = settingsXML.replace("$$JDKPATH$$", javaHome)
     print Colors.BLUE + "JAVA_HOME    : " + Colors.GREEN +  javaHome  + Colors.RESET
 
