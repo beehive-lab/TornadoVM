@@ -84,7 +84,7 @@ Again, ***Run > Edit Configurations > Application > Add new (e.g. plus sign)***
 
 Then, add your own paraters similar to the following:
 
-* **Main Class:** uk.ac.manchester.tornado.examples.HelloWord
+* **Main Class:** uk.ac.manchester.tornado.examples.matrices.MatrixVectorMultiplication 
 * **VM Options:** What you copied from `-server` and on
 * **Working Directory:** `/home/tornadovm`
 * **JRE:** Default (Should point to the 1.8.0_131)

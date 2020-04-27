@@ -23,7 +23,7 @@ TornadoVM can be currently executed with the following two configurations:
 ## 2. Running Examples
 
 ```bash
-$ tornado uk.ac.manchester.tornado.examples.HelloWorld
+$ tornado uk.ac.manchester.tornado.examples.matrices.MatrixVectorMultiplication
 ```
 
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices:
@@ -86,7 +86,7 @@ Where `s` is the *schedule name* and `t` is the task name.
 For example running on device [1] (Intel HD Graphics in our example) will look like this:
 
 ```bash
-$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
+$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.matrices.MatrixVectorMultiplication
 ```
 
 The command above will run the HelloWorld example on the integrated GPU (Intel HD Graphics).
