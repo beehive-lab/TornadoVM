@@ -27,8 +27,9 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class TestLambdas {
+public class TestLambdas extends TornadoTestBase {
 
     @Test
     public void testVectorFunctionLambda() {

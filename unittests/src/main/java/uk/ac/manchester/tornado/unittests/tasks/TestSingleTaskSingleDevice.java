@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Testing Tornado with one task in the same device. The {@link TaskSchedule}
@@ -35,7 +36,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * of the one selected.
  *
  */
-public class TestSingleTaskSingleDevice {
+public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
     public static void simpleTask(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {

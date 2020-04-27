@@ -28,8 +28,9 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class PrebuiltTest {
+public class PrebuiltTest extends TornadoTestBase {
 
     @Test
     public void testPrebuild01() {
@@ -44,7 +45,10 @@ public class PrebuiltTest {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDefaultDevice();
+
+        defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        System.out.println("Default Device:  " + defaultDevice);
 
         // @formatter:off
         new TaskSchedule("s0")

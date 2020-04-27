@@ -25,8 +25,9 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class TestParallelDimensions {
+public class TestParallelDimensions extends TornadoTestBase {
 
     public static void forLoopOneD(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {

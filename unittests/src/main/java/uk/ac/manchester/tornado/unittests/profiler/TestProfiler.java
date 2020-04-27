@@ -20,13 +20,14 @@ package uk.ac.manchester.tornado.unittests.profiler;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.TestHello;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class TestProfiler {
+public class TestProfiler extends TornadoTestBase {
 
     @Test
     public void testProfilerEnabled() {
