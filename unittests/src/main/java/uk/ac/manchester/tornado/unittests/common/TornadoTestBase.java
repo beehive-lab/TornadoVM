@@ -41,7 +41,6 @@ public abstract class TornadoTestBase {
             int deviceIndex = getDeviceIndex();
             if (deviceIndex != 0) {
                 // We swap the default device for the selected one
-                System.out.println("Selecting device: " + deviceIndex + " " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceIndex));
                 TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
                 driver.setDefaultDevice(deviceIndex);
             }
