@@ -23,9 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -74,19 +72,18 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof IntegerEqualsNode //
             ) {
                 System.out.println("Java kind : " + getPrimitiveType(node));
-                count = irFeatures.get(ProfilerCodeFeatures.INTEGER);
-                irFeatures.put(ProfilerCodeFeatures.INTEGER, (count + 1));
+                count = irFeatures.get(ProfilerCodeFeatures.INTEGER_OPS);
+                irFeatures.put(ProfilerCodeFeatures.INTEGER_OPS, (count + 1));
+                // updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
             } else if (node instanceof MarkOCLWriteNode //
                     || node instanceof WriteNode) { //
                 for (Node nodee : node.inputs().snapshot()) {
                     if (nodee instanceof AddressNode) {
                         for (Node nodeee : nodee.inputs()) {
                             if (nodeee instanceof MarkLocalArray) {
-                                count = irFeatures.get(ProfilerCodeFeatures.LOCAL_STORES);
-                                irFeatures.put(ProfilerCodeFeatures.LOCAL_STORES, (count + 1));
+                                updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_STORES);
                             } else if (nodeee instanceof ParameterNode) {
-                                count = irFeatures.get(ProfilerCodeFeatures.GLOBAL_STORES);
-                                irFeatures.put(ProfilerCodeFeatures.GLOBAL_STORES, (count + 1));
+                                updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                             }
                         }
                     }
@@ -96,32 +93,26 @@ public class TornadoFeatureExtraction extends Phase {
                     if (nodee instanceof AddressNode) {
                         for (Node nodeee : nodee.inputs()) {
                             if (nodeee instanceof MarkLocalArray) {
-                                count = irFeatures.get(ProfilerCodeFeatures.LOCAL_LOADS);
-                                irFeatures.put(ProfilerCodeFeatures.LOCAL_LOADS, (count + 1));
+                                updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_LOADS);
                             } else if (nodeee instanceof ParameterNode) {
-                                count = irFeatures.get(ProfilerCodeFeatures.GLOBAL_LOADS);
-                                irFeatures.put(ProfilerCodeFeatures.GLOBAL_LOADS, (count + 1));
+                                updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_LOADS);
                             }
                         }
                     }
                 }
             } else if (node instanceof LoopBeginNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.LOOPS);
-                irFeatures.put(ProfilerCodeFeatures.LOOPS, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.LOOPS);
             } else if (node instanceof IfNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.IFS);
-                irFeatures.put(ProfilerCodeFeatures.IFS, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.IFS);
             } else if (node instanceof IntegerSwitchNode) {
                 count = irFeatures.get(ProfilerCodeFeatures.SWITCH);
                 irFeatures.put(ProfilerCodeFeatures.SWITCH, (count + 1));
                 int countCases = irFeatures.get(ProfilerCodeFeatures.CASE);
                 irFeatures.put(ProfilerCodeFeatures.CASE, (countCases + ((IntegerSwitchNode) node).getSuccessorCount()));
             } else if (node instanceof MarkVectorLoad || node instanceof MarkVectorValueNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.VECTORS);
-                irFeatures.put(ProfilerCodeFeatures.VECTORS, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.VECTORS);
             } else if (node instanceof IntegerLessThanNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.I_CMP);
-                irFeatures.put(ProfilerCodeFeatures.I_CMP, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.I_CMP);
             } else if (node instanceof OrNode //
                     || node instanceof AndNode //
                     || node instanceof LeftShiftNode //
@@ -129,30 +120,21 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof UnsignedRightShiftNode //
                     || node instanceof ShiftNode //
                     || node instanceof XorNode) { //
-                System.out.println("Java kind : " + getPrimitiveType(node));
-                count = irFeatures.get(ProfilerCodeFeatures.BOOLEAN);
-                irFeatures.put(ProfilerCodeFeatures.BOOLEAN, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.BOOLEAN);
             } else if (node instanceof MarkGlobalThreadID) {
-                count = irFeatures.get(ProfilerCodeFeatures.PARALLEL_LOOPS);
-                irFeatures.put(ProfilerCodeFeatures.PARALLEL_LOOPS, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.PARALLEL_LOOPS);
             } else if (node instanceof ConstantNode || node instanceof ParameterNode || node instanceof SignExtendNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.PRIVATE_LOADS);
-                irFeatures.put(ProfilerCodeFeatures.PRIVATE_LOADS, (count + 1));
-                count = irFeatures.get(ProfilerCodeFeatures.PRIVATE_STORES);
-                irFeatures.put(ProfilerCodeFeatures.PRIVATE_STORES, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.PRIVATE_LOADS);
+                updateCounter(irFeatures, ProfilerCodeFeatures.PRIVATE_STORES);
             } else if (node instanceof MarkCastNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.CAST);
-                irFeatures.put(ProfilerCodeFeatures.CAST, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.CAST);
             } else if (node instanceof FloatLessThanNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.F_CMP);
-                irFeatures.put(ProfilerCodeFeatures.F_CMP, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.F_CMP);
             } else if (node instanceof MarkOCLFPIntrinsicsNode //
                     || node instanceof UnaryArithmeticNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.F_MATH);
-                irFeatures.put(ProfilerCodeFeatures.F_MATH, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.F_MATH);
             } else if (node instanceof MarkOCLIntIntrinsicNode) {
-                count = irFeatures.get(ProfilerCodeFeatures.I_MATH);
-                irFeatures.put(ProfilerCodeFeatures.I_MATH, (count + 1));
+                updateCounter(irFeatures, ProfilerCodeFeatures.I_MATH);
             }
         }
         return irFeatures;
@@ -160,5 +142,11 @@ public class TornadoFeatureExtraction extends Phase {
 
     private JavaKind getPrimitiveType(Node inputNode) {
         return ((ValueNode) inputNode).getStackKind();
+    }
+
+    private void updateCounter(LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures, ProfilerCodeFeatures feature) {
+        Integer count;
+        count = irFeatures.get(feature);
+        irFeatures.put(feature, (count + 1));
     }
 }
