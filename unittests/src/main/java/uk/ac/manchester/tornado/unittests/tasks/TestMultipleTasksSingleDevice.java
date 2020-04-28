@@ -24,13 +24,14 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Testing Tornado with multiple tasks in the same device. The
  * {@link TaskSchedule} contains more than one task.
  *
  */
-public class TestMultipleTasksSingleDevice {
+public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
     public static void task0Initialization(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
