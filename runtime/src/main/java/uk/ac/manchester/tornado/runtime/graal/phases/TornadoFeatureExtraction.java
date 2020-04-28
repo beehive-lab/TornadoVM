@@ -141,6 +141,9 @@ public class TornadoFeatureExtraction extends Phase {
                         } else {
                             updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                         }
+                    } else if (nodeee instanceof FloatingReadNode && !isLoad) {
+                        // This covers the case of storing to global from a vector type
+                        updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                     }
                 }
             }
