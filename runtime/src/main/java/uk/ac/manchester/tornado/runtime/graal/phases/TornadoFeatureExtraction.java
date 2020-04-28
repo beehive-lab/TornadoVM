@@ -23,7 +23,9 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -31,26 +33,8 @@ import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.AndNode;
-import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
-import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
-import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
-import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.calc.LeftShiftNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.OrNode;
-import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.calc.RightShiftNode;
-import org.graalvm.compiler.nodes.calc.ShiftNode;
-import org.graalvm.compiler.nodes.calc.SignExtendNode;
-import org.graalvm.compiler.nodes.calc.SignedDivNode;
-import org.graalvm.compiler.nodes.calc.SignedRemNode;
-import org.graalvm.compiler.nodes.calc.SubNode;
-import org.graalvm.compiler.nodes.calc.UnaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
-import org.graalvm.compiler.nodes.calc.XorNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.*;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
@@ -58,6 +42,7 @@ import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.Phase;
 
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 
@@ -88,6 +73,7 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof FloatEqualsNode //
                     || node instanceof IntegerEqualsNode //
             ) {
+                System.out.println("Java kind : " + getPrimitiveType(node));
                 count = irFeatures.get(ProfilerCodeFeatures.INTEGER);
                 irFeatures.put(ProfilerCodeFeatures.INTEGER, (count + 1));
             } else if (node instanceof MarkOCLWriteNode //
@@ -143,6 +129,7 @@ public class TornadoFeatureExtraction extends Phase {
                     || node instanceof UnsignedRightShiftNode //
                     || node instanceof ShiftNode //
                     || node instanceof XorNode) { //
+                System.out.println("Java kind : " + getPrimitiveType(node));
                 count = irFeatures.get(ProfilerCodeFeatures.BOOLEAN);
                 irFeatures.put(ProfilerCodeFeatures.BOOLEAN, (count + 1));
             } else if (node instanceof MarkGlobalThreadID) {
@@ -169,5 +156,9 @@ public class TornadoFeatureExtraction extends Phase {
             }
         }
         return irFeatures;
+    }
+
+    private JavaKind getPrimitiveType(Node inputNode) {
+        return ((ValueNode) inputNode).getStackKind();
     }
 }
