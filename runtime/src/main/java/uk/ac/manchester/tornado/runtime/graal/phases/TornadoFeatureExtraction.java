@@ -77,7 +77,6 @@ public class TornadoFeatureExtraction extends Phase {
 
     private LinkedHashMap<ProfilerCodeFeatures, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<ProfilerCodeFeatures, Integer> initMap) {
         LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures = initMap;
-        Integer count;
         for (Node node : graph.getNodes().snapshot()) {
             if (node instanceof MulNode || node instanceof AddNode //
                     || node instanceof SubNode || node instanceof SignedDivNode //
@@ -130,9 +129,7 @@ public class TornadoFeatureExtraction extends Phase {
     }
 
     private void updateCounter(LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures, ProfilerCodeFeatures feature) {
-        Integer count;
-        count = irFeatures.get(feature);
-        irFeatures.put(feature, (count + 1));
+        irFeatures.put(feature, (irFeatures.get(feature) + 1));
     }
 
     private void updateWithType(LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures, Node node) {
@@ -145,22 +142,22 @@ public class TornadoFeatureExtraction extends Phase {
     }
 
     private void updateMemoryAccesses(LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures, Node node, boolean isLoad) {
-        for (Node nodee : node.inputs().snapshot()) {
-            if (nodee instanceof AddressNode) {
-                for (Node nodeee : nodee.inputs()) {
-                    if (nodeee instanceof MarkLocalArray) {
+        for (Node memOpNode : node.inputs().snapshot()) {
+            if (memOpNode instanceof AddressNode) {
+                for (Node addressInput : memOpNode.inputs()) {
+                    if (addressInput instanceof MarkLocalArray) {
                         if (isLoad) {
                             updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_LOADS);
                         } else {
                             updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_STORES);
                         }
-                    } else if (nodeee instanceof ParameterNode) {
+                    } else if (addressInput instanceof ParameterNode) {
                         if (isLoad) {
                             updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_LOADS);
                         } else {
                             updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                         }
-                    } else if (nodeee instanceof FloatingReadNode && !isLoad) {
+                    } else if (addressInput instanceof FloatingReadNode && !isLoad) {
                         // This covers the case of storing to global from a vector type
                         updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                     }
