@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -32,10 +31,13 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
 
 @NodeInfo(shortName = "OCL-FMA")
-public class OCLFMANode extends FloatingNode implements ArithmeticLIRLowerable {
+public class OCLFMANode extends FloatingNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
 
     public static final NodeClass<OCLFMANode> TYPE = NodeClass.create(OCLFMANode.class);
 
