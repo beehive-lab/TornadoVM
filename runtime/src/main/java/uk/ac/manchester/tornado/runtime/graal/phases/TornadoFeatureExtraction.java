@@ -60,23 +60,14 @@ public class TornadoFeatureExtraction extends Phase {
         LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures = initMap;
         Integer count;
         for (Node node : graph.getNodes().snapshot()) {
-            if (node instanceof MulNode //
-                    || node instanceof AddNode //
-                    || node instanceof SubNode //
-                    || node instanceof SignedDivNode //
-                    || node instanceof org.graalvm.compiler.nodes.calc.AddNode //
-                    || node instanceof IntegerDivRemNode //
-                    || node instanceof RemNode //
-                    || node instanceof SignedRemNode //
-                    || node instanceof FloatEqualsNode //
-                    || node instanceof IntegerEqualsNode //
+            if (node instanceof MulNode || node instanceof AddNode //
+                    || node instanceof SubNode || node instanceof SignedDivNode //
+                    || node instanceof org.graalvm.compiler.nodes.calc.AddNode || node instanceof IntegerDivRemNode //
+                    || node instanceof RemNode || node instanceof SignedRemNode //
+                    || node instanceof FloatEqualsNode || node instanceof IntegerEqualsNode //
             ) {
-                System.out.println("Java kind : " + getPrimitiveType(node));
-                count = irFeatures.get(ProfilerCodeFeatures.INTEGER_OPS);
-                irFeatures.put(ProfilerCodeFeatures.INTEGER_OPS, (count + 1));
-                // updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
-            } else if (node instanceof MarkOCLWriteNode //
-                    || node instanceof WriteNode) { //
+                updateWithType(irFeatures, node);
+            } else if (node instanceof MarkOCLWriteNode || node instanceof WriteNode) {
                 for (Node nodee : node.inputs().snapshot()) {
                     if (nodee instanceof AddressNode) {
                         for (Node nodeee : nodee.inputs()) {
@@ -113,14 +104,11 @@ public class TornadoFeatureExtraction extends Phase {
                 updateCounter(irFeatures, ProfilerCodeFeatures.VECTORS);
             } else if (node instanceof IntegerLessThanNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.I_CMP);
-            } else if (node instanceof OrNode //
-                    || node instanceof AndNode //
-                    || node instanceof LeftShiftNode //
-                    || node instanceof RightShiftNode //
-                    || node instanceof UnsignedRightShiftNode //
-                    || node instanceof ShiftNode //
-                    || node instanceof XorNode) { //
-                updateCounter(irFeatures, ProfilerCodeFeatures.BOOLEAN);
+            } else if (node instanceof OrNode || node instanceof AndNode //
+                    || node instanceof LeftShiftNode || node instanceof RightShiftNode //
+                    || node instanceof UnsignedRightShiftNode || node instanceof ShiftNode //
+                    || node instanceof XorNode) {
+                updateWithType(irFeatures, node);
             } else if (node instanceof MarkGlobalThreadID) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.PARALLEL_LOOPS);
             } else if (node instanceof ConstantNode || node instanceof ParameterNode || node instanceof SignExtendNode) {
@@ -130,8 +118,7 @@ public class TornadoFeatureExtraction extends Phase {
                 updateCounter(irFeatures, ProfilerCodeFeatures.CAST);
             } else if (node instanceof FloatLessThanNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.F_CMP);
-            } else if (node instanceof MarkOCLFPIntrinsicsNode //
-                    || node instanceof UnaryArithmeticNode) {
+            } else if (node instanceof MarkOCLFPIntrinsicsNode || node instanceof UnaryArithmeticNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.F_MATH);
             } else if (node instanceof MarkOCLIntIntrinsicNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.I_MATH);
@@ -148,5 +135,18 @@ public class TornadoFeatureExtraction extends Phase {
         Integer count;
         count = irFeatures.get(feature);
         irFeatures.put(feature, (count + 1));
+    }
+
+    private void updateWithType(LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures, Node node) {
+        JavaKind opType = getPrimitiveType(node);
+        if (opType == (JavaKind.Boolean) || (opType == JavaKind.Char) || (opType == JavaKind.Int) || (opType == JavaKind.Short) || (opType == JavaKind.Long)) {
+            updateCounter(irFeatures, ProfilerCodeFeatures.INTEGER_OPS);
+        } else if ((opType == (JavaKind.Double) || (opType == JavaKind.Float))) {
+            updateCounter(irFeatures, ProfilerCodeFeatures.FLOAT_OPS);
+        }
+    }
+
+    private void updateMemoryAccesses() {
+
     }
 }
