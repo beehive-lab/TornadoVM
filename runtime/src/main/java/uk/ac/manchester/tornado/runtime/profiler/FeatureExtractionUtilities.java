@@ -92,6 +92,8 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.VECTORS, 0);
         myMap.put(ProfilerCodeFeatures.INTEGER_OPS, 0);
         myMap.put(ProfilerCodeFeatures.FLOAT_OPS, 0);
+        myMap.put(ProfilerCodeFeatures.FP32, 0);
+        myMap.put(ProfilerCodeFeatures.DOUBLES, 0);
         myMap.put(ProfilerCodeFeatures.CAST, 0);
         myMap.put(ProfilerCodeFeatures.F_MATH, 0);
         myMap.put(ProfilerCodeFeatures.I_MATH, 0);

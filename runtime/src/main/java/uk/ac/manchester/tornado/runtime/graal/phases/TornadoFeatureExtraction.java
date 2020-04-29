@@ -136,8 +136,10 @@ public class TornadoFeatureExtraction extends Phase {
         JavaKind opType = getPrimitiveType(node);
         if (opType == (JavaKind.Boolean) || (opType == JavaKind.Char) || (opType == JavaKind.Int) || (opType == JavaKind.Short) || (opType == JavaKind.Long)) {
             updateCounter(irFeatures, ProfilerCodeFeatures.INTEGER_OPS);
-        } else if ((opType == (JavaKind.Double) || (opType == JavaKind.Float))) {
-            updateCounter(irFeatures, ProfilerCodeFeatures.FLOAT_OPS);
+        } else if ((opType == (JavaKind.Double))) {
+            updateCounter(irFeatures, ProfilerCodeFeatures.DOUBLES);
+        } else if ((opType == JavaKind.Float)) {
+            updateCounter(irFeatures, ProfilerCodeFeatures.FP32);
         }
     }
 
