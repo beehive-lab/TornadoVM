@@ -137,32 +137,32 @@ public class TornadoFeatureExtraction extends Phase {
         if (opType == (JavaKind.Boolean) || (opType == JavaKind.Char) || (opType == JavaKind.Int) || (opType == JavaKind.Short) || (opType == JavaKind.Long)) {
             updateCounter(irFeatures, ProfilerCodeFeatures.INTEGER_OPS);
         } else if ((opType == (JavaKind.Double))) {
+            updateCounter(irFeatures, ProfilerCodeFeatures.FLOAT_OPS);
             updateCounter(irFeatures, ProfilerCodeFeatures.DOUBLES);
         } else if ((opType == JavaKind.Float)) {
+            updateCounter(irFeatures, ProfilerCodeFeatures.FLOAT_OPS);
             updateCounter(irFeatures, ProfilerCodeFeatures.FP32);
         }
     }
 
     private void updateMemoryAccesses(LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures, Node node, boolean isLoad) {
-        for (Node memOpNode : node.inputs().snapshot()) {
-            if (memOpNode instanceof AddressNode) {
-                for (Node addressInput : memOpNode.inputs()) {
-                    if (addressInput instanceof MarkLocalArray) {
-                        if (isLoad) {
-                            updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_LOADS);
-                        } else {
-                            updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_STORES);
-                        }
-                    } else if (addressInput instanceof ParameterNode) {
-                        if (isLoad) {
-                            updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_LOADS);
-                        } else {
-                            updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
-                        }
-                    } else if (addressInput instanceof FloatingReadNode && !isLoad) {
-                        // This covers the case of storing to global from a vector type
+        for (Node memOpNode : node.inputs().filter(AddressNode.class)) {
+            for (Node addressInput : memOpNode.inputs()) {
+                if (addressInput instanceof MarkLocalArray) {
+                    if (isLoad) {
+                        updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_LOADS);
+                    } else {
+                        updateCounter(irFeatures, ProfilerCodeFeatures.LOCAL_STORES);
+                    }
+                } else if (addressInput instanceof ParameterNode) {
+                    if (isLoad) {
+                        updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_LOADS);
+                    } else {
                         updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                     }
+                } else if (addressInput instanceof FloatingReadNode && !isLoad) {
+                    // This covers the case of storing to global from a vector type
+                    updateCounter(irFeatures, ProfilerCodeFeatures.GLOBAL_STORES);
                 }
             }
         }
