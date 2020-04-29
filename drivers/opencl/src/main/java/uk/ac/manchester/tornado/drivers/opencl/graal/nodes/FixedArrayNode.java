@@ -61,7 +61,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         this.length = length;
         this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLBinaryTemplate.NEW_ARRAY;
+        this.arrayTemplate = OCLBinaryTemplate.NEW_PRIVATE_CHAR_ARRAY;
     }
 
     public OCLMemoryBase getMemoryRegister() {
