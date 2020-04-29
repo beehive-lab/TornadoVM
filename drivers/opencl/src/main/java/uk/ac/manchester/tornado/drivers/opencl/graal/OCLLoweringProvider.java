@@ -62,7 +62,6 @@ import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
@@ -107,6 +106,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNod
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
@@ -158,8 +158,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
              */
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node);
-        } else if (node instanceof NewArrayNode) {
-            lowerNewArrayNode((NewArrayNode) node);
+        } else if (node instanceof NewArrayNonVirtualizableNode) {
+            lowerNewArrayNode((NewArrayNonVirtualizableNode) node);
         } else if (node instanceof AtomicAddNode) {
             lowerAtomicAddNode((AtomicAddNode) node, tool);
         } else if (node instanceof LoadIndexedNode) {
@@ -424,7 +424,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(vectorLoad, vectorRead);
     }
 
-    private void lowerNewArrayNode(NewArrayNode newArray) {
+    private void lowerNewArrayNode(NewArrayNonVirtualizableNode newArray) {
         final StructuredGraph graph = newArray.graph();
         final ValueNode firstInput = newArray.length();
         if (firstInput instanceof ConstantNode) {
@@ -524,14 +524,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
-    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
+    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
         localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(localArrayNode);
     }
 
-    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
+    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNonVirtualizableNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.privateSpace, newArray.elementType(), newLengthNode));
