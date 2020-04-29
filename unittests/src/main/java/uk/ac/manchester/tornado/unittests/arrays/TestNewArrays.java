@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -87,17 +88,44 @@ public class TestNewArrays extends TornadoTestBase {
         }
     }
 
+    public static void initializeToOneParallelScope(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            int[] testArray = new int[128];
+            testArray[i] = 2;
+            for (int y = 0; y < a.length; y++) {
+                a[i] = a[i] + testArray[i];
+            }
+        }
+    }
+
+    @Ignore
+    public void testInitArrayInsideParallel() {
+        final int N = 128;
+        int[] data = new int[N];
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        assertNotNull(s0);
+
+        s0.task("t0", TestNewArrays::initializeToOneParallelScope, data);
+        s0.streamOut(data).warmup();
+        s0.execute();
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(1, data[i], 0.0001);
+        }
+    }
+
     private static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
         float[] testFloatSum = new float[256];
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
-            // testFloatSum[i] = 1;
+            testFloatSum[i] = 1;
         }
-        // result[0] = result[0] = testFloatSum[testFloatSum.length];
+        result[0] = result[0] + testFloatSum[testFloatSum.length];
     }
 
-    @Test
+    @Ignore
     public void testInitArrayWithReductions() {
         float[] input = new float[8192];
         float[] result = new float[1];
