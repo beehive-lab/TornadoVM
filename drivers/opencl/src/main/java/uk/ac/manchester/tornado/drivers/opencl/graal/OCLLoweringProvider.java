@@ -202,7 +202,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     public static boolean isGpuSnippet() {
         // OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
-        // Therefore, this getter must be called after a lowering phase in order to get the correct result
+        // Therefore, this getter must be called after a lowering phase in order to get
+        // the correct result
         return gpuSnippet;
     }
 
@@ -442,6 +443,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     }
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
+                    GraphUtil.removeFixedWithUnusedInputs(newArray);
                 } else {
                     shouldNotReachHere();
                 }
@@ -505,7 +507,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
-        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
@@ -513,7 +516,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
-        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
@@ -530,7 +534,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.globalSpace, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.privateSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
