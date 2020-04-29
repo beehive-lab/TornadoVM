@@ -78,11 +78,9 @@ public class TornadoFeatureExtraction extends Phase {
     private LinkedHashMap<ProfilerCodeFeatures, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<ProfilerCodeFeatures, Integer> initMap) {
         LinkedHashMap<ProfilerCodeFeatures, Integer> irFeatures = initMap;
         for (Node node : graph.getNodes().snapshot()) {
-            if (node instanceof MulNode || node instanceof AddNode //
-                    || node instanceof SubNode || node instanceof SignedDivNode //
-                    || node instanceof org.graalvm.compiler.nodes.calc.AddNode || node instanceof IntegerDivRemNode //
-                    || node instanceof RemNode || node instanceof SignedRemNode //
-                    || node instanceof FloatEqualsNode || node instanceof IntegerEqualsNode //
+            if (node instanceof MulNode || node instanceof AddNode || node instanceof SubNode //
+                    || node instanceof SignedDivNode || node instanceof org.graalvm.compiler.nodes.calc.AddNode || node instanceof IntegerDivRemNode //
+                    || node instanceof RemNode || node instanceof SignedRemNode || node instanceof FloatEqualsNode || node instanceof IntegerEqualsNode //
             ) {
                 updateWithType(irFeatures, node);
             } else if (node instanceof MarkOCLWriteNode || node instanceof WriteNode) {
@@ -101,10 +99,9 @@ public class TornadoFeatureExtraction extends Phase {
                 updateCounter(irFeatures, ProfilerCodeFeatures.VECTORS);
             } else if (node instanceof IntegerLessThanNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.I_CMP);
-            } else if (node instanceof OrNode || node instanceof AndNode //
-                    || node instanceof LeftShiftNode || node instanceof RightShiftNode //
-                    || node instanceof UnsignedRightShiftNode || node instanceof ShiftNode //
-                    || node instanceof XorNode) {
+            } else if (node instanceof OrNode || node instanceof AndNode || node instanceof LeftShiftNode //
+                    || node instanceof RightShiftNode || node instanceof UnsignedRightShiftNode //
+                    || node instanceof ShiftNode || node instanceof XorNode) {
                 updateWithType(irFeatures, node);
             } else if (node instanceof MarkGlobalThreadID) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.PARALLEL_LOOPS);
