@@ -94,9 +94,9 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(canonicalizer);
 
-        if (PartialEscapeAnalysis.getValue(options)) {
-            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
-        }
+        // if (PartialEscapeAnalysis.getValue(options)) {
+        // appendPhase(new PartialEscapePhase(true, canonicalizer, options));
+        // }
         appendPhase(new TornadoValueTypeCleanup());
 
         if (OptConvertDeoptsToGuards.getValue(options)) {
@@ -123,6 +123,10 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
+
+        if (PartialEscapeAnalysis.getValue(options)) {
+            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
+        }
 
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
