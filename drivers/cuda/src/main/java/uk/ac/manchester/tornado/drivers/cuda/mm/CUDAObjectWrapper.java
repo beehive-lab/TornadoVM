@@ -135,7 +135,7 @@ public class CUDAObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object reference, long batchSize) {
         if (DEBUG) {
             debug("object: object=0x%x, class=%s, size=%s", reference.hashCode(), reference.getClass().getName(), humanReadableByteCount(bytesToAllocate, true));
         }

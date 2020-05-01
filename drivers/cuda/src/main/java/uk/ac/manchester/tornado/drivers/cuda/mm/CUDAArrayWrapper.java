@@ -188,7 +188,7 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object value, long batchSize) {
         long newBufferSize = 0;
         long sizeOfBatch = arrayHeaderSize + batchSize;
         if (batchSize > 0) {

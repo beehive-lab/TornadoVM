@@ -40,6 +40,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     private final CUDADevice device;
     private static CUDADriver driver = null;
+    private final int deviceIndex;
 
     public static CUDADriver findDriver() {
         if (driver == null) {
@@ -51,6 +52,8 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
 
     public CUDATornadoDevice(final int deviceIndex) {
+        this.deviceIndex = deviceIndex;
+
         device = CUDA.getPlatform().getDevice(deviceIndex);
     }
 
@@ -117,24 +120,64 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         if (!state.hasBuffer()) {
-            try {
-                ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, batchSize);
-                buffer.allocate(object, batchSize);
-                state.setBuffer(buffer);
-
-                final Class<?> type = object.getClass();
-                if (!type.isArray()) {
-                    if (batchSize > 0) {
-                        throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
-                    }
-                    buffer.write(object);
-                }
-            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-                e.printStackTrace();
-            }
+            reserveMemory(object, batchSize, state);
         }
-        state.setValid(true);
+
+        if (!state.hasBuffer()) {
+            reserveMemory(object, batchSize, state);
+        } else {
+            checkForResizeBuffer(object, batchSize, state);
+        }
+
+        if (!state.isValid()) {
+            reAllocateInvalidBuffer(object, batchSize, state);
+        }
         return -1;
+    }
+
+    private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
+
+        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, batchSize);
+        buffer.allocate(object, batchSize);
+        state.setBuffer(buffer);
+
+        final Class<?> type = object.getClass();
+        if (!type.isArray()) {
+            checkBatchSize(batchSize);
+            buffer.write(object);
+        }
+
+        state.setValid(true);
+    }
+
+    private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
+        // We re-allocate if buffer size has changed
+        final ObjectBuffer buffer = state.getBuffer();
+        try {
+            buffer.allocate(object, batchSize);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
+        try {
+            state.getBuffer().allocate(object, batchSize);
+            final Class<?> type = object.getClass();
+            if (!type.isArray()) {
+                checkBatchSize(batchSize);
+                state.getBuffer().write(object);
+            }
+            state.setValid(true);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void checkBatchSize(long batchSize) {
+        if (batchSize > 0) {
+            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
+        }
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, long batchSize) {
@@ -319,6 +362,23 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     public void sync() {
         getDeviceContext().sync();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CUDATornadoDevice) {
+            final CUDATornadoDevice other = (CUDATornadoDevice) obj;
+            return (other.deviceIndex == deviceIndex);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + this.deviceIndex;
+        return hash;
+    }
+
 
     @Override
     public void flush() {

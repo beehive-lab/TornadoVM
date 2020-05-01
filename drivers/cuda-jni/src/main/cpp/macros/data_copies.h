@@ -25,7 +25,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStre
     } \
     if (cuEventQuery(event) != 0) cuEventSynchronize(event); \
  \
-    (*env)->Set ## J_TYPE ## ArrayRegion(env, array, host_offset, length / sizeof(NATIVE_J_TYPE), staging_list->staging_area); \
+    (*env)->Set ## J_TYPE ## ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), staging_list->staging_area); \
     set_to_unused(stream, result, staging_list); \
  \
     return array_from_event(env, &event); \

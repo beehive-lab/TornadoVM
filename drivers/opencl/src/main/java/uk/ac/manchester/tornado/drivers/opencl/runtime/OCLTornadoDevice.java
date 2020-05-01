@@ -438,7 +438,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-
         final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
         buffer.allocate(object, batchSize);
         state.setBuffer(buffer);
