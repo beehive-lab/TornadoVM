@@ -5,9 +5,9 @@ mvn clean
 
 if [[ $2 == "OFFLINE" ]]
 then
-	mvn -o -Dcmake.root.dir=$CMAKE_ROOT -P$1 package
+	mvn -T1.5C -o -Dcmake.root.dir=$CMAKE_ROOT -P$1 package
 else
-	mvn -Dcmake.root.dir=$CMAKE_ROOT -P$1 package
+	mvn -T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P$1 package
 fi
 
 if [ $? -eq 0 ] 
