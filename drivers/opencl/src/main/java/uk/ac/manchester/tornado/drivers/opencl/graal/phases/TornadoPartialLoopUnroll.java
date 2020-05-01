@@ -38,6 +38,9 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     private static final int LOOP_UNROLL_FACTOR = 32; // TODO: Measure perf benefits
 
+    /*
+     * TODO: Keep copy of the graph and recover if fail
+     */
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
 
@@ -59,10 +62,11 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         canonicalizer.apply(graph, context);
         dataCounted.detectedCountedLoops();
         for (LoopEx loop : dataCounted.countedLoops()) {
-            loop.loopBegin().setUnrollFactor(4);
-            LoopFragmentInside newSegment = loop.inside().duplicate();
-            newSegment.insertWithinAfter(loop, null);
-            System.out.println("FREQ : " + loop.loopBegin().loopFrequency());
+            int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
+            if (isPowerOfTwo(loopBound)) {
+                LoopFragmentInside newSegment = loop.inside().duplicate();
+                newSegment.insertWithinAfter(loop, null);
+            }
         }
         new DeadCodeEliminationPhase().apply(graph);
     }
@@ -71,4 +75,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         return new DefaultLoopPolicies();
     }
 
+    private static boolean isPowerOfTwo(int number) {
+        return number > 0 && ((number & (number - 1)) == 0);
+    }
 }
