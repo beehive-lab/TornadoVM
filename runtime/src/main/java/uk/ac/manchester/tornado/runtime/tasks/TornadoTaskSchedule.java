@@ -213,8 +213,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void addInner(SchedulableTask task) {
-        Providers providers = getTornadoRuntime().getDriver(0).getProviders();
-        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
+        int driverIndex = task.meta().getDriverIndex();
+        Providers providers = getTornadoRuntime().getDriver(driverIndex).getProviders();
+        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
         int index = graphContext.addTask(task);
 

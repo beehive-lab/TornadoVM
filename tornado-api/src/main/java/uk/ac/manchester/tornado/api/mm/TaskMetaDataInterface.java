@@ -64,4 +64,8 @@ public interface TaskMetaDataInterface {
     void setNumThreads(long threads);
 
     long getNumThreads();
+
+    int getDriverIndex();
+
+    int getDeviceIndex();
 }

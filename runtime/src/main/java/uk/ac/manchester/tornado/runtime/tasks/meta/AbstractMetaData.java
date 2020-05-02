@@ -113,10 +113,12 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         this.device = device;
     }
 
+    @Override
     public int getDriverIndex() {
         return driverIndex;
     }
 
+    @Override
     public int getDeviceIndex() {
         return deviceIndex;
     }
