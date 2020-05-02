@@ -53,7 +53,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.task("t0", TestNewArrays::initializeToOneParallel, data);
-        s0.streamOut(data).warmup();
+        s0.streamOut(data);
         s0.execute();
 
         for (int i = 0; i < N; i++) {
@@ -80,7 +80,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.task("t0", TestNewArrays::initializeToOne, data);
-        s0.streamOut(data).warmup();
+        s0.streamOut(data);
         s0.execute();
 
         for (int i = 0; i < N; i++) {
