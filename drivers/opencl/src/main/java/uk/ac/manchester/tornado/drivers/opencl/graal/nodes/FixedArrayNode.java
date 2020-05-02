@@ -52,14 +52,14 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
-    protected ResolvedJavaType elemenType;
+    protected ResolvedJavaType elementType;
     protected OCLBinaryTemplate arrayTemplate;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.elemenType = elementType;
+        this.elementType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLBinaryTemplate.NEW_PRIVATE_CHAR_ARRAY;
     }
@@ -73,7 +73,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     }
 
     public ResolvedJavaType getElementType() {
-        return elemenType;
+        return elementType;
     }
 
     public ConstantNode getLength() {
