@@ -37,20 +37,24 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     private static final int LOOP_UNROLL_FACTOR = 32; // TODO: Measure perf benefits
+    private static final int LOOP_BOUND_UPPER_LIMIT = 16384;
 
     /*
      * TODO: Keep copy of the graph and recover if fail
      */
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
+        int initialNodeCount = graph.getNodeCount(); // Add a check for powers of two\
 
-        int initialNodeCount = graph.getNodeCount(); // Add a check for powers of two
+        if (!graph.hasLoops()) {
+            return;
+        }
+
         for (int i = 0; i < Tornado.UNROLL_FACTOR - 1; i++) {
             if (graph.getNodeCount() < initialNodeCount + GraalOptions.MaximumDesiredSize.getValue(graph.getOptions()) * 2) {
                 partialUnroll(graph, context);
             }
         }
-
     }
 
     private static void partialUnroll(StructuredGraph graph, MidTierContext context) {
@@ -63,7 +67,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         dataCounted.detectedCountedLoops();
         for (LoopEx loop : dataCounted.countedLoops()) {
             int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
-            if (isPowerOfTwo(loopBound)) {
+            if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {
                 LoopFragmentInside newSegment = loop.inside().duplicate();
                 newSegment.insertWithinAfter(loop, null);
             }
