@@ -297,10 +297,10 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
         trace("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        if (cast.getMemorySpace().name() == OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) {
-            getGen().append(new LoadStmt(result, cast, address));
-        } else {
+        if (cast.getMemorySpace().name() == OCLAssemblerConstants.LOCAL_MEM_MODIFIER) {
             getGen().append(new LoadStmt(result, cast, address, address.getIndex()));
+        } else {
+            getGen().append(new LoadStmt(result, cast, address));
         }
     }
 
