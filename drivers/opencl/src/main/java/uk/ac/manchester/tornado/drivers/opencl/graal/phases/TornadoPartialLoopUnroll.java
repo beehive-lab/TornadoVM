@@ -35,23 +35,28 @@ import org.graalvm.compiler.phases.tiers.MidTierContext;
 
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
+/**
+ * Applies partial unroll on counted loops of more than 128 elements. By default
+ * the unroll factor is set to 2 except if the user explicitly passes a
+ * different value power of two.
+ * 
+ * @see org.graalvm.compiler.loop.phases.LoopTransformations
+ */
 public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
-    private static final int LOOP_UNROLL_FACTOR = 32; // TODO: Measure perf benefits
+    private static final int LOOP_UNROLL_FACTOR_DEFAULT = 2;
     private static final int LOOP_BOUND_UPPER_LIMIT = 16384;
 
-    /*
-     * TODO: Keep copy of the graph and recover if fail
-     */
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
-        int initialNodeCount = graph.getNodeCount(); // Add a check for powers of two\
+        int initialNodeCount = graph.getNodeCount();
 
         if (!graph.hasLoops()) {
             return;
         }
+        int unrollFactor = getUnrollFactor();
 
-        for (int i = 0; i < Tornado.UNROLL_FACTOR - 1; i++) {
-            if (graph.getNodeCount() < initialNodeCount + GraalOptions.MaximumDesiredSize.getValue(graph.getOptions()) * 2) {
+        for (int i = 0; Math.pow(2, i) < unrollFactor; i++) {
+            if (graph.getNodeCount() < getUpperGraphLimit(initialNodeCount, graph)) {
                 partialUnroll(graph, context);
             }
         }
@@ -73,6 +78,14 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
             }
         }
         new DeadCodeEliminationPhase().apply(graph);
+    }
+
+    private static int getUnrollFactor() {
+        return (isPowerOfTwo(Tornado.UNROLL_FACTOR) && Tornado.UNROLL_FACTOR <= 32) ? Tornado.UNROLL_FACTOR : LOOP_UNROLL_FACTOR_DEFAULT;
+    }
+
+    private static int getUpperGraphLimit(int initialGraphNodeCount, StructuredGraph graph) {
+        return (initialGraphNodeCount + GraalOptions.MaximumDesiredSize.getValue(graph.getOptions()) * 2);
     }
 
     public static LoopPolicies createLoopPolicies() {
