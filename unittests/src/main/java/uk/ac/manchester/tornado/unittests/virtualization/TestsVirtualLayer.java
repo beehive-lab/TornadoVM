@@ -18,21 +18,24 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
+import static org.junit.Assert.*;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
-import static org.junit.Assert.*;
-
-public class TestsVirtualLayer {
+public class TestsVirtualLayer extends TornadoTestBase {
 
     public static void accumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -66,9 +69,10 @@ public class TestsVirtualLayer {
      * Check if enough devices are available
      */
     @Before
-    public void enoughDevices(){
+    public void enoughDevices() {
+        super.before();
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        if (driver.getDeviceCount()<=2){
+        if (driver.getDeviceCount() <= 2) {
             throw new UnsupportedConfigurationException("Not enough devices to run tests");
         }
     }
