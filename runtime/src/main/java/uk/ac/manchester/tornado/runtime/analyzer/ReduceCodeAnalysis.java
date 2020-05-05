@@ -146,7 +146,7 @@ public class ReduceCodeAnalysis {
                     if (!checkIfVarIsInLoop(store)) {
                         continue;
                     }
-                    if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
+                    if (store.value() instanceof BinaryNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
                     } else if (store.value() instanceof InvokeNode) {
@@ -276,6 +276,7 @@ public class ReduceCodeAnalysis {
                         }
 
                         if (aux instanceof StartNode) {
+                            // We reach the beginning of the graph
                             break;
                         } else if (aux instanceof LoopBeginNode) {
                             loopBegin = (LoopBeginNode) aux;
