@@ -18,24 +18,21 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
-public class TestsVirtualLayer extends TornadoTestBase {
+import static org.junit.Assert.*;
+
+public class TestsVirtualLayer {
 
     public static void accumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -63,6 +60,17 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
     public static TornadoRuntimeCI getTornadoRuntime() {
         return TornadoRuntime.getTornadoRuntime();
+    }
+
+    /**
+     * Check if enough devices are available
+     */
+    @Before
+    public void enoughDevices(){
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        if (driver.getDeviceCount()<=2){
+            throw new UnsupportedConfigurationException("Not enough devices to run tests");
+        }
     }
 
     /**
@@ -111,10 +119,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
-        if (driver.getDeviceCount() < 2) {
-            assertFalse("The current driver has less than 2 devices", true);
-        }
-
         s0.mapAllTo(driver.getDevice(0));
         s0.execute();
 
@@ -136,10 +140,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void testTaskMigration() {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-
-        if (driver.getDeviceCount() < 2) {
-            assertFalse("The current driver has less than 2 devices", true);
-        }
 
         final int numElements = 512;
         final float alpha = 2f;
@@ -173,10 +173,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void testVirtualLayer01() {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        if (driver.getDeviceCount() < 2) {
-            return;
-        }
-
         /*
          * The following expression is not correct for Tornado to execute on different
          * devices.
@@ -211,9 +207,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void testVirtualLayer02() {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        if (driver.getDeviceCount() < 2) {
-            return;
-        }
 
         final int N = 128;
         int[] data = new int[N];
@@ -241,9 +234,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Test
     public void testVirtualLayer03() {
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        if (driver.getDeviceCount() < 2) {
-            return;
-        }
 
         final int N = 128;
         int[] dataA = new int[N];
@@ -275,9 +265,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Test
     public void testDynamicDeviceSwitch() {
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        if (driver.getDeviceCount() <= 2) {
-            return;
-        }
 
         final int N = 128;
         int[] data = new int[N];
@@ -330,9 +317,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
     @Test
     public void testSchedulerDevices() {
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
-        if (tornadoDriver.getDeviceCount() < 2) {
-            return;
-        }
 
         final int N = 128;
         int[] dataA = new int[N];

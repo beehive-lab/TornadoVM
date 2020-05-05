@@ -34,6 +34,7 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
+import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 public class TornadoHelper {
 
@@ -153,6 +154,14 @@ public class TornadoHelper {
                 bufferFile.append(message);
                 successCounter++;
             } else {
+                // If UnsupportedConfigurationException is thrown this means that test did not fail, it simply can't be run on current configuration
+                if (result.getFailures().stream().filter(e->(e.getException() instanceof UnsupportedConfigurationException)).count()>0){
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    continue;
+                }
+
                 message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
