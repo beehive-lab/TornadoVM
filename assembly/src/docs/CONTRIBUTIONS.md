@@ -1,30 +1,31 @@
 # How to contribute
 
 We welcome contributions!
-Please follow the instructions below for your PRs!
+Please follow the instructions below for your Pull Requests.
 
 ## How to submit your changes
 
 1. **Fork** the repo in Github
 2. **Clone** the project 
-3. **Create a new branch** 
+3. **Create a new branch from the `develop` branch** 
 4. **Commit your changes**
 5. **Push** your work to your repository
-6. Create a **Pull Request**. 
+6. Create a **Pull Request** to the `develop` branch. 
 
-Please, ensure that your changes are merged with the latest changes in the `master` branch.
+Please, ensure that your changes are merged with the latest changes in the `develop` branch.
 
 ## Coding conventions
 
-We use the auto-formatter of Eclipse and IntelliJ. 
+We use the auto-formatter in **Eclipse** and **IntelliJ**. 
 Please,  ensure that your code follows the formatter rules before the pull request.
 The auto-formatter is set automatically by running the following script:
 
 ```bash
+## For Eclipse, use the following script
 python scripts/eclipseSetup.py
 ``` 
 
-For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_INTELLIJ.md).
+For IntelliJ, import the XML auto-formatter. Steps [here](3_INTELLIJ.md).
 
 
 ## Looking for tasks to contribute? 
