@@ -42,9 +42,7 @@ public class PTXUnary {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            opcode.emit(crb, value);
-            asm.emit(TAB);
-            asm.emitValue(dest);
+            opcode.emit(crb, value, dest);
         }
     }
 

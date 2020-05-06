@@ -61,6 +61,7 @@ class ReduceTaskSchedule {
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
+    private static final int DEFAULT_DEVICE_INDEX = 0;
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
 
@@ -116,16 +117,17 @@ class ReduceTaskSchedule {
         }
     }
 
-    private int changeDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
+    private int[] changeDriverAndDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
         String idTaskName = tsName + "." + taskName;
         boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
         if (isDeviceDefined) {
             int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
+            int driverNumber = info[0];
             int deviceNumber = info[1];
-            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", "0:" + deviceNumber);
-            return deviceNumber;
+            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", driverNumber + ":" + deviceNumber);
+            return info;
         }
-        return 0;
+        return null;
     }
 
     private void fillOutputArrayWithNeutral(Object reduceArray, Object neutral) {
@@ -385,7 +387,8 @@ class ReduceTaskSchedule {
             reduceOperandTable = new HashMap<>();
         }
 
-        int deviceToRun = 0;
+        int driverToRun = DEFAULT_DRIVER_INDEX;
+        int deviceToRun = DEFAULT_DEVICE_INDEX;
 
         // Create new buffer variables and update the corresponding streamIn and
         // streamOut
@@ -397,8 +400,11 @@ class ReduceTaskSchedule {
 
             ArrayList<Object> streamReduceList = new ArrayList<>();
 
-            deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
-            final int targetDeviceToRun = deviceToRun;
+            int[] driverAndDevice = changeDriverAndDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
+            if (driverAndDevice != null) {
+                driverToRun = driverAndDevice[0];
+                deviceToRun = driverAndDevice[1];
+            }
             inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), false);
 
             if (tableReduce.containsKey(taskNumber)) {
@@ -418,7 +424,7 @@ class ReduceTaskSchedule {
 
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
-                    updateGlobalAndLocalDimensionsFPGA(targetDeviceToRun, taskScheduleReduceName, taskPackage, inputSize);
+                    updateGlobalAndLocalDimensionsFPGA(deviceToRun, taskScheduleReduceName, taskPackage, inputSize);
 
                     // Analyse Input Size - if not power of 2 -> split host and
                     // device executions
@@ -430,14 +436,14 @@ class ReduceTaskSchedule {
                         inputSize -= elementsReductionLeftOver;
 
                         final int sizeTargetDevice = inputSize;
-                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, false)) {
+                        if (isTaskEligibleSplitHostAndDevice(deviceToRun, elementsReductionLeftOver, false)) {
                             Object codeTask = taskPackage.getTaskParameters()[0];
                             createThreads(codeTask, taskPackage, sizeTargetDevice);
                         }
                     }
 
                     // Set the new array size
-                    int sizeReductionArray = obtainSizeArrayResult(DEFAULT_DRIVER_INDEX, deviceToRun, inputSize);
+                    int sizeReductionArray = obtainSizeArrayResult(driverToRun, deviceToRun, inputSize);
                     Object newArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
                     Object neutralElement = getNeutralElement(originalReduceArray);
                     fillOutputArrayWithNeutral(newArray, neutralElement);
@@ -513,7 +519,7 @@ class ReduceTaskSchedule {
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = rewrittenTaskSchedule.getTaskScheduleName() + "." + newTaskSequentialName;
-                        TornadoRuntime.setProperty(fullName + ".device", "0:" + deviceToRun);
+                        TornadoRuntime.setProperty(fullName + ".device", driverToRun + ":" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
 
                         switch (operation) {

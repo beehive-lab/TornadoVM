@@ -71,7 +71,7 @@ public class OCLGraphBuilderPlugins {
         registerTornadoInstrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
-        TornadoMathPlugins.registerTornadoMathPlugins(plugins);
+        OCLMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
     }
 

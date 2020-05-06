@@ -173,7 +173,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         return result;
     }
 
-    private PTXLIRGenerator getGen() {
+    public PTXLIRGenerator getGen() {
         return (PTXLIRGenerator) getLIRGen();
     }
 
@@ -185,8 +185,15 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMathSqrt(Value input) {
-        unimplemented();
-        return null;
+        PTXBuiltinTool builtinTool = getGen().getPtxBuiltinTool();
+        PTXKind ptxKind = (PTXKind) input.getPlatformKind();
+        Variable result = getGen().newVariable(input.getValueKind());
+        if (ptxKind.isFloating()) {
+            getGen().append(new PTXLIRStmt.AssignStmt(result, builtinTool.genFloatSqrt(input)));
+        } else {
+            shouldNotReachHere();
+        }
+        return result;
     }
 
     @Override

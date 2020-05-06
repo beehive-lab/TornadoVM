@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
 
 public class PTXLIRGenerator extends LIRGenerator {
     private PTXGenTool ptxGenTool;
+    private PTXBuiltinTool ptxBuiltinTool;
 
     private final Map<String, Variable> parameterAllocations;
 
@@ -46,6 +47,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
         ((PTXLIRGenerationResult)lirGenRes).setParameterAllocations(parameterAllocations);
+        ptxBuiltinTool = new PTXBuiltinTool();
     }
 
     @Override
@@ -153,6 +155,10 @@ public class PTXLIRGenerator extends LIRGenerator {
     @Override
     public void emitUnwind(Value operand) {
         unimplemented();
+    }
+
+    public PTXBuiltinTool getPtxBuiltinTool() {
+        return ptxBuiltinTool;
     }
 
     @Override

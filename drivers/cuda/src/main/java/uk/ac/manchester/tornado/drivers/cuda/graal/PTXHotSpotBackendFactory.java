@@ -21,6 +21,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilerConfiguration;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins.PTXGraphBuilderPlugins;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXAddressLowering;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -95,12 +96,16 @@ public class PTXHotSpotBackendFactory {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         GraphBuilderConfiguration.Plugins plugins = new GraphBuilderConfiguration.Plugins(invocationPlugins);
 
+//        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
+//        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
+
         StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess,
                 snippetReflection,
                 invocationPlugins,
                 replacements,
                 true,
                 true);
+        PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }
 }

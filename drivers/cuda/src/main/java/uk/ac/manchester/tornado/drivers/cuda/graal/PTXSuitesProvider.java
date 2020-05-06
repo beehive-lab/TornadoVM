@@ -4,12 +4,14 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCanonicalizer;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilerConfiguration;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins.PTXGraphBuilderPlugins;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
@@ -36,10 +38,10 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(GraphBuilderConfiguration.Plugins plugins) {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
-        //InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
-        //OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
-        //OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
-        //OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
+        InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
+        PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
+//        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
+//        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
 
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);

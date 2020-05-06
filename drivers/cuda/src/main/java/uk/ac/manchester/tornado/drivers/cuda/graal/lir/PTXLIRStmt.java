@@ -56,8 +56,8 @@ public class PTXLIRStmt {
                 }
                 else {
                     asm.emit("cvt.");
-                    if (lhsKind.isFloating() || rhsKind.isFloating()) {
-                        asm.emit(ROUND_NEAREST_EVEN);
+                    if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                        asm.emit(getFPURoundingMode(lhsKind, rhsKind));
                         asm.emitSymbol(DOT);
                     }
                     asm.emit(lhsKind.toString());
@@ -71,6 +71,14 @@ public class PTXLIRStmt {
             }
             asm.delimiter();
             asm.eol();
+        }
+
+        private String getFPURoundingMode(PTXKind lhs, PTXKind rhs) {
+            String roundingMode = ROUND_NEAREST_EVEN;
+            if ((lhs.isF64() && rhs.isF32())) {
+                roundingMode = null;
+            }
+            return roundingMode;
         }
 
         public AllocatableValue getResult() {

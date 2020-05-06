@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsi
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 
 
-public class TornadoMathPlugins {
+public class OCLMathPlugins {
 
     public static final void registerTornadoMathPlugins(final InvocationPlugins plugins) {
         Registration registration = new Registration(plugins, TornadoMath.class);

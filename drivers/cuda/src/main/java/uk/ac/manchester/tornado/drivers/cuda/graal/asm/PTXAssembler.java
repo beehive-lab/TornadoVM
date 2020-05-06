@@ -64,8 +64,7 @@ public class PTXAssembler extends Assembler {
     public void emitValue(Value value) {
         if (value instanceof PTXReturnSlot) {
             ((PTXReturnSlot) value).emit(this);
-        }
-        else {
+        } else {
             emit(toString(value));
         }
     }
@@ -119,8 +118,7 @@ public class PTXAssembler extends Assembler {
     public void eol() {
         if (emitEOL) {
             emitSymbol(PTXAssemblerConstants.EOL);
-        }
-        else {
+        } else {
             space();
         }
     }
@@ -200,7 +198,7 @@ public class PTXAssembler extends Assembler {
             emitSymbol(COMMA);
             space();
         }
-        emitValue(values[values.length-1]);
+        emitValue(values[values.length - 1]);
     }
 
     public String toString(LabelRef ref) {
@@ -287,7 +285,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXNullaryOp LDU = new PTXNullaryOp("ldu");
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
 
-        protected  PTXNullaryOp(String opcode) {
+        protected PTXNullaryOp(String opcode) {
             this(opcode, false);
         }
 
@@ -328,24 +326,107 @@ public class PTXAssembler extends Assembler {
      * Unary opcodes
      */
     public static class PTXUnaryOp extends PTXOp {
-        public static final PTXUnaryOp NOT = new PTXUnaryOp("not", true);
+        public static final PTXUnaryOp NOT = new PTXUnaryOp("not", true, false);
 
-        protected PTXUnaryOp(String opcode, boolean isWeaklyTyped) {
-            super(opcode, isWeaklyTyped);
+        private final boolean needsRounding;
+
+        public PTXUnaryOp(String opcode) {
+            this(opcode, true);
         }
 
-        public void emit(PTXCompilationResultBuilder crb, Value value) {
+        public PTXUnaryOp(String opcode, boolean needsRounding) {
+            super(opcode);
+            this.needsRounding = needsRounding;
+        }
+
+        protected PTXUnaryOp(String opcode, boolean isWeaklyTyped, boolean needsRounding) {
+            super(opcode, isWeaklyTyped);
+            this.needsRounding = needsRounding;
+        }
+
+        public void emit(PTXCompilationResultBuilder crb, Value value, Value dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
+            PTXKind type = (PTXKind) dest.getPlatformKind();
+            if (needsRounding && type.isFloating()) {
+                asm.emitSymbol(DOT);
+                asm.emit(ROUND_NEAREST_EVEN);
+            }
+
+//            if (isTyped){
+//                if (type == PTXKind.PRED) type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
+//                if (isWeaklyTyped) type = type.toUntyped();
+            asm.emit("." + type);
+//            }
+            asm.emitSymbol(TAB);
+            asm.emitValues(new Value[]{dest, value});
         }
     }
+
+    /**
+     * Unary intrinsic
+     */
+    public static class PTXUnaryIntrinsic extends PTXUnaryOp {
+        // @formatter:off
+
+        public static final PTXUnaryIntrinsic GLOBAL_ID = new PTXUnaryIntrinsic("get_global_id");
+        public static final PTXUnaryIntrinsic GLOBAL_SIZE = new PTXUnaryIntrinsic("get_global_size");
+
+        public static final PTXUnaryIntrinsic LOCAL_ID = new PTXUnaryIntrinsic("get_local_id");
+        public static final PTXUnaryIntrinsic LOCAL_SIZE = new PTXUnaryIntrinsic("get_local_size");
+
+        public static final PTXUnaryIntrinsic GROUP_ID = new PTXUnaryIntrinsic("get_group_id");
+        public static final PTXUnaryIntrinsic GROUP_SIZE = new PTXUnaryIntrinsic("get_group_size");
+
+        public static final PTXUnaryIntrinsic ATOMIC_INC = new PTXUnaryIntrinsic("atomic_inc");
+        public static final PTXUnaryIntrinsic ATOMIC_DEC = new PTXUnaryIntrinsic("atomic_dec");
+
+        public static final PTXUnaryIntrinsic BARRIER = new PTXUnaryIntrinsic("barrier");
+        public static final PTXUnaryIntrinsic MEM_FENCE = new PTXUnaryIntrinsic("mem_fence");
+        public static final PTXUnaryIntrinsic READ_MEM_FENCE = new PTXUnaryIntrinsic("read_mem_fence");
+        public static final PTXUnaryIntrinsic WRITE_MEM_FENCE = new PTXUnaryIntrinsic("write_mem_fence");
+
+        public static final PTXUnaryIntrinsic ABS = new PTXUnaryIntrinsic("abs", false);
+        public static final PTXUnaryIntrinsic EXP2 = new PTXUnaryIntrinsic("ex2.approx", false);
+        public static final PTXUnaryIntrinsic SQRT = new PTXUnaryIntrinsic("sqrt");
+        public static final PTXUnaryIntrinsic LOG2 = new PTXUnaryIntrinsic("lg2.approx", false);
+        public static final PTXUnaryIntrinsic SIN = new PTXUnaryIntrinsic("sin.approx", false);
+        public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", false);
+
+        public static final PTXUnaryIntrinsic LOCAL_MEMORY = new PTXUnaryIntrinsic("__local");
+
+        public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc", false);
+
+        public static final PTXUnaryIntrinsic AS_FLOAT = new PTXUnaryIntrinsic("as_float");
+        public static final PTXUnaryIntrinsic AS_INT = new PTXUnaryIntrinsic("as_int");
+
+        public static final PTXUnaryIntrinsic IS_FINITE = new PTXUnaryIntrinsic("isfinite");
+        public static final PTXUnaryIntrinsic IS_INF = new PTXUnaryIntrinsic("isinf");
+        public static final PTXUnaryIntrinsic IS_NAN = new PTXUnaryIntrinsic("isnan");
+        public static final PTXUnaryIntrinsic IS_NORMAL = new PTXUnaryIntrinsic("isnormal");
+        // @formatter:on
+
+        protected PTXUnaryIntrinsic(String opcode) {
+            super(opcode, true);
+        }
+
+        protected PTXUnaryIntrinsic(String opcode, boolean needsRounding) {
+            super(opcode, needsRounding);
+        }
+
+        @Override
+        public void emit(PTXCompilationResultBuilder crb, Value x, Value dest) {
+            super.emit(crb, x, dest);
+        }
+    }
+
 
     /**
      * Binary opcodes
      */
     public static class PTXBinaryOp extends PTXOp {
 
-        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl",true, false);
+        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl", true, false);
         public static final PTXBinaryOp BITWISE_RIGHT_SHIFT = new PTXBinaryOp("shr", true, false);
         public static final PTXBinaryOp BITWISE_AND = new PTXBinaryOp("and", true, false);
         public static final PTXBinaryOp BITWISE_OR = new PTXBinaryOp("or", true, false);
@@ -390,8 +471,9 @@ public class PTXAssembler extends Assembler {
                 asm.emit(ROUND_NEAREST_EVEN);
             }
 
-            if (isTyped){
-                if (type == PTXKind.PRED) type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
+            if (isTyped) {
+                if (type == PTXKind.PRED)
+                    type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
                 if (isWeaklyTyped) type = type.toUntyped();
                 asm.emit("." + type);
             }
@@ -405,27 +487,42 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXBinaryIntrinsic extends PTXBinaryOp {
         // @formatter:off
+        public static final PTXBinaryIntrinsic INT_MIN = new PTXBinaryIntrinsic("min", false);
+        public static final PTXBinaryIntrinsic INT_MAX = new PTXBinaryIntrinsic("max", false);
+
+        public static final PTXBinaryIntrinsic FLOAT_MIN = new PTXBinaryIntrinsic("min", false);
+        public static final PTXBinaryIntrinsic FLOAT_MAX = new PTXBinaryIntrinsic("max", false);
+
+        public static final PTXBinaryIntrinsic ATOMIC_ADD = new PTXBinaryIntrinsic("atomic_add");
+        public static final PTXBinaryIntrinsic ATOMIC_SUB = new PTXBinaryIntrinsic("atomic_sub");
+        public static final PTXBinaryIntrinsic ATOMIC_XCHG = new PTXBinaryIntrinsic("atomic_xchg");
+        public static final PTXBinaryIntrinsic ATOMIC_MIN = new PTXBinaryIntrinsic("atomic_min");
+        public static final PTXBinaryIntrinsic ATOMIC_MAX = new PTXBinaryIntrinsic("atomic_max");
+        public static final PTXBinaryIntrinsic ATOMIC_AND = new PTXBinaryIntrinsic("atomic_and");
+        public static final PTXBinaryIntrinsic ATOMIC_OR = new PTXBinaryIntrinsic("atomic_or");
+        public static final PTXBinaryIntrinsic ATOMIC_XOR = new PTXBinaryIntrinsic("atomic_xor");
+
         public static final PTXBinaryIntrinsic VLOAD2 = new PTXBinaryIntrinsic("vload2");
         public static final PTXBinaryIntrinsic VLOAD3 = new PTXBinaryIntrinsic("vload3");
         public static final PTXBinaryIntrinsic VLOAD4 = new PTXBinaryIntrinsic("vload4");
         public static final PTXBinaryIntrinsic VLOAD8 = new PTXBinaryIntrinsic("vload8");
         public static final PTXBinaryIntrinsic VLOAD16 = new PTXBinaryIntrinsic("vload16");
+
+        public static final PTXBinaryIntrinsic DOT = new PTXBinaryIntrinsic("dot");
+        public static final PTXBinaryIntrinsic CROSS = new PTXBinaryIntrinsic("cross");
         // @formatter:on
 
         protected PTXBinaryIntrinsic(String opcode) {
-            super(opcode);
+            super(opcode, true);
+        }
+
+        protected PTXBinaryIntrinsic(String opcode, boolean needsRounding) {
+            super(opcode, needsRounding);
         }
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
-            final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emitSymbol(TAB);
-            asm.emit("(");
-            asm.emitValue(x);
-            asm.emit(", ");
-            asm.emitValue(y);
-            asm.emit(")");
+            super.emit(crb, x, y, dest);
         }
     }
 
@@ -433,13 +530,13 @@ public class PTXAssembler extends Assembler {
         //TODO: These need to be PTX
         public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", "char %s[%s]");
 
-        public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY =  new PTXBinaryTemplate("local memory array float", "__local float %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY =    new PTXBinaryTemplate("local memory array int", "__local int %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", "__local float %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY = new PTXBinaryTemplate("local memory array int", "__local int %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new PTXBinaryTemplate("local memory array double", "__local double %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY =   new PTXBinaryTemplate("local memory array long", "__local long %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY =  new PTXBinaryTemplate("local memory array short", "__local short %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY =   new PTXBinaryTemplate("local memory array char", "__local char %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY =   new PTXBinaryTemplate("local memory array byte", "__local byte %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY = new PTXBinaryTemplate("local memory array long", "__local long %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", "__local short %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", "__local char %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", "__local byte %s[%s]");
 
         private final String template;
 
@@ -481,7 +578,7 @@ public class PTXAssembler extends Assembler {
             }
             asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
-            asm.emitValues(new Value[] {dest, x, y, z});
+            asm.emitValues(new Value[]{dest, x, y, z});
         }
     }
 }

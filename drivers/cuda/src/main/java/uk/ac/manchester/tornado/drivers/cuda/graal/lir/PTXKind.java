@@ -192,6 +192,18 @@ public enum PTXKind implements PlatformKind {
         return kind == F16 || kind == F32 || kind == F64;
     }
 
+    public boolean isF64() {
+        return kind == F64;
+    }
+
+    public boolean isF32() {
+        return kind == F32;
+    }
+
+    public boolean isF16() {
+        return kind == F16;
+    }
+
     public PTXKind toUntyped() {
         switch (size) {
             case 1: return PTXKind.B8;
