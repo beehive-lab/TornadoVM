@@ -261,7 +261,13 @@ public class PTXAssembler extends Assembler {
             this.isWeaklyTyped = isWeaklyTyped;
         }
 
-        protected final void emitOpcode(PTXAssembler asm) {
+        protected PTXOp(String opcode, boolean isTyped, boolean isWeaklyTyped) {
+            this.opcode = opcode;
+            this.isTyped = isTyped;
+            this.isWeaklyTyped = isWeaklyTyped;
+        }
+
+        public final void emitOpcode(PTXAssembler asm) {
             asm.emitSymbol(TAB);
             asm.emit(opcode);
         }
@@ -339,6 +345,11 @@ public class PTXAssembler extends Assembler {
             this.needsRounding = needsRounding;
         }
 
+        public PTXUnaryOp(String opcode, boolean needsRounding, boolean isTyped, boolean isWeaklyTyped) {
+            super(opcode, isTyped, isWeaklyTyped);
+            this.needsRounding = needsRounding;
+        }
+
         protected PTXUnaryOp(String opcode, boolean isWeaklyTyped, boolean needsRounding) {
             super(opcode, isWeaklyTyped);
             this.needsRounding = needsRounding;
@@ -353,11 +364,11 @@ public class PTXAssembler extends Assembler {
                 asm.emit(ROUND_NEAREST_EVEN);
             }
 
-//            if (isTyped){
-//                if (type == PTXKind.PRED) type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
-//                if (isWeaklyTyped) type = type.toUntyped();
-            asm.emit("." + type);
-//            }
+            if (isTyped){
+                if (type == PTXKind.PRED) type = (PTXKind) value.getPlatformKind(); // Make sure setp doesn't end up with pred
+                if (isWeaklyTyped) type = type.toUntyped();
+                asm.emit("." + type);
+            }
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[]{dest, value});
         }
@@ -381,7 +392,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic ATOMIC_INC = new PTXUnaryIntrinsic("atomic_inc");
         public static final PTXUnaryIntrinsic ATOMIC_DEC = new PTXUnaryIntrinsic("atomic_dec");
 
-        public static final PTXUnaryIntrinsic BARRIER = new PTXUnaryIntrinsic("barrier");
+        public static final PTXUnaryIntrinsic BARRIER_SYNC = new PTXUnaryIntrinsic("barrier.sync", false, false, false);
         public static final PTXUnaryIntrinsic MEM_FENCE = new PTXUnaryIntrinsic("mem_fence");
         public static final PTXUnaryIntrinsic READ_MEM_FENCE = new PTXUnaryIntrinsic("read_mem_fence");
         public static final PTXUnaryIntrinsic WRITE_MEM_FENCE = new PTXUnaryIntrinsic("write_mem_fence");
@@ -412,6 +423,10 @@ public class PTXAssembler extends Assembler {
 
         protected PTXUnaryIntrinsic(String opcode, boolean needsRounding) {
             super(opcode, needsRounding);
+        }
+
+        protected PTXUnaryIntrinsic(String opcode, boolean needsRounding, boolean isTyped, boolean isWeaklyTyped) {
+            super(opcode, needsRounding, isTyped, isWeaklyTyped);
         }
 
         @Override
@@ -528,15 +543,15 @@ public class PTXAssembler extends Assembler {
 
     public static class PTXBinaryTemplate extends PTXBinaryOp {
         //TODO: These need to be PTX
-        public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", "char %s[%s]");
+        public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", ".u8 %s[%s]");
 
-        public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", "__local float %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY = new PTXBinaryTemplate("local memory array int", "__local int %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new PTXBinaryTemplate("local memory array double", "__local double %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY = new PTXBinaryTemplate("local memory array long", "__local long %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", "__local short %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", "__local char %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", "__local byte %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", ".shared .f32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY = new PTXBinaryTemplate("local memory array int", ".shared .s32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new PTXBinaryTemplate("local memory array double", ".shared .f64 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY = new PTXBinaryTemplate("local memory array long", ".shared .s64 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", ".shared .s16 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".shared .u8 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", ".shared .s8 %s[%s]");
 
         private final String template;
 
@@ -548,6 +563,7 @@ public class PTXAssembler extends Assembler {
         @Override
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
+            asm.emitSymbol(TAB);
             asm.beginStackPush();
             asm.emitValue(x);
             final String input1 = asm.getLastOp();

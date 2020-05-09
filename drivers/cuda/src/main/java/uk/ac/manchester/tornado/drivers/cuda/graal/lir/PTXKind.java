@@ -34,6 +34,38 @@ public enum PTXKind implements PlatformKind {
     ILLEGAL(0, null);
     // @formatter:on
 
+    public JavaKind asJavaKind() {
+        if (kind == ILLEGAL || kind.isVector()) {
+            return JavaKind.Illegal;
+        } else {
+            switch (kind) {
+                case U8:
+                case S8:
+                case B8:
+                    return JavaKind.Byte;
+                case S16:
+                case U16:
+                case B16:
+                    return JavaKind.Short;
+                case S32:
+                case U32:
+                case B32:
+                    return JavaKind.Int;
+                case S64:
+                case U64:
+                case B64:
+                    return JavaKind.Long;
+                case F32:
+                    return JavaKind.Float;
+                case F64:
+                    return JavaKind.Double;
+                default:
+                    shouldNotReachHere();
+            }
+            return JavaKind.Illegal;
+        }
+    }
+
     private final int size;
     private final int vectorLength;
 

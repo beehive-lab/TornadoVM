@@ -313,8 +313,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            unimplemented("Logic: IntegerBelowNode");
-            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LE, intLirKind, x, y)));
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
         } else if (node instanceof IntegerEqualsNode) {
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
             final Value x = operand(condition.getX());

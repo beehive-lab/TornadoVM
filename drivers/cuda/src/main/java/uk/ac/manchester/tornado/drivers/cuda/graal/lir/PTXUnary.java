@@ -63,6 +63,31 @@ public class PTXUnary {
         }
     }
 
+    public static class Barrier extends PTXUnary.UnaryConsumer {
+
+        private final int ctaInstance;
+        private final int numberOfThreads;
+
+        public Barrier(PTXAssembler.PTXUnaryOp opcode, int ctaInstance, int numberOfThreads) {
+            super(opcode, LIRKind.Illegal, null);
+            this.ctaInstance = ctaInstance;
+            this.numberOfThreads = numberOfThreads;
+        }
+
+        @Override
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
+            opcode.emitOpcode(asm);
+            asm.emitSymbol(TAB);
+            asm.emitSymbol(String.valueOf(ctaInstance));
+            if (numberOfThreads != -1) {
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emitInt(numberOfThreads);
+            }
+        }
+
+    }
+
     public static class MemoryAccess extends UnaryConsumer {
 
         private final PTXMemoryBase base;

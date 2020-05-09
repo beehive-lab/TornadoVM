@@ -5,6 +5,7 @@ public class PTXAssemblerConstants {
     public static final String HEAP_PTR_NAME = "heap_pointer";
     public static final String STACK_PTR_NAME = "stack_pointer";
     public static final String GLOBAL_MEM_MODIFIER = "global";
+    public static final String SHARED_MEM_MODIFIER = "shared";
     public static final String PARAM_MEM_MODIFIER = "param";
 
     public static final String COMPUTE_VERSION = ".version";

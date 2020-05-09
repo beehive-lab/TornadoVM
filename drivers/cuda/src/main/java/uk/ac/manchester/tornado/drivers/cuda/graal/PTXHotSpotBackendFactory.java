@@ -25,10 +25,13 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins.PTXGraphBuil
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXAddressLowering;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+
+import java.util.Collections;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
@@ -62,7 +65,7 @@ public class PTXHotSpotBackendFactory {
         PTXLoweringProvider lowerer;
 
         try (InitTimer t = timer("create providers")) {
-            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, target, false, vmConfig);
+            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, constantReflection, target, false, vmConfig);
 
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, hotSpotGCProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
@@ -83,6 +86,8 @@ public class PTXHotSpotBackendFactory {
                                          stampProvider,
                                          null,
                                          suites);
+
+            lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
 
         }
         try (InitTimer rt = timer("instantiate backend")) {

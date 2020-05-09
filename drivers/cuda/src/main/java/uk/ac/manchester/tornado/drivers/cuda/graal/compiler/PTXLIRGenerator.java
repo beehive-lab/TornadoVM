@@ -139,7 +139,12 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitDeoptimize(Value actionAndReason, Value failedSpeculation, LIRFrameState state) {
-        unimplemented();
+        JavaConstant constant = ((ConstantValue) actionAndReason).getJavaConstant();
+        DeoptimizationReason reason = getMetaAccess().decodeDeoptReason(constant);
+        DeoptimizationAction action = getMetaAccess().decodeDeoptAction(constant);
+        int debugId = getMetaAccess().decodeDebugId(constant);
+        trace("emitDeoptimize: id=%d, reason=%s, action=%s", debugId, reason, action);
+        append(new PTXControlFlow.DeoptOp(actionAndReason));
     }
 
     @Override

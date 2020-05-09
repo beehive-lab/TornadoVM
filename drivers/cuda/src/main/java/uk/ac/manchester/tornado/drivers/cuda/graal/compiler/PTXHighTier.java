@@ -11,6 +11,7 @@ import org.graalvm.compiler.phases.common.*;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
@@ -81,9 +82,8 @@ public class PTXHighTier extends TornadoHighTier {
 
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
-
         //TODO: Should there be IntrinsicsReplacements for PTX?
-        //appendPhase(new TornadoOpenCLIntrinsicsReplacements(metaAccessProvider));
+        appendPhase(new TornadoPTXIntrinsicsReplacements(metaAccessProvider));
 
         appendPhase(new TornadoLocalMemoryAllocation());
 

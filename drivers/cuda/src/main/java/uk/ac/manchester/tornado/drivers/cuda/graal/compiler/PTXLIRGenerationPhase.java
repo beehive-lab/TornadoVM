@@ -23,6 +23,7 @@ public class PTXLIRGenerationPhase extends LIRPhase<PTXLIRGenerationPhase.LIRGen
         private final NodeLIRBuilderTool nodeLirBuilder;
         private final StructuredGraph.ScheduleResult schedule;
         private final boolean isKernel;
+
         public LIRGenerationContext(final LIRGeneratorTool lirGen, final NodeLIRBuilderTool nodeLirBuilder, final StructuredGraph graph, final StructuredGraph.ScheduleResult schedule, final boolean isKernel) {
             this.nodeLirBuilder = nodeLirBuilder;
             this.lirGen = lirGen;

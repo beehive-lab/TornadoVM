@@ -427,7 +427,7 @@ public class TornadoVM extends TornadoLogger {
                         }
                         installedCodes[taskIndex] = device.installCode(task);
                     } catch (Error | Exception e) {
-                        if (Tornado.DEBUG) {
+                        if (DEBUG || FULL_DEBUG) {
                             e.printStackTrace();
                         }
                         fatal("unable to compile task %s", task.getName());

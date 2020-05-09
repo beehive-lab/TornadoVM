@@ -24,6 +24,7 @@ public class PTXArchitecture extends Architecture {
 
     public static final PTXMemoryBase globalSpace = new PTXMemoryBase(0, PTXMemorySpace.GLOBAL);
     public static final PTXMemoryBase paramSpace = new PTXMemoryBase(1, PTXMemorySpace.PARAM);
+    public static final PTXMemoryBase sharedSpace = new PTXMemoryBase(2, PTXMemorySpace.SHARED);
 
     public static PTXParam STACK_POINTER;
     public static PTXParam[] abiRegisters;
