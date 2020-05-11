@@ -92,6 +92,10 @@ public class TornadoOptions {
         return getBooleanValue("tornado.profiler.save", "False");
     }
 
+    public static boolean PARTIAL_UNROLL() {
+        return getBooleanValue("tornado.experimental.partial.unroll", "False");
+    }
+
     private static boolean getBooleanValue(String property, String defaultValue) {
         return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
     }

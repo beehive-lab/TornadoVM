@@ -45,7 +45,7 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.virtual.phases.ea.EarlyReadEliminationPhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
@@ -87,7 +87,7 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(canonicalizer);
 
-        if (Tornado.PARTIAL_UNROLL) {
+        if (TornadoOptions.PARTIAL_UNROLL()) {
             appendPhase(new TornadoPartialLoopUnroll());
         }
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
