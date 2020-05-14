@@ -253,26 +253,15 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         trace("block: %d", block.getId());
-        if (isMergeBlock(block)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[");
-            for (Block pred : block.getPredecessors()) {
-                sb.append(pred.getId()).append(" ");
-            }
-            sb.append("]");
-            ((OCLAssembler) asm).emitLine("// BLOCK %d MERGES %s", block.getId(), sb.toString());
-
-        } else {
-            ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
-        }
-
-        if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
-            blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
-        }
+        printBasicBlockTrace(block);
 
         LIRInstruction breakInst = null;
         LIRInstruction opPreEmit = null;
 
+        // SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS in the latest Graal
+        // reschedule unreachable within the loop instruction to the previous basic
+        // block (i.e. the one that the loop begin exists). This patch solves the issue
+        // of Loop header BBs that contain additional ops
         for (int i = 0; i < lir.getLIRforBlock(block).size(); i++) {
             if (isLoopDependencyNode(lir.getLIRforBlock(block).get(i))) {
                 for (int j = i; j < lir.getLIRforBlock(block).size(); j++) {
@@ -302,6 +291,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 blockComment(String.format("%d %s", op.id(), op));
             }
 
+            // Skips op emition for already emitted op
             if (op == opPreEmit) {
                 continue;
             }
@@ -326,6 +316,24 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
 
+    }
+
+    void printBasicBlockTrace(Block block) {
+        if (isMergeBlock(block)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (Block pred : block.getPredecessors()) {
+                sb.append(pred.getId()).append(" ");
+            }
+            sb.append("]");
+            ((OCLAssembler) asm).emitLine("// BLOCK %d MERGES %s", block.getId(), sb.toString());
+        } else {
+            ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
+        }
+
+        if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
+            blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
+        }
     }
 
     private static boolean isLoopDependencyNode(LIRInstruction op) {
