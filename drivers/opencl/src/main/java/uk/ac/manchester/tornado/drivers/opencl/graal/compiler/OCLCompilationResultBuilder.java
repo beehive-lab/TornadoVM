@@ -271,13 +271,28 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         LIRInstruction breakInst = null;
+        LIRInstruction opPreEmit = null;
+
+        for (int i = 0; i < lir.getLIRforBlock(block).size(); i++) {
+            if (isLoopDependencyNode(lir.getLIRforBlock(block).get(i))) {
+                for (int j = i; j < lir.getLIRforBlock(block).size(); j++) {
+                    if (!isLoopDependencyNode(lir.getLIRforBlock(block).get(j))) {
+                        emitOp(this, lir.getLIRforBlock(block).get(j));
+                        opPreEmit = lir.getLIRforBlock(block).get(j);
+                        continue;
+                    }
+                }
+                break;
+            }
+        }
+
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
             if (op == null) {
                 continue;
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((shouldRemoveLoop() && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+            } else if ((shouldRemoveLoop() && loops == 0) && isLoopDependencyNode(op)) {
                 if (op instanceof OCLControlFlow.LoopPostOp) {
                     loops++;
                 }
@@ -285,6 +300,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
+            }
+
+            if (op == opPreEmit) {
+                continue;
             }
 
             try {
@@ -307,6 +326,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
 
+    }
+
+    private static boolean isLoopDependencyNode(LIRInstruction op) {
+        return ((op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp));
     }
 
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
