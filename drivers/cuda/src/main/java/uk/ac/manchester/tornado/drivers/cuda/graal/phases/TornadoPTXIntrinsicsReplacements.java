@@ -136,14 +136,6 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
         newArray.replaceAtUsages(localArrayNode);
     }
 
-    private void lowerPrivateInvokeNodeNewArray(StructuredGraph graph, int size, JavaKind elementKind, InvokeNode newArray) {
-        FixedArrayNode fixedArrayNode;
-        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(PTXArchitecture.localSpace, elementType, newLengthNode));
-        newArray.replaceAtUsages(fixedArrayNode);
-    }
-
     private void lowerInvokeNode(InvokeNode newArray) {
         CallTargetNode callTarget = newArray.callTarget();
         final StructuredGraph graph = newArray.graph();
@@ -153,14 +145,7 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
             if (lengthNode.getValue() instanceof PrimitiveConstant) {
                 final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
                 JavaKind elementKind = getJavaKindFromConstantNode((ConstantNode) callTarget.arguments().get(0));
-                final int offset = metaAccess.getArrayBaseOffset(elementKind);;
-                final int size = offset + (elementKind.getByteCount() * length);
-                // This phase should come after OCL lowering, therefore OCLLoweringProvider::gpuSnippet should be set
-                if (PTXLoweringProvider.isGpuSnippet()) {
-                    lowerLocalInvokeNodeNewArray(graph, length, elementKind, newArray);
-                } else {
-                    lowerPrivateInvokeNodeNewArray(graph, size, elementKind, newArray);
-                }
+                lowerLocalInvokeNodeNewArray(graph, length, elementKind, newArray);
                 newArray.clearInputs();
                 GraphUtil.unlinkFixedNode(newArray);
             } else {

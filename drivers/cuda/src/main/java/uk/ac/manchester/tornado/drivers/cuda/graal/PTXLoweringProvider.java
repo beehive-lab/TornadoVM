@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.drivers.cuda.graal;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -61,19 +60,14 @@ import org.graalvm.compiler.replacements.SnippetCounter;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXWriteNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CastNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.calc.DivNode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.snippets.PTXReduceCPUSnippets;
-import uk.ac.manchester.tornado.drivers.cuda.graal.snippets.PTXReduceGPUSnippets;
+import uk.ac.manchester.tornado.drivers.cuda.graal.snippets.PTXReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
-
-import java.util.Iterator;
 
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
@@ -83,12 +77,9 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
-    private static boolean gpuSnippet = false;
-
     private TornadoVMConfig vmConfig;
 
-    private PTXReduceGPUSnippets.Templates GPUReduceSnippets;
-    private PTXReduceCPUSnippets.Templates CPUReduceSnippets;
+    private PTXReduceSnippets.Templates GPUReduceSnippets;
 
     public PTXLoweringProvider(MetaAccessProvider metaAccess,
                                ForeignCallsProvider foreignCalls,
@@ -110,8 +101,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
                                     SnippetReflectionProvider snippetReflection) {
-        this.GPUReduceSnippets = new PTXReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
-        this.CPUReduceSnippets = new PTXReduceCPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+        this.GPUReduceSnippets = new PTXReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
     @Override
@@ -128,10 +118,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField field) {
         JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
-    }
-
-    public static boolean isGpuSnippet() {
-        return gpuSnippet;
     }
 
     @Override
@@ -223,7 +209,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             if (!callTarget.isStatic() && receiver.stamp(NodeView.DEFAULT) instanceof ObjectStamp && !StampTool.isPointerNonNull(receiver)) {
                 ValueNode nonNullReceiver = createNullCheckedValue(receiver, invoke.asNode(), tool);
                 parameters.set(0, nonNullReceiver);
-                receiver = nonNullReceiver;
             }
             JavaType[] signature = callTarget.targetMethod().getSignature().toParameterTypes(callTarget.isStatic() ? null : callTarget.targetMethod().getDeclaringClass());
 
@@ -256,15 +241,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 final ConstantNode lengthNode = (ConstantNode) firstInput;
                 if (lengthNode.getValue() instanceof PrimitiveConstant) {
                     final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
-                    ResolvedJavaType elementType = newArray.elementType();
-                    JavaKind elementKind = elementType.getJavaKind();
-                    final int offset = arrayBaseOffset(elementKind);
-                    final int size = offset + (elementKind.getByteCount() * length);
-                    if (gpuSnippet) {
-                        lowerLocalNewArray(graph, length, newArray);
-                    } else {
-                        lowerPrivateNewArray(graph, size, newArray);
-                    }
+                    lowerLocalNewArray(graph, length, newArray);
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
                 } else {
@@ -278,22 +255,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
-        FixedArrayNode fixedArrayNode;
-        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(PTXArchitecture.localSpace, newArray.elementType(), newLengthNode));
-        newArray.replaceAtUsages(fixedArrayNode);
-    }
-
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
         localArrayNode = graph.addWithoutUnique(new LocalArrayNode(PTXArchitecture.sharedSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(localArrayNode);
-    }
-
-    public int arrayBaseOffset(JavaKind kind) {
-        return metaAccess.getArrayBaseOffset(kind);
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
@@ -306,44 +272,17 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
-        ValueNode startIndexNode = storeIndexed.getStartNode();
-
-        // Find Get Global ID node and Global Size;
-        GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
-        GlobalThreadSizeNode oclGlobalSize = graph.getNodes().filter(GlobalThreadSizeNode.class).first();
-
+        GlobalThreadIdNode threadIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
         ValueNode threadID = null;
-        Iterator<Node> usages = oclIdNode.usages().iterator();
 
-        boolean cpuScheduler = false;
-
-        while (usages.hasNext()) {
-            Node n = usages.next();
-
+        for (Node n : threadIdNode.usages()) {
             // GPU SCHEDULER
             if (n instanceof PhiNode) {
-                gpuSnippet = true;
                 threadID = (ValueNode) n;
                 break;
             }
-
-            // CPU SCHEDULER
-            if (n instanceof MulNode) {
-                for (Node n2 : n.usages()) {
-                    if (n2 instanceof PhiNode) {
-                        threadID = (ValueNode) n2;
-                        cpuScheduler = true;
-                        break;
-                    }
-                }
-            }
         }
-        // Depending on the Scheduler, call the proper snippet factory
-        if (cpuScheduler) {
-            CPUReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
-        } else {
-            GPUReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
-        }
+        GPUReduceSnippets.lower(storeIndexed, threadID, tool);
     }
 
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
@@ -456,7 +395,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
-        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
+        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName());
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
@@ -464,7 +403,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
-        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
+        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName());
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 

@@ -43,7 +43,6 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.cuda.builtins.PTXIntrinsics;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
@@ -51,9 +50,9 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
- * Tornado-Graal snippets for GPUs reductions using OpenCL semantics.
+ * Tornado-Graal snippets for GPUs reductions using PTX semantics.
  */
-public class PTXReduceGPUSnippets implements Snippets {
+public class PTXReduceSnippets implements Snippets {
 
     private static int LOCAL_WORK_GROUP_SIZE = 223;
 
@@ -619,42 +618,42 @@ public class PTXReduceGPUSnippets implements Snippets {
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         // Add
-        private final SnippetInfo partialReduceIntSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceIntAddGlobal");
-        private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceIntAddGlobal2");
-        private final SnippetInfo partialReduceLongSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceLongAddGlobal");
-        private final SnippetInfo partialReduceLongSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceLongAddGlobal2");
-        private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceFloatAddGlobal");
-        private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceFloatAddGlobal2");
-        private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceDoubleAddGlobal");
-        private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceDoubleAddGlobal2");
+        private final SnippetInfo partialReduceIntSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceIntAddGlobal");
+        private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceIntAddGlobal2");
+        private final SnippetInfo partialReduceLongSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceLongAddGlobal");
+        private final SnippetInfo partialReduceLongSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceLongAddGlobal2");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceFloatAddGlobal");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceFloatAddGlobal2");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceDoubleAddGlobal");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceDoubleAddGlobal2");
 
         // Mul
-        private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceIntMultGlobal");
-        private final SnippetInfo partialReduceIntMultSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceIntMultGlobal2");
-        private final SnippetInfo partialReduceLongMultSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceLongMultGlobal");
-        private final SnippetInfo partialReduceLongMultSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceLongMultGlobal2");
-        private final SnippetInfo partialReducetFloatMultSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceFloatMultGlobal");
-        private final SnippetInfo partialReducetFloatMultSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceFloatMultGlobal2");
-        private final SnippetInfo partialReducetDoubleMultSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceDoubleMultGlobal");
-        private final SnippetInfo partialReducetDoubleMultSnippetGlobal2 = snippet(PTXReduceGPUSnippets.class, "partialReduceDoubleMultGlobal2");
+        private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceIntMultGlobal");
+        private final SnippetInfo partialReduceIntMultSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceIntMultGlobal2");
+        private final SnippetInfo partialReduceLongMultSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceLongMultGlobal");
+        private final SnippetInfo partialReduceLongMultSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceLongMultGlobal2");
+        private final SnippetInfo partialReducetFloatMultSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceFloatMultGlobal");
+        private final SnippetInfo partialReducetFloatMultSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceFloatMultGlobal2");
+        private final SnippetInfo partialReducetDoubleMultSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceDoubleMultGlobal");
+        private final SnippetInfo partialReducetDoubleMultSnippetGlobal2 = snippet(PTXReduceSnippets.class, "partialReduceDoubleMultGlobal2");
 
         // Max
-        private final SnippetInfo partialReduceIntMaxSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceIntMaxGlobal");
-        private final SnippetInfo partialReduceLongMaxSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceLongMaxGlobal");
-        private final SnippetInfo partialReduceMaxFloatSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceFloatMaxGlobal");
-        private final SnippetInfo partialReduceMaxDoubleSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceDoubleMaxGlobal");
+        private final SnippetInfo partialReduceIntMaxSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceIntMaxGlobal");
+        private final SnippetInfo partialReduceLongMaxSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceLongMaxGlobal");
+        private final SnippetInfo partialReduceMaxFloatSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceFloatMaxGlobal");
+        private final SnippetInfo partialReduceMaxDoubleSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceDoubleMaxGlobal");
 
         // Min
-        private final SnippetInfo partialReduceIntMinSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceIntMinGlobal");
-        private final SnippetInfo partialReduceLongMinSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceLongMinGlobal");
-        private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
-        private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(PTXReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
+        private final SnippetInfo partialReduceIntMinSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceIntMinGlobal");
+        private final SnippetInfo partialReduceLongMinSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceLongMinGlobal");
+        private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceFloatMinGlobal");
+        private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(PTXReduceSnippets.class, "partialReduceDoubleMinGlobal");
 
         public Templates(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, debugHandlersFactories ,providers, snippetReflection, target);
         }
 
-        private SnippetInfo getSnippetFromOCLBinaryNode(PTXIntBinaryIntrinsicNode value) {
+        private SnippetInfo getSnippetFromPTXBinaryNode(PTXIntBinaryIntrinsicNode value) {
             switch (value.operation()) {
                 case MAX:
                     return partialReduceIntMaxSnippetGlobal;
@@ -665,7 +664,7 @@ public class PTXReduceGPUSnippets implements Snippets {
             }
         }
 
-        private SnippetInfo getSnippetFromOCLBinaryNodeLong(PTXIntBinaryIntrinsicNode value) {
+        private SnippetInfo getSnippetFromPTXBinaryNodeLong(PTXIntBinaryIntrinsicNode value) {
             switch (value.operation()) {
                 case MAX:
                     return partialReduceLongMaxSnippetGlobal;
@@ -686,7 +685,7 @@ public class PTXReduceGPUSnippets implements Snippets {
                 snippet = (extra == null) ? partialReduceIntMultSnippetGlobal : partialReduceIntMultSnippetGlobal2;
             } else if (value instanceof PTXIntBinaryIntrinsicNode) {
                 PTXIntBinaryIntrinsicNode op = (PTXIntBinaryIntrinsicNode) value;
-                snippet = getSnippetFromOCLBinaryNode(op);
+                snippet = getSnippetFromPTXBinaryNode(op);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -702,21 +701,21 @@ public class PTXReduceGPUSnippets implements Snippets {
                 snippet = (extra == null) ? partialReduceLongMultSnippetGlobal : partialReduceLongMultSnippetGlobal2;
             } else if (value instanceof PTXIntBinaryIntrinsicNode) {
                 PTXIntBinaryIntrinsicNode op = (PTXIntBinaryIntrinsicNode) value;
-                snippet = getSnippetFromOCLBinaryNodeLong(op);
+                snippet = getSnippetFromPTXBinaryNodeLong(op);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
 
-        private SnippetInfo getSnippetFromOCLBinaryNode(PTXFPBinaryIntrinsicNode value) {
+        private SnippetInfo getSnippetFromPTXBinaryNode(PTXFPBinaryIntrinsicNode value) {
             switch (value.operation()) {
                 case FMAX:
                     return partialReduceMaxFloatSnippetGlobal;
                 case FMIN:
                     return partialReduceMinFloatSnippetGlobal;
                 default:
-                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+                    throw new RuntimeException("PTXFPBinaryIntrinsicNode operation not supported yet");
             }
         }
 
@@ -728,21 +727,21 @@ public class PTXReduceGPUSnippets implements Snippets {
             } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReducetFloatMultSnippetGlobal : partialReducetFloatMultSnippetGlobal2;
             } else if (value instanceof PTXFPBinaryIntrinsicNode) {
-                snippet = getSnippetFromOCLBinaryNode((PTXFPBinaryIntrinsicNode) value);
+                snippet = getSnippetFromPTXBinaryNode((PTXFPBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
 
-        private SnippetInfo getSnippetFromOCLBinaryNodeDouble(PTXFPBinaryIntrinsicNode value) {
+        private SnippetInfo getSnippetFromPTXBinaryNodeDouble(PTXFPBinaryIntrinsicNode value) {
             switch (value.operation()) {
                 case FMAX:
                     return partialReduceMaxDoubleSnippetGlobal;
                 case FMIN:
                     return partialReduceMinDoubleSnippetGlobal;
                 default:
-                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+                    throw new RuntimeException("PTXFPBinaryIntrinsicNode operation not supported yet");
             }
         }
 
@@ -754,7 +753,7 @@ public class PTXReduceGPUSnippets implements Snippets {
             } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReducetDoubleMultSnippetGlobal : partialReducetDoubleMultSnippetGlobal2;
             } else if (value instanceof PTXFPBinaryIntrinsicNode) {
-                snippet = getSnippetFromOCLBinaryNodeDouble((PTXFPBinaryIntrinsicNode) value);
+                snippet = getSnippetFromPTXBinaryNodeDouble((PTXFPBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -776,7 +775,7 @@ public class PTXReduceGPUSnippets implements Snippets {
             return snippet;
         }
 
-        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode globalId, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
             JavaKind elementKind = storeAtomicIndexed.elementKind();
