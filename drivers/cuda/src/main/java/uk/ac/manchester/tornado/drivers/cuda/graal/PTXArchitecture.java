@@ -6,10 +6,8 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
 import java.nio.ByteOrder;
@@ -25,6 +23,7 @@ public class PTXArchitecture extends Architecture {
     public static final PTXMemoryBase globalSpace = new PTXMemoryBase(0, PTXMemorySpace.GLOBAL);
     public static final PTXMemoryBase paramSpace = new PTXMemoryBase(1, PTXMemorySpace.PARAM);
     public static final PTXMemoryBase sharedSpace = new PTXMemoryBase(2, PTXMemorySpace.SHARED);
+    public static final PTXMemoryBase localSpace = new PTXMemoryBase(2, PTXMemorySpace.LOCAL);
 
     public static PTXParam STACK_POINTER;
     public static PTXParam[] abiRegisters;

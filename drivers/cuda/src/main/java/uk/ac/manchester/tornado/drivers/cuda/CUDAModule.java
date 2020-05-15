@@ -20,10 +20,10 @@ public class CUDAModule {
 
     private native static byte[] cuModuleLoadData(byte[] source);
 
-    private native static int calcMaximalBlockSize(int maxBlockSize, byte[] module, String funcName);
+    private native static int calcMaximalBlockSize(byte[] module, String funcName);
 
-    public int getMaximalBlocks(int maxBlockSize) {
-        if (maximalBlockSize < 0) maximalBlockSize = calcMaximalBlockSize(maxBlockSize, moduleWrapper, kernelFunctionName);
+    public int getMaximalBlocks() {
+        if (maximalBlockSize < 0) maximalBlockSize = calcMaximalBlockSize(moduleWrapper, kernelFunctionName);
         return maximalBlockSize;
     }
 

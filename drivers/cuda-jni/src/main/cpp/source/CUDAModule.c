@@ -45,10 +45,10 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModu
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAModule
  * Method:    calcMaximalBlockSize
- * Signature: (I)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModule_calcMaximalBlockSize
-  (JNIEnv *env, jclass clazz, jint max_blocks, jbyteArray module_wrapper, jstring func_name) {
+  (JNIEnv *env, jclass clazz, jbyteArray module_wrapper, jstring func_name) {
     CUmodule module;
     array_to_module(env, &module, module_wrapper);
 
@@ -59,6 +59,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModule_cal
 
     int min_grid_size;
     int block_size;
-    cuOccupancyMaxPotentialBlockSize (&min_grid_size, &block_size, kernel, 0, 0, max_blocks);
+    cuOccupancyMaxPotentialBlockSize (&min_grid_size, &block_size, kernel, 0, 0, 0);
     return block_size;
 }

@@ -82,7 +82,6 @@ public class PTXHighTier extends TornadoHighTier {
 
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
-        //TODO: Should there be IntrinsicsReplacements for PTX?
         appendPhase(new TornadoPTXIntrinsicsReplacements(metaAccessProvider));
 
         appendPhase(new TornadoLocalMemoryAllocation());

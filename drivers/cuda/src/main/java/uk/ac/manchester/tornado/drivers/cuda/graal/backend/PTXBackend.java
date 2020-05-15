@@ -6,6 +6,7 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.collections.Pair;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -49,8 +50,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     private PTXCodeProvider codeCache;
     private OptionValues options;
 
-    public PTXBackend(PTXProviders providers, CUDADeviceContext deviceContext, CUDATargetDescription target,
-                      PTXCodeProvider codeCache, OptionValues options) {
+    public PTXBackend(PTXProviders providers, CUDADeviceContext deviceContext, CUDATargetDescription target, PTXCodeProvider codeCache, OptionValues options) {
         super(providers);
 
         this.deviceContext = deviceContext;
@@ -96,7 +96,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public void init() {
-        if (isInitialised) return;
+        if (isInitialised)
+            return;
 
         allocateHeapMemoryOnDevice();
 
@@ -129,18 +130,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXFrameMap(getCodeCache(), registerConfig, this);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier,
-                                                      LIR lir,
-                                                      FrameMapBuilder frameMapBuilder,
-                                                      RegisterAllocationConfig registerAllocationConfig) {
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
 
-        return new PTXLIRGenerationResult(
-                identifier,
-                lir,
-                frameMapBuilder,
-                registerAllocationConfig,
-                new CallingConvention(0, null, (AllocatableValue[]) null)
-        );
+        return new PTXLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
@@ -151,25 +143,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXNodeLIRBuilder(graph, lirGen, new PTXNodeMatchRules(lirGen));
     }
 
-    public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes,
-                                                                   FrameMap frameMap,
-                                                                   PTXCompilationResult compilationResult,
-                                                                   CompilationResultBuilderFactory factory,
-                                                                   boolean isKernel,
-                                                                   boolean isParallel) {
+    public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory,
+            boolean isKernel, boolean isParallel) {
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
-        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(
-                codeCache,
-                getForeignCalls(),
-                frameMap,
-                asm,
-                dataBuilder,
-                frameContext,
-                options,
-                compilationResult
-        );
+        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, options, compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         return crb;
@@ -195,21 +174,14 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             emitPTXHeader(asm);
             emitKernelFunction(asm, crb.compilationResult.getName());
             emitVariableDefs(asm, lirGenRes);
-        }
-        else {
+        } else {
             unimplemented("Non-kernel function calls are not implemented id CUDA_PTX yet.");
         }
     }
 
     private void emitKernelFunction(PTXAssembler asm, String methodName) {
 
-        asm.emitLine(
-                "%s %s %s(%s) {",
-                PTXAssemblerConstants.EXTERNALLY_VISIBLE,
-                PTXAssemblerConstants.KERNEL_ENTRYPOINT,
-                methodName,
-                arch.getABI()
-        );
+        asm.emitLine("%s %s %s(%s) {", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, methodName, arch.getABI());
     }
 
     private void emitPTXHeader(PTXAssembler asm) {
@@ -222,15 +194,19 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
-        Map<PTXKind, Set<Variable>> kindToVariable = lirGenRes.getVariableTable();
+        Map<PTXKind, Set<Pair<Variable, Boolean>>> kindToVariable = lirGenRes.getVariableTable();
 
         for (PTXKind type : kindToVariable.keySet()) {
-            asm.emitLine(
-                    "\t.reg .%s %s<%d>;",
-                    type,
-                    type.getRegisterTypeString(),
-                    kindToVariable.get(type).size()
-            );
+
+            Set<Pair<Variable, Boolean>> vars = kindToVariable.get(type);
+            int varCount = 0;
+            for (Pair<Variable, Boolean> var : vars) {
+                if (!var.getRight()) {
+                    varCount++;
+                }
+            }
+
+            asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), varCount + 1);
         }
 
     }

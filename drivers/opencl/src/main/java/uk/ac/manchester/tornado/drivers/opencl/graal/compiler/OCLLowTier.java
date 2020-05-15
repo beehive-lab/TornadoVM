@@ -81,6 +81,8 @@ public class OCLLowTier extends TornadoLowTier {
         appendPhase(new DeadCodeEliminationPhase(Required));
 
         appendPhase(new TornadoLoopCanonicalization());
+
+//        appendPhase(new TornadoIfCanonicalization());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {

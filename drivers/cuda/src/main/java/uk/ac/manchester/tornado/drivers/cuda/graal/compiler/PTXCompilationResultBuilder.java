@@ -29,25 +29,9 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private PTXAssembler asm;
 
-    public PTXCompilationResultBuilder(CodeCacheProvider codeCache,
-                                       ForeignCallsProvider foreignCalls,
-                                       FrameMap frameMap,
-                                       Assembler asm,
-                                       DataBuilder dataBuilder,
-                                       FrameContext frameContext,
-                                       OptionValues options,
-                                       CompilationResult compilationResult) {
-        super(codeCache,
-                foreignCalls,
-                frameMap,
-                asm,
-                dataBuilder,
-                frameContext,
-                options,
-                getDebugContext(),
-                compilationResult,
-                Register.None
-        );
+    public PTXCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
+            OptionValues options, CompilationResult compilationResult) {
+        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, Register.None);
 
         nonInlinedMethods = new HashSet<>();
         this.asm = (PTXAssembler) asm;

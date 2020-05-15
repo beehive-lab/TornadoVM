@@ -28,17 +28,17 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 
-@NodeInfo(shortName = "REDUCE(-)")
-public class OCLReduceSubNode extends SubNode {
+@NodeInfo(shortName = "REDUCE(+)")
+public class TornadoReduceAddNode extends AddNode {
 
-    public static final NodeClass<OCLReduceSubNode> TYPE = NodeClass.create(OCLReduceSubNode.class);
+    public static final NodeClass<TornadoReduceAddNode> TYPE = NodeClass.create(TornadoReduceAddNode.class);
 
-    public OCLReduceSubNode(ValueNode x, ValueNode y) {
+    public TornadoReduceAddNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y);
     }
 
@@ -59,7 +59,7 @@ public class OCLReduceSubNode extends SubNode {
             op1 = op2;
             op2 = tmp;
         }
-        Value resultAdd = gen.emitSub(op1, op2, false);
+        Value resultAdd = gen.emitAdd(op1, op2, false);
         tool.setResult(this, resultAdd);
 
     }

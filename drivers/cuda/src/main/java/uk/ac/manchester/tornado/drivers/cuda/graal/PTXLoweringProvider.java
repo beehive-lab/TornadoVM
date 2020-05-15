@@ -281,7 +281,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(PTXArchitecture.globalSpace, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(PTXArchitecture.localSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
@@ -387,7 +387,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
         ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, HeapAccess.BarrierType.NONE));
-        loadIndexed.replaceAtUsages(memoryRead);
+        ValueNode readValue = implicitLoadConvert(graph, elementKind, memoryRead);
+        loadIndexed.replaceAtUsages(readValue);
         graph.replaceFixed(loadIndexed, memoryRead);
     }
 
@@ -398,7 +399,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, value, array, address, graph, storeIndexed);
+        ValueNode writeValue = implicitStoreConvert(graph, elementKind, value);
+        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, writeValue, array, address, graph, storeIndexed);
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }

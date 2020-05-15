@@ -129,7 +129,7 @@ public class PTXAssembler extends Assembler {
 
     @Override
     public void align(int modulus) {
-        //unimplemented();
+        // unimplemented();
     }
 
     @Override
@@ -158,7 +158,6 @@ public class PTXAssembler extends Assembler {
     public void ensureUniquePC() {
         unimplemented();
     }
-
 
     private void beginStackPush() {
         pushToStack = true;
@@ -226,6 +225,16 @@ public class PTXAssembler extends Assembler {
 
     public void convertNextTabToSpace() {
         convertTabToSpace = true;
+    }
+
+    public void emitLoop(int id) {
+        emit("LOOP_COND_%d", id);
+    }
+
+    public void emitLoopLabel(int id) {
+        emitLoop(id);
+        emitSymbol(COLON);
+        eol();
     }
 
     public void emitBlock(int id) {
@@ -310,7 +319,6 @@ public class PTXAssembler extends Assembler {
         }
     }
 
-
     public static class PTXNullaryTemplate extends PTXNullaryOp {
         public PTXNullaryTemplate(String opcode) {
             super(opcode, true);
@@ -364,13 +372,15 @@ public class PTXAssembler extends Assembler {
                 asm.emit(ROUND_NEAREST_EVEN);
             }
 
-            if (isTyped){
-                if (type == PTXKind.PRED) type = (PTXKind) value.getPlatformKind(); // Make sure setp doesn't end up with pred
-                if (isWeaklyTyped) type = type.toUntyped();
+            if (isTyped) {
+                if (type == PTXKind.PRED)
+                    type = (PTXKind) value.getPlatformKind(); // Make sure setp doesn't end up with pred
+                if (isWeaklyTyped)
+                    type = type.toUntyped();
                 asm.emit("." + type);
             }
             asm.emitSymbol(TAB);
-            asm.emitValues(new Value[]{dest, value});
+            asm.emitValues(new Value[] { dest, value });
         }
     }
 
@@ -435,7 +445,6 @@ public class PTXAssembler extends Assembler {
         }
     }
 
-
     /**
      * Binary opcodes
      */
@@ -450,6 +459,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp SUB = new PTXBinaryOp("sub");
         public static final PTXBinaryOp MUL = new PTXBinaryOp("mul");
         public static final PTXBinaryOp MUL_LO = new PTXBinaryOp("mul.lo");
+        public static final PTXBinaryOp MUL_WIDE = new PTXBinaryOp("mul.wide");
         public static final PTXBinaryOp DIV = new PTXBinaryOp("div");
         public static final PTXBinaryOp DIV_APPROX = new PTXBinaryOp("div.approx", false);
 
@@ -481,6 +491,13 @@ public class PTXAssembler extends Assembler {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             PTXKind type = (PTXKind) dest.getPlatformKind();
+
+            // mul.wide.u32 rud, rui, rui. For mul.wide, we need to specify the
+            // type of the sources and not destination
+            if (MUL_WIDE.opcode.equals(opcode)) {
+                type = (PTXKind) x.getPlatformKind();
+            }
+
             if (needsRounding && type.isFloating()) {
                 asm.emitSymbol(DOT);
                 asm.emit(ROUND_NEAREST_EVEN);
@@ -489,11 +506,12 @@ public class PTXAssembler extends Assembler {
             if (isTyped) {
                 if (type == PTXKind.PRED)
                     type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
-                if (isWeaklyTyped) type = type.toUntyped();
+                if (isWeaklyTyped)
+                    type = type.toUntyped();
                 asm.emit("." + type);
             }
             asm.emitSymbol(TAB);
-            asm.emitValues(new Value[]{dest, x, y});
+            asm.emitValues(new Value[] { dest, x, y });
         }
     }
 
@@ -542,8 +560,8 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXBinaryTemplate extends PTXBinaryOp {
-        //TODO: These need to be PTX
-        public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", ".u8 %s[%s]");
+        // TODO: These need to be PTX
+        public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", ".local .u8 %s[%s]");
 
         public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", ".shared .f32 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY = new PTXBinaryTemplate("local memory array int", ".shared .s32 %s[%s]");
@@ -594,7 +612,7 @@ public class PTXAssembler extends Assembler {
             }
             asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
-            asm.emitValues(new Value[]{dest, x, y, z});
+            asm.emitValues(new Value[] { dest, x, y, z });
         }
     }
 }

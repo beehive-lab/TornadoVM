@@ -14,6 +14,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
@@ -61,7 +62,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         final Value lengthValue = gen.operand(length);
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
-        final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
+        final Variable variable = ((PTXLIRGenerator) gen.getLIRGeneratorTool()).newVariable(lirKind, true);
         final PTXBinary.Expr declaration = new PTXBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
         final PTXLIRStmt.ExprStmt expr = new PTXLIRStmt.ExprStmt(declaration);

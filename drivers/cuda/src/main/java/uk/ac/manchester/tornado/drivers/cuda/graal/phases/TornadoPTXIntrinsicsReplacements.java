@@ -140,7 +140,7 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(PTXArchitecture.globalSpace, elementType, newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(PTXArchitecture.localSpace, elementType, newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 

@@ -26,7 +26,9 @@ public class CUDACodeCache {
         if (!cache.containsKey(cacheKey)) {
             if (PRINT_SOURCE) {
                 String source = new String(result.getTargetCode());
+                System.out.println("BEGIN");
                 System.out.println(source);
+                System.out.println("END");
             }
 
             CUDAModule module = new CUDAModule(name, result.getTargetCode(), result.getName(), result.getTaskMeta());

@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.*;
+import org.graalvm.collections.Pair;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
@@ -15,6 +16,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
@@ -116,6 +118,15 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public LIRKind getLIRKind(Stamp stamp) {
+        if (stamp instanceof PTXStamp) {
+            return LIRKind.value(((PTXStamp) stamp).getPTXKind());
+        } else {
+            return super.getLIRKind(stamp);
+        }
+    }
+
+    @Override
     public <K extends ValueKind<K>> K toRegisterKind(K kind) {
         return kind;
     }
@@ -178,7 +189,11 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitJump(LabelRef label) {
-        unimplemented();
+        append(new PTXControlFlow.Branch(label, false, false));
+    }
+
+    public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
+        append(new PTXControlFlow.Branch(label, false, isLoopEdgeBack));
     }
 
     @Override
@@ -273,9 +288,9 @@ public class PTXLIRGenerator extends LIRGenerator {
                     key,
                     new ConstantValue(LIRKind.value(PTXKind.S32), constants[i])
             )));
-            emitConditionalBranch(keyTargets[i], predicate, false);
+            emitConditionalBranch(keyTargets[i], predicate, false, false);
         }
-        append(new PTXControlFlow.Branch(defaultTarget, false));
+        append(new PTXControlFlow.Branch(defaultTarget, false, false));
     }
 
     @Override
@@ -318,8 +333,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         unimplemented(); return null;
     }
 
-    @Override
-    public Variable newVariable(ValueKind<?> lirKind) {
+    public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
         PlatformKind pk = lirKind.getPlatformKind();
         ValueKind<?> actualLIRKind = lirKind;
         PTXKind kind = PTXKind.ILLEGAL;
@@ -333,11 +347,20 @@ public class PTXLIRGenerator extends LIRGenerator {
         trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
-        int indexForType = res.insertVariableAndGetIndex(var);
+        int indexForType = res.insertVariableAndGetIndex(var, isArray);
 
-        var.setName(kind.getRegisterTypeString() + indexForType);
+        if (isArray) {
+            var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);
+        } else {
+            var.setName(kind.getRegisterTypeString() + indexForType);
+        }
 
         return var;
+    }
+
+    @Override
+    public Variable newVariable(ValueKind<?> lirKind) {
+        return newVariable(lirKind, false);
     }
 
     public PTXGenTool getPTXGenTool() {
@@ -361,8 +384,8 @@ public class PTXLIRGenerator extends LIRGenerator {
         ));
     }
 
-    public void emitConditionalBranch(LabelRef ref, Variable predicate, boolean isNegated) {
-        append(new PTXLIRStmt.ConditionalStatement(new PTXControlFlow.Branch(ref), predicate, isNegated));
+    public void emitConditionalBranch(LabelRef ref, Variable predicate, boolean isNegated, boolean isLoopEdgeBack) {
+        append(new PTXLIRStmt.ConditionalStatement(new PTXControlFlow.Branch(ref, true, isLoopEdgeBack), predicate, isNegated));
     }
 
     public Variable getParameterAllocation(PTXArchitecture.PTXParam param) {

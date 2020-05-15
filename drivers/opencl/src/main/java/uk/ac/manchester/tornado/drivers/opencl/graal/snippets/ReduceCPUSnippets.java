@@ -43,8 +43,8 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
@@ -323,9 +323,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddIntSnippetGlobal : partialReduceAddIntSnippetGlobal2;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulIntSnippetGlobal : partialReduceMulIntSnippetGlobal2;
             } else if (value instanceof OCLIntBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeInteger((OCLIntBinaryIntrinsicNode) value);
@@ -338,9 +338,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferLongSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddLongSnippetGlobal : partialReduceAddLongSnippetGlobal2;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulLongSnippetGlobal : partialReduceMulLongSnippetGlobal2;
             } else if (value instanceof OCLIntBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeLong((OCLIntBinaryIntrinsicNode) value);
@@ -364,9 +364,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulFloatSnippetGlobal : partialReduceMulFloatSnippetGlobal2;
             } else if (value instanceof OCLFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNode((OCLFPBinaryIntrinsicNode) value);
@@ -390,9 +390,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulDoubleSnippetGlobal : partialReduceMulDoubleSnippetGlobal2;
             } else if (value instanceof OCLFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeDouble((OCLFPBinaryIntrinsicNode) value);

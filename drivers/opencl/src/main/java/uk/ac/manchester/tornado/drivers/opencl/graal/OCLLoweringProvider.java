@@ -107,9 +107,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNod
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
@@ -306,11 +306,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode accumulator = storeIndexed.getAccumulator();
 
         ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
-        if (value instanceof OCLReduceAddNode) {
+        if (value instanceof TornadoReduceAddNode) {
             operation = ATOMIC_OPERATION.ADD;
-        } else if (value instanceof OCLReduceSubNode) {
+        } else if (value instanceof TornadoReduceSubNode) {
             operation = ATOMIC_OPERATION.SUB;
-        } else if (value instanceof OCLReduceMulNode) {
+        } else if (value instanceof TornadoReduceMulNode) {
             operation = ATOMIC_OPERATION.MUL;
         }
 

@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
 import jdk.vm.ci.code.CallingConvention;
+import org.graalvm.collections.Pair;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
@@ -19,7 +20,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 
 public class PTXLIRGenerationResult extends LIRGenerationResult {
 
-    private final Map<PTXKind, Set<Variable>> variableTable;
+    private final Map<PTXKind, Set<Pair<Variable, Boolean>>> variableTable;
     private Map<String, Variable> paramAllocations;
 
     public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder,
@@ -30,15 +31,15 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         variableTable = new HashMap<>();
     }
 
-    public int insertVariableAndGetIndex(Variable var) {
+    public int insertVariableAndGetIndex(Variable var, boolean isArray) {
         guarantee(var.getPlatformKind() instanceof PTXKind, "invalid variable kind: %s", var.getValueKind());
         PTXKind kind = (PTXKind) var.getPlatformKind();
 
-        variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(var);
+        variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(Pair.create(var, isArray));
         return variableTable.get(kind).size() - 1;
     }
 
-    public Map<PTXKind, Set<Variable>> getVariableTable() {
+    public Map<PTXKind, Set<Pair<Variable, Boolean>>> getVariableTable() {
         return variableTable;
     }
 

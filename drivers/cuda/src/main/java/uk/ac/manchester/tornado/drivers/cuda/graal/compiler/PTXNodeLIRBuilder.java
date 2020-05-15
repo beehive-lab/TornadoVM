@@ -230,22 +230,21 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
-        // Get first IfNode after loop begin to get the loop exit condition
-        IfNode ifNode = null;
-        Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
-        while (nodesIterator.hasNext() && ifNode == null) {
-            FixedNode fNode = nodesIterator.next();
-            if (fNode instanceof IfNode) ifNode = (IfNode) fNode;
-        }
+        getGen().emitJump(getLIRBlock(begin), true);
 
-        if (ifNode == null) shouldNotReachHere("Could not find condition");
-        final Variable predicate = emitLogicNode(ifNode.condition());
-        Block loopStart = ((ControlFlowGraph) gen.getResult().getLIR().getControlFlowGraph()).blockFor(begin);
-        getGen().emitConditionalBranch(
-                LabelRef.forSuccessor(gen.getResult().getLIR(), loopStart, 0),
-                predicate,
-                false
-        );
+        //TODO get the first loop block and jump to it. At the moment with the commented code we make the loop condition check twice
+//        // Get first IfNode after loop begin to get the loop exit condition
+//        IfNode ifNode = null;
+//        Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
+//        while (nodesIterator.hasNext() && ifNode == null) {
+//            FixedNode fNode = nodesIterator.next();
+//            if (fNode instanceof IfNode) ifNode = (IfNode) fNode;
+//        }
+//
+//        if (ifNode == null) shouldNotReachHere("Could not find condition");
+//        final Variable predicate = emitLogicNode(ifNode.condition());
+//        boolean isNegated = ifNode.trueSuccessor() instanceof LoopExitNode;
+//        getGen().emitConditionalBranch(getLIRBlock(begin), predicate, isNegated, true);
     }
 
     @Override
@@ -290,16 +289,18 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
-        final boolean invertedLoop = isLoop && x.trueSuccessor() instanceof LoopExitNode;
+        final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
+
+        if (isLoop) {
+            append(new PTXControlFlow.LoopLabel(gen.getCurrentBlock().getId()));
+        }
 
         final Variable predicate = emitLogicNode(x.condition());
 
         if (isLoop) {
-            // Branch away if already
-            getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, !invertedLoop);
-
+            getGen().emitConditionalBranch(isNegated ? getLIRBlock(x.trueSuccessor()) : getLIRBlock(x.falseSuccessor()), predicate, !isNegated, false);
         } else {
-            getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, true);
+            getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, true, false);
         }
     }
 
@@ -395,7 +396,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitSwitchBreak(AbstractEndNode end) {
-        append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false));
+        append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false, false));
     }
 
     private void emitElseBranch(IfNode dominator, BeginNode beginNode, AbstractEndNode node) {
@@ -403,10 +404,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         boolean hasElse = dominator.falseSuccessor() instanceof BeginNode;
 
         if (isElse && hasElse) {
-            append(new PTXControlFlow.Branch(
-                    LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0),
-                    false
-            ));
+            append(new PTXControlFlow.Branch(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
 

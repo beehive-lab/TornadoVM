@@ -9,7 +9,9 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
+import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -54,9 +56,8 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
         setMemoryAccess(gen, baseValue, indexValue, tool);
     }
 
-    private boolean isLocalMemoryAccess() {
-        return false;
-        //return this.memoryRegister.name.equals(PTXAssemblerConstants.LOCAL_REGION_NAME);
+    private boolean isLocalOrSharedMemoryAccess() {
+        return memoryRegister.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || memoryRegister.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
     }
 
     @Override
@@ -76,9 +77,8 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
 
     private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, PTXLIRGenerator tool) {
         Variable addressValue;
-        if (isLocalMemoryAccess()) {
-            unimplemented("Local memory access is not implemented yet in CUDA-PTX");
-            //gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, baseValue, indexValue, null));
+        if (isLocalOrSharedMemoryAccess()) {
+            gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, baseValue, indexValue));
         } else {
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
             gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, addressValue, null));

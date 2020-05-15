@@ -22,10 +22,10 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModu
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAModule
  * Method:    calcMaximalBlockSize
- * Signature: (I)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModule_calcMaximalBlockSize
-  (JNIEnv *, jclass, jint, jbyteArray, jstring);
+  (JNIEnv *, jclass, jbyteArray, jstring);
 
 #ifdef __cplusplus
 }

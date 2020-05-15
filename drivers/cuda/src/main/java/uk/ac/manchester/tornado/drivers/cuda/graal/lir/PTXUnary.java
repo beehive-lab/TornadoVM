@@ -8,6 +8,7 @@ import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
 import static org.graalvm.compiler.lir.LIRInstruction.Use;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.paramSpace;
@@ -91,7 +92,7 @@ public class PTXUnary {
     public static class MemoryAccess extends UnaryConsumer {
 
         private final PTXMemoryBase base;
-        private ConstantValue index;
+        private Value index;
         private String name;
         private Variable assignedTo;
 
@@ -100,10 +101,9 @@ public class PTXUnary {
             this.base = base;
         }
 
-        MemoryAccess(PTXMemoryBase base, Value value, ConstantValue index) {
+        MemoryAccess(PTXMemoryBase base, Value value, Value index) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
-
             this.index = index;
         }
 
@@ -113,20 +113,26 @@ public class PTXUnary {
             this.name = name;
         }
 
-        private boolean shouldEmitRelativeAddress() {
-            return false;
-            //return needsBase || (!(base.memorySpace == PTXMemorySpace.LOCAL) && OPENCL_USE_RELATIVE_ADDRESSES);
+        private boolean isLocalOrSharedMemoryAccess() {
+            return base.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
         }
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-            if (name != null) asm.emit(name);
-            if (value != null) asm.emitValue(value);
-            if (index != null && index.getJavaConstant().asInt() != 0) {
-                asm.emitConstant(index);
+            if (isLocalOrSharedMemoryAccess()) {
+                if (value != null) asm.emitValue(value);
+                asm.emitSymbol(SQUARE_BRACKETS_OPEN);
+                if (index != null) asm.emitValue(index);
+                asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
+            } else {
+                asm.emitSymbol(SQUARE_BRACKETS_OPEN);
+                if (name != null) asm.emit(name);
+                if (value != null) asm.emitValue(value);
+                if (index != null && ((ConstantValue) index).getJavaConstant().asInt() != 0) {
+                    asm.emitConstant((ConstantValue) index);
+                }
+                asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             }
-            asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
         }
 
         public PTXMemoryBase getBase() {

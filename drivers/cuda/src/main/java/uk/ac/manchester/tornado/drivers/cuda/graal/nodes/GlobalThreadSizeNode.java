@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -14,10 +15,13 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBinary;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXBuiltInRegisterArray;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp.MUL;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp.MUL_LO;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp.MUL_WIDE;
 
 @NodeInfo
 public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
@@ -35,16 +39,21 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        LIRKind kind = tool.getLIRKind(stamp);
-        Variable result = tool.newVariable(kind);
+//        LIRKind kind = tool.getLIRKind(stamp);
+//        LIRKind kind = LIRKind.value(PTXKind.U32);
+        Variable result = tool.newVariable(LIRKind.value(PTXKind.U64));
         PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;
 
         PTXBuiltInRegisterArray builtIns = new PTXBuiltInRegisterArray(((ConstantValue)gen.operand(index)).getJavaConstant().asInt());
         Variable gridDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.gridDim);
         Variable blockDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockDim);
 
-        tool.append(new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(MUL_LO, kind, gridDim, blockDim)));
-        gen.setResult(this, result);
+
+        Value var = tool.append(new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(MUL_WIDE, LIRKind.value(PTXKind.U32), gridDim, blockDim))).getResult();
+
+        Variable actualResult = tool.newVariable(LIRKind.value(PTXKind.S32));
+        tool.append(new PTXLIRStmt.AssignStmt(actualResult, var));
+        gen.setResult(this, actualResult);
     }
 
 }

@@ -18,19 +18,33 @@ public class PTXControlFlow {
         asm.emitBlock(labelRef.label().getBlockId());
     }
 
+    public static class LoopLabel extends AbstractInstruction {
+        public static final LIRInstructionClass<LoopLabel> TYPE = LIRInstructionClass.create(LoopLabel.class);
+
+        private final int blockId;
+
+        public LoopLabel(int blockId) {
+            super(TYPE);
+            this.blockId = blockId;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitLoopLabel(blockId);
+        }
+    }
+
     public static class Branch extends AbstractInstruction {
         public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
         private final LabelRef destination;
         private final boolean isConditional;
+        private final boolean isLoopEdgeBack;
 
-        public Branch(LabelRef destination) {
-            this(destination, true);
-        }
-
-        public Branch(LabelRef destination, boolean isConditional) {
+        public Branch(LabelRef destination, boolean isConditional, boolean isLoopEdgeBack) {
             super(TYPE);
             this.destination = destination;
             this.isConditional = isConditional;
+            this.isLoopEdgeBack = isLoopEdgeBack;
         }
 
         @Override
@@ -40,7 +54,8 @@ public class PTXControlFlow {
             if (!isConditional) asm.emit(".uni");
             asm.emitSymbol(TAB);
 
-            emitBlockRef(destination, asm);
+            if (isLoopEdgeBack) asm.emitLoop(destination.label().getBlockId());
+            else emitBlockRef(destination, asm);
             asm.delimiter();
             asm.eol();
         }

@@ -36,11 +36,11 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo(shortName = "REDUCE(*)", cycles = CYCLES_2)
-public class OCLReduceMulNode extends MulNode {
+public class TornadoReduceMulNode extends MulNode {
 
-    public static final NodeClass<OCLReduceMulNode> TYPE = NodeClass.create(OCLReduceMulNode.class);
+    public static final NodeClass<TornadoReduceMulNode> TYPE = NodeClass.create(TornadoReduceMulNode.class);
 
-    public OCLReduceMulNode(ValueNode x, ValueNode y) {
+    public TornadoReduceMulNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y);
     }
 
