@@ -133,9 +133,13 @@ public class CUDADeviceContext
     }
 
     public int enqueueKernelLaunch(CUDAModule module, CallStack stack, long batchThreads) {
-        scheduler.calculateGlobalWork(module.metaData, batchThreads);
-        int [] blocks = scheduler.calculateBlocks(module);
-        int [] grids = scheduler.calculateGrids(module, blocks);
+        int[] blocks = {1, 1, 1};
+        int[] grids = {1, 1, 1};
+        if (module.metaData.isParallel()) {
+            scheduler.calculateGlobalWork(module.metaData, batchThreads);
+            blocks = scheduler.calculateBlocks(module);
+            grids = scheduler.calculateGrids(module, blocks);
+        }
         return stream.enqueueKernelLaunch(
                 module,
                 getKernelParams((CUDACallStack) stack),
