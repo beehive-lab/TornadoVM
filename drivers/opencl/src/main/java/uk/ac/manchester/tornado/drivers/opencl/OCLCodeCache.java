@@ -145,7 +145,7 @@ public class OCLCodeCache {
             fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
             bufferedReader = new BufferedReader(fileReader);
             String line;
-            while ((line=bufferedReader.readLine()) != null) {
+            while ((line = bufferedReader.readLine()) != null) {
                 switch (line.split("=")[0]) {
                     case "DEVICE_NAME":
                         fpgaName = line.split("=")[1];
@@ -167,7 +167,6 @@ public class OCLCodeCache {
             System.exit(1);
         }
     }
-
 
     private void processPrecompiledBinaries() {
         String[] binaries = OPENCL_BINARIES.toString().split(",");
@@ -409,7 +408,7 @@ public class OCLCodeCache {
 
             String vendor = getDeviceVendor();
 
-            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor };
+            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir };
             Path path = Paths.get(fpgaBinLocation);
             addNewEntryInBitstreamHashMap(id, fpgaBinLocation);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
