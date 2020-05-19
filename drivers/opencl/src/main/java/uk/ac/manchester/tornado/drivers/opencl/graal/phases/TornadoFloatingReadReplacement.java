@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -65,11 +65,14 @@ import org.graalvm.compiler.nodes.memory.MemoryMapNode;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
+
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 
 public class TornadoFloatingReadReplacement extends Phase {
     private boolean createFloatingReads;
@@ -377,7 +380,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         private static void processFloatable(FloatableAccessNode accessNode, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
-            if (accessNode.canFloat()) {
+            if (accessNode.canFloat() && !notPrivateRead(accessNode)) {
                 assert accessNode.getNullCheck() == false;
                 MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
@@ -386,6 +389,20 @@ public class TornadoFloatingReadReplacement extends Phase {
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
             }
+        }
+
+        private static boolean notPrivateRead(FloatableAccessNode accessNode) {
+            boolean isPrivateRead = false;
+            System.out.println(accessNode.toString() + " . . . ");
+            for (Node node : accessNode.inputs().snapshot()) {
+                if (node instanceof OffsetAddressNode) {
+                    System.out.println(node.inputs().first().toString());
+                    if (node.inputs().filter(FixedArrayNode.class).isNotEmpty()) {
+                        isPrivateRead = true;
+                    }
+                }
+            }
+            return isPrivateRead;
         }
 
         @Override
