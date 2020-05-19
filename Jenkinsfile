@@ -30,7 +30,9 @@ pipeline {
         stage('Unit Tests') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
-               		sh 'make tests'
+               		sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:1"'
+               		sh 'tornado-test.py -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+               		sh 'test-native.sh'
             	}
 			}
         }
