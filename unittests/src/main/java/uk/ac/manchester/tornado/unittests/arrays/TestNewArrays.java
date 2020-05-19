@@ -45,7 +45,6 @@ public class TestNewArrays extends TornadoTestBase {
             a[i] = 1;
         }
         a[0] = a[0] + testArray[0];
-        a[125] = a[125] + testArray[1];
     }
 
     @Test
@@ -135,7 +134,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.task("t0", TestNewArrays::initializeToOneParallelScope, data);
-        s0.streamOut(data).warmup();
+        s0.streamOut(data);
         s0.execute();
 
         initializeToOneParallelScope(dataSeq);
@@ -172,7 +171,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
-        s0.streamOut(data).warmup();
+        s0.streamOut(data);
         s0.execute();
 
         initializeToOneParallelScopeComplex(dataSeq);
