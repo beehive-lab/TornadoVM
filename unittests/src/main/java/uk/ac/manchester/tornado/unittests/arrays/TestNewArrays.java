@@ -24,30 +24,40 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestNewArrays extends TornadoTestBase {
 
-    public static void initializeToOneParallel(int[] a) {
-        int[] testArray = new int[128];
+    public static void initializeToOneParallel(float[] a) {
+        float[] testArray = new float[16];
         for (@Parallel int i = 0; i < a.length; i++) {
+            if (i == 0) {
+                testArray[0] = 2;
+            } else if (i == 125) {
+                testArray[1] = 3;
+            }
             a[i] = 1;
-            testArray[i] = 2;
         }
-        a[0] = a[0] + testArray[a.length];
-        a[a.length] = a[a.length] + testArray[0];
+        a[0] = a[0] + testArray[0];
+        a[125] = a[125] + testArray[1];
     }
 
     @Test
-    public void testInitArrayParallel() {
+    public void testInitNewArrayParallel() {
         final int N = 128;
-        int[] data = new int[N];
+        float[] data = new float[N];
+        float[] dataSeq = new float[N];
+
+        IntStream.range(0, N).parallel().forEach(i -> {
+            data[i] = (int) Math.random();
+            dataSeq[i] = data[i];
+        });
 
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
@@ -56,8 +66,10 @@ public class TestNewArrays extends TornadoTestBase {
         s0.streamOut(data);
         s0.execute();
 
+        initializeToOneParallel(dataSeq);
+
         for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
+            assertEquals(dataSeq[i], data[i], 0.1);
         }
     }
 
@@ -67,14 +79,20 @@ public class TestNewArrays extends TornadoTestBase {
             a[i] = 1;
             testArray[i] = 2;
         }
-        a[0] = a[0] + testArray[a.length];
-        a[a.length] = a[a.length] + testArray[0];
+        a[0] = a[0] + testArray[0];
+        a[125] = a[125] + testArray[0];
     }
 
     @Test
-    public void testInitArrayNotParallel() {
+    public void testInitNewArrayNotParallel() {
         final int N = 128;
         int[] data = new int[N];
+        int[] dataSeq = new int[N];
+
+        IntStream.range(0, N).parallel().forEach(i -> {
+            data[i] = (int) Math.random();
+            dataSeq[i] = data[i];
+        });
 
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
@@ -83,25 +101,35 @@ public class TestNewArrays extends TornadoTestBase {
         s0.streamOut(data);
         s0.execute();
 
+        initializeToOne(dataSeq);
+
         for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
+            assertEquals(dataSeq[i], data[i], 0.1);
         }
     }
 
-    public static void initializeToOneParallelScope(int[] a) {
+    public static void initializeToOneParallelScope(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            int[] testArray = new int[128];
-            testArray[i] = 2;
-            for (int y = 0; y < a.length; y++) {
-                a[i] = a[i] + testArray[i];
+            float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
+            for (int j = 0; j < 256; j++) {
+                if (j % 2 == 0) {
+                    acc[2] = j;
+                }
             }
+            a[i] = acc[2];
         }
     }
 
-    @Ignore
-    public void testInitArrayInsideParallel() {
-        final int N = 128;
-        int[] data = new int[N];
+    @Test
+    public void testInitNewArrayInsideParallel() {
+        final int N = 256;
+        float[] data = new float[N];
+        float[] dataSeq = new float[N];
+
+        IntStream.range(0, N).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            dataSeq[i] = data[i];
+        });
 
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
@@ -110,8 +138,47 @@ public class TestNewArrays extends TornadoTestBase {
         s0.streamOut(data).warmup();
         s0.execute();
 
+        initializeToOneParallelScope(dataSeq);
+
         for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
+            assertEquals(dataSeq[i], data[i], 0.1);
+        }
+    }
+
+    public static void initializeToOneParallelScopeComplex(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
+            for (int j = 0; j < 256; j++) {
+                if (j % 2 == 0) {
+                    acc[2] = j;
+                }
+            }
+            a[i] = acc[2] + a[i];
+        }
+    }
+
+    @Test
+    public void testInitNewArrayInsideParallelWithComplexAccesses() {
+        final int N = 256;
+        float[] data = new float[N];
+        float[] dataSeq = new float[N];
+
+        IntStream.range(0, N).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            dataSeq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        assertNotNull(s0);
+
+        s0.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
+        s0.streamOut(data).warmup();
+        s0.execute();
+
+        initializeToOneParallelScopeComplex(dataSeq);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(dataSeq[i], data[i], 0.1);
         }
     }
 
@@ -125,8 +192,8 @@ public class TestNewArrays extends TornadoTestBase {
         result[0] = result[0] + testFloatSum[testFloatSum.length];
     }
 
-    @Ignore
-    public void testInitArrayWithReductions() {
+    @TornadoNotSupported
+    public void testIniNewtArrayWithReductions() {
         float[] input = new float[8192];
         float[] result = new float[1];
         final int neutral = 0;
