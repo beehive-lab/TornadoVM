@@ -73,6 +73,7 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
 
 public class TornadoFloatingReadReplacement extends Phase {
     private boolean createFloatingReads;
@@ -380,7 +381,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         private static void processFloatable(FloatableAccessNode accessNode, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
-            if (accessNode.canFloat() && !notPrivateRead(accessNode)) {
+            if (accessNode.canFloat() && shouldBeFloatingRead(accessNode)) {
                 assert accessNode.getNullCheck() == false;
                 MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
@@ -391,18 +392,19 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
 
-        private static boolean notPrivateRead(FloatableAccessNode accessNode) {
-            boolean isPrivateRead = false;
-            System.out.println(accessNode.toString() + " . . . ");
+        private static boolean shouldBeFloatingRead(FloatableAccessNode accessNode) {
+            boolean shouldReadFloat = true;
+            boolean isVectorLoad = accessNode.usages().filter(VectorLoadElementNode.class).isNotEmpty();
+            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(FixedArrayNode.class).isNotEmpty();
+
             for (Node node : accessNode.inputs().snapshot()) {
                 if (node instanceof OffsetAddressNode) {
-                    System.out.println(node.inputs().first().toString());
-                    if (node.inputs().filter(FixedArrayNode.class).isNotEmpty()) {
-                        isPrivateRead = true;
+                    if (node.inputs().filter(FixedArrayNode.class).isNotEmpty() || hasPrivateArrays && !isVectorLoad) {
+                        shouldReadFloat = false;
                     }
                 }
             }
-            return isPrivateRead;
+            return shouldReadFloat;
         }
 
         @Override
