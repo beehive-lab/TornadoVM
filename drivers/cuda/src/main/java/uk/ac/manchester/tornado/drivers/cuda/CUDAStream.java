@@ -1,6 +1,8 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAEvent.EventDescription;
+import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -11,6 +13,9 @@ import java.util.Map;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 
 public class CUDAStream extends TornadoLogger {
+
+    protected static final Event EMPTY_EVENT = new EmptyEvent();
+
     private final byte[] streamWrapper;
     private Map<Integer, CUDAEvent> recordedEvents;
     private int eventCount;
@@ -21,45 +26,45 @@ public class CUDAStream extends TornadoLogger {
         eventCount = 0;
     }
 
-    private native static byte[] writeArrayDtoH(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayDtoH(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayDtoH(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayDtoH(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayDtoH(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayDtoH(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayDtoH(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoH(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static int writeArrayDtoHAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
-    private native static int writeArrayDtoHAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
-    private native static int writeArrayDtoHAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
-    private native static int writeArrayDtoHAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
-    private native static int writeArrayDtoHAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
-    private native static int writeArrayDtoHAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
-    private native static int writeArrayDtoHAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayDtoHAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static void writeArrayHtoD(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
-    private native static void writeArrayHtoD(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
-    private native static void writeArrayHtoD(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
-    private native static void writeArrayHtoD(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
-    private native static void writeArrayHtoD(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
-    private native static void writeArrayHtoD(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
-    private native static void writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
-    private native static byte[] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private native static byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
+    private native static byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
 
     private native static byte[] cuCreateStream();
     private native static void cuDestroyStream(byte[] streamWrapper);
     private native static void cuStreamSynchronize(byte[] streamWrapper);
 
-    private native static byte[] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
+    private native static byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
     private int recordEvent(EventDescription description) {
         CUDAEvent event = new CUDAEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamWrapper), description);
@@ -68,7 +73,7 @@ public class CUDAStream extends TornadoLogger {
         return eventCount - 1;
     }
 
-    private int record(byte[] eventWrapper, EventDescription description) {
+    private int record(byte[][] eventWrapper, EventDescription description) {
         CUDAEvent event = new CUDAEvent(eventWrapper, description);
         recordedEvents.put(eventCount, event);
         eventCount++;
@@ -90,7 +95,10 @@ public class CUDAStream extends TornadoLogger {
         cuDestroyStream(streamWrapper);
     }
 
-    public CUDAEvent resolveEvent(int event) {
+    public Event resolveEvent(int event) {
+        if (event == -1) {
+            return EMPTY_EVENT;
+        }
         return recordedEvents.get(event);
     }
 
@@ -188,80 +196,73 @@ public class CUDAStream extends TornadoLogger {
 
     public int enqueueAsyncRead(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_BYTE);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_BYTE);
     }
 
     public int enqueueAsyncRead(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_SHORT);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_SHORT);
     }
 
     public int enqueueAsyncRead(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_CHAR);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_CHAR);
     }
 
     public int enqueueAsyncRead(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_INT);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_INT);
     }
 
     public int enqueueAsyncRead(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_LONG);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_LONG);
     }
 
     public int enqueueAsyncRead(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_FLOAT);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_FLOAT);
     }
 
     public int enqueueAsyncRead(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper);
-        return recordEvent(EventDescription.MEMCPY_D_TO_H_DOUBLE);
+        return record(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_DOUBLE);
     }
 
 
     public void enqueueWrite(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_BYTE);
     }
 
     public void enqueueWrite(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_SHORT);
     }
 
     public void enqueueWrite(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_CHAR);
     }
 
     public void enqueueWrite(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_INT);
     }
 
     public void enqueueWrite(long address, long length, long[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_LONG);
     }
 
     public void enqueueWrite(long address, long length, float[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_FLOAT);
     }
 
     public void enqueueWrite(long address, long length, double[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        writeArrayHtoD(address, length, array, hostOffset, streamWrapper);
+        record(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), EventDescription.MEMCPY_D_TO_H_DOUBLE);
     }
 
 

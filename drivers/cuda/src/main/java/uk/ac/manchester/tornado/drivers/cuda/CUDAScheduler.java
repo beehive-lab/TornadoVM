@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.Arrays;
@@ -89,6 +92,4 @@ public class CUDAScheduler {
 
         return defaultGrids;
     }
-
-
 }

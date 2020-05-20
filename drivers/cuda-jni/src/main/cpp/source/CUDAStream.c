@@ -197,7 +197,7 @@ COPY_ARRAY_H_TO_D(D, jdouble, Double)
  * Method:    cuLaunchKernel
  * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)I
  */
-JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel(
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel(
         JNIEnv *env,
         jclass clazz,
         jbyteArray module,
@@ -229,6 +229,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStre
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
+    INSERT_EVENT(before_event)
     result = cuLaunchKernel(kernel,
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
             (unsigned int) blockDimX, (unsigned int) blockDimY, (unsigned int) blockDimZ,
@@ -239,21 +240,11 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStre
     if (result != 0) {
         printf("Failed to launch kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
     }
+    INSERT_EVENT(after_event)
 
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
-    CUevent event;
-    result = cuEventCreate(&event, CU_EVENT_DEFAULT);
-    if (result != 0) {
-        printf("Failed to create event! (%d)\n", result); fflush(stdout);
-    }
-
-    result = cuEventRecord(event, stream);
-    if (result != 0) {
-        printf("Failed to record event! (%d)\n", result); fflush(stdout);
-    }
-
-    return array_from_event(env, &event);
+    return wrapper_from_events(env, &before_event, &after_event);
 }
 
 /*
@@ -318,23 +309,16 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuS
  * Method:    cuEventCreateAndRecord
  * Signature: (Z[B)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuEventCreateAndRecord
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuEventCreateAndRecord
   (JNIEnv *env, jclass clazz, jboolean is_timing, jbyteArray stream_wrapper) {
     unsigned int flags = CU_EVENT_DEFAULT;
     if (!is_timing) flags |= CU_EVENT_DISABLE_TIMING;
 
-    CUevent event;
-    CUresult result = cuEventCreate(&event, flags);
-    if (result != 0) {
-        printf("Failed to create event! (%d)\n", result); fflush(stdout);
-    }
-
+    CUresult result;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
-    result = cuEventRecord(event, stream);
-    if (result != 0) {
-        printf("Failed to record event! (%d)\n", result); fflush(stdout);
-    }
+    INSERT_EVENT(before_event)
+    INSERT_EVENT(after_event)
 
-    return array_from_event(env, &event);
+    return wrapper_from_events(env, &before_event, &after_event);
 }

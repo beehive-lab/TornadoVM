@@ -8,8 +8,22 @@
 extern "C" {
 #endif
 
+#define INSERT_EVENT(eventName) \
+    CUevent eventName; \
+    result = cuEventCreate(&eventName, CU_EVENT_DEFAULT); \
+    if (result != 0) { \
+        printf("Failed to create event! (%d)\n", result); fflush(stdout); \
+    } \
+ \
+    result = cuEventRecord(eventName, stream); \
+    if (result != 0) { \
+        printf("Failed to record event! (%d)\n", result); fflush(stdout); \
+    }
+
 
 jbyteArray array_from_event(JNIEnv *env, CUevent *event);
+
+jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent
@@ -26,6 +40,14 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEv
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventSynchronize
   (JNIEnv *, jclass, jobjectArray);
+
+ /*
+  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent
+  * Method:    cuEventElapsedTime
+  * Signature: ([B)V
+  */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventElapsedTime
+ (JNIEnv *env, jclass clazz, jobjectArray wrapper);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent

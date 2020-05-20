@@ -13,10 +13,13 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.cuda.CUDA;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
@@ -71,6 +74,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
         if (!(task instanceof CompilableTask)) TornadoInternalError.unimplemented("Non compilable tasks are not yet implemented in the CUDA driver");
 
+        TornadoProfiler profiler = task.getProfiler();
         final CUDADeviceContext deviceContext = getDeviceContext();
 
         final CompilableTask executable = (CompilableTask) task;
@@ -87,13 +91,20 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         PTXCompilationResult result;
         if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod, executable))) {
             PTXProviders providers = (PTXProviders) getBackend().getProviders();
+            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
         }
         else {
             result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
         }
 
-        return deviceContext.installCode(result, resolvedMethod.getName());
+        profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+        TornadoInstalledCode installedCode = deviceContext.installCode(result, resolvedMethod.getName());
+        profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+        profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+        return installedCode;
     }
 
     @Override

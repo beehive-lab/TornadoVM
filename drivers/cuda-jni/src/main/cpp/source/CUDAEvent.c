@@ -9,6 +9,16 @@ jbyteArray array_from_event(JNIEnv *env, CUevent *event) {
     return array;
 }
 
+jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2) {
+    jbyteArray array1 = array_from_event(env, event1);
+    jbyteArray array2 = array_from_event(env, event2);
+    jclass byteClass = (*env)->FindClass(env, "[B");
+    jobjectArray wrapper_2d_array = (*env)->NewObjectArray(env, (jsize) 2, byteClass, NULL);
+    (*env)->SetObjectArrayElement(env, wrapper_2d_array, (jsize) 0, array1);
+    (*env)->SetObjectArrayElement(env, wrapper_2d_array, (jsize) 1, array2);
+    return wrapper_2d_array;
+}
+
 void event_from_array(JNIEnv *env, CUevent *event, jbyteArray array) {
     (*env)->GetByteArrayRegion(env, array, 0, sizeof(CUevent), (void *) event);
 }
@@ -44,6 +54,26 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEv
 
         (*env)->DeleteLocalRef(env, array);
     }
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAEvent
+ * Method:    cuEventElapsedTime
+ * Signature: ([B)V
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuEventElapsedTime
+  (JNIEnv *env, jclass clazz, jobjectArray wrapper) {
+    jbyteArray array1 = (jbyteArray) (*env)->GetObjectArrayElement(env, wrapper, (jsize) 0);
+    jbyteArray array2 = (jbyteArray) (*env)->GetObjectArrayElement(env, wrapper, (jsize) 1);
+
+    CUevent before_event, after_event;
+    event_from_array(env, &before_event, array1);
+    event_from_array(env, &after_event, array2);
+
+    float time;
+    cuEventElapsedTime(&time, before_event, after_event);
+    // cuEventElapsedTime returns the time in milliseconds.  We convert because the tornado profiler uses nanoseconds.
+    return (jlong) (time * 1e+6);
 }
 
 /*

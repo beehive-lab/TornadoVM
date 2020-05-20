@@ -292,6 +292,10 @@ public class RuntimeUtilities {
         return duration * 1e-9;
     }
 
+    public static double elapsedTimeInSeconds(long duration) {
+        return duration * 1e-9;
+    }
+
     public static double elapsedTimeInMilliSeconds(long start, long end) {
         return BigDecimal.valueOf((end - start) * 1e-6).setScale(5, RoundingMode.HALF_UP).doubleValue();
     }

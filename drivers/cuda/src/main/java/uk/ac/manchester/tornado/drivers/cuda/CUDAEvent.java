@@ -2,17 +2,21 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class CUDAEvent extends TornadoLogger implements Event {
 
-    private final byte[] eventWrapper;
+    // eventWrapper[0] contains the before_event
+    // eventWrapper[1] contians the after_event
+    private final byte[][] eventWrapper;
+
     private boolean isCompleted;
     private final EventDescription description;
 
-    public CUDAEvent(byte[] bytes, EventDescription description) {
+    public CUDAEvent(byte[][] bytes, EventDescription description) {
         eventWrapper = bytes;
         this.description = description;
         isCompleted = false;
@@ -21,11 +25,12 @@ public class CUDAEvent extends TornadoLogger implements Event {
     private native static void cuEventDestroy(byte[] eventWrapper);
     private native static void cuEventSynchronize(byte[][] wrappers);
     private native static boolean cuEventQuery(byte[] eventWrapper);
+    private native static long cuEventElapsedTime(byte[][] wrappers);
 
     public static void waitForEventArray(CUDAEvent[] events) {
         byte[][] wrappers = new byte[events.length][];
         for (int i = 0; i < events.length; i++) {
-            wrappers[i] = events[i].eventWrapper;
+            wrappers[i] = events[i].eventWrapper[1];
         }
 
         cuEventSynchronize(wrappers);
@@ -43,45 +48,39 @@ public class CUDAEvent extends TornadoLogger implements Event {
 
     @Override
     public long getSubmitTime() {
-        unimplemented();
-        return 0;
+        return -1;
     }
 
     @Override
     public long getStartTime() {
-        unimplemented();
-        return 0;
+        return -1;
     }
 
     @Override
     public long getEndTime() {
-        unimplemented();
-        return 0;
+        return -1;
     }
 
     @Override
     public long getExecutionTime() {
-        unimplemented();
-        return 0;
+        return cuEventElapsedTime(eventWrapper);
     }
 
     @Override
     public double getExecutionTimeInSeconds() {
-        unimplemented();
-        return 0;
+        return RuntimeUtilities.elapsedTimeInSeconds(cuEventElapsedTime(eventWrapper));
     }
 
     @Override
     public TornadoExecutionStatus getStatus() {
-        if (!isCompleted) isCompleted = cuEventQuery(eventWrapper);
+        if (!isCompleted) isCompleted = cuEventQuery(eventWrapper[1]);
 
         return isCompleted ? TornadoExecutionStatus.COMPLETE : TornadoExecutionStatus.QUEUED;
     }
 
     @Override
     public double getTotalTimeInSeconds() {
-        unimplemented();
-        return 0;
+        return getExecutionTimeInSeconds();
     }
 
     @Override
@@ -90,7 +89,8 @@ public class CUDAEvent extends TornadoLogger implements Event {
     }
 
     public void destroy() {
-        cuEventDestroy(eventWrapper);
+        cuEventDestroy(eventWrapper[0]);
+        cuEventDestroy(eventWrapper[1]);
     }
 
     public enum EventDescription {
