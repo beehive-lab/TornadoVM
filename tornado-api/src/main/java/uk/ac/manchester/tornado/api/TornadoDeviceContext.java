@@ -53,4 +53,8 @@ public interface TornadoDeviceContext {
 
     void setResetToFalse();
 
+    boolean isPlatformFPGA();
+
+    boolean useRelativeAddresses();
+
 }
