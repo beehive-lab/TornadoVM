@@ -72,8 +72,9 @@ public class OCLMidTier extends TornadoMidTier {
         }
 
         if (OptReadElimination.getValue(options)) {
-            appendPhase(new EarlyReadEliminationPhase(canonicalizer));
+            // appendPhase(new EarlyReadEliminationPhase(canonicalizer));
         }
+
         appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
@@ -90,6 +91,7 @@ public class OCLMidTier extends TornadoMidTier {
         if (TornadoOptions.PARTIAL_UNROLL()) {
             appendPhase(new TornadoPartialLoopUnroll());
         }
+
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 
         appendPhase(new FrameStateAssignmentPhase());
