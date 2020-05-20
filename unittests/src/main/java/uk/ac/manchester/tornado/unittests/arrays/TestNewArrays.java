@@ -193,7 +193,7 @@ public class TestNewArrays extends TornadoTestBase {
 
     @TornadoNotSupported
     public void testIniNewtArrayWithReductions() {
-        float[] input = new float[8192];
+        float[] input = new float[1024];
         float[] result = new float[1];
         final int neutral = 0;
         Arrays.fill(result, neutral);
