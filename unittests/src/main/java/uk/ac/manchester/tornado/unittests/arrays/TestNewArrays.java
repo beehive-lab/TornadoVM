@@ -39,7 +39,7 @@ public class TestNewArrays extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             if (i == 0) {
                 testArray[0] = 2;
-            } else if (i == 125) {
+            } else if (i == 5) {
                 testArray[1] = 3;
             }
             a[i] = 1;
