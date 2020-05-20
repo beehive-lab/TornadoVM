@@ -323,7 +323,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public boolean isFullJITMode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA);
+        return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
     }
 
     @Override
@@ -335,13 +335,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private boolean isJITTaskForFGPA(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA;
+        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
     }
 
     private boolean isJITTaskForGPUsAndCPUs(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA;
+        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
     }
 
     private TornadoInstalledCode compileJavaForFPGAs(SchedulableTask task) {
