@@ -29,7 +29,7 @@ pipeline {
         }
             stage("Unit Tests") {
                 parallel {
-                stage('Unit Tests on GPU (Nvidia GeForce GTX 1060)') {
+                stage('GPU: Nvidia GeForce GTX 1060') {
                 steps {
                     timeout(time: 5, unit: 'MINUTES') {
                         sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:1"'
@@ -38,7 +38,7 @@ pipeline {
                     }
                 }
             }
-            stage('Unit Tests on CPU (Intel Xeon E5-2620)') {
+            stage('CPU: Intel Xeon E5-2620') {
                 steps {
                     timeout(time: 5, unit: 'MINUTES') {
                         sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
@@ -62,6 +62,7 @@ pipeline {
 		stage('Benchmarks') {
         	steps {
 				timeout(time: 10, unit: 'MINUTES') {
+                	sh 'python assembly/src/bin/tornado-benchmarks.py --printBenchmarks '
                 	sh 'python assembly/src/bin/tornado-benchmarks.py --medium --skipSequential --iterations 5 '
             	}
 			}
