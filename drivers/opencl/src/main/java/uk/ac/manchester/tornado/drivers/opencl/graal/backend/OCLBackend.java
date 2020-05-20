@@ -580,6 +580,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult, options);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
+        crb.setDeviceContext(deviceContext);
         return crb;
     }
 
