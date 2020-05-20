@@ -27,28 +27,28 @@ pipeline {
                 sh 'bash bin/bin/tornadoLocalInstallMaven'
             }
         }
-            stage("Unit Tests") {
-                parallel {
+        stage("Unit Tests") {
+            parallel {
                 stage('GPU: Nvidia GeForce GTX 1060') {
-                steps {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:1"'
-                        sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:1" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
-                        sh 'test-native.sh'
+                    steps {
+                        timeout(time: 5, unit: 'MINUTES') {
+                            sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:1"'
+                            sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:1" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                            sh 'test-native.sh'
+                        }
+                    }
+                }
+                stage('CPU: Intel Xeon E5-2620') {
+                    steps {
+                        timeout(time: 5, unit: 'MINUTES') {
+                            sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
+                            sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                            sh 'test-native.sh'
+                        }
                     }
                 }
             }
-            stage('CPU: Intel Xeon E5-2620') {
-                steps {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
-                        sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
-                        sh 'test-native.sh'
-                    }
-                }
-              }
-            }
-         }
+        }
         stage('Test GPU Reductions') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
