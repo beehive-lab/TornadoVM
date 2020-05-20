@@ -47,7 +47,7 @@ public class TestNewArrays extends TornadoTestBase {
         a[0] = a[0] + testArray[0];
     }
 
-    @Test
+    @TornadoNotSupported
     public void testInitNewArrayParallel() {
         final int N = 128;
         float[] data = new float[N];
@@ -188,7 +188,7 @@ public class TestNewArrays extends TornadoTestBase {
             result[0] += input[i];
             testFloatSum[i] = 1;
         }
-        result[0] = result[0] + testFloatSum[testFloatSum.length];
+        result[0] = result[0] + testFloatSum[0];
     }
 
     @TornadoNotSupported
