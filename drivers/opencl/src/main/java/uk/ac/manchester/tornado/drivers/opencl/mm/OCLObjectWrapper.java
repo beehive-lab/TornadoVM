@@ -33,7 +33,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
@@ -223,7 +222,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            if (OPENCL_USE_RELATIVE_ADDRESSES) {
+            if (deviceContext.useRelativeAddresses()) {
                 buffer.putLong(wrappedFields[index].toRelativeAddress());
             } else {
                 buffer.putLong(wrappedFields[index].toAbsoluteAddress());
