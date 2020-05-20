@@ -27,24 +27,28 @@ pipeline {
                 sh 'bash bin/bin/tornadoLocalInstallMaven'
             }
         }
-        stage('Unit Tests on GPU (Nvidia GeForce GTX 1060)') {
-        	steps {
-				timeout(time: 5, unit: 'MINUTES') {
-               		sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:1"'
-               		sh 'tornado-test.py -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
-               		sh 'test-native.sh'
-            	}
-			}
-        }
-        stage('Unit Tests on CPU (Intel Xeon E5-2620)') {
-        	steps {
-				timeout(time: 5, unit: 'MINUTES') {
-               		sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
-               		sh 'tornado-test.py -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
-               		sh 'test-native.sh'
-            	}
-			}
-        }
+            stage("Unit Tests") {
+                parallel {
+                stage('Unit Tests on GPU (Nvidia GeForce GTX 1060)') {
+                steps {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:1"'
+                        sh 'tornado-test.py -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                        sh 'test-native.sh'
+                    }
+                }
+            }
+            stage('Unit Tests on CPU (Intel Xeon E5-2620)') {
+                steps {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
+                        sh 'tornado-test.py -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                        sh 'test-native.sh'
+                    }
+                }
+              }
+            }
+         }
         stage('Test GPU Reductions') {
         	steps {
 				timeout(time: 5, unit: 'MINUTES') {
