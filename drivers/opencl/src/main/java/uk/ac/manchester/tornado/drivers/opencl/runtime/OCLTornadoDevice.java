@@ -675,4 +675,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
     }
 
+    @Override
+    public void setContextForCurrentThread() {
+        // OpenCL device context is shared across different threads by default
+    }
 }

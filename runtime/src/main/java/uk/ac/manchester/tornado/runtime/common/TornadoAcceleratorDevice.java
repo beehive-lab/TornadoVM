@@ -40,4 +40,6 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     TornadoInstalledCode getCodeFromCache(SchedulableTask task);
 
+    void setContextForCurrentThread();
+
 }

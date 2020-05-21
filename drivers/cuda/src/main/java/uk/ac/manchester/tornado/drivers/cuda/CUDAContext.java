@@ -32,6 +32,12 @@ public class CUDAContext extends TornadoLogger {
 
     private native static void cuMemFree(int deviceIndex, long devicePtr);
 
+    private native static void cuCtxSetCurrent(int deviceIndex);
+
+    public void setContextForCurrentThread() {
+        cuCtxSetCurrent(device.getIndex());
+    }
+
     public void cleanup() {
         deviceContext.cleanup();
 

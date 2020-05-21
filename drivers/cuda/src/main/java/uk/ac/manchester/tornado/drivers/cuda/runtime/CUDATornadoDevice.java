@@ -499,6 +499,12 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public void setContextForCurrentThread() {
+        // CUDA context is not shared by default to other threads
+        device.getContext().setContextForCurrentThread();
+    }
+
+    @Override
     public String toString() {
 
         return getPlatformName() + " -- " + device.getDeviceName();

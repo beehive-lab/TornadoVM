@@ -210,6 +210,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public void setContextForCurrentThread() {
+        TornadoInternalError.unimplemented();
+    }
+
+    @Override
     public long getMaxAllocMemory() {
         return Runtime.getRuntime().maxMemory();
     }

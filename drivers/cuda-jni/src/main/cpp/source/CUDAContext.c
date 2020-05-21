@@ -86,3 +86,21 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cu
 
     return;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    cuCtxSetCurrent
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cuCtxSetCurrent
+  (JNIEnv *env, jclass clazz, jint device_index) {
+    CUcontext ctx;
+    cuCtxGetCurrent(&ctx);
+
+    if (ctx == NULL) {
+        ctx = *g_contexts[(int) device_index];
+        cuCtxSetCurrent(ctx);
+    }
+
+    return;
+}
