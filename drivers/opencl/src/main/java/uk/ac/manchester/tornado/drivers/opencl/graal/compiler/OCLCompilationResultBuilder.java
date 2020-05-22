@@ -58,13 +58,13 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -74,6 +74,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isKernel;
     private int loops = 0;
     private boolean isParallel;
+    private OCLDeviceContext deviceContext;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
@@ -94,7 +95,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public boolean shouldRemoveLoop() {
-        return (isParallel() && Tornado.ACCELERATOR_IS_FPGA);
+        return (isParallel() && deviceContext.isPlatformFPGA());
     }
 
     public boolean isKernel() {
@@ -401,5 +402,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public void setParallel(boolean parallel) {
         this.isParallel = parallel;
+    }
+
+    public void setDeviceContext(OCLDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
+    }
+
+    public OCLDeviceContext getDeviceContext() {
+        return this.deviceContext;
     }
 }

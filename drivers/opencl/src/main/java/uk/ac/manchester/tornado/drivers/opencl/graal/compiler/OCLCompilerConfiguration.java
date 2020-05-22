@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerConfiguration;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
@@ -55,8 +56,8 @@ public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider) {
-        return new OCLHighTier(options, canonicalizer, metaAccessProvider);
+    public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider) {
+        return new OCLHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
     }
 
     @Override

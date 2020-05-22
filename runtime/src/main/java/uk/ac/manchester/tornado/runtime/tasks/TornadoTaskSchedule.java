@@ -374,14 +374,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     private void preCompilationForFPGA() {
         boolean compile = false;
-        if (Tornado.ACCELERATOR_IS_FPGA) {
-            if (Tornado.FPGA_EMULATION) {
+        if (Tornado.FPGA_EMULATION) {
+            compile = true;
+        } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice) {
+            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
+            if (device.isFullJITMode(graphContext.getTask(0))) {
                 compile = true;
-            } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice) {
-                TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
-                if (device.isFullJITMode(graphContext.getTask(0))) {
-                    compile = true;
-                }
             }
         }
 
@@ -414,7 +412,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void scheduleInner() {
         boolean compile = compileToTornadoVMBytecodes();
-        if (compile) {
+        TornadoAcceleratorDevice deviceForTask = graphContext.getDeviceForTask(0);
+        if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {
             preCompilationForFPGA();
         }
 
