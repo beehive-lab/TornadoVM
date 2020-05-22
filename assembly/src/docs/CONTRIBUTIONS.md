@@ -12,7 +12,7 @@ Please follow the instructions below for your Pull Requests.
 5. **Push** your work to your repository
 6. Create a **Pull Request** to the `develop` branch. 
 
-Please, ensure that your changes are merged with the latest changes in the `develop` branch.
+Please, ensure that your changes are merged with the latest changes in the `develop` branch, and the code follows the code conventions (see below).
 
 ## Coding conventions
 
@@ -33,6 +33,7 @@ For IntelliJ, import the XML auto-formatter. Steps [here](3_INTELLIJ.md).
 
 Help us to develop TornadoVM or TornadoVM use cases:
 
+* Look at Github issues tagged with [good first issue](https://github.com/beehive-lab/TornadoVM/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 * **Documentation**: you can help to improve install documentation, testing platforms, and scripts to easy deploy TornadoVM. 
 * **TornadoVM use-cases**: Develop use cases that use TornadoVM for acceleration: block-chain, graphical version of NBody, filters for photography, etc. 
 * **TornadoVM Development / Improvements**: If you would like to contribute to the TornadoVM internals, here is a list of pending tasks/improvements:
@@ -44,6 +45,7 @@ Help us to develop TornadoVM or TornadoVM use cases:
     - Implement deoptimization from parallel OpenCL execution (running the sequential implementation). This should be a fall-back mechanism from GPU/FPGA/multi-core execution.
     - Port all Python-2 scripts to Python-3.
     - Implement a performance plot suite when running the benchmark runner. This should plot speedups against serial Java as well as stacked bars with breakdown analysis (e.g. time spent on compilation, execution, and data transfers).
+    - Port TornadoVM to Windows 10 - port bash scripts and adapt Python scripts to build with Windows 10. 
 
 
 
