@@ -181,7 +181,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclGpuBlock2DY;
     }
 
-    public boolean shouldUseOpenclRelativeAddresses() {
+    public boolean shouldUseOpenCLRelativeAddresses() {
         return openclUseRelativeAddresses;
     }
 
@@ -193,7 +193,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclUseDriverScheduling;
     }
 
-    public boolean shouldUseOpenclWaitActive() {
+    public boolean shouldUseOpenCLWaitActive() {
         return openclWaitActive;
     }
 
@@ -213,7 +213,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return enableOooExecution;
     }
 
-    public boolean shouldUseOpenclBlockingApiCalls() {
+    public boolean shouldUseOpenCLBlockingApiCalls() {
         return openclUseBlockingApiCalls;
     }
 

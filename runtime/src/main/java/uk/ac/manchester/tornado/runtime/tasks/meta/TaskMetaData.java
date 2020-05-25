@@ -371,13 +371,13 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean shouldUseOpenclBlockingApiCalls() {
-        return super.shouldUseOpenclBlockingApiCalls() || scheduleMetaData.shouldUseOpenclBlockingApiCalls();
+    public boolean shouldUseOpenCLBlockingApiCalls() {
+        return super.shouldUseOpenCLBlockingApiCalls() || scheduleMetaData.shouldUseOpenCLBlockingApiCalls();
     }
 
     @Override
-    public boolean shouldUseOpenclRelativeAddresses() {
-        return super.shouldUseOpenclRelativeAddresses() || scheduleMetaData.shouldUseOpenclRelativeAddresses();
+    public boolean shouldUseOpenCLRelativeAddresses() {
+        return super.shouldUseOpenCLRelativeAddresses() || scheduleMetaData.shouldUseOpenCLRelativeAddresses();
     }
 
     @Override
@@ -386,8 +386,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean shouldUseOpenclWaitActive() {
-        return super.shouldUseOpenclWaitActive() || scheduleMetaData.shouldUseOpenclWaitActive();
+    public boolean shouldUseOpenCLWaitActive() {
+        return super.shouldUseOpenCLWaitActive() || scheduleMetaData.shouldUseOpenCLWaitActive();
     }
 
     @Override
