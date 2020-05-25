@@ -143,7 +143,7 @@ public class TestOpenCLJITCompiler {
         stack.push(c, objectStateC);
 
         // Run the code
-        openCLCode.launchWithoutDeps(stack, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(stack, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
