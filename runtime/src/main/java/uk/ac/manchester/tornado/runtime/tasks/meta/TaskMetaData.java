@@ -57,7 +57,6 @@ public class TaskMetaData extends AbstractMetaData {
     protected Access[] argumentsAccess;
     protected DomainTree domain;
     protected final Map<TornadoAcceleratorDevice, BitSet> profiles;
-    private boolean schedule;
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
     private boolean canAssumeExact;
@@ -77,7 +76,6 @@ public class TaskMetaData extends AbstractMetaData {
         inspectLocalWork();
         inspectGlobalWork();
 
-        this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
 
         // Set the number of threads to run (subset of the input space)
@@ -144,14 +142,12 @@ public class TaskMetaData extends AbstractMetaData {
 
         System.arraycopy(values, 0, globalWork, 0, values.length);
         globalWorkDefined = true;
-        schedule = !(globalWorkDefined && localWorkDefined);
     }
 
     @Override
     public void setLocalWork(long[] values) {
         System.arraycopy(values, 0, localWork, 0, values.length);
         localWorkDefined = true;
-        schedule = !(globalWorkDefined && localWorkDefined);
     }
 
     public void setLocalWorkToNull() {
@@ -159,12 +155,11 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void setSchedule(boolean value) {
-        schedule = value;
     }
 
     public void addProfile(int id) {
         final TornadoAcceleratorDevice device = getDevice();
-        BitSet events = null;
+        BitSet events;
         if (!profiles.containsKey(device)) {
             events = new BitSet(EVENT_WINDOW);
             profiles.put(device, events);
