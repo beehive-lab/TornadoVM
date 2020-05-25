@@ -185,7 +185,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclUseRelativeAddresses;
     }
 
-    public boolean enableOpenclBifs() {
+    public boolean enableOpenCLBifs() {
         return openclEnableBifs;
     }
 

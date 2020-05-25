@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
+    private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce_seq";
 
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
@@ -82,6 +82,10 @@ class ReduceTaskSchedule {
         this.streamInObjects = streamInObjects;
         this.streamOutObjects = streamOutObjects;
         this.sketchGraph = graph;
+    }
+
+    private boolean isAheadOfTime() {
+        return TornadoOptions.FPGA_BINARIES == null ? false : true;
     }
 
     private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
@@ -345,10 +349,14 @@ class ReduceTaskSchedule {
         }
     }
 
+    private boolean isDeviceAnAccelerator(final int deviceToRun) {
+        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+        return (deviceType == TornadoDeviceType.ACCELERATOR);
+    }
+
     private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
         // Update GLOBAL and LOCAL Dims if device to run is the FPGA
-        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
-        if (deviceType == TornadoDeviceType.ACCELERATOR) {
+        if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
         }
@@ -637,6 +645,12 @@ class ReduceTaskSchedule {
         }
 
         int maxBlockSize = (int) device.getDeviceMaxWorkgroupDimensions()[0];
+
+        if (maxBlockSize <= 0) {
+            // Due to a bug on Xilinx platforms, this value can be -1. In that case, we
+            // setup the block size to the default value.
+            return DEFAULT_GPU_WORK_GROUP;
+        }
 
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;

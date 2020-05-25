@@ -45,8 +45,7 @@ import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
 public class TaskMetaData extends AbstractMetaData {
 
-    private Coarseness coarseness;
-    private byte[] constantData;
+    private final byte[] constantData;
     private int constantSize;
     private long[] globalOffset;
     private int globalSize;
@@ -93,7 +92,7 @@ public class TaskMetaData extends AbstractMetaData {
         return new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
     }
 
-    private boolean inspectLocalWork() {
+    private void inspectLocalWork() {
         localWorkDefined = getProperty(getId() + ".local.dims") != null;
         if (localWorkDefined) {
             final String[] values = getProperty(getId() + ".local.dims").split(",");
@@ -102,10 +101,9 @@ public class TaskMetaData extends AbstractMetaData {
                 localWork[i] = Long.parseLong(values[i]);
             }
         }
-        return localWorkDefined;
     }
 
-    private boolean inspectGlobalWork() {
+    private void inspectGlobalWork() {
         globalWorkDefined = getProperty(getId() + ".global.dims") != null;
         if (globalWorkDefined) {
             final String[] values = getProperty(getId() + ".global.dims").split(",");
@@ -114,13 +112,12 @@ public class TaskMetaData extends AbstractMetaData {
                 globalWork[i] = Long.parseLong(values[i]);
             }
         }
-        return globalWorkDefined;
     }
 
-    private static String formatWorkDimentionArray(final long[] array, final String defaults) {
+    private static String formatWorkDimensionArray(final long[] array, final String defaults) {
         final StringBuilder sb = new StringBuilder();
         if (array == null || array.length == 0) {
-            sb.append("[" + defaults + "]");
+            sb.append("[").append(defaults).append("]");
         } else {
             sb.append(Arrays.toString(array));
         }
@@ -129,10 +126,6 @@ public class TaskMetaData extends AbstractMetaData {
 
     private static String getProperty(String key) {
         return System.getProperty(key);
-    }
-
-    public boolean canAssumeExact() {
-        return canAssumeExact;
     }
 
     public boolean isLocalWorkDefined() {
@@ -149,18 +142,14 @@ public class TaskMetaData extends AbstractMetaData {
             return;
         }
 
-        for (int i = 0; i < values.length; i++) {
-            globalWork[i] = values[i];
-        }
+        System.arraycopy(values, 0, globalWork, 0, values.length);
         globalWorkDefined = true;
         schedule = !(globalWorkDefined && localWorkDefined);
     }
 
     @Override
     public void setLocalWork(long[] values) {
-        for (int i = 0; i < values.length; i++) {
-            localWork[i] = values[i];
-        }
+        System.arraycopy(values, 0, localWork, 0, values.length);
         localWorkDefined = true;
         schedule = !(globalWorkDefined && localWorkDefined);
     }
@@ -173,10 +162,6 @@ public class TaskMetaData extends AbstractMetaData {
         schedule = value;
     }
 
-    public boolean shouldSchedule() {
-        return schedule;
-    }
-
     public void addProfile(int id) {
         final TornadoAcceleratorDevice device = getDevice();
         BitSet events = null;
@@ -186,23 +171,6 @@ public class TaskMetaData extends AbstractMetaData {
         }
         events = profiles.get(device);
         events.set(id);
-    }
-
-    public void allocConstant(int size) {
-        this.constantSize = size;
-        constantData = new byte[size];
-    }
-
-    public void allocGlobal(int size) {
-        this.globalSize = size;
-    }
-
-    public void allocLocal(int size) {
-        this.localSize = size;
-    }
-
-    public void allocPrivate(int size) {
-        this.privateSize = size;
     }
 
     @Override
@@ -226,8 +194,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean enableOpenclBifs() {
-        return super.enableOpenclBifs() || scheduleMetaData.enableOpenclBifs();
+    public boolean enableOpenCLBifs() {
+        return super.enableOpenCLBifs() || scheduleMetaData.enableOpenCLBifs();
     }
 
     @Override
@@ -260,14 +228,6 @@ public class TaskMetaData extends AbstractMetaData {
         return argumentsAccess;
     }
 
-    public Coarseness getCoarseness() {
-        return coarseness;
-    }
-
-    public int getCoarseness(int index) {
-        return coarseness.getCoarseness(index);
-    }
-
     public byte[] getConstantData() {
         return constantData;
     }
@@ -297,7 +257,7 @@ public class TaskMetaData extends AbstractMetaData {
     public void setDomain(final DomainTree value) {
 
         domain = value;
-        coarseness = new Coarseness(domain.getDepth());
+        Coarseness coarseness = new Coarseness(domain.getDepth());
 
         final String config = getProperty(getId() + ".coarseness");
         if (config != null && !config.isEmpty()) {
@@ -318,10 +278,6 @@ public class TaskMetaData extends AbstractMetaData {
 
     public long[] getGlobalOffset() {
         return globalOffset;
-    }
-
-    public int getGlobalSize() {
-        return globalSize;
     }
 
     @Override
@@ -358,20 +314,12 @@ public class TaskMetaData extends AbstractMetaData {
         return isOpenclGpuBlockXDefined() ? super.getOpenCLGpuBlockX() : scheduleMetaData.getOpenCLGpuBlockX();
     }
 
-    public int getPrivateSize() {
-        return privateSize;
-    }
-
     public List<TornadoEvents> getProfiles() {
         final List<TornadoEvents> result = new ArrayList<>(profiles.keySet().size());
         for (TornadoAcceleratorDevice device : profiles.keySet()) {
             result.add(new EventSet(device, profiles.get(device)));
         }
         return result;
-    }
-
-    public String getScheduleId() {
-        return scheduleMetaData.getId();
     }
 
     public boolean hasDomain() {
@@ -392,13 +340,9 @@ public class TaskMetaData extends AbstractMetaData {
         System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
         System.out.printf("\tdims              : %s\n", domain == null ? "0" : Integer.toString(domain.getDepth()));
-        System.out.printf("\tglobal work offset: %s\n", formatWorkDimentionArray(globalOffset, "0"));
-        System.out.printf("\tglobal work size  : %s\n", formatWorkDimentionArray(globalWork, "1"));
-        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimentionArray(localWork, "1"));
-    }
-
-    public void setCoarseness(int index, int value) {
-        coarseness.setCoarseness(index, value);
+        System.out.printf("\tglobal work offset: %s\n", formatWorkDimensionArray(globalOffset, "0"));
+        System.out.printf("\tglobal work size  : %s\n", formatWorkDimensionArray(globalWork, "1"));
+        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimensionArray(localWork, "1"));
     }
 
     @Override
@@ -468,7 +412,6 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public String toString() {
-        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimentionArray(getGlobalWork(), "1"));
+        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
     }
-
 }

@@ -291,7 +291,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private String getTaskEntryName(SchedulableTask task) {
-        return task.getName().replace(" ", "").split("-")[1];
+        return task.getTaskName();
+        // return task.getName().replace(" ", "").split("-")[1];
     }
 
     private TornadoInstalledCode loadPreCompiledBinaryForTask(SchedulableTask task) {

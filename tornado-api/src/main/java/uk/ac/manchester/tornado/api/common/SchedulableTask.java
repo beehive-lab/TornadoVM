@@ -56,7 +56,9 @@ public interface SchedulableTask {
 
     TornadoDevice getDevice();
 
-    String getName();
+    String getFullName();
+
+    String getTaskName();
 
     String getId();
 

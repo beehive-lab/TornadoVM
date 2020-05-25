@@ -418,7 +418,7 @@ public class TornadoVM extends TornadoLogger {
                 task.setBatchThreads(batchThreads);
 
                 if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getName(), contexts.get(contextIndex), batchThreads, offset, eventList);
+                    String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
                     bytecodesList.append(verbose + "\n");
                 }
 
@@ -434,7 +434,7 @@ public class TornadoVM extends TornadoLogger {
                         }
                         installedCodes[taskIndex] = device.installCode(task);
                     } catch (Error | Exception e) {
-                        fatal("unable to compile task %s", task.getName());
+                        fatal("unable to compile task %s", task.getFullName());
                     }
                 }
 
@@ -493,9 +493,9 @@ public class TornadoVM extends TornadoLogger {
                 metadata.attachProfiler(timeProfiler);
 
                 if (useDependencies) {
-                    lastEvent = installedCode.launchWithDeps(stack, metadata, batchThreads, waitList);
+                    lastEvent = installedCode.launchWithDependencies(stack, metadata, batchThreads, waitList);
                 } else {
-                    lastEvent = installedCode.launchWithoutDeps(stack, metadata, batchThreads);
+                    lastEvent = installedCode.launchWithoutDependencies(stack, metadata, batchThreads);
                 }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
