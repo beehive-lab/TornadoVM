@@ -61,7 +61,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         this.length = length;
         this.elementType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLBinaryTemplate.NEW_PRIVATE_CHAR_ARRAY;
+        this.arrayTemplate = OCLKind.resolvePrivateTemplateType(elementType);
     }
 
     public OCLMemoryBase getMemoryRegister() {
@@ -74,10 +74,6 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        /*
-         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
-         * and int value = 1, float x = &(value);
-         */
         final Value lengthValue = gen.operand(length);
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
