@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
-import static org.graalvm.compiler.core.common.GraalOptions.OptReadElimination;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateInvariants;
 
 import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
@@ -67,10 +66,6 @@ public class OCLMidTier extends TornadoMidTier {
 
         if (OptFloatingReads.getValue(options)) {
             appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
-        }
-
-        if (OptReadElimination.getValue(options)) {
-            // appendPhase(new EarlyReadEliminationPhase(canonicalizer));
         }
 
         appendPhase(new TornadoMemoryPhiElimination());
