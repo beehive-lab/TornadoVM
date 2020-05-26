@@ -155,7 +155,6 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
                 JavaKind elementKind = getJavaKindFromConstantNode((ConstantNode) callTarget.arguments().get(0));
                 final int offset = metaAccess.getArrayBaseOffset(elementKind);
-                ;
                 final int size = offset + (elementKind.getByteCount() * length);
                 // This phase should come after OCL lowering, therefore
                 // OCLLoweringProvider::gpuSnippet should be set
