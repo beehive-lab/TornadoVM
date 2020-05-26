@@ -40,10 +40,10 @@ Allows to define global worksizes (problem sizes).
 Allows to define custom local workgroum configuration and overwrite the default values provided by the TornadoScheduler.  
 
 * ```-Dtornado.profiling.enable=true ```:  
-Enable profilling for OpenCL events such as kernel times and data tranfers. 
- 
+Enable profilling for OpenCL events such as kernel times and data tranfers.
+
 * ```-Dtornado.opencl.userelative=true ```:  
-Enables use of relative addresses which a prior for using DMA tranfers for Alters/Intel FPGAs. 
+Enable usage of relative addresses which is a prerequisite for using DMA tranfers on Alters/Intel FPGAs. Nonetheless, this flag can be used for any type of devices. 
  
 * ```-Dtornado.opencl.timer.kernel=true ```:  
 Print kernel times for OpenCL compute kernels.

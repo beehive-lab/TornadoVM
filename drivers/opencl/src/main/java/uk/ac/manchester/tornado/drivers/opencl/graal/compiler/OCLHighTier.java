@@ -48,13 +48,13 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoThreadScheduler;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
@@ -64,7 +64,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 
-    public OCLHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+    public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
         CanonicalizerPhase canonicalizer;
@@ -110,8 +110,7 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
-
-        if (Tornado.ACCELERATOR_IS_FPGA) {
+        if (deviceContext.isPlatformFPGA()) {
             appendPhase(new TornadoPragmaUnroll());
             appendPhase(new TornadoThreadScheduler());
         } else {

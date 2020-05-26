@@ -27,7 +27,7 @@ Before building the new JDK, the JAVA_HOME environment variable should point to 
 
 These steps will generate on Linux a new Java binary into `jdk1.8.0_<your_version>/<os-architecture>/product` and `jdk1.8.0_<your_version>/<os-architecture>/product/Contents/Home` for MacOS.
 
-E.g: `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
+E.g: `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2).
 
 ### 2. Download TornadoVM
 
