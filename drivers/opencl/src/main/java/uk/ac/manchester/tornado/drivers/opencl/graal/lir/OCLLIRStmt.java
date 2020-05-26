@@ -192,11 +192,15 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
+            if (shouldEmitIntegerLoad()) {
                 emitIntegerBasedIndexCode(crb, asm);
             } else {
                 emitPointerBaseIndexCode(crb, asm);
             }
+        }
+
+        private boolean shouldEmitIntegerLoad() {
+            return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
         }
 
         public AllocatableValue getResult() {
@@ -319,7 +323,6 @@ public class OCLLIRStmt {
         }
 
         public void emitNormalCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-
             // asm.emitLine("*((__global char *) ul_12) = 102;");
             asm.emit("*(");
             cast.emit(crb, asm);
@@ -337,11 +340,15 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
+            if (shouldEmitIntegerStore()) {
                 emitIntegerStore(crb, asm);
             } else {
                 emitNormalCode(crb, asm);
             }
+        }
+
+        private boolean shouldEmitIntegerStore() {
+            return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
         }
 
         public Value getRhs() {
