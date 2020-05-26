@@ -225,6 +225,44 @@ public class TestNewArrays extends TornadoTestBase {
         }
     }
 
+    public static void initializeToOneParallel(float[] a) {
+        float[] testArray = new float[16];
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (i == 0) {
+                testArray[0] = 2;
+            } else if (i == 5) {
+                testArray[1] = 3;
+            }
+            a[i] = 1;
+        }
+        a[0] = a[0] + testArray[0];
+    }
+
+    @Test
+    public void testInitNewArrayParallel() {
+        final int N = 128;
+        float[] data = new float[N];
+        float[] dataSeq = new float[N];
+
+        IntStream.range(0, N).parallel().forEach(i -> {
+            data[i] = (int) Math.random();
+            dataSeq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        assertNotNull(s0);
+
+        s0.task("t0", TestNewArrays::initializeToOneParallel, data);
+        s0.streamOut(data);
+        s0.execute();
+
+        initializeToOneParallel(dataSeq);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(dataSeq[i], data[i], 0.1);
+        }
+    }
+
     private static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
         float[] testFloatSum = new float[256];
@@ -259,43 +297,5 @@ public class TestNewArrays extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
-    }
-
-    public static void initializeToOneParallel(float[] a) {
-        float[] testArray = new float[16];
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (i == 0) {
-                testArray[0] = 2;
-            } else if (i == 5) {
-                testArray[1] = 3;
-            }
-            a[i] = 1;
-        }
-        a[0] = a[0] + testArray[0];
-    }
-
-    @TornadoNotSupported // This one is not working on CPUs because of the parallel stridess
-    public void testInitNewArrayParallel() {
-        final int N = 128;
-        float[] data = new float[N];
-        float[] dataSeq = new float[N];
-
-        IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (int) Math.random();
-            dataSeq[i] = data[i];
-        });
-
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
-
-        s0.task("t0", TestNewArrays::initializeToOneParallel, data);
-        s0.streamOut(data);
-        s0.execute();
-
-        initializeToOneParallel(dataSeq);
-
-        for (int i = 0; i < N; i++) {
-            assertEquals(dataSeq[i], data[i], 0.1);
-        }
     }
 }
