@@ -200,9 +200,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return field.getJavaKind();
     }
 
-    public static boolean isGpuSnippet() {
-        // OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
-        // Therefore, this getter must be called after a lowering phase in order to get the correct result
+    /**
+     * OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
+     * Therefore, this getter must be called after a lowering phase in order to get
+     * the correct result.
+     * 
+     * @return
+     */
+    public static boolean isGPUSnippet() {
         return gpuSnippet;
     }
 
@@ -505,7 +510,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
-        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
@@ -513,7 +519,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
-        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;

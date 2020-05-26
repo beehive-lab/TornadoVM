@@ -582,7 +582,6 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             System.out.println(bytecodesList.toString());
-            bytecodesList = null;
         }
 
         return barrier;

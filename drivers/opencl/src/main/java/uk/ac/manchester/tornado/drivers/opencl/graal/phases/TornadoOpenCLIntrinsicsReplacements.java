@@ -76,7 +76,7 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
         for (InvokeNode invoke : invokeNodes) {
             String methodName = invoke.callTarget().targetName();
 
-                switch (methodName) {
+            switch (methodName) {
                 case "Direct#NewArrayNode.newArray": {
                     lowerInvokeNode(invoke);
                     break;
@@ -154,10 +154,12 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
             if (lengthNode.getValue() instanceof PrimitiveConstant) {
                 final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
                 JavaKind elementKind = getJavaKindFromConstantNode((ConstantNode) callTarget.arguments().get(0));
-                final int offset = metaAccess.getArrayBaseOffset(elementKind);;
+                final int offset = metaAccess.getArrayBaseOffset(elementKind);
+                ;
                 final int size = offset + (elementKind.getByteCount() * length);
-                // This phase should come after OCL lowering, therefore OCLLoweringProvider::gpuSnippet should be set
-                if (OCLLoweringProvider.isGpuSnippet()) {
+                // This phase should come after OCL lowering, therefore
+                // OCLLoweringProvider::gpuSnippet should be set
+                if (OCLLoweringProvider.isGPUSnippet()) {
                     lowerLocalInvokeNodeNewArray(graph, length, elementKind, newArray);
                 } else {
                     lowerPrivateInvokeNodeNewArray(graph, size, elementKind, newArray);
@@ -174,11 +176,16 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
 
     private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
         switch (signatureNode.getValue().toValueString()) {
-            case "Class:int": return JavaKind.Int;
-            case "Class:long": return JavaKind.Long;
-            case "Class:float": return JavaKind.Float;
-            case "Class:double": return JavaKind.Double;
-            default: unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
+            case "Class:int":
+                return JavaKind.Int;
+            case "Class:long":
+                return JavaKind.Long;
+            case "Class:float":
+                return JavaKind.Float;
+            case "Class:double":
+                return JavaKind.Double;
+            default:
+                unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
         }
         return null;
     }

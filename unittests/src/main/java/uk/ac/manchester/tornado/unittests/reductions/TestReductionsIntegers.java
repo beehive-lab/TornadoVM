@@ -220,18 +220,19 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         int[] result = new int[1];
 
-        Arrays.fill(result, Integer.MIN_VALUE);
+        int neutral = Integer.MIN_VALUE + 1;
+        Arrays.fill(result, neutral);
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, Integer.MIN_VALUE)
+            .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral)
             .streamOut(result)
             .execute();
         //@formatter:on
 
         int[] sequential = new int[1];
-        maxReductionAnnotation(input, sequential, Integer.MIN_VALUE);
+        maxReductionAnnotation(input, sequential, neutral);
 
         assertEquals(sequential[0], result[0]);
     }
@@ -562,6 +563,70 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         int[] sequential = new int[1];
         reductionAddInts3(inputA, inputB, sequential);
+
+        assertEquals(sequential[0], result[0]);
+    }
+
+    private static void maxReductionAnnotation2(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i] * 100);
+        }
+    }
+
+    @Test
+    public void testMaxReduction2() {
+        int[] input = new int[SIZE];
+        int[] result = new int[1];
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = idx;
+        });
+
+        int neutral = Integer.MIN_VALUE + 1;
+        Arrays.fill(result, neutral);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsIntegers::maxReductionAnnotation2, input, result, neutral)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        int[] sequential = new int[] { neutral };
+        maxReductionAnnotation2(input, sequential, neutral);
+
+        assertEquals(sequential[0], result[0]);
+    }
+
+    private static void minReductionAnnotation2(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.min(result[0], input[i] * 50);
+        }
+    }
+
+    @Test
+    public void testMinReduction2() {
+        int[] input = new int[SIZE];
+        int[] result = new int[1];
+
+        IntStream.range(0, SIZE).parallel().forEach(idx -> {
+            input[idx] = 100;
+        });
+
+        Arrays.fill(result, Integer.MAX_VALUE);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsIntegers::minReductionAnnotation2, input, result, Integer.MAX_VALUE)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        minReductionAnnotation2(input, sequential, Integer.MAX_VALUE);
 
         assertEquals(sequential[0], result[0]);
     }

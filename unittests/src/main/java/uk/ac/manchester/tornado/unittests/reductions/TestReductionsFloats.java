@@ -395,6 +395,36 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
+    private static void maxReductionAnnotation2(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i] * 100);
+        }
+    }
+
+    @Test
+    public void testMaxReduction2() {
+        float[] input = new float[SIZE];
+        float[] result = new float[1];
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = idx;
+        });
+
+        Arrays.fill(result, Float.MIN_VALUE);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsFloats::maxReductionAnnotation2, input, result)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        float[] sequential = new float[] { Float.MIN_VALUE };
+        maxReductionAnnotation2(input, sequential);
+
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
     private static void minReductionAnnotation(float[] input, @Reduce float[] result, float neutral) {
         result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
@@ -423,6 +453,38 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         float[] sequential = new float[1];
         minReductionAnnotation(input, sequential, Float.MAX_VALUE);
+
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    private static void minReductionAnnotation2(float[] input, @Reduce float[] result, float neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.min(result[0], input[i] * 50);
+        }
+    }
+
+    @Test
+    public void testMinReduction2() {
+        float[] input = new float[SIZE];
+        float[] result = new float[1];
+
+        IntStream.range(0, SIZE).parallel().forEach(idx -> {
+            input[idx] = 100;
+        });
+
+        Arrays.fill(result, Float.MAX_VALUE);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsFloats::minReductionAnnotation2, input, result, Float.MAX_VALUE)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        float[] sequential = new float[1];
+        minReductionAnnotation2(input, sequential, Float.MAX_VALUE);
 
         assertEquals(sequential[0], result[0], 0.01f);
     }
