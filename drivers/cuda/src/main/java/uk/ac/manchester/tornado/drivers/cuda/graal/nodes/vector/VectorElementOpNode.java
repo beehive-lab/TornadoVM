@@ -97,7 +97,6 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     @Override
     public boolean inferStamp() {
-        // return false;
         return updateStamp(StampFactory.forKind(ptxKind.asJavaKind()));
     }
 
@@ -125,10 +124,20 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         // }
 
         guarantee(targetVector != null, "vector is null 2");
-        final PTXVectorElementSelect element = new PTXVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector,
-                new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(laneId())));
+        final PTXVectorElementSelect element = new PTXVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector, laneIdToVectorSuffix());
         gen.setResult(this, element);
 
+    }
+
+    private String laneIdToVectorSuffix() {
+        switch (laneId()) {
+            case 0: return "x";
+            case 1: return "y";
+            case 2: return "z";
+            case 3: return "w";
+            default: shouldNotReachHere();
+        }
+        return null;
     }
 
 }

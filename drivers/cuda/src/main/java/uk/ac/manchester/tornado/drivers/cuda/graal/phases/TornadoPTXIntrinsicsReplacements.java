@@ -121,8 +121,6 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
                 }
                 case "Direct#PTXIntrinsics.printEmpty":
                     unimplemented();
-//                    OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
-//                    graph.replaceFixed(invoke, printfNode);
                     break;
             }
         }

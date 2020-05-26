@@ -62,21 +62,20 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
 
     }
 
-//    public boolean tryResolve() {
-//        if (canResolve()) {
-//            /*
-//             * If we can resolve this node properly, this operation should be
-//             * applied to the vector node and this node should be discarded.
-//             */
-//            final VectorValueNode vector = (VectorValueNode) origin;
-//            vector.setElement(((ConstantNode) laneOrigin).asJavaConstant().asInt(), value);
-//            clearInputs();
-//            return true;
-//        } else {
-//            return false;
-//        }
-
-//    }
+    public boolean tryResolve() {
+        if (canResolve()) {
+            /*
+             * If we can resolve this node properly, this operation should be
+             * applied to the vector node and this node should be discarded.
+             */
+            final VectorValueNode vector = (VectorValueNode) origin;
+            vector.setElement(laneOrigin.asJavaConstant().asInt(), value);
+            clearInputs();
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public VectorStoreElementProxyNode(PTXKind kind, ValueNode origin, ValueNode lane, ValueNode value) {
         this(TYPE, kind, origin, lane);
@@ -88,34 +87,19 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
         return true;// updateStamp(createStamp(origin, kind.getElementKind()));
     }
 
-//    public boolean canResolve() {
-//        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode
-//                && ((VectorValueNode) origin).getOCLKind().getVectorLength() > laneOrigin.asJavaConstant().asInt());
-//    }
-
-    public ValueNode getOrigin() {
-        return origin;
-    }
-
-    public void setOrigin(ValueNode value) {
-        origin = value;
-    }
-
-    public int getLane() {
-        // System.out.printf("vector store proxy: this=%s,
-        // origin=%s\n",this,laneOrigin);
-        return ((ConstantNode) laneOrigin).asJavaConstant().asInt();
+    public boolean canResolve() {
+        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode
+                && ((VectorValueNode) origin).getPTXKind().getVectorLength() > laneOrigin.asJavaConstant().asInt());
     }
 
     @Override
     public Node canonical(CanonicalizerTool ct) {
         TornadoInternalError.unimplemented();
-        return null;
-//        if (tryResolve()) {
-//            return null;
-//        } else {
-//            return this;
-//        }
+        if (tryResolve()) {
+            return null;
+        } else {
+            return this;
+        }
     }
 
 }

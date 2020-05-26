@@ -55,165 +55,11 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntBinaryIntr
 public class PTXGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
-//        registerCompilerInstrinsicsPlugins(plugins);
-//        registerTornadoInstrinsicsPlugins(plugins);
         registerPTXBuiltinPlugins(plugins);
 
         PTXMathPlugins.registerTornadoMathPlugins(plugins);
-//        VectorPlugins.registerPlugins(ps, plugins);
+        PTXVectorPlugins.registerPlugins(ps, plugins);
     }
-
-//    private static void registerCompilerInstrinsicsPlugins(InvocationPlugins plugins) {
-//        Registration r = new Registration(plugins, CompilerInternals.class);
-//
-//        r.register0("getSlotsAddress", new InvocationPlugin() {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-//                b.addPush(JavaKind.Object, new SlotsBaseAddressNode());
-//                return true;
-//            }
-//        });
-//    }
-
-//    private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
-//
-//        final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
-//
-//            @Override
-//            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-//
-//                int idCount = 0;
-//                int index = 0;
-//                for (; index < 3; index++) {
-//                    ValueNode arg = args[index];
-//                    if (arg instanceof ConstantNode && arg.getStackKind().isObject()) {
-//                        break;
-//                    }
-//                    idCount++;
-//                }
-//
-//                NewArrayNode newArrayNode = (NewArrayNode) args[index + 1];
-//                ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
-//                int length = ((JavaConstant) lengthNode.getValue()).asInt();
-//
-//                ValueNode[] actualArgs = new ValueNode[4 + length];
-//                for (int i = 0; i < idCount; i++) {
-//                    actualArgs[i] = args[i];
-//                }
-//
-//                for (int i = idCount; i < 3; i++) {
-//                    actualArgs[i] = ConstantNode.forInt(0);
-//                }
-//
-//                actualArgs[3] = args[index];
-//
-//                int argIndex = 0;
-//                for (Node n : newArrayNode.usages()) {
-//                    if (n instanceof StoreIndexedNode) {
-//                        StoreIndexedNode storeNode = (StoreIndexedNode) n;
-//                        ValueNode value = storeNode.value();
-//                        if (value instanceof BoxNode) {
-//                            BoxNode box = (BoxNode) value;
-//                            value = box.getValue();
-//                            GraphUtil.unlinkFixedNode(box);
-//                            box.safeDelete();
-//                        }
-//                        actualArgs[4 + argIndex] = value;
-//                        argIndex++;
-//                    }
-//
-//                }
-//
-//                TPrintfNode printfNode = new TPrintfNode(actualArgs);
-//
-//                b.add(b.append(printfNode));
-//                while (newArrayNode.hasUsages()) {
-//                    Node n = newArrayNode.usages().first();
-//                    // need to remove all nodes from the graph that operate on
-//                    // the new array,
-//                    // however, we cannot remove all inputs as they may be used
-//                    // by the currently
-//                    // unbuilt part of the graph. We also need to ensure that we
-//                    // do not leave any
-//                    // gaps inbetween fixed nodes
-//                    if (n instanceof FixedWithNextNode) {
-//                        GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
-//                    }
-//                    n.clearInputs();
-//                    n.safeDelete();
-//                }
-//
-//                GraphUtil.unlinkFixedNode(newArrayNode);
-//                newArrayNode.clearInputs();
-//                newArrayNode.safeDelete();
-//
-//                return true;
-//            }
-//        };
-//
-//        plugins.register(tprintfPlugin, Debug.class, "tprintf", String.class, Object[].class);
-//        plugins.register(tprintfPlugin, Debug.class, "tprintf", int.class, String.class, Object[].class);
-//        plugins.register(tprintfPlugin, Debug.class, "tprintf", int.class, int.class, String.class, Object[].class);
-//        plugins.register(tprintfPlugin, Debug.class, "tprintf", int.class, int.class, int.class, String.class, Object[].class);
-//
-//        final InvocationPlugin printfPlugin = new InvocationPlugin() {
-//
-//            @Override
-//            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
-//
-//                NewArrayNode newArrayNode = (NewArrayNode) args[1];
-//                ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
-//                int length = ((JavaConstant) lengthNode.getValue()).asInt();
-//
-//                ValueNode[] actualArgs = new ValueNode[length + 1];
-//                actualArgs[0] = args[0];
-//
-//                int argIndex = 0;
-//                for (Node n : newArrayNode.usages()) {
-//                    if (n instanceof StoreIndexedNode) {
-//                        StoreIndexedNode storeNode = (StoreIndexedNode) n;
-//                        ValueNode value = storeNode.value();
-//                        if (value instanceof BoxNode) {
-//                            BoxNode box = (BoxNode) value;
-//                            value = box.getValue();
-//                            GraphUtil.unlinkFixedNode(box);
-//                            box.safeDelete();
-//                        }
-//                        actualArgs[argIndex + 1] = value;
-//                        argIndex++;
-//                    }
-//
-//                }
-//
-//                PrintfNode printfNode = new PrintfNode(actualArgs);
-//                b.add(b.append(printfNode));
-//
-//                while (newArrayNode.hasUsages()) {
-//                    Node n = newArrayNode.usages().first();
-//                    // need to remove all nodes from the graph that operate on
-//                    // the new array,
-//                    // however, we cannot remove all inputs as they
-//                    // may be used by the currently unbuilt part of the graph.
-//                    // We also need to
-//                    // ensure that we do not leave any gaps inbetween fixed
-//                    // nodes
-//                    if (n instanceof FixedWithNextNode) {
-//                        GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
-//                    }
-//                    n.clearInputs();
-//                    n.safeDelete();
-//                }
-//
-//                GraphUtil.unlinkFixedNode(newArrayNode);
-//                newArrayNode.clearInputs();
-//                newArrayNode.safeDelete();
-//                return true;
-//            }
-//        };
-//
-//        plugins.register(printfPlugin, Debug.class, "printf", String.class, Object[].class);
-//
-//    }
 
     private static void registerPTXBuiltinPlugins(InvocationPlugins plugins) {
 
@@ -224,24 +70,6 @@ public class PTXGraphBuilderPlugins {
         registerPTXOverridesForType(r, Long.TYPE, JavaKind.Long);
         registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
-
-//        Registration longReg = new Registration(plugins, Long.class);
-//        longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-//                b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
-//                return true;
-//            }
-//        });
-//
-//        Registration intReg = new Registration(plugins, Integer.class);
-//        intReg.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-//                b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
-//                return true;
-//            }
-//        });
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
@@ -328,12 +156,10 @@ public class PTXGraphBuilderPlugins {
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
-//        plugins.appendNodePlugin(new PTXVectorNodePlugin());
-        TornadoInternalError.unimplemented();
+        plugins.appendNodePlugin(new PTXVectorNodePlugin());
     }
 
     public static void registerParameterPlugins(Plugins plugins) {
-//        VectorPlugins.registerParameterPlugins(plugins);
-        TornadoInternalError.unimplemented();
+        PTXVectorPlugins.registerParameterPlugins(plugins);
     }
 }

@@ -20,7 +20,17 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 
 public class PTXLIRGenerationResult extends LIRGenerationResult {
 
-    private final Map<PTXKind, Set<Pair<Variable, Boolean>>> variableTable;
+    public static class VariableData {
+        public boolean isArray;
+        public Variable variable;
+
+        public VariableData(Variable variable, boolean isArray) {
+            this.variable = variable;
+            this.isArray = isArray;
+        }
+    }
+
+    private final Map<PTXKind, Set<VariableData>> variableTable;
     private Map<String, Variable> paramAllocations;
 
     public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder,
@@ -35,11 +45,11 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         guarantee(var.getPlatformKind() instanceof PTXKind, "invalid variable kind: %s", var.getValueKind());
         PTXKind kind = (PTXKind) var.getPlatformKind();
 
-        variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(Pair.create(var, isArray));
+        variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(new VariableData(var, isArray));
         return variableTable.get(kind).size() - 1;
     }
 
-    public Map<PTXKind, Set<Pair<Variable, Boolean>>> getVariableTable() {
+    public Map<PTXKind, Set<VariableData>> getVariableTable() {
         return variableTable;
     }
 

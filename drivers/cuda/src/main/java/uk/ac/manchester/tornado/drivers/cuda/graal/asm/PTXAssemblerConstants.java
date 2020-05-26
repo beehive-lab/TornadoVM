@@ -2,6 +2,12 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.asm;
 
 public class PTXAssemblerConstants {
 
+    public static final String REG = "reg";
+    public static final String VECTOR = "v";
+
+    public static final String CONVERT = "cvt";
+    public static final String MOVE = "mov";
+
     public static final String HEAP_PTR_NAME = "heap_pointer";
     public static final String STACK_PTR_NAME = "stack_pointer";
     public static final String GLOBAL_MEM_MODIFIER = "global";
@@ -29,6 +35,8 @@ public class PTXAssemblerConstants {
 
     public static final String SQUARE_BRACKETS_OPEN = "[";
     public static final String SQUARE_BRACKETS_CLOSE = "]";
+    public static final String CURLY_BRACKETS_OPEN = "{";
+    public static final String CURLY_BRACKETS_CLOSE = "}";
 
 
     public static final int STACK_BASE_OFFSET = 0;

@@ -44,10 +44,7 @@ public class PTXHotSpotBackendFactory {
     private static final PTXCompilerConfiguration compilerConfiguration = new PTXCompilerConfiguration();
     private static final PTXAddressLowering addressLowering = new PTXAddressLowering();
 
-    public static PTXBackend createBackend(OptionValues options,
-                                           HotSpotJVMCIRuntime jvmciRuntime,
-                                           TornadoVMConfig vmConfig,
-                                           CUDADevice device) {
+    public static PTXBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, CUDADevice device) {
         JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
@@ -76,16 +73,7 @@ public class PTXHotSpotBackendFactory {
             replacements.setGraphBuilderPlugins(plugins);
 
             suites = new PTXSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
-            providers = new PTXProviders(metaAccess,
-                                         codeCache,
-                                         constantReflection,
-                                         constantFieldProvider,
-                                         foreignCalls,
-                                         lowerer,
-                                         replacements,
-                                         stampProvider,
-                                         null,
-                                         suites);
+            providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, null, suites);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
 
@@ -94,22 +82,16 @@ public class PTXHotSpotBackendFactory {
             return new PTXBackend(providers, deviceContext, target, codeCache, options);
         }
 
-
     }
 
     protected static GraphBuilderConfiguration.Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, Replacements replacements) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         GraphBuilderConfiguration.Plugins plugins = new GraphBuilderConfiguration.Plugins(invocationPlugins);
 
-//        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
-//        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
+        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
+        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess,
-                snippetReflection,
-                invocationPlugins,
-                replacements,
-                true,
-                true);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, true, true);
         PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

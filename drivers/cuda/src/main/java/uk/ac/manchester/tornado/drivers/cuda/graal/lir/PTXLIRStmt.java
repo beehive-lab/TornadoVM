@@ -52,10 +52,10 @@ public class PTXLIRStmt {
 
                 asm.emitSymbol(TAB);
                 if (lhsKind == rhsKind) {
-                    asm.emit("mov." + lhsKind.toString());
+                    asm.emit(MOVE + "." + lhsKind.toString());
                 }
                 else {
-                    asm.emit("cvt.");
+                    asm.emit(CONVERT + ".");
                     if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
                         asm.emit(getFPURoundingMode(lhsKind, rhsKind));
                         asm.emitSymbol(DOT);
@@ -159,6 +159,55 @@ public class PTXLIRStmt {
         }
     }
 
+    @Opcode("VLOAD")
+    public static class VectorLoadStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorLoadStmt> TYPE = LIRInstructionClass.create(VectorLoadStmt.class);
+
+        @Def
+        protected Variable dest;
+        @Use
+        protected PTXUnary.MemoryAccess address;
+
+        @Use
+        protected Value index;
+
+        public VectorLoadStmt(Variable dest, Value index, PTXUnary.MemoryAccess address) {
+            super(TYPE);
+            this.dest = dest;
+            this.address = address;
+            this.index = index;
+            address.assignTo(dest);
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            PTXNullaryOp.LD.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit(address.getBase().memorySpace.name());
+            asm.emitSymbol(DOT);
+            asm.emit(VECTOR + dest.getPlatformKind().getVectorLength());
+            asm.emitSymbol(DOT);
+            asm.emit(((PTXKind)dest.getPlatformKind()).getElementKind().toString());
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA);
+            asm.space();
+            address.emit(crb, asm, null);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        public Value getResult() {
+            return dest;
+        }
+
+        public PTXUnary.MemoryAccess getAddress() {
+            return address;
+        }
+    }
+
     @Opcode("STORE")
     public static class StoreStmt extends AbstractInstruction {
 
@@ -179,7 +228,7 @@ public class PTXLIRStmt {
 
             // st.global.u32 		[%rd19], %r10;
             asm.emitSymbol(TAB);
-            asm.emit("st.");
+            PTXNullaryOp.ST.emit(crb, null);
             asm.emit(address.getBase().memorySpace.name());
             asm.emitSymbol(DOT);
             asm.emit(rhs.getPlatformKind().toString());
@@ -205,6 +254,46 @@ public class PTXLIRStmt {
 
         public PTXUnary.MemoryAccess getAddress() {
             return address;
+        }
+    }
+
+    @Opcode("VSTORE")
+    public static class VectorStoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<VectorStoreStmt> TYPE = LIRInstructionClass.create(VectorStoreStmt.class);
+
+        @Def
+        protected Value source;
+        @Use
+        protected PTXUnary.MemoryAccess address;
+
+        @Use
+        protected Value index;
+
+        public VectorStoreStmt(Value source, Value index, PTXUnary.MemoryAccess address) {
+            super(TYPE);
+            this.source = source;
+            this.address = address;
+            this.index = index;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            PTXNullaryOp.ST.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emit(address.getBase().memorySpace.name());
+            asm.emitSymbol(DOT);
+            asm.emit(VECTOR + source.getPlatformKind().getVectorLength());
+            asm.emitSymbol(DOT);
+            asm.emit(((PTXKind) source.getPlatformKind()).getElementKind().toString());
+            asm.emitSymbol(TAB);
+
+            address.emit(crb, asm, null);
+            asm.emitSymbol(COMMA);
+            asm.space();
+            asm.emitValue(source);
+            asm.delimiter();
+            asm.eol();
         }
     }
 

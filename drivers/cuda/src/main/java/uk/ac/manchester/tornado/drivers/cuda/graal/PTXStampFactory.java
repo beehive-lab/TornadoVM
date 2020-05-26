@@ -7,8 +7,8 @@ public class PTXStampFactory {
 
     public static PTXStamp getStampFor(PTXKind kind) {
         int index = 0;
-        for (PTXKind oclKind : PTXKind.values()) {
-            if (oclKind == kind) {
+        for (PTXKind ptxKind : PTXKind.values()) {
+            if (ptxKind == kind) {
                 break;
             }
             index++;

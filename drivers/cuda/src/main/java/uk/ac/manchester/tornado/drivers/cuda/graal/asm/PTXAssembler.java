@@ -17,6 +17,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXParam;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXReturnSlot;
 
 import java.util.ArrayList;
@@ -66,6 +67,14 @@ public class PTXAssembler extends Assembler {
             ((PTXReturnSlot) value).emit(this);
         } else {
             emit(toString(value));
+        }
+    }
+
+    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
+        if (value instanceof PTXLIROp) {
+            ((PTXLIROp) value).emit(crb, this, dest);
+        } else {
+            emitValue(value);
         }
     }
 
@@ -200,6 +209,15 @@ public class PTXAssembler extends Assembler {
         emitValue(values[values.length - 1]);
     }
 
+    public void emitValuesOrOp(PTXCompilationResultBuilder crb, Value[] values, Variable dest) {
+        for (int i = 0; i < values.length - 1; i++) {
+            emitValueOrOp(crb, values[i], dest);
+            emitSymbol(COMMA);
+            space();
+        }
+        emitValueOrOp(crb, values[values.length - 1], dest);
+    }
+
     public String toString(LabelRef ref) {
         return ref.label().toString();
     }
@@ -298,6 +316,8 @@ public class PTXAssembler extends Assembler {
 
         public static final PTXNullaryOp LD = new PTXNullaryOp("ld");
         public static final PTXNullaryOp LDU = new PTXNullaryOp("ldu");
+        public static final PTXNullaryOp ST = new PTXNullaryOp("st");
+        public static final PTXNullaryOp STU = new PTXNullaryOp("stu");
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
 
         protected PTXNullaryOp(String opcode) {
@@ -389,23 +409,7 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXUnaryIntrinsic extends PTXUnaryOp {
         // @formatter:off
-
-        public static final PTXUnaryIntrinsic GLOBAL_ID = new PTXUnaryIntrinsic("get_global_id");
-        public static final PTXUnaryIntrinsic GLOBAL_SIZE = new PTXUnaryIntrinsic("get_global_size");
-
-        public static final PTXUnaryIntrinsic LOCAL_ID = new PTXUnaryIntrinsic("get_local_id");
-        public static final PTXUnaryIntrinsic LOCAL_SIZE = new PTXUnaryIntrinsic("get_local_size");
-
-        public static final PTXUnaryIntrinsic GROUP_ID = new PTXUnaryIntrinsic("get_group_id");
-        public static final PTXUnaryIntrinsic GROUP_SIZE = new PTXUnaryIntrinsic("get_group_size");
-
-        public static final PTXUnaryIntrinsic ATOMIC_INC = new PTXUnaryIntrinsic("atomic_inc");
-        public static final PTXUnaryIntrinsic ATOMIC_DEC = new PTXUnaryIntrinsic("atomic_dec");
-
         public static final PTXUnaryIntrinsic BARRIER_SYNC = new PTXUnaryIntrinsic("barrier.sync", false, false, false);
-        public static final PTXUnaryIntrinsic MEM_FENCE = new PTXUnaryIntrinsic("mem_fence");
-        public static final PTXUnaryIntrinsic READ_MEM_FENCE = new PTXUnaryIntrinsic("read_mem_fence");
-        public static final PTXUnaryIntrinsic WRITE_MEM_FENCE = new PTXUnaryIntrinsic("write_mem_fence");
 
         public static final PTXUnaryIntrinsic ABS = new PTXUnaryIntrinsic("abs", false);
         public static final PTXUnaryIntrinsic EXP2 = new PTXUnaryIntrinsic("ex2.approx", false);
@@ -417,14 +421,6 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic LOCAL_MEMORY = new PTXUnaryIntrinsic("__local");
 
         public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc", false);
-
-        public static final PTXUnaryIntrinsic AS_FLOAT = new PTXUnaryIntrinsic("as_float");
-        public static final PTXUnaryIntrinsic AS_INT = new PTXUnaryIntrinsic("as_int");
-
-        public static final PTXUnaryIntrinsic IS_FINITE = new PTXUnaryIntrinsic("isfinite");
-        public static final PTXUnaryIntrinsic IS_INF = new PTXUnaryIntrinsic("isinf");
-        public static final PTXUnaryIntrinsic IS_NAN = new PTXUnaryIntrinsic("isnan");
-        public static final PTXUnaryIntrinsic IS_NORMAL = new PTXUnaryIntrinsic("isnormal");
         // @formatter:on
 
         protected PTXUnaryIntrinsic(String opcode) {
@@ -511,7 +507,7 @@ public class PTXAssembler extends Assembler {
                 asm.emit("." + type);
             }
             asm.emitSymbol(TAB);
-            asm.emitValues(new Value[] { dest, x, y });
+            asm.emitValuesOrOp(crb, new Value[] { dest, x, y }, dest);
         }
     }
 
@@ -526,23 +522,11 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryIntrinsic FLOAT_MIN = new PTXBinaryIntrinsic("min", false);
         public static final PTXBinaryIntrinsic FLOAT_MAX = new PTXBinaryIntrinsic("max", false);
 
-        public static final PTXBinaryIntrinsic ATOMIC_ADD = new PTXBinaryIntrinsic("atomic_add");
-        public static final PTXBinaryIntrinsic ATOMIC_SUB = new PTXBinaryIntrinsic("atomic_sub");
-        public static final PTXBinaryIntrinsic ATOMIC_XCHG = new PTXBinaryIntrinsic("atomic_xchg");
-        public static final PTXBinaryIntrinsic ATOMIC_MIN = new PTXBinaryIntrinsic("atomic_min");
-        public static final PTXBinaryIntrinsic ATOMIC_MAX = new PTXBinaryIntrinsic("atomic_max");
-        public static final PTXBinaryIntrinsic ATOMIC_AND = new PTXBinaryIntrinsic("atomic_and");
-        public static final PTXBinaryIntrinsic ATOMIC_OR = new PTXBinaryIntrinsic("atomic_or");
-        public static final PTXBinaryIntrinsic ATOMIC_XOR = new PTXBinaryIntrinsic("atomic_xor");
-
         public static final PTXBinaryIntrinsic VLOAD2 = new PTXBinaryIntrinsic("vload2");
         public static final PTXBinaryIntrinsic VLOAD3 = new PTXBinaryIntrinsic("vload3");
         public static final PTXBinaryIntrinsic VLOAD4 = new PTXBinaryIntrinsic("vload4");
         public static final PTXBinaryIntrinsic VLOAD8 = new PTXBinaryIntrinsic("vload8");
         public static final PTXBinaryIntrinsic VLOAD16 = new PTXBinaryIntrinsic("vload16");
-
-        public static final PTXBinaryIntrinsic DOT = new PTXBinaryIntrinsic("dot");
-        public static final PTXBinaryIntrinsic CROSS = new PTXBinaryIntrinsic("cross");
         // @formatter:on
 
         protected PTXBinaryIntrinsic(String opcode) {
@@ -613,6 +597,153 @@ public class PTXAssembler extends Assembler {
             asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[] { dest, x, y, z });
+        }
+    }
+
+    public static class PTXTernaryIntrinsic extends PTXTernaryOp {
+
+        // @formatter:off
+        public static final PTXTernaryIntrinsic VSTORE2 = new PTXTernaryIntrinsic("vstore2");
+        public static final PTXTernaryIntrinsic VSTORE3 = new PTXTernaryIntrinsic("vstore3");
+        public static final PTXTernaryIntrinsic VSTORE4 = new PTXTernaryIntrinsic("vstore4");
+        public static final PTXTernaryIntrinsic VSTORE8 = new PTXTernaryIntrinsic("vstore8");
+        public static final PTXTernaryIntrinsic VSTORE16 = new PTXTernaryIntrinsic("vstore16");
+        // @formatter:on
+
+        protected PTXTernaryIntrinsic(String opcode) {
+            super(opcode);
+        }
+
+        @Override
+        public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Value z, Variable dest) {
+            final PTXAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValue(x);
+            asm.emit(", ");
+            asm.emitValue(y);
+            asm.emit(", ");
+            asm.emitValue(z);
+            asm.emit(")");
+        }
+    }
+
+    public static class PTXOp2 extends PTXOp {
+
+        // @formatter:off
+        public static final PTXOp2 VMOV_SHORT2 = new PTXOp2("(short2)");
+        public static final PTXOp2 VMOV_INT2 = new PTXOp2("(int2)");
+        public static final PTXOp2 VMOV_FLOAT2 = new PTXOp2("(float2)");
+        public static final PTXOp2 VMOV_BYTE2 = new PTXOp2("(char2)");
+        public static final PTXOp2 VMOV_DOUBLE2 = new PTXOp2("(double2)");
+        // @formatter:on
+
+        protected PTXOp2(String opcode) {
+            super(opcode);
+        }
+
+        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1) {
+            final PTXAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValue(s0);
+            asm.emit(", ");
+            asm.emitValue(s1);
+            asm.emit(")");
+        }
+    }
+
+    public static class PTXOp3 extends PTXOp2 {
+        // @formatter:off
+
+        public static final PTXOp3 VMOV_SHORT3 = new PTXOp3("(short3)");
+        public static final PTXOp3 VMOV_INT3 = new PTXOp3("(int3)");
+        public static final PTXOp3 VMOV_FLOAT3 = new PTXOp3("(float3)");
+        public static final PTXOp3 VMOV_BYTE3 = new PTXOp3("(char3)");
+        public static final PTXOp3 VMOV_DOUBLE3 = new PTXOp3("(double3)");
+
+        // @formatter:on
+        public PTXOp3(String opcode) {
+            super(opcode);
+        }
+
+        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1, Value s2) {
+            final PTXAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValue(s0);
+            asm.emit(", ");
+            asm.emitValue(s1);
+            asm.emit(", ");
+            asm.emitValue(s2);
+            asm.emit(")");
+        }
+    }
+
+    public static class PTXOp4 extends PTXOp3 {
+        // @formatter:off
+
+        public static final PTXOp4 VMOV_SHORT4 = new PTXOp4("(short4)");
+        public static final PTXOp4 VMOV_INT4 = new PTXOp4("(int4)");
+        public static final PTXOp4 VMOV_FLOAT4 = new PTXOp4("(float4)");
+        public static final PTXOp4 VMOV_BYTE4 = new PTXOp4("(char4)");
+        public static final PTXOp4 VMOV_DOUBLE4 = new PTXOp4("(double4)");
+        // @formatter:on
+
+        protected PTXOp4(String opcode) {
+            super(opcode);
+        }
+
+        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3) {
+            final PTXAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValue(s0);
+            asm.emit(", ");
+            asm.emitValue(s1);
+            asm.emit(", ");
+            asm.emitValue(s2);
+            asm.emit(", ");
+            asm.emitValue(s3);
+            asm.emit(")");
+        }
+    }
+
+    public static class PTXOp8 extends PTXOp4 {
+        // @formatter:off
+
+        public static final PTXOp8 VMOV_SHORT8 = new PTXOp8("(short8)");
+        public static final PTXOp8 VMOV_INT8 = new PTXOp8("(int8)");
+        public static final PTXOp8 VMOV_FLOAT8 = new PTXOp8("(float8)");
+        public static final PTXOp8 VMOV_BYTE8 = new PTXOp8("(char8)");
+        public static final PTXOp8 VMOV_DOUBLE8 = new PTXOp8("(double8)");
+
+        // @formatter:on
+
+        protected PTXOp8(String opcode) {
+            super(opcode);
+        }
+
+        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3, Value s4, Value s5, Value s6, Value s7) {
+            final PTXAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValue(s0);
+            asm.emit(", ");
+            asm.emitValue(s1);
+            asm.emit(", ");
+            asm.emitValue(s2);
+            asm.emit(", ");
+            asm.emitValue(s3);
+            asm.emit(", ");
+            asm.emitValue(s4);
+            asm.emit(", ");
+            asm.emitValue(s5);
+            asm.emit(", ");
+            asm.emitValue(s6);
+            asm.emit(", ");
+            asm.emitValue(s7);
+            asm.emit(")");
         }
     }
 }

@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -15,7 +16,6 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXUnary.MemoryAccess;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.globalSpace;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.STACK_BASE_OFFSET;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
@@ -26,6 +26,11 @@ public class PTXGenTool {
 
     public PTXGenTool(PTXLIRGenerator generator) {
         gen = generator;
+    }
+
+    public void emitVectorLoad(Variable result, Value index, MemoryAccess address) {
+        trace("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        gen.append(new PTXLIRStmt.VectorLoadStmt(result, index, address));
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int paramOffset) {
@@ -44,16 +49,12 @@ public class PTXGenTool {
         emitParameterLoad(result, paramOffset);
 
         if (kind.isVector()) {
+            Variable vector = gen.newVariable(lirKind);
+            PTXArchitecture.PTXMemoryBase base = globalSpace;
+            MemoryAccess address = new MemoryAccess(base, result);
 
-            unimplemented("Vector parameter load is not supported in CUDA-PTX");
-//            Variable vector = gen.newVariable(lirKind);
-//            PTXMemoryBase base = globalSpace;
-//            PTXBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(kind);
-//            PTXAddressCast cast = new PTXAddressCast(base, LIRKind.value(kind.getElementKind()));
-//            MemoryAccess address = new MemoryAccess(base, result);
-//
-//            emitVectorLoad(vector, intrinsic, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), cast, address);
-//            result = vector;
+            emitVectorLoad(vector, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), address);
+            result = vector;
         }
 
         return result;
@@ -64,11 +65,7 @@ public class PTXGenTool {
                 LIRKind.value(PTXKind.S32),
                 JavaConstant.forInt(index * PTXKind.U64.getSizeInBytes() + STACK_BASE_OFFSET)
         );
-        gen.append(new PTXLIRStmt.LoadStmt(
-                new MemoryAccess(globalSpace, gen.getParameterAllocation(PTXArchitecture.STACK_POINTER), stackIndex),
-                (Variable) dst,
-                PTXAssembler.PTXNullaryOp.LDU
-        ));
+        gen.append(new PTXLIRStmt.LoadStmt(new MemoryAccess(globalSpace, gen.getParameterAllocation(PTXArchitecture.STACK_POINTER), stackIndex), (Variable) dst, PTXAssembler.PTXNullaryOp.LDU));
     }
 
 }

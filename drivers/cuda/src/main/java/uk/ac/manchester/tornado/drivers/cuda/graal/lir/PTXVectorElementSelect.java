@@ -29,7 +29,6 @@ import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
@@ -37,24 +36,23 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult
 public class PTXVectorElementSelect extends PTXLIROp {
 
     final Value vector;
-    private final Value selection;
+    private final String vectorSuffix;
 
-    public PTXVectorElementSelect(LIRKind lirKind, Value vector, Value selection) {
+    public PTXVectorElementSelect(LIRKind lirKind, Value vector, String vectorSuffix) {
         super(lirKind);
         this.vector = vector;
-        this.selection = selection;
+        this.vectorSuffix = vectorSuffix;
     }
 
     @Override
     public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-        TornadoInternalError.unimplemented();
-//        asm.emitValueOrOp(crb, vector);
-//        asm.emitSymbol(".s");
-//        asm.emitValue(crb, selection);
+        asm.emitValueOrOp(crb, vector, dest);
+        asm.emitSymbol(".");
+        asm.emit(vectorSuffix);
     }
 
     @Override
     public String toString() {
-        return String.format("vselect(%s, %s)", vector, selection);
+        return String.format("vselect(%s, %s)", vector, vectorSuffix);
     }
 }

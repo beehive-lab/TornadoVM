@@ -31,17 +31,13 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
         lirSuites = createLIRSuites();
     }
 
-    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, TaskMetaData meta) {
-        //canonicalizer.setContext(metaAccess, method, args, meta);
-    }
-
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(GraphBuilderConfiguration.Plugins plugins) {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
         InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
         PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
-//        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
-//        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
+        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
+        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
 
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);

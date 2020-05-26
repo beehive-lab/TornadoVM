@@ -37,19 +37,19 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 public class LoadIndexedVectorNode extends LoadIndexedNode {
 
     public static final NodeClass<LoadIndexedVectorNode> TYPE = NodeClass.create(LoadIndexedVectorNode.class);
-    private final PTXKind oclKind;
+    private final PTXKind ptxKind;
 
-    public LoadIndexedVectorNode(PTXKind oclKind, ValueNode array, ValueNode index, JavaKind elementKind) {
-        super(TYPE, PTXStampFactory.getStampFor(oclKind), array, index, null, elementKind);
-        this.oclKind = oclKind;
+    public LoadIndexedVectorNode(PTXKind ptxKind, ValueNode array, ValueNode index, JavaKind elementKind) {
+        super(TYPE, PTXStampFactory.getStampFor(ptxKind), array, index, null, elementKind);
+        this.ptxKind = ptxKind;
     }
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(PTXStampFactory.getStampFor(oclKind));
+        return updateStamp(PTXStampFactory.getStampFor(ptxKind));
     }
 
-    public PTXKind getOCLKind() {
-        return oclKind;
+    public PTXKind getPtxKind() {
+        return ptxKind;
     }
 }

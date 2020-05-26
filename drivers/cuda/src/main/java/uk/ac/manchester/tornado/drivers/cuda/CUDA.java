@@ -16,7 +16,7 @@ public class CUDA {
         initialise();
         platform = new CUDAPlatform();
 
-        // add a shutdown hook to free-up all OpenCL resources on VM exit
+        // add a shutdown hook to free-up all CUDA resources on VM exit
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

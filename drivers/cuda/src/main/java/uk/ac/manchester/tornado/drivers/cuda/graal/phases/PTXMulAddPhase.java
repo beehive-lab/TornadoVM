@@ -7,6 +7,7 @@ import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXMultiplyAddNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorElementOpNode;
 
 public class PTXMulAddPhase extends Phase {
 
@@ -20,6 +21,11 @@ public class PTXMulAddPhase extends Phase {
                 ValueNode x = mul.getX();
                 ValueNode y = mul.getY();
                 ValueNode z = (ValueNode) addNode.inputs().filter(node -> !node.equals(mul)).first();
+
+                if (x instanceof VectorElementOpNode || y instanceof VectorElementOpNode || z instanceof VectorElementOpNode) {
+                    return;
+                }
+
                 PTXMultiplyAddNode newNode = new PTXMultiplyAddNode(x, y, z);
                 graph.addWithoutUnique(newNode);
 

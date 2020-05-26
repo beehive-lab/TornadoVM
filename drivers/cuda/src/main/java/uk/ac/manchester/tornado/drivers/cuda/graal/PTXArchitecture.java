@@ -72,7 +72,44 @@ public class PTXArchitecture extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        return null;
+        PTXKind ptxKind = PTXKind.ILLEGAL;
+        switch (javaKind) {
+            case Boolean:
+                ptxKind = PTXKind.U8;
+                break;
+            case Byte:
+                ptxKind = PTXKind.S8;
+                break;
+            case Short:
+                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U16 : PTXKind.S16;
+                break;
+            case Char:
+                ptxKind = PTXKind.U16;
+                break;
+            case Int:
+                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U32 : PTXKind.S32;
+                break;
+            case Long:
+                ptxKind = (javaKind.isUnsigned()) ? PTXKind.U64 : PTXKind.S64;
+                break;
+            case Float:
+                ptxKind = PTXKind.F32;
+                break;
+            case Double:
+                ptxKind = PTXKind.F64;
+                break;
+            case Object:
+                ptxKind = (PTXKind) getWordKind();
+                break;
+            case Void:
+            case Illegal:
+                ptxKind = PTXKind.ILLEGAL;
+                break;
+            default:
+                shouldNotReachHere("illegal java type for %s", javaKind.name());
+        }
+
+        return ptxKind;
     }
 
     public String getABI() {

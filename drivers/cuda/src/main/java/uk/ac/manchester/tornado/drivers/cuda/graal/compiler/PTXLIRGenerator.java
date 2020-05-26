@@ -351,6 +351,8 @@ public class PTXLIRGenerator extends LIRGenerator {
 
         if (isArray) {
             var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);
+        } else if (kind.isVector()) {
+            var.setName(kind.getRegisterTypeString() + "Vec" + indexForType);
         } else {
             var.setName(kind.getRegisterTypeString() + indexForType);
         }
@@ -377,11 +379,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
         Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
-        append(new PTXLIRStmt.LoadStmt(
-                new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME),
-                stackPointer,
-                PTXNullaryOp.LD
-        ));
+        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));
     }
 
     public void emitConditionalBranch(LabelRef ref, Variable predicate, boolean isNegated, boolean isLoopEdgeBack) {

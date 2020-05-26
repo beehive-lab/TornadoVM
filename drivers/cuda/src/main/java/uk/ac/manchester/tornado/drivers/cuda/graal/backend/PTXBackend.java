@@ -194,19 +194,25 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
-        Map<PTXKind, Set<Pair<Variable, Boolean>>> kindToVariable = lirGenRes.getVariableTable();
+        Map<PTXKind, Set<PTXLIRGenerationResult.VariableData>> kindToVariable = lirGenRes.getVariableTable();
 
         for (PTXKind type : kindToVariable.keySet()) {
 
-            Set<Pair<Variable, Boolean>> vars = kindToVariable.get(type);
-            int varCount = 0;
-            for (Pair<Variable, Boolean> var : vars) {
-                if (!var.getRight()) {
-                    varCount++;
+            Set<PTXLIRGenerationResult.VariableData> vars = kindToVariable.get(type);
+            int regVarCount = 0;
+            for (PTXLIRGenerationResult.VariableData varData : vars) {
+                PTXKind kind = (PTXKind) varData.variable.getPlatformKind();
+                if (!varData.isArray && !kind.isVector()) {
+                    regVarCount++;
+                }
+                if (kind.isVector()) {
+                    asm.emitLine("\t.reg .v%d .%s %s;", kind.getVectorLength(), type.getElementKind(), varData.variable.getName());
                 }
             }
 
-            asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), varCount + 1);
+            if (regVarCount != 0) {
+                asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), regVarCount + 1);
+            }
         }
 
     }

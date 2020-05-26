@@ -113,10 +113,6 @@ public class PTXUnary {
             this.name = name;
         }
 
-        private boolean isLocalOrSharedMemoryAccess() {
-            return base.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
-        }
-
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             if (isLocalOrSharedMemoryAccess()) {
@@ -133,6 +129,14 @@ public class PTXUnary {
                 }
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             }
+        }
+
+        private boolean isLocalOrSharedMemoryAccess() {
+            return base.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
+        }
+
+        private boolean isVector() {
+            return assignedTo != null && ((PTXKind) assignedTo.getPlatformKind()).isVector();
         }
 
         public PTXMemoryBase getBase() {
