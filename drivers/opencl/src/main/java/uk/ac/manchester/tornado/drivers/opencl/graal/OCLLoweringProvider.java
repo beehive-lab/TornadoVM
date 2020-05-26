@@ -185,7 +185,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public Integer smallestCompareWidth() {
-        // For now don't use this optimization.
         return null;
     }
 
@@ -432,14 +431,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 final ConstantNode lengthNode = (ConstantNode) firstInput;
                 if (lengthNode.getValue() instanceof PrimitiveConstant) {
                     final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
-                    ResolvedJavaType elementType = newArray.elementType();
-                    JavaKind elementKind = elementType.getJavaKind();
-                    final int offset = arrayBaseOffset(elementKind);
-                    final int size = offset + (elementKind.getByteCount() * length);
                     if (gpuSnippet) {
                         lowerLocalNewArray(graph, length, newArray);
                     } else {
-                        lowerPrivateNewArray(graph, size, newArray);
+                        lowerPrivateNewArray(graph, length, newArray);
                     }
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
@@ -506,7 +501,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return graph.unique(new OffsetAddressNode(array, index));
     }
 
-    private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+    private boolean isLocalIDNode(StoreIndexedNode storeIndexed) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
@@ -515,13 +510,23 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
-    private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
+    private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+    }
+
+    private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {
+        Node nd = storeIndexed.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
+    }
+
+    private boolean isPrivateIDNode(LoadIndexedNode loadIndexedNode) {
+        Node nd = loadIndexedNode.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
@@ -540,7 +545,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
         AddressNode address;
-        if (isLocalIdNode(loadIndexed)) {
+        if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
             address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
@@ -555,7 +560,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             // char or short. In future integrations with JVMCI and Graal, this issue is
             // completely solved.
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
-        } else if (isLocalIdNode(storeIndexed)) {
+        } else if (isLocalIDNode(storeIndexed) || isPrivateIDNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         } else {
