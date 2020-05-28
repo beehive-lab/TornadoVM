@@ -47,13 +47,11 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
 
         if ((context.getMeta().getDomain() != null)) {
             if ((context.getMeta().getDomain().getDepth() != 0)) {
-                int opt = calculateLocalMemAllocSize(context);
-
                 NodeIterable<Node> sumNodes = graph.getNodes();
 
                 for (Node n : sumNodes) {
                     if (n instanceof MarkLocalArray) {
-                        ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
+                        ConstantNode newLengthNode = ConstantNode.forInt(calculateLocalMemAllocSize(context), graph);
                         n.inputs().first().replaceAndDelete(newLengthNode);
                     }
                 }
@@ -68,7 +66,7 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
             maxBlockSize /= 4;
         }
 
-        int value = (int) Math.min(Math.max(maxBlockSize, context.getMeta().getOpenCLGpuBlock2DX()), context.getMeta().getDomain().get(0).cardinality());
+        int value = Math.min(Math.max(maxBlockSize, context.getMeta().getOpenCLGpuBlock2DX()), context.getMeta().getDomain().get(0).cardinality());
         while (context.getMeta().getDomain().get(0).cardinality() % value != 0) {
             value--;
         }
