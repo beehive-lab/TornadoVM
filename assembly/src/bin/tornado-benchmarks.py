@@ -67,7 +67,6 @@ __SKIP_SERIAL__   = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL__ = " -Dtornado.enable=False "
 __SKIP_DEVICES__  = " -Dtornado.blacklist.devices="
 __VALIDATE__      = " -Dtornado.benchmarks.validate=True "
-__VERBOSE__       = " -Dtornado.verbose=True "
 ## ========================================================================================
 
 ## Include here benchmarks to run
@@ -125,8 +124,6 @@ def composeAllOptions(args):
 		options = options + __SKIP_PARALLEL__
 	if args.validate:
 		options = options + __VALIDATE__
-	if args.verbose:
-		options = options + __VERBOSE__
 	if args.skip_devices != None:
 		options = options + __SKIP_DEVICES__ + args.skip_devices  + " "
 	return options
@@ -174,7 +171,6 @@ def parseArguments():
 	parser.add_argument('--skipSequential', action="store_true", dest="skip_serial", default=False, help="Skip java version")
 	parser.add_argument('--skipParallel', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
 	parser.add_argument('--skipDevices', action="store", dest="skip_devices", default=None, help="Skip devices. Provide a list of devices (e.g., 0,1)")
-	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Enable verbose")
 	parser.add_argument('--printBenchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
 	args = parser.parse_args()
 	return args

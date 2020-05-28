@@ -43,7 +43,6 @@ function print_usage() {
   echo "usage:    tornado [options] class [arg0 ... argN]"
   echo ""
   echo "              -h|--help             Show this message"
-  echo "              -v|--verbose          Enable verbose output"
   echo "              -d|--debug            Enable debug output"
   echo ""
   echo "          Debugging options:"
@@ -80,14 +79,14 @@ function print_all_options() {
   echo ""
   echo " Debugging Information: "
   echo ""
-  echo -e "\tPrint all Devices available   : --devices "
+  echo -e "\tPrint all devices available   : --devices "
   echo -e "\tPrint generated kernel        : -Dtornado.opencl.source.print=True "
   echo -e "\tPrint kernel debug information: -Dtornado.debug=True "
   echo -e "\tEnable full debug information : -Dtornado.fullDebug=True "
   echo -e "\tDump compiled graphs into IGV : -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false "
   echo ""
   echo " Define on which device the application should run (by default is 0): "
-  echo -e "\tChange OpenCL device to run the application: -D<task-scheduleName>.<taskName>=0:<deviceID> (e.g., -Ds0.t0.device=0:2)"
+  echo -e "\tChange OpenCL device to run the application: -D<taskScheduleName>.<taskName>=0:<deviceID> (e.g., -Ds0.t0.device=0:2)"
   echo ""
   echo " Profiler: "
   echo -e "\tEnable online profiler        : -Dtornado.profiler=True "
@@ -125,10 +124,6 @@ while [[ $# -gt 0 ]]; do
   --version)
     print_version
     shift
-    ;;
-  -v | --verbose)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.verbose=True"
-    shift # past argument
     ;;
   -d | --debug)
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.debug=True"
