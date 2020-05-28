@@ -58,7 +58,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         final int numPlatforms = OpenCL.getNumPlatforms();
 
         if (numPlatforms < 1) {
-            throw new TornadoNoOpenCLPlatformException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine");
+            throw new TornadoNoOpenCLPlatformException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine ");
         }
 
         backends = new OCLBackend[numPlatforms][];

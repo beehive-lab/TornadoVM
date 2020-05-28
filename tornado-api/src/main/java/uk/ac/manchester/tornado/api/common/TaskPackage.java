@@ -56,9 +56,9 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 
 public class TaskPackage {
 
-    private String id;
-    private int taskType;
-    private Object[] taskParameters;
+    private final String id;
+    private final int taskType;
+    private final Object[] taskParameters;
     private long numThreadsToRun;
 
     public TaskPackage(String id, Task code) {
@@ -154,8 +154,8 @@ public class TaskPackage {
     }
 
     /**
-     * Get all parameters to the lambda expression. First parameter is reserved
-     * to the input code.
+     * Get all parameters to the lambda expression. First parameter is reserved to
+     * the input code.
      * 
      * @return an object array with all parameters.
      */
