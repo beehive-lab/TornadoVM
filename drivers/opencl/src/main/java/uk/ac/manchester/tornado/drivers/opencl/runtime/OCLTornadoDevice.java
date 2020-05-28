@@ -291,7 +291,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private String getTaskEntryName(SchedulableTask task) {
-        return task.getName().replace(" ", "").split("-")[1];
+        return task.getTaskName();
     }
 
     private TornadoInstalledCode loadPreCompiledBinaryForTask(SchedulableTask task) {
@@ -315,7 +315,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             TaskMetaData metaData = (TaskMetaData) task.meta();
             return task.getId() + ".device=" + metaData.getDriverIndex() + ":" + metaData.getDeviceIndex();
         } else {
-            throw new RuntimeException("[ERROR] TaskMedata expected");
+            throw new RuntimeException("[ERROR] TaskMetadata expected");
         }
     }
 

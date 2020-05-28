@@ -380,12 +380,12 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
-    public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         return submitWithEvents((OCLCallStack) stack, meta, waitEvents, batchThreads);
     }
 
     @Override
-    public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(CallStack stack, TaskMetaData meta, long batchThreads) {
         submitWithoutEvents((OCLCallStack) stack, meta, batchThreads);
         return -1;
     }
