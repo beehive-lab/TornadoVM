@@ -192,14 +192,20 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (shouldEmitIntegerLoad()) {
+            if (isLocalOrPrivateLoad()) {
                 emitIntegerBasedIndexCode(crb, asm);
             } else {
                 emitPointerBaseIndexCode(crb, asm);
             }
         }
 
-        private boolean shouldEmitIntegerLoad() {
+        /**
+         * This method is used to check if emiting a load to a local or private memory
+         * space.
+         *
+         * @return boolean This returns if the memory base is private or local.
+         */
+        private boolean isLocalOrPrivateLoad() {
             return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
         }
 
@@ -340,14 +346,20 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (shouldEmitIntegerStore()) {
+            if (isLocalOrPrivateStore()) {
                 emitIntegerStore(crb, asm);
             } else {
                 emitNormalCode(crb, asm);
             }
         }
 
-        private boolean shouldEmitIntegerStore() {
+        /**
+         * This method is used to check if emiting a store to a local or private memory
+         * space.
+         * 
+         * @return boolean This returns if the memory base is private or local.
+         */
+        private boolean isLocalOrPrivateStore() {
             return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
         }
 
