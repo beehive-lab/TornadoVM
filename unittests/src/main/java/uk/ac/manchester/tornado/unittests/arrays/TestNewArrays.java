@@ -54,7 +54,7 @@ public class TestNewArrays extends TornadoTestBase {
         int[] a = new int[size];
         int[] b = new int[size];
         int[] c = new int[size];
-        int[] result = new int[size];
+        int[] sequentialResult = new int[size];
 
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
@@ -66,10 +66,10 @@ public class TestNewArrays extends TornadoTestBase {
                 .streamOut(c);
         //@formatter:on
         schedule.execute();
-        vectorAdd(a, b, result);
+        vectorAdd(a, b, sequentialResult);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(result[i], c[i]);
+            assertEquals(sequentialResult[i], c[i]);
         }
 
     }
@@ -97,7 +97,7 @@ public class TestNewArrays extends TornadoTestBase {
         int[] a = new int[size];
         int[] b = new int[size];
         int[] c = new int[size];
-        int[] result = new int[size];
+        int[] sequentialResult = new int[size];
 
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
@@ -109,10 +109,10 @@ public class TestNewArrays extends TornadoTestBase {
                 .streamOut(c);
         //@formatter:on
         schedule.execute();
-        vectorAddComplexConditions(a, b, result);
+        vectorAddComplexConditions(a, b, sequentialResult);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(result[i], c[i]);
+            assertEquals(sequentialResult[i], c[i]);
         }
 
     }
