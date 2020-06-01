@@ -8,17 +8,22 @@
 extern "C" {
 #endif
 
-#define INSERT_EVENT(eventName) \
-    CUevent eventName; \
-    result = cuEventCreate(&eventName, CU_EVENT_DEFAULT); \
+#define RECORD_EVENT_BEGIN() \
+    CUevent beforeEvent, afterEvent; \
+    result = cuEventCreate(&beforeEvent, CU_EVENT_DEFAULT); \
     if (result != 0) { \
         printf("Failed to create event! (%d)\n", result); fflush(stdout); \
     } \
- \
-    result = cuEventRecord(eventName, stream); \
+    result = cuEventCreate(&afterEvent, CU_EVENT_DEFAULT); \
     if (result != 0) { \
-        printf("Failed to record event! (%d)\n", result); fflush(stdout); \
-    }
+        printf("Failed to create event! (%d)\n", result); fflush(stdout); \
+    } \
+\
+    result = cuEventRecord(beforeEvent, stream); \
+
+
+#define RECORD_EVENT_END() \
+    result = cuEventRecord(afterEvent, stream); \
 
 
 jbyteArray array_from_event(JNIEnv *env, CUevent *event);

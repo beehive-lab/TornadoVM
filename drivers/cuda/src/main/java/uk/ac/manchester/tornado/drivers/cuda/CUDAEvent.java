@@ -9,8 +9,8 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 public class CUDAEvent extends TornadoLogger implements Event {
 
-    // eventWrapper[0] contains the before_event
-    // eventWrapper[1] contians the after_event
+    // eventWrapper[0] contains the beforeEvent
+    // eventWrapper[1] contians the afterEvent
     private final byte[][] eventWrapper;
 
     private boolean isCompleted;

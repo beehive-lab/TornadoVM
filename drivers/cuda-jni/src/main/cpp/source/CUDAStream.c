@@ -229,7 +229,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    INSERT_EVENT(before_event)
+    RECORD_EVENT_BEGIN()
     result = cuLaunchKernel(kernel,
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
             (unsigned int) blockDimX, (unsigned int) blockDimY, (unsigned int) blockDimZ,
@@ -237,14 +237,14 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
             NULL,
             arg_config
     );
+    RECORD_EVENT_END()
     if (result != 0) {
         printf("Failed to launch kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
     }
-    INSERT_EVENT(after_event)
 
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
-    return wrapper_from_events(env, &before_event, &after_event);
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }
 
 /*
@@ -317,8 +317,8 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
     CUresult result;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
-    INSERT_EVENT(before_event)
-    INSERT_EVENT(after_event)
+    RECORD_EVENT_BEGIN()
+    RECORD_EVENT_END()
 
-    return wrapper_from_events(env, &before_event, &after_event);
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }

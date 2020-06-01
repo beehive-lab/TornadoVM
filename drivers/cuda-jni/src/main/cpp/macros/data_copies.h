@@ -9,20 +9,20 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
 \
     StagingAreaList *staging_list = get_first_free_staging_area(length); \
     CUresult result; \
-    INSERT_EVENT(before_event) \
+    RECORD_EVENT_BEGIN() \
 \
     result = cuMemcpyDtoHAsync(staging_list->staging_area, device_ptr, (size_t) length, stream); \
 \
-    INSERT_EVENT(after_event) \
+    RECORD_EVENT_END() \
     if (result != 0) { \
         printf("Failed to copy memory from device to host! (%d)\n", result); fflush(stdout); \
     } \
-    if (cuEventQuery(after_event) != 0) cuEventSynchronize(after_event); \
+    if (cuEventQuery(afterEvent) != 0) cuEventSynchronize(afterEvent); \
  \
     (*env)->Set ## J_TYPE ## ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), staging_list->staging_area); \
     set_to_unused(stream, result, staging_list); \
  \
-    return wrapper_from_events(env, &before_event, &after_event); \
+    return wrapper_from_events(env, &beforeEvent, &afterEvent); \
 } \
  \
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayDtoHAsync__JJ_3##SIG##J_3B \
@@ -32,15 +32,15 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
     stream_from_array(env, &stream, stream_wrapper); \
 \
     CUresult result; \
-    INSERT_EVENT(before_event) \
+    RECORD_EVENT_BEGIN() \
 \
     result = cuMemcpyDtoHAsync(native_array + host_offset, device_ptr, (size_t) length, stream); \
  \
-    INSERT_EVENT(after_event) \
+    RECORD_EVENT_END() \
     cuMemFreeHost(native_array); \
     (*env)->ReleasePrimitiveArrayCritical(env, array, native_array, 0); \
  \
-    return wrapper_from_events(env, &before_event, &after_event); \
+    return wrapper_from_events(env, &beforeEvent, &afterEvent); \
 }
 
 #define COPY_ARRAY_H_TO_D(SIG,NATIVE_J_TYPE,J_TYPE) \
@@ -52,16 +52,16 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
     StagingAreaList *staging_list = get_first_free_staging_area(length); \
     (*env)->Get##J_TYPE##ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), staging_list->staging_area); \
     CUresult result; \
-    INSERT_EVENT(before_event) \
+    RECORD_EVENT_BEGIN() \
  \
     result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream); \
  \
-    INSERT_EVENT(after_event) \
+    RECORD_EVENT_END() \
     result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0); \
     if (result != 0) { \
         printf("Failed to queue memory free! (%d)\n", result); fflush(stdout); \
     } \
-    return wrapper_from_events(env, &before_event, &after_event); \
+    return wrapper_from_events(env, &beforeEvent, &afterEvent); \
 } \
  \
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJ_3##SIG##J_3B \
@@ -72,18 +72,18 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDASt
     CUstream stream; \
     stream_from_array(env, &stream, stream_wrapper); \
     CUresult result; \
-    INSERT_EVENT(before_event) \
+    RECORD_EVENT_BEGIN() \
 \
     result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream); \
 \
-    INSERT_EVENT(after_event) \
+    RECORD_EVENT_END() \
  \
     result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0); \
     if (result != 0) { \
         printf("Failed to queue memory free! (%d)\n", result); fflush(stdout); \
     } \
  \
-    return wrapper_from_events(env, &before_event, &after_event); \
+    return wrapper_from_events(env, &beforeEvent, &afterEvent); \
 }
 
 #endif

@@ -66,12 +66,12 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAEvent_cuE
     jbyteArray array1 = (jbyteArray) (*env)->GetObjectArrayElement(env, wrapper, (jsize) 0);
     jbyteArray array2 = (jbyteArray) (*env)->GetObjectArrayElement(env, wrapper, (jsize) 1);
 
-    CUevent before_event, after_event;
-    event_from_array(env, &before_event, array1);
-    event_from_array(env, &after_event, array2);
+    CUevent beforeEvent, afterEvent;
+    event_from_array(env, &beforeEvent, array1);
+    event_from_array(env, &afterEvent, array2);
 
     float time;
-    cuEventElapsedTime(&time, before_event, after_event);
+    cuEventElapsedTime(&time, beforeEvent, afterEvent);
     // cuEventElapsedTime returns the time in milliseconds.  We convert because the tornado profiler uses nanoseconds.
     return (jlong) (time * 1e+6);
 }
