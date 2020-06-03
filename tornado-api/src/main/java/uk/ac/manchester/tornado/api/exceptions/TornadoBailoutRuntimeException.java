@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,27 +20,30 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.domain;
+package uk.ac.manchester.tornado.api.exceptions;
 
-public interface Domain {
+public class TornadoBailoutRuntimeException extends RuntimeException {
 
-    /***
-     * Returns the number of elements in a domain.
-     * 
-     * @return
-     */
-    int cardinality();
+    private final String message;
+    private Exception e;
 
-    /***
-     * Maps the given index onto the ith element in the domain. e.g. for a domain
-     * with cardinality=3 {2,4,6} map(1) = 4;
-     * 
-     * @param index
-     *            (0...cardninality())
-     * @return
-     */
-    int map(int index);
+    public TornadoBailoutRuntimeException(final String msg) {
+        message = msg;
+    }
+
+    public TornadoBailoutRuntimeException(final String msg, Exception e) {
+        message = msg;
+        this.e = e;
+    }
+
+    public Exception getException() {
+        return this.e;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
 }

@@ -67,10 +67,14 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
         }
 
         int value = Math.min(Math.max(maxBlockSize, context.getMeta().getOpenCLGpuBlock2DX()), context.getMeta().getDomain().get(0).cardinality());
-        while (context.getMeta().getDomain().get(0).cardinality() % value != 0) {
-            value--;
-        }
-        return value;
-    }
 
+        if (value == 0) {
+            return 0;
+        } else {
+            while (context.getMeta().getDomain().get(0).cardinality() % value != 0) {
+                value--;
+            }
+            return value;
+        }
+    }
 }

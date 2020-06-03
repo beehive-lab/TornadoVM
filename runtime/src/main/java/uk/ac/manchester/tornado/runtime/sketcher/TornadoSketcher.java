@@ -57,8 +57,10 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
@@ -148,7 +150,10 @@ public class TornadoSketcher {
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
-            throw new TornadoInternalError(e);
+            if (Tornado.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new TornadoBailoutRuntimeException("unable to build sketch for method: " + resolvedMethod.getName() + "(" + e.getMessage() + ")");
         }
     }
 }

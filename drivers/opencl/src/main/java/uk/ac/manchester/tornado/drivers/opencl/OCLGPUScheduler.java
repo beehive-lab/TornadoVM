@@ -87,6 +87,9 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         }
 
         int value = (int) Math.min(maxBlockSize, globalWorkSize);
+        if (value == 0) {
+            return 1;
+        }
         while (globalWorkSize % value != 0) {
             value--;
         }

@@ -362,7 +362,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     if (!graph.method().isStatic() || getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
                         index++;
                     }
-
                     processReduceAnnotation(graph, index);
                 }
             }
