@@ -411,6 +411,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    private void deoptimizeToSequentialJava(TornadoBailoutRuntimeException e) {
+        // Execute the sequential code
+        if (!Tornado.DEBUG) {
+            System.out.println("[Bailout] Running the sequential implementation. Enable --debug to see the reason.");
+        } else {
+            System.out.println(e.getMessage());
+            for (StackTraceElement s : e.getStackTrace()) {
+                System.out.println("\t" + s);
+            }
+        }
+        runAllTasksJavaSequential();
+    }
+
     @Override
     public void scheduleInner() {
         boolean compile = compileToTornadoVMBytecodes();
@@ -424,16 +437,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
             updateProfiler();
         } catch (TornadoBailoutRuntimeException e) {
-            // Execute the sequential code
-            System.out.println("[Bailout] Running the sequential implementation. Enable --debug with see the reason");
-            if (Tornado.DEBUG) {
-                System.out.println(e.getMessage());
-                for (StackTraceElement s : e.getStackTrace()) {
-                    System.out.println("\t" + s);
-                }
-            }
-
-            runAllTasksJavaSequential();
+            deoptimizeToSequentialJava(e);
         }
     }
 
@@ -1480,9 +1484,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         try {
             addInner(type, method, meta, id, parameters);
         } catch (TornadoBailoutRuntimeException e) {
-            System.out.println("WARNING: Code Bailout to Java sequential. Use --debug to see the reason");
             this.bailout = true;
-            if (Tornado.DEBUG) {
+            if (!Tornado.DEBUG) {
+                System.out.println("WARNING: Code Bailout to Java sequential. Use --debug to see the reason");
+            } else {
                 e.printStackTrace();
             }
         }
