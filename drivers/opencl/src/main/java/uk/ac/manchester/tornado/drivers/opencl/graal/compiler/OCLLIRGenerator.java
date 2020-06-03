@@ -35,9 +35,12 @@ import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LIRVerifier;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
@@ -74,6 +77,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import java.util.ArrayList;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
@@ -423,6 +428,16 @@ public class OCLLIRGenerator extends LIRGenerator {
     protected JavaConstant zapValueForKind(PlatformKind pk) {
         unimplemented();
         return null;
+    }
+
+    @Override
+    public <I extends LIRInstruction> I append(I op) {
+        LIR lir = getResult().getLIR();
+        ArrayList<LIRInstruction> lirForBlock = lir.getLIRforBlock(getCurrentBlock());
+        // TODO checks this does not break anything
+//        op.setPosition(currentPosition);
+        lirForBlock.add(op);
+        return op;
     }
 
 }

@@ -161,6 +161,26 @@ public class OCLGraphBuilderPlugins {
 
                 return true;
             }
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
+                return defaultHandler(b, targetMethod, receiver, arg1, arg2);
+            }
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3) {
+                return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3);
+            }
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4) {
+                return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3, arg4);
+            }
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4, ValueNode arg5) {
+                return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3, arg4, arg5);
+            }
         };
 
         plugins.register(tprintfPlugin, Debug.class, "tprintf", String.class, Object[].class);
@@ -221,6 +241,11 @@ public class OCLGraphBuilderPlugins {
                 newArrayNode.safeDelete();
                 return true;
             }
+
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
+                return defaultHandler(b, targetMethod, receiver, arg1, arg2);
+            }
         };
 
         plugins.register(printfPlugin, Debug.class, "printf", String.class, Object[].class);
@@ -230,6 +255,8 @@ public class OCLGraphBuilderPlugins {
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
 
         Registration r = new Registration(plugins, java.lang.Math.class);
+        // We have to overwrite some of standard math plugins
+        r.setAllowOverwrite(true);
         registerOpenCLOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);

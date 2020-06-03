@@ -93,7 +93,7 @@ public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGen
         }
         context.lirGen.beforeRegisterAllocation();
 
-        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
+//        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
 
 }

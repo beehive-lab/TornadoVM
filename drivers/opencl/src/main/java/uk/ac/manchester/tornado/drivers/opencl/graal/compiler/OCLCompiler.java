@@ -29,6 +29,7 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMBackend;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METHODS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
@@ -233,7 +234,7 @@ public class OCLCompiler {
                 if (r.meta != null && r.meta.isParallel()) {
                     isParallel = true;
                 }
-                emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
+                emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, r.providers.getCodeCache().getRegisterConfig(), r.lirSuites, r.isKernel, isParallel);
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
@@ -386,7 +387,8 @@ public class OCLCompiler {
     public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, int bytecodeSize, LIRGenerationResult lirGenRes,
             OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
-            FrameMap frameMap = lirGenRes.getFrameMap();
+//            FrameMap frameMap = lirGenRes.getFrameMap();
+            FrameMap frameMap = null;
             final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(lirGenRes, frameMap, compilationResult, factory, isKernel, isParallel);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
 

@@ -148,6 +148,7 @@ public final class VectorPlugins {
 
         final Registration r = new Registration(plugins, declaringClass);
 
+        // TODO double check there's no need for initialiser to be registered.
         final Class<?>[] argumentTypes = new Class<?>[vectorKind.getVectorLength()];
         for (int i = 0; i < vectorKind.getVectorLength(); i++) {
             argumentTypes[i] = elementType;
@@ -189,7 +190,7 @@ public final class VectorPlugins {
             // }
         };
 
-        r.register0("<init>", initialiser);
+//        r.register0("<init>", initialiser);
 
         r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
             @Override
@@ -209,7 +210,8 @@ public final class VectorPlugins {
             }
         });
 
-        r.register3("add", Receiver.class, declaringClass, declaringClass, new InvocationPlugin() {
+        r.register2("add", declaringClass, declaringClass, new InvocationPlugin() {
+            @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
