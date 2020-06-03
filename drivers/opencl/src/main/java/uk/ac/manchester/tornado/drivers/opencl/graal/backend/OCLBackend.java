@@ -593,8 +593,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, StructuredGraph graph, Object stub) {
-        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig ,new CallingConvention(0, null, (AllocatableValue[]) null));
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
+            StructuredGraph graph, Object stub) {
+        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {

@@ -47,6 +47,7 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -112,7 +113,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                         info("\tnode %s updated:\n", n);
                         info(sb.toString().trim());
                     }
-                    return;
+                    throw new TornadoBailoutRuntimeException("unable to parallelise because of loop-dependencies.");
                 }
 
                 if (ivs.size() > 1) {
@@ -169,7 +170,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
 
         } else {
-            throw new TornadoCompilationException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device!");
+            throw new TornadoBailoutRuntimeException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device.");
         }
     }
 }

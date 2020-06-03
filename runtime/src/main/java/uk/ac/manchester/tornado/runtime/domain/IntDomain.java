@@ -28,17 +28,13 @@ package uk.ac.manchester.tornado.runtime.domain;
 public class IntDomain implements Domain {
 
     private int offset;
-    private int step;
+    private final int step;
     private int length;
 
     public IntDomain(int offset, int step, int length) {
         this.offset = offset;
         this.step = step;
         this.length = length;
-    }
-
-    public IntDomain(int length) {
-        this(0, 1, length);
     }
 
     @Override
@@ -62,14 +58,6 @@ public class IntDomain implements Domain {
 
     public void setOffset(int offset) {
         this.offset = offset;
-    }
-
-    public int getStep() {
-        return step;
-    }
-
-    public void setStep(int step) {
-        this.step = step;
     }
 
     public void setLength(int length) {

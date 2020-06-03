@@ -45,10 +45,7 @@ public class PrebuiltTest extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDefaultDevice();
-
-        defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        System.out.println("Default Device:  " + defaultDevice);
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
         // @formatter:off
         new TaskSchedule("s0")
