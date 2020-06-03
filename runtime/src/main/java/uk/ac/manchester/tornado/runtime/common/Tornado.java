@@ -104,7 +104,6 @@ public final class Tornado implements TornadoCI {
             } catch (IOException e) {
                 warn("Unable to load settings from %s", localSettings.getAbsolutePath());
             }
-
         }
         /*
          * merge local and system properties, note that command line arguments override

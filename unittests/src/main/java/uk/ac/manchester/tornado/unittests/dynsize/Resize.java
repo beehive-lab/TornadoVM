@@ -53,7 +53,6 @@ public class Resize {
 
         System.out.println("[APP] " + a);
         ts.execute();
-
         // Resize A
         a = createArray(128);
 
