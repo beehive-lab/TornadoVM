@@ -161,26 +161,6 @@ public class OCLGraphBuilderPlugins {
 
                 return true;
             }
-
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
-                return defaultHandler(b, targetMethod, receiver, arg1, arg2);
-            }
-
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3) {
-                return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3);
-            }
-
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4) {
-                return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3, arg4);
-            }
-
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4, ValueNode arg5) {
-                return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3, arg4, arg5);
-            }
         };
 
         plugins.register(tprintfPlugin, Debug.class, "tprintf", String.class, Object[].class);
@@ -240,11 +220,6 @@ public class OCLGraphBuilderPlugins {
                 newArrayNode.clearInputs();
                 newArrayNode.safeDelete();
                 return true;
-            }
-
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
-                return defaultHandler(b, targetMethod, receiver, arg1, arg2);
             }
         };
 

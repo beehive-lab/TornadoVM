@@ -49,7 +49,6 @@ import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
@@ -266,11 +265,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     }
                 }
             }
-
-            // TODO do we really need this?
-            // LIR::verifyBlock asserts that each block ends with
-            // assert end instanceof StandardOp.BlockEndOp : String.format("Not a BlockEndOp %s (Block %s)", end.getClass(), block);
-            // assert LIR.verifyBlock(gen.getResult().getLIR(), block);
+            assert LIR.verifyBlock(gen.getResult().getLIR(), block);
         }
     }
 

@@ -148,50 +148,6 @@ public final class VectorPlugins {
 
         final Registration r = new Registration(plugins, declaringClass);
 
-        // TODO double check there's no need for initialiser to be registered.
-        final Class<?>[] argumentTypes = new Class<?>[vectorKind.getVectorLength()];
-        for (int i = 0; i < vectorKind.getVectorLength(); i++) {
-            argumentTypes[i] = elementType;
-        }
-        final InvocationPlugin initialiser = new InvocationPlugin() {
-            @Override
-            public boolean execute(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode[] args) {
-                final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
-                if (args.length > 0) {
-                    int offset = (vector == args[0]) ? 1 : 0;
-
-                    for (int i = offset; i < args.length; i++) {
-                        vector.setElement(i - offset, args[i]);
-                    }
-                } else {
-                    vector.initialiseToDefaultValues(vector.graph());
-                }
-                return true;
-            }
-
-            // @Override
-            // public boolean defaultHandler(GraphBuilderContext b,
-            // ResolvedJavaMethod targetMethod,
-            // Receiver receiver, ValueNode... args) {
-            // final VectorValueNode vector = resolveReceiver(b, vectorKind,
-            // receiver);
-            // if (args.length > 0) {
-            //
-            // int offset = (vector == args[0]) ? 1 : 0;
-            //
-            // for (int i = offset; i < args.length; i++) {
-            // vector.setElement(i - offset, args[i]);
-            // }
-            // } else {
-            // vector.initialiseToDefaultValues(vector.graph());
-            // }
-            //
-            // return true;
-            // }
-        };
-
-//        r.register0("<init>", initialiser);
-
         r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
@@ -211,7 +167,6 @@ public final class VectorPlugins {
         });
 
         r.register2("add", declaringClass, declaringClass, new InvocationPlugin() {
-            @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);

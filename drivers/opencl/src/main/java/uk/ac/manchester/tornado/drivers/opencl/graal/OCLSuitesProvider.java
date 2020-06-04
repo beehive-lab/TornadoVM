@@ -68,12 +68,6 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
-        //TODO remove this
-//        InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
-//        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
-//        OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
-//        OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
-
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);
 
