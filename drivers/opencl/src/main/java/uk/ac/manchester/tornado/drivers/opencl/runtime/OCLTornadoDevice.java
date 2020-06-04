@@ -213,12 +213,16 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
-
         final OCLDeviceContext deviceContext = getDeviceContext();
-
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+
+        // Return the code from the cache
+        if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+            // return deviceContext.getInstalledCode(task.getId(),
+            // resolvedMethod.getName());
+        }
 
         // copy meta data into task
         final TaskMetaData sketchMeta = sketch.getMeta();
@@ -234,11 +238,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
-
-            if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-                // Return the code from the cache
-                return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
-            }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code

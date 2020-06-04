@@ -222,6 +222,26 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             i++;
         }
 
+        // 4. Update task-parameters
+        i = 0;
+        // Force to recompile the task-sketcher
+        for (TaskPackage tp : taskPackages) {
+            Object[] params = tp.getTaskParameters();
+            for (int k = 1; k < params.length; k++) {
+                if (params[k].equals(oldRef)) {
+                    System.out.println("PARAM OLD " + oldRef + " -> " + newRef);
+                    params[k] = newRef;
+                }
+            }
+        }
+
+        // 5. Force to recompile the task-sketcher
+        i = 0;
+        for (TaskPackage tp : taskPackages) {
+            updateTask(tp, i);
+            i++;
+        }
+
         updateData = true;
         if (vm != null) {
             vm.clearInstalledCode();
@@ -253,6 +273,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public long getReturnValue(String id) {
         CallStack stack = graphContext.getFrame(id);
         return stack.getReturnValue();
+    }
+
+    public void updateInner(int index, SchedulableTask task) {
+        Providers providers = getTornadoRuntime().getDriver(0).getProviders();
+        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
+
+        graphContext.setTask(index, task);
+
+        if (task instanceof CompilableTask) {
+            CompilableTask compilableTask = (CompilableTask) task;
+            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+            new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            this.graph = lookup.getGraph();
+        }
     }
 
     @Override
@@ -1458,6 +1494,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
+    private void addInner(int index, int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
+        switch (type) {
+            case 0:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
+                break;
+            case 1:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task1) parameters[0], parameters[1]));
+                break;
+            case 2:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task2) parameters[0], parameters[1], parameters[2]));
+                break;
+            default:
+                throw new RuntimeException("Task not supported yet. Type: " + type);
+        }
+    }
+
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
         switch (type) {
@@ -1503,6 +1555,33 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 break;
             default:
                 throw new RuntimeException("Task not supported yet. Type: " + type);
+        }
+    }
+
+    public void updateTask(TaskPackage taskPackage, int index) {
+        String id = taskPackage.getId();
+        int type = taskPackage.getTaskType();
+        Object[] parameters = taskPackage.getTaskParameters();
+
+        Method method = TaskUtils.resolveMethodHandle(parameters[0]);
+        ScheduleMetaData meta = meta();
+
+        // Set the number of threads to run. If 0, it will execute as many
+        // threads as input size (after Tornado analyses the right block-size).
+        // Otherwise, we force the number of threads to run. This is the case,
+        // for example, when executing reductions in which the input size is not
+        // power of two.
+        meta.setNumThreads(taskPackage.getNumThreadsToRun());
+
+        try {
+            addInner(index, type, method, meta, id, parameters);
+        } catch (TornadoBailoutRuntimeException e) {
+            this.bailout = true;
+            if (!Tornado.DEBUG) {
+                System.out.println("WARNING: Code Bailout to Java sequential. Use --debug to see the reason");
+            } else {
+                e.printStackTrace();
+            }
         }
     }
 

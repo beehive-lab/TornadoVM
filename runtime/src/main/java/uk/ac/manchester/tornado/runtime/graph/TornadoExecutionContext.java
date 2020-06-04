@@ -125,6 +125,10 @@ public class TornadoExecutionContext {
         return index;
     }
 
+    public void setTask(int index, SchedulableTask task) {
+        tasks.set(index, task);
+    }
+
     public List<Object> getConstants() {
         return constants;
     }
