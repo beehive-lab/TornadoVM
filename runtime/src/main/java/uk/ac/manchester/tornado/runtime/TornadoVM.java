@@ -463,7 +463,6 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 final Access[] accesses = task.getArgumentsAccess();
-
                 if (redeployOnDevice || !stack.isOnDevice()) {
                     stack.reset();
                 }

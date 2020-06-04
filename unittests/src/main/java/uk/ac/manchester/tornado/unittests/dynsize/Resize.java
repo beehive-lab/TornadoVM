@@ -44,17 +44,18 @@ public class Resize {
 
     @Test
     public void testDynamicSize01() {
-        float[] a = createArray(4096);
+        float[] a = createArray(256);
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .streamIn(a) //
                 .task("t0", Resize::resize01, a) //
                 .streamOut(a); //
 
-        System.out.println("[APP] " + a);
         ts.execute();
         // Resize data
-        float[] b = createArray(128);
+        float[] b = createArray(512);
+
+        // Update old reference for a new reference
         ts.updateData(a, b);
 
         ts.execute();

@@ -364,16 +364,16 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private ObjectBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize) {
         ObjectBuffer result = null;
-        if (type == int[].class) {
+        if (type == float[].class) {
+            result = new OCLFloatArrayWrapper(device, batchSize);
+        } else if (type == int[].class) {
             result = new OCLIntArrayWrapper(device, batchSize);
+        } else if (type == double[].class) {
+            result = new OCLDoubleArrayWrapper(device, batchSize);
         } else if (type == short[].class) {
             result = new OCLShortArrayWrapper(device, batchSize);
         } else if (type == byte[].class) {
             result = new OCLByteArrayWrapper(device, batchSize);
-        } else if (type == float[].class) {
-            result = new OCLFloatArrayWrapper(device, batchSize);
-        } else if (type == double[].class) {
-            result = new OCLDoubleArrayWrapper(device, batchSize);
         } else if (type == long[].class) {
             result = new OCLLongArrayWrapper(device, batchSize);
         } else if (type == char[].class) {

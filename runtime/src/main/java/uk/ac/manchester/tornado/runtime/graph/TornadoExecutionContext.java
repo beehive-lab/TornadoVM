@@ -57,11 +57,11 @@ public class TornadoExecutionContext {
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
     private final List<TornadoAcceleratorDevice> devices;
-    private CallStack[] stacks;
+    private final CallStack[] stacks;
     private final int[] taskToDevice;
     private int nextTask;
 
-    private HashSet<TornadoAcceleratorDevice> lastDevices;
+    private final HashSet<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
 
