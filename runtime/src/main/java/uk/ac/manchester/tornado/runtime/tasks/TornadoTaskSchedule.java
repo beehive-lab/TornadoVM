@@ -25,57 +25,15 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task2;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task5;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.common.*;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.*;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
@@ -85,17 +43,9 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
-import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
+import uk.ac.manchester.tornado.runtime.graph.*;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
@@ -104,37 +54,30 @@ import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
-
-    private TornadoExecutionContext graphContext;
-
-    private byte[] highLevelCode = new byte[2048];
-    private ByteBuffer hlBuffer;
-    private TornadoVMGraphCompilationResult result;
-    private long batchSizeBytes = -1;
-
-    // One TornadoVM instance per TaskSchedule
-    private TornadoVM vm;
-    private Event event;
-    private String taskScheduleName;
-
-    private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
-    private ArrayList<Object> streamOutObjects = new ArrayList<>();
-    private ArrayList<Object> streamInObjects = new ArrayList<>();
-    private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
-
-    private static ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
-    private static int baseGlobalIndex = 0;
-    private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
-
-    private StringBuffer bufferLogProfiler = new StringBuffer();
-    private CachedGraph<?> graph;
 
     /**
      * Options for Dynamic Reconfiguration
@@ -147,22 +90,44 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
     private static final int HISTORY_POINTS_PREDICTION = 5;
     private static final boolean USE_GLOBAL_TASK_CACHE = false;
-
+    private static ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
+    private static int baseGlobalIndex = 0;
+    private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
+    private final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
+    private final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
+    private final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
+    private final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+    MetaReduceCodeAnalysis analysisTaskSchedule;
+    private TornadoExecutionContext graphContext;
+    private byte[] highLevelCode = new byte[2048];
+    private ByteBuffer hlBuffer;
+    private TornadoVMGraphCompilationResult result;
+    private long batchSizeBytes = -1;
+    // One TornadoVM instance per TaskSchedule
+    private TornadoVM vm;
+    private Event event;
+    private String taskScheduleName;
+    private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
+    private ArrayList<Object> streamOutObjects = new ArrayList<>();
+    private ArrayList<Object> streamInObjects = new ArrayList<>();
+    private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
+    private StringBuffer bufferLogProfiler = new StringBuffer();
+    private CachedGraph<?> graph;
     /**
      * Options for new reductions - experimental
      */
     private boolean reduceExpressionRewritten = false;
     private ReduceTaskSchedule reduceTaskScheduleMeta;
     private boolean reduceAnalysis = false;
-    MetaReduceCodeAnalysis analysisTaskSchedule;
-
     private TornadoProfiler timeProfiler;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      *
-     * @param taskScheduleName
-     *            Task-Schedule name
+     * @param taskScheduleName Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         graphContext = new TornadoExecutionContext(taskScheduleName);
@@ -177,6 +142,90 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             this.timeProfiler = new TimeProfiler();
         } else {
             this.timeProfiler = new EmptyProfiler();
+        }
+    }
+
+    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+        int numObjectsCopyIn = inputObjects.size();
+        switch (numObjectsCopyIn) {
+            case 0:
+                break;
+            case 1:
+                task.streamIn(inputObjects.get(0));
+                break;
+            case 2:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1));
+                break;
+            case 3:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
+                break;
+            case 4:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
+                break;
+            case 5:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
+                break;
+            case 6:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
+            case 7:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
+                break;
+            case 8:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
+                break;
+            case 9:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8));
+            case 10:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9));
+                break;
+            default:
+                System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
+                break;
+        }
+    }
+
+    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+        int numObjectsCopyOut = outputArrays.size();
+        switch (numObjectsCopyOut) {
+            case 0:
+                break;
+            case 1:
+                task.streamOut(outputArrays.get(0));
+                break;
+            case 2:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1));
+                break;
+            case 3:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
+                break;
+            case 4:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
+                break;
+            case 5:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
+                break;
+            case 6:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
+                break;
+            case 7:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
+                break;
+            case 8:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7));
+                break;
+            case 9:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8));
+                break;
+            case 10:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9));
+                break;
+            default:
+                System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
+                break;
         }
     }
 
@@ -252,25 +301,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         hlBuffer.put(TornadoGraphBitcodes.LAUNCH.index());
     }
 
-    // Timer implementation within the Task Schedule
-    private static abstract class Timer {
-        abstract long time();
-    }
-
-    private static class MillesecTimer extends Timer {
-        @Override
-        long time() {
-            return System.currentTimeMillis();
-        }
-    }
-
-    private static class NanoSecTimer extends Timer {
-        @Override
-        long time() {
-            return System.nanoTime();
-        }
-    }
-
     private void updateDeviceContext(TornadoGraph graph) {
         BitSet deviceContexts = graph.filter(ContextNode.class);
         final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
@@ -281,8 +311,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Compile a task-schedule into TornadoVM byte-code
      *
-     * @param setNewDevice:
-     *            boolean that specifies if set a new device or not.
+     * @param setNewDevice: boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
@@ -312,21 +341,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean compareDevices(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
         return lastDevices.contains(device2);
     }
-
-    private static class CompileInfo {
-
-        private boolean compile;
-        private boolean updateDevice;
-
-        private CompileInfo(boolean compile, boolean updateDevice) {
-            this.compile = compile;
-            this.updateDevice = updateDevice;
-        }
-    }
-
-    private final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
-    private final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
-    private final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
 
     @Override
     public boolean isLastDeviceListEmpty() {
@@ -626,6 +640,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph schedule() {
+
+        if (getTornadoRuntime().getNumDrivers() < 1 || getTornadoRuntime().getDriver(0).getNumPlatforms() < 1) {
+            runSequential();
+            return this;
+        }
+
         timeProfiler.clean();
         timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
 
@@ -747,90 +767,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
         return winner;
-    }
-
-    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
-        int numObjectsCopyIn = inputObjects.size();
-        switch (numObjectsCopyIn) {
-            case 0:
-                break;
-            case 1:
-                task.streamIn(inputObjects.get(0));
-                break;
-            case 2:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1));
-                break;
-            case 3:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
-                break;
-            case 4:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
-                break;
-            case 5:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
-                break;
-            case 6:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
-            case 7:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
-                break;
-            case 8:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
-                break;
-            case 9:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8));
-            case 10:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9));
-                break;
-            default:
-                System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
-                break;
-        }
-    }
-
-    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
-        int numObjectsCopyOut = outputArrays.size();
-        switch (numObjectsCopyOut) {
-            case 0:
-                break;
-            case 1:
-                task.streamOut(outputArrays.get(0));
-                break;
-            case 2:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1));
-                break;
-            case 3:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
-                break;
-            case 4:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
-                break;
-            case 5:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
-                break;
-            case 6:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
-                break;
-            case 7:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
-                break;
-            case 8:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7));
-                break;
-            case 9:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8));
-                break;
-            case 10:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9));
-                break;
-            default:
-                System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
-                break;
-        }
     }
 
     private void runAllTasksSequentially() {
@@ -1218,10 +1154,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
      *
-     * @param policy
-     *            input policy
-     * @param numDevices
-     *            number of devices
+     * @param policy     input policy
+     * @param numDevices number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1267,40 +1201,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } else {
             // It runs the parallel in the corresponding device
             runTaskScheduleParallelSelected(deviceWinnerIndex);
-        }
-    }
-
-    /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
-     */
-    private static class HistoryTable {
-        /**
-         * TreeMap between input size -> device index
-         */
-        private TreeMap<Integer, Integer> table = new TreeMap<>();
-
-        private int getClosestKey(int goal) {
-            Set<Integer> keySet = table.keySet();
-            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
-        }
-
-        private TreeMap<Integer, Integer> getTree() {
-            return table;
-        }
-
-        private int getNumKeys() {
-            return table.keySet().size();
-        }
-
-        private int getDeviceNumber(int key) {
-            return table.get(key);
-        }
-
-        private boolean isKeyInTable(int key) {
-            return table.containsKey(key);
         }
     }
 
@@ -1383,7 +1283,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void addTask(TaskPackage taskPackage) {
 
@@ -1457,8 +1357,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void addScalaTask(String id, Object function, Object[] args) {
         addInner(TaskUtils.scalaTask(id, function, args));
     }
-
-    private final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
 
     @Override
     public void batch(String batchSize) {
@@ -1538,5 +1436,69 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public String getProfileLog() {
         return bufferLogProfiler.toString();
+    }
+
+    // Timer implementation within the Task Schedule
+    private static abstract class Timer {
+        abstract long time();
+    }
+
+    private static class MillesecTimer extends Timer {
+        @Override
+        long time() {
+            return System.currentTimeMillis();
+        }
+    }
+
+    private static class NanoSecTimer extends Timer {
+        @Override
+        long time() {
+            return System.nanoTime();
+        }
+    }
+
+    private static class CompileInfo {
+
+        private boolean compile;
+        private boolean updateDevice;
+
+        private CompileInfo(boolean compile, boolean updateDevice) {
+            this.compile = compile;
+            this.updateDevice = updateDevice;
+        }
+    }
+
+    /**
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
+     */
+    private static class HistoryTable {
+        /**
+         * TreeMap between input size -> device index
+         */
+        private TreeMap<Integer, Integer> table = new TreeMap<>();
+
+        private int getClosestKey(int goal) {
+            Set<Integer> keySet = table.keySet();
+            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
+        }
+
+        private TreeMap<Integer, Integer> getTree() {
+            return table;
+        }
+
+        private int getNumKeys() {
+            return table.keySet().size();
+        }
+
+        private int getDeviceNumber(int key) {
+            return table.get(key);
+        }
+
+        private boolean isKeyInTable(int key) {
+            return table.containsKey(key);
+        }
     }
 }

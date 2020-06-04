@@ -38,6 +38,8 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
+    ;
+
     public static void compute(float[] arrayA, float[] arrayB) {
         for (@Parallel int i = 0; i < arrayA.length; i++) {
             arrayB[i] = arrayA[i] + 100;
@@ -77,12 +79,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test100MB() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 100 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(100,MemSize.MB);
 
         // Fill 800MB of float array
         int size = 200000000;
@@ -112,12 +109,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test300MB() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 300 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(300,MemSize.MB);
 
         // Fill 1.0GB
         int size = 250_000_000;
@@ -148,12 +140,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test512MB() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 512 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(512,MemSize.MB);
 
         // Fill 800MB
         int size = 200000000;
@@ -182,12 +169,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MB() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 50 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
 
         // Fill 80MB of input Array
         int size = 20000000;
@@ -221,12 +203,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBInteger() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 50 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
 
         // Fill 80MB of input Array
         int size = 20000000;
@@ -260,12 +237,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBShort() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 50 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
 
         // Fill 160MB of input Array
         int size = 80000000;
@@ -300,12 +272,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBDouble() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 50 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
 
         int size = 20000000;
         // or as much as we can
@@ -338,12 +305,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBLong() {
 
-        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
-
-        //check if there is enough memory for at least one chunk
-        if (maxAllocMemory < 50 * 1024 * 1024) {
-            throw new UnsupportedConfigurationException("Not enough memory to run the test");
-        }
+        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
 
         // Fill 160MB of input Array
         int size = 20000000;
@@ -373,5 +335,34 @@ public class TestBatches extends TornadoTestBase {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
     }
+
+
+    private long checkMaxHeapAllocation(int size, MemSize memSize) throws UnsupportedConfigurationException {
+        long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
+
+        long memThreshold = 0;
+
+        switch (memSize) {
+            case GB:
+                memThreshold = size * 1024 * 1024 * 1024;
+                break;
+            case MB:
+                memThreshold = size * 1024 * 1024;
+                break;
+            case TB:
+                memThreshold = size * 1024 * 1024 * 1024 * 1024;
+                break;
+
+        }
+
+        //check if there is enough memory for at least one chunk
+        if (maxAllocMemory < memThreshold) {
+            throw new UnsupportedConfigurationException("Not enough memory to run the test");
+        }
+
+        return maxAllocMemory;
+    }
+
+    private enum MemSize {MB, GB, TB}
 
 }

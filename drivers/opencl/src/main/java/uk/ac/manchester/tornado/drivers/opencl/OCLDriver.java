@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -27,16 +27,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -48,6 +42,9 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
 
     private final OCLBackend[] flatBackends;
@@ -58,7 +55,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         final int numPlatforms = OpenCL.getNumPlatforms();
 
         if (numPlatforms < 1) {
-            throw new TornadoNoOpenCLPlatformException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine");
+            warn("[WARN]: No OpenCL platforms found!");
+            backends = new OCLBackend[0][0];
+            contexts = new ArrayList<>();
+            flatBackends = new OCLBackend[0];
+            return;
         }
 
         backends = new OCLBackend[numPlatforms][];
@@ -71,6 +72,15 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
                 flatBackends[index] = backends[i][j];
             }
         }
+    }
+
+    private static String getString(String property) {
+        if (System.getProperty(property) == null) {
+            return null;
+        } else {
+            return System.getProperty(property);
+        }
+
     }
 
     @Override
@@ -125,15 +135,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         final OCLDevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
         return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime, vmConfig, context, device);
-    }
-
-    private static String getString(String property) {
-        if (System.getProperty(property) == null) {
-            return null;
-        } else {
-            return System.getProperty(property);
-        }
-
     }
 
     private void installDevices(int platformIndex, OCLPlatform platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
