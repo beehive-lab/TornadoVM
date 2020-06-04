@@ -31,6 +31,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -217,15 +218,14 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
-        if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-            // return deviceContext.getInstalledCode(task.getId(),
-            // resolvedMethod.getName());
+        if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+            return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
         }
 
         // copy meta data into task
-        final TaskMetaData sketchMeta = sketch.getMeta();
         final TaskMetaData taskMeta = executable.meta();
         final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();

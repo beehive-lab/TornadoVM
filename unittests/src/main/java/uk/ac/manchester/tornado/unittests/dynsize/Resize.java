@@ -57,10 +57,40 @@ public class Resize {
 
         // Update old reference for a new reference
         ts.updateData(a, b);
-
         ts.execute();
 
         for (float v : b) {
+            assertEquals(1.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testDynamicSize02() {
+        float[] a = createArray(256);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize01, a) //
+                .streamOut(a); //
+        ts.execute();
+
+        // Resize data
+        float[] b = createArray(512);
+
+        // Update old reference for a new reference
+        ts.updateData(a, b);
+
+        ts.execute();
+        ts.execute();
+        ts.execute();
+        ts.execute();
+
+        // Update old reference for a new reference
+        float[] c = createArray(2048);
+        ts.updateData(b, c);
+        ts.execute();
+
+        for (float v : c) {
             assertEquals(1.0f, v, 0.001f);
         }
     }

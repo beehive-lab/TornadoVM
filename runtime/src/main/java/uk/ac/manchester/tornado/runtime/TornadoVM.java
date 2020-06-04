@@ -96,6 +96,7 @@ public class TornadoVM extends TornadoLogger {
     private long invocations;
     private TornadoProfiler timeProfiler;
     private boolean finishedWarmup;
+    private boolean doUpdate;
 
     public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
@@ -158,6 +159,10 @@ public class TornadoVM extends TornadoLogger {
 
         debug("%s - vm ready to go", graphContext.getId());
         buffer.mark();
+    }
+
+    public void setCompileUpdate() {
+        this.doUpdate = true;
     }
 
     private GlobalObjectState resolveGlobalObjectState(int index) {
@@ -439,7 +444,11 @@ public class TornadoVM extends TornadoLogger {
                             // be a single source
                             task.forceCompilation();
                         }
+                        if (doUpdate) {
+                            task.forceCompilation();
+                        }
                         installedCodes[taskIndex] = device.installCode(task);
+                        doUpdate = false;
                     } catch (Exception e) {
                         throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + e.getStackTrace(), e);
                     }

@@ -232,6 +232,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         updateData = true;
         if (vm != null) {
             vm.clearInstalledCode();
+            vm.setCompileUpdate();
         }
 
         // 7. Mark new stack on the device due to new data
@@ -714,6 +715,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graph;
     }
 
+    private void cleanUp() {
+        updateData = false;
+    }
+
     @Override
     public AbstractTaskGraph schedule() {
 
@@ -735,6 +740,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
         analysisTaskSchedule = null;
         scheduleInner();
+        cleanUp();
         return this;
     }
 
