@@ -96,6 +96,8 @@ __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
 __GC__                       		= "-Xmx6g "
 # ################################################################################################################
 
+TORNADO_CMD = "tornado -ea "
+
 __VERSION__ = "0.8_04022020"
 
 JDK_11_VERSION = "11.0"
@@ -234,9 +236,9 @@ def runTests(args):
 	## Run test
 	cmd = ""
 	if (args.useOptirun):
-		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options
+		cmd = "optirun " + TORNADO_CMD + __IGNORE_INTEL_PLATFORM__ + options
 	else:
-		cmd = "tornado " + options
+		cmd = TORNADO_CMD + options
 
 	if (javaVersion == JDK_11_VERSION):
 		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
@@ -282,7 +284,7 @@ def runTests(args):
 def runWithJUnit(args):
 	""" Run the tests using JUNIT """
 
-	cmd = "tornado "
+	cmd = TORNADO_CMD
 	if (javaVersion == JDK_11_VERSION):
 		cmd += " -m " + __MAIN_TORNADO_JUNIT_MODULE__ + __MAIN_TORNADO_JUNIT__
 	else:

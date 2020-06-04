@@ -114,7 +114,7 @@ fi
 
 printflags=0
 printdevices=0
-printAllOptions=0
+enableAssertions=0
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -161,6 +161,10 @@ while [[ $# -gt 0 ]]; do
     print_usage
     shift
     ;;
+  -ea | --ea | -enableassertions | --enableassertions)
+    enableAssertions=1
+    shift
+    ;;
   *) # unknown option
     POSITIONAL+=("$1") # save it in an array for later
     shift              # past argument
@@ -177,7 +181,14 @@ PROVIDERS=" \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
-JAVA_FLAGS="-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
+JAVA_FLAGS=""
+if [ $enableAssertions -eq 1 ]; then
+  # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
+  # This allows us have the GraalIR in states which normally would be illegal.
+  JAVA_FLAGS="-ea -da:org.graalvm.compiler... "
+fi
+
+JAVA_FLAGS="${JAVA_FLAGS}-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
 if [ "$JAVA_VERSION" = "1.8" ]; then
   JAVA_FLAGS="${JAVA_FLAGS} -XX:-UseJVMCIClassLoader "
 elif [ "$JAVA_VERSION" = "11.0" ]; then
