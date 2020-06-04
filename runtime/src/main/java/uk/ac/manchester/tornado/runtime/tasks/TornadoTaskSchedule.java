@@ -234,9 +234,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             vm.clearInstalledCode();
             vm.setCompileUpdate();
         }
-
-        // 7. Mark new stack on the device due to new data
-        executionContext.newStack(true);
     }
 
     @Override

@@ -34,6 +34,12 @@ public class Resize {
         }
     }
 
+    public static void resize02(float[] a, float[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] + 10;
+        }
+    }
+
     public float[] createArray(int numElements) {
         float[] a = new float[numElements];
         IntStream.range(0, numElements).sequential().forEach(i -> {
@@ -92,6 +98,32 @@ public class Resize {
 
         for (float v : c) {
             assertEquals(1.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testDynamicSize03() {
+        float[] a = createArray(1024);
+        float[] b = createArray(1024);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize02, a, b) //
+                .streamOut(b); //
+        ts.execute();
+
+        // Resize data
+        float[] c = createArray(512);
+        float[] d = createArray(512);
+
+        // Update multiple references
+        ts.updateData(a, c);
+        ts.updateData(b, d);
+
+        ts.execute();
+
+        for (float v : d) {
+            assertEquals(20.0f, v, 0.001f);
         }
     }
 }
