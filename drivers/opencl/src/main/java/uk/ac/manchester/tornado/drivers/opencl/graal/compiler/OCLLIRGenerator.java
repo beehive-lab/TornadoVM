@@ -36,7 +36,6 @@ import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
@@ -75,8 +74,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
-import java.util.ArrayList;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
