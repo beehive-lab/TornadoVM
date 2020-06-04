@@ -53,15 +53,14 @@ public class Resize {
 
         System.out.println("[APP] " + a);
         ts.execute();
-        // Resize A
-        a = createArray(128);
-
-        System.out.println("[APP] " + a);
+        // Resize data
+        float[] b = createArray(128);
+        ts.updateData(a, b);
 
         ts.execute();
 
-        for (float v : a) {
-            assertEquals(v, 1.0f, 0.001f);
+        for (float v : b) {
+            assertEquals(1.0f, v, 0.001f);
         }
     }
 }

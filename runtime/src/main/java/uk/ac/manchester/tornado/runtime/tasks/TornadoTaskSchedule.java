@@ -159,6 +159,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     MetaReduceCodeAnalysis analysisTaskSchedule;
 
     private TornadoProfiler timeProfiler;
+    private boolean updateData;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -185,6 +186,47 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public String getTaskScheduleName() {
         return taskScheduleName;
+    }
+
+    @Override
+    public void updateData(Object oldRef, Object newRef) {
+        // Update the oldReference of Data for the new reference
+
+        // 1. Update from the streamIn list of objects
+        int i = 0;
+        for (Object o : streamInObjects) {
+            if (o.equals(oldRef)) {
+                System.out.println("SIN OLD " + oldRef + " -> " + newRef);
+                streamInObjects.set(i, newRef);
+            }
+            i++;
+        }
+
+        // 2. Update from the stream out list of objects
+        i = 0;
+        for (Object o : streamOutObjects) {
+            if (o.equals(oldRef)) {
+                System.out.println("SOUT OLD " + oldRef + " -> " + newRef);
+                streamOutObjects.set(i, newRef);
+            }
+            i++;
+        }
+
+        // 3. Update from graphContext
+        i = 0;
+        for (Object o : graphContext.getObjects()) {
+            if (o.equals(oldRef)) {
+                System.out.println("GraphContext OLD " + oldRef + " -> " + newRef);
+                graphContext.getObjects().set(i, newRef);
+            }
+            i++;
+        }
+
+        updateData = true;
+        if (vm != null) {
+            vm.clearInstalledCode();
+        }
+
     }
 
     @Override
@@ -291,10 +333,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
-        // final long t0 = System.nanoTime();
         final TornadoGraph graph = TornadoGraphBuilder.buildGraph(graphContext, buffer);
-        // final long t1 = System.nanoTime();
-
         if (setNewDevice) {
             updateDeviceContext(graph);
         }
@@ -302,6 +341,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // TornadoVM byte-code generation
         result = TornadoVMGraphCompiler.compile(graph, graphContext, batchSizeBytes);
 
+        System.out.println("TornadoVM new -> UPDATE");
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize(), timeProfiler);
 
         if (meta().shouldDumpSchedule()) {
@@ -350,6 +390,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             return COMPILE_ONLY;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
             return COMPILE_AND_UPDATE;
+        } else if (updateData) {
+            return COMPILE_ONLY;
         }
         return NOT_COMPILE_UPDATE;
     }

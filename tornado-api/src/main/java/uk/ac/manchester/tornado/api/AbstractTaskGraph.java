@@ -121,4 +121,6 @@ public interface AbstractTaskGraph extends ProfileInterface {
     void addScalaTask(String id, Object function, Object[] args);
 
     String getTaskScheduleName();
+
+    void updateData(Object oldRef, Object newRef);
 }
