@@ -96,7 +96,8 @@ __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
 __GC__                       		= "-Xmx6g "
 # ################################################################################################################
 
-TORNADO_CMD = "tornado -ea "
+TORNADO_CMD = "tornado "
+ENABLE_ASSERTIONS = "-ea "
 
 __VERSION__ = "0.8_04022020"
 
@@ -305,6 +306,7 @@ def parseArguments():
 	parser.add_argument('testClass', nargs="?", help='testClass#method')
 	parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version")
 	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")
+	parser.add_argument("--da", "--disableassertions", action="store_true", dest="disable_assertions", default=False, help="Disable Tornado assertions")
 	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
@@ -339,6 +341,9 @@ def main():
 	global javaVersion
 	javaVersion = getJavaVersion()
 
+	if (not args.disable_assertions):
+		global TORNADO_CMD
+		TORNADO_CMD += ENABLE_ASSERTIONS
 
 	if (args.junit):
 		runWithJUnit(args)
