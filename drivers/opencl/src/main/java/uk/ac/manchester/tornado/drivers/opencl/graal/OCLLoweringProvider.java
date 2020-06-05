@@ -199,7 +199,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return field.getJavaKind();
     }
 
-    public static boolean isGpuSnippet() {
+    public static boolean isGPUSnippet() {
         // OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
         // Therefore, this getter must be called after a lowering phase in order to get
         // the correct result
