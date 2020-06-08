@@ -31,6 +31,10 @@ import uk.ac.manchester.tornado.api.collections.types.Double3;
 import uk.ac.manchester.tornado.api.collections.types.Double4;
 import uk.ac.manchester.tornado.api.collections.types.Double8;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
+import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
+import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
+import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {
@@ -215,4 +219,107 @@ public class TestDoubles extends TornadoTestBase {
 
         assertEquals(seqReduce[0], outputReduce[0], 0.001);
     }
+
+    public static void addVectorDouble2(VectorDouble2 a, VectorDouble2 b, VectorDouble2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double2.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorDouble2() {
+        int size = 64;
+
+        VectorDouble2 a = new VectorDouble2(size);
+        VectorDouble2 b = new VectorDouble2(size);
+        VectorDouble2 output = new VectorDouble2(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Double2(i, i));
+            b.set(i, new Double2(size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestDoubles::addVectorDouble2, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Double2 sequential = new Double2(i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+        }
+    }
+
+    public static void addVectorDouble3(VectorDouble3 a, VectorDouble3 b, VectorDouble3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double3.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @TornadoNotSupported
+    public void testVectorDouble3() {
+        int size = 64;
+
+        VectorDouble3 a = new VectorDouble3(size);
+        VectorDouble3 b = new VectorDouble3(size);
+        VectorDouble3 output = new VectorDouble3(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Double3(i, i, i));
+            b.set(i, new Double3(size - i, size - i, size - 1));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestDoubles::addVectorDouble3, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Double3 sequential = new Double3(i + (size - i), i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+        }
+    }
+
+    public static void addVectorDouble4(VectorDouble4 a, VectorDouble4 b, VectorDouble4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double4.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @TornadoNotSupported
+    public void testVectorDouble4() {
+        int size = 64;
+
+        VectorDouble4 a = new VectorDouble4(size);
+        VectorDouble4 b = new VectorDouble4(size);
+        VectorDouble4 output = new VectorDouble4(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Double4(i, i, i, i));
+            b.set(i, new Double4(size - i, size - i, size - 1, size - 1));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestDoubles::addVectorDouble4, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Double4 sequential = new Double4(i + (size - i), i + (size - i), i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+            assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+        }
+    }
+
 }
