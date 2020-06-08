@@ -61,6 +61,7 @@ public class TornadoMathPlugins {
         Registration registration = new Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);
+        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath2Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath3Plugins(registration, float.class, JavaKind.Float);
 
@@ -125,7 +126,9 @@ public class TornadoMathPlugins {
                 return true;
             }
         });
+    }
 
+    private static void registerTrigonometric1Plugins(Registration r, Class<?> type, JavaKind kind) {
         r.register1("floatSin", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
