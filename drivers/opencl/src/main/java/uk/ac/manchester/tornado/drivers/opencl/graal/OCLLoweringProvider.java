@@ -62,7 +62,6 @@ import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
-import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
@@ -107,6 +106,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNod
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
@@ -158,8 +158,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
              */
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node);
-        } else if (node instanceof NewArrayNode) {
-            lowerNewArrayNode((NewArrayNode) node);
+        } else if (node instanceof NewArrayNonVirtualizableNode) {
+            lowerNewArrayNode((NewArrayNonVirtualizableNode) node);
         } else if (node instanceof AtomicAddNode) {
             lowerAtomicAddNode((AtomicAddNode) node, tool);
         } else if (node instanceof LoadIndexedNode) {
@@ -185,7 +185,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public Integer smallestCompareWidth() {
-        // For now don't use this optimization.
         return null;
     }
 
@@ -200,14 +199,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return field.getJavaKind();
     }
 
-    /**
-     * OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
-     * Therefore, this getter must be called after a lowering phase in order to get
-     * the correct result.
-     * 
-     * @return
-     */
     public static boolean isGPUSnippet() {
+        // OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
+        // Therefore, this getter must be called after a lowering phase in order to get
+        // the correct result
         return gpuSnippet;
     }
 
@@ -428,7 +423,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(vectorLoad, vectorRead);
     }
 
-    private void lowerNewArrayNode(NewArrayNode newArray) {
+    private void lowerNewArrayNode(NewArrayNonVirtualizableNode newArray) {
         final StructuredGraph graph = newArray.graph();
         final ValueNode firstInput = newArray.length();
         if (firstInput instanceof ConstantNode) {
@@ -436,17 +431,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 final ConstantNode lengthNode = (ConstantNode) firstInput;
                 if (lengthNode.getValue() instanceof PrimitiveConstant) {
                     final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
-                    ResolvedJavaType elementType = newArray.elementType();
-                    JavaKind elementKind = elementType.getJavaKind();
-                    final int offset = arrayBaseOffset(elementKind);
-                    final int size = offset + (elementKind.getByteCount() * length);
                     if (gpuSnippet) {
                         lowerLocalNewArray(graph, length, newArray);
                     } else {
-                        lowerPrivateNewArray(graph, size, newArray);
+                        lowerPrivateNewArray(graph, length, newArray);
                     }
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
+                    GraphUtil.removeFixedWithUnusedInputs(newArray);
                 } else {
                     shouldNotReachHere();
                 }
@@ -509,7 +501,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return graph.unique(new OffsetAddressNode(array, index));
     }
 
-    private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+    private boolean isLocalIDNode(StoreIndexedNode storeIndexed) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
@@ -518,7 +510,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
-    private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
+    private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
@@ -527,23 +519,33 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
-    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
+    private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {
+        Node nd = storeIndexed.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
+    }
+
+    private boolean isPrivateIDNode(LoadIndexedNode loadIndexedNode) {
+        Node nd = loadIndexedNode.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
+    }
+
+    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
         localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(localArrayNode);
     }
 
-    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
+    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNonVirtualizableNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.globalSpace, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.privateSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
     private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
         AddressNode address;
-        if (isLocalIdNode(loadIndexed)) {
+        if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
             address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
@@ -558,7 +560,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             // char or short. In future integrations with JVMCI and Graal, this issue is
             // completely solved.
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
-        } else if (isLocalIdNode(storeIndexed)) {
+        } else if (isLocalIDNode(storeIndexed) || isPrivateIDNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         } else {
