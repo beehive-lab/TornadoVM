@@ -27,7 +27,7 @@ For each of the benchmarks, a Java version exists in order to obtain timing meas
 
 Go to the directory `<tornadovm path>/bin/sdk/bin`. Then, the run options can be found with the following command:
 
-```!bash
+```bash
 usage: tornado-benchmarks.py [-h] [--validate] [--default] [--medium]
                              [--iterations ITERATIONS] [--full]
                              [--skipSequential] [--skipParallel]
@@ -52,7 +52,7 @@ optional arguments:
                         Skip devices. Provide a list of devices (e.g., 0,1)
   --verbose, -V         Enable verbose
   --printBenchmarks     Print the list of available benchmarks
-
+  --jmh                 Run with JMH
 ```
 
 
@@ -85,4 +85,37 @@ bm=convolve-array-100-2048-2048-5, id=java-reference      , average=2.612301e+08
 bm=convolve-array-100-2048-2048-5, device=0:0  , average=8.143104e+06, median=8.214443e+06, firstIteration=1.811648e+07, best=7.609697e+06, speedupAvg=32.0799, speedupMedian=31.7648, speedupFirstIteration=22.1171, CV=4.6348%, deviceName=NVIDIA CUDA -- GeForce GTX 1050
 bm=convolve-array-100-2048-2048-5, device=0:1  , average=9.842007e+07, median=9.631152e+07, firstIteration=1.018732e+08, best=9.032237e+07, speedupAvg=2.6542, speedupMedian=2.7092, speedupFirstIteration=3.9332, CV=9.3753%, deviceName=Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ...
+```
+
+
+
+### Using JMH
+
+The `tornado-benchmarks.py` script is configured to use JMH. 
+
+
+```bash
+$ tornado-benchmarks.py --jmh    
+```
+
+The script runs all benchmarks using JMH. This process takes ~3.5h. 
+
+
+Additionally, each benchmark has a JMH configuration. Users can execute the program any benchmark from the list as follows:
+
+```bash
+$ tornado uk.ac.manchester.tornado.benchmarks.<benchmark>.JMH<BENCHMARK>
+```
+
+This process takes ~10mins per benchmark. 
+
+For example: 
+
+```bash
+$ tornado uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
+# JMH version: 1.23
+...
+Benchmark          Mode  Cnt   Score   Error  Units
+JMHDFT.dftJava     avgt    5  19.736 ± 1.589   s/op
+JMHDFT.dftTornado  avgt    5   0.155 ± 0.008   s/op
 ```

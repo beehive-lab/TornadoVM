@@ -75,17 +75,17 @@ public class JMHBlackScholes {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
+    public void blachcholesJava(BenchmarkSetup state) {
         ComputeKernels.blackscholes(state.randArray, state.put, state.call);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @Warmup(iterations = 2, time = 60, timeUnit = TimeUnit.SECONDS)
+    @Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void blachcholesTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);

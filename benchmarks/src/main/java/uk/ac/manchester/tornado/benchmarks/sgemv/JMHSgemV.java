@@ -89,7 +89,7 @@ public class JMHSgemV {
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @Warmup(iterations = 2, time = 60, timeUnit = TimeUnit.SECONDS)
+    @Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
