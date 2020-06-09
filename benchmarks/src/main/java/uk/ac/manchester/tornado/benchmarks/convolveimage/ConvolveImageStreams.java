@@ -26,9 +26,13 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class ConvolveImageStreams extends BenchmarkDriver {
 
-    private final int imageSizeX,imageSizeY,filterSize;
+    private final int imageSizeX;
+    private final int imageSizeY;
+    private final int filterSize;
 
-    private ImageFloat input,output,filter;
+    private ImageFloat input;
+    private ImageFloat output;
+    private ImageFloat filter;
 
     public ConvolveImageStreams(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);

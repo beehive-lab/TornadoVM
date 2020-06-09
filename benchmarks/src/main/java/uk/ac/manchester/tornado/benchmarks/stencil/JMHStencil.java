@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.benchmarks.addImage;
+package uk.ac.manchester.tornado.benchmarks.stencil;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,49 +35,53 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
-public class JMHAddImage {
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
 
+public class JMHStencil {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
-        int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
-        TaskSchedule ts;
+        private int size = Integer.parseInt(System.getProperty("x", "1048576"));
+        int sz;
+        int n;
+        private final float FAC = 1 / 26;
+        private float[] a0;
+        private float[] a1;
+        private float[] ainit;
 
-        ImageFloat4 a;
-        ImageFloat4 b;
-        ImageFloat4 c;
+        private TaskSchedule ts;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new ImageFloat4(numElementsX, numElementsY);
-            b = new ImageFloat4(numElementsX, numElementsY);
-            c = new ImageFloat4(numElementsX, numElementsY);
+            sz = (int) Math.cbrt(size / 8) / 2;
+            n = sz - 2;
+            a0 = new float[sz * sz * sz];
+            a1 = new float[sz * sz * sz];
+            ainit = new float[sz * sz * sz];
 
-            Random r = new Random();
-            for (int j = 0; j < numElementsY; j++) {
-                for (int i = 0; i < numElementsX; i++) {
-                    float[] ra = new float[4];
-                    IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                    float[] rb = new float[4];
-                    IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
+            Arrays.fill(a1, 0);
+
+            final Random rand = new Random(7);
+            for (int i = 1; i < n + 1; i++) {
+                for (int j = 1; j < n + 1; j++) {
+                    for (int k = 1; k < n + 1; k++) {
+                        ainit[(i * sz * sz) + (j * sz) + k] = rand.nextFloat();
+                    }
                 }
             }
+            copy(sz, ainit, a0);
             ts = new TaskSchedule("benchmark") //
-                    .streamIn(a, b) //
-                    .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                    .streamOut(c);
+                    .streamIn(a0, a1) //
+                    .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
+                    .task("copy", Stencil::copy, sz, a1, a0) //
+                    .streamOut(a0);
+            ts.getTask("stencil");
             ts.warmup();
         }
     }
@@ -88,8 +92,9 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
-        GraphicsKernels.addImage(state.a, state.b, state.c);
+    public void stencilJava(BenchmarkSetup state) {
+        stencil3d(state.n, state.sz, state.a0, state.a1, state.FAC);
+        copy(state.sz, state.a0, state.a1);
     }
 
     @Benchmark
@@ -98,7 +103,7 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void stencilTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
@@ -106,7 +111,7 @@ public class JMHAddImage {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
-                .include(JMHAddImage.class.getName() + ".*") //
+                .include(JMHStencil.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
                 .timeUnit(TimeUnit.SECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //

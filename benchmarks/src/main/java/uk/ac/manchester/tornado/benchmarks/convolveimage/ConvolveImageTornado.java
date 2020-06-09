@@ -29,9 +29,13 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 
-    private final int imageSizeX,imageSizeY,filterSize;
+    private final int imageSizeX;
+    private final int imageSizeY;
+    private final int filterSize;
 
-    private ImageFloat input,output,filter;
+    private ImageFloat input;
+    private ImageFloat output;
+    private ImageFloat filter;
 
     private TaskSchedule graph;
 

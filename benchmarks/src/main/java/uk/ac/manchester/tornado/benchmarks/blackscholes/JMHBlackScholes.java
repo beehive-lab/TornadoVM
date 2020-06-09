@@ -29,8 +29,14 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
+import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
 
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +45,7 @@ public class JMHBlackScholes {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        int size;
+        int size = Integer.parseInt(System.getProperty("x", "8192"));
         float[] randArray;
         float[] call;
         float[] put;
@@ -83,5 +89,19 @@ public class JMHBlackScholes {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder() //
+                .include(JMHBlackScholes.class.getName() + ".*") //
+                .mode(Mode.AverageTime) //
+                .timeUnit(TimeUnit.SECONDS) //
+                .warmupTime(TimeValue.seconds(60)) //
+                .warmupIterations(2) //
+                .measurementTime(TimeValue.seconds(30)) //
+                .measurementIterations(5) //
+                .forks(1) //
+                .build();
+        new Runner(opt).run();
     }
 }

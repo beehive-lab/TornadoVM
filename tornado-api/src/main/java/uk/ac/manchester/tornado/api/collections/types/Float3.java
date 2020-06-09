@@ -64,14 +64,15 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload final protected float[] storage;
+    @Payload
+    final protected float[] storage;
 
     /**
      * number of elements in the storage
      */
     final private static int numElements = 3;
 
-    private Float3(float[] storage) {
+    public Float3(float[] storage) {
         this.storage = storage;
     }
 

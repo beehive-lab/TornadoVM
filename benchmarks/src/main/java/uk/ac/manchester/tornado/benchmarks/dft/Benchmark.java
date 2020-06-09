@@ -40,12 +40,12 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected BenchmarkDriver getJavaDriver() {
-        return new DftJava(iterations, size);
+        return new DFTJava(iterations, size);
     }
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new DftTornado(iterations, size);
+        return new DFTTornado(iterations, size);
     }
 
     @Override

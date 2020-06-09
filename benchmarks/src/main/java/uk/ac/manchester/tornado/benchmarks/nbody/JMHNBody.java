@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.benchmarks.addImage;
+package uk.ac.manchester.tornado.benchmarks.nbody;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,49 +35,53 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.Random;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
-public class JMHAddImage {
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
+public class JMHNBody {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
-        int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
-        TaskSchedule ts;
+        int numBodies = Integer.parseInt(System.getProperty("x", "16384"));
+        float delT;
+        float espSqr;
+        float[] velSeq;
+        private float[] posSeq;
 
-        ImageFloat4 a;
-        ImageFloat4 b;
-        ImageFloat4 c;
+        private TaskSchedule ts;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new ImageFloat4(numElementsX, numElementsY);
-            b = new ImageFloat4(numElementsX, numElementsY);
-            c = new ImageFloat4(numElementsX, numElementsY);
+            delT = 0.005f;
+            espSqr = 500.0f;
 
-            Random r = new Random();
-            for (int j = 0; j < numElementsY; j++) {
-                for (int i = 0; i < numElementsX; i++) {
-                    float[] ra = new float[4];
-                    IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                    float[] rb = new float[4];
-                    IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
-                }
+            float[] auxPositionRandom = new float[numBodies * 4];
+            float[] auxVelocityZero = new float[numBodies * 3];
+
+            for (int i = 0; i < auxPositionRandom.length; i++) {
+                auxPositionRandom[i] = (float) Math.random();
             }
+
+            Arrays.fill(auxVelocityZero, 0.0f);
+
+            posSeq = new float[numBodies * 4];
+            velSeq = new float[numBodies * 4];
+
+            if (auxPositionRandom.length >= 0) {
+                System.arraycopy(auxPositionRandom, 0, posSeq, 0, auxPositionRandom.length);
+            }
+
+            if (auxVelocityZero.length >= 0) {
+                System.arraycopy(auxVelocityZero, 0, velSeq, 0, auxVelocityZero.length);
+            }
+
             ts = new TaskSchedule("benchmark") //
-                    .streamIn(a, b) //
-                    .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                    .streamOut(c);
+                    .streamIn(velSeq, posSeq) //
+                    .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
             ts.warmup();
         }
     }
@@ -88,8 +92,8 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
-        GraphicsKernels.addImage(state.a, state.b, state.c);
+    public void nbodyJava(BenchmarkSetup state) {
+        nBody(state.numBodies, state.posSeq, state.velSeq, state.delT, state.espSqr);
     }
 
     @Benchmark
@@ -98,7 +102,7 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void nbodyTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
@@ -106,7 +110,7 @@ public class JMHAddImage {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
-                .include(JMHAddImage.class.getName() + ".*") //
+                .include(JMHNBody.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
                 .timeUnit(TimeUnit.SECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //

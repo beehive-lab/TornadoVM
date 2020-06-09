@@ -28,10 +28,12 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class NBodyTornado extends BenchmarkDriver {
-    private float delT,espSqr;
-    private float[] posSeq,velSeq;
+    private float delT;
+    private float espSqr;
+    private float[] posSeq;
+    private float[] velSeq;
     private int numBodies;
-    private TaskSchedule graph;
+    private TaskSchedule ts;
 
     public NBodyTornado(int numBodies, int iterations) {
         super(iterations);
@@ -63,20 +65,20 @@ public class NBodyTornado extends BenchmarkDriver {
             System.arraycopy(auxVelocityZero, 0, velSeq, 0, auxVelocityZero.length);
         }
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(velSeq, posSeq) //
+        ts = new TaskSchedule("benchmark");
+        ts.streamIn(velSeq, posSeq) //
                 .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         posSeq = null;
         velSeq = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
@@ -109,12 +111,12 @@ public class NBodyTornado extends BenchmarkDriver {
             velSeq[i] = auxVelocityZero[i];
             velSeqSeq[i] = auxVelocityZero[i];
         }
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        graph.warmup();
-        graph.execute();
-        graph.syncObjects(posSeq, velSeq);
-        graph.clearProfiles();
+        ts = new TaskSchedule("benchmark");
+        ts.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        ts.warmup();
+        ts.execute();
+        ts.syncObjects(posSeq, velSeq);
+        ts.clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
 
@@ -134,6 +136,6 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod() {
-        graph.execute();
+        ts.execute();
     }
 }

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.benchmarks.addImage;
+package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,49 +35,66 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
-public class JMHAddImage {
+public class JMHBlurFilter {
 
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
-        int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
+        int size = Integer.parseInt(System.getProperty("x", "512"));
+        public static final int FILTER_WIDTH = 31;
+        int[] redChannel;
+        int[] greenChannel;
+        int[] blueChannel;
+        int[] alphaChannel;
+        int[] redFilter;
+        int[] greenFilter;
+        int[] blueFilter;
+        float[] filter;
         TaskSchedule ts;
-
-        ImageFloat4 a;
-        ImageFloat4 b;
-        ImageFloat4 c;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new ImageFloat4(numElementsX, numElementsY);
-            b = new ImageFloat4(numElementsX, numElementsY);
-            c = new ImageFloat4(numElementsX, numElementsY);
+            int w = size;
+            int h = size;
 
-            Random r = new Random();
-            for (int j = 0; j < numElementsY; j++) {
-                for (int i = 0; i < numElementsX; i++) {
-                    float[] ra = new float[4];
-                    IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                    float[] rb = new float[4];
-                    IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
+            redChannel = new int[w * h];
+            greenChannel = new int[w * h];
+            blueChannel = new int[w * h];
+            alphaChannel = new int[w * h];
+
+            greenFilter = new int[w * h];
+            redFilter = new int[w * h];
+            blueFilter = new int[w * h];
+
+            filter = new float[w * h];
+            for (int i = 0; i < w; i++) {
+                for (int j = 0; j < h; j++) {
+                    filter[i * h + j] = 1.f / (FILTER_WIDTH * FILTER_WIDTH);
                 }
             }
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(a, b) //
-                    .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                    .streamOut(c);
+
+            Random r = new Random();
+            for (int i = 0; i < w; i++) {
+                for (int j = 0; j < h; j++) {
+                    int rgb = r.nextInt(255);
+                    alphaChannel[i * h + j] = (rgb >> 24) & 0xFF;
+                    redChannel[i * h + j] = (rgb >> 16) & 0xFF;
+                    greenChannel[i * h + j] = (rgb >> 8) & 0xFF;
+                    blueChannel[i * h + j] = (rgb & 0xFF);
+                }
+            }
+
+            ts = new TaskSchedule("blur") //
+                    .streamIn(redChannel, greenChannel, blueChannel) //
+                    .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
+                    .streamOut(redFilter, greenFilter, blueFilter);
             ts.warmup();
         }
     }
@@ -88,8 +105,10 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
-        GraphicsKernels.addImage(state.a, state.b, state.c);
+    public void blurFilterJava(BenchmarkSetup state) {
+        ComputeKernels.channelConvolution(state.redChannel, state.redFilter, state.size, state.size, state.filter, state.FILTER_WIDTH);
+        ComputeKernels.channelConvolution(state.greenChannel, state.greenFilter, state.size, state.size, state.filter, state.FILTER_WIDTH);
+        ComputeKernels.channelConvolution(state.blueChannel, state.blueFilter, state.size, state.size, state.filter, state.FILTER_WIDTH);
     }
 
     @Benchmark
@@ -98,7 +117,7 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void blurFilterTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
@@ -106,7 +125,7 @@ public class JMHAddImage {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
-                .include(JMHAddImage.class.getName() + ".*") //
+                .include(JMHBlurFilter.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
                 .timeUnit(TimeUnit.SECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //

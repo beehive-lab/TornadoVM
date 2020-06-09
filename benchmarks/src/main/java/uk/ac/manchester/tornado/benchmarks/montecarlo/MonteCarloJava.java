@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 public class MonteCarloJava extends BenchmarkDriver {
 
     private final int size;
-
     private float[] seq;
 
     public MonteCarloJava(int iterations, int size) {

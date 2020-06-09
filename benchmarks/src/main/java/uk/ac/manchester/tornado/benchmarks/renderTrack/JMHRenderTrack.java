@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.benchmarks.addImage;
+package uk.ac.manchester.tornado.benchmarks.renderTrack;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,49 +35,39 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
-public class JMHAddImage {
-
+public class JMHRenderTrack {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
-        int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
-        TaskSchedule ts;
+        private int size = Integer.parseInt(System.getProperty("x", "8192"));
+        private ImageFloat3 input;
+        private ImageByte3 output;
+        private TaskSchedule s0;
 
-        ImageFloat4 a;
-        ImageFloat4 b;
-        ImageFloat4 c;
+        private TaskSchedule ts;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new ImageFloat4(numElementsX, numElementsY);
-            b = new ImageFloat4(numElementsX, numElementsY);
-            c = new ImageFloat4(numElementsX, numElementsY);
-
+            output = new ImageByte3(size, size);
+            input = new ImageFloat3(size, size);
             Random r = new Random();
-            for (int j = 0; j < numElementsY; j++) {
-                for (int i = 0; i < numElementsX; i++) {
-                    float[] ra = new float[4];
-                    IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                    float[] rb = new float[4];
-                    IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
+            for (int i = 0; i < input.X(); i++) {
+                for (int j = 0; j < input.Y(); j++) {
+                    float value = (float) r.nextInt(10) * -1;
+                    input.set(i, j, new Float3(i, j, value));
                 }
             }
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(a, b) //
-                    .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                    .streamOut(c);
+            ts = new TaskSchedule("s0")//
+                    .task("t0", ComputeKernels::renderTrack, output, input) //
+                    .streamOut(output);
             ts.warmup();
         }
     }
@@ -88,8 +78,8 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
-        GraphicsKernels.addImage(state.a, state.b, state.c);
+    public void renderTrackJava(BenchmarkSetup state) {
+        ComputeKernels.renderTrack(state.output, state.input);
     }
 
     @Benchmark
@@ -98,7 +88,7 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void renderTrackTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
@@ -106,7 +96,7 @@ public class JMHAddImage {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
-                .include(JMHAddImage.class.getName() + ".*") //
+                .include(JMHRenderTrack.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
                 .timeUnit(TimeUnit.SECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //

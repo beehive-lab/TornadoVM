@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.benchmarks.addImage;
+package uk.ac.manchester.tornado.benchmarks.sgemm;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,50 +35,47 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
+import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
-public class JMHAddImage {
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
+
+public class JMHSgemm {
 
     @State(Scope.Thread)
     public static class BenchmarkSetup {
-
-        int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
-        int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
+        int m = Integer.parseInt(System.getProperty("x", "1024"));
+        int n = Integer.parseInt(System.getProperty("y", "1024"));
+        private float[] a;
+        private float[] b;
+        private float[] c;
         TaskSchedule ts;
-
-        ImageFloat4 a;
-        ImageFloat4 b;
-        ImageFloat4 c;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new ImageFloat4(numElementsX, numElementsY);
-            b = new ImageFloat4(numElementsX, numElementsY);
-            c = new ImageFloat4(numElementsX, numElementsY);
 
-            Random r = new Random();
-            for (int j = 0; j < numElementsY; j++) {
-                for (int i = 0; i < numElementsX; i++) {
-                    float[] ra = new float[4];
-                    IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                    float[] rb = new float[4];
-                    IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
-                }
+            a = new float[m * n];
+            b = new float[m * n];
+            c = new float[m * n];
+
+            final Random random = new Random();
+
+            for (int i = 0; i < m; i++) {
+                a[i * (m + 1)] = 1;
             }
+
+            for (int i = 0; i < m * n; i++) {
+                b[i] = random.nextFloat();
+            }
+
             ts = new TaskSchedule("benchmark") //
                     .streamIn(a, b) //
-                    .task("addImage", GraphicsKernels::addImage, a, b, c) //
+                    .task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c) //
                     .streamOut(c);
             ts.warmup();
+
         }
     }
 
@@ -88,8 +85,8 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
-        GraphicsKernels.addImage(state.a, state.b, state.c);
+    public void sgemmJava(BenchmarkSetup state) {
+        sgemm(state.m, state.n, state.m, state.a, state.b, state.c);
     }
 
     @Benchmark
@@ -98,7 +95,7 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void sgemmTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
@@ -106,7 +103,7 @@ public class JMHAddImage {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
-                .include(JMHAddImage.class.getName() + ".*") //
+                .include(JMHSgemm.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
                 .timeUnit(TimeUnit.SECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //

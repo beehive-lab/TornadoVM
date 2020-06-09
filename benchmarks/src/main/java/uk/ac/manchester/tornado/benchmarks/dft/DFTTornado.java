@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-public class DftTornado extends BenchmarkDriver {
+public class DFTTornado extends BenchmarkDriver {
 
     private int size;
     private TaskSchedule graph;
@@ -32,7 +32,7 @@ public class DftTornado extends BenchmarkDriver {
     private double[] outReal;
     private double[] outImag;
 
-    public DftTornado(int iterations, int size) {
+    public DFTTornado(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
@@ -53,7 +53,7 @@ public class DftTornado extends BenchmarkDriver {
         initData();
         graph = new TaskSchedule("benchmark") //
                 .streamIn(inReal, inImag) //
-                .task("t0", ComputeKernels::computeDft, inReal, inImag, outReal, outImag) //
+                .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                 .streamOut(outReal, outImag);
         graph.warmup();
     }
@@ -68,7 +68,7 @@ public class DftTornado extends BenchmarkDriver {
         graph.execute();
         graph.streamOut(outReal, outImag);
 
-        ComputeKernels.computeDft(inReal, inImag, outRealTor, outImagTor);
+        ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor[i] - outImag[i]) > 0.01) {

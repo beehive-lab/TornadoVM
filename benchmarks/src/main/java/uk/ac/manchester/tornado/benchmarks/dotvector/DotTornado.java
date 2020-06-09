@@ -26,6 +26,9 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 public class DotTornado extends BenchmarkDriver {
 
     private final int numElements;
@@ -47,11 +50,14 @@ public class DotTornado extends BenchmarkDriver {
         b = new VectorFloat3(numElements);
         c = new float[numElements];
 
-        final Float3 valueA = new Float3(1f, 1f, 1f);
-        final Float3 valueB = new Float3(2f, 2f, 2f);
+        Random r = new Random();
         for (int i = 0; i < numElements; i++) {
-            a.set(i, valueA);
-            b.set(i, valueB);
+            float[] ra = new float[3];
+            IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
+            float[] rb = new float[3];
+            IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+            a.set(i, new Float3(ra));
+            b.set(i, new Float3(rb));
         }
 
         graph = new TaskSchedule("benchmark");

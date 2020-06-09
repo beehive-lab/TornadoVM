@@ -25,8 +25,8 @@ import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
 public class SpmvJava extends BenchmarkDriver {
 
     private final CSRMatrix<float[]> matrix;
-
-    private float[] v,y;
+    private float[] v;
+    private float[] y;
 
     public SpmvJava(int iterations, CSRMatrix<float[]> matrix) {
         super(iterations);
@@ -35,19 +35,15 @@ public class SpmvJava extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-
         v = new float[matrix.size];
         y = new float[matrix.size];
-
         Benchmark.initData(v);
-
     }
 
     @Override
     public void tearDown() {
         v = null;
         y = null;
-
         super.tearDown();
     }
 
@@ -58,7 +54,6 @@ public class SpmvJava extends BenchmarkDriver {
 
     @Override
     public void barrier() {
-
     }
 
     @Override

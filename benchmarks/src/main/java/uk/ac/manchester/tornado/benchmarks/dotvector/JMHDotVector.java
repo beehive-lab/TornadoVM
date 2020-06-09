@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.benchmarks.addImage;
+package uk.ac.manchester.tornado.benchmarks.dotvector;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -35,48 +35,44 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-public class JMHAddImage {
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
+
+public class JMHDotVector {
 
     @State(Scope.Thread)
     public static class BenchmarkSetup {
-
-        int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
-        int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
+        int numElements = Integer.parseInt(System.getProperty("x", "4194304"));
+        private VectorFloat3 a;
+        private VectorFloat3 b;
+        private float[] c;
         TaskSchedule ts;
-
-        ImageFloat4 a;
-        ImageFloat4 b;
-        ImageFloat4 c;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new ImageFloat4(numElementsX, numElementsY);
-            b = new ImageFloat4(numElementsX, numElementsY);
-            c = new ImageFloat4(numElementsX, numElementsY);
+            a = new VectorFloat3(numElements);
+            b = new VectorFloat3(numElements);
+            c = new float[numElements];
 
             Random r = new Random();
-            for (int j = 0; j < numElementsY; j++) {
-                for (int i = 0; i < numElementsX; i++) {
-                    float[] ra = new float[4];
-                    IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                    float[] rb = new float[4];
-                    IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
-                }
+            for (int i = 0; i < numElements; i++) {
+                float[] ra = new float[3];
+                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
+                float[] rb = new float[3];
+                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+                a.set(i, new Float3(ra));
+                b.set(i, new Float3(rb));
             }
-            ts = new TaskSchedule("benchmark") //
+            ts = new TaskSchedule("benchmark")//
                     .streamIn(a, b) //
-                    .task("addImage", GraphicsKernels::addImage, a, b, c) //
+                    .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
                     .streamOut(c);
             ts.warmup();
         }
@@ -88,8 +84,8 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageJava(BenchmarkSetup state) {
-        GraphicsKernels.addImage(state.a, state.b, state.c);
+    public void dotVectorJava(BenchmarkSetup state) {
+        dotVector(state.a, state.b, state.c);
     }
 
     @Benchmark
@@ -98,7 +94,7 @@ public class JMHAddImage {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
+    public void dotVectorTornado(BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
@@ -106,7 +102,7 @@ public class JMHAddImage {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
-                .include(JMHAddImage.class.getName() + ".*") //
+                .include(JMHDotVector.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
                 .timeUnit(TimeUnit.SECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //

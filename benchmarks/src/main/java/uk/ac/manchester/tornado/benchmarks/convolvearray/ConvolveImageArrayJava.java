@@ -25,9 +25,13 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class ConvolveImageArrayJava extends BenchmarkDriver {
 
-    private final int imageSizeX,imageSizeY,filterSize;
+    private final int imageSizeX;
+    private final int imageSizeY;
+    private final int filterSize;
 
-    private float[] input,output,filter;
+    private float[] input;
+    private float[] output;
+    private float[] filter;
 
     public ConvolveImageArrayJava(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);

@@ -30,7 +30,9 @@ public class ConvolveImageJava extends BenchmarkDriver {
     private final int imageSizeY;
     private final int filterSize;
 
-    private ImageFloat input,output,filter;
+    private ImageFloat input;
+    private ImageFloat output;
+    private ImageFloat filter;
 
     public ConvolveImageJava(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
