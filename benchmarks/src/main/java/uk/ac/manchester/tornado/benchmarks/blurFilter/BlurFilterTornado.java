@@ -81,7 +81,9 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .streamOut(redFilter, greenFilter, blueFilter);
+                .streamOut(redFilter, greenFilter, blueFilter) //
+                .useDefaultThreadScheduler(true);
+
         parallelFilter.warmup();
     }
 

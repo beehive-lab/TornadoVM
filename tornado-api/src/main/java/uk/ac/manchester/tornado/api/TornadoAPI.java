@@ -488,4 +488,6 @@ public interface TornadoAPI {
 
     void waitOn();
 
+    TaskSchedule useDefaultThreadScheduler(boolean use);
+
 }
