@@ -44,7 +44,6 @@ public class JMHBlurFilter {
 
     @State(Scope.Thread)
     public static class BenchmarkSetup {
-
         int size = Integer.parseInt(System.getProperty("x", "512"));
         public static final int FILTER_WIDTH = 31;
         int[] redChannel;
@@ -124,13 +123,13 @@ public class JMHBlurFilter {
     // TaskSchedule t = state.ts;
     // t.execute();
     // blackhole.consume(t);
-    // }
+    //
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
                 .include(JMHBlurFilter.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
-                .timeUnit(TimeUnit.SECONDS) //
+                .timeUnit(TimeUnit.NANOSECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //
                 .warmupIterations(2) //
                 .measurementTime(TimeValue.seconds(30)) //

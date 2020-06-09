@@ -107,7 +107,7 @@ public class JMHDotImage {
         Options opt = new OptionsBuilder() //
                 .include(JMHDotImage.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
-                .timeUnit(TimeUnit.SECONDS) //
+                .timeUnit(TimeUnit.NANOSECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //
                 .warmupIterations(2) //
                 .measurementTime(TimeValue.seconds(30)) //

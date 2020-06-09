@@ -97,7 +97,7 @@ public class JMHSaxpy {
         Options opt = new OptionsBuilder() //
                 .include(JMHSaxpy.class.getName() + ".*") //
                 .mode(Mode.AverageTime) //
-                .timeUnit(TimeUnit.SECONDS) //
+                .timeUnit(TimeUnit.NANOSECONDS) //
                 .warmupTime(TimeValue.seconds(60)) //
                 .warmupIterations(2) //
                 .measurementTime(TimeValue.seconds(30)) //
