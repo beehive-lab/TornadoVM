@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.dft;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -59,12 +60,13 @@ public class DFTTornado extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         boolean validation = true;
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
         graph.warmup();
+        graph.mapAllTo(device);
         graph.execute();
         graph.streamOut(outReal, outImag);
 
@@ -96,7 +98,8 @@ public class DFTTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
 
     }

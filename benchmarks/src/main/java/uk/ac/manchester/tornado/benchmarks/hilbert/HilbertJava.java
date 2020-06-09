@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.hilbert;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -36,12 +37,12 @@ public class HilbertJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         ComputeKernels.hilbertComputation(hilbertMatrix, size, size);
     }
 }

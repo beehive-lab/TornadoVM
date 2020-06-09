@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class BlackScholesJava extends BenchmarkDriver {
@@ -46,12 +47,12 @@ public class BlackScholesJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         blackscholes(randArray, call, put);
     }
 }

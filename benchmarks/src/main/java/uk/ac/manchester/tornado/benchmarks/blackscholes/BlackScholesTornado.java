@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -67,7 +68,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         float[] randArrayTor,callTor,putTor,calSeq,putSeq;
         boolean val;
 
@@ -108,7 +109,8 @@ public class BlackScholesTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
     }
 }

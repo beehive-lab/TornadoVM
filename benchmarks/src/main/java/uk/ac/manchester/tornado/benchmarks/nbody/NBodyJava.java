@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class NBodyJava extends BenchmarkDriver {
@@ -64,12 +65,12 @@ public class NBodyJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         nBody(numBodies, posSeq, velSeq, delT, espSqr);
     }
 }

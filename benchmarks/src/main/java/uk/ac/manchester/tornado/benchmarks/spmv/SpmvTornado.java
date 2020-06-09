@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
 import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.initData;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
@@ -63,16 +64,17 @@ public class SpmvTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final float[] ref = new float[matrix.size];
 
-        benchmarkMethod();
+        benchmarkMethod(device);
         graph.clearProfiles();
 
         spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, ref);

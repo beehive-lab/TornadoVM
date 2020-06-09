@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -37,7 +38,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
     int[] blueFilter;
     float[] filter;
 
-    TaskSchedule parallelFilter;
+    TaskSchedule ts;
 
     public BlurFilterTornado(int iterations, int size) {
         super(iterations);
@@ -76,7 +77,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
             }
         }
 
-        parallelFilter = new TaskSchedule("blur") //
+        ts = new TaskSchedule("blur") //
                 .streamIn(redChannel, greenChannel, blueChannel) //
                 .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
@@ -84,12 +85,12 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .streamOut(redFilter, greenFilter, blueFilter) //
                 .useDefaultThreadScheduler(true);
 
-        parallelFilter.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        parallelFilter.dumpProfiles();
+        ts.dumpProfiles();
         redChannel = null;
         greenChannel = null;
         blueChannel = null;
@@ -97,12 +98,12 @@ public class BlurFilterTornado extends BenchmarkDriver {
         greenFilter = null;
         redFilter = null;
         blueFilter = null;
-        parallelFilter.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         boolean valid = true;
         int w = size;
         int h = size;
@@ -171,7 +172,8 @@ public class BlurFilterTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
-        parallelFilter.execute();
+    public void benchmarkMethod(TornadoDevice device) {
+        ts.mapAllTo(device);
+        ts.execute();
     }
 }

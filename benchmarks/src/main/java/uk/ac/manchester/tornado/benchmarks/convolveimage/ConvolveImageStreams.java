@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImageStreams;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class ConvolveImageStreams extends BenchmarkDriver {
@@ -60,7 +61,7 @@ public class ConvolveImageStreams extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         convolveImageStreams(input, filter, output);
     }
 
@@ -70,7 +71,7 @@ public class ConvolveImageStreams extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

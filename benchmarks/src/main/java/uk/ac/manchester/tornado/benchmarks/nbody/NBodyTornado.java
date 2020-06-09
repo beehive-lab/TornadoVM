@@ -24,6 +24,7 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -83,7 +84,7 @@ public class NBodyTornado extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         boolean val = true;
         float[] posSeqSeq,velSeqSeq;
         delT = 0.005f;
@@ -113,6 +114,7 @@ public class NBodyTornado extends BenchmarkDriver {
         }
         ts = new TaskSchedule("benchmark");
         ts.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        ts.mapAllTo(device);
         ts.warmup();
         ts.execute();
         ts.syncObjects(posSeq, velSeq);
@@ -135,7 +137,8 @@ public class NBodyTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        ts.mapAllTo(device);
         ts.execute();
     }
 }

@@ -21,6 +21,7 @@ import static java.lang.Math.toIntExact;
 import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class BenchmarkDriver {
@@ -53,9 +54,9 @@ public abstract class BenchmarkDriver {
         }
     }
 
-    public abstract boolean validate();
+    public abstract boolean validate(TornadoDevice device);
 
-    public abstract void benchmarkMethod();
+    public abstract void benchmarkMethod(TornadoDevice device);
 
     protected void barrier() {
 
@@ -73,11 +74,11 @@ public abstract class BenchmarkDriver {
         return true;
     }
 
-    public void benchmark() {
+    public void benchmark(TornadoDevice device) {
 
         setUp();
 
-        validResult = (!VALIDATE) || validate();
+        validResult = (!VALIDATE) || validate(device);
 
         int size = toIntExact(iterations);
 
@@ -89,7 +90,7 @@ public abstract class BenchmarkDriver {
                     System.gc();
                 }
                 final long start = System.nanoTime();
-                benchmarkMethod();
+                benchmarkMethod(device);
                 final long end = System.nanoTime();
                 timers[toIntExact(i)] = (end - start);
             }

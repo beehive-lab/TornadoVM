@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
 
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 import java.util.Random;
@@ -65,7 +66,7 @@ public class DotJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         dotVector(a, b, c);
     }
 
@@ -75,7 +76,7 @@ public class DotJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

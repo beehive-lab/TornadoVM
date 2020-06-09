@@ -21,6 +21,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
@@ -82,16 +83,17 @@ public class AddTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        ts.mapAllTo(device);
         ts.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
-        benchmarkMethod();
+        benchmarkMethod(device);
         ts.syncObject(c);
         ts.clearProfiles();
 

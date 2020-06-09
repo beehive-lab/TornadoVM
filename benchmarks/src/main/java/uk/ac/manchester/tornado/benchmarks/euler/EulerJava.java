@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.euler;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -54,12 +55,12 @@ public class EulerJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         ComputeKernels.euler(size, input, outputA, outputB, outputC, outputD, outputE);
     }
 }

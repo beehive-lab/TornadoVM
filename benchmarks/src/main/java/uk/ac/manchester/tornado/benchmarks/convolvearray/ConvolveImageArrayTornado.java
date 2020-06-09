@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.convolvearray;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -73,16 +74,17 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        ts.mapAllTo(device);
         ts.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final float[] result = new float[imageSizeX * imageSizeY];
 
-        benchmarkMethod();
+        benchmarkMethod(device);
         ts.syncObject(output);
         ts.clearProfiles();
 

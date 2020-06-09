@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dft;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -47,7 +48,7 @@ public class DFTJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
@@ -58,7 +59,7 @@ public class DFTJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         ComputeKernels.computeDFT(inReal, inImag, outReal, outImag);
     }
 }
