@@ -23,8 +23,11 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class BlackScholesJava extends BenchmarkDriver {
-    private int size;
-    private float[] randArray,call,put;
+
+    private final int size;
+    private float[] randArray;
+    private float[] call;
+    private float[] put;
 
     public BlackScholesJava(int iterations, int size) {
         super(iterations);
@@ -40,7 +43,6 @@ public class BlackScholesJava extends BenchmarkDriver {
         for (int i = 0; i < size; i++) {
             randArray[i] = (i * 1.0f) / size;
         }
-
     }
 
     @Override

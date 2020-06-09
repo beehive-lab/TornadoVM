@@ -33,5 +33,4 @@ module tornado.benchmarks {
     exports uk.ac.manchester.tornado.benchmarks.sgemv;
     exports uk.ac.manchester.tornado.benchmarks.spmv;
     exports uk.ac.manchester.tornado.benchmarks.stencil;
-
 }

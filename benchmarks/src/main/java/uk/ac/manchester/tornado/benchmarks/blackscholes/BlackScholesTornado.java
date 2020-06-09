@@ -25,8 +25,11 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class BlackScholesTornado extends BenchmarkDriver {
-    private int size;
-    private float[] randArray,call,put;
+
+    private final int size;
+    private float[] randArray;
+    private float[] call;
+    private float[] put;
     private TaskSchedule graph;
 
     public BlackScholesTornado(int iterations, int size) {
