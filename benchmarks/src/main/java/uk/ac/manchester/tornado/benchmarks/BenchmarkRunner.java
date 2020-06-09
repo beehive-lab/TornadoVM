@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -113,7 +114,11 @@ public abstract class BenchmarkRunner {
                 TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver deviceTest = getTornadoDriver();
 
-                deviceTest.benchmark(tornadoDevice);
+                try {
+                    deviceTest.benchmark(tornadoDevice);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
                         deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
                         deviceTest.getCV(), driver.getDevice(deviceIndex));
