@@ -93,37 +93,35 @@ public class JMHBlurFilter {
                     .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .streamOut(redFilter, greenFilter, blueFilter);
+                    .streamOut(redFilter, greenFilter, blueFilter) //
+                    .useDefaultThreadScheduler(true);
             ts.warmup();
         }
     }
 
-    // @Benchmark
-    // @BenchmarkMode(Mode.AverageTime)
-    // @Warmup(iterations = 2, time = 60, timeUnit = TimeUnit.SECONDS)
-    // @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
-    // @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    // @Fork(1)
-    // public void blurFilterJava(BenchmarkSetup state) {
-    // ComputeKernels.channelConvolution(state.redChannel, state.redFilter,
-    // state.size, state.size, state.filter, state.FILTER_WIDTH);
-    // ComputeKernels.channelConvolution(state.greenChannel, state.greenFilter,
-    // state.size, state.size, state.filter, state.FILTER_WIDTH);
-    // ComputeKernels.channelConvolution(state.blueChannel, state.blueFilter,
-    // state.size, state.size, state.filter, state.FILTER_WIDTH);
-    // }
-    //
-    // @Benchmark
-    // @BenchmarkMode(Mode.AverageTime)
-    // @Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
-    // @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
-    // @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    // @Fork(1)
-    // public void blurFilterTornado(BenchmarkSetup state, Blackhole blackhole) {
-    // TaskSchedule t = state.ts;
-    // t.execute();
-    // blackhole.consume(t);
-    //
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 2, time = 60, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Fork(1)
+    public void blurFilterJava(BenchmarkSetup state) {
+        ComputeKernels.channelConvolution(state.redChannel, state.redFilter, state.size, state.size, state.filter, state.FILTER_WIDTH);
+        ComputeKernels.channelConvolution(state.greenChannel, state.greenFilter, state.size, state.size, state.filter, state.FILTER_WIDTH);
+        ComputeKernels.channelConvolution(state.blueChannel, state.blueFilter, state.size, state.size, state.filter, state.FILTER_WIDTH);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Fork(1)
+    public void blurFilterTornado(BenchmarkSetup state, Blackhole blackhole) {
+        TaskSchedule t = state.ts;
+        t.execute();
+        blackhole.consume(t);
+    }
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder() //
