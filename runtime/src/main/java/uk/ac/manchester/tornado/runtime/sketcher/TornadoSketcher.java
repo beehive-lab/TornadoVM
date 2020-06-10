@@ -80,12 +80,21 @@ public class TornadoSketcher {
     static {
         // XXX: To be completed
         openCLTokens.add("kernel");
+        openCLTokens.add("__kernel");
         openCLTokens.add("__global");
         openCLTokens.add("global");
         openCLTokens.add("local");
         openCLTokens.add("__local");
         openCLTokens.add("private");
-        openCLTokens.add("__private");
+        openCLTokens.add("half");
+        openCLTokens.add("dot");
+        openCLTokens.add("uniform");
+        openCLTokens.add("pipe");
+        openCLTokens.add("auto");
+        openCLTokens.add("cross");
+        openCLTokens.add("distance");
+        openCLTokens.add("normalize");
+        openCLTokens.add("complex");
     }
 
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod) {
