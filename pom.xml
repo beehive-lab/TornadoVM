@@ -285,8 +285,15 @@
                         <configuration>
                             <source>11</source>
                             <target>11</target>
-                            <compilerArgument>-proc:none</compilerArgument>
+                            <!-- <compilerArgument>-proc:none</compilerArgument> -->
                             <showDeprecation>true</showDeprecation>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
                             <compilerArgs>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
@@ -581,7 +588,6 @@
                         <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/graal.jar</systemPath>
                         <version>${graal.version}</version>
                     </dependency>
-
                     <dependency>
                         <groupId>jvmci</groupId>
                         <artifactId>api</artifactId>
@@ -762,7 +768,6 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
-
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
@@ -774,7 +779,6 @@
             <version>${jmh.version}</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
