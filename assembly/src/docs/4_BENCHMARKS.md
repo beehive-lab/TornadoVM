@@ -101,7 +101,7 @@ $ tornado-benchmarks.py --jmh
 The script runs all benchmarks using JMH. This process takes ~3.5h. 
 
 
-Additionally, each benchmark has a JMH configuration. Users can execute the program any benchmark from the list as follows:
+Additionally, each benchmark has a JMH configuration. Users can execute any benchmark from the list as follows:
 
 ```bash
 $ tornado uk.ac.manchester.tornado.benchmarks.<benchmark>.JMH<BENCHMARK>
