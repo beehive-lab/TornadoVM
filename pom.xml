@@ -285,6 +285,7 @@
                         <configuration>
                             <source>11</source>
                             <target>11</target>
+                            <compilerArgument>-proc:none</compilerArgument>
                             <showDeprecation>true</showDeprecation>
                             <compilerArgs>
                                 <arg>--add-modules</arg>
@@ -306,6 +307,14 @@
                                 <arg>--add-exports</arg>
                                 <arg>
                                     jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>

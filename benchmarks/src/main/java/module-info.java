@@ -5,6 +5,7 @@ module tornado.benchmarks {
 
     requires transitive junit;
     requires transitive lucene.core;
+    requires transitive jmh.core;
     requires transitive tornado.api;
     requires transitive tornado.matrices;
 
