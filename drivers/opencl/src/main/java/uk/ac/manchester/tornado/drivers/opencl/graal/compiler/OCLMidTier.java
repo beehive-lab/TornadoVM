@@ -28,24 +28,22 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
-import static org.graalvm.compiler.core.common.GraalOptions.OptReadElimination;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateInvariants;
 
 import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
-import org.graalvm.compiler.virtual.phases.ea.EarlyReadEliminationPhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
@@ -68,11 +66,7 @@ public class OCLMidTier extends TornadoMidTier {
         appendPhase(new ExceptionCheckingElimination());
 
         if (OptFloatingReads.getValue(options)) {
-            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()));
-        }
-
-        if (OptReadElimination.getValue(options)) {
-            // appendPhase(new EarlyReadEliminationPhase(canonicalizer));
+            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
         }
 
         appendPhase(new TornadoMemoryPhiElimination());

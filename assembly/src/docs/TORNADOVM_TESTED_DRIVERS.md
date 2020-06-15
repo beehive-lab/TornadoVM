@@ -17,8 +17,13 @@
 
 ##### Drivers from Intel Compute HD Graphics (Intel Compute Runtime) - NEO
 
-[Link](https://github.com/intel/compute-runtime/releases)
+[Link](https://github.com/intel/compute-runtime/releases)   
 
+The following drivers have been tested on Linux - CentOS 7.8
+
+* 20.20.16837: OK
+* 20.19.16754: OK
+* 20.18.16699: OK
 * 20.17.16650: OK
 * 20.16.16582: OK
 * 20.15.16524: OK

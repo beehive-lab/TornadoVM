@@ -297,11 +297,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
         trace("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        if (cast.getMemorySpace().name() == OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) {
-            getGen().append(new LoadStmt(result, cast, address));
-        } else {
+        if (shouldEmitIntegerIndexes(cast)) {
             getGen().append(new LoadStmt(result, cast, address, address.getIndex()));
+        } else {
+            getGen().append(new LoadStmt(result, cast, address));
         }
+    }
+
+    private boolean shouldEmitIntegerIndexes(OCLAddressCast cast) {
+        return cast.getMemorySpace().name() == OCLAssemblerConstants.LOCAL_MEM_MODIFIER || cast.getMemorySpace().name() == OCLAssemblerConstants.PRIVATE_MEM_MODIFIER;
     }
 
     public void emitVectorLoad(AllocatableValue result, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {

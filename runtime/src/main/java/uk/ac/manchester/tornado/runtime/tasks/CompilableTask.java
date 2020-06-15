@@ -85,8 +85,13 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public String getName() {
+    public String getFullName() {
         return "task " + meta.getId() + " - " + method.getName();
+    }
+
+    @Override
+    public String getTaskName() {
+        return method.getName();
     }
 
     @Override

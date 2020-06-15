@@ -36,6 +36,7 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
@@ -52,10 +53,11 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     private final TornadoLIRSuites lirSuites;
     private final OCLCanonicalizer canonicalizer;
 
-    public OCLSuitesProvider(OptionValues options, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
+    public OCLSuitesProvider(OptionValues options, OCLDeviceContext deviceContext, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig,
+            AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new OCLCanonicalizer();
-        suites = new TornadoSuites(options, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 
@@ -65,11 +67,6 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
 
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
-
-        InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
-        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
-        OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
-        OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
 
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);

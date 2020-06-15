@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,17 +20,30 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.api.exceptions;
 
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+public class TornadoBailoutRuntimeException extends RuntimeException {
 
-public interface TornadoInstalledCode {
+    private final String message;
+    private Exception e;
 
-    int launchWithDependencies(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents);
+    public TornadoBailoutRuntimeException(final String msg) {
+        message = msg;
+    }
 
-    int launchWithoutDependencies(CallStack stack, TaskMetaData meta, long batchThreads);
+    public TornadoBailoutRuntimeException(final String msg, Exception e) {
+        message = msg;
+        this.e = e;
+    }
 
+    public Exception getException() {
+        return this.e;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
 }

@@ -177,7 +177,7 @@ public class OpenCL {
         }
 
         // Run the code
-        openCLCode.launchWithoutDeps(stack, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(stack, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {

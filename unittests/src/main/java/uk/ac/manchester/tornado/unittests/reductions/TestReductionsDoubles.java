@@ -508,6 +508,70 @@ public class TestReductionsDoubles extends TornadoTestBase {
         compute2(sequentialData, sequentialStd);
 
         assertEquals(sequentialStd[0], resultStd[0], 0.01);
-
     }
+
+    private static void maxReductionAnnotation2(double[] input, @Reduce double[] result, double neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i] * 100);
+        }
+    }
+
+    @Test
+    public void testMaxReduction2() {
+        double[] input = new double[SIZE];
+        double[] result = new double[1];
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = idx;
+        });
+
+        double neutral = Double.MIN_VALUE + 1;
+        Arrays.fill(result, neutral);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsDoubles::maxReductionAnnotation2, input, result, neutral)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        double[] sequential = new double[] { neutral };
+        maxReductionAnnotation2(input, sequential, neutral);
+
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    private static void minReductionAnnotation2(double[] input, @Reduce double[] result, double neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.min(result[0], input[i] * 50);
+        }
+    }
+
+    @Test
+    public void testMinReduction2() {
+        double[] input = new double[SIZE];
+        double[] result = new double[1];
+
+        IntStream.range(0, SIZE).parallel().forEach(idx -> {
+            input[idx] = 100;
+        });
+
+        Arrays.fill(result, Double.MAX_VALUE);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsDoubles::minReductionAnnotation2, input, result, Double.MAX_VALUE)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        double[] sequential = new double[1];
+        minReductionAnnotation2(input, sequential, Double.MAX_VALUE);
+
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
 }

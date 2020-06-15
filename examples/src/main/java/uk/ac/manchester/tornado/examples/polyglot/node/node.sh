@@ -85,7 +85,6 @@ function print_usage {
     echo "usage:    bash node.sh [options] server.js "
     echo ""
     echo "              -h|--help             This message"
-    echo "              -v|--verbose          Enable verbose output"
     echo "              -d|--debug            Enable debug output"
     echo ""
     echo "              --printBytecodes      Print TornadoVM bytecodes"
@@ -126,10 +125,6 @@ case $key in
     --version)
     print_version
     shift
-    ;;
-    -v|--verbose)
-    TORNADO_FLAGS="${TORNADO_FLAGS} --vm.Dtornado.verbose=True"
-    shift # past argument
     ;;
     -d|--debug)
     TORNADO_FLAGS="${TORNADO_FLAGS} --vm.Dtornado.debug=True"

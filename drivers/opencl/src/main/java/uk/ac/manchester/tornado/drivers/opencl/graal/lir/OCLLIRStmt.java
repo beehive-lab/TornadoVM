@@ -192,11 +192,21 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
+            if (isLocalOrPrivateLoad()) {
                 emitIntegerBasedIndexCode(crb, asm);
             } else {
                 emitPointerBaseIndexCode(crb, asm);
             }
+        }
+
+        /**
+         * This method is used to check if emiting a load to a local or private memory
+         * space.
+         *
+         * @return boolean This returns if the memory base is private or local.
+         */
+        private boolean isLocalOrPrivateLoad() {
+            return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
         }
 
         public AllocatableValue getResult() {
@@ -319,7 +329,6 @@ public class OCLLIRStmt {
         }
 
         public void emitNormalCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-
             // asm.emitLine("*((__global char *) ul_12) = 102;");
             asm.emit("*(");
             cast.emit(crb, asm);
@@ -337,11 +346,21 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
+            if (isLocalOrPrivateStore()) {
                 emitIntegerStore(crb, asm);
             } else {
                 emitNormalCode(crb, asm);
             }
+        }
+
+        /**
+         * This method is used to check if emiting a store to a local or private memory
+         * space.
+         * 
+         * @return boolean This returns if the memory base is private or local.
+         */
+        private boolean isLocalOrPrivateStore() {
+            return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
         }
 
         public Value getRhs() {
