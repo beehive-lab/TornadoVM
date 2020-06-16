@@ -34,7 +34,7 @@ public enum PTXKind implements PlatformKind {
     U64(8, null),
     B64(8, null),
 
-    CHAR2(2, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, U8),
+    CHAR2(2, null, U8),
     CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, U8),
     CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, U8),
 

@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.calc.DivNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.snippets.PTXReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -326,7 +327,10 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
         ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, HeapAccess.BarrierType.NONE));
-        ValueNode readValue = implicitLoadConvert(graph, elementKind, memoryRead);
+        ValueNode readValue = memoryRead;
+        if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
+            readValue = implicitLoadConvert(graph, elementKind, memoryRead);
+        }
         loadIndexed.replaceAtUsages(readValue);
         graph.replaceFixed(loadIndexed, memoryRead);
     }
@@ -338,7 +342,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        ValueNode writeValue = implicitStoreConvert(graph, elementKind, value);
+        ValueNode writeValue = value;
+        Stamp valueStamp = value.stamp(NodeView.DEFAULT);
+        if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
+            writeValue = implicitStoreConvert(graph, elementKind, value);
+        }
         AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, writeValue, array, address, graph, storeIndexed);
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
