@@ -33,6 +33,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -116,28 +117,13 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         guarantee(vector != null, "vector is null");
-        // System.out.printf("vector = %s,
-        // origin=%s\n",vector,vector.getOrigin());
         Value targetVector = gen.operand(getVector());
-        // if (targetVector == null && vector.getOrigin() instanceof Invoke) {
-        // targetVector = gen.operand(vector.getOrigin());
-        // }
 
-        guarantee(targetVector != null, "vector is null 2");
-        final PTXVectorElementSelect element = new PTXVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector, laneIdToVectorSuffix());
+        assert targetVector instanceof Variable;
+
+        final PTXVectorElementSelect element = new PTXVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), (Variable) targetVector, laneId());
         gen.setResult(this, element);
 
-    }
-
-    private String laneIdToVectorSuffix() {
-        switch (laneId()) {
-            case 0: return "x";
-            case 1: return "y";
-            case 2: return "z";
-            case 3: return "w";
-            default: shouldNotReachHere();
-        }
-        return null;
     }
 
 }

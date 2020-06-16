@@ -34,22 +34,23 @@ public enum PTXKind implements PlatformKind {
     U64(8, null),
     B64(8, null),
 
-    CHAR3(4, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, U8),
+    CHAR2(2, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, U8),
+    CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, U8),
     CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, U8),
 
     SHORT2(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, S16),
 
     INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, S32),
-    INT3(4, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, S32),
+    INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, S32),
     INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, S32),
 
     FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, F32),
-    FLOAT3(4, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, F32),
+    FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, F32),
     FLOAT4(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, F32),
     FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, F32),
 
     DOUBLE2(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, F64),
-    DOUBLE3(4, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, F64),
+    DOUBLE3(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, F64),
     DOUBLE4(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, F64),
     DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, F64),
 

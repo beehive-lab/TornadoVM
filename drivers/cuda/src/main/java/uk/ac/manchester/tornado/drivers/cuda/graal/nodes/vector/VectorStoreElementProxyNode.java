@@ -94,7 +94,6 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
 
     @Override
     public Node canonical(CanonicalizerTool ct) {
-        TornadoInternalError.unimplemented();
         if (tryResolve()) {
             return null;
         } else {

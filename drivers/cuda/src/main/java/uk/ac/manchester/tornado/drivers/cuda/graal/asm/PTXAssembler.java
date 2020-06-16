@@ -237,8 +237,12 @@ public class PTXAssembler extends Assembler {
     }
 
     public void emitConstant(ConstantValue constant) {
-        emitSymbol(constant.getJavaConstant().asLong() > 0 ? "+" : "-");
-        emit(constant.getConstant().toValueString());
+        emitConstant(constant.getJavaConstant().asLong());
+    }
+
+    public void emitConstant(long constant) {
+        emitSymbol(constant > 0 ? "+" : "-");
+        emit(Long.toString(constant));
     }
 
     public void convertNextTabToSpace() {
@@ -521,12 +525,6 @@ public class PTXAssembler extends Assembler {
 
         public static final PTXBinaryIntrinsic FLOAT_MIN = new PTXBinaryIntrinsic("min", false);
         public static final PTXBinaryIntrinsic FLOAT_MAX = new PTXBinaryIntrinsic("max", false);
-
-        public static final PTXBinaryIntrinsic VLOAD2 = new PTXBinaryIntrinsic("vload2");
-        public static final PTXBinaryIntrinsic VLOAD3 = new PTXBinaryIntrinsic("vload3");
-        public static final PTXBinaryIntrinsic VLOAD4 = new PTXBinaryIntrinsic("vload4");
-        public static final PTXBinaryIntrinsic VLOAD8 = new PTXBinaryIntrinsic("vload8");
-        public static final PTXBinaryIntrinsic VLOAD16 = new PTXBinaryIntrinsic("vload16");
         // @formatter:on
 
         protected PTXBinaryIntrinsic(String opcode) {
@@ -654,15 +652,6 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXOp3 extends PTXOp2 {
-        // @formatter:off
-
-        public static final PTXOp3 VMOV_SHORT3 = new PTXOp3("(short3)");
-        public static final PTXOp3 VMOV_INT3 = new PTXOp3("(int3)");
-        public static final PTXOp3 VMOV_FLOAT3 = new PTXOp3("(float3)");
-        public static final PTXOp3 VMOV_BYTE3 = new PTXOp3("(char3)");
-        public static final PTXOp3 VMOV_DOUBLE3 = new PTXOp3("(double3)");
-
-        // @formatter:on
         public PTXOp3(String opcode) {
             super(opcode);
         }

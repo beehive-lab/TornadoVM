@@ -31,12 +31,16 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXVectorAssign;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXVectorSplit;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
@@ -206,7 +210,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                     regVarCount++;
                 }
                 if (kind.isVector()) {
-                    asm.emitLine("\t.reg .v%d .%s %s;", kind.getVectorLength(), type.getElementKind(), varData.variable.getName());
+                    PTXVectorSplit vectorSplitData = new PTXVectorSplit(varData.variable);
+                    if (vectorSplitData.fullUnwrapVector) {
+                        IntStream.range(0, vectorSplitData.vectorNames.length).forEach(i -> asm.emitLine("\t.reg .%s %s;", type.getElementKind(), vectorSplitData.vectorNames[i]));
+                    } else {
+                        IntStream.range(0, vectorSplitData.vectorNames.length).forEach(i -> asm.emitLine("\t.reg .v%d .%s %s;", vectorSplitData.newKind.getVectorLength(), type.getElementKind(), vectorSplitData.vectorNames[i]));
+                    }
                 }
             }
 

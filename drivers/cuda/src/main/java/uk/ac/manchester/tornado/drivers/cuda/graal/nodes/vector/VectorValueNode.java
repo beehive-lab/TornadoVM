@@ -35,7 +35,8 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<VectorValueNode> TYPE = NodeClass.create(VectorValueNode.class);
 
-    @OptionalInput(InputType.Association) private ValueNode origin;
+    @OptionalInput(InputType.Association)
+    private ValueNode origin;
 
     @Input
     NodeInputList<ValueNode> values;
@@ -97,9 +98,8 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
             final AllocatableValue result = tool.newVariable(LIRKind.value(getPTXKind()));
 
             /*
-             * two cases: 1. when this vector state has elements assigned
-             * individually 2. when this vector is assigned by a vector
-             * operation
+             * two cases: 1. when this vector state has elements assigned individually 2.
+             * when this vector is assigned by a vector operation
              */
             final int numValues = values.count();
             final ValueNode firstValue = values.first();
@@ -135,8 +135,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
                 s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
-                assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2,
-                        new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(0)));
+                assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2);
                 break;
             case 4:
                 s0 = getParam(gen, tool, 0);

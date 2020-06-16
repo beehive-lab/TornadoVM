@@ -352,7 +352,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         if (isArray) {
             var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);
         } else if (kind.isVector()) {
-            var.setName(kind.getRegisterTypeString() + "Vec" + indexForType);
+            var.setName(kind.getRegisterTypeString() + kind.getVectorLength() + "Vec" + indexForType);
         } else {
             var.setName(kind.getRegisterTypeString() + indexForType);
         }

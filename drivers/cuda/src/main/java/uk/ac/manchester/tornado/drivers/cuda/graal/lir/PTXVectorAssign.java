@@ -29,9 +29,12 @@ import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Variable;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.COMMA;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_OPEN;
@@ -57,20 +60,39 @@ public class PTXVectorAssign {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            asm.emitSymbol(TAB);
-            asm.emitSymbol(MOVE);
-            asm.emitSymbol(DOT);
-            asm.emit(VECTOR + dest.getPlatformKind().getVectorLength());
-            asm.emitSymbol(DOT);
-            asm.emit(((PTXKind)dest.getPlatformKind()).getElementKind().toString());
-            asm.emitSymbol(TAB);
+            PTXVectorSplit vectorSplitData = new PTXVectorSplit(dest);
+            Value[] intermValues = new Value[vectorSplitData.newKind.getVectorLength()];
 
-            asm.emitValue(dest);
-            asm.emitSymbol(COMMA);
-            asm.emitSymbol(SPACE);
-            asm.emitSymbol(CURLY_BRACKETS_OPEN);
-            asm.emitValues(values);
-            asm.emitSymbol(CURLY_BRACKETS_CLOSE);
+            for (int i = 0; i < vectorSplitData.vectorNames.length; i++) {
+                if (vectorSplitData.newKind.getVectorLength() >= 0) {
+                    System.arraycopy(values, i * vectorSplitData.newKind.getVectorLength(), intermValues, 0, vectorSplitData.newKind.getVectorLength());
+                }
+                asm.emitSymbol(TAB);
+                asm.emitSymbol(MOVE);
+                if (!vectorSplitData.fullUnwrapVector) {
+                    asm.emitSymbol(DOT);
+                    asm.emit(VECTOR + vectorSplitData.newKind.getVectorLength());
+                }
+                asm.emitSymbol(DOT);
+                asm.emit(((PTXKind)dest.getPlatformKind()).getElementKind().toString());
+                asm.emitSymbol(TAB);
+
+                asm.emitSymbol(vectorSplitData.vectorNames[i]);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                if (!vectorSplitData.fullUnwrapVector) {
+                    asm.emitSymbol(CURLY_BRACKETS_OPEN);
+                }
+                asm.emitValuesOrOp(crb, intermValues, dest);
+                if (!vectorSplitData.fullUnwrapVector) {
+                    asm.emitSymbol(CURLY_BRACKETS_CLOSE);
+                }
+                if (i < vectorSplitData.vectorNames.length - 1) {
+                    asm.delimiter();
+                    asm.eol();
+                }
+            }
         }
     }
+
 }

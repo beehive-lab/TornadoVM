@@ -29,30 +29,31 @@ import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
 @Opcode("VSEL")
 public class PTXVectorElementSelect extends PTXLIROp {
 
-    final Value vector;
-    private final String vectorSuffix;
+    private final Variable vector;
+    private final int laneId;
+    private final PTXVectorSplit vectorSplitData;
 
-    public PTXVectorElementSelect(LIRKind lirKind, Value vector, String vectorSuffix) {
+    public PTXVectorElementSelect(LIRKind lirKind, Variable vector, int laneId) {
         super(lirKind);
         this.vector = vector;
-        this.vectorSuffix = vectorSuffix;
+        this.laneId = laneId;
+        this.vectorSplitData = new PTXVectorSplit(vector);
     }
 
     @Override
     public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-        asm.emitValueOrOp(crb, vector, dest);
-        asm.emitSymbol(".");
-        asm.emit(vectorSuffix);
+        asm.emitSymbol(vectorSplitData.getVectorElement(laneId));
     }
 
     @Override
     public String toString() {
-        return String.format("vselect(%s, %s)", vector, vectorSuffix);
+        return String.format("vselect(%s, %d)", vector, laneId);
     }
 }

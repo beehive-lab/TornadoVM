@@ -47,6 +47,7 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
 
 public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     private final Map<String, Variable> builtInAllocations;
+
     public PTXNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen, PTXNodeMatchRules ptxNodeMatchRules) {
         super(graph, lirGen, ptxNodeMatchRules);
         builtInAllocations = new HashMap<>();
@@ -58,14 +59,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     @Override
-    protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps,
-                                  LIRFrameState callState) {
+    protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
         unimplemented();
     }
 
     @Override
-    protected void emitIndirectCall(IndirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps,
-                                    LIRFrameState callState) {
+    protected void emitIndirectCall(IndirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
         unimplemented();
     }
 
@@ -103,14 +102,10 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     public void doBlock(Block block, StructuredGraph graph, BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
-        trace("%s - block %s", graph.method()
-                                    .getName(), block);
+        trace("%s - block %s", graph.method().getName(), block);
         try (LIRGeneratorTool.BlockScope blockScope = gen.getBlockScope(block)) {
 
-            if (block == gen.getResult()
-                            .getLIR()
-                            .getControlFlowGraph()
-                            .getStartBlock()) {
+            if (block == gen.getResult().getLIR().getControlFlowGraph().getStartBlock()) {
                 assert block.getPredecessorCount() == 0;
                 emitPrologue(graph, isKernel);
             }
@@ -135,29 +130,25 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                             try {
                                 doRoot(valueNode);
                                 platformPatch(isKernel);
-                            }
-                            catch (final Throwable e) {
+                            } catch (final Throwable e) {
                                 System.out.println("e: " + e.toString());
                                 e.printStackTrace();
                                 throw new TornadoInternalError(e).addContext(valueNode.toString());
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Value operand = operand(valueNode);
                         if (ComplexMatchValue.INTERIOR_MATCH.equals(operand)) {
                             // Doesn't need to be evaluated
                             getDebugContext().log("interior match for %s", valueNode);
-                        }
-                        else if (operand instanceof ComplexMatchValue) {
+                        } else if (operand instanceof ComplexMatchValue) {
                             getDebugContext().log("complex match for %s", valueNode);
                             final ComplexMatchValue match = (ComplexMatchValue) operand;
                             operand = match.evaluate(this);
                             if (operand != null) {
                                 setResult(valueNode, operand);
                             }
-                        }
-                        else if (valueNode instanceof VectorValueNode) {
+                        } else if (valueNode instanceof VectorValueNode) {
                             // There can be cases in which the result of an
                             // instruction is already set before by other
                             // instructions. case where vector value is used as an input to a phi
@@ -209,8 +200,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
-        }
-        else if (node instanceof ShortCircuitOrNode) {
+        } else if (node instanceof ShortCircuitOrNode) {
             unimplemented("Unimplemented ShortCircuitOrNode");
         }
         super.emitNode(node);
@@ -218,12 +208,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(LoopEndNode node) {
-        LoopBeginNode begin  = node.loopBegin();
+        LoopBeginNode begin = node.loopBegin();
         final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
 
         for (ValuePhiNode phi : phis) {
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
-            Value src  = operand(phi.valueAt(node));
+            Value src = operand(phi.valueAt(node));
 
             if (!dest.equals(src)) {
                 append(new PTXLIRStmt.AssignStmt(dest, src));
@@ -232,19 +222,21 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
         getGen().emitJump(getLIRBlock(begin), true);
 
-        //TODO get the first loop block and jump to it. At the moment with the commented code we make the loop condition check twice
-//        // Get first IfNode after loop begin to get the loop exit condition
-//        IfNode ifNode = null;
-//        Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
-//        while (nodesIterator.hasNext() && ifNode == null) {
-//            FixedNode fNode = nodesIterator.next();
-//            if (fNode instanceof IfNode) ifNode = (IfNode) fNode;
-//        }
-//
-//        if (ifNode == null) shouldNotReachHere("Could not find condition");
-//        final Variable predicate = emitLogicNode(ifNode.condition());
-//        boolean isNegated = ifNode.trueSuccessor() instanceof LoopExitNode;
-//        getGen().emitConditionalBranch(getLIRBlock(begin), predicate, isNegated, true);
+        // TODO get the first loop block and jump to it. At the moment with the
+        // commented code we make the loop condition check twice
+        // // Get first IfNode after loop begin to get the loop exit condition
+        // IfNode ifNode = null;
+        // Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
+        // while (nodesIterator.hasNext() && ifNode == null) {
+        // FixedNode fNode = nodesIterator.next();
+        // if (fNode instanceof IfNode) ifNode = (IfNode) fNode;
+        // }
+        //
+        // if (ifNode == null) shouldNotReachHere("Could not find condition");
+        // final Variable predicate = emitLogicNode(ifNode.condition());
+        // boolean isNegated = ifNode.trueSuccessor() instanceof LoopExitNode;
+        // getGen().emitConditionalBranch(getLIRBlock(begin), predicate, isNegated,
+        // true);
     }
 
     @Override
@@ -305,7 +297,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private Variable emitLogicNode(final LogicNode node) {
-        //Value result = null;
+        // Value result = null;
         trace("emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(PTXKind.S32);
         LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
@@ -329,7 +321,9 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
             unimplemented("Logic: IsNullNode");
-            //result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
+            // result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ,
+            // boolLirKind, value, new ConstantValue(intLirKind,
+            // PrimitiveConstant.NULL_POINTER));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
@@ -443,7 +437,8 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     public Variable getBuiltInAllocation(PTXBuiltInRegister builtIn) {
-        if (builtInAllocations.containsKey(builtIn.getName())) return builtInAllocations.get(builtIn.getName());
+        if (builtInAllocations.containsKey(builtIn.getName()))
+            return builtInAllocations.get(builtIn.getName());
 
         Variable allocateTo = getGen().newVariable(builtIn.getValueKind());
         append(new AssignStmt(allocateTo, builtIn));

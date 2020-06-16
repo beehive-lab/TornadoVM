@@ -61,10 +61,8 @@ public class PTXGenTool {
     }
 
     private void emitParameterLoad(AllocatableValue dst, int index) {
-        ConstantValue stackIndex = new ConstantValue(
-                LIRKind.value(PTXKind.S32),
-                JavaConstant.forInt(index * PTXKind.U64.getSizeInBytes() + STACK_BASE_OFFSET)
-        );
+        ConstantValue stackIndex = new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(index * PTXKind.U64.getSizeInBytes() + STACK_BASE_OFFSET));
+
         gen.append(new PTXLIRStmt.LoadStmt(new MemoryAccess(globalSpace, gen.getParameterAllocation(PTXArchitecture.STACK_POINTER), stackIndex), (Variable) dst, PTXAssembler.PTXNullaryOp.LDU));
     }
 

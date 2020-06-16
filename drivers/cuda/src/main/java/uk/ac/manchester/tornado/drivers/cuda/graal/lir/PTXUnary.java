@@ -131,6 +131,22 @@ public class PTXUnary {
             }
         }
 
+        public void emit(PTXAssembler asm, int index) {
+            if (isLocalOrSharedMemoryAccess()) {
+                if (value != null) asm.emitValue(value);
+                asm.emitSymbol(SQUARE_BRACKETS_OPEN);
+                asm.emitConstant(index);
+            } else {
+                asm.emitSymbol(SQUARE_BRACKETS_OPEN);
+                if (name != null) asm.emit(name);
+                if (value != null) asm.emitValue(value);
+                if (index != 0) {
+                    asm.emitConstant(index);
+                }
+            }
+            asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
+        }
+
         private boolean isLocalOrSharedMemoryAccess() {
             return base.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
         }
