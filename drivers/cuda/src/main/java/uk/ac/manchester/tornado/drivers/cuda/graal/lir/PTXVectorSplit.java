@@ -20,7 +20,7 @@ public class PTXVectorSplit {
         this.actualVector = actualVector;
         this.actualKind = ((PTXKind) actualVector.getPlatformKind());
 
-        if (actualKind.getSizeInBytes() <= MAX_VECTOR_SIZE_BYTES && actualKind.getVectorLength() != 3) {
+        if (actualKind.getSizeInBytes() < MAX_VECTOR_SIZE_BYTES && actualKind.getVectorLength() != 3) {
             this.vectorNames = new String[] { actualVector.getName() };
             this.newKind = actualKind;
             return;
@@ -38,19 +38,28 @@ public class PTXVectorSplit {
     }
 
     private PTXKind lowerVectorPTXKind(PTXKind vectorKind) {
-        switch (vectorKind) {
-            case DOUBLE3:
-                return PTXKind.F64;
-            case DOUBLE4:
-            case DOUBLE8:
-                return PTXKind.DOUBLE2;
-            case FLOAT8: return PTXKind.FLOAT4;
-            case FLOAT3: return PTXKind.F32;
-            case INT3: return PTXKind.S32;
-            case CHAR3: return PTXKind.U8;
-            default: TornadoInternalError.shouldNotReachHere();
-        }
-        return null;
+        fullUnwrapVector = true;
+        return vectorKind.getElementKind();
+
+        // TODO the OpenCL Nvidia driver fully unwraps vector types to variables. For
+        // now, we do the same due to memory alignment issues (loads and stores on
+        // vector types must be aligned by the size of the vector in PTX). The commented
+        // code below does what we should normally do if memory alignment wouldn't be an
+        // issue.
+
+        // switch (vectorKind) {
+        // case DOUBLE3:
+        // return PTXKind.F64;
+        // case DOUBLE4:
+        // case DOUBLE8:
+        // return PTXKind.DOUBLE2;
+        // case FLOAT8: return PTXKind.FLOAT4;
+        // case FLOAT3: return PTXKind.F32;
+        // case INT3: return PTXKind.S32;
+        // case CHAR3: return PTXKind.U8;
+        // default: TornadoInternalError.shouldNotReachHere();
+        // }
+        // return null;
     }
 
     public String getVectorElement(int laneId) {
@@ -65,11 +74,16 @@ public class PTXVectorSplit {
     private String laneIdToVectorSuffix(int laneId) {
         assert laneId < 16;
         switch ((laneId % 4) % newKind.getVectorLength()) {
-            case 0: return "x";
-            case 1: return "y";
-            case 2: return "z";
-            case 3: return "w";
-            default: shouldNotReachHere();
+            case 0:
+                return "x";
+            case 1:
+                return "y";
+            case 2:
+                return "z";
+            case 3:
+                return "w";
+            default:
+                shouldNotReachHere();
         }
         return null;
     }
