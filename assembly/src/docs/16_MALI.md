@@ -17,7 +17,7 @@ We have tested TornadoVM on the following ARM Mali GPUs:
 * Mali-G71, which implements the Bifrost architecture: [link](https://developer.arm.com/ip-products/graphics-and-multimedia/mali-gpus/mali-g71-gpu)
 
 
-Some of the unittests in TornadoVM run with `double` data type. To enable double support, TornadoVM includes the following extension in the generated OpenCL code:
+Some of the unittests in TornadoVM run with `double` data types. To enable double support, TornadoVM includes the following extension in the generated OpenCL code:
 
 ```c
 cl_khr_fp64
