@@ -488,6 +488,6 @@ public interface TornadoAPI {
 
     void waitOn();
 
-    void updateData(Object oldRef, Object newRef);
+    void updateReference(Object oldRef, Object newRef);
 
 }

@@ -370,7 +370,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public void updateData(Object oldRef, Object newRef) {
-        taskScheduleImpl.updateData(oldRef, newRef);
+    public void updateReference(Object oldRef, Object newRef) {
+        taskScheduleImpl.updateReference(oldRef, newRef);
     }
 }

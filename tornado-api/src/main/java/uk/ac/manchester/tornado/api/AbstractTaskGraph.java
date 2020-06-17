@@ -122,5 +122,5 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     String getTaskScheduleName();
 
-    void updateData(Object oldRef, Object newRef);
+    void updateReference(Object oldRef, Object newRef);
 }

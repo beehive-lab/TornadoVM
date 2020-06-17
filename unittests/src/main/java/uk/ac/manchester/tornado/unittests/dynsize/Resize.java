@@ -62,7 +62,7 @@ public class Resize {
         float[] b = createArray(512);
 
         // Update old reference for a new reference
-        ts.updateData(a, b);
+        ts.updateReference(a, b);
         ts.execute();
 
         for (float v : b) {
@@ -84,7 +84,7 @@ public class Resize {
         float[] b = createArray(512);
 
         // Update old reference for a new reference
-        ts.updateData(a, b);
+        ts.updateReference(a, b);
 
         ts.execute();
         ts.execute();
@@ -93,7 +93,7 @@ public class Resize {
 
         // Update old reference for a new reference
         float[] c = createArray(2048);
-        ts.updateData(b, c);
+        ts.updateReference(b, c);
         ts.execute();
 
         for (float v : c) {
@@ -117,8 +117,8 @@ public class Resize {
         float[] d = createArray(512);
 
         // Update multiple references
-        ts.updateData(a, c);
-        ts.updateData(b, d);
+        ts.updateReference(a, c);
+        ts.updateReference(b, d);
 
         ts.execute();
 
