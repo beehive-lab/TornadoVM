@@ -326,7 +326,7 @@ The following Java snippet shows the data preparation, task definition, and invo
 ```
  
 
-## 6. Resize input data at runtime
+## 6. Resizing input data at runtime
 
 TornadoVM supports dynamic recompilation of expressions when the input data is resized.
 To do so, TornadoVM exposes an API call (`taskSchedule.updateReference`). 
@@ -339,7 +339,7 @@ The syntax is as follows:
 ts.updateReference(oldReference, newReference);
 ```
 
-The API call `updateReference` updates all the references to the new data. Additionally, it compiles a new sketcher, because sketcher specializes pre-compilation depending on the input data size. The code cache is erased and the OpenCL stack is reset to accommodate the new data.
+The API call `updateReference` updates all the references to the new data. Additionally, it compiles a new sketcher, because the sketcher specializes pre-compilation depending on the input data size. The code cache is erased and the OpenCL stack is reset to accommodate the new data.
 
 ```java
     float[] a = createArray(1024);
