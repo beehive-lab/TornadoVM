@@ -46,6 +46,13 @@ The following drivers have been tested on Linux - CentOS 7.8
 * 19.43.14583: OK
 * 19.23.13131: OK
 
+
+##### ARM Mali GPUs
+
+[Link](https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel)
+
+* `v1.r9p0-01rel0`: OK
+
 ##### Drivers for Intel FPGAs
 
 [Link](http://fpgasoftware.intel.com/17.1/?edition=lite)
