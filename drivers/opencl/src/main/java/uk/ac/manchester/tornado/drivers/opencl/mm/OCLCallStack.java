@@ -39,19 +39,17 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     public final static int RETURN_VALUE_INDEX = 0;
-    public final static int RESERVED_SLOTS = 1;
 
     private final int numArgs;
 
     private boolean onDevice;
 
     OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
-        super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
+        super(device, offset, numArgs << 3);
         this.numArgs = numArgs;
 
         // clear the buffer and set the mark position
         buffer.clear();
-        buffer.putLong(0);
         buffer.mark();
 
         onDevice = false;
@@ -90,7 +88,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public void reset() {
-        buffer.putLong(0, 0);
+//        buffer.putLong(0, 0);
         buffer.reset();
         onDevice = false;
     }

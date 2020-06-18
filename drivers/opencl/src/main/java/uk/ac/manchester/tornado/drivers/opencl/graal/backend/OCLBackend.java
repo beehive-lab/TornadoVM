@@ -208,8 +208,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public long readHeapBaseAddress(TaskMetaData meta) {
         final OCLByteBuffer parameters = deviceContext.getMemoryManager().getSubBuffer(0, 16);
-
-        parameters.putLong(0);
         parameters.putLong(0);
 
         int task = lookupCode.executeTask(parameters, meta);
