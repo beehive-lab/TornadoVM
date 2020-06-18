@@ -101,8 +101,6 @@ Example:
 ```bash
 tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.opencl.accelerator.fpga=true \
-    -Dtornado.opencl.userelative=True \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
@@ -118,7 +116,6 @@ tornado \
     -Ds0.t0.global.dims=1024 \
     -Ds0.t0.local.dims=64 \
     -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
-    -Dtornado.opencl.userelative=True \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
@@ -137,6 +134,5 @@ Example:
 ```bash
 env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.opencl.userelative=True \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```

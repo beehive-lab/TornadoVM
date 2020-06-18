@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ import static org.junit.Assert.assertArrayEquals;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -56,6 +57,18 @@ public class TestMath extends TornadoTestBase {
         }
     }
 
+    public static void testExpDouble(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = Math.exp(a[i]);
+        }
+    }
+
+    public static void testExpLong(long[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (long) Math.exp(a[i]);
+        }
+    }
+
     public static void testExpFloat(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (float) Math.exp(a[i]);
@@ -65,6 +78,24 @@ public class TestMath extends TornadoTestBase {
     public static void testPow(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (float) Math.pow(a[i], 2);
+        }
+    }
+
+    public static void testPowDouble(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (double) Math.pow(a[i], 2);
+        }
+    }
+
+    public static void testAcos(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (Math.acos(a[i]));
+        }
+    }
+
+    public static void testFloor(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (TornadoMath.floor(a[i]));
         }
     }
 
@@ -195,7 +226,27 @@ public class TestMath extends TornadoTestBase {
     }
 
     @Test
-    public void testMathPow() {
+    public void testMathExpDouble() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (double) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testExpDouble, data).streamOut(data).execute();
+
+        testExpDouble(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testMathPowDouble() {
         final int size = 8192;
         float[] data = new float[size];
         float[] seq = new float[size];
@@ -209,6 +260,63 @@ public class TestMath extends TornadoTestBase {
         s0.task("t0", TestMath::testPow, data).streamOut(data).execute();
 
         testPow(seq);
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testMathPow() {
+        final int size = 8192;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testPowDouble, data).streamOut(data).execute();
+
+        testPowDouble(seq);
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Ignore
+    public void testMathAcosDouble() {
+        final int size = 8192;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testAcos, data).streamOut(data).execute();
+
+        testAcos(seq);
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testMathFloorDouble() {
+        final int size = 8192;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testFloor, data).streamOut(data).execute();
+
+        testFloor(seq);
         assertArrayEquals(data, seq, 0.01f);
 
     }

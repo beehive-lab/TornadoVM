@@ -155,6 +155,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, options, compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
+        crb.setDeviceContext(deviceContext);
         return crb;
     }
 

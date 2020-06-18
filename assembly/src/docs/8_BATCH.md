@@ -25,7 +25,7 @@ batch("XMB");   // Express in MB (X is an int number)
 batch("ZGB");   // Express in GB (Z is an int number)
 ```
 
-### Tornado Batch Processing Internals 
+### TornadoVM Batch Processing Internals 
 
 Internally, if we detect that a specific task is invoked with the batch-call, we generate new bytecodes. Those new bytecodes are a variant of the existing ones but passing the offset and the size to be executed. For instance, we generate the following sequence of bytecodes:
 
@@ -51,15 +51,11 @@ Notice that we repeat the sequence `COPY_IN`, `ALLOCATE`, `LAUNCH` and `STREAM_O
 
 All copies and launches are executed asynchronously between the host and the target device. Only the last copy is synchronous. We also use the same OpenCL command queue for running all the commands. Future work might include here support for multiple command queues. 
 
-Notice also that to accommodate this change, we updated the OpenCL-JNI calls of of Tornado to receive a host-offset.
-
-
 ### Current Limitations
 
-There are a set of limitations with the current implementation of batch processing. 
+There is a set of limitations with the current implementation of batch processing. 
 
 1. All arrays passed to the input methods to be compiled to the target device have to have the same data type and size.
 1. We only support arrays of primitives that are passed as arguments. This means that scope arrays in batches are not currently supported.
 1. All bytecodes make use of the same OpenCL command queue.
 1. Matrix or non-regular batch distributions. (E.g., MxM would need to be split by rows in matrix-A and columns in matrix-B).
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -42,6 +42,7 @@ import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
@@ -296,11 +297,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
         trace("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        if (cast.getMemorySpace().name() == OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) {
-            getGen().append(new LoadStmt(result, cast, address));
-        } else {
+        if (shouldEmitIntegerIndexes(cast)) {
             getGen().append(new LoadStmt(result, cast, address, address.getIndex()));
+        } else {
+            getGen().append(new LoadStmt(result, cast, address));
         }
+    }
+
+    private boolean shouldEmitIntegerIndexes(OCLAddressCast cast) {
+        return cast.getMemorySpace().name() == OCLAssemblerConstants.LOCAL_MEM_MODIFIER || cast.getMemorySpace().name() == OCLAssemblerConstants.PRIVATE_MEM_MODIFIER;
     }
 
     public void emitVectorLoad(AllocatableValue result, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {
@@ -438,4 +443,13 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         }
         return result;
     }
+
+    public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
+        LIRKind resultKind = LIRKind.combine(op1, op2);
+        Variable result = getGen().newVariable(resultKind);
+        OCLAssembler.OCLTernaryOp operation = OCLTernaryIntrinsic.FMA;
+        getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLTernary.Expr(operation, resultKind, op1, op2, op3)));
+        return result;
+    }
+
 }

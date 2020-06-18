@@ -27,11 +27,12 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXVectorAssign;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
-public class VectorValueNode extends FloatingNode implements LIRLowerable {
+public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
 
     public static final NodeClass<VectorValueNode> TYPE = NodeClass.create(VectorValueNode.class);
 

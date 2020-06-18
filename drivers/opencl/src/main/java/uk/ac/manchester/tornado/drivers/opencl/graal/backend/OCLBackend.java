@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -383,7 +383,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return deviceContext;
     }
 
-    protected OCLAssembler createAssembler(FrameMap frameMap) {
+    protected OCLAssembler createAssembler() {
         return new OCLAssembler(target);
     }
 
@@ -573,12 +573,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
             boolean isKernel, boolean isParallel) {
 
-        OCLAssembler asm = createAssembler(frameMap);
+        OCLAssembler asm = createAssembler();
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
         OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult, options);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
+        crb.setDeviceContext(deviceContext);
         return crb;
     }
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -49,9 +49,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable {
+public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
 
     protected OCLFPUnaryIntrinsicNode(ValueNode value, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);

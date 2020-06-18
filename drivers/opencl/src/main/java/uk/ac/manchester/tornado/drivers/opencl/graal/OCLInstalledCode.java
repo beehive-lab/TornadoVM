@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -380,12 +380,12 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
-    public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         return submitWithEvents((OCLCallStack) stack, meta, waitEvents, batchThreads);
     }
 
     @Override
-    public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(CallStack stack, TaskMetaData meta, long batchThreads) {
         submitWithoutEvents((OCLCallStack) stack, meta, batchThreads);
         return -1;
     }

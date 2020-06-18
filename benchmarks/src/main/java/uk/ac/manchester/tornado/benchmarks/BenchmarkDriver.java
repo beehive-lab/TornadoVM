@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@ import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.benchmarks.bitset.BitsetTornado;
 
 public abstract class BenchmarkDriver {
 
@@ -56,7 +55,7 @@ public abstract class BenchmarkDriver {
 
     public abstract boolean validate();
 
-    public abstract void code();
+    public abstract void benchmarkMethod();
 
     protected void barrier() {
 
@@ -71,7 +70,7 @@ public abstract class BenchmarkDriver {
     }
 
     private boolean skipGC() {
-        return this instanceof BitsetTornado;
+        return true;
     }
 
     public void benchmark() {
@@ -85,15 +84,12 @@ public abstract class BenchmarkDriver {
         timers = new double[size];
 
         if (validResult) {
-
-            System.gc();
-
             for (long i = 0; i < iterations; i++) {
                 if (!skipGC()) {
                     System.gc();
                 }
                 final long start = System.nanoTime();
-                code();
+                benchmarkMethod();
                 final long end = System.nanoTime();
                 timers[toIntExact(i)] = (end - start);
             }
@@ -148,7 +144,6 @@ public abstract class BenchmarkDriver {
 
     public double getStdDev() {
         return Math.sqrt(getVariance());
-
     }
 
     public double getCV() {
@@ -174,5 +169,4 @@ public abstract class BenchmarkDriver {
     public String getSummary() {
         return String.format("elapsed=%6e, per iteration=%6e", getElapsed(), getElapsedPerIteration());
     }
-
 }

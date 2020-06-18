@@ -38,9 +38,10 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStamp;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLWriteNode;
 
 @NodeInfo(nameTemplate = "OCLWrite#{p#location/s}")
-public class PTXWriteNode extends AbstractWriteNode implements LIRLowerableAccess {
+public class PTXWriteNode extends AbstractWriteNode implements LIRLowerableAccess, MarkOCLWriteNode {
 
     private JavaKind type;
 

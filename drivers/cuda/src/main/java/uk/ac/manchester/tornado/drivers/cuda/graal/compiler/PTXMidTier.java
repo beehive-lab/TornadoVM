@@ -4,6 +4,7 @@ import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.*;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
@@ -27,7 +28,7 @@ public class PTXMidTier extends TornadoMidTier {
         appendPhase(new ExceptionCheckingElimination());
 
         if (OptFloatingReads.getValue(options)) {
-            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()));
+            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
         }
 
         appendPhase(new TornadoMemoryPhiElimination());

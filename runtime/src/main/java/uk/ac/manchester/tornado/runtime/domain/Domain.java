@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,15 +32,15 @@ public interface Domain {
      * 
      * @return
      */
-    public int cardinality();
+    int cardinality();
 
     /***
-     * Maps the given index onto the ith element in the domain. e.g. for a
-     * domain with cardinality=3 {2,4,6} map(1) = 4;
+     * Maps the given index onto the ith element in the domain. e.g. for a domain
+     * with cardinality=3 {2,4,6} map(1) = 4;
      * 
      * @param index
      *            (0...cardninality())
      * @return
      */
-    public int map(int index);
+    int map(int index);
 }

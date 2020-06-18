@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
@@ -182,7 +181,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         }
 
         if (bufferOffset == -1) {
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(reference.getClass(), bytesToAllocate, 32, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, 32, getAlignment());
         }
 
         if (DEBUG) {
@@ -223,7 +222,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            if (OPENCL_USE_RELATIVE_ADDRESSES) {
+            if (deviceContext.useRelativeAddresses()) {
                 buffer.putLong(wrappedFields[index].toRelativeAddress());
             } else {
                 buffer.putLong(wrappedFields[index].toAbsoluteAddress());

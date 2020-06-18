@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -61,6 +61,7 @@ public class OCLMathPlugins {
         Registration registration = new Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);
+        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath2Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath3Plugins(registration, float.class, JavaKind.Float);
 
@@ -125,7 +126,9 @@ public class OCLMathPlugins {
                 return true;
             }
         });
+    }
 
+    private static void registerTrigonometric1Plugins(Registration r, Class<?> type, JavaKind kind) {
         r.register1("floatSin", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {

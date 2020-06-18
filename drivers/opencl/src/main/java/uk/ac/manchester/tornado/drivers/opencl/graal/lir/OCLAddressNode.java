@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -83,6 +83,10 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         return this.memoryRegister.name.equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
     }
 
+    private boolean isPrivateMemoryAccess() {
+        return this.memoryRegister.name.equals(OCLAssemblerConstants.PRIVATE_REGION_NAME);
+    }
+
     @Override
     public ValueNode getBase() {
         return base;
@@ -100,7 +104,7 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, OCLLIRGenerator tool) {
         Variable addressValue;
-        if (isLocalMemoryAccess()) {
+        if (isLocalMemoryAccess() || isPrivateMemoryAccess()) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue, false));
         } else {
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);

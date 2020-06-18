@@ -44,11 +44,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable {
+public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
 
     protected PTXIntBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);

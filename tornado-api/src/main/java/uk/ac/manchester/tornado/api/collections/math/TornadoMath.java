@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -298,6 +298,10 @@ public class TornadoMath {
 
     public static float floatPI() {
         return (float) Math.PI;
+    }
+
+    public static double PI() {
+        return Math.PI;
     }
 
     public static float floatSqrt(float value) {

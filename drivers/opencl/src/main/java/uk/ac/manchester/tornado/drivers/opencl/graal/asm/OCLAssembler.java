@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -455,7 +455,13 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate DECLARE_DOUBLE_ARRAY = new OCLBinaryTemplate("DECLARE_ARRAY", "double %s[%s]");
         public static final OCLBinaryTemplate ARRAY_INDEX = new OCLBinaryTemplate("index", "%s[%s]");
 
-        public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_CHAR_ARRAY = new OCLBinaryTemplate("new private array char", "__private char %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_FLOAT_ARRAY = new OCLBinaryTemplate("new private array float", "__private float %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_INT_ARRAY = new OCLBinaryTemplate("new private array int", "__private int %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_DOUBLE_ARRAY = new OCLBinaryTemplate("new private array double", "__private double %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_LONG_ARRAY = new OCLBinaryTemplate("new private array long", "__private long %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_SHORT_ARRAY = new OCLBinaryTemplate("new private array short", "__private short %s[%s]");
+        public static final OCLBinaryTemplate NEW_PRIVATE_BYTE_ARRAY = new OCLBinaryTemplate("new private array byte", "__private byte %s[%s]");
 
         public static final OCLBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local float %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array int", "__local int %s[%s]");
@@ -516,6 +522,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLTernaryIntrinsic VSTORE8 = new OCLTernaryIntrinsic("vstore8");
         public static final OCLTernaryIntrinsic VSTORE16 = new OCLTernaryIntrinsic("vstore16");
         public static final OCLTernaryIntrinsic CLAMP = new OCLTernaryIntrinsic("clamp");
+        public static final OCLTernaryIntrinsic FMA = new OCLTernaryIntrinsic("fma");
         // @formatter:on
 
         protected OCLTernaryIntrinsic(String opcode) {

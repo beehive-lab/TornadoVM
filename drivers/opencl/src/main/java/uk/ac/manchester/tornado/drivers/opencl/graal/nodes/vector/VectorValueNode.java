@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -57,9 +57,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLVectorAssign;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
-public class VectorValueNode extends FloatingNode implements LIRLowerable {
+public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
 
     public static final NodeClass<VectorValueNode> TYPE = NodeClass.create(VectorValueNode.class);
 

@@ -74,7 +74,7 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
         for (InvokeNode invoke : invokeNodes) {
             String methodName = invoke.callTarget().targetName();
 
-                switch (methodName) {
+            switch (methodName) {
                 case "Direct#NewArrayNode.newArray": {
                     lowerInvokeNode(invoke);
                     break;
@@ -156,11 +156,16 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
 
     private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
         switch (signatureNode.getValue().toValueString()) {
-            case "Class:int": return JavaKind.Int;
-            case "Class:long": return JavaKind.Long;
-            case "Class:float": return JavaKind.Float;
-            case "Class:double": return JavaKind.Double;
-            default: unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
+            case "Class:int":
+                return JavaKind.Int;
+            case "Class:long":
+                return JavaKind.Long;
+            case "Class:float":
+                return JavaKind.Float;
+            case "Class:double":
+                return JavaKind.Double;
+            default:
+                unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
         }
         return null;
     }

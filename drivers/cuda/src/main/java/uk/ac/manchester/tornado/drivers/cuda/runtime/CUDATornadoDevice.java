@@ -6,6 +6,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -88,23 +89,29 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
-        PTXCompilationResult result;
-        if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod, executable))) {
-            PTXProviders providers = (PTXProviders) getBackend().getProviders();
-            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
-            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
-        }
-        else {
-            result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
-        }
+        try {
+            PTXCompilationResult result;
+            if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod, executable))) {
+                PTXProviders providers = (PTXProviders) getBackend().getProviders();
+                profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+                result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+                profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+                profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
+            } else {
+                result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
+            }
 
-        profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-        TornadoInstalledCode installedCode = deviceContext.installCode(result, resolvedMethod.getName());
-        profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-        profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
-        return installedCode;
+            profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            TornadoInstalledCode installedCode = deviceContext.installCode(result, resolvedMethod.getName());
+            profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+            return installedCode;
+        } catch (Exception e) {
+            driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+            driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
+            driver.fatal("exception: %s", e.toString());
+            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
+        }
     }
 
     @Override

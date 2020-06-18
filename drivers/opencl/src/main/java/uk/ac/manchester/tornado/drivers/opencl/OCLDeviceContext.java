@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,12 +36,14 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -60,6 +62,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     private final OCLCodeCache codeCache;
     private boolean wasReset;
+    private boolean useRelativeAddresses;
+    private boolean printOnce = true;
 
     protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -67,6 +71,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
+
+        setRelativeAddressesFlag();
 
         needsBump = false;
         for (String bumpDevice : BUMP_DEVICES) {
@@ -81,6 +87,14 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
             info("device requires bump buffer: %s", device.getDeviceName());
         } else {
             bumpBuffer = -1;
+        }
+    }
+
+    private void setRelativeAddressesFlag() {
+        if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
+            useRelativeAddresses = true;
+        } else {
+            useRelativeAddresses = Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
         }
     }
 
@@ -351,6 +365,22 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public void setResetToFalse() {
         wasReset = false;
+    }
+
+    @Override
+    public boolean isPlatformFPGA() {
+        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR
+                && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx"));
+    }
+
+    @Override
+    public boolean useRelativeAddresses() {
+        if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES && printOnce) {
+            System.out.println("Warning: -Dtornado.opencl.userelative was set to False. TornadoVM changed it to True because it is required for FPGA execution.");
+            printOnce = false;
+        }
+
+        return useRelativeAddresses;
     }
 
     public long getBumpBuffer() {

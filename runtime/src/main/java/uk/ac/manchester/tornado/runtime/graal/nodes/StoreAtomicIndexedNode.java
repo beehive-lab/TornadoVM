@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -48,19 +48,19 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     @Input ValueNode value;
     @Input ValueNode accumulator;
     @Input ValueNode inputArray;
-    @Input StoreAtomicIndexedNodeExtension extension;
+    @Input StoreAtomicIndexedNodeExtension storeAtomicExtraNode;
     //@formatter:on
 
     @Override
     public FrameState stateAfter() {
-        return extension.getStateAfter();
+        return storeAtomicExtraNode.getStateAfter();
     }
 
     @Override
     public void setStateAfter(FrameState x) {
         assert x == null || x.isAlive() : "frame state must be in a graph";
-        updateUsages(extension.getStateAfter(), x);
-        extension.setStateAfter(x);
+        updateUsages(storeAtomicExtraNode.getStateAfter(), x);
+        storeAtomicExtraNode.setStateAfter(x);
     }
 
     @Override
@@ -78,7 +78,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         this.value = value;
         this.accumulator = accumulator;
         this.inputArray = inputArray;
-        this.extension = extension;
+        this.storeAtomicExtraNode = extension;
     }
 
     @Override
@@ -87,7 +87,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public FrameState getState() {
-        return extension.getStateAfter();
+        return storeAtomicExtraNode.getStateAfter();
     }
 
     public ValueNode getAccumulator() {
@@ -95,7 +95,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public ValueNode getStartNode() {
-        return extension.getStartNode();
+        return storeAtomicExtraNode.getStartNode();
     }
 
     public ValueNode getInputArray() {
@@ -103,14 +103,14 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public void setOptionalOperation(ValueNode node) {
-        extension.setExtraOperation(node);
+        storeAtomicExtraNode.setExtraOperation(node);
     }
 
     public ValueNode getExtraOperation() {
-        return extension.getExtraOperation();
+        return storeAtomicExtraNode.getExtraOperation();
     }
 
-    public StoreAtomicIndexedNodeExtension getExtension() {
-        return extension;
+    public StoreAtomicIndexedNodeExtension getStoreAtomicExtraNode() {
+        return storeAtomicExtraNode;
     }
 }

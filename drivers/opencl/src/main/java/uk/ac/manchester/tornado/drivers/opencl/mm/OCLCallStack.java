@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -42,12 +41,14 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     public final static int RETURN_VALUE_INDEX = 0;
 
     private final int numArgs;
+    private OCLDeviceContext deviceContext;
 
     private boolean onDevice;
 
     OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
         super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
         this.numArgs = numArgs;
+        this.deviceContext = device;
 
         // clear the buffer and set the mark at the beginning of the arguments
         buffer.clear();
@@ -163,7 +164,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
             if (DEBUG) {
                 debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass().getSimpleName(), arg, state.getAddress(), state.getOffset());
             }
-            if (OPENCL_USE_RELATIVE_ADDRESSES) {
+            if (deviceContext.useRelativeAddresses()) {
                 buffer.putLong(state.getOffset());
             } else {
                 buffer.putLong(state.getAddress());

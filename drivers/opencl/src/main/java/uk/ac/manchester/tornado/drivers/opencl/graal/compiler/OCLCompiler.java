@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -89,6 +89,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
@@ -117,8 +118,8 @@ public class OCLCompiler {
     private static final OCLLIRGenerationPhase LIR_GENERATION_PHASE = new OCLLIRGenerationPhase();
 
     /**
-     * Encapsulates all the inputs to a
-     * {@linkplain GraalCompiler#compile(Request) compilation}.
+     * Encapsulates all the inputs to a {@linkplain GraalCompiler#compile(Request)
+     * compilation}.
      */
     public static class Request<T extends OCLCompilationResult> {
 
@@ -225,19 +226,19 @@ public class OCLCompiler {
      * @return the result of the compilation
      */
     public static <T extends OCLCompilationResult> T compile(Request<T> r) {
-            assert !r.graph.isFrozen();
-            try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
-                emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
-                        r.batchThreads);
-                boolean isParallel = false;
-                if (r.meta != null && r.meta.isParallel()) {
-                    isParallel = true;
-                }
-                emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
-            } catch (Throwable e) {
-                throw getDebugContext().handle(e);
+        assert !r.graph.isFrozen();
+        try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
+            emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
+                    r.batchThreads);
+            boolean isParallel = false;
+            if (r.meta != null && r.meta.isParallel()) {
+                isParallel = true;
             }
-            return r.compilationResult;
+            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
+        } catch (Throwable e) {
+            throw getDebugContext().handle(e);
+        }
+        return r.compilationResult;
     }
 
     public static ProfilingInfo getProfilingInfo(StructuredGraph graph) {
@@ -437,28 +438,24 @@ public class OCLCompiler {
 
         kernelCompilationRequest.execute();
 
-        final Set<ResolvedJavaMethod> includedMethods = new HashSet<>();
-        final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>();
-        worklist.addAll(kernelCompResult.getNonInlinedMethods());
+        final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
 
-        while (!worklist.isEmpty()) {
-            final ResolvedJavaMethod currentMethod = worklist.pop();
-            if (!includedMethods.contains(currentMethod)) {
-                final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
-                Builder builder1 = new Builder(getTornadoRuntime().getOptions(), getDebugContext(), AllowAssumptions.YES);
-                builder1.method(resolvedMethod);
-                builder1.compilationId(id);
-                builder1.name("internal" + currentMethod.getName());
+        while (!workList.isEmpty()) {
+            final ResolvedJavaMethod currentMethod = workList.pop();
+            final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
+            Builder builder1 = new Builder(TornadoCoreRuntime.getOptions(), getDebugContext(), AllowAssumptions.YES);
+            builder1.method(resolvedMethod);
+            builder1.compilationId(id);
+            builder1.name("internal" + currentMethod.getName());
 
-                final StructuredGraph graph = builder.build();
-                Request<OCLCompilationResult> methodcompilationRequest = new Request<>(graph, currentMethod, null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                        profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true, 0);
+            final StructuredGraph graph = builder.build();
+            Request<OCLCompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
+                    profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true, 0);
 
-                methodcompilationRequest.execute();
-                worklist.addAll(compResult.getNonInlinedMethods());
+            methodCompilationRequest.execute();
+            workList.addAll(compResult.getNonInlinedMethods());
 
-                kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
-            }
+            kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
 
         return kernelCompResult;

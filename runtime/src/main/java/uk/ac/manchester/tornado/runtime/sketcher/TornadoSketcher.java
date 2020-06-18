@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,8 +57,10 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
@@ -78,12 +80,21 @@ public class TornadoSketcher {
     static {
         // XXX: To be completed
         openCLTokens.add("kernel");
+        openCLTokens.add("__kernel");
         openCLTokens.add("__global");
         openCLTokens.add("global");
         openCLTokens.add("local");
         openCLTokens.add("__local");
         openCLTokens.add("private");
-        openCLTokens.add("__private");
+        openCLTokens.add("half");
+        openCLTokens.add("dot");
+        openCLTokens.add("uniform");
+        openCLTokens.add("pipe");
+        openCLTokens.add("auto");
+        openCLTokens.add("cross");
+        openCLTokens.add("distance");
+        openCLTokens.add("normalize");
+        openCLTokens.add("complex");
     }
 
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod) {
@@ -148,7 +159,10 @@ public class TornadoSketcher {
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
-            throw new TornadoInternalError(e);
+            if (Tornado.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new TornadoBailoutRuntimeException("unable to build sketch for method: " + resolvedMethod.getName() + "(" + e.getMessage() + ")");
         }
     }
 }

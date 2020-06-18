@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,12 @@ public class TornadoOptions {
      * reductions.
      */
     public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", "True");
+
+    /**
+     * Stream-In All variables when using automatic reductions. This option is
+     * considered experimental and it might be removed in future versions.
+     */
+    public static final boolean EXPERIMENTAL_REDUCE_STREAM_ALL_IN = getBooleanValue("tornado.experimental.reduce.stream.all.in", "False");
 
     /**
      * Option to load FPGA pre-compiled binaries.

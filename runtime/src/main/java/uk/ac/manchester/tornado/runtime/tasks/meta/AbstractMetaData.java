@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -183,11 +183,11 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclGpuBlock2DY;
     }
 
-    public boolean shouldUseOpenclRelativeAddresses() {
+    public boolean shouldUseOpenCLRelativeAddresses() {
         return openclUseRelativeAddresses;
     }
 
-    public boolean enableOpenclBifs() {
+    public boolean enableOpenCLBifs() {
         return openclEnableBifs;
     }
 
@@ -195,7 +195,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclUseDriverScheduling;
     }
 
-    public boolean shouldUseOpenclWaitActive() {
+    public boolean shouldUseOpenCLWaitActive() {
         return openclWaitActive;
     }
 
@@ -215,7 +215,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return enableOooExecution;
     }
 
-    public boolean shouldUseOpenclBlockingApiCalls() {
+    public boolean shouldUseOpenCLBlockingApiCalls() {
         return openclUseBlockingApiCalls;
     }
 

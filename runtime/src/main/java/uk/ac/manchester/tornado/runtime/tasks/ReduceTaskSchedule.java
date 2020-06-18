@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
+    private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce_seq";
 
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
@@ -83,6 +83,10 @@ class ReduceTaskSchedule {
         this.streamInObjects = streamInObjects;
         this.streamOutObjects = streamOutObjects;
         this.sketchGraph = graph;
+    }
+
+    private boolean isAheadOfTime() {
+        return TornadoOptions.FPGA_BINARIES == null ? false : true;
     }
 
     private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
@@ -330,8 +334,10 @@ class ReduceTaskSchedule {
             }
 
             // Add the rest of the variables
-            for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
-                streamInObjects.add(pair.getValue());
+            if (TornadoOptions.EXPERIMENTAL_REDUCE_STREAM_ALL_IN) {
+                for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
+                    streamInObjects.add(pair.getValue());
+                }
             }
 
             TornadoTaskSchedule.performStreamInThread(rewrittenTaskSchedule, streamInObjects);
@@ -345,10 +351,14 @@ class ReduceTaskSchedule {
         }
     }
 
+    private boolean isDeviceAnAccelerator(final int deviceToRun) {
+        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+        return (deviceType == TornadoDeviceType.ACCELERATOR);
+    }
+
     private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
         // Update GLOBAL and LOCAL Dims if device to run is the FPGA
-        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
-        if (deviceType == TornadoDeviceType.ACCELERATOR) {
+        if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
         }
@@ -618,15 +628,35 @@ class ReduceTaskSchedule {
                 return Runtime.getRuntime().availableProcessors() + 1;
             case GPU:
             case ACCELERATOR:
-                return inputSize > calculateGroupSize(deviceToRun, inputSize) ? (inputSize / calculateGroupSize(deviceToRun, inputSize)) + 1 : 2;
+                return inputSize > calculateAcceleratorGroupSize(deviceToRun, inputSize) ? (inputSize / calculateAcceleratorGroupSize(deviceToRun, inputSize)) + 1 : 2;
             default:
                 break;
         }
         return 0;
     }
 
-    private static int calculateGroupSize(TornadoDevice device, long globalWorkSize) {
+    /**
+     * It computes the right local work group size for GPUs/FPGAs.
+     * 
+     * @param device
+     *            Input device.
+     * @param globalWorkSize
+     *            Number of global threads to run.
+     * @return Local Work Threads.
+     */
+    private static int calculateAcceleratorGroupSize(TornadoDevice device, long globalWorkSize) {
+
+        if (device.getPlatformName().contains("AMD")) {
+            return DEFAULT_GPU_WORK_GROUP;
+        }
+
         int maxBlockSize = (int) device.getDeviceMaxWorkgroupDimensions()[0];
+
+        if (maxBlockSize <= 0) {
+            // Due to a bug on Xilinx platforms, this value can be -1. In that case, we
+            // setup the block size to the default value.
+            return DEFAULT_GPU_WORK_GROUP;
+        }
 
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;

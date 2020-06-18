@@ -22,8 +22,15 @@ Example, download for Linux:
 $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0/graalvm-ce-java8-linux-amd64-19.3.0.tar.gz
 $ tar -xf graalvm-ce-java8-linux-amd64-19.3.0.tar.gz
 ```
-
 The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-19.3.0` directory. This directory is used as the JAVA_HOME (See step 2).
+
+
+For OSX:
+```bash
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0/graalvm-ce-java11-darwin-amd64-19.3.0.tar.gz
+```
+then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice. 
+
 
 ### 2. Download TornadoVM
 
@@ -53,9 +60,11 @@ This file should be loaded once after opening the command prompt for the setup o
 ```bash
 $ source ./etc/sources.env
 ```
+For OSX: the exports above may be added to `~/.profile`
 
 ### 3. Install CMAKE (if cmake < 3.6)
 
+#### For Linux:
 ```
 $ cmake -version
 ```
@@ -81,8 +90,21 @@ cmake version 3.10.1
 Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `./etc/sources.env` file.
 
 ```bash
-export CMAKE_ROOT=/opt/cmake-3.10.1
+$ export CMAKE_ROOT=/opt/cmake-3.10.1
 ```
+
+#### For OSX:
+
+Install cmake:
+```bash
+$ brew install cmake
+```
+then 
+
+```bash
+export CMAKE_ROOT=/usr/local
+```
+which can be added to `~/.profile`
 
 ### 4. Compile TornadoVM
 
@@ -105,7 +127,32 @@ $ make graal-jdk-11
 
 and done!!
 
-## Know issues
+
+## Running with Graal JDK 11
+
+
+TornadoVM uses modules:
+
+To run examples:
+
+```bash
+$ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
+```
+
+To run benchmarks:
+
+```bash
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dft
+```
+
+To run individual tests:
+
+```bash
+tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
+```
+
+
+## Known issues
 
 ##### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
 
@@ -114,3 +161,4 @@ In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (
 ```bash
 $ apt-get install ocl-icd-opencl-dev
 ```
+

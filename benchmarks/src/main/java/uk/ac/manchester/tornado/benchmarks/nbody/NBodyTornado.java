@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,15 +55,17 @@ public class NBodyTornado extends BenchmarkDriver {
         posSeq = new float[numBodies * 4];
         velSeq = new float[numBodies * 4];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            posSeq[i] = auxPositionRandom[i];
+        if (auxPositionRandom.length >= 0) {
+            System.arraycopy(auxPositionRandom, 0, posSeq, 0, auxPositionRandom.length);
         }
-        for (int i = 0; i < auxVelocityZero.length; i++) {
-            velSeq[i] = auxVelocityZero[i];
+
+        if (auxVelocityZero.length >= 0) {
+            System.arraycopy(auxVelocityZero, 0, velSeq, 0, auxVelocityZero.length);
         }
 
         graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        graph.streamIn(velSeq, posSeq) //
+                .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
         graph.warmup();
     }
 
@@ -131,7 +133,7 @@ public class NBodyTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 }

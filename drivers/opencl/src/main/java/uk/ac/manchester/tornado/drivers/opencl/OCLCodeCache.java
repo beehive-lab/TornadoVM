@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -129,7 +129,7 @@ public class OCLCodeCache {
         pendingTasks = new ConcurrentHashMap<>();
         linkObjectFiles = new ArrayList<>();
 
-        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
+        if (deviceContext.isPlatformFPGA()) {
             precompiledBinariesPerDevice = new HashMap<>();
             parseFPGAConfigurationFile();
             if (OPENCL_BINARIES != null) {
@@ -142,10 +142,11 @@ public class OCLCodeCache {
         FileReader fileReader;
         BufferedReader bufferedReader;
         try {
-            fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
+            fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
+                    : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
             bufferedReader = new BufferedReader(fileReader);
             String line;
-            while ((line=bufferedReader.readLine()) != null) {
+            while ((line = bufferedReader.readLine()) != null) {
                 switch (line.split("=")[0]) {
                     case "DEVICE_NAME":
                         fpgaName = line.split("=")[1];
@@ -167,7 +168,6 @@ public class OCLCodeCache {
             System.exit(1);
         }
     }
-
 
     private void processPrecompiledBinaries() {
         String[] binaries = OPENCL_BINARIES.toString().split(",");
@@ -232,9 +232,9 @@ public class OCLCodeCache {
     }
 
     private Path resolveDirectory(String dir) {
-        final String tornadoRoot = (Tornado.ACCELERATOR_IS_FPGA) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
+        final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = (Tornado.ACCELERATOR_IS_FPGA) ? Paths.get(tornadoRoot + "/" + dir) : Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        final Path outDir = (deviceContext.isPlatformFPGA()) ? Paths.get(tornadoRoot + "/" + dir) : Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         if (!Files.exists(outDir)) {
             try {
                 Files.createDirectories(outDir);
@@ -269,7 +269,7 @@ public class OCLCodeCache {
     }
 
     private void appendSourceToFile(String id, String entryPoint, byte[] source) {
-        final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveBitstreamDirectory() : resolveSourceDirectory();
+        final Path outDir = deviceContext.isPlatformFPGA() ? resolveBitstreamDirectory() : resolveSourceDirectory();
         File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
         boolean createFile = false;
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
@@ -409,7 +409,7 @@ public class OCLCodeCache {
 
             String vendor = getDeviceVendor();
 
-            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor };
+            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir };
             Path path = Paths.get(fpgaBinLocation);
             addNewEntryInBitstreamHashMap(id, fpgaBinLocation);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {

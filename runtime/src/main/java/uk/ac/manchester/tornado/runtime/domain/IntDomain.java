@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,17 +28,13 @@ package uk.ac.manchester.tornado.runtime.domain;
 public class IntDomain implements Domain {
 
     private int offset;
-    private int step;
+    private final int step;
     private int length;
 
     public IntDomain(int offset, int step, int length) {
         this.offset = offset;
         this.step = step;
         this.length = length;
-    }
-
-    public IntDomain(int length) {
-        this(0, 1, length);
     }
 
     @Override
@@ -62,14 +58,6 @@ public class IntDomain implements Domain {
 
     public void setOffset(int offset) {
         this.offset = offset;
-    }
-
-    public int getStep() {
-        return step;
-    }
-
-    public void setStep(int step) {
-        this.step = step;
     }
 
     public void setLength(int length) {

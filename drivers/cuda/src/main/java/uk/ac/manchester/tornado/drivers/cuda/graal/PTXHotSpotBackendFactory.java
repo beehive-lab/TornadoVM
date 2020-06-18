@@ -72,7 +72,7 @@ public class PTXHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new PTXSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new PTXSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
             providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, null, suites);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);

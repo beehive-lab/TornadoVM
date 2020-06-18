@@ -34,7 +34,6 @@ import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
@@ -60,12 +59,14 @@ import org.graalvm.compiler.replacements.SnippetCounter;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXWriteNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CastNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.snippets.PTXReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
@@ -82,12 +83,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private PTXReduceSnippets.Templates GPUReduceSnippets;
 
-    public PTXLoweringProvider(MetaAccessProvider metaAccess,
-                               ForeignCallsProvider foreignCalls,
-                               ConstantReflectionProvider constantReflection,
-                               TargetDescription target,
-                               boolean useCompressedOops,
-                               TornadoVMConfig vmConfig) {
+    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TargetDescription target, boolean useCompressedOops,
+            TornadoVMConfig vmConfig) {
         super(metaAccess, foreignCalls, target, useCompressedOops);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
@@ -95,13 +92,13 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public void initialize(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
-                           SnippetReflectionProvider snippetReflection) {
+            SnippetReflectionProvider snippetReflection) {
         super.initialize(options, debugHandlersFactories, factory, providers, snippetReflection);
         initializeSnippets(options, debugHandlersFactories, factory, providers, snippetReflection);
     }
 
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
-                                    SnippetReflectionProvider snippetReflection) {
+            SnippetReflectionProvider snippetReflection) {
         this.GPUReduceSnippets = new PTXReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
@@ -166,20 +163,14 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     public void lower(Node node, LoweringTool tool) {
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
-//        } else if (node instanceof VectorLoadNode) {
-//            lowerVectorLoadNode((VectorLoadNode) node);
-//        } else if (node instanceof VectorStoreNode) {
-//            lowerVectorStoreNode((VectorStoreNode) node);
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
             /*
              * No lowering, we currently generate LIR directly for these nodes.
              */
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node);
-        } else if (node instanceof NewArrayNode) {
-            lowerNewArrayNode((NewArrayNode) node);
-//        } else if (node instanceof AtomicAddNode) {
-//            lowerAtomicAddNode((AtomicAddNode) node, tool);
+        } else if (node instanceof NewArrayNonVirtualizableNode) {
+            lowerNewArrayNode((NewArrayNonVirtualizableNode) node);
         } else if (node instanceof LoadIndexedNode) {
             lowerLoadIndexedNode((LoadIndexedNode) node, tool);
         } else if (node instanceof StoreIndexedNode) {
@@ -234,7 +225,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     }
 
-    private void lowerNewArrayNode(NewArrayNode newArray) {
+    private void lowerNewArrayNode(NewArrayNonVirtualizableNode newArray) {
         final StructuredGraph graph = newArray.graph();
         final ValueNode firstInput = newArray.length();
         if (firstInput instanceof ConstantNode) {
@@ -245,6 +236,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                     lowerLocalNewArray(graph, length, newArray);
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
+                    GraphUtil.removeFixedWithUnusedInputs(newArray);
                 } else {
                     shouldNotReachHere();
                 }
@@ -256,7 +248,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
+    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
         localArrayNode = graph.addWithoutUnique(new LocalArrayNode(PTXArchitecture.sharedSpace, newArray.elementType(), newLengthNode));
@@ -289,7 +281,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
         unimplemented();
     }
-
 
     private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
         StructuredGraph graph = integerDivRemNode.graph();
@@ -387,7 +378,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
         AddressNode address;
-        if (isLocalIdNode(loadIndexed)) {
+        if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
             address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
@@ -399,20 +390,32 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         return graph.unique(new OffsetAddressNode(array, index));
     }
 
-    private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
-        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
+    private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName());
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
-    private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
-        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
+    private boolean isLocalIDNode(StoreIndexedNode storeIndexed) {
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName());
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+    }
+
+    private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {
+        Node nd = storeIndexed.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
+    }
+
+    private boolean isPrivateIDNode(LoadIndexedNode loadIndexedNode) {
+        Node nd = loadIndexedNode.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
     }
 
     private AbstractWriteNode createMemWriteNode(JavaKind elementKind, ValueNode value, ValueNode array, AddressNode address, StructuredGraph graph, StoreIndexedNode storeIndexed) {
@@ -422,7 +425,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             // char or short. In future integrations with JVMCI and Graal, this issue is
             // completely solved.
             memoryWrite = graph.add(new PTXWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
-        } else if (isLocalIdNode(storeIndexed)) {
+        } else if (isLocalIDNode(storeIndexed) || isPrivateIDNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         } else {

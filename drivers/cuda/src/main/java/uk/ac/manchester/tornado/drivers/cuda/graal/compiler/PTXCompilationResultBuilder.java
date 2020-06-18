@@ -16,6 +16,8 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 
 import java.util.*;
@@ -28,6 +30,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isParallel;
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private PTXAssembler asm;
+    private CUDADeviceContext deviceContext;
 
     public PTXCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OptionValues options, CompilationResult compilationResult) {
@@ -194,5 +197,13 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
         return false;
+    }
+
+    public void setDeviceContext(CUDADeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
+    }
+
+    public CUDADeviceContext getDeviceContext() {
+        return this.deviceContext;
     }
 }

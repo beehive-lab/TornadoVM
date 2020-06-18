@@ -240,11 +240,13 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        assert input instanceof Variable;
+        assert address instanceof PTXUnary.MemoryAccess;
+        assert kind.getPlatformKind() instanceof PTXKind;
         trace("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         PTXUnary.MemoryAccess access = (PTXUnary.MemoryAccess) address;
         PTXKind ptxKind = (PTXKind) kind.getPlatformKind();
         if (ptxKind.isVector()) {
+            assert input instanceof Variable;
             getGen().append(new PTXLIRStmt.VectorStoreStmt((Variable) input, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), access));
         } else {
             getGen().append(new PTXLIRStmt.StoreStmt(access, input));

@@ -10,16 +10,18 @@ This document describes how to program and run a full example in TornadoVM.
 
 Below you can find a snapshot of the `TestArrays` example code in TornadoVM (full code listing can be found in the `examples` directory).  
 
-In this example, we will run the `vectorAdd` method on a heterogeneous device. TornadoVM will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device.During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
+In this example, we will run the `vectorAdd` method on a heterogeneous device. TornadoVM will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device. During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
 
 As you can see in the example below, the accelerated `vectorAdd` method performs a double vector addition. Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method. The only difference is the addition of the `@Parallel` annotation that instructs TornadoVM that the loop has to be computed in parallel (i.e. using the global identifier in OpenCL).
 
-The `testVectorAddition` method prepares the input data and creates a TornadoVM `task`. Tornado `tasks` can not execute directly; instead they must be part of a `TaskSchedule`. This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed.Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
+The `testVectorAddition` method prepares the input data and creates a TornadoVM `task`. TornadoVM `tasks` cannot execute directly; instead they must be part of a `TaskSchedule`. This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed. Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
 
 Once the method `execute` is invoked, TornadoVM builds the data dependency graph, compiles the referenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
 
 
 ```java
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
@@ -130,9 +132,9 @@ Similarly, you can execute the code on the rest of the devices.
 ## 3. Vector Addition using Vector Types
 
 The TornadoVM API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc. 
-The simple algorithm of vector addition can be rewritten to use TornadoVM vector types. The TornadoVM JIT compiler will generate OpenCL vector types that match the Tornado vector types.
+The simple algorithm of vector addition can be rewritten to use the TornadoVM vector types. The TornadoVM JIT compiler will generate OpenCL vector types that match the TornadoVM vector types.
 
-The following snippet shows the vector addition example using TornadoVM's vector types.
+The following snippet shows the vector addition example using the TornadoVM vector types.
 
 
 ```java
@@ -151,7 +153,7 @@ These are intrinsics to the compiler.
 
 
 TornadoVM exposes `Float2`, `Float3`, `Float4`, `Float6` and `Float8` vector types.
-Vector operations are also exposed for `int` and `double` types (e.g `Double8`, `Int4`).
+Vector operations are also exposed for `int` and `double` types (e.g. `Double8`, `Int4`).
 
 
 The following code shows a snippet of the generated OpenCL C code using the vector types. 

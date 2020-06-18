@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,9 @@
 package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -38,12 +40,20 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -412,7 +422,7 @@ public class TornadoVM extends TornadoLogger {
                 task.setBatchThreads(batchThreads);
 
                 if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getName(), contexts.get(contextIndex), batchThreads, offset, eventList);
+                    String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
                     bytecodesList.append(verbose + "\n");
                 }
 
@@ -427,11 +437,8 @@ public class TornadoVM extends TornadoLogger {
                             task.forceCompilation();
                         }
                         installedCodes[taskIndex] = device.installCode(task);
-                    } catch (Error | Exception e) {
-                        if (DEBUG || FULL_DEBUG) {
-                            e.printStackTrace();
-                        }
-                        fatal("unable to compile task %s", task.getName());
+                    } catch (Exception e) {
+                        throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + e.getStackTrace(), e);
                     }
                 }
 
@@ -447,6 +454,11 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 final TornadoInstalledCode installedCode = installedCodes[taskIndex];
+                if (installedCode == null) {
+                    // There was an error during compilation -> bailout
+                    throw new TornadoBailoutRuntimeException("Code generator Failed");
+                }
+
                 final Access[] accesses = task.getArgumentsAccess();
 
                 if (redeployOnDevice || !stack.isOnDevice()) {
@@ -489,13 +501,21 @@ public class TornadoVM extends TornadoLogger {
                 // We attach the profiler
                 metadata.attachProfiler(timeProfiler);
 
-                if (useDependencies) {
-                    lastEvent = installedCode.launchWithDeps(stack, metadata, batchThreads, waitList);
-                } else {
-                    lastEvent = installedCode.launchWithoutDeps(stack, metadata, batchThreads);
-                }
-                if (eventList != -1) {
-                    eventsIndicies[eventList] = 0;
+                try {
+                    if (useDependencies) {
+                        lastEvent = installedCode.launchWithDependencies(stack, metadata, batchThreads, waitList);
+                    } else {
+                        lastEvent = installedCode.launchWithoutDependencies(stack, metadata, batchThreads);
+                    }
+                    if (eventList != -1) {
+                        eventsIndicies[eventList] = 0;
+                    }
+                } catch (Exception e) {
+                    String re = e.toString();
+                    if (Tornado.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + re, e);
                 }
             } else if (op == TornadoVMBytecodes.ADD_DEP.value()) {
                 final int eventList = buffer.getInt();
@@ -579,7 +599,6 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             System.out.println(bytecodesList.toString());
-            bytecodesList = null;
         }
 
         return barrier;

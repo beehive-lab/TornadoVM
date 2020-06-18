@@ -159,4 +159,64 @@ public class TestReductionsLong extends TornadoTestBase {
 
         assertEquals(sequential[0], result[0]);
     }
+
+    private static void maxReductionAnnotation2(long[] input, @Reduce long[] result) {
+        result[0] = Long.MIN_VALUE + 1;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i] * 2);
+        }
+    }
+
+    @Test
+    public void testMaxReduction2() {
+        long[] input = new long[SIZE];
+        long[] result = new long[1];
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = idx;
+        });
+
+        long neutral = Long.MIN_VALUE;
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsLong::maxReductionAnnotation2, input, result)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        long[] sequential = new long[] { neutral };
+        maxReductionAnnotation2(input, sequential);
+        assertEquals(sequential[0], result[0]);
+    }
+
+    private static void minReductionAnnotation2(long[] input, @Reduce long[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.min(result[0], input[i] * 50);
+        }
+    }
+
+    @Test
+    public void testMinReduction2() {
+        long[] input = new long[SIZE];
+        long[] result = new long[1];
+
+        IntStream.range(0, SIZE).parallel().forEach(idx -> {
+            input[idx] = 100;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsLong::minReductionAnnotation2, input, result)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        long[] sequential = new long[1];
+        minReductionAnnotation2(input, sequential);
+
+        assertEquals(sequential[0], result[0]);
+    }
+
 }

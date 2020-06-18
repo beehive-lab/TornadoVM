@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,8 +63,8 @@ public class CorrMatrixTest extends BenchLogger {
     private static final boolean verify = true;
 
     /**
-     * NumTerms and NumLongs (documents) need to be adjusted manually right now
-     * to force 'striping' to occur (see Host code for details)
+     * NumTerms and NumLongs (documents) need to be adjusted manually right now to
+     * force 'striping' to occur (see Host code for details)
      */
     @Before
     public void setup() throws Exception {

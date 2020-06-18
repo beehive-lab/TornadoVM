@@ -27,12 +27,13 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorLoad;
 
 /**
  * The {@code LoadIndexedNode} represents a read from an element of an array.
  */
 @NodeInfo(nameTemplate = "Load .s{p#lane}")
-public class VectorLoadElementNode extends VectorElementOpNode {
+public class VectorLoadElementNode extends VectorElementOpNode implements MarkVectorLoad {
 
     public static final NodeClass<VectorLoadElementNode> TYPE = NodeClass.create(VectorLoadElementNode.class);
 

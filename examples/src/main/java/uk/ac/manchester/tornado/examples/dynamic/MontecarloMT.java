@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,8 +30,8 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  */
 public class MontecarloMT {
 
-    public static void computeMontecarlo(float[] output, final int iterations) {
-        for (@Parallel int j = 0; j < iterations; j++) {
+    public static void computeMontecarlo(float[] output) {
+        for (@Parallel int j = 0; j < output.length; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
             seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
@@ -54,7 +54,7 @@ public class MontecarloMT {
         }
     }
 
-    public static void computeMontecarloThreads(float[] output, final int iterations, int threads, Thread[] th) throws InterruptedException {
+    public static void computeMontecarloThreads(float[] output, int threads, Thread[] th) throws InterruptedException {
         int balk = output.length / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
@@ -105,7 +105,7 @@ public class MontecarloMT {
         long startInit = System.nanoTime();
         // @formatter:off
         TaskSchedule s0 = new TaskSchedule("s0")
-                .task("t0", MontecarloMT::computeMontecarlo, output, size)
+                .task("t0", MontecarloMT::computeMontecarlo, output)
                 .streamOut(output);
         // @formatter:on
         long stopInit = System.nanoTime();
@@ -129,13 +129,13 @@ public class MontecarloMT {
                 case "sequential":
                     System.gc();
                     start = System.nanoTime();
-                    computeMontecarlo(output, iterations);
+                    computeMontecarlo(output);
                     end = System.nanoTime();
                     break;
                 case "multi":
                     System.gc();
                     start = System.nanoTime();
-                    computeMontecarloThreads(output, iterations, maxSystemThreads, threads);
+                    computeMontecarloThreads(output, maxSystemThreads, threads);
                     end = System.nanoTime();
                     break;
                 default:
@@ -153,9 +153,7 @@ public class MontecarloMT {
         sum *= 4;
         System.out.println("Pi value (TornadoVM) : " + (sum / size));
 
-        start = System.nanoTime();
-        computeMontecarlo(seq, size);
-        end = System.nanoTime();
+        computeMontecarlo(seq);
 
         sum = 0;
         for (int j = 0; j < size; j++) {

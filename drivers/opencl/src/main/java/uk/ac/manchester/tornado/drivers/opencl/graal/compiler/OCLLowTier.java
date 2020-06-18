@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,6 +41,7 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
@@ -60,18 +61,8 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new RemoveValueProxyPhase());
 
-        // appendPhase(new ExpandLogicPhase());
-
-        /*
-         * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
-         * ExpandLogic phase.
-         */
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
-            /*
-             * Canonicalizer may create some new ShortCircuitOrNodes so clean them up.
-             */
-            // appendPhase(new ExpandLogicPhase());
         }
 
         appendPhase(new AddressLoweringPhase(addressLowering));
@@ -82,7 +73,8 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new TornadoLoopCanonicalization());
 
-//        appendPhase(new TornadoIfCanonicalization());
+        appendPhase(new OCLFMAPhase());
+
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {

@@ -63,6 +63,16 @@ public class CUDADeviceContext extends TornadoLogger implements Initialisable, T
     }
 
     @Override
+    public boolean isPlatformFPGA() {
+        return false;
+    }
+
+    @Override
+    public boolean useRelativeAddresses() {
+        return false;
+    }
+
+    @Override
     public boolean isInitialised() {
         return false;
     }

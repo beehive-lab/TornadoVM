@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 
 import java.lang.reflect.Array;
@@ -42,6 +41,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     private OCLLongArrayWrapper tableWrapper;
     private long[] addresses;
     private OCLArrayWrapper<E>[] wrappers;
+    private OCLDeviceContext deviceContext;
 
     public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize) {
         this(device, factory, false, batchSize);
@@ -49,6 +49,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
     private OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
         super(device, JavaKind.Object, isFinal, batchSize);
+        this.deviceContext = device;
         innerWrapperFactory = factory;
         tableWrapper = new OCLLongArrayWrapper(device, false, batchSize);
     }
@@ -111,7 +112,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
                 wrappers[i].allocate(elements[i], batchSize);
-                addresses[i] = (OPENCL_USE_RELATIVE_ADDRESSES) ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
+                addresses[i] = deviceContext.useRelativeAddresses() ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());

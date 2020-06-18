@@ -95,7 +95,7 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
         return callStack;
     }
 
-    public long tryAllocate(Class<?> type, long bytes, int headerSize, int alignment) {
+    public long tryAllocate(long bytes, int headerSize, int alignment) {
         final long alignedDataStart = align(heapPosition + headerSize, alignment);
         final long headerStart = alignedDataStart - headerSize;
         if (headerStart + bytes < heapLimit) {

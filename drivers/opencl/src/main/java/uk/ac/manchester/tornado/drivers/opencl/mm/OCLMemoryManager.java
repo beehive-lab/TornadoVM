@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
@@ -102,14 +100,15 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
-    long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) {
+    long tryAllocate(final long bytes, final int headerSize, int alignment) {
         final long alignedDataStart = align(heapPosition + headerSize, alignment);
         final long headerStart = alignedDataStart - headerSize;
         if (headerStart + bytes < heapLimit) {
             heapPosition = headerStart + bytes;
         } else {
             throw new TornadoOutOfMemoryException("Out of memory on the target device -> " + deviceContext.getDevice().getDeviceName() + ". [Heap Limit is: "
-                    + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true) + "]");
+                    + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true)
+                    + "]\nUse flag -Dtornado.heap.allocation=<XGB> to tune the device heap. E.g., -Dtornado.heap.allocation=2GB\n");
         }
         return headerStart;
     }

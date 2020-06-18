@@ -16,11 +16,12 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXBuiltInReg
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXTernary;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp;
 
 @NodeInfo
-public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable {
+public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, MarkGlobalThreadID {
     public static final NodeClass<GlobalThreadIdNode> TYPE = NodeClass.create(GlobalThreadIdNode.class);
 
     @Input

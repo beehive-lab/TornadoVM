@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,8 +27,9 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class TestFields {
+public class TestFields extends TornadoTestBase {
 
     private static class Foo {
         int[] output;

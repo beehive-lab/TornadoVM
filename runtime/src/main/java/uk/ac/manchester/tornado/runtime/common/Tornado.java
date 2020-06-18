@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,7 +76,7 @@ public final class Tornado implements TornadoCI {
     public static boolean FORCE_BLOCKING_API_CALLS = false;
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
-    public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "True"));
+    public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
     public static final boolean FULL_DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.fullDebug", "False"));
 
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
@@ -87,16 +87,6 @@ public final class Tornado implements TornadoCI {
     private static boolean isFPGAEmulation() {
         String cl_context_emulator_device_intelfpga = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
         return cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1"));
-    }
-
-    public final static boolean ACCELERATOR_IS_FPGA = isFPGAAccelerationEnabled();
-
-    private static boolean isFPGAAccelerationEnabled() {
-        boolean isAcceleration = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
-        if (isAcceleration) {
-            return true;
-        }
-        return isFPGAEmulation();
     }
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
@@ -114,7 +104,6 @@ public final class Tornado implements TornadoCI {
             } catch (IOException e) {
                 warn("Unable to load settings from %s", localSettings.getAbsolutePath());
             }
-
         }
         /*
          * merge local and system properties, note that command line arguments override

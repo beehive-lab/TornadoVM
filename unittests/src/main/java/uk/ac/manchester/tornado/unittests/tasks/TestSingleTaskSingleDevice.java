@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Testing Tornado with one task in the same device. The {@link TaskSchedule}
@@ -35,9 +36,9 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * of the one selected.
  *
  */
-public class TestSingleTaskSingleDevice {
+public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
-    public static void simpleTask(double[] a, double[] b, double[] c) {
+    public static void simpleTask(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
@@ -46,9 +47,9 @@ public class TestSingleTaskSingleDevice {
     @Test
     public void testSimpleTask() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
             a[i] = (float) Math.random();
@@ -71,9 +72,9 @@ public class TestSingleTaskSingleDevice {
     @Test
     public void testSimpleTaskOnDevice0() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
             a[i] = (float) Math.random();
@@ -101,9 +102,9 @@ public class TestSingleTaskSingleDevice {
     @Test
     public void testSimpleTaskOnDevice1() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
             a[i] = (float) Math.random();

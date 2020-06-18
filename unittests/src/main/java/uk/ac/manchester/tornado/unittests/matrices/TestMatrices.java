@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,6 +70,30 @@ public class TestMatrices extends TornadoTestBase {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
+                    sum += A[(i * size) + k] * B[(k * size) + j];
+                }
+                C[(i * size) + j] = sum;
+            }
+        }
+    }
+
+    public static void matrixMultiplicationParallelInduction(final float[] A, final float[] B, final float[] C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < i; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < size; k++) {
+                    sum += A[(i * size) + k] * B[(k * size) + j];
+                }
+                C[(i * size) + j] = sum;
+            }
+        }
+    }
+
+    public static void matrixUsageOfParallelInduction(final float[] A, final float[] B, final float[] C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < i; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < i; k++) {
                     sum += A[(i * size) + k] * B[(k * size) + j];
                 }
                 C[(i * size) + j] = sum;
@@ -238,6 +262,66 @@ public class TestMatrices extends TornadoTestBase {
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 assertEquals(resultSeq[i * N + j], matrixC[i * N + j], 0.1);
+            }
+        }
+    }
+
+    @Test
+    public void testParallelInductionVariablesAsBounds() {
+        final int N = 256;
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] matrixC = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        Random r = new Random();
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = r.nextFloat();
+            matrixB[idx] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestMatrices::matrixMultiplicationParallelInduction, matrixA, matrixB, matrixC, N)
+                .streamOut(matrixC);
+        //@formatter:on
+        t.execute();
+
+        matrixMultiplicationParallelInduction(matrixA, matrixB, resultSeq, N);
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                assertEquals(resultSeq[i * N + j], matrixC[i * N + j], 0.1f);
+            }
+        }
+    }
+
+    @Test
+    public void testMultipleParallelInductionVariableLoopUsage() {
+        final int N = 256;
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] matrixC = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        Random r = new Random();
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = r.nextFloat();
+            matrixB[idx] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestMatrices::matrixUsageOfParallelInduction, matrixA, matrixB, matrixC, N)
+                .streamOut(matrixC);
+        //@formatter:on
+        t.execute();
+
+        matrixUsageOfParallelInduction(matrixA, matrixB, resultSeq, N);
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                assertEquals(resultSeq[i * N + j], matrixC[i * N + j], 0.1f);
             }
         }
     }

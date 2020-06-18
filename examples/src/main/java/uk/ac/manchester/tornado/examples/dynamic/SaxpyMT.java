@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -90,7 +90,6 @@ public class SaxpyMT {
 
         int maxSystemThreads = Runtime.getRuntime().availableProcessors();
         Thread[] threads = new Thread[maxSystemThreads];
-        System.out.println("Number of threads: " + maxSystemThreads);
         for (int idx = 0; idx < iterations; idx++) {
             switch (executionType) {
                 case "performance":

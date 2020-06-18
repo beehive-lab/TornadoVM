@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ public class OCLByteBuffer {
     public void allocate(final long numBytes) throws TornadoOutOfMemoryException {
         bytes = numBytes;
 
-        offset = deviceContext.getMemoryManager().tryAllocate(byte[].class, numBytes, 0, getAlignment());
+        offset = deviceContext.getMemoryManager().tryAllocate(numBytes, 0, getAlignment());
 
         buffer = ByteBuffer.allocate((int) numBytes);
         buffer.order(deviceContext.getByteOrder());

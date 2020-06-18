@@ -11,6 +11,7 @@ import org.graalvm.compiler.phases.common.*;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.phases.TornadoTaskSpecialisation;
@@ -54,6 +55,8 @@ public class PTXHighTier extends TornadoHighTier {
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
         appendPhase(canonicalizer);
+
+        appendPhase(new TornadoNewArrayDevirtualizationReplacement());
 
         if (PartialEscapeAnalysis.getValue(options)) {
             appendPhase(new PartialEscapePhase(true, canonicalizer, options));

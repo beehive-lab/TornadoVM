@@ -64,6 +64,7 @@ public class PTXGraphBuilderPlugins {
     private static void registerPTXBuiltinPlugins(InvocationPlugins plugins) {
 
         Registration r = new Registration(plugins, Math.class);
+        r.setAllowOverwrite(true);
         registerPTXOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerPTXOverridesForType(r, Double.TYPE, JavaKind.Double);
         registerPTXOverridesForType(r, Integer.TYPE, JavaKind.Int);

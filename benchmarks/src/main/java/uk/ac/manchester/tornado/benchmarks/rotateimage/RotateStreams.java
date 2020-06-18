@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,9 +26,11 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class RotateStreams extends BenchmarkDriver {
 
-    private final int numElementsX,numElementsY;
+    private final int numElementsX;
+    private final int numElementsY;
 
-    private ImageFloat3 input,output;
+    private ImageFloat3 input;
+    private ImageFloat3 output;
     private Matrix4x4Float m;
 
     public RotateStreams(int iterations, int numElementsX, int numElementsY) {
@@ -63,7 +65,7 @@ public class RotateStreams extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         rotateImageStreams(output, m, input);
     }
 

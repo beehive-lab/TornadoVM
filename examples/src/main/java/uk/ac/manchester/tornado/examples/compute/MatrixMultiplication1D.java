@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,6 +103,20 @@ public class MatrixMultiplication1D {
         System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");
+        System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }
 
+    private static boolean verify(float[] par, float[] seq, int size) {
+        boolean check = true;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+
+                if (Math.abs(par[i * size + j] - seq[i * size + j]) > 0.1f) {
+                    check = false;
+                    break;
+                }
+            }
+        }
+        return check;
+    }
 }

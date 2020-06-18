@@ -9,6 +9,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCanonicalizer;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.plugins.PTXGraphBuilderPlugins;
@@ -24,20 +25,15 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
     private final TornadoLIRSuites lirSuites;
     private final PTXCanonicalizer canonicalizer;
 
-    public PTXSuitesProvider(OptionValues options, GraphBuilderConfiguration.Plugins plugins, MetaAccessProvider metaAccessProvider, PTXCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
+    public PTXSuitesProvider(OptionValues options, CUDADeviceContext deviceContext, GraphBuilderConfiguration.Plugins plugins, MetaAccessProvider metaAccessProvider, PTXCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new PTXCanonicalizer();
-        suites = new TornadoSuites(options, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(GraphBuilderConfiguration.Plugins plugins) {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
-
-        InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
-        PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
-        PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
-        PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
 
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);

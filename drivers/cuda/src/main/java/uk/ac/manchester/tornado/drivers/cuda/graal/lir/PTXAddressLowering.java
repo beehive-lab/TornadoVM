@@ -4,6 +4,7 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
+import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -22,7 +23,7 @@ public class PTXAddressLowering extends AddressLoweringPhase.AddressLowering {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
         } else if (base instanceof LocalArrayNode) {
             memoryRegister = ((LocalArrayNode) base).getMemoryRegister();
-        } else if (!((base instanceof ParameterNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+        } else if (!((base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 

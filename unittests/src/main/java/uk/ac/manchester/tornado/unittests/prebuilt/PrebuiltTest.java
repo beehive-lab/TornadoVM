@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,8 +28,9 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class PrebuiltTest {
+public class PrebuiltTest extends TornadoTestBase {
 
     @Test
     public void testPrebuild01() {
@@ -44,7 +45,7 @@ public class PrebuiltTest {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
         // @formatter:off
         new TaskSchedule("s0")

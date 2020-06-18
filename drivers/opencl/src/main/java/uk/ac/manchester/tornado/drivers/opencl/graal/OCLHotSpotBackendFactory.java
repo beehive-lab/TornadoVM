@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -112,7 +112,7 @@ public class OCLHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new OCLSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new OCLSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider,  plugins, suites, hotSpotGCProvider);
 

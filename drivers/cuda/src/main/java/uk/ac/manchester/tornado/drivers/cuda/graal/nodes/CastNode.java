@@ -11,9 +11,10 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
 
 @NodeInfo
-public class CastNode extends FloatingNode implements LIRLowerable {
+public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode {
 
     public static final NodeClass<CastNode> TYPE = NodeClass.create(CastNode.class);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,32 +50,6 @@ public class TestLoops extends TornadoTestBase {
                 .streamOut(a)
                 .execute();
         //@formatter:on
-
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(10, a[i]);
-        }
-    }
-
-    public static void reverseLoop(int[] a) {
-        for (@Parallel int i = a.length - 1; i >= 0; i--) {
-            a[i] = 10;
-        }
-    }
-
-    @Test
-    public void testReverseOneDLoop() {
-        final int size = 10;
-
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
-
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestLoops::reverseLoop, a)
-                .streamOut(a)
-                .execute();
-        //formatter:on
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(10, a[i]);
@@ -695,6 +669,30 @@ public class TestLoops extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(2, c[i]);
+        }
+    }
+
+    public static void reverseLoop(int[] a) {
+        for (@Parallel int i = a.length - 1; i >= 0; i--) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testReverseOrderLoops() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::reverseLoop, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        for (int j = 0; j < size; j++) {
+            assertEquals(10, a[j]);
         }
     }
 }

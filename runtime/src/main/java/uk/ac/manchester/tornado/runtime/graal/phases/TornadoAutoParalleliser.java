@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -47,6 +47,8 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
@@ -111,7 +113,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                         info("\tnode %s updated:\n", n);
                         info(sb.toString().trim());
                     }
-                    return;
+                    throw new TornadoBailoutRuntimeException("unable to parallelise because of loop-dependencies.");
                 }
 
                 if (ivs.size() > 1) {
@@ -120,49 +122,55 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                 }
 
                 final InductionVariable iv = ivs.get(0);
-                ValueNode maxIterations = null;
+                ValueNode maxIterations;
+
                 List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
-                if (conditions.size() == 1) {
-                    final IntegerLessThanNode lessThan = conditions.get(0);
-                    maxIterations = lessThan.getY();
-                } else {
-                    debug("Unable to parallelise: multiple uses of iv");
+                final IntegerLessThanNode lessThan = conditions.get(0);
+                maxIterations = lessThan.getY();
+
+                try {
+                    parallelizationReplacement(graph, iv, parallelDepth, maxIterations, conditions);
+                } catch (TornadoCompilationException compE) {
+                    System.out.println(compE.getMessage());
                     continue;
                 }
 
-                if (iv.isConstantInit() && iv.isConstantStride()) {
-                    final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
-
-                    final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
-
-                    final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(parallelDepth, newInit));
-
-                    final ParallelStrideNode stride = graph.addWithoutUnique(new ParallelStrideNode(parallelDepth, newStride));
-
-                    final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(parallelDepth, maxIterations, offset, stride));
-
-                    final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-
-                    final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
-
-                    if (oldStride.usages().count() > 1) {
-                        final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
-                        oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
-                    }
-
-                    iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
-                    iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
-
-                    // only replace this node in the loop condition
-                    maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
-
-                } else {
-                    debug("Unable to parallelise: non-constant stride or offset");
-                    continue;
-                }
                 parallelDepth++;
             }
             info("automatically parallelised %s (%dD kernel)\n", graph.method().getName(), parallelDepth);
+        }
+    }
+
+    private void parallelizationReplacement(StructuredGraph graph, InductionVariable iv, int parallelDepth, ValueNode maxIterations, List<IntegerLessThanNode> conditions)
+            throws TornadoCompilationException {
+        if (iv.isConstantInit() && iv.isConstantStride()) {
+            final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+
+            final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
+
+            final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(parallelDepth, newInit));
+
+            final ParallelStrideNode stride = graph.addWithoutUnique(new ParallelStrideNode(parallelDepth, newStride));
+
+            final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(parallelDepth, maxIterations, offset, stride));
+
+            final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
+
+            final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
+
+            if (oldStride.usages().count() > 1) {
+                final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
+                oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
+            }
+
+            iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
+            iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
+
+            // only replace this node in the loop condition
+            maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
+
+        } else {
+            throw new TornadoBailoutRuntimeException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device.");
         }
     }
 }

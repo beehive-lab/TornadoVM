@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,12 +27,12 @@ public class Benchmark extends BenchmarkRunner {
     public void parseArgs(String[] args) {
         if (args.length == 2) {
             iterations = Integer.parseInt(args[0]);
-            size = 2 * Integer.parseInt(args[1]);
+            size = Integer.parseInt(args[1]);
         } else if (args.length == 1) {
             System.out.printf("Two arguments are needed: iterations size");
         } else {
             iterations = 131;
-            size = 10240;
+            size = 512;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,7 @@ public class Benchmark extends BenchmarkRunner {
             iterations = Integer.parseInt(args[0]);
             size = Integer.parseInt(args[1]);
         } else {
-            iterations = 10;
+            iterations = 101;
             size = 1048576;
         }
     }

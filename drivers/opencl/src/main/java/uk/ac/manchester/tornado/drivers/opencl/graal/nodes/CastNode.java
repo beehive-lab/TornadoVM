@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -40,13 +38,16 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
 
 @NodeInfo
-public class CastNode extends FloatingNode implements LIRLowerable {
+public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode {
 
     public static final NodeClass<CastNode> TYPE = NodeClass.create(CastNode.class);
 
-    @Input protected ValueNode value;
+    @Input
+    protected ValueNode value;
     protected FloatConvert op;
 
     public CastNode(Stamp stamp, FloatConvert op, ValueNode value) {
@@ -58,27 +59,21 @@ public class CastNode extends FloatingNode implements LIRLowerable {
     private OCLUnaryOp resolveOp() {
         switch (op) {
             case I2D:
-                return OCLUnaryOp.CAST_TO_DOUBLE;
-            case F2I:
-                return OCLUnaryOp.CAST_TO_INT;
-            case I2F:
-                return OCLUnaryOp.CAST_TO_FLOAT;
             case F2D:
-                return OCLUnaryOp.CAST_TO_DOUBLE;
-            case D2F:
-                return OCLUnaryOp.CAST_TO_FLOAT;
-            case L2F:
-                return OCLUnaryOp.CAST_TO_FLOAT;
-            case D2I:
-                return OCLUnaryOp.CAST_TO_INT;
-            case D2L:
-                return OCLUnaryOp.CAST_TO_LONG;
-            case F2L:
-                return OCLUnaryOp.CAST_TO_LONG;
             case L2D:
                 return OCLUnaryOp.CAST_TO_DOUBLE;
+            case F2I:
+            case D2I:
+                return OCLUnaryOp.CAST_TO_INT;
+            case I2F:
+            case D2F:
+            case L2F:
+                return OCLUnaryOp.CAST_TO_FLOAT;
+            case D2L:
+            case F2L:
+                return OCLUnaryOp.CAST_TO_LONG;
             default:
-                unimplemented("Conversion unimplemented: " + op.toString());
+                TornadoUnsupportedError.unsupported("Conversion unimplemented: ", op.toString());
                 break;
         }
         return null;
@@ -87,8 +82,8 @@ public class CastNode extends FloatingNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
-         * using as_T reinterprets the data as type T - consider: float x =
-         * (float) 1; and int value = 1, float x = &(value);
+         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
+         * and int value = 1, float x = &(value);
          */
         LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
@@ -99,8 +94,6 @@ public class CastNode extends FloatingNode implements LIRLowerable {
             gen.getLIRGeneratorTool().append(new AssignStmt(result, new OCLUnary.FloatCast(OCLUnaryOp.CAST_TO_INT, lirKind, gen.operand(value))));
 
         }
-
         gen.setResult(this, result);
-
     }
 }

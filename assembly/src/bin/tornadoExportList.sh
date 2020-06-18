@@ -98,4 +98,7 @@ PACKAGE_LIST=(
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.match=tornado.drivers.opencl,tornado.drivers.cuda
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.drivers.opencl,tornado.drivers.cuda,tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.opencl,tornado.drivers.cuda
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl,tornado.drivers.cuda
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl,tornado.drivers.cuda
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.replacements.nodes=tornado.runtime
 )

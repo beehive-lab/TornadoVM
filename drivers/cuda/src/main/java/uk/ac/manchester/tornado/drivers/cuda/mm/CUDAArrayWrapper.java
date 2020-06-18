@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.drivers.cuda.mm;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
@@ -211,7 +210,7 @@ public abstract class CUDAArrayWrapper<T> implements ObjectBuffer {
                 throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
             }
             assert hostArray != null;
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(hostArray.getClass(), bytesToAllocate, arrayHeaderSize, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
 
             if (Tornado.FULL_DEBUG) {
                 info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x",

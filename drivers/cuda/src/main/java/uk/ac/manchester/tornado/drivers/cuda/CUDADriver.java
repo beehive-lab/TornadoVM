@@ -87,6 +87,22 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     }
 
     @Override
+    public void setDefaultDevice(int index) {
+        swapDefaultDevice(index);
+    }
+
+    private PTXBackend swapDefaultDevice(final int device) {
+        PTXBackend tmp = backends[0];
+        backends[0] = backends[device];
+        backends[device] = tmp;
+        PTXBackend backend = backends[0];
+        if (!backend.isInitialised()) {
+            backend.init();
+        }
+        return backend;
+    }
+
+    @Override
     public int getDeviceCount() {
         return 1;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,8 @@ public class DotTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private VectorFloat3 a,b;
+    private VectorFloat3 a;
+    private VectorFloat3 b;
     private float[] c;
 
     private TaskSchedule graph;
@@ -54,17 +55,10 @@ public class DotTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
-        }
+        graph.streamIn(a, b);
         graph.task("dotVector", GraphicsKernels::dotVector, a, b, c);
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
-        }
-
-        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
-            graph.warmup();
-        }
+        graph.streamOut(c);
+        graph.warmup();
     }
 
     @Override
@@ -80,7 +74,7 @@ public class DotTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void code() {
+    public void benchmarkMethod() {
         graph.execute();
     }
 
@@ -89,7 +83,7 @@ public class DotTornado extends BenchmarkDriver {
 
         final float[] result = new float[numElements];
 
-        code();
+        benchmarkMethod();
         graph.clearProfiles();
 
         GraphicsKernels.dotVector(a, b, result);

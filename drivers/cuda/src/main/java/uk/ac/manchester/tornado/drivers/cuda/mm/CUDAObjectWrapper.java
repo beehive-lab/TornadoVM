@@ -7,7 +7,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
@@ -152,7 +151,7 @@ public class CUDAObjectWrapper implements ObjectBuffer {
         }
 
         if (bufferOffset == -1) {
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(reference.getClass(), bytesToAllocate, 32, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, 32, getAlignment());
         }
 
         if (DEBUG) {

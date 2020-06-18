@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,6 +60,11 @@ public abstract class OCLKernelScheduler {
         }
     }
 
+    public int launch(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+        return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
+                waitEvents);
+    }
+
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
         if (!meta.isGlobalWorkDefined()) {
             calculateGlobalWork(meta, batchThreads);
@@ -72,12 +77,7 @@ public abstract class OCLKernelScheduler {
         if (meta.isDebug()) {
             meta.printThreadDims();
         }
-
-        final int taskEvent;
-
-        taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
-                waitEvents);
-
+        final int taskEvent = launch(kernel, meta, waitEvents, batchThreads);
         updateProfiler(taskEvent, meta);
         return taskEvent;
     }

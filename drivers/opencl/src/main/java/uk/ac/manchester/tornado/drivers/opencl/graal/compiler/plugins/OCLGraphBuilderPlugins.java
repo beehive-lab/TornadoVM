@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -230,6 +230,8 @@ public class OCLGraphBuilderPlugins {
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
 
         Registration r = new Registration(plugins, java.lang.Math.class);
+        // We have to overwrite some of standard math plugins
+        r.setAllowOverwrite(true);
         registerOpenCLOverridesForType(r, Float.TYPE, JavaKind.Float);
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);

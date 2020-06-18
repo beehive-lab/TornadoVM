@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -39,9 +39,10 @@ import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLWriteNode;
 
 @NodeInfo(nameTemplate = "OCLWrite#{p#location/s}")
-public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAccess {
+public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAccess, MarkOCLWriteNode {
 
     private JavaKind type;
 

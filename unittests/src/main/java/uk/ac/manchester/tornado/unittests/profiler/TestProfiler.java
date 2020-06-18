@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +20,14 @@ package uk.ac.manchester.tornado.unittests.profiler;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.TestHello;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class TestProfiler {
+public class TestProfiler extends TornadoTestBase {
 
     @Test
     public void testProfilerEnabled() {

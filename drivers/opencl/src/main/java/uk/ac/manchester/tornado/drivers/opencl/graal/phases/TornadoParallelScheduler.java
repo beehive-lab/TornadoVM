@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -172,10 +172,12 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         range.replaceAtUsages(adjustedRange);
         range.safeDelete();
     }
-    // ================================== END-DEPRECATED ========================================
+    // ================================== END-DEPRECATED
+    // ========================================
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
         if (context.getMeta() == null || context.getMeta().enableThreadCoarsener()) {
             return;
         }
@@ -223,83 +225,4 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         killNode(stride);
 
     }
-
-    // private void paralleliseLoop(StructuredGraph graph, ParallelRangeNode
-    // range) {
-    // /*
-    // * take copies of any nodes found via range
-    // */
-    // ParallelOffsetNode offset = range.offset();
-    // ParallelStrideNode stride = range.stride();
-    // IfNode ifNode = (IfNode) range.usages().first().usages().first();
-    //
-    // /*
-    // * remove the range node from the graph - needs to be done before any
-    // * node which is used as an input to range: e.g. offset and stride
-    // */
-    // range.replaceAtUsages(range.value());
-    // killNode(range);
-    //
-    // /*
-    // * replace the offset node with thread id node
-    // */
-    // final ConstantNode index =
-    // graph.addOrUnique(ConstantNode.forInt(offset.index()));
-    // ValueNode threadId = graph.addOrUnique(new GlobalThreadIdNode(index));
-    // offset.replaceAtUsages(threadId);
-    // killNode(offset);
-    //
-    // /*
-    // * kill off the stride node - not needed
-    // */
-    // killNode(stride);
-    //
-    // /*
-    // * now update the cfg to remove the for loop
-    // */
-    // LoopExitNode loopExit = (LoopExitNode) ifNode.falseSuccessor();
-    // LoopBeginNode loopBegin = loopExit.loopBegin();
-    //
-    // BeginNode newFalseBegin = graph.addWithoutUnique(new BeginNode());
-    // EndNode newFalseEnd = graph.addWithoutUnique(new EndNode());
-    // newFalseBegin.setNext(newFalseEnd);
-    //
-    // MergeNode newMerge = graph.addWithoutUnique(new MergeNode());
-    //
-    // for (LoopEndNode loopEnd : loopBegin.loopEnds().snapshot()) {
-    // EndNode newEnd = graph.addWithoutUnique(new EndNode());
-    // loopEnd.replaceAndDelete(newEnd);
-    // newMerge.addForwardEnd(newEnd);
-    // }
-    //
-    // newMerge.addForwardEnd(newFalseEnd);
-    //
-    // FixedNode next = loopExit.next();
-    //
-    // loopExit.setNext(null);
-    // loopExit.replaceAndDelete(newFalseBegin);
-    //
-    // newMerge.setNext(next);
-    //
-    // /*
-    // * eliminate the phi nodes
-    // */
-    // for (PhiNode phi : loopBegin.phis()) {
-    // phi.replaceAtUsages(phi.firstValue());
-    // }
-    //
-    // /*
-    // * eliminate any unneccesary nodes/branches from the graph
-    // */
-    // graph.reduceDegenerateLoopBegin(loopBegin);
-    //
-    // /*
-    // * removes the if stmt (thread id check)
-    // */
-    // GraphUtil.killWithUnusedFloatingInputs(ifNode.condition());
-    // AbstractBeginNode branch = ifNode.falseSuccessor();
-    // branch.predecessor().replaceFirstSuccessor(branch, null);
-    // GraphUtil.killCFG(branch);
-    // graph.removeSplitPropagate(ifNode, ifNode.trueSuccessor());
-    // }
 }

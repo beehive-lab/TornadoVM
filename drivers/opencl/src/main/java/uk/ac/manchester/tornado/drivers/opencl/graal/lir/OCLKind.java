@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -120,6 +120,25 @@ public enum OCLKind implements PlatformKind {
         return ILLEGAL;
     }
 
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivateTemplateType(JavaKind type) {
+        if (type == JavaKind.Int) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_INT_ARRAY;
+        } else if (type == JavaKind.Double) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_DOUBLE_ARRAY;
+        } else if (type == JavaKind.Float) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_FLOAT_ARRAY;
+        } else if (type == JavaKind.Short) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_SHORT_ARRAY;
+        } else if (type == JavaKind.Long) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_LONG_ARRAY;
+        } else if (type == JavaKind.Char) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_CHAR_ARRAY;
+        } else if (type == JavaKind.Byte) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_PRIVATE_BYTE_ARRAY;
+        }
+        return null;
+    }
+
     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {
         if (type == JavaKind.Int) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
@@ -133,15 +152,19 @@ public enum OCLKind implements PlatformKind {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
         } else if (type == JavaKind.Char) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-        } else if (type == JavaKind.Byte){
+        } else if (type == JavaKind.Byte) {
             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
         }
         return null;
     }
 
-     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
         return resolveTemplateType(type.getJavaKind());
-     }
+    }
+
+    public static OCLAssembler.OCLBinaryTemplate resolvePrivateTemplateType(ResolvedJavaType type) {
+        return resolvePrivateTemplateType(type.getJavaKind());
+    }
 
     public static OCLKind fromClass(Class<?> type) {
         if (!type.isArray()) {

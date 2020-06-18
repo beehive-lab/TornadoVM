@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,13 +28,13 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.ADDRESS_OF;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
@@ -163,13 +163,14 @@ public class OCLUnary {
             this.needsBase = needsBase;
         }
 
-        private boolean shouldEmitRelativeAddress() {
-            return needsBase || (!(base.memorySpace == OCLMemorySpace.LOCAL) && OPENCL_USE_RELATIVE_ADDRESSES);
+        private boolean shouldEmitRelativeAddress(OCLCompilationResultBuilder crb) {
+            OCLDeviceContext deviceContext = crb.getDeviceContext();
+            return needsBase || (!(base.memorySpace == OCLMemorySpace.LOCAL) && deviceContext.useRelativeAddresses());
         }
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            if (shouldEmitRelativeAddress()) {
+            if (shouldEmitRelativeAddress(crb)) {
                 asm.emitSymbol(ADDRESS_OF);
                 asm.emit(base.name);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);

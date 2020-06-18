@@ -20,13 +20,13 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
-    public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         unimplemented("launch with deps");
         return 0;
     }
 
     @Override
-    public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(CallStack stack, TaskMetaData meta, long batchThreads) {
         return deviceContext.enqueueKernelLaunch(module, stack, batchThreads);
     }
 }
