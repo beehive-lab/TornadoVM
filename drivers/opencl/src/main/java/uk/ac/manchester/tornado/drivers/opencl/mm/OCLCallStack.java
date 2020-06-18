@@ -89,7 +89,6 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public void reset() {
-//        buffer.putLong(0, 0);
         buffer.reset();
         onDevice = false;
     }
