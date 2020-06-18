@@ -91,7 +91,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     private static final long[] internalBuffer = new long[2];
 
-    private OCLDeviceContext deviceContext;
+    private OCLEventsWrapper eventsWrapper;
     private OCLCommandQueue queue;
     private int localId;
     private long oclEventID;
@@ -105,12 +105,12 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     OCLEvent() {}
 
-    OCLEvent(final OCLDeviceContext deviceContext, final OCLCommandQueue queue, final int event, final long oclEventID) {
-        this.deviceContext = deviceContext;
+    OCLEvent(final OCLEventsWrapper eventsWrapper, final OCLCommandQueue queue, final int event, final long oclEventID) {
+        this.eventsWrapper = eventsWrapper;
         this.queue = queue;
         this.localId = event;
         this.oclEventID = oclEventID;
-        this.name = String.format("%s: 0x%x", EVENT_DESCRIPTIONS[deviceContext.eventsWrapper.descriptors[localId]], deviceContext.eventsWrapper.tags[localId]);
+        this.name = String.format("%s: 0x%x", EVENT_DESCRIPTIONS[eventsWrapper.getDescriptor(localId)], eventsWrapper.getTag(localId));
         this.status = -1;
     }
 
@@ -257,7 +257,7 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     void release() {
-        deviceContext.releaseEvent(localId);
+        eventsWrapper.releaseEvent(localId);
         try {
             clReleaseEvent(oclEventID);
         } catch (OCLException e) {

@@ -37,16 +37,23 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
-public class OCLEventsWrapper {
+/**
+ * Class which holds mapping between OpenCL events and TornadoVM local events
+ * and handles event registration and serialization. Also contains extra
+ * information such as events description and tag.
+ * 
+ * Only one instance of this class is created per device.
+ */
+class OCLEventsWrapper {
 
     private static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.opencl.circularevents", "True"));
 
-    protected final long[] events;
-    protected final int[] descriptors;
-    protected final long[] tags;
-    protected final BitSet retain;
-    protected final OCLCommandQueue[] eventQueues;
-    protected int eventIndex;
+    private final long[] events;
+    private final int[] descriptors;
+    private final long[] tags;
+    private final BitSet retain;
+    private final OCLCommandQueue[] eventQueues;
+    private int eventIndex;
 
     private final OCLEvent internalEvent;
     protected final long[] waitEventsBuffer;
@@ -125,15 +132,40 @@ public class OCLEventsWrapper {
         return (index > 0);
     }
 
-    public List<OCLEvent> getEvents(OCLDeviceContext deviceContext) {
+    public List<OCLEvent> getEvents() {
         List<OCLEvent> result = new ArrayList<>();
         for (int i = 0; i < eventIndex; i++) {
             final long eventId = events[i];
             if (eventId <= 0) {
                 continue;
             }
-            result.add(new OCLEvent(deviceContext, eventQueues[i], i, eventId));
+            result.add(new OCLEvent(this, eventQueues[i], i, eventId));
         }
         return result;
+    }
+
+    protected void reset() {
+        Arrays.fill(events, 0);
+        eventIndex = 0;
+    }
+
+    protected void retainEvent(int localEventID) {
+        retain.set(localEventID);
+    }
+
+    protected void releaseEvent(int localEventID) {
+        retain.clear(localEventID);
+    }
+
+    protected long getOCLEvent(int localEventID) {
+        return events[localEventID];
+    }
+
+    protected int getDescriptor(int localEventID) {
+        return descriptors[localEventID];
+    }
+
+    protected long getTag(int localEventID) {
+        return tags[localEventID];
     }
 }

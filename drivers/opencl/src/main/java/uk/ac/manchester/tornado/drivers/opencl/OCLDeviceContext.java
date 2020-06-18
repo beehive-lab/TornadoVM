@@ -47,11 +47,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLContext.BATCH_QUEUES_PER_DEVICE;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DEFAULT_TAG;
@@ -71,10 +66,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_FLOAT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_INT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_SHORT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.EVENT_DESCRIPTIONS;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.MAX_WAIT_EVENTS;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
@@ -94,7 +85,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     private boolean useRelativeAddresses;
     private boolean printOnce = true;
 
-    protected OCLEventsWrapper eventsWrapper;
+    protected final OCLEventsWrapper eventsWrapper;
 
     protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -461,8 +452,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public void reset() {
-        Arrays.fill(eventsWrapper.events, 0);
-        eventsWrapper.eventIndex = 0;
+        eventsWrapper.reset();
         memoryManager.reset();
         codeCache.reset();
         wasReset = true;
@@ -477,7 +467,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public void dumpEvents() {
-        List<OCLEvent> events = eventsWrapper.getEvents(this);
+        List<OCLEvent> events = eventsWrapper.getEvents();
 
         final String deviceName = "opencl-" + context.getPlatformIndex() + "-" + device.getIndex();
         System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
@@ -531,18 +521,18 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public void retainEvent(int localEventId) {
-        eventsWrapper.retain.set(localEventId);
+        eventsWrapper.retainEvent(localEventId);
     }
 
     public void releaseEvent(int localEventId) {
-        eventsWrapper.retain.clear(localEventId);
+        eventsWrapper.releaseEvent(localEventId);
     }
 
     public Event resolveEvent(int event) {
         if (event == -1) {
             return EMPTY_EVENT;
         }
-        return new OCLEvent(this, queue, event, eventsWrapper.events[event]);
+        return new OCLEvent(eventsWrapper, queue, event, eventsWrapper.getOCLEvent(event));
     }
 
     public void flush() {
