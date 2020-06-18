@@ -47,6 +47,11 @@ The following drivers have been tested on Linux - CentOS 7.8
 * 19.43.14583: OK
 * 19.23.13131: OK
 
+The following drivers have been tested on Linux - Ubuntu 20.04
+
+* 20.22.16952: OK
+* 20.16.16582: OK
+* 20.13.16352: OK
 
 ##### ARM Mali GPUs
 
