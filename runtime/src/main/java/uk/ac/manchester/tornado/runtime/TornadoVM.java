@@ -96,6 +96,7 @@ public class TornadoVM extends TornadoLogger {
     private long invocations;
     private TornadoProfiler timeProfiler;
     private boolean finishedWarmup;
+    private boolean doUpdate;
 
     public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
@@ -160,6 +161,10 @@ public class TornadoVM extends TornadoLogger {
         buffer.mark();
     }
 
+    public void setCompileUpdate() {
+        this.doUpdate = true;
+    }
+
     private GlobalObjectState resolveGlobalObjectState(int index) {
         return globalStates[index];
     }
@@ -205,15 +210,19 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
+    public void clearInstalledCode() {
+        Arrays.fill(installedCodes, null);
+    }
+
     private Event execute(boolean isWarmup) {
 
         final long t0 = System.nanoTime();
         int lastEvent = -1;
         initWaitEventList();
 
-        StringBuilder bytecodesList = null;
+        StringBuilder tornadoVMBytecodeList = null;
         if (TornadoOptions.printBytecodes) {
-            bytecodesList = new StringBuilder();
+            tornadoVMBytecodeList = new StringBuilder();
         }
 
         while (buffer.hasRemaining()) {
@@ -232,7 +241,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (TornadoOptions.printBytecodes) {
                     String verbose = String.format("vm: ALLOCATE [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
-                    bytecodesList.append(verbose + "\n");
+                    tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -258,7 +267,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (TornadoOptions.printBytecodes) {
                     String verbose = String.format("vm: COPY_IN [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    bytecodesList.append(verbose + "\n");
+                    tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
                 List<Integer> allEvents;
@@ -301,7 +310,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (TornadoOptions.printBytecodes) {
                     String verbose = String.format("vm: STREAM_IN [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    bytecodesList.append(verbose + "\n");
+                    tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -339,7 +348,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (TornadoOptions.printBytecodes) {
                     String verbose = String.format("vm: STREAM_OUT [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    bytecodesList.append(verbose + "\n");
+                    tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -375,7 +384,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (TornadoOptions.printBytecodes) {
                     String verbose = String.format("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    bytecodesList.append(verbose + "\n");
+                    tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -422,7 +431,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (TornadoOptions.printBytecodes) {
                     String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
-                    bytecodesList.append(verbose + "\n");
+                    tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
                 if (installedCodes[taskIndex] == null) {
@@ -435,7 +444,11 @@ public class TornadoVM extends TornadoLogger {
                             // be a single source
                             task.forceCompilation();
                         }
+                        if (doUpdate) {
+                            task.forceCompilation();
+                        }
                         installedCodes[taskIndex] = device.installCode(task);
+                        doUpdate = false;
                     } catch (Exception e) {
                         throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + e.getStackTrace(), e);
                     }
@@ -459,7 +472,6 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 final Access[] accesses = task.getArgumentsAccess();
-
                 if (redeployOnDevice || !stack.isOnDevice()) {
                     stack.reset();
                 }
@@ -525,7 +537,7 @@ public class TornadoVM extends TornadoLogger {
 
                     if (TornadoOptions.printBytecodes) {
                         String verbose = String.format("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
-                        bytecodesList.append(verbose + "\n");
+                        tornadoVMBytecodeList.append(verbose + "\n");
                     }
 
                     TornadoInternalError.guarantee(eventsIndicies[eventList] < events[eventList].length, "event list is too small");
@@ -542,7 +554,7 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (TornadoOptions.printBytecodes) {
-                    bytecodesList.append(String.format("BARRIER event list %d\n", eventList));
+                    tornadoVMBytecodeList.append(String.format("BARRIER event list %d\n", eventList));
                 }
 
                 if (contexts.size() == 1) {
@@ -557,9 +569,8 @@ public class TornadoVM extends TornadoLogger {
                 }
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (TornadoOptions.printBytecodes) {
-                    bytecodesList.append(String.format("END\n"));
+                    tornadoVMBytecodeList.append(String.format("END\n"));
                 }
-
                 break;
             } else {
                 if (graphContext.meta().isDebug()) {
@@ -597,7 +608,7 @@ public class TornadoVM extends TornadoLogger {
         buffer.reset();
 
         if (TornadoOptions.printBytecodes) {
-            System.out.println(bytecodesList.toString());
+            System.out.println(tornadoVMBytecodeList.toString());
         }
 
         return barrier;

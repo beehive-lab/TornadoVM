@@ -116,6 +116,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             if (bytesToAllocate <= 0) {
                 throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
             }
+
             bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
 
             if (Tornado.FULL_DEBUG) {
