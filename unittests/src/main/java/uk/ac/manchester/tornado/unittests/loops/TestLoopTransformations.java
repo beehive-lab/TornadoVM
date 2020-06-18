@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,8 +47,6 @@ public class TestLoopTransformations extends TornadoTestBase {
     public void testPartialUnrollDefault() {
         int size = 512;
 
-        TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
-
         float[] matrixA = new float[size * size];
         float[] matrixB = new float[size * size];
         float[] matrixC = new float[size * size];
@@ -64,10 +62,7 @@ public class TestLoopTransformations extends TornadoTestBase {
             matrixB[idx] = r.nextFloat();
         });
 
-        // Tornado
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
-
-        System.setProperty("tornado.experimental.partial.unroll", "True");
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
@@ -89,8 +84,6 @@ public class TestLoopTransformations extends TornadoTestBase {
     public void testPartialUnrollNvidia32() {
         int size = 512;
 
-        TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
-
         float[] matrixA = new float[size * size];
         float[] matrixB = new float[size * size];
         float[] matrixC = new float[size * size];
@@ -106,10 +99,7 @@ public class TestLoopTransformations extends TornadoTestBase {
             matrixB[idx] = r.nextFloat();
         });
 
-        // Tornado
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
-
-        System.setProperty("tornado.experimental.partial.unroll", "True");
 
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount(); i++) {
             if (TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i).getPlatformName().toLowerCase().contains("nvidia")) {
@@ -120,11 +110,9 @@ public class TestLoopTransformations extends TornadoTestBase {
             }
         }
 
-        //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
-        //@formatter:on
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size) //
+                .streamOut(matrixC); //
 
         t.execute();
 
@@ -132,6 +120,47 @@ public class TestLoopTransformations extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 assertEquals(matrixC[i * size + j], resultSeq[i * size + j], 0.01f);
+            }
+        }
+    }
+
+    private static void matrixTranspose(final float[] A, float[] B, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                B[(i * size) + j] = A[(j * size) + i];
+            }
+        }
+    }
+
+    @Test
+    public void testPartialUnrollParallelLoops() {
+        final int N = 256;
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
+
+        Random r = new Random();
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = r.nextFloat();
+            matrixB[idx] = r.nextFloat();
+        });
+
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestLoopTransformations::matrixTranspose, matrixA, matrixB, N) //
+                .streamOut(matrixB); //
+        t.execute();
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                resultSeq[(i * N) + j] = matrixA[(j * N) + i];
+            }
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                assertEquals(resultSeq[i * N + j], matrixB[i * N + j], 0.1);
             }
         }
     }
