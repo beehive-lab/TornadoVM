@@ -33,7 +33,9 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
+
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
+import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 public class TornadoHelper {
 
@@ -66,19 +68,9 @@ public class TornadoHelper {
         return method;
     }
 
-    static class TestSuiteCollection {
-        ArrayList<Method> methodsToTest;
-        HashSet<Method> unsupportedMethods;
-
-        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
-            this.methodsToTest = methodsToTest;
-            this.unsupportedMethods = unsupportedMethods;
-        }
-    }
-
     /**
      * It returns the list of methods with the {@link @Test} annotation.
-     * 
+     *
      */
     private static TestSuiteCollection getTestMethods(Class<?> klass) {
         Method[] methods = klass.getMethods();
@@ -153,6 +145,15 @@ public class TornadoHelper {
                 bufferFile.append(message);
                 successCounter++;
             } else {
+                // If UnsupportedConfigurationException is thrown this means that test did not
+                // fail, it simply can't be run on current configuration
+                if (result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).count() > 0) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    continue;
+                }
+
                 message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
@@ -189,5 +190,15 @@ public class TornadoHelper {
         Request request = Request.aClass(Class.forName(klassName));
         Result result = new JUnitCore().run(request);
         printResult(result);
+    }
+
+    static class TestSuiteCollection {
+        ArrayList<Method> methodsToTest;
+        HashSet<Method> unsupportedMethods;
+
+        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
+            this.methodsToTest = methodsToTest;
+            this.unsupportedMethods = unsupportedMethods;
+        }
     }
 }

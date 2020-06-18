@@ -43,7 +43,7 @@ public class OCLScheduler {
             case CL_DEVICE_TYPE_GPU:
                 return getInstanceGPUScheduler(context);
             case CL_DEVICE_TYPE_ACCELERATOR:
-                return (Tornado.ACCELERATOR_IS_FPGA) ? new OCLFPGAScheduler(context) : new OCLCPUScheduler(context);
+                return context.isPlatformFPGA() ? new OCLFPGAScheduler(context) : new OCLCPUScheduler(context);
             case CL_DEVICE_TYPE_CPU:
                 return new OCLCPUScheduler(context);
             default:
@@ -63,4 +63,5 @@ public class OCLScheduler {
         }
         return null;
     }
+
 }

@@ -42,12 +42,14 @@ public enum ProfilerCodeFeatures {
     CASE ("Switch Cases"),
     CAST ("Cast Operations"),
     VECTORS ("Vector Operations"),
-    INTEGER ("Integer & Float Operations"),
+    INTEGER_OPS ("Total Integer Operations"),
+    FLOAT_OPS ("Total Float Operations"),
+    FP32 ("Single Precision Float Operations"),
+    DOUBLES ("Double Precision Float Operations"),
     BINARY ("Binary Operations"),
     BOOLEAN ("Boolean Operations"),
     F_MATH ("Float Math Functions"),
     I_MATH ("Integer Math Functions"),
-    FLOATS ("Float Operations"),
     I_CMP ("Integer Comparison"),
     F_CMP ("Float Comparison");
     // @formatter:on

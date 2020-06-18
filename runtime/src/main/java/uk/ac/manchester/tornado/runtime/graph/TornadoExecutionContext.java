@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -57,13 +57,14 @@ public class TornadoExecutionContext {
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
     private final List<TornadoAcceleratorDevice> devices;
-    private CallStack[] stacks;
+    private final CallStack[] stacks;
     private final int[] taskToDevice;
     private int nextTask;
 
-    private HashSet<TornadoAcceleratorDevice> lastDevices;
+    private final HashSet<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
+    private boolean defaultScheduler;
 
     public TornadoExecutionContext(String id) {
         name = id;
@@ -123,6 +124,10 @@ public class TornadoExecutionContext {
             tasks.add(task);
         }
         return index;
+    }
+
+    public void setTask(int index, SchedulableTask task) {
+        tasks.set(index, task);
     }
 
     public List<Object> getConstants() {
@@ -238,7 +243,7 @@ public class TornadoExecutionContext {
         System.out.println("task table:");
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
-            System.out.printf("[%d]: %s\n", i, task.getName());
+            System.out.printf("[%d]: %s\n", i, task.getFullName());
         }
     }
 
@@ -257,7 +262,7 @@ public class TornadoExecutionContext {
     /**
      * Default device inspects the driver 0 and device 0 of the internal OpenCL
      * list.
-     * 
+     *
      * @return {@link TornadoAcceleratorDevice}
      */
     public TornadoAcceleratorDevice getDefaultDevice() {
@@ -337,5 +342,13 @@ public class TornadoExecutionContext {
 
     public boolean redeployOnDevice() {
         return this.redeployOnDevice;
+    }
+
+    public void setDefaultThreadScheduler(boolean use) {
+        defaultScheduler = use;
+    }
+
+    public boolean useDefaultThreadScheduler() {
+        return defaultScheduler;
     }
 }

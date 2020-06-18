@@ -4,6 +4,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -62,7 +63,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         ImageByte3 outputTornado = new ImageByte3(size, size);
         ImageFloat3 inputValidation = new ImageFloat3(size, size);
         Random r = new Random();
@@ -75,12 +76,15 @@ public class RenderTrackTornado extends BenchmarkDriver {
         TaskSchedule s0 = new TaskSchedule("s0")//
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
                 .streamOut(outputTornado);
+        s0.mapAllTo(device);
+        s0.execute();
 
         return validate(inputValidation, outputTornado);
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        s0.mapAllTo(device);
         s0.execute();
     }
 }

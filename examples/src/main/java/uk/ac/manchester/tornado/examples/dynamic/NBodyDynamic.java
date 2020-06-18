@@ -23,13 +23,12 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class NBodyDynamic {
 
     private static boolean VALIDATION = true;
 
-    private static void usage(String[] args) {
+    private static void usage() {
         System.err.printf("Usage: <numBodies> <performance|end|sequential> <iterations>\n");
         System.exit(1);
     }
@@ -48,7 +47,7 @@ public class NBodyDynamic {
                     distSqr += r[k] * r[k];
                 }
 
-                float invDist = (float) (1.0f / (float) TornadoMath.floatSqrt(distSqr + espSqr));
+                float invDist = (1.0f / (float) Math.sqrt(distSqr + espSqr));
 
                 float invDistCube = invDist * invDist * invDist;
                 float s = refPos[index + 3] * invDistCube;
@@ -92,7 +91,7 @@ public class NBodyDynamic {
     public static void main(String[] args) {
 
         if (args.length < 3) {
-            usage(args);
+            usage();
         }
 
         float delT;

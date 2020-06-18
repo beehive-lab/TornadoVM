@@ -48,6 +48,8 @@ public interface TornadoDriver {
 
     TornadoDevice getDefaultDevice();
 
+    void setDefaultDevice(int index);
+
     int getDeviceCount();
 
     TornadoDevice getDevice(int index);

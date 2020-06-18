@@ -4,13 +4,13 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Hardware    |
-| -------------------------- | ----------- |
-| CentOS >= 7.3              | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)           |
-| Fedora >= 21               | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)        |
-| Ubuntu >= 16.04            | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)        |
-| Mac OS X Mojave 10.14.6    | Any OpenCL compatible device (GPUs and CPUs >= 1.2)        |
-| Mac OS X Catalina 10.15.3  | Any OpenCL compatible device (GPUs and CPUs >= 1.2)          |
+| OS                         | Hardware                                                              |
+| -------------------------- | --------------------------------------------------------------------- |
+| CentOS >= 7.3              | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
+| Fedora >= 21               | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
+| Ubuntu >= 16.04            | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
+| Mac OS X Mojave 10.14.6    | Any OpenCL compatible device (GPUs and CPUs >= 1.2)                   |
+| Mac OS X Catalina 10.15.3  | Any OpenCL compatible device (GPUs and CPUs >= 1.2)                   |
 
 
 ## 1. Installation
@@ -20,10 +20,12 @@ TornadoVM can be currently executed with the following two configurations:
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
 
+Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/16_MALI.md).
+
 ## 2. Running Examples
 
 ```bash
-$ tornado uk.ac.manchester.tornado.examples.HelloWorld
+$ tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```
 
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices:
@@ -86,10 +88,10 @@ Where `s` is the *schedule name* and `t` is the task name.
 For example running on device [1] (Intel HD Graphics in our example) will look like this:
 
 ```bash
-$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
+$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```
 
-The command above will run the HelloWorld example on the integrated GPU (Intel HD Graphics).
+The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
 
 ## 3. Running Benchmarks
 

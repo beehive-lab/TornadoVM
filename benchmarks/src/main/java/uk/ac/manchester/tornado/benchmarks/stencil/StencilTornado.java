@@ -26,6 +26,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class StencilTornado extends BenchmarkDriver {
@@ -64,6 +65,7 @@ public class StencilTornado extends BenchmarkDriver {
         }
         copy(sz, ainit, a0);
         graph = new TaskSchedule("benchmark") //
+                .streamIn(a0, a1) //
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
                 .streamOut(a0);
@@ -81,19 +83,19 @@ public class StencilTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
-        graph.execute();
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device).execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final float[] b0 = new float[ainit.length];
         final float[] b1 = new float[ainit.length];
 
         copy(sz, ainit, b0);
         for (int i = 0; i < iterations; i++) {
-            benchmarkMethod();
+            benchmarkMethod(device);
         }
         barrier();
         graph.clearProfiles();
@@ -103,9 +105,6 @@ public class StencilTornado extends BenchmarkDriver {
             copy(sz, b1, b0);
         }
 
-        System.out.println(Arrays.toString(a0));
-        System.out.println("----");
-        System.out.println(Arrays.toString(b0));
         final float ulp = findULPDistance(a0, b0);
         return ulp < MAX_ULP;
     }

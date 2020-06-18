@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.convolvearray;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -29,11 +30,13 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
-    private final int imageSizeX,imageSizeY,filterSize;
-
-    private float[] input,output,filter;
-
-    private TaskSchedule graph;
+    private final int imageSizeX;
+    private final int imageSizeY;
+    private final int filterSize;
+    private float[] input;
+    private float[] output;
+    private float[] filter;
+    private TaskSchedule ts;
 
     public ConvolveImageArrayTornado(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
@@ -51,38 +54,39 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createImage(input, imageSizeX, imageSizeY);
         createFilter(filter, filterSize, filterSize);
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(input);
-        graph.task("convolveImageArray", GraphicsKernels::convolveImageArray, input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize);
-        graph.streamOut(output);
-        graph.warmup();
+        ts = new TaskSchedule("benchmark") //
+                .streamIn(input) //
+                .task("convolveImageArray", GraphicsKernels::convolveImageArray, input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize) //
+                .streamOut(output);
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         input = null;
         output = null;
         filter = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
-    public void benchmarkMethod() {
-        graph.execute();
+    public void benchmarkMethod(TornadoDevice device) {
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final float[] result = new float[imageSizeX * imageSizeY];
 
-        benchmarkMethod();
-        graph.syncObject(output);
-        graph.clearProfiles();
+        benchmarkMethod(device);
+        ts.syncObject(output);
+        ts.clearProfiles();
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX, imageSizeY, filterSize, filterSize);
 

@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 
+if [ "$#" -ne 2 ]
+then
+	echo "$0: invalid number of arguments."
+	exit 1
+fi
+
 vendor=$1
-FPGA_DIRECTORY="fpga-source-comp"
+fpga_directory=$2
 BINARY="lookupBufferAddress"
 
 ## Back up current kernel 
-mv fpga-source-comp/lookupBufferAddress.cl fpga-source-comp/backup_source.cl
+mv $fpga_directory/lookupBufferAddress.cl $fpga_directory/backup_source.cl
 
-## Move current genereted directory
-mv fpga-source-comp/lookupBufferAddress fpga-source-comp/intelFPGAFiles
+## Move current generated directory
+mv $fpga_directory/lookupBufferAddress $fpga_directory/intelFPGAFiles
 
-## Create sym link to the original kerenl 
+## Create sym link to the original kernel
 current=`pwd`
-cd $FPGA_DIRECTORY
+cd $fpga_directory
 
 if [ $vendor = "intel" ]
 then
@@ -21,7 +27,7 @@ elif [ $vendor = "xilinx" ]
 then
 	ln -s $BINARY.xclbin $BINARY
 else
-	echo "FPGA Vendor no supported yet."
+	echo "$0: FPGA vendor is not supported yet."
 fi
 
 cd $current

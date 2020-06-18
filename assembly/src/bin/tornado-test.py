@@ -64,16 +64,21 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.math.TestMath",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
 	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
+	"uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap",
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
 	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
-	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
 	"uk.ac.manchester.tornado.unittests.bitsets.BitSetTests",
 	"uk.ac.manchester.tornado.unittests.fails.TestFails",
-  "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
-	"uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
+    "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
+    "uk.ac.manchester.tornado.unittests.arrays.TestNewArrays",
+	"uk.ac.manchester.tornado.unittests.dynsize.Resize",
+	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations",
+    "uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
+	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
@@ -94,6 +99,9 @@ __IGNORE_INTEL_PLATFORM__    		= "-Dtornado.ignore.platform=Intel "  # Due to a 
 __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
 __GC__                       		= "-Xmx6g "
 # ################################################################################################################
+
+TORNADO_CMD = "tornado "
+ENABLE_ASSERTIONS = "-ea "
 
 __VERSION__ = "0.8_04022020"
 
@@ -233,9 +241,9 @@ def runTests(args):
 	## Run test
 	cmd = ""
 	if (args.useOptirun):
-		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options
+		cmd = "optirun " + TORNADO_CMD + __IGNORE_INTEL_PLATFORM__ + options
 	else:
-		cmd = "tornado " + options
+		cmd = TORNADO_CMD + options
 
 	if (javaVersion == JDK_11_VERSION):
 		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
@@ -281,7 +289,7 @@ def runTests(args):
 def runWithJUnit(args):
 	""" Run the tests using JUNIT """
 
-	cmd = "tornado "
+	cmd = TORNADO_CMD
 	if (javaVersion == JDK_11_VERSION):
 		cmd += " -m " + __MAIN_TORNADO_JUNIT_MODULE__ + __MAIN_TORNADO_JUNIT__
 	else:
@@ -302,6 +310,7 @@ def parseArguments():
 	parser.add_argument('testClass', nargs="?", help='testClass#method')
 	parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version")
 	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")
+	parser.add_argument("--ea", "--enableassertions", action="store_true", dest="enable_assertions", default=False, help="Enable Tornado assertions")
 	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
@@ -336,6 +345,9 @@ def main():
 	global javaVersion
 	javaVersion = getJavaVersion()
 
+	if (args.enable_assertions):
+		global TORNADO_CMD
+		TORNADO_CMD += ENABLE_ASSERTIONS
 
 	if (args.junit):
 		runWithJUnit(args)

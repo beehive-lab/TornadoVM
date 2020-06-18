@@ -52,28 +52,20 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
-    protected ResolvedJavaType elemenType;
+    protected ResolvedJavaType elementType;
     protected OCLBinaryTemplate arrayTemplate;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.elemenType = elementType;
+        this.elementType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLBinaryTemplate.NEW_ARRAY;
+        this.arrayTemplate = OCLKind.resolvePrivateTemplateType(elementType);
     }
 
     public OCLMemoryBase getMemoryRegister() {
         return memoryRegister;
-    }
-
-    public void setMemoryLocation(OCLMemoryBase memoryRegister) {
-        this.memoryRegister = memoryRegister;
-    }
-
-    public ResolvedJavaType getElementType() {
-        return elemenType;
     }
 
     public ConstantNode getLength() {
@@ -82,10 +74,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        /*
-         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
-         * and int value = 1, float x = &(value);
-         */
         final Value lengthValue = gen.operand(length);
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
@@ -96,5 +84,4 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         gen.getLIRGeneratorTool().append(expr);
         gen.setResult(this, variable);
     }
-
 }

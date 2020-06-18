@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -117,7 +118,7 @@ public class TornadoGraphBuilder {
 
                 final AbstractNode arg = objectNodes[variableIndex];
                 if (!(arg instanceof ContextOpNode)) {
-                    if (accesses[argIndex] == Access.WRITE) {
+                    if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE) {
                         createAllocateNode(context, graph, arg, args, argIndex);
                     } else {
                         final ObjectNode objectNode = (ObjectNode) arg;

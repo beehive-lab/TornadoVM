@@ -20,8 +20,10 @@ package uk.ac.manchester.tornado.benchmarks;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class BenchmarkRunner {
@@ -57,7 +59,7 @@ public abstract class BenchmarkRunner {
 
         if (!SKIP_SERIAL) {
             final BenchmarkDriver referenceTest = getJavaDriver();
-            referenceTest.benchmark();
+            referenceTest.benchmark(null);
 
             System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
 
@@ -67,7 +69,7 @@ public abstract class BenchmarkRunner {
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
-                streamsTest.benchmark();
+                streamsTest.benchmark(null);
                 System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getSummary());
             }
         } else {
@@ -107,10 +109,16 @@ public abstract class BenchmarkRunner {
                     continue;
                 }
 
+                TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
+
                 TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver deviceTest = getTornadoDriver();
 
-                deviceTest.benchmark();
+                try {
+                    deviceTest.benchmark(tornadoDevice);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
                         deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
                         deviceTest.getCV(), driver.getDevice(deviceIndex));
@@ -127,10 +135,10 @@ public abstract class BenchmarkRunner {
             final int driverIndex = Integer.parseInt(indicies[0]);
             final int deviceIndex = Integer.parseInt(indicies[1]);
 
-            TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
             final BenchmarkDriver deviceTest = getTornadoDriver();
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
-            deviceTest.benchmark();
+            final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
+            deviceTest.benchmark(tornadoDevice);
 
             System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
                     deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),

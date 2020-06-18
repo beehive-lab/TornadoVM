@@ -181,11 +181,11 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclGpuBlock2DY;
     }
 
-    public boolean shouldUseOpenclRelativeAddresses() {
+    public boolean shouldUseOpenCLRelativeAddresses() {
         return openclUseRelativeAddresses;
     }
 
-    public boolean enableOpenclBifs() {
+    public boolean enableOpenCLBifs() {
         return openclEnableBifs;
     }
 
@@ -193,7 +193,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclUseDriverScheduling;
     }
 
-    public boolean shouldUseOpenclWaitActive() {
+    public boolean shouldUseOpenCLWaitActive() {
         return openclWaitActive;
     }
 
@@ -213,7 +213,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return enableOooExecution;
     }
 
-    public boolean shouldUseOpenclBlockingApiCalls() {
+    public boolean shouldUseOpenCLBlockingApiCalls() {
         return openclUseBlockingApiCalls;
     }
 
@@ -266,7 +266,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /*
      * Allows the OpenCL driver to select the size of local work groups
      */
-    private final boolean openclUseDriverScheduling;
+    private boolean openclUseDriverScheduling;
     private final boolean openclWaitActive;
     private final boolean vmWaitEvent;
     private final boolean enableExceptions;
@@ -445,6 +445,10 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public TornadoProfiler getProfiler() {
         return this.profiler;
+    }
+
+    public void enableDefaultThreadScheduler(boolean use) {
+        openclUseDriverScheduling = use;
     }
 
 }

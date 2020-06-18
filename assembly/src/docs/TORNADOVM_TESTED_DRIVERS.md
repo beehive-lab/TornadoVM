@@ -1,11 +1,34 @@
 # List of Tested OpenCL Drivers for TornadoVM
 
-## Intel 
+## OpenCL supported drivers for OSx
+
+* 1.2 (Mar 15 2020)
+  * AMD Radeon Pro 560 Compute Engine
+  * Intel(R) HD Graphics 630
+  * Intel(R) Core(TM) i7-7820HQ CPU 
+
+* 1.2 (Jan 23 2020)
+   * Intel(R) Core(TM) i5-5257U CPU
+   * Intel(R) Iris(TM) Graphics 6100
+
+## List of supported drivers for Linux
+
+### Intel 
 
 ##### Drivers from Intel Compute HD Graphics (Intel Compute Runtime) - NEO
 
-[Link](https://github.com/intel/compute-runtime/releases)
+[Link](https://github.com/intel/compute-runtime/releases)   
 
+The following drivers have been tested on Linux - CentOS 7.8
+
+* 20.22.16952: OK
+* 20.21.16886: OK
+* 20.20.16837: OK
+* 20.19.16754: OK
+* 20.18.16699: OK
+* 20.17.16650: OK
+* 20.16.16582: OK
+* 20.15.16524: OK
 * 20.14.16441: OK
 * 20.13.16352: OK
 * 20.12.16259: OK
@@ -25,6 +48,18 @@
 * 19.43.14583: OK
 * 19.23.13131: OK
 
+The following drivers have been tested on Linux - Ubuntu 20.04
+
+* 20.22.16952: OK
+* 20.16.16582: OK
+* 20.13.16352: OK
+
+##### ARM Mali GPUs
+
+[Link](https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel)
+
+* `v1.r9p0-01rel0`: OK
+
 ##### Drivers for Intel FPGAs
 
 [Link](http://fpgasoftware.intel.com/17.1/?edition=lite)
@@ -38,7 +73,7 @@
 * 18.1.0.0920 : OK 
 * 1.2.0.37  (Old version for CentOS) : OK
 
-## NVIDIA 
+### NVIDIA 
 
 ##### NVIDIA GPUs
 
@@ -51,13 +86,13 @@
 * 440.36: OK 
 * 435.21: OK 
 
-## AMD
+### AMD
 
 [Link](https://www.amd.com/en/support)
 
 * 2766.4 (PAL,HSAIL) OK
 
-## Xilinx
+### Xilinx
 
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 

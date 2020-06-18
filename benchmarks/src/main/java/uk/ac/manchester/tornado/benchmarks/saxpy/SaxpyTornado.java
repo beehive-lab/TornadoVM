@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPD
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -68,16 +69,17 @@ public class SaxpyTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final float[] result = new float[numElements];
 
-        benchmarkMethod();
+        benchmarkMethod(device);
         graph.syncObjects(y);
         graph.clearProfiles();
 

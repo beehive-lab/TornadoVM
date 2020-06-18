@@ -23,9 +23,13 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
+
+import java.util.Random;
+import java.util.stream.IntStream;
 
 public class DotTornado extends BenchmarkDriver {
 
@@ -50,19 +54,21 @@ public class DotTornado extends BenchmarkDriver {
         b = new ImageFloat3(numElementsX, numElementsY);
         c = new ImageFloat(numElementsX, numElementsY);
 
-        final Float3 valueA = new Float3(1f, 1f, 1f);
-        final Float3 valueB = new Float3(2f, 2f, 2f);
-
+        Random r = new Random();
         for (int i = 0; i < numElementsX; i++) {
             for (int j = 0; j < numElementsY; j++) {
-                a.set(i, j, valueA);
-                b.set(i, j, valueB);
+                float[] ra = new float[3];
+                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
+                float[] rb = new float[3];
+                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+                a.set(i, j, new Float3(ra));
+                b.set(i, j, new Float3(rb));
             }
         }
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(a, b);
-        graph.task("dotVector", GraphicsKernels::dotImage, a, b, c);
-        graph.streamOut(c);
+        graph = new TaskSchedule("benchmark") //
+                .streamIn(a, b) //
+                .task("dotVector", GraphicsKernels::dotImage, a, b, c) //
+                .streamOut(c);
         graph.warmup();
     }
 
@@ -77,16 +83,17 @@ public class DotTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
-        benchmarkMethod();
+        benchmarkMethod(device);
         graph.syncObjects(c);
         graph.clearProfiles();
 

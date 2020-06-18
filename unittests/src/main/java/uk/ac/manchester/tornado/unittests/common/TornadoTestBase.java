@@ -21,21 +21,35 @@ package uk.ac.manchester.tornado.unittests.common;
 import org.junit.Before;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class TornadoTestBase {
+
+    protected static boolean wasDeviceInspected = false;
 
     @Before
     public void before() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
-            driver.getDefaultDevice().reset();
+            for (int j = 0; j < driver.getDeviceCount(); j++) {
+                driver.getDevice(j).reset();
+            }
+        }
+
+        if (!wasDeviceInspected) {
+            int deviceIndex = getDeviceIndex();
+            if (deviceIndex != 0) {
+                // We swap the default device for the selected one
+                TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+                driver.setDefaultDevice(deviceIndex);
+            }
+            wasDeviceInspected = true;
         }
     }
 
-    public static TornadoDeviceType getDefaultDeviceType() {
-        final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        return driver.getTypeDefaultDevice();
+    public int getDeviceIndex() {
+        String driverAndDevice = System.getProperty("tornado.unittests.device", "0:0");
+        String[] device = driverAndDevice.split(":");
+        return Integer.parseInt(device[1]);
     }
 }

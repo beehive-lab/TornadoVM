@@ -49,15 +49,15 @@ public class BitSetTests extends TornadoTestBase {
         final long[] aBits = new long[numWords];
         final long[] bBits = new long[numWords];
 
-        for (int i = 0; i < aBits.length; i++) {
-            aBits[i] = rand.nextLong();
-            bBits[i] = rand.nextLong();
-        }
-
         final LongBitSet a = new LongBitSet(aBits, numWords * 8);
         final LongBitSet b = new LongBitSet(bBits, numWords * 8);
         long[] result = new long[numWords];
         long[] seq = new long[numWords];
+
+        for (int i = 0; i < aBits.length; i++) {
+            aBits[i] = rand.nextLong();
+            bBits[i] = rand.nextLong();
+        }
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", BitSetTests::intersectionCount, numWords, a, b, result) //

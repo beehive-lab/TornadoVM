@@ -382,7 +382,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return deviceContext;
     }
 
-    protected OCLAssembler createAssembler(FrameMap frameMap) {
+    protected OCLAssembler createAssembler() {
         return new OCLAssembler(target);
     }
 
@@ -572,12 +572,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
             boolean isKernel, boolean isParallel) {
 
-        OCLAssembler asm = createAssembler(frameMap);
+        OCLAssembler asm = createAssembler();
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
         OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult, options);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
+        crb.setDeviceContext(deviceContext);
         return crb;
     }
 
@@ -590,8 +591,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, StructuredGraph graph, Object stub) {
-        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig ,new CallingConvention(0, null, (AllocatableValue[]) null));
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
+            StructuredGraph graph, Object stub) {
+        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {

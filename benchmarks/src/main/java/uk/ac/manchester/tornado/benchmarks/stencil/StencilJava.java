@@ -23,6 +23,7 @@ import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
 import java.util.Arrays;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class StencilJava extends BenchmarkDriver {
@@ -65,7 +66,7 @@ public class StencilJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         stencil3d(n, sz, a0, a1, FAC);
         copy(sz, a0, a1);
     }
@@ -76,7 +77,7 @@ public class StencilJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

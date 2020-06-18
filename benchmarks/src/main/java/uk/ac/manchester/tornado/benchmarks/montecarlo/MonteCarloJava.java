@@ -19,12 +19,12 @@ package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.monteCarlo;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class MonteCarloJava extends BenchmarkDriver {
 
     private final int size;
-
     private float[] seq;
 
     public MonteCarloJava(int iterations, int size) {
@@ -44,7 +44,7 @@ public class MonteCarloJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         monteCarlo(seq, size);
     }
 
@@ -54,7 +54,7 @@ public class MonteCarloJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

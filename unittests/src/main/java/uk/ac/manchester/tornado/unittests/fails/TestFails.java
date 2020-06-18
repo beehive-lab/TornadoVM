@@ -41,7 +41,9 @@ public class TestFails extends TornadoTestBase {
     private void reset() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
-            driver.getDefaultDevice().reset();
+            for (int j = 0; j < driver.getDeviceCount(); j++) {
+                driver.getDevice(j).reset();
+            }
         }
     }
 

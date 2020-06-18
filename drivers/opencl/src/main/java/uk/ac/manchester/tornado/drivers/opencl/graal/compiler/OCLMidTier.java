@@ -34,7 +34,6 @@ import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
@@ -42,6 +41,9 @@ import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
@@ -59,27 +61,18 @@ public class OCLMidTier extends TornadoMidTier {
             canonicalizer = CanonicalizerPhase.create();
         }
 
-        // if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-        // }
 
-        // if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
         appendPhase(new ExceptionCheckingElimination());
 
-        // appendPhase(new LockEliminationPhase());
         if (OptFloatingReads.getValue(options)) {
-            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()));
+            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
         }
 
-        // if (OptReadElimination.getValue(options)) {
-        // appendPhase(new EarlyReadEliminationPhase(canonicalizer));
-        // }
         appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
-        // if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-        // }
 
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
@@ -87,19 +80,11 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(new GuardLoweringPhase());
 
-        // if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-        // }
 
-        // TODO disable as it introduces loop limit checks
-        // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
-        // LoopSafepointEliminationPhase()));
-        // appendPhase(new LoopSafepointInsertionPhase());
-        // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
-        // GuardLoweringPhase()));
-        // if (VerifyHeapAtReturn.getValue()) {
-        // appendPhase(new VerifyHeapAtReturnPhase());
-        // }
+        if (TornadoOptions.PARTIAL_UNROLL()) {
+            appendPhase(new TornadoPartialLoopUnroll());
+        }
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 

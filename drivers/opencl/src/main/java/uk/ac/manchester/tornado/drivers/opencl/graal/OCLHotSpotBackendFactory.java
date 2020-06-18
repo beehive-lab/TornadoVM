@@ -112,7 +112,7 @@ public class OCLHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new OCLSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new OCLSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider,  plugins, suites, hotSpotGCProvider);
 
