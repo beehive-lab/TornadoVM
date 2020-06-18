@@ -263,8 +263,8 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     /**
-     * This test checks the {@linkplain Matrix2DFloat4} type. Each position in a
-     * 2D matrix is an explicit Vector4 in OpenCL.
+     * This test checks the {@linkplain Matrix2DFloat4} type. Each position in a 2D
+     * matrix is an explicit Vector4 in OpenCL.
      */
     @Test
     public void testMatrix05() {
@@ -344,8 +344,8 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     /**
-     * This test checks the {@linkplain Matrix3DFloat4} type. Each position in a
-     * 3D matrix is an explicit Vector4 in OpenCL.
+     * This test checks the {@linkplain Matrix3DFloat4} type. Each position in a 3D
+     * matrix is an explicit Vector4 in OpenCL.
      */
     @Test
     public void testMatrix11() {
@@ -529,6 +529,58 @@ public class TestMatrixTypes extends TornadoTestBase {
     @Test
     public void testMatrix21() {
         testMatrixDoubles(640, 640);
+    }
+
+    @Test
+    public void testMatrix22() {
+        final int Y = 2160;
+        final int X = 3840;
+
+        float[][] a = new float[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextFloat();
+            }
+        }
+        Matrix2DFloat matrixA = new Matrix2DFloat(a);
+        Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01f);
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix23() {
+        final int X = 2160;
+        final int Y = 3840;
+
+        float[][] a = new float[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextFloat();
+            }
+        }
+        Matrix2DFloat matrixA = new Matrix2DFloat(a);
+        Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01f);
+            }
+        }
     }
 
 }
