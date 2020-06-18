@@ -161,4 +161,9 @@ public class CompilableTask implements SchedulableTask {
         return forceCompiler;
     }
 
+    @Override
+    public void enableDefaultThreadScheduler(boolean useDefaultScheduler) {
+        meta.enableDefaultThreadScheduler(useDefaultScheduler);
+    }
+
 }

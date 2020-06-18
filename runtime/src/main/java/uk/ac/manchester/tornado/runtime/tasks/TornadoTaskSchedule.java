@@ -237,6 +237,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
+    public void useDefaultThreadScheduler(boolean use) {
+        executionContext.setDefaultThreadScheduler(use);
+    }
+
+    @Override
     public SchedulableTask getTask(String id) {
         return executionContext.getTask(id);
     }

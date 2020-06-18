@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImage;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class ConvolveImageJava extends BenchmarkDriver {
@@ -30,7 +31,9 @@ public class ConvolveImageJava extends BenchmarkDriver {
     private final int imageSizeY;
     private final int filterSize;
 
-    private ImageFloat input,output,filter;
+    private ImageFloat input;
+    private ImageFloat output;
+    private ImageFloat filter;
 
     public ConvolveImageJava(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
@@ -58,7 +61,7 @@ public class ConvolveImageJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         convolveImage(input, filter, output);
     }
 
@@ -68,7 +71,7 @@ public class ConvolveImageJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

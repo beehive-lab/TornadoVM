@@ -17,10 +17,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dft;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-public class DftJava extends BenchmarkDriver {
+public class DFTJava extends BenchmarkDriver {
 
     private int size;
     private double[] inReal;
@@ -28,7 +29,7 @@ public class DftJava extends BenchmarkDriver {
     private double[] outReal;
     private double[] outImag;
 
-    public DftJava(int iterations, int size) {
+    public DFTJava(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
@@ -47,7 +48,7 @@ public class DftJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
@@ -58,7 +59,7 @@ public class DftJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
-        ComputeKernels.computeDft(inReal, inImag, outReal, outImag);
+    public void benchmarkMethod(TornadoDevice device) {
+        ComputeKernels.computeDFT(inReal, inImag, outReal, outImag);
     }
 }

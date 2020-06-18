@@ -7,9 +7,9 @@ fi
 mvn clean
 
 if [[ $2 == "OFFLINE" ]]; then
-  mvn -T1.5C -o -Dcmake.root.dir=$CMAKE_ROOT -P$1 package
+  mvn -T1.5C -o -Dcmake.root.dir=$CMAKE_ROOT -P$1 install
 else
-  mvn -T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P$1 package
+  mvn -T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P$1 install
 fi
 
 if [ $? -eq 0 ]; then

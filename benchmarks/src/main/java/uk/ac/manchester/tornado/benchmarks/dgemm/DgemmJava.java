@@ -21,13 +21,17 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class DgemmJava extends BenchmarkDriver {
 
-    private final int m,n;
+    private final int m;
+    private final int n;
 
-    private double[] a,b,c;
+    private double[] a;
+    private double[] b;
+    private double[] c;
 
     public DgemmJava(int iterations, int m, int n) {
         super(iterations);
@@ -62,18 +66,16 @@ public class DgemmJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         dgemm(m, n, m, a, b, c);
     }
 
     @Override
     public void barrier() {
-
     }
 
     @Override
-    public boolean validate() {
-
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

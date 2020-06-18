@@ -22,14 +22,19 @@ import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotImage;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+
+import java.util.Random;
+import java.util.stream.IntStream;
 
 public class DotJava extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat3 a,b;
+    private ImageFloat3 a;
+    private ImageFloat3 b;
     private ImageFloat c;
 
     public DotJava(int iterations, int numElementsX, int numElementsY) {
@@ -44,13 +49,15 @@ public class DotJava extends BenchmarkDriver {
         b = new ImageFloat3(numElementsX, numElementsY);
         c = new ImageFloat(numElementsX, numElementsY);
 
-        final Float3 valueA = new Float3(1f, 1f, 1f);
-        final Float3 valueB = new Float3(2f, 2f, 2f);
-
+        Random r = new Random();
         for (int i = 0; i < numElementsX; i++) {
             for (int j = 0; j < numElementsY; j++) {
-                a.set(i, j, valueA);
-                b.set(i, j, valueB);
+                float[] ra = new float[3];
+                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
+                float[] rb = new float[3];
+                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+                a.set(i, j, new Float3(ra));
+                b.set(i, j, new Float3(rb));
             }
         }
     }
@@ -64,7 +71,7 @@ public class DotJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         dotImage(a, b, c);
     }
 
@@ -74,7 +81,7 @@ public class DotJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

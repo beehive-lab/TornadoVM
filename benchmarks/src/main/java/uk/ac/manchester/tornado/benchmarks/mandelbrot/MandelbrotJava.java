@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.mandelbrot;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -35,12 +36,12 @@ public class MandelbrotJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         ComputeKernels.mandelbrot(size, result);
     }
 }

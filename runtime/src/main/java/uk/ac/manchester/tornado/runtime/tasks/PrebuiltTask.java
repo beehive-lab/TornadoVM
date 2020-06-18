@@ -179,4 +179,9 @@ public class PrebuiltTask implements SchedulableTask {
     public boolean shouldCompile() {
         return forceCompiler;
     }
+
+    @Override
+    public void enableDefaultThreadScheduler(boolean useDefaultScheduler) {
+        meta.enableDefaultThreadScheduler(useDefaultScheduler);
+    }
 }
