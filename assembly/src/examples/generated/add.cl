@@ -9,9 +9,9 @@ __kernel void add(__global uchar *_heap_base, ulong _frame_base, __constant ucha
 
 
   // BLOCK 0
-  ul_0  =  (ulong) _frame[6];
-  ul_1  =  (ulong) _frame[7];
-  ul_2  =  (ulong) _frame[8];
+  ul_0  =  (ulong) _frame[0];
+  ul_1  =  (ulong) _frame[1];
+  ul_2  =  (ulong) _frame[2];
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 2 ]
   i_4  =  i_3;

@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
-    public final static int RESERVED_SLOTS = 6;
     public final static int RETURN_VALUE_INDEX = 0;
 
     private final int numArgs;
@@ -46,19 +45,12 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     private boolean onDevice;
 
     OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
-        super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
+        super(device, offset, numArgs << 3);
         this.numArgs = numArgs;
         this.deviceContext = device;
 
-        // clear the buffer and set the mark at the beginning of the arguments
+        // clear the buffer and set the mark position
         buffer.clear();
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(0);
-        buffer.putLong(toAbsoluteAddress());
-        buffer.putInt(0);
-        buffer.putInt(numArgs);
         buffer.mark();
 
         onDevice = false;
@@ -91,20 +83,12 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         return super.enqueueWrite(events);
     }
 
-    public int getReservedSlots() {
-        return RESERVED_SLOTS;
-    }
-
     public int getSlotCount() {
         return (int) bytes >> 3;
     }
 
     @Override
     public void reset() {
-        for (int i = 0; i < 2; i++) {
-            buffer.putLong(i, 0);
-        }
-
         buffer.reset();
         onDevice = false;
     }
