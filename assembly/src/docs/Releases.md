@@ -1,4 +1,5 @@
 # Releases
+  * TornadoVM 0.7  - 22/06/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-07)
   * TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
   * TornadoVM 0.5  - 16/12/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-05)
   * TornadoVM 0.4  - 14/10/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-04)

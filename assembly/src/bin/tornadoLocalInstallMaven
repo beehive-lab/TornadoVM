@@ -29,7 +29,7 @@
 cd $TORNADO_SDK 
 cd share/java/tornado/
 
-TORNADOVM_VERSION="0.6"
+TORNADOVM_VERSION="0.7"
 
 mvn install:install-file -Dfile=tornado-api-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-api -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-examples-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-examples -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar

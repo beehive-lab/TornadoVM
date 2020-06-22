@@ -2,7 +2,7 @@
 
 **Pre-requisites**
 
-  * Maven Version 3
+  * Maven Version 3.6.3
   * CMake 3.6 (or newer)
   * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
   * GCC or clang/LLVM (GCC >= 5.5)
