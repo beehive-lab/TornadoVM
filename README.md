@@ -4,7 +4,7 @@
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/14_FAQ.md).
 
-**Current Release:** TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-06)
+**Current Release:** TornadoVM 0.7  - 22/06/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-07)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
@@ -33,6 +33,7 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
 [FPGA execution](assembly/src/docs/7_FPGA.md)
 
 [Profiler Usage](assembly/src/docs/9_PROFILER.md)
+
 
 # 4. Programming Model
 
@@ -80,19 +81,48 @@ Further details and instructions on how to enable this feature can be found here
 
 * Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
 
-# 6. Additional Resources
+
+# 6. How to Use it in your Projects?
+
+You can import the API and start using TornadoVM. Set this in the `pom.xml` file. 
+
+```xml
+   <repositories>
+     <repository>
+       <id>universityOfManchester-graal</id>
+       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
+     </repository>
+   </repositories>
+  
+   <dependencies>   
+      <dependency>
+         <groupId>tornado</groupId>
+         <artifactId>tornado-api</artifactId>
+         <version>0.7</version>
+      </dependency>
+      <dependency>
+         <groupId>tornado</groupId>
+         <artifactId>tornado-matrices</artifactId>
+         <version>0.7</version>
+      </dependency>
+   </dependencies>
+```
+
+To run TornadoVM, you need to either install the TornadoVM extension for GraalVM/OpenJDK, or run with our docker [images](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
+
+# 7. Additional Resources
 
 [Here](assembly/src/docs/15_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing TornadoVM and how to use it.
 
-# 7. Academic Publications
+# 8. Academic Publications
 
 Selected publications and citations can be found [here](assembly/src/docs/13_PUBLICATIONS.md).
 
-# 8. Acknowledgments
+# 9. Acknowledgments
 
 This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and [AnyScale Apps EP/L000725/1](http://anyscale.org), and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
 
-# 9. Contributions and Collaborations
+# 10. Contributions and Collaborations
 
 We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](CONTRIBUTIONS.md).
 
@@ -102,7 +132,7 @@ tornado-support@googlegroups.com
 
 For collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
 
-# 10. TornadoVM Team
+# 11. TornadoVM Team
 
 This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
 Currently, this project is maintained and updated by the following contributors:
@@ -114,7 +144,7 @@ Currently, this project is maintained and updated by the following contributors:
 * [Florin Blanaru](https://github.com/gigiblender)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
-# 11. License
+# 12. Licenses
 
 To use TornadoVM, you can link the TornadoVM API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
