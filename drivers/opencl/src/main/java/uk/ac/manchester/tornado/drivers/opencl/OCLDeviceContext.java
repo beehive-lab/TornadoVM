@@ -468,10 +468,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         eventsWrapper.retainEvent(localEventId);
     }
 
-    public void releaseEvent(int localEventId) {
-        eventsWrapper.releaseEvent(localEventId);
-    }
-
     public Event resolveEvent(int event) {
         if (event == -1) {
             return EMPTY_EVENT;

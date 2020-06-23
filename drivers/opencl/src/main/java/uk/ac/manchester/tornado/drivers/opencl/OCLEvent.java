@@ -103,9 +103,7 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    OCLEvent(final OCLEventsWrapper eventsWrapper) {
-        this.eventsWrapper = eventsWrapper;
-    }
+    OCLEvent() {}
 
     OCLEvent(final OCLEventsWrapper eventsWrapper, final OCLCommandQueue queue, final int event, final long oclEventID) {
         this.eventsWrapper = eventsWrapper;
@@ -259,7 +257,6 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     void release() {
-        eventsWrapper.releaseEvent(localId);
         try {
             clReleaseEvent(oclEventID);
         } catch (OCLException e) {

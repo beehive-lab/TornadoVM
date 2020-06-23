@@ -67,7 +67,7 @@ class OCLEventsWrapper {
         this.eventQueues = new OCLCommandQueue[EVENT_WINDOW];
         this.eventIndex = 0;
         this.waitEventsBuffer = new long[MAX_WAIT_EVENTS];
-        this.internalEvent = new OCLEvent(this);
+        this.internalEvent = new OCLEvent();
     }
 
     protected int registerEvent(long oclEventId, int descriptorId, long tag, OCLCommandQueue queue) {
@@ -89,6 +89,7 @@ class OCLEventsWrapper {
 
         if (events[currentEvent] > 0 && !retain.get(currentEvent)) {
             internalEvent.setEventId(currentEvent, events[currentEvent]);
+            releaseEvent(currentEvent);
             internalEvent.release();
         }
         events[currentEvent] = oclEventId;
