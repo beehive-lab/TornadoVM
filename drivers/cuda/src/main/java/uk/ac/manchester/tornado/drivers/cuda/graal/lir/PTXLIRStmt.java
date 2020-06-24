@@ -31,11 +31,11 @@ public class PTXLIRStmt {
         public static final LIRInstructionClass<AssignStmt> TYPE = LIRInstructionClass.create(AssignStmt.class);
 
         @Def
-        protected AllocatableValue lhs;
+        protected Value lhs;
         @Use
         protected Value rhs;
 
-        public AssignStmt(AllocatableValue lhs, Value rhs) {
+        public AssignStmt(Value lhs, Value rhs) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = rhs;
@@ -81,7 +81,7 @@ public class PTXLIRStmt {
             return roundingMode;
         }
 
-        public AllocatableValue getResult() {
+        public Value getResult() {
             return lhs;
         }
 

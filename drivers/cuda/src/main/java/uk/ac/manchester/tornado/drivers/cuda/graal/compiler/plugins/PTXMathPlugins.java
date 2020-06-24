@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPUnaryIntrinsicNode
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntUnaryIntrinsicNode;
 
+import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SQRT;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
@@ -149,6 +150,14 @@ public class PTXMathPlugins {
     }
 
     private static void registerFloatMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
+
+        r.register2("pow", type, type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                b.push(kind, b.append(PTXFPBinaryIntrinsicNode.create(x, y, POW, kind)));
+                return true;
+            }
+        });
 
         r.register2("min", type, type, new InvocationPlugin() {
             @Override

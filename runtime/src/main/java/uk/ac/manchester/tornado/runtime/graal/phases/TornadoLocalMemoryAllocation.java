@@ -52,7 +52,9 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
                 for (Node n : sumNodes) {
                     if (n instanceof MarkLocalArray) {
                         ConstantNode newLengthNode = ConstantNode.forInt(calculateLocalMemAllocSize(context), graph);
-                        n.inputs().first().replaceAndDelete(newLengthNode);
+                        if (newLengthNode != n.inputs().first()) {
+                            n.inputs().first().replaceAndDelete(newLengthNode);
+                        }
                     }
                 }
             }

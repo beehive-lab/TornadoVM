@@ -300,6 +300,14 @@ public class TornadoMath {
         return (float) Math.PI;
     }
 
+    public static float pow(float a, float b) {
+        return (float) Math.pow(a, b);
+    }
+
+    public static double pow(double a, double b) {
+        return Math.pow(a, b);
+    }
+
     public static double PI() {
         return Math.PI;
     }

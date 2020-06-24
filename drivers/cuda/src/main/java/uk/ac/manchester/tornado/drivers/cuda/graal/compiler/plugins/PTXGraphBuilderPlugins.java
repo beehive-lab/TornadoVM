@@ -37,9 +37,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntBinaryIntrinsicNode;
-//import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
-//import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.SlotsBaseAddressNode;
-//import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TPrintfNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntUnaryIntrinsicNode;
+
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
@@ -51,6 +50,7 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPUnaryIntrin
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 public class PTXGraphBuilderPlugins {
 
@@ -71,6 +71,24 @@ public class PTXGraphBuilderPlugins {
         registerPTXOverridesForType(r, Long.TYPE, JavaKind.Long);
         registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
+
+        Registration longReg = new Registration(plugins, Long.class);
+        longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
+                return true;
+            }
+        });
+
+        Registration intReg = new Registration(plugins, Integer.class);
+        intReg.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
+                return true;
+            }
+        });
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {

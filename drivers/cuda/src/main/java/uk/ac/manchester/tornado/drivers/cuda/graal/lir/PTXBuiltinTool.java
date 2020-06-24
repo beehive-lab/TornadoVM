@@ -38,6 +38,7 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBi
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.ABS;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.COS;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.EXP2;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.FLOAT_FLOOR;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.LOG2;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.POPCOUNT;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryIntrinsic.SIN;
@@ -132,8 +133,8 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatFloor(Value input) {
-        unimplemented();
-        return null;
+        trace("genFloatFloor: floor(%s)", input);
+        return new PTXUnary.Intrinsic(FLOAT_FLOOR, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatILogb(Value input) {
@@ -388,7 +389,6 @@ public class PTXBuiltinTool {
 
     public Value genIntClamp(Value x, Value y, Value z) {
         trace("genIntClamp: clamp(%s, %s, %s)", x, y, z);
-//        return new PTXTernary.Intrinsic(CLAMP, LIRKind.combine(x, y, z), x, y, z);
         TornadoInternalError.unimplemented();
         return null;
     }

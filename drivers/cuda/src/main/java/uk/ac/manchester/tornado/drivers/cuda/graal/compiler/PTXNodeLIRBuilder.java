@@ -1,7 +1,9 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -15,9 +17,12 @@ import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
+import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.IntegerTestNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
@@ -302,7 +307,17 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         LIRKind intLirKind = LIRKind.value(PTXKind.S32);
         LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
         Variable pred = getGen().newVariable(LIRKind.value(PTXKind.PRED));
-        if (node instanceof IntegerBelowNode) {
+        if (node instanceof FloatEqualsNode) {
+            final FloatEqualsNode condition = (FloatEqualsNode) node;
+            final Value x = operand(condition.getX());
+            final Value y = operand(condition.getY());
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, intLirKind, x, y)));
+        } else if (node instanceof FloatLessThanNode) {
+            final FloatLessThanNode condition = (FloatLessThanNode) node;
+            final Value x = operand(condition.getX());
+            final Value y = operand(condition.getY());
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
+        } else if (node instanceof IntegerBelowNode) {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
@@ -321,9 +336,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
             unimplemented("Logic: IsNullNode");
-            // result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ,
-            // boolLirKind, value, new ConstantValue(intLirKind,
-            // PrimitiveConstant.NULL_POINTER));
+        } else if (node instanceof IntegerTestNode) {
+            final IntegerTestNode testNode = (IntegerTestNode) node;
+            final Value x = operand(testNode.getX());
+            final Value y = operand(testNode.getY());
+            Value andRes = gen.getArithmetic().emitAnd(x, y);
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, boolLirKind, andRes, new ConstantValue(boolLirKind, PrimitiveConstant.INT_0))));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }

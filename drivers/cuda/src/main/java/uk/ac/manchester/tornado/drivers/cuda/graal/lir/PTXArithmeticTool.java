@@ -118,8 +118,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitUShr(Value a, Value b) {
-        unimplemented();
-        return null;
+        return emitShr(a, b);
     }
 
     @Override

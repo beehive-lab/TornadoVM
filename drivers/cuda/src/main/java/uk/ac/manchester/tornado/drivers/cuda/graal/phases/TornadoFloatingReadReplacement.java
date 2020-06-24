@@ -73,6 +73,7 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorLoadElementNode;
 
 /**
@@ -406,7 +407,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         private static boolean shouldBeFloatingRead(FloatableAccessNode accessNode) {
             boolean shouldReadFloat = true;
             boolean isVectorLoad = accessNode.usages().filter(VectorLoadElementNode.class).isNotEmpty();
-            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(FixedArrayNode.class).isNotEmpty();
+            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(LocalArrayNode.class).isNotEmpty();
 
             for (Node node : accessNode.inputs().snapshot()) {
                 if (node instanceof OffsetAddressNode) {

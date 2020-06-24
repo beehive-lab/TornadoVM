@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -40,6 +42,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBuiltinTool;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
 
@@ -92,20 +95,24 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getValue());
         Value result;
+        ValueKind valueKind = null;
         switch (operation()) {
             case ABS:
                 result = gen.genIntAbs(x);
+                valueKind = result.getValueKind();
                 break;
             case CLZ:
                 result = gen.genIntClz(x);
+                valueKind = result.getValueKind();
                 break;
             case POPCOUNT:
                 result = gen.genIntPopcount(x);
+                valueKind = LIRKind.value(PTXKind.U32);
                 break;
             default:
                 throw shouldNotReachHere();
         }
-        Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
+        Variable var = builder.getLIRGeneratorTool().newVariable(valueKind);
         builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
         builder.setResult(this, var);
 

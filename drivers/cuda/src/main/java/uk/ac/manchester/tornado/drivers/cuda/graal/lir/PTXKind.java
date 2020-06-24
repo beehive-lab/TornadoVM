@@ -303,6 +303,10 @@ public enum PTXKind implements PlatformKind {
         return kind == F16;
     }
 
+    public boolean is64Bit() {
+        return size == 8 && !isVector();
+    }
+
     public PTXKind toUntyped() {
         switch (size) {
             case 1: return PTXKind.B8;

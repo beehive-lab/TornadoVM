@@ -364,44 +364,52 @@ public class PTXAssembler extends Assembler {
      * Unary opcodes
      */
     public static class PTXUnaryOp extends PTXOp {
-        public static final PTXUnaryOp NOT = new PTXUnaryOp("not", true, false);
+        public static final PTXUnaryOp NOT = new PTXUnaryOp("not", true, ROUND_NEAREST_EVEN);
 
-        private final boolean needsRounding;
+        private final String roundingMode;
 
         public PTXUnaryOp(String opcode) {
-            this(opcode, true);
+            this(opcode, ROUND_NEAREST_EVEN);
         }
 
-        public PTXUnaryOp(String opcode, boolean needsRounding) {
+        public PTXUnaryOp(String opcode, String roundingMode) {
             super(opcode);
-            this.needsRounding = needsRounding;
+            this.roundingMode = roundingMode;
         }
 
-        public PTXUnaryOp(String opcode, boolean needsRounding, boolean isTyped, boolean isWeaklyTyped) {
+        public PTXUnaryOp(String opcode, String roundingMode, boolean isTyped, boolean isWeaklyTyped) {
             super(opcode, isTyped, isWeaklyTyped);
-            this.needsRounding = needsRounding;
+            this.roundingMode = roundingMode;
         }
 
-        protected PTXUnaryOp(String opcode, boolean isWeaklyTyped, boolean needsRounding) {
+        protected PTXUnaryOp(String opcode, boolean isWeaklyTyped, String roundingMode) {
             super(opcode, isWeaklyTyped);
-            this.needsRounding = needsRounding;
+            this.roundingMode = roundingMode;
         }
 
         public void emit(PTXCompilationResultBuilder crb, Value value, Value dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
-            PTXKind type = (PTXKind) dest.getPlatformKind();
-            if (needsRounding && type.isFloating()) {
+            PTXKind destType = (PTXKind) dest.getPlatformKind();
+            if (roundingMode != null && destType.isFloating()) {
                 asm.emitSymbol(DOT);
-                asm.emit(ROUND_NEAREST_EVEN);
+                asm.emit(roundingMode);
             }
 
             if (isTyped) {
-                if (type == PTXKind.PRED)
-                    type = (PTXKind) value.getPlatformKind(); // Make sure setp doesn't end up with pred
-                if (isWeaklyTyped)
-                    type = type.toUntyped();
-                asm.emit("." + type);
+                if (destType == PTXKind.PRED) {
+                    destType = (PTXKind) value.getPlatformKind(); // Make sure setp doesn't end up with pred
+                }
+                if (isWeaklyTyped) {
+                    destType = destType.toUntyped();
+                }
+
+                // we specify both types for convert
+                if (CONVERT.equals(opcode)) {
+                    asm.emit("." + value.getPlatformKind());
+                }
+
+                asm.emit("." + destType);
             }
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[] { dest, value });
@@ -413,30 +421,48 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXUnaryIntrinsic extends PTXUnaryOp {
         // @formatter:off
-        public static final PTXUnaryIntrinsic BARRIER_SYNC = new PTXUnaryIntrinsic("barrier.sync", false, false, false);
+        public static final PTXUnaryIntrinsic BARRIER_SYNC = new PTXUnaryIntrinsic("barrier.sync", null, false, false);
 
-        public static final PTXUnaryIntrinsic ABS = new PTXUnaryIntrinsic("abs", false);
-        public static final PTXUnaryIntrinsic EXP2 = new PTXUnaryIntrinsic("ex2.approx", false);
+        public static final PTXUnaryIntrinsic ABS = new PTXUnaryIntrinsic("abs", null);
+        public static final PTXUnaryIntrinsic EXP2 = new PTXUnaryIntrinsic("ex2.approx", null);
         public static final PTXUnaryIntrinsic SQRT = new PTXUnaryIntrinsic("sqrt");
-        public static final PTXUnaryIntrinsic LOG2 = new PTXUnaryIntrinsic("lg2.approx", false);
-        public static final PTXUnaryIntrinsic SIN = new PTXUnaryIntrinsic("sin.approx", false);
-        public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", false);
+        public static final PTXUnaryIntrinsic LOG2 = new PTXUnaryIntrinsic("lg2.approx", null);
+        public static final PTXUnaryIntrinsic SIN = new PTXUnaryIntrinsic("sin.approx", null);
+        public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", null);
+        public static final PTXUnaryIntrinsic FLOAT_FLOOR = new PTXUnaryIntrinsic(CONVERT, ROUND_NEGATIVE_INFINITY_INTEGER, true, false);
 
         public static final PTXUnaryIntrinsic LOCAL_MEMORY = new PTXUnaryIntrinsic("__local");
 
-        public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc", false);
+        public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc") {
+            @Override
+            public void emit(PTXCompilationResultBuilder crb, Value x, Value dest) {
+                final PTXAssembler asm = crb.getAssembler();
+                emitOpcode(asm);
+                PTXKind destType = (PTXKind) dest.getPlatformKind();
+
+                PTXKind instructionKind = PTXKind.B32;
+                if (((PTXKind) x.getPlatformKind()).is64Bit()) {
+                    instructionKind = PTXKind.B64;
+                }
+                asm.emit("." + instructionKind);
+
+                asm.emitSymbol(TAB);
+                asm.emitValues(new Value[] { dest, x });
+
+            }
+        };
         // @formatter:on
 
         protected PTXUnaryIntrinsic(String opcode) {
-            super(opcode, true);
+            super(opcode, ROUND_NEAREST_EVEN);
         }
 
-        protected PTXUnaryIntrinsic(String opcode, boolean needsRounding) {
-            super(opcode, needsRounding);
+        protected PTXUnaryIntrinsic(String opcode, String roundingMode) {
+            super(opcode, roundingMode);
         }
 
-        protected PTXUnaryIntrinsic(String opcode, boolean needsRounding, boolean isTyped, boolean isWeaklyTyped) {
-            super(opcode, needsRounding, isTyped, isWeaklyTyped);
+        protected PTXUnaryIntrinsic(String opcode, String roundingMode, boolean isTyped, boolean isWeaklyTyped) {
+            super(opcode, roundingMode, isTyped, isWeaklyTyped);
         }
 
         @Override
@@ -504,10 +530,12 @@ public class PTXAssembler extends Assembler {
             }
 
             if (isTyped) {
-                if (type == PTXKind.PRED)
+                if (type == PTXKind.PRED) {
                     type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
-                if (isWeaklyTyped)
+                }
+                if (isWeaklyTyped) {
                     type = type.toUntyped();
+                }
                 asm.emit("." + type);
             }
             asm.emitSymbol(TAB);
@@ -600,14 +628,6 @@ public class PTXAssembler extends Assembler {
 
     public static class PTXTernaryIntrinsic extends PTXTernaryOp {
 
-        // @formatter:off
-        public static final PTXTernaryIntrinsic VSTORE2 = new PTXTernaryIntrinsic("vstore2");
-        public static final PTXTernaryIntrinsic VSTORE3 = new PTXTernaryIntrinsic("vstore3");
-        public static final PTXTernaryIntrinsic VSTORE4 = new PTXTernaryIntrinsic("vstore4");
-        public static final PTXTernaryIntrinsic VSTORE8 = new PTXTernaryIntrinsic("vstore8");
-        public static final PTXTernaryIntrinsic VSTORE16 = new PTXTernaryIntrinsic("vstore16");
-        // @formatter:on
-
         protected PTXTernaryIntrinsic(String opcode) {
             super(opcode);
         }
@@ -627,14 +647,6 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXOp2 extends PTXOp {
-
-        // @formatter:off
-        public static final PTXOp2 VMOV_SHORT2 = new PTXOp2("(short2)");
-        public static final PTXOp2 VMOV_INT2 = new PTXOp2("(int2)");
-        public static final PTXOp2 VMOV_FLOAT2 = new PTXOp2("(float2)");
-        public static final PTXOp2 VMOV_BYTE2 = new PTXOp2("(char2)");
-        public static final PTXOp2 VMOV_DOUBLE2 = new PTXOp2("(double2)");
-        // @formatter:on
 
         protected PTXOp2(String opcode) {
             super(opcode);
@@ -670,14 +682,6 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXOp4 extends PTXOp3 {
-        // @formatter:off
-
-        public static final PTXOp4 VMOV_SHORT4 = new PTXOp4("(short4)");
-        public static final PTXOp4 VMOV_INT4 = new PTXOp4("(int4)");
-        public static final PTXOp4 VMOV_FLOAT4 = new PTXOp4("(float4)");
-        public static final PTXOp4 VMOV_BYTE4 = new PTXOp4("(char4)");
-        public static final PTXOp4 VMOV_DOUBLE4 = new PTXOp4("(double4)");
-        // @formatter:on
 
         protected PTXOp4(String opcode) {
             super(opcode);
@@ -699,15 +703,6 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXOp8 extends PTXOp4 {
-        // @formatter:off
-
-        public static final PTXOp8 VMOV_SHORT8 = new PTXOp8("(short8)");
-        public static final PTXOp8 VMOV_INT8 = new PTXOp8("(int8)");
-        public static final PTXOp8 VMOV_FLOAT8 = new PTXOp8("(float8)");
-        public static final PTXOp8 VMOV_BYTE8 = new PTXOp8("(char8)");
-        public static final PTXOp8 VMOV_DOUBLE8 = new PTXOp8("(double8)");
-
-        // @formatter:on
 
         protected PTXOp8(String opcode) {
             super(opcode);
