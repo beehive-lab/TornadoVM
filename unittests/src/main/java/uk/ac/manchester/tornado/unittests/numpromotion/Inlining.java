@@ -27,6 +27,25 @@ import java.util.stream.IntStream;
 
 public class Inlining {
 
+    public static void bitwiseOr(byte[] result, byte[] input, byte[] elements) {
+        result[0] |= input[1];
+    }
+
+    @Test
+    public void test0() {
+
+        byte[] elements = new byte[] { 4 };
+        byte[] result = new byte[4];
+        byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(result, input, elements)
+                .task("t0", Inlining::bitwiseOr, result, input, elements)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+    }
+
     public static int b2i(int v) {
         return v < 0 ? 256 + v : v;
     }
