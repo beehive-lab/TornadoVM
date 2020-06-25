@@ -30,6 +30,66 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLoops extends TornadoTestBase {
 
+    public static void forConstant01(int[] a, final int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testForConstant01() {
+        final int size = 256;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant01, a, size) //
+                .streamOut(a) //
+                .execute();
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
+    public static void forConstant02(int[] a, final int n) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testForConstant02() {
+        final int size = 256;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant02, a, size) //
+                .streamOut(a) //
+                .execute();
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
+    public static void forConstant03(int[] a, int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testForConstant03() {
+        int size = 256;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant03, a, size) //
+                .streamOut(a) //
+                .execute();
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
     public static void forLoopOneD(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = 10;

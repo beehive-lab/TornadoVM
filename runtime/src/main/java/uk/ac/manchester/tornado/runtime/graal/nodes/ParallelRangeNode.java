@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.runtime.graal.nodes;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
 
 @NodeInfo(nameTemplate = "Range")
@@ -35,8 +36,10 @@ public class ParallelRangeNode extends AbstractParallelNode {
 
     public static final NodeClass<ParallelRangeNode> TYPE = NodeClass.create(ParallelRangeNode.class);
 
-    @Input(InputType.Association) private ParallelOffsetNode offset;
-    @Input(InputType.Association) private ParallelStrideNode stride;
+    @Input(InputType.Association)
+    private ParallelOffsetNode offset;
+    @Input(InputType.Association)
+    private ParallelStrideNode stride;
 
     public ParallelRangeNode(int index, ValueNode range, ParallelOffsetNode offset, ParallelStrideNode stride) {
         super(TYPE, index, range);
