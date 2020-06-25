@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLoops extends TornadoTestBase {
@@ -87,6 +88,52 @@ public class TestLoops extends TornadoTestBase {
                 .execute();
         for (int value : a) {
             assertEquals(10, value);
+        }
+    }
+
+    public static void forConstant04(Matrix2DFloat m, int n) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            for (@Parallel int j = 0; j <= n; j++) {
+                m.set(i, j, 10);
+            }
+        }
+    }
+
+    @Test
+    public void testForConstant04() {
+        int size = 255;
+        Matrix2DFloat m = new Matrix2DFloat(size, size);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant04, m, size) //
+                .streamOut(m) //
+                .execute();
+        for (int i = 0; i < m.M(); i++) {
+            for (int j = 0; j < m.N(); j++) {
+                assertEquals(10.0f, m.get(i, j), 0.001f);
+            }
+        }
+    }
+
+    public static void forConstant05(Matrix2DFloat m, int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            for (@Parallel int j = 0; j < n; j++) {
+                m.set(i, j, 10);
+            }
+        }
+    }
+
+    @Test
+    public void testForConstant05() {
+        int size = 256;
+        Matrix2DFloat m = new Matrix2DFloat(size, size);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant05, m, size) //
+                .streamOut(m) //
+                .execute();
+        for (int i = 0; i < m.M(); i++) {
+            for (int j = 0; j < m.N(); j++) {
+                assertEquals(10.0f, m.get(i, j), 0.001f);
+            }
         }
     }
 
