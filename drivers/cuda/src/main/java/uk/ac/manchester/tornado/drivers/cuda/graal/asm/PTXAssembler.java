@@ -488,6 +488,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp MUL_WIDE = new PTXBinaryOp("mul.wide");
         public static final PTXBinaryOp DIV = new PTXBinaryOp("div");
         public static final PTXBinaryOp DIV_APPROX = new PTXBinaryOp("div.approx", false);
+        public static final PTXBinaryOp REM = new PTXBinaryOp("rem", false);
 
         public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
         public static final PTXBinaryOp SETP_LT = new PTXBinaryOp("setp.lt");

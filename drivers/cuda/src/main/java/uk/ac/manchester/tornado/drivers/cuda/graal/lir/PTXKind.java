@@ -309,7 +309,7 @@ public enum PTXKind implements PlatformKind {
 
     public PTXKind toUntyped() {
         switch (size) {
-            case 1: return PTXKind.B8;
+            case 1: return this == PRED ? PTXKind.PRED : PTXKind.B8;
             case 2: return PTXKind.B16;
             case 4: return PTXKind.B32;
             case 8: return PTXKind.B64;

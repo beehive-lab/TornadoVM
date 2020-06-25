@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -75,8 +74,12 @@ public class PTXLIRStmt {
 
         private String getFPURoundingMode(PTXKind lhs, PTXKind rhs) {
             String roundingMode = ROUND_NEAREST_EVEN;
+
+            if (!lhs.isFloating() && rhs.isFloating()) {
+                roundingMode = ROUND_NEAREST_EVEN_INTEGER;
+            }
             if ((lhs.isF64() && rhs.isF32())) {
-                roundingMode = null;
+                return null;
             }
             return roundingMode;
         }
