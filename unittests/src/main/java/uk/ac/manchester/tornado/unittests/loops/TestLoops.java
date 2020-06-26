@@ -26,9 +26,140 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLoops extends TornadoTestBase {
+
+    public static void forConstant01(int[] a, final int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testForConstant01() {
+        final int size = 256;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant01, a, size) //
+                .streamOut(a) //
+                .execute();
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
+    public static void forConstant02(int[] a, final int n) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testForConstant02() {
+        final int size = 256;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant02, a, (size - 1)) //
+                .streamOut(a) //
+                .execute();
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
+    public static void forConstant03(int[] a, int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    @Test
+    public void testForConstant03() {
+        int size = 256;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant03, a, size) //
+                .streamOut(a) //
+                .execute();
+        for (int value : a) {
+            assertEquals(10, value);
+        }
+    }
+
+    public static void forConstant04(Matrix2DFloat m, int n) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            for (@Parallel int j = 0; j <= n; j++) {
+                m.set(i, j, 10);
+            }
+        }
+    }
+
+    @Test
+    public void testForConstant04() {
+        int size = 255;
+        Matrix2DFloat m = new Matrix2DFloat(size, size);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant04, m, (size - 1)) //
+                .streamOut(m) //
+                .execute();
+        for (int i = 0; i < m.M(); i++) {
+            for (int j = 0; j < m.N(); j++) {
+                assertEquals(10.0f, m.get(i, j), 0.001f);
+            }
+        }
+    }
+
+    public static void forConstant05(Matrix2DFloat m, int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            for (@Parallel int j = 0; j < n; j++) {
+                m.set(i, j, 10);
+            }
+        }
+    }
+
+    @Test
+    public void testForConstant05() {
+        int size = 256;
+        Matrix2DFloat m = new Matrix2DFloat(size, size);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant05, m, size) //
+                .streamOut(m) //
+                .execute();
+        for (int i = 0; i < m.M(); i++) {
+            for (int j = 0; j < m.N(); j++) {
+                assertEquals(10.0f, m.get(i, j), 0.001f);
+            }
+        }
+    }
+
+    public static void forConstant06(Matrix2DFloat m2, int n, int m) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            for (@Parallel int j = 0; j <= m; j++) {
+                m2.set(i, j, 10);
+            }
+        }
+    }
+
+    @Test
+    public void testForConstant06() {
+        int m = 256;
+        int n = 64;
+        Matrix2DFloat m2 = new Matrix2DFloat(m, n);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant06, m2, (m - 1), (n - 1)) //
+                .streamOut(m2) //
+                .execute();
+        for (int i = 0; i < m2.M(); i++) {
+            for (int j = 0; j < m2.N(); j++) {
+                assertEquals(10.0f, m2.get(i, j), 0.001f);
+            }
+        }
+    }
 
     public static void forLoopOneD(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
