@@ -4,7 +4,7 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 ## TornadoVM 0.7
 22/06/2020
 
-  * Support for ARM Mali GPUs. See documentation [here](16_MALI.md)
+  * Support for ARM Mali GPUs. See documentation [here](17_MALI.md)
   * Support parallel reductions on FPGAs
   * Agnostic FPGA vendor compilation via [configuration files](7_FPGA.md#step-1-updatecreate-the-fpgas-configuration-file) (Intel & Xilinx)
   * Support for AWS on Xilinx FPGAs [link](16_AWS.md)
