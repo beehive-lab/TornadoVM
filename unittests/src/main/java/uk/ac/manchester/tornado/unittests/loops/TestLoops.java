@@ -63,7 +63,7 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 1);
         new TaskSchedule("s0") //
-                .task("t0", TestLoops::forConstant02, a, size) //
+                .task("t0", TestLoops::forConstant02, a, (size - 1)) //
                 .streamOut(a) //
                 .execute();
         for (int value : a) {
@@ -104,7 +104,7 @@ public class TestLoops extends TornadoTestBase {
         int size = 255;
         Matrix2DFloat m = new Matrix2DFloat(size, size);
         new TaskSchedule("s0") //
-                .task("t0", TestLoops::forConstant04, m, size) //
+                .task("t0", TestLoops::forConstant04, m, (size - 1)) //
                 .streamOut(m) //
                 .execute();
         for (int i = 0; i < m.M(); i++) {
@@ -133,6 +133,30 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < m.M(); i++) {
             for (int j = 0; j < m.N(); j++) {
                 assertEquals(10.0f, m.get(i, j), 0.001f);
+            }
+        }
+    }
+
+    public static void forConstant06(Matrix2DFloat m2, int n, int m) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            for (@Parallel int j = 0; j <= m; j++) {
+                m2.set(i, j, 10);
+            }
+        }
+    }
+
+    @Test
+    public void testForConstant06() {
+        int m = 256;
+        int n = 64;
+        Matrix2DFloat m2 = new Matrix2DFloat(m, n);
+        new TaskSchedule("s0") //
+                .task("t0", TestLoops::forConstant06, m2, (m - 1), (n - 1)) //
+                .streamOut(m2) //
+                .execute();
+        for (int i = 0; i < m2.M(); i++) {
+            for (int j = 0; j < m2.N(); j++) {
+                assertEquals(10.0f, m2.get(i, j), 0.001f);
             }
         }
     }
