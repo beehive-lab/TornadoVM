@@ -156,8 +156,6 @@ public interface TornadoDevice {
 
     void ensureLoaded();
 
-    void markEvent();
-
     void flushEvents();
 
     int enqueueBarrier();

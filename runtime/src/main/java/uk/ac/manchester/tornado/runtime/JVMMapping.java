@@ -165,11 +165,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void markEvent() {
-
-    }
-
-    @Override
     public void flushEvents() {
 
     }
