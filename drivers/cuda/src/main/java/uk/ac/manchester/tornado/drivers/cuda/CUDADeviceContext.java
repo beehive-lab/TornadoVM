@@ -81,8 +81,16 @@ public class CUDADeviceContext extends TornadoLogger implements Initialisable, T
         return new CUDATornadoDevice(device.getIndex());
     }
 
-    public TornadoInstalledCode installCode(PTXCompilationResult result, String name) {
-        return codeCache.installSource(result, name);
+    public TornadoInstalledCode installCode(PTXCompilationResult result, String resolvedMethodName) {
+        return codeCache.installSource(result.getName(), result.getTargetCode(), result.getTaskMeta(), resolvedMethodName);
+    }
+
+    public TornadoInstalledCode installCode(String name, byte[] code, TaskMetaData taskMeta, String resolvedMethodName) {
+        return codeCache.installSource(name, code, taskMeta, resolvedMethodName);
+    }
+
+    public TornadoInstalledCode getInstalledCode(String name) {
+        return codeCache.getCachedCode(name);
     }
 
     public CUDADevice getDevice() {

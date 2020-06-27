@@ -34,10 +34,8 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -81,7 +79,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public void setDefaultDevice(int index) {
-        swapDefaultDevice(0, index);
+        swapDefaultDevice(index);
     }
 
     @Override
@@ -111,7 +109,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return backend;
     }
 
-    private OCLBackend swapDefaultDevice(final int platform, final int device) {
+    private void swapDefaultDevice(final int device) {
         OCLBackend tmp = flatBackends[0];
         flatBackends[0] = flatBackends[device];
         flatBackends[device] = tmp;
@@ -119,7 +117,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         if (!backend.isInitialised()) {
             backend.init();
         }
-        return backend;
     }
 
     private OCLBackend createOCLBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLContext context, final int deviceIndex) {

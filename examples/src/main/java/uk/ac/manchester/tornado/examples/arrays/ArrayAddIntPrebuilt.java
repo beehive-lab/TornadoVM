@@ -48,10 +48,12 @@ public class ArrayAddIntPrebuilt {
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        String filePath = tornadoSDK + "/examples/generated/";
+        filePath += device.getPlatformName().contains("CUDA") ? "add.ptx" : "add.cl";
 
         // @formatter:off
         new TaskSchedule("s0")
-                .prebuiltTask("t0", "add", tornadoSDK + "/examples/generated/add.cl", 
+                .prebuiltTask("t0", "add", filePath,
                         new Object[] { a, b, c }, 
                         new Access[] { Access.READ, Access.READ, Access.WRITE },
                         device, 

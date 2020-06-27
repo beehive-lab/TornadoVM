@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.cuda.runtime;
 
+import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -31,11 +32,15 @@ import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class CUDATornadoDevice implements TornadoAcceleratorDevice {
@@ -73,8 +78,16 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-        if (!(task instanceof CompilableTask)) TornadoInternalError.unimplemented("Non compilable tasks are not yet implemented in the CUDA driver");
+        if (task instanceof CompilableTask) {
+            return compileTask(task);
+        } else if (task instanceof PrebuiltTask) {
+            return compilePreBuiltTask(task);
+        }
+        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
+        return null;
+    }
 
+    private TornadoInstalledCode compileTask(SchedulableTask task) {
         TornadoProfiler profiler = task.getProfiler();
         final CUDADeviceContext deviceContext = getDeviceContext();
 
@@ -91,14 +104,14 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
         try {
             PTXCompilationResult result;
-            if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod, executable))) {
+            if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod.getName(), executable))) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
             } else {
-                result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
+                result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod.getName(), executable), taskMeta);
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -112,6 +125,25 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
             driver.fatal("exception: %s", e.toString());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
+    }
+
+    private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
+        final CUDADeviceContext deviceContext = getDeviceContext();
+        final PrebuiltTask executable = (PrebuiltTask) task;
+        String functionName = PTXCompiler.buildFunctionName(executable.getEntryPoint(), executable);
+        if (!deviceContext.shouldCompile(functionName)) {
+            return deviceContext.getInstalledCode(functionName);
+        }
+
+        final Path path = Paths.get(executable.getFilename());
+        TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+        try {
+            final byte[] source = Files.readAllBytes(path);
+            return deviceContext.installCode(functionName, source, executable.meta(), executable.getEntryPoint());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override

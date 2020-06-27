@@ -1,0 +1,48 @@
+.version 6.5
+.target sm_75
+.address_size 64
+
+.visible .entry add_int8_int8_int8(.param .u64 stack_pointer) {
+	.reg .u64 rud<9>;
+	.reg .s64 rsd<4>;
+	.reg .u32 rui<5>;
+	.reg .pred rpb<2>;
+	.reg .s32 rsi<8>;
+
+BLOCK_0:
+	ld.param.u64	rud0, [stack_pointer];
+	ldu.global.u64	rud1, [rud0];
+	ldu.global.u64	rud2, [rud0+8];
+	ldu.global.u64	rud3, [rud0+16];
+	mov.u32	rui0, %tid.x;
+	mov.u32	rui1, %ntid.x;
+	mov.u32	rui2, %ctaid.x;
+	mad.lo.s32	rsi0, rui2, rui1, rui0;
+
+BLOCK_1:
+	mov.s32	rsi1, rsi0;
+LOOP_COND_1:
+	setp.lt.s32	rpb0, rsi1, 8;
+	@!rpb0 bra	BLOCK_3;
+
+BLOCK_2:
+	cvt.s64.s32	rsd0, rsi1;
+	shl.b64	rsd1, rsd0, 2;
+	add.s64	rsd2, rsd1, 24;
+	add.u64	rud4, rud1, rsd2;
+	ld.global.s32	rsi2, [rud4];
+	add.u64	rud5, rud2, rsd2;
+	ld.global.s32	rsi3, [rud5];
+	add.u64	rud6, rud3, rsd2;
+	add.s32	rsi4, rsi2, rsi3;
+	st.global.s32	[rud6], rsi4;
+	mov.u32	rui3, %nctaid.x;
+	mul.wide.u32	rud7, rui3, rui1;
+	cvt.s32.u64	rsi5, rud7;
+	add.s32	rsi6, rsi5, rsi1;
+	mov.s32	rsi1, rsi6;
+	bra.uni	LOOP_COND_1;
+
+BLOCK_3:
+	ret;
+}

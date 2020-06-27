@@ -89,6 +89,7 @@
       <outputDirectory>examples/generated</outputDirectory>
       <includes>
         <include>add.cl</include>
+        <include>add.ptx</include>
       </includes>
       <fileMode>0666</fileMode>
     </fileSet>

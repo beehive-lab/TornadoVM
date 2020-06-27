@@ -29,6 +29,7 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
@@ -380,7 +381,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildFunctionName(resolvedMethod, task), taskMeta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildFunctionName(resolvedMethod.getName(), task), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -449,8 +450,8 @@ public class PTXCompiler {
         return kernelCompResult;
     }
 
-    public static String buildFunctionName(ResolvedJavaMethod method, CompilableTask task) {
-        StringBuilder sb = new StringBuilder(method.getName());
+    public static String buildFunctionName(String methodName, SchedulableTask task) {
+        StringBuilder sb = new StringBuilder(methodName);
 
         for (Object arg : task.getArguments()) {
             // Object is either array or primitive

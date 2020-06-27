@@ -214,6 +214,13 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return drivers[index];
     }
 
+    @Override
+    public void setDefaultDriver(int index) {
+        TornadoAcceleratorDriver tmp = drivers[0];
+        drivers[0] = drivers[index];
+        drivers[index] = tmp;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <D extends TornadoDriver> D getDriver(Class<D> type) {

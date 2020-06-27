@@ -25,6 +25,24 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class TornadoTestBase {
 
+    private static class Pair<T1, T2> {
+        T1 first;
+        T2 second;
+
+        public Pair(T1 first, T2 second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        public T1 getFirst() {
+            return first;
+        }
+
+        public T2 getSecond() {
+            return second;
+        }
+    }
+
     protected static boolean wasDeviceInspected = false;
 
     @Before
@@ -37,7 +55,13 @@ public abstract class TornadoTestBase {
         }
 
         if (!wasDeviceInspected) {
-            int deviceIndex = getDeviceIndex();
+            Pair<Integer, Integer> driverAndDevice = getDriverAndDeviceIndex();
+            int driverIndex = driverAndDevice.getFirst();
+            if (driverIndex != 0) {
+                // We swap the default driver for the selected one
+                TornadoRuntime.getTornadoRuntime().setDefaultDriver(driverIndex);
+            }
+            int deviceIndex = driverAndDevice.getSecond();
             if (deviceIndex != 0) {
                 // We swap the default device for the selected one
                 TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -47,9 +71,9 @@ public abstract class TornadoTestBase {
         }
     }
 
-    public int getDeviceIndex() {
+    private Pair<Integer, Integer> getDriverAndDeviceIndex() {
         String driverAndDevice = System.getProperty("tornado.unittests.device", "0:0");
-        String[] device = driverAndDevice.split(":");
-        return Integer.parseInt(device[1]);
+        String[] propertyValues = driverAndDevice.split(":");
+        return new Pair<>(Integer.parseInt(propertyValues[0]), Integer.parseInt(propertyValues[1]));
     }
 }

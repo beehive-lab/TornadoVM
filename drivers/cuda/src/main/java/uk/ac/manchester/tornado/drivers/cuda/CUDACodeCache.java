@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,19 +21,19 @@ public class CUDACodeCache {
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(PTXCompilationResult result, String name) {
-        String cacheKey = result.getName();
+    public PTXInstalledCode installSource(String name, byte[] targetCode, TaskMetaData taskMeta, String resolvedMethodName) {
+        String cacheKey = name;
 
         if (!cache.containsKey(cacheKey)) {
             if (PRINT_SOURCE) {
-                String source = new String(result.getTargetCode());
+                String source = new String(targetCode);
                 System.out.println(source);
             }
 
-            CUDAModule module = new CUDAModule(name, result.getTargetCode(), result.getName(), result.getTaskMeta());
+            CUDAModule module = new CUDAModule(resolvedMethodName, targetCode, name, taskMeta);
 
             if (module.getIsPTXJITSuccess()) {
-                PTXInstalledCode code = new PTXInstalledCode(result.getName(), module, deviceContext);
+                PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
                 cache.put(cacheKey, code);
                 return code;
             }
@@ -42,6 +43,10 @@ public class CUDACodeCache {
         }
 
         return cache.get(cacheKey);
+    }
+
+    public PTXInstalledCode getCachedCode(String name) {
+        return cache.get(name);
     }
 
     public boolean isCached(String name) {
