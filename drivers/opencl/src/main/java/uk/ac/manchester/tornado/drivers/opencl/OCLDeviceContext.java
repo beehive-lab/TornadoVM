@@ -84,7 +84,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     private boolean useRelativeAddresses;
     private boolean printOnce = true;
 
-    protected final OCLEventsWrapper eventsWrapper;
+    private final OCLEventsWrapper eventsWrapper;
 
     protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
