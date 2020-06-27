@@ -268,7 +268,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /*
      * Allows the OpenCL driver to select the size of local work groups
      */
-    private final boolean openclUseDriverScheduling;
+    private boolean openclUseDriverScheduling;
     private final boolean openclWaitActive;
     private final boolean vmWaitEvent;
     private final boolean enableExceptions;
@@ -447,6 +447,10 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public TornadoProfiler getProfiler() {
         return this.profiler;
+    }
+
+    public void enableDefaultThreadScheduler(boolean use) {
+        openclUseDriverScheduling = use;
     }
 
 }

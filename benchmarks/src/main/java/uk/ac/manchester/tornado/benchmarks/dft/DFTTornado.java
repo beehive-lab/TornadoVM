@@ -20,10 +20,11 @@ package uk.ac.manchester.tornado.benchmarks.dft;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-public class DftTornado extends BenchmarkDriver {
+public class DFTTornado extends BenchmarkDriver {
 
     private int size;
     private TaskSchedule graph;
@@ -32,7 +33,7 @@ public class DftTornado extends BenchmarkDriver {
     private double[] outReal;
     private double[] outImag;
 
-    public DftTornado(int iterations, int size) {
+    public DFTTornado(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
@@ -53,22 +54,23 @@ public class DftTornado extends BenchmarkDriver {
         initData();
         graph = new TaskSchedule("benchmark") //
                 .streamIn(inReal, inImag) //
-                .task("t0", ComputeKernels::computeDft, inReal, inImag, outReal, outImag) //
+                .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                 .streamOut(outReal, outImag);
         graph.warmup();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         boolean validation = true;
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
         graph.warmup();
+        graph.mapAllTo(device);
         graph.execute();
         graph.streamOut(outReal, outImag);
 
-        ComputeKernels.computeDft(inReal, inImag, outRealTor, outImagTor);
+        ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor[i] - outImag[i]) > 0.01) {
@@ -96,7 +98,8 @@ public class DftTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
 
     }

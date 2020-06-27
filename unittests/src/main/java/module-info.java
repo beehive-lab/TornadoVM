@@ -1,8 +1,8 @@
 open module tornado.unittests {
     requires transitive junit;
     requires transitive tornado.api;
-    requires transitive tornado.drivers.cuda;
     requires lucene.core;
+    requires transitive tornado.drivers.cuda;
 
     exports uk.ac.manchester.tornado.unittests;
     exports uk.ac.manchester.tornado.unittests.api;

@@ -1,33 +1,39 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.addImage;
 
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
+
+import java.util.Random;
+import java.util.stream.IntStream;
 
 public class AddJava extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat4 a,b,c;
+    ImageFloat4 a;
+    ImageFloat4 b;
+    ImageFloat4 c;
 
     public AddJava(int iterations, int numElementsX, int numElementsY) {
         super(iterations);
@@ -41,12 +47,15 @@ public class AddJava extends BenchmarkDriver {
         b = new ImageFloat4(numElementsX, numElementsY);
         c = new ImageFloat4(numElementsX, numElementsY);
 
-        final Float4 valueA = new Float4(new float[] { 1f, 1f, 1f, 1f });
-        final Float4 valueB = new Float4(new float[] { 2f, 2f, 2f, 2f });
+        Random r = new Random();
         for (int j = 0; j < numElementsY; j++) {
             for (int i = 0; i < numElementsX; i++) {
-                a.set(i, j, valueA);
-                b.set(i, j, valueB);
+                float[] ra = new float[4];
+                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
+                float[] rb = new float[4];
+                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+                a.set(i, j, new Float4(ra));
+                b.set(i, j, new Float4(rb));
             }
         }
     }
@@ -60,7 +69,7 @@ public class AddJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         GraphicsKernels.addImage(a, b, c);
     }
 
@@ -70,7 +79,7 @@ public class AddJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

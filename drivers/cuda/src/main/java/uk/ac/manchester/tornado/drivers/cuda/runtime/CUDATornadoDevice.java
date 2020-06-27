@@ -379,11 +379,6 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void markEvent() {
-        getDeviceContext().markEvent();
-    }
-
-    @Override
     public void flushEvents() {
         getDeviceContext().flushEvents();
     }

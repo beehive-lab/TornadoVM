@@ -5,7 +5,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.6</version>
+        <version>0.7</version>
     </parent>
     <artifactId>tornado-unittests</artifactId>
     <name>tornado-unittests</name>
@@ -21,14 +21,14 @@
             <artifactId>junit</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-drivers-cuda</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
         </dependency>
     </dependencies>
 </project>

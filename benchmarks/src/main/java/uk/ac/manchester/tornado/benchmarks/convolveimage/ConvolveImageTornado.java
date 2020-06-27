@@ -23,15 +23,20 @@ import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 
-    private final int imageSizeX,imageSizeY,filterSize;
+    private final int imageSizeX;
+    private final int imageSizeY;
+    private final int filterSize;
 
-    private ImageFloat input,output,filter;
+    private ImageFloat input;
+    private ImageFloat output;
+    private ImageFloat filter;
 
     private TaskSchedule graph;
 
@@ -71,16 +76,17 @@ public class ConvolveImageTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        graph.mapAllTo(device);
         graph.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
 
         final ImageFloat result = new ImageFloat(imageSizeX, imageSizeY);
 
-        benchmarkMethod();
+        benchmarkMethod(device);
         graph.syncObject(output);
         graph.clearProfiles();
 

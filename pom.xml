@@ -5,7 +5,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.6</version>
+    <version>0.7</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -17,11 +17,13 @@
     </scm>
 
     <properties>
-        <tornado.version>0.6</tornado.version>
+        <tornado.version>0.7</tornado.version>
         <graal.version>19.3.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
+        <jmh.version>1.23</jmh.version>
+        <uberjar.name>jmhbenchmarks</uberjar.name>
     </properties>
 
     <profiles>
@@ -189,8 +191,8 @@
                 <cmake.classifier>linux-amd64</cmake.classifier>
                 <cmake.generator>Unix Makefiles</cmake.generator>
             </properties>
-    	</profile>
-	<profile>
+        </profile>
+        <profile>
             <id>linux-aarch64-release</id>
             <activation>
                 <property>
@@ -283,7 +285,15 @@
                         <configuration>
                             <source>11</source>
                             <target>11</target>
+                            <!-- <compilerArgument>-proc:none</compilerArgument> -->
                             <showDeprecation>true</showDeprecation>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
                             <compilerArgs>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
@@ -304,6 +314,14 @@
                                 <arg>--add-exports</arg>
                                 <arg>
                                     jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.opencl,tornado.drivers.cuda,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl,tornado.drivers.cuda
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl,tornado.drivers.cuda
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
@@ -538,6 +556,15 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl,tornado.drivers.cuda
                                 </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.nodes=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl,tornado.drivers.cuda
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl,tornado.drivers.cuda
+                                </arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -576,7 +603,6 @@
                         <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/graal.jar</systemPath>
                         <version>${graal.version}</version>
                     </dependency>
-
                     <dependency>
                         <groupId>jvmci</groupId>
                         <artifactId>api</artifactId>
@@ -701,6 +727,44 @@
                     <shortRevisionLength>7</shortRevisionLength>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${uberjar.name}</finalName>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.openjdk.jmh.Main</mainClass>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <!--
+                                        Shading signed JARs will fail without this.
+                                        http://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar
+                                    -->
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencyManagement>
@@ -719,6 +783,17 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>

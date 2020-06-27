@@ -40,7 +40,7 @@ except:
 	sys.exit(0)
 
 class Colors:
-	RED   = "\033[1;31m"  
+	RED   = "\033[1;31m"
 	BLUE  = "\033[1;34m"
 	CYAN  = "\033[1;36m"
 	GREEN = "\033[0;32m"
@@ -153,18 +153,24 @@ def runMediumConfiguration(args):
 				command = command + " " + str(size)
 			os.system(command)
 
+def runWithJMH(args):
+	printBenchmarks()
+	options = composeAllOptions(args)
+	print Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET
+	command = __TORNADO_COMMAND__ + " -jar benchmarks/target/jmhbenchmarks.jar "
+	os.system(command)
+
 def runDefaultSizePerBenchmark(args):
 	printBenchmarks()
 	options = composeAllOptions(args)
 	print Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET
 	for b in __BENCHMARKS__:
-		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b 
+		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b
 		os.system(command)
 
 def parseArguments():
 	parser = argparse.ArgumentParser(description="""Tool to execute benchmarks in TornadoVM. With no options, it runs all benchmarks with the default size""")
 	parser.add_argument('--validate', action="store_true", dest="validate", default=False, help="Enable result validation")
-	parser.add_argument('--default', action="store_true", dest="default", default=False, help="Run default benchmark configuration")
 	parser.add_argument('--medium', action="store_true", dest="medium", default=False, help="Run benchmarks with medium sizes")
 	parser.add_argument('--iterations', action="store", type=int, dest="iterations", default=0, help="Set the number of iterations")
 	parser.add_argument('--full', action="store_true", dest="full", default=False, help="Run for all sizes in all devices. Including big data sizes")
@@ -172,6 +178,7 @@ def parseArguments():
 	parser.add_argument('--skipParallel', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
 	parser.add_argument('--skipDevices', action="store", dest="skip_devices", default=None, help="Skip devices. Provide a list of devices (e.g., 0,1)")
 	parser.add_argument('--printBenchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
+	parser.add_argument('--jmh', action="store_true", dest="jmh", default=False, help="Run with JMH")
 	args = parser.parse_args()
 	return args
 
@@ -183,13 +190,14 @@ def main():
 
 	if args.benchmarks:
 		printBenchmarks()
-	elif args.default:
-		runDefaultSizePerBenchmark(args)
 	elif args.full:
 		runBenchmarksFullCoverage(args)
 	elif args.medium:
 		print "[INFO] Running small and medium sizes"
 		runMediumConfiguration(args)
+	elif args.jmh:
+		print "[INFO] Running default size with JMH"
+		runWithJMH(args)
 	else:
 		print Colors.BLUE + "Running TornadoVM Benchmarks" + Colors.RESET
 		print Colors.CYAN + "[INFO] This process takes between 30-60 minutes" + Colors.RESET

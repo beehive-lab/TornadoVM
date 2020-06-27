@@ -1,6 +1,31 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+## TornadoVM 0.7
+22/06/2020
+
+  * Support for ARM Mali GPUs. See documentation [here](17_MALI.md)
+  * Support parallel reductions on FPGAs
+  * Agnostic FPGA vendor compilation via [configuration files](7_FPGA.md#step-1-updatecreate-the-fpgas-configuration-file) (Intel & Xilinx)
+  * Support for AWS on Xilinx FPGAs [link](16_AWS.md)
+  * Recompilation for different input data sizes supported 
+  * New TornadoVM API calls:
+     a) Update references for re-compilation: 
+        `taskSchedule.updateReferences(oldRef, newRef);`
+     b) Use the default OpenCL scheduler: 
+        `taskSchedule.useDefaultThreadScheduler(true);`
+  * Use of JMH for benchmarking 
+  * Support for Fused Multiply-Add (FMA) instructions 
+  * Easy-selection of different devices for unit-tests
+     `tornado-test.py -V --debug -J"-Dtornado.unittests.device=0:1"`
+  * Bailout mechanism improved from parallel to sequential
+  * Improve thread scheduling
+  * Support for private memory allocation
+  * Assertion mode included
+  * Documentation improved
+  * Several bug fixes 
+
+
 ## TornadoVM 0.6
 21/02/2020
 

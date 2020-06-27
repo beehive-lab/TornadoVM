@@ -23,7 +23,6 @@
  * Authors: Michalis Papadimitriou
  *
  */
-
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**

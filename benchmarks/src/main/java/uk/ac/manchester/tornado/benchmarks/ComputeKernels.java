@@ -174,7 +174,7 @@ public class ComputeKernels {
         }
     }
 
-    public static void computeDft(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
+    public static void computeDFT(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             double sumReal = 0;

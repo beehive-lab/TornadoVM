@@ -34,6 +34,12 @@ public class Resize {
         }
     }
 
+    public static void resize02(float[] a, float[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] + 10;
+        }
+    }
+
     public float[] createArray(int numElements) {
         float[] a = new float[numElements];
         IntStream.range(0, numElements).sequential().forEach(i -> {
@@ -44,24 +50,80 @@ public class Resize {
 
     @Test
     public void testDynamicSize01() {
-        float[] a = createArray(4096);
+        float[] a = createArray(256);
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .streamIn(a) //
                 .task("t0", Resize::resize01, a) //
                 .streamOut(a); //
 
-        System.out.println("[APP] " + a);
         ts.execute();
-        // Resize A
-        a = createArray(128);
+        // Resize data
+        float[] b = createArray(512);
 
-        System.out.println("[APP] " + a);
+        // Update old reference for a new reference
+        ts.updateReference(a, b);
+        ts.execute();
+
+        for (float v : b) {
+            assertEquals(1.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testDynamicSize02() {
+        float[] a = createArray(256);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize01, a) //
+                .streamOut(a); //
+        ts.execute();
+
+        // Resize data
+        float[] b = createArray(512);
+
+        // Update old reference for a new reference
+        ts.updateReference(a, b);
+
+        ts.execute();
+        ts.execute();
+        ts.execute();
+        ts.execute();
+
+        // Update old reference for a new reference
+        float[] c = createArray(2048);
+        ts.updateReference(b, c);
+        ts.execute();
+
+        for (float v : c) {
+            assertEquals(1.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testDynamicSize03() {
+        float[] a = createArray(1024);
+        float[] b = createArray(1024);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize02, a, b) //
+                .streamOut(b); //
+        ts.execute();
+
+        // Resize data
+        float[] c = createArray(512);
+        float[] d = createArray(512);
+
+        // Update multiple references
+        ts.updateReference(a, c);
+        ts.updateReference(b, d);
 
         ts.execute();
 
-        for (float v : a) {
-            assertEquals(v, 1.0f, 0.001f);
+        for (float v : d) {
+            assertEquals(20.0f, v, 0.001f);
         }
     }
 }

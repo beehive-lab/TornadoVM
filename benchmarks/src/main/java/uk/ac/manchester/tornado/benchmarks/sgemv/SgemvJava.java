@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemv;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SgemvJava extends BenchmarkDriver {
@@ -64,7 +65,7 @@ public class SgemvJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         sgemv(m, n, a, x, y);
     }
 
@@ -74,8 +75,7 @@ public class SgemvJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
-
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 

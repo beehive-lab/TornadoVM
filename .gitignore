@@ -48,3 +48,4 @@ bin/sdk
 .idea/*
 *.factorypath
 .unittestingStatus
+*dependency-reduced-pom.xml

@@ -283,44 +283,6 @@ public class TestMath extends TornadoTestBase {
 
     }
 
-    @Ignore
-    public void testMathAcosDouble() {
-        final int size = 8192;
-        double[] data = new double[size];
-        double[] seq = new double[size];
-
-        IntStream.range(0, size).parallel().forEach(i -> {
-            data[i] = (float) Math.random();
-            seq[i] = data[i];
-        });
-
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", TestMath::testAcos, data).streamOut(data).execute();
-
-        testAcos(seq);
-        assertArrayEquals(data, seq, 0.01f);
-
-    }
-
-    @Test
-    public void testMathFloorDouble() {
-        final int size = 8192;
-        double[] data = new double[size];
-        double[] seq = new double[size];
-
-        IntStream.range(0, size).parallel().forEach(i -> {
-            data[i] = (float) Math.random();
-            seq[i] = data[i];
-        });
-
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", TestMath::testFloor, data).streamOut(data).execute();
-
-        testFloor(seq);
-        assertArrayEquals(data, seq, 0.01f);
-
-    }
-
     @Test
     public void testMathAbs() {
         final int size = 8192;

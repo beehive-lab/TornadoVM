@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.benchmarks.saxpy;
 
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SaxpyJava extends BenchmarkDriver {
@@ -53,7 +54,7 @@ public class SaxpyJava extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
         saxpy(alpha, x, y);
     }
 
@@ -63,8 +64,7 @@ public class SaxpyJava extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
-
+    public boolean validate(TornadoDevice device) {
         return true;
     }
 
