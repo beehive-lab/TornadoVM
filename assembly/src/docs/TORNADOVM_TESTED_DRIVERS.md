@@ -21,6 +21,7 @@
 
 The following drivers have been tested on Linux - CentOS 7.8
 
+* 20.24.17065: OK
 * 20.22.16952: OK
 * 20.21.16886: OK
 * 20.20.16837: OK
