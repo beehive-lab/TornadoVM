@@ -127,7 +127,7 @@ The output should be like this:
 
 ```OpenCL
 xclProbe found 1 FPGA slots with xocl driver running
-__kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
+__kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region)
 {
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
@@ -141,7 +141,7 @@ Initialization time:  1166006276 ns
 
 [DEBUG] JIT compilation for the FPGA
 __attribute__((reqd_work_group_size(64,1,1)))
-__kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
+__kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region)
 {
   int i_8, i_9, i_38, i_4, i_5, i_37;
   ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2;
@@ -213,7 +213,7 @@ INFO: Could not load AFI for data retention, code: 18 - Loading in classic mode.
 IOCTL DRM_IOCTL_XOCL_READ_AXLF Failed: 76
 ERROR: Failed to load xclbin.
 __attribute__((reqd_work_group_size(64,1,1)))
-__kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
+__kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region)
 {
   int i_8, i_9, i_38, i_4, i_5, i_37;
   ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2;
