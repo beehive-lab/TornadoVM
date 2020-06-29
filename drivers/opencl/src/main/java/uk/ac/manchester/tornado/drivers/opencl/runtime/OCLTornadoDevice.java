@@ -610,11 +610,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void markEvent() {
-        getDeviceContext().markEvent();
-    }
-
-    @Override
     public String getDeviceName() {
         return String.format("opencl-%d-%d", platformIndex, deviceIndex);
     }
