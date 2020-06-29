@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 public class OCLByteBuffer {
 
     protected ByteBuffer buffer;
-    protected long bufferOffset;
     protected long bytes;
 
     protected final OCLDeviceContext deviceContext;
@@ -284,10 +283,6 @@ public class OCLByteBuffer {
 
     public long toConstantAddress() {
         return deviceContext.getMemoryManager().toConstantAddress();
-    }
-
-    public long toPrivateAddress() {
-        return deviceContext.getMemoryManager().toPrivateAddress();
     }
 
     public long toRelativeAddress() {

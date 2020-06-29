@@ -45,7 +45,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private final OCLDeviceContext deviceContext;
     private long deviceHeapPointer;
     private long constantPointer;
-    private long privatePointer;
     private long heapLimit;
     private long heapPosition;
     private boolean initialised;
@@ -156,7 +155,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
         this.constantPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
-        this.privatePointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
     }
 
     public void init(OCLBackend backend, long address) {
@@ -185,10 +183,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     long toConstantAddress() {
         return constantPointer;
-    }
-
-    long toPrivateAddress() {
-        return privatePointer;
     }
 
     public long toRelativeAddress() {
