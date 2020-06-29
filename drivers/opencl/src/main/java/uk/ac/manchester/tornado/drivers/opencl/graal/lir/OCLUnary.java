@@ -165,7 +165,11 @@ public class OCLUnary {
 
         private boolean shouldEmitRelativeAddress(OCLCompilationResultBuilder crb) {
             OCLDeviceContext deviceContext = crb.getDeviceContext();
-            return needsBase || (!(base.memorySpace == OCLMemorySpace.LOCAL) && deviceContext.useRelativeAddresses());
+            return needsBase || (!notUsePointerIndexing() && deviceContext.useRelativeAddresses());
+        }
+
+        private boolean notUsePointerIndexing() {
+            return (base.memorySpace == OCLMemorySpace.PRIVATE || base.memorySpace == OCLMemorySpace.LOCAL);
         }
 
         @Override
