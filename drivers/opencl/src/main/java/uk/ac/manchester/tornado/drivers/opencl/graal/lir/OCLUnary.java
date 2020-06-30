@@ -34,7 +34,6 @@ import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
@@ -164,8 +163,11 @@ public class OCLUnary {
         }
 
         private boolean shouldEmitRelativeAddress(OCLCompilationResultBuilder crb) {
-            OCLDeviceContext deviceContext = crb.getDeviceContext();
-            return needsBase || (!(base.memorySpace == OCLMemorySpace.LOCAL) && deviceContext.useRelativeAddresses());
+            return needsBase || (!keepIntegerIndexing() && crb.getDeviceContext().useRelativeAddresses());
+        }
+
+        private boolean keepIntegerIndexing() {
+            return (base.memorySpace == OCLMemorySpace.PRIVATE || base.memorySpace == OCLMemorySpace.LOCAL);
         }
 
         @Override
