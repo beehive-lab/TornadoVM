@@ -21,6 +21,7 @@
 
 The following drivers have been tested on Linux - CentOS 7.8
 
+* 20.25.17111: OK
 * 20.24.17065: OK
 * 20.22.16952: OK
 * 20.21.16886: OK
@@ -80,12 +81,13 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
-* 440.82: OK
-* 440.64: OK
-* 440.59: OK
-* 440.40: OK
-* 440.36: OK 
-* 435.21: OK 
+* 440.100: OK
+* 440.82 : OK
+* 440.64 : OK
+* 440.59 : OK
+* 440.40 : OK
+* 440.36 : OK 
+* 435.21 : OK 
 
 ### AMD
 
