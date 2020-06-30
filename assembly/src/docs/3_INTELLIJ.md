@@ -1,8 +1,8 @@
 # Loading TornadoVM into IntelliJ
 
-**Tested with** IntelliJ IDEA 2018.3, 2018.2.2 and IntelliJ IDEA 2017.3.5
+**Tested with** IntelliJ IDEA 2020.1.2, 2018.3, 2018.2.2, and 2017.3.5
 
-## Intellij 
+## IntelliJ
 
 Download and install the latest IntelliJ IDEA Community Edition: [https://www.jetbrains.com/idea/download/](https://www.jetbrains.com/idea/download/)
 
