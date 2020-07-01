@@ -31,14 +31,13 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
     }
 
     private final Map<PTXKind, Set<VariableData>> variableTable;
-    private Map<String, Variable> paramAllocations;
+    private Map<PTXKind, Set<Variable>> paramTable;
 
-    public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder,
-                                  RegisterAllocationConfig registerAllocationConfig,
-                                  CallingConvention callingConvention) {
+    public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, CallingConvention callingConvention) {
         super(identifier, lir, frameMapBuilder, registerAllocationConfig, callingConvention);
 
         variableTable = new HashMap<>();
+        paramTable = new HashMap<>();
     }
 
     public int insertVariableAndGetIndex(Variable var, boolean isArray) {
@@ -53,11 +52,15 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         return variableTable;
     }
 
-    public Variable getVarForParam(PTXArchitecture.PTXParam param) {
-        return paramAllocations.get(param.getName());
+    public int insertParameterAndGetIndex(Variable var) {
+        guarantee(var.getPlatformKind() instanceof PTXKind, "invalid variable kind %s", var.getValueKind());
+        PTXKind kind = (PTXKind) var.getPlatformKind();
+
+        paramTable.computeIfAbsent(kind, k -> new HashSet<>()).add(var);
+        return paramTable.get(kind).size() - 1;
     }
 
-    public void setParameterAllocations(Map<String, Variable> parameterAllocations) {
-        paramAllocations = parameterAllocations;
+    public Map<PTXKind, Set<Variable>> getParamTable() {
+        return paramTable;
     }
 }

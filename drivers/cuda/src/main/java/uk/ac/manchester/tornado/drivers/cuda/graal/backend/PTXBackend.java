@@ -148,7 +148,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel, boolean isParallel) {
+            boolean isKernel, boolean isParallel, boolean includePrintf) {
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
@@ -156,6 +156,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);
+        crb.setIncludePrintf(includePrintf);
         return crb;
     }
 
@@ -177,10 +178,20 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
         if (crb.isKernel()) {
             emitPTXHeader(asm);
+            emitPrintfPrototype(crb);
             emitKernelFunction(asm, crb.compilationResult.getName());
+            emitParamVariableDefs(asm, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
         } else {
             unimplemented("Non-kernel function calls are not implemented id CUDA_PTX yet.");
+        }
+    }
+
+    private void emitPrintfPrototype(PTXCompilationResultBuilder crb) {
+        if (crb.getIncludePrintf()) {
+            PTXAssembler asm = crb.getAssembler();
+            asm.emitLine(PTXAssemblerConstants.VPRINTF_PROTOTYPE);
+            asm.emitLine("");
         }
     }
 
@@ -196,6 +207,18 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         asm.emitLine(headerFormat, PTXAssemblerConstants.TARGET_ARCH, device.getTargetArchitecture());
         asm.emitLine(headerFormat, PTXAssemblerConstants.ADDRESS_HEADER, arch.getWordSize() * 8);
         asm.emitLine("");
+    }
+
+    private void emitParamVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
+        Map<PTXKind, Set<Variable>> kindToVariable = lirGenRes.getParamTable();
+
+        for (PTXKind type : kindToVariable.keySet()) {
+            Set<Variable> vars = kindToVariable.get(type);
+            if (vars.size() != 0) {
+                asm.emitLine("\t.param .%s %sParam<%d>;", type, type.getRegisterTypeString(), vars.size() + 1);
+            }
+        }
+
     }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {

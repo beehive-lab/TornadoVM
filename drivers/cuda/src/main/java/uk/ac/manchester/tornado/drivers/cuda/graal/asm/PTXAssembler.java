@@ -44,10 +44,6 @@ public class PTXAssembler extends Assembler {
         this.lirGenRes = lirGenRes;
     }
 
-    public Variable getVarForParam(PTXParam param) {
-        return lirGenRes.getVarForParam(param);
-    }
-
     public void emitSymbol(String sym) {
         byte[] symBytes = sym.getBytes();
         if (convertTabToSpace) {
@@ -95,7 +91,7 @@ public class PTXAssembler extends Assembler {
         return result;
     }
 
-    private static String formatConstant(ConstantValue cv) {
+    public static String formatConstant(ConstantValue cv) {
         String result = "";
         JavaConstant javaConstant = cv.getJavaConstant();
         Constant constant = cv.getConstant();
@@ -232,6 +228,10 @@ public class PTXAssembler extends Assembler {
         eol();
     }
 
+    private static String encodeString(String str) {
+        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
+    }
+
     public void loopBreak() {
         emitLine("LOOP_BREAK");
     }
@@ -323,6 +323,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXNullaryOp ST = new PTXNullaryOp("st");
         public static final PTXNullaryOp STU = new PTXNullaryOp("stu");
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
+        public static final PTXNullaryOp CVTA = new PTXNullaryOp(CONVERT_ADDRESS);
 
         protected PTXNullaryOp(String opcode) {
             this(opcode, false);
@@ -571,7 +572,6 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXBinaryTemplate extends PTXBinaryOp {
-        // TODO: These need to be PTX
         public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", ".local .u8 %s[%s]");
 
         public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", ".shared .f32 %s[%s]");
@@ -581,6 +581,8 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", ".shared .s16 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".shared .u8 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", ".shared .s8 %s[%s]");
+
+        public static final PTXBinaryTemplate NEW_PRIVATE_BIT32_ARRAY = new PTXBinaryTemplate("local memory array bit 32", ".local .b32 %s[%s]");
 
         private final String template;
 

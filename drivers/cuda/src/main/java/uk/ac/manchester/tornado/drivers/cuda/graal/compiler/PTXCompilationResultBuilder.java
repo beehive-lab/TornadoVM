@@ -31,6 +31,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private PTXAssembler asm;
     private CUDADeviceContext deviceContext;
+    private boolean includePrintf;
 
     public PTXCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OptionValues options, CompilationResult compilationResult) {
@@ -50,6 +51,14 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
     public void setParallel(boolean value) {
         isParallel = value;
+    }
+
+    public void setIncludePrintf(boolean value) {
+        this.includePrintf = value;
+    }
+
+    public boolean getIncludePrintf() {
+        return includePrintf;
     }
 
     public boolean getParallel() {

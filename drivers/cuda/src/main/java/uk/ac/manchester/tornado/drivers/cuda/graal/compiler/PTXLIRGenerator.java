@@ -38,17 +38,10 @@ public class PTXLIRGenerator extends LIRGenerator {
     private final Map<String, Variable> parameterAllocations;
 
     public PTXLIRGenerator(Providers providers, LIRGenerationResult lirGenRes) {
-        super(
-                new PTXLIRKindTool((CUDATargetDescription) providers.getCodeCache().getTarget()),
-                new PTXArithmeticTool(),
-                new PTXMoveFactory(),
-                providers,
-                lirGenRes
-        );
+        super(new PTXLIRKindTool((CUDATargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new PTXMoveFactory(), providers, lirGenRes);
 
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
-        ((PTXLIRGenerationResult)lirGenRes).setParameterAllocations(parameterAllocations);
         ptxBuiltinTool = new PTXBuiltinTool();
     }
 
@@ -137,15 +130,15 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue,
-                                            Value trueValue, Value falseValue) {
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
         unimplemented();
         return null;
     }
 
     @Override
     public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
@@ -160,7 +153,8 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitAddress(AllocatableValue stackslot) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
@@ -197,30 +191,23 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination, double trueDestinationProbability) {
+    public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
+            double trueDestinationProbability) {
         unimplemented();
     }
 
     @Override
-    public void emitOverflowCheckBranch(LabelRef overflow, LabelRef noOverflow, LIRKind cmpKind,
-                                        double overflowProbability) {
+    public void emitOverflowCheckBranch(LabelRef overflow, LabelRef noOverflow, LIRKind cmpKind, double overflowProbability) {
         unimplemented();
     }
 
     @Override
-    public void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination,
-                                      double trueSuccessorProbability) {
+    public void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
         unimplemented();
     }
 
     @Override
-    public Variable emitConditionalMove(PlatformKind cmpKind,
-                                        Value left,
-                                        Value right,
-                                        Condition cond,
-                                        boolean unorderedIsTrue,
-                                        Value trueValue,
-                                        Value falseValue) {
+    public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
         trace("emitConditionalMove?");
 
         LIRKind kind = LIRKind.combine(trueValue, falseValue);
@@ -228,7 +215,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         Variable result = newVariable(kind);
 
         append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(getConditionalOp(cond), kind, left, right)));
-        append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind,trueValue, falseValue, predicate)));
+        append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind, trueValue, falseValue, predicate)));
 
         return result;
     }
@@ -264,30 +251,22 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitIntegerTestMove(Value leftVal, Value right, Value trueValue, Value falseValue) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
-    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value result, Value[] arguments, Value[] temps,
-                                     LIRFrameState info) {
+    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
         unimplemented();
     }
 
     @Override
-    public void emitStrategySwitch(SwitchStrategy strategy,
-                                   Variable key,
-                                   LabelRef[] keyTargets,
-                                   LabelRef defaultTarget) {
+    public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
         LIRKind kind = LIRKind.value(PTXKind.PRED);
         Variable predicate = newVariable(kind);
         Constant[] constants = strategy.getKeyConstants();
         for (int i = 0; i < keyTargets.length; i++) {
-            append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(
-                    PTXBinaryOp.SETP_EQ,
-                    kind,
-                    key,
-                    new ConstantValue(LIRKind.value(PTXKind.S32), constants[i])
-            )));
+            append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, key, new ConstantValue(LIRKind.value(PTXKind.S32), constants[i]))));
             emitConditionalBranch(keyTargets[i], predicate, false, false);
         }
         append(new PTXControlFlow.Branch(defaultTarget, false, false));
@@ -295,12 +274,14 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitByteSwap(Value operand) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
     public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
@@ -320,17 +301,20 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     protected JavaConstant zapValueForKind(PlatformKind kind) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
     public StandardOp.ZapRegistersOp createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     @Override
     public LIRInstruction createZapArgumentSpace(StackSlot[] zappedStack, JavaConstant[] zapValues) {
-        unimplemented(); return null;
+        unimplemented();
+        return null;
     }
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
@@ -360,6 +344,26 @@ public class PTXLIRGenerator extends LIRGenerator {
         return var;
     }
 
+    public Variable newParamVariable(ValueKind<?> lirKind) {
+        PlatformKind pk = lirKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = lirKind;
+        PTXKind kind = PTXKind.ILLEGAL;
+        if (pk instanceof PTXKind) {
+            kind = (PTXKind) pk;
+        } else {
+            shouldNotReachHere();
+        }
+
+        final Variable var = super.newVariable(actualLIRKind);
+        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+
+        PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
+        int indexForType = res.insertParameterAndGetIndex(var);
+        var.setName(kind.getRegisterTypeString() + "Param" + indexForType);
+
+        return var;
+    }
+
     @Override
     public Variable newVariable(ValueKind<?> lirKind) {
         return newVariable(lirKind, false);
@@ -370,13 +374,6 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public void emitParameterAlloc() {
-//        Variable heapPointer = newVariable(LIRKind.value(PTXArchitecture.HEAP_POINTER.ptxKind));
-//        parameterAllocations.put(PTXArchitecture.HEAP_POINTER.getName(), heapPointer);
-//        append(new PTXLIRStmt.LoadStmt(
-//                new PTXUnary.MemoryAccess(PTXAssemblerConstants.HEAP_PTR_NAME),
-//                heapPointer
-//        ));
-
         Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));

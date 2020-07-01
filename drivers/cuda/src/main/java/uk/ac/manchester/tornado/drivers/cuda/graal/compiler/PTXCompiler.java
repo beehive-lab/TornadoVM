@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
@@ -85,10 +86,11 @@ public class PTXCompiler {
         public final boolean isKernel;
         public final boolean buildGraph;
         public final long batchThreads;
+        public final boolean includePrintf;
 
         private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads) {
+                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads, boolean includePrintf) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
             this.args = args;
@@ -105,6 +107,7 @@ public class PTXCompiler {
             this.isKernel = isKernel;
             this.buildGraph = buildGraph;
             this.batchThreads = batchThreads;
+            this.includePrintf = includePrintf;
         }
 
         public PTXCompilationResult execute() {
@@ -128,13 +131,14 @@ public class PTXCompiler {
             private boolean isKernel;
             private boolean buildGraph;
             private long batchThreads;
+            private boolean includePrintf;
 
             private PTXCompilationRequestBuilder() {
             }
 
             public PTXCompilationRequest build() {
                 return new PTXCompilationRequest(graph, codeOwner, args, meta, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
-                        isKernel, buildGraph, batchThreads);
+                        isKernel, buildGraph, batchThreads, includePrintf);
             }
 
             public static PTXCompilationRequestBuilder getInstance() {
@@ -220,6 +224,11 @@ public class PTXCompiler {
                 this.batchThreads = batchThreads;
                 return this;
             }
+
+            public PTXCompilationRequestBuilder includePrintf(boolean includePrintf) {
+                this.includePrintf = includePrintf;
+                return this;
+            }
         }
     }
 
@@ -256,7 +265,7 @@ public class PTXCompiler {
     private static void emitCode(PTXCompilationRequest r, LIRGenerationResult lirGenRes, boolean isParallel) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel);
+            final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel, r.includePrintf);
             r.backend.emitCode(crb, ((PTXLIRGenerationResult) lirGenRes));
 
             Assumptions assumptions = r.graph.getAssumptions();
@@ -385,12 +394,13 @@ public class PTXCompiler {
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
+        boolean includePrintf = kernelGraph.hasNode(PrintfNode.TYPE);
 
         final PTXSuitesProvider suitesProvider = (PTXSuitesProvider) providers.getSuitesProvider();
         PTXCompilationRequest kernelCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(kernelGraph).withCodeOwner(resolvedMethod).withArgs(args)
                 .withMetaData(taskMeta).withProviders(providers).withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts)
                 .withProfilingInfo(profilingInfo).withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(kernelCompResult).withResultBuilderFactory(factory)
-                .isKernel(true).buildGraph(true).withBatchThreads(batchThreads).build();
+                .isKernel(true).buildGraph(true).includePrintf(includePrintf).withBatchThreads(batchThreads).build();
 
         kernelCompilationRequest.execute();
 
@@ -411,7 +421,7 @@ public class PTXCompiler {
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph).withCodeOwner(currentMethod).withProviders(providers)
                     .withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts).withProfilingInfo(profilingInfo)
                     .withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(compResult).withResultBuilderFactory(factory).isKernel(false).buildGraph(false)
-                    .withBatchThreads(0).build();
+                    .includePrintf(false).withBatchThreads(0).build();
 
             methodCompilationRequest.execute();
             worklist.addAll(compResult.getNonInlinedMethods());

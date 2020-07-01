@@ -101,7 +101,7 @@ public class PTXUnary {
             this.base = base;
         }
 
-        MemoryAccess(PTXMemoryBase base, Value value, Value index) {
+        public MemoryAccess(PTXMemoryBase base, Value value, Value index) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
             this.index = index;
@@ -115,6 +115,7 @@ public class PTXUnary {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
+            //@formatter:off
             if (isLocalOrSharedMemoryAccess()) {
                 if (value != null) asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
@@ -129,9 +130,11 @@ public class PTXUnary {
                 }
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             }
+            //@formatter:on
         }
 
         public void emit(PTXAssembler asm, int index) {
+            //@formatter:off
             if (isLocalOrSharedMemoryAccess()) {
                 if (value != null) asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
@@ -145,6 +148,7 @@ public class PTXUnary {
                 }
             }
             asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
+            //@formatter:on
         }
 
         private boolean isLocalOrSharedMemoryAccess() {

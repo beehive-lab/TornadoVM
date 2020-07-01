@@ -6,6 +6,9 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
+
+import java.nio.charset.StandardCharsets;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
 
@@ -44,16 +47,14 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (rhs instanceof PTXLIROp) {
                 ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
-            }
-            else {
+            } else {
                 PTXKind lhsKind = (PTXKind) lhs.getPlatformKind();
                 PTXKind rhsKind = (PTXKind) rhs.getPlatformKind();
 
                 asm.emitSymbol(TAB);
                 if (lhsKind == rhsKind) {
                     asm.emit(MOVE + "." + lhsKind.toString());
-                }
-                else {
+                } else {
                     asm.emit(CONVERT + ".");
                     if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
                         asm.emit(getFPURoundingMode(lhsKind, rhsKind));
@@ -90,6 +91,42 @@ public class PTXLIRStmt {
 
         public Value getExpr() {
             return rhs;
+        }
+    }
+
+    @Opcode("CONVERT_ADDRESS")
+    public static class ConvertAddressStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<ConvertAddressStmt> TYPE = LIRInstructionClass.create(ConvertAddressStmt.class);
+
+        @Use
+        private final Value src;
+        @Use
+        private final Value dest;
+        @Use
+        private final PTXMemorySpace srcMemorySpace;
+
+        public ConvertAddressStmt(Value dest, Value src, PTXMemorySpace srcMemorySpace) {
+            super(TYPE);
+            this.src = src;
+            this.dest = dest;
+            this.srcMemorySpace = srcMemorySpace;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            PTXKind destKind = (PTXKind) dest.getPlatformKind();
+
+            PTXNullaryOp.CVTA.emit(crb, null);
+            asm.emitSymbol(DOT);
+            asm.emitSymbol(srcMemorySpace.name());
+            asm.emitSymbol(DOT);
+            asm.emitSymbol(destKind.is64Bit() ? PTXKind.U64.toString() : PTXKind.U32.toString());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA + SPACE);
+            asm.emitValue(src);
+            asm.emitSymbol(STMT_DELIMITER);
+            asm.eol();
         }
     }
 
@@ -145,7 +182,7 @@ public class PTXLIRStmt {
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            //ld.u64 	%rd9, [%rd8];
+            // ld.u64 %rd9, [%rd8];
             loadOp.emit(crb, null);
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.name());
@@ -234,7 +271,7 @@ public class PTXLIRStmt {
         }
 
         public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            // st.global.u32 		[%rd19], %r10;
+            // st.global.u32 [%rd19], %r10;
             PTXNullaryOp.ST.emit(crb, null);
             asm.emitSymbol(DOT);
             asm.emit(address.getBase().memorySpace.name());
@@ -324,22 +361,72 @@ public class PTXLIRStmt {
         @Use
         private final boolean isNegated;
 
-
         public ConditionalStatement(AbstractInstruction instr, Variable guard, boolean isNegated) {
             super(TYPE);
             this.instruction = instr;
             this.guard = guard;
             this.isNegated = isNegated;
         }
+
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
             asm.emitSymbol(OP_GUARD);
-            if (isNegated) asm.emitSymbol(NEGATION);
+            if (isNegated)
+                asm.emitSymbol(NEGATION);
             asm.emitValue(guard);
 
             asm.convertNextTabToSpace();
             instruction.emitCode(crb, asm);
+        }
+    }
+
+    @Opcode("PRINTF_STRING_STMT")
+    public static class PrintfStringDeclarationStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<PrintfStringDeclarationStmt> TYPE = LIRInstructionClass.create(PrintfStringDeclarationStmt.class);
+
+        @Use
+        private final Value stringValue;
+
+        @Use
+        private final Value dest;
+
+        public PrintfStringDeclarationStmt(Value dest, Value stringValue) {
+            super(TYPE);
+            this.dest = dest;
+            this.stringValue = stringValue;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            String string = PTXAssembler.formatConstant((ConstantValue) stringValue);
+            string = "tornado[%u, %u, %u]> " + string;
+            byte[] asciiBytes = string.getBytes(StandardCharsets.US_ASCII);
+            {
+                // Replace "\n" (0x5C 0x6E) with NL (0xA) and NULL (0x0) characters
+                byte first = asciiBytes[asciiBytes.length - 2];
+                byte second = asciiBytes[asciiBytes.length - 1];
+                if (first == 0x5C && second == 0x6E) {
+                    asciiBytes[asciiBytes.length - 2] = 0xA;
+                    asciiBytes[asciiBytes.length - 1] = 0x0;
+                }
+            }
+
+            asm.emitSymbol(TAB);
+            asm.emitSymbol(DOT + GLOBAL_MEM_MODIFIER + SPACE);
+            asm.emitSymbol(DOT + dest.getPlatformKind().toString());
+            asm.emitSymbol(SPACE);
+            asm.emitValue(dest);
+            asm.emitSymbol(SQUARE_BRACKETS_OPEN + asciiBytes.length + SQUARE_BRACKETS_CLOSE);
+            asm.emitSymbol(SPACE + ASSIGN + SPACE);
+            asm.emitSymbol(CURLY_BRACKETS_OPEN);
+            for (int i = 0; i < asciiBytes.length - 1; i++) {
+                asm.emitSymbol(asciiBytes[i] + COMMA + SPACE);
+            }
+            asm.emitSymbol(asciiBytes[asciiBytes.length - 1] + CURLY_BRACKETS_CLOSE);
+            asm.emitSymbol(STMT_DELIMITER);
+            asm.eol();
         }
     }
 }

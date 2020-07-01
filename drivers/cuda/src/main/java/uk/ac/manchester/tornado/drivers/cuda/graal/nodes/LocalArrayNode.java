@@ -12,8 +12,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
-import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
@@ -31,26 +30,25 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
     @Input
     protected ConstantNode length;
 
-    protected PTXKind elementKind;
     protected PTXMemoryBase memoryRegister;
-    protected ResolvedJavaType elemenType;
     protected PTXBinaryTemplate arrayTemplate;
 
     public LocalArrayNode(PTXMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.elemenType = elementType;
-        this.elementKind = PTXKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = PTXKind.resolveTemplateType(elementType);
+    }
+
+    public LocalArrayNode(PTXMemoryBase memoryRegister, PTXKind ptxKind, PTXBinaryTemplate arrayTemplate, ConstantNode length) {
+        super(TYPE, PTXStampFactory.getStampFor(ptxKind));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.arrayTemplate = arrayTemplate;
     }
 
     public PTXMemoryBase getMemoryRegister() {
         return memoryRegister;
-    }
-
-    public ResolvedJavaType getElementType() {
-        return elemenType;
     }
 
     public ConstantNode getLength() {

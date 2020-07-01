@@ -2,10 +2,13 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.asm;
 
 public class PTXAssemblerConstants {
 
+    public static String VPRINTF_PROTOTYPE = ".extern .func (.param .b32 status) vprintf (.param .b64 format, .param .b64 valist);";
+
     public static final String REG = "reg";
     public static final String VECTOR = "v";
 
     public static final String CONVERT = "cvt";
+    public static final String CONVERT_ADDRESS = "cvta";
     public static final String MOVE = "mov";
 
     public static final String HEAP_PTR_NAME = "heap_pointer";
@@ -35,6 +38,7 @@ public class PTXAssemblerConstants {
     public static final String OP_GUARD = "@";
     public static final String NEGATION = "!";
     public static final String SPACE = " ";
+    public static final String ASSIGN = "=";
 
     public static final String SQUARE_BRACKETS_OPEN = "[";
     public static final String SQUARE_BRACKETS_CLOSE = "]";

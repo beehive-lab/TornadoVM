@@ -39,16 +39,13 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
         LIRKind kind = tool.getLIRKind(stamp);
         PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;
 
-        PTXBuiltInRegisterArray builtIns = new PTXBuiltInRegisterArray(((ConstantValue)gen.operand(index)).getJavaConstant().asInt());
-        Variable threadID =  ptxNodeBuilder.getBuiltInAllocation(builtIns.threadID);
+        PTXBuiltInRegisterArray builtIns = new PTXBuiltInRegisterArray(((ConstantValue) gen.operand(index)).getJavaConstant().asInt());
+        Variable threadID = ptxNodeBuilder.getBuiltInAllocation(builtIns.threadID);
         Variable blockDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockDim);
         Variable blockID = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockID);
         Variable result = tool.newVariable(kind);
 
-        tool.append(new PTXLIRStmt.AssignStmt(
-                result,
-                new PTXTernary.Expr(PTXTernaryOp.MAD_LO, kind, blockID, blockDim, threadID)
-        ));
+        tool.append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXTernaryOp.MAD_LO, kind, blockID, blockDim, threadID)));
         gen.setResult(this, result);
     }
 }
