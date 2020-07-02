@@ -103,7 +103,7 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
         this(matrix.length, matrix[0].length, matrix[0][0].length, StorageFormats.toRowMajor3D(matrix));
     }
 
-    public float[] getFlattenMatrix() {
+    public float[] getFlattenedMatrix() {
         return storage;
     }
 

@@ -98,7 +98,7 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
 
-    public int[] getFlattenMatrix() {
+    public int[] getFlattenedMatrix() {
         return storage;
     }
 

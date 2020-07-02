@@ -99,7 +99,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
 
-    public double[] getFlattenMatrix() {
+    public double[] getFlattenedMatrix() {
         return storage;
     }
 
