@@ -63,3 +63,9 @@ It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time,
 * `-Dtornado.opencl.compiler.options=LIST_OF_OPTIONS`:  
 It allows to pass the compile options specified by the OpenCL ``CLBuildProgram`` [specification](https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html) to TornadoVM at runtime. By default it doesn't enable any. 
 
+
+##### Optimizations
+
+* `-Dtornado.enable.fma=True`:  
+It enables Fused-Multiply-Add optimizations. This option is enabled bu default. However, for some platforms, such as Xilinx with OpenCL 1.0, this option must be disabled. 
+

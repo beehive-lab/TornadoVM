@@ -74,6 +74,11 @@ public class TornadoOptions {
     public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
 
     /**
+     * Enable/Disable FMA Optimizations. True by default.
+     */
+    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      * 
      * @return boolean.
