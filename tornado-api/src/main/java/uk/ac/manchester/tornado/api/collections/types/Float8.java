@@ -87,10 +87,6 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return storage;
     }
 
-    public float[] getStorage() {
-        return storage;
-    }
-
     public float get(int index) {
         return storage[index];
     }
