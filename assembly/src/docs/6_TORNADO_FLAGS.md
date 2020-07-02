@@ -67,5 +67,5 @@ It allows to pass the compile options specified by the OpenCL ``CLBuildProgram``
 ##### Optimizations
 
 * `-Dtornado.enable.fma=True`:  
-It enables Fused-Multiply-Add optimizations. This option is enabled bu default. However, for some platforms, such as Xilinx with OpenCL 1.0, this option must be disabled. 
+It enables Fused-Multiply-Add optimizations. This option is enabled by default. However, for some platforms, such as the Xilinx FPGA using SDAccel 2018.2 and OpenCL 1.0, this option must be disabled as it causes runtime errors. See issue on [Github](https://github.com/beehive-lab/TornadoVM/issues/24).
 
