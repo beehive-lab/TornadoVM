@@ -41,70 +41,47 @@ The TornadoVM API only provides two Java annotations (`@Parallel` and `@Reduce`)
 No, TornadoVM supports a subset of the Java programming language.
 A list of unsupported features along with the reasoning behind it can be found [here](Unsupported.md).
 
-## 6. How does TornadoVM compare to APARAPI and IBM J9?
-
-Although TornadoVM shares some similarities with APARAPI and IBM J9, it has a number of key advantages which are listed below:
-
-#### Aparapi
-Aparapi is a direct translation from Java bytecodes to OpenCL. To do so, Aparapi provides a compiler and a runtime system to automatically handle data and execute the generated OpenCL Kernel.
-
-#### IBM J9
-IBM J9 accelerates the `forEach` method within the Java Stream API to run on NVIDIA GPUs by offloading Java code to NVIDIA PTX. IBM J9 also provides pre-compiled CUDA kernels for some common operations, such as sorting.
-
-
-#### TornadoVM
-
-TornadoVM also compiles from Java bytecodes to OpenCL. But additionally, it optimizes and specializes the code by interleaving Graal compiler optimizations, such as partial escape analysis, canonicalization, loop unrolling, constant propagation, etc) with GPU/CPU/FPGA specific optimizations (e.g., parallel loop exploration, automatic use of local memory, parallel skeletons exploration such as reductions). TornadoVM generates different OpenCL code depending on the target device, which means that the code generated for GPUs is different for FPGAs and multi-cores. This is because although OpenCL is portable across devices, its performance is not. TornadoVM addresses this challenge by applying compiler specializations tailored to each device.
-
-Additionally, TornadoVM performs live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows that the new device offers better performance. As far as we know, this is not available in Aparapi (in which device selection is static). With the task-migration, the TornadoVM's approach is to only switch device if it detects applications can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select the heterogeneous hardware. Otherwise it will stay on the CPU using the default compilers (C2 or Graal).
-
-Some references:
-* Compiler specializations: [https://dl.acm.org/doi/10.1145/3237009.3237016](https://dl.acm.org/doi/10.1145/3237009.3237016)
-* Parallel skeletons: [https://dl.acm.org/doi/10.1145/3281287.3281292](https://dl.acm.org/doi/10.1145/3281287.3281292)
-* Live task-migration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
-
-
-## 7. Can TornadoVM degrade the performance of my application?
+## 6. Can TornadoVM degrade the performance of my application?
 
 No, TornadoVM can only increase the performance of your application because it can dynamically change the execution of a program at runtime onto another device.
 If a particular code segment cannot be accelerated, then execution falls back to the host JVM which will execute your code on the CPU as it would normally do.
 
 Also with the **Dynamic Reconfiguration**, TornadoVM discovers the fastest possible device for a particular code segment completely transparently to the user.
 
-## 8. Dynamic Reconfiguration? What is this?
+## 7. Dynamic Reconfiguration? What is this?
 
 It is a novel feature of TornadoVM, in which the user selects a metric on which the system decides how to map a specific computation on a particular device.
 Further details and instructions on how to enable this feature can be found here:
 
 * Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
 
-## 9. Is TornadoVM supported by a company?
+## 8. Is TornadoVM supported by a company?
 
 No, TornadoVM has been developed in the Beehive-Lab of the Advanced Processor Technology Group ([APT](http://apt.cs.manchester.ac.uk/)) at The University of Manchester.
 
 
-## 10. Does TornadoVM support only OpenCL devices?
+## 9. Does TornadoVM support only OpenCL devices?
 
 Currently, yes. However, due to its decoupled software architecture, we are adding support for other back-ends as well. Therefore users can decide which one to use.
 
-## 11. Why is it called a VM?
+## 10. Why is it called a VM?
 
 The VM name is used because TornadoVM implements its own set of bytecodes for handling heterogeneous execution. These bytecodes are used for handling JIT compilation, device exploration, data management and live task-migration for heterogeneous devices (multi-core CPUs, GPUs, and FPGAs). We sometimes refer to a VM inside a VM (nested VM). The main VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 
 You can find more information here: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
 
 
-## 12. How it interacts with OpenJDK?
+## 11. How it interacts with OpenJDK?
 
 TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C at runtime. As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes a new backend for OpenCL C code generation). 
 
-## 13. How do I know which parts of my application are suitable for acceleration?
+## 12. How do I know which parts of my application are suitable for acceleration?
 Workloads with for-loops that do not have dependencies between iterations are very good candidates to offload on accelerators. Examples of this pattern are NBody computation, Black-scholes, DFT, KMeans, etc. 
 
 Besides, matrix-type applications are good candidates, such as matrix-multiplication widely used in machine and deep learning. 
 
 
-## 14. How can I contribute to TornadoVM?
+## 13. How can I contribute to TornadoVM?
 
 TornadoVM is an open-source project, and, as such, we welcome contributions.
 
@@ -119,13 +96,7 @@ TornadoVM is an open-source project, and, as such, we welcome contributions.
     
 [Here](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTIONS.md) you can find more information about how to contribute, code conventions, and tasks.
 
-
-## 15. Is it possible to generate code other than OpenCL at the backend?
-
-Yes. Currently TornadoVM generates OpenCL. However, it is possible to generate other type of code, such as CUDA PTX, SPIR or HSAIL. The way to do this is by implementing a new backend (that includes the code generation) and plug it in to the TornadoVM runtime. 
-
 	
-## 16. Does TornadoVM supports calls to standard Java libraries?
+## 14. Does TornadoVM supports calls to standard Java libraries?
 
 Partially yes. TornadoVM currently supports calls to the Math library. However, invocations that imply I/O are not supported.
-
