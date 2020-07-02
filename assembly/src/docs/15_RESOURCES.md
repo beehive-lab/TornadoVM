@@ -13,9 +13,13 @@
 
 * TornadoVM Slides @ QConLondon 2020: [link](https://github.com/jjfumero/jjfumero.github.io/blob/master/files/QCON2020-TornadoVM.pdf)
 * TornadoVM Slides @ JokerConf<?> 2019: [link](https://github.com/jjfumero/jjfumero.github.io/blob/master/files/JVMLS2019-TornadoVM.pdf)
+* TornadoVM Slides @ JVMLS 2019: [link](https://github.com/jjfumero/jjfumero.github.io/blob/master/files/JVMLS2019-TornadoVM.pdf)
 
 
 ## Articles
+
+- Article by Juan Fumero, [TornadoVM: Accelerating Java with GPUs and FPGAs](https://www.infoq.com/articles/tornadovm-java-gpu-fpga/), InfoQ, 13/06/2020.
+
 - Article by C. Swan, [TornadoVM: Running Java on GPUs and FPGAs](https://www.infoq.com/news/2020/03/TornadoVM-QCon-London/), InfoQ, 08/03/2020.
 
 - F. Blanaru, J. Fumero, C.Kotselidis, [Towards a unified VM for hardware acceleration of managed languages](https://e2data.eu/blog/towards-a-unified-vm-for-hardware-acceleration-of-managed-languages), E2DATA, 20/02/2020.
