@@ -29,7 +29,6 @@ For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_IN
 
 * Settings -> General -> Code Editing -> Formatting -> Imports optimization
 * Settings -> Code Style -> Java -> "Use single class import"
-* Settings -> Code Style -> Java -> "Use fully qualified names"
 * Settings -> Other Settings -> Save Actions -> Formatting Actions -> Optimize Imports
 * Settings -> Other Settings -> Save Actions -> Formatting Actions -> Reformat File
 
