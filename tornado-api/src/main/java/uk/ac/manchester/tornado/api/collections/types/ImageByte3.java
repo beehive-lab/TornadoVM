@@ -41,12 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.ByteBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.Byte3.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.ByteOps.fmt3;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
 import java.nio.ByteBuffer;
 
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
@@ -75,11 +69,11 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
-     * @param data
+     * @param height
+     *            number of columns
+     * @param array
      *            array reference which contains data
      */
     public ImageByte3(int width, int height, byte[] array) {
@@ -92,17 +86,21 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
+     * @param height
+     *            number of columns
      */
     public ImageByte3(int width, int height) {
         this(width, height, new byte[width * height * elementSize]);
     }
 
     public ImageByte3(byte[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
+        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+    }
+
+    public byte[] getArray() {
+        return storage;
     }
 
     private int toIndex(int x, int y) {
@@ -119,7 +117,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     public Byte3 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return loadFromArray(storage, offset);
+        return Byte3.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Byte3 value) {
@@ -155,20 +153,18 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     public String toString(String fmt) {
         String str = "";
-
         for (int i = 0; i < Y; i++) {
             for (int j = 0; j < X; j++) {
                 str += get(j, i).toString(fmt) + "\n";
             }
         }
-
         return str;
     }
 
     public String toString() {
-        String result = format("ImageByte3 <%d x %d>", X, Y);
+        String result = String.format("ImageByte3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(fmt3);
+            result += "\n" + toString(ByteOps.fmt3);
         }
         return result;
     }
@@ -180,7 +176,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return wrap(storage);
+        return ByteBuffer.wrap(storage);
     }
 
     @Override

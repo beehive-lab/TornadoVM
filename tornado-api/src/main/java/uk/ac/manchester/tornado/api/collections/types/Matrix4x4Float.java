@@ -41,16 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.Float4.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt4m;
-
 import java.nio.FloatBuffer;
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
@@ -83,6 +73,10 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         storage = array;
     }
 
+    public float[] getFlattenMatrix() {
+        return storage;
+    }
+
     private int toIndex(int i, int j) {
         return j + (i * N);
     }
@@ -102,7 +96,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      *            row index
      * @param j
      *            col index
-     * @return
+     * @return float
      */
     public float get(int i, int j) {
         return storage[toIndex(i, j)];
@@ -115,7 +109,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      *            row index
      * @param j
      *            col index
-     * @return
+     * @return float
      */
     public void set(int i, int j, float value) {
         storage[toIndex(i, j)] = value;
@@ -124,7 +118,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     /**
      * Returns the number of rows in this matrix
      * 
-     * @return
+     * @return int
      */
     public int M() {
         return M;
@@ -133,7 +127,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     /**
      * Returns the number of columns in the matrix
      * 
-     * @return
+     * @return int
      */
     public int N() {
         return N;
@@ -141,7 +135,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     public Float4 row(int row) {
         int offset = M * row;
-        return loadFromArray(storage, offset);
+        return Float4.loadFromArray(storage, offset);
     }
 
     public Float4 column(int col) {
@@ -183,8 +177,8 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString() {
-        String result = format("MatrixFloat <%d x %d>", M, N);
-        result += "\n" + toString(fmt4m);
+        String result = String.format("MatrixFloat <%d x %d>", M, N);
+        result += "\n" + toString(FloatOps.fmt4m);
         return result;
     }
 
@@ -206,7 +200,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -215,8 +209,8 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public FloatingPointError calculateULP(Matrix4x4Float ref) {
-        float maxULP = MIN_VALUE;
-        float minULP = MAX_VALUE;
+        float maxULP = Float.MIN_VALUE;
+        float minULP = Float.MAX_VALUE;
         float averageULP = 0f;
 
         /*
@@ -231,10 +225,10 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
                 final float v = get(i, j);
                 final float r = ref.get(i, j);
 
-                final float ulpFactor = findMaxULP(v, r);
+                final float ulpFactor = FloatOps.findMaxULP(v, r);
                 averageULP += ulpFactor;
-                minULP = min(ulpFactor, minULP);
-                maxULP = max(ulpFactor, maxULP);
+                minULP = Math.min(ulpFactor, minULP);
+                maxULP = Math.max(ulpFactor, maxULP);
 
             }
         }

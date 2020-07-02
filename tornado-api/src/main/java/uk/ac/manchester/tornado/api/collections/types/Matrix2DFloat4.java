@@ -73,11 +73,11 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
-     * @param data
+     * @param array
      *            array reference which contains data
      */
     public Matrix2DFloat4(int width, int height, float[] array) {
@@ -90,13 +90,17 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
      */
     public Matrix2DFloat4(int width, int height) {
         this(width, height, new float[width * height * VECTOR_ELEMENTS]);
+    }
+
+    public float[] getFlattenMatrix() {
+        return storage;
     }
 
     public Float4 get(int i, int j) {
@@ -163,7 +167,7 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Transposes the matrix in-place
      * 
-     * @param m
+     * @param matrix
      *            matrix to transpose
      */
     public static void transpose(Matrix2DFloat4 matrix) {

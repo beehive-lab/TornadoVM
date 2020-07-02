@@ -41,14 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Math.min;
-import static java.lang.String.format;
-import static java.nio.DoubleBuffer.wrap;
-import static java.util.Arrays.copyOfRange;
-import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 
 public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
@@ -74,11 +68,11 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
-     * @param data
+     * @param height
+     *            number of columns
+     * @param array
      *            array reference which contains data
      */
     public Matrix2DDouble(int width, int height, double[] array) {
@@ -91,25 +85,30 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
+     * @param height
+     *            number of columns
+     * 
      */
     public Matrix2DDouble(int width, int height) {
         this(width, height, new double[width * height]);
     }
 
     public Matrix2DDouble(double[][] matrix) {
-        this(matrix.length, matrix[0].length, toRowMajor(matrix));
+        this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
+    }
+
+    public double[] getFlattenMatrix() {
+        return storage;
     }
 
     public double get(int i, int j) {
-        return storage[toRowMajor(i, j, M)];
+        return storage[StorageFormats.toRowMajor(i, j, M)];
     }
 
     public void set(int i, int j, double value) {
-        storage[toRowMajor(i, j, M)] = value;
+        storage[StorageFormats.toRowMajor(i, j, M)] = value;
     }
 
     public int M() {
@@ -121,12 +120,12 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public VectorDouble row(int row) {
-        int index = toRowMajor(row, 0, N);
-        return new VectorDouble(N, copyOfRange(storage, index, N));
+        int index = StorageFormats.toRowMajor(row, 0, N);
+        return new VectorDouble(N, Arrays.copyOfRange(storage, index, N));
     }
 
     public VectorDouble column(int col) {
-        int index = toRowMajor(0, col, N);
+        int index = StorageFormats.toRowMajor(0, col, N);
         final VectorDouble v = new VectorDouble(M);
         for (int i = 0; i < M; i++) {
             v.set(i, storage[index + (i * N)]);
@@ -135,7 +134,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public VectorDouble diag() {
-        final VectorDouble v = new VectorDouble(min(M, N));
+        final VectorDouble v = new VectorDouble(Math.min(M, N));
         for (int i = 0; i < M; i++) {
             v.set(i, storage[i * (N + 1)]);
         }
@@ -163,7 +162,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Transposes the matrix in-place
      * 
-     * @param m
+     * @param matrix
      *            matrix to transpose
      */
     public static void transpose(Matrix2DDouble matrix) {
@@ -195,7 +194,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
         String str = "";
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                str += format(fmt, get(i, j)) + " ";
+                str += String.format(fmt, get(i, j)) + " ";
             }
             str += "\n";
         }
@@ -204,9 +203,9 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        String result = format("MatrixDouble <%d x %d>", M, N);
+        String result = String.format("MatrixDouble <%d x %d>", M, N);
         if (M < 16 && N < 16) {
-            result += "\n" + toString(fmt);
+            result += "\n" + toString(DoubleOps.fmt);
         }
         return result;
     }
@@ -224,7 +223,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return wrap(storage);
+        return DoubleBuffer.wrap(storage);
     }
 
     @Override

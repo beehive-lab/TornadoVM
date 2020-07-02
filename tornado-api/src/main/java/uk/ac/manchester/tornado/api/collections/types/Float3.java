@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
-
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 3x floats e.g. <float,float,float>
- *
- * @author jamesclarkson
- */
 @Vector
 public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
@@ -85,6 +76,10 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         setX(x);
         setY(y);
         setZ(z);
+    }
+
+    public float[] getArray() {
+        return storage;
     }
 
     public float get(int index) {
@@ -152,7 +147,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Float3}
      */
     public Float3 duplicate() {
         final Float3 vector = new Float3();
@@ -161,24 +156,24 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX(), getY(), getZ());
     }
 
     @Override
     public String toString() {
-        return toString(fmt3);
+        return toString(FloatOps.fmt3);
     }
 
     /**
-     * Cast vector into a Float2
+     * Cast vector From Float3 into a Float2
      *
-     * @return
+     * @return {@link Float2}
      */
     public Float2 asFloat2() {
         return new Float2(getX(), getY());
     }
 
-    protected static final Float3 loadFromArray(final float[] array, int index) {
+    protected static Float3 loadFromArray(final float[] array, int index) {
         final Float3 result = new Float3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -199,7 +194,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -322,7 +317,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Returns the vector length e.g. the sqrt of all elements squared
      *
-     * @return
+     * @return float
      */
     public static float length(Float3 value) {
         return TornadoMath.sqrt(dot(value, value));
