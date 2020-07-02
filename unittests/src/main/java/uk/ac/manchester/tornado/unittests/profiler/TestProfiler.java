@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.profiler;
 
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -38,6 +39,10 @@ public class TestProfiler extends TornadoTestBase {
 
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
+
+        // testProfilerDisabled might execute first. We must make sure that the code cache is reset.
+        // Otherwise we get 0 compile time.
+        TornadoRuntime.getTornadoRuntime().getDefaultDevice().reset();
 
         // Enable profiler
         System.setProperty("tornado.profiler", "True");
@@ -62,6 +67,9 @@ public class TestProfiler extends TornadoTestBase {
 
         assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());
         assertEquals(ts.getTornadoCompilerTime() + ts.getDriverInstallTime(), ts.getCompileTime());
+
+        // Disable profiler
+        System.setProperty("tornado.profiler", "False");
     }
 
     @Test

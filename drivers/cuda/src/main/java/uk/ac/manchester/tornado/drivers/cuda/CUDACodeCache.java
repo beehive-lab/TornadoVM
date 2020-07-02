@@ -52,4 +52,8 @@ public class CUDACodeCache {
     public boolean isCached(String name) {
         return cache.containsKey(name);
     }
+
+    public void reset() {
+        cache.clear();
+    }
 }

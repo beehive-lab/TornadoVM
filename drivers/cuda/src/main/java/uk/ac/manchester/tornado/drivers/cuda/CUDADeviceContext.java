@@ -147,6 +147,7 @@ public class CUDADeviceContext extends TornadoLogger implements Initialisable, T
     public void reset() {
         stream.reset();
         memoryManager.reset();
+        codeCache.reset();
         wasReset = true;
     }
 
