@@ -20,15 +20,16 @@ public class PTXVectorSplit {
         this.actualVector = actualVector;
         this.actualKind = ((PTXKind) actualVector.getPlatformKind());
 
-        if (actualKind.getSizeInBytes() < MAX_VECTOR_SIZE_BYTES && actualKind.getVectorLength() != 3) {
-            this.vectorNames = new String[] { actualVector.getName() };
-            this.newKind = actualKind;
-            return;
-        }
-
-        if (actualKind.getVectorLength() == 3) {
-            this.fullUnwrapVector = true;
-        }
+        // if (actualKind.getSizeInBytes() <= MAX_VECTOR_SIZE_BYTES &&
+        // actualKind.getVectorLength() != 3) {
+        // this.vectorNames = new String[] { actualVector.getName() };
+        // this.newKind = actualKind;
+        // return;
+        // }
+        //
+        // if (actualKind.getVectorLength() == 3) {
+        // this.fullUnwrapVector = true;
+        // }
 
         this.newKind = lowerVectorPTXKind(actualKind);
         this.vectorNames = new String[actualKind.getVectorLength() / newKind.getVectorLength()];
