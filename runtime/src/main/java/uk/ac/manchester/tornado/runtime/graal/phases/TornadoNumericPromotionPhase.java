@@ -35,7 +35,7 @@ import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoNumericPromotionPhase extends BasePhase<TornadoSketchTierContext> {
 
-    private boolean isLogicalOperatorNode(ValueNode node) {
+    private boolean isNodeElegibleForNumericPromotion(ValueNode node) {
         return (node instanceof BinaryArithmeticNode || node instanceof ShiftNode || node instanceof FixedBinaryNode);
     }
 
@@ -49,7 +49,7 @@ public class TornadoNumericPromotionPhase extends BasePhase<TornadoSketchTierCon
             // We check if the usage is sign-extend and the predecessor is a logic operator
             ValueNode valueOfNarrow = narrow.getValue();
 
-            if (!isLogicalOperatorNode(valueOfNarrow)) {
+            if (!isNodeElegibleForNumericPromotion(valueOfNarrow)) {
                 continue;
             }
 

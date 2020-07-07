@@ -17,13 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.numpromotion;
 
-import org.junit.Assert;
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-
 import java.util.Random;
 import java.util.stream.IntStream;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class Inlining {
 
@@ -46,12 +47,16 @@ public class Inlining {
         //@formatter:on
     }
 
-    public static int b2i(int v) {
+    public static int b2i(byte v) {
         return v < 0 ? 256 + v : v;
     }
 
+    public static int grey(byte r, byte g, byte b) {
+        return ((29 * b2i(r) + 60 * b2i(g) + 11 * b2i(b)) / 100);
+    }
+
     public static int grey(int r, int g, int b) {
-        return (29 * b2i(r) + 60 * b2i(g) + 11 * b2i(b)) / 100;
+        return (29 * b2i((byte) r) + 60 * b2i((byte) g) + 11 * b2i((byte) b)) / 100;
     }
 
     public static void rgbToGreyKernel(byte[] rgbBytes, int[] greyInts) {
