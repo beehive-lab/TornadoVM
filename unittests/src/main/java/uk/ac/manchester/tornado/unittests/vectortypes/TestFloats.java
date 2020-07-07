@@ -33,8 +33,11 @@ import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Float8;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestFloats extends TornadoTestBase {
@@ -266,6 +269,47 @@ public class TestFloats extends TornadoTestBase {
 
     /**
      * Test using Tornado {@link VectorFloat3} data type
+     *
+     * @param a
+     * @param b
+     * @param results
+     */
+    public static void addVectorFloat2(VectorFloat2 a, VectorFloat2 b, VectorFloat2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Float2.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorFloat2() {
+
+        int size = 16;
+
+        VectorFloat2 a = new VectorFloat2(size);
+        VectorFloat2 b = new VectorFloat2(size);
+        VectorFloat2 output = new VectorFloat2(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Float2(i, i));
+            b.set(i, new Float2(size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::addVectorFloat2, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Float2 sequential = new Float2(i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+        }
+    }
+
+    /**
+     * Test using Tornado {@link VectorFloat3} data type
      * 
      * @param a
      * @param b
@@ -346,6 +390,46 @@ public class TestFloats extends TornadoTestBase {
             assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
             assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
             assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+        }
+    }
+
+    public static void addVectorFloat8(VectorFloat8 a, VectorFloat8 b, VectorFloat8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Float8.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @TornadoNotSupported
+    public void testVectorFloat8() {
+
+        int size = 8;
+
+        VectorFloat8 a = new VectorFloat8(size);
+        VectorFloat8 b = new VectorFloat8(size);
+        VectorFloat8 output = new VectorFloat8(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Float8(i, i, i, i, i, i, i, i));
+            b.set(i, new Float8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::addVectorFloat8, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Float8 sequential = new Float8(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
+            assertEquals(sequential.getS0(), output.get(i).getS0(), 0.001);
+            assertEquals(sequential.getS1(), output.get(i).getS1(), 0.001);
+            assertEquals(sequential.getS2(), output.get(i).getS2(), 0.001);
+            assertEquals(sequential.getS3(), output.get(i).getS3(), 0.001);
+            assertEquals(sequential.getS4(), output.get(i).getS4(), 0.001);
+            assertEquals(sequential.getS5(), output.get(i).getS5(), 0.001);
+            assertEquals(sequential.getS6(), output.get(i).getS6(), 0.001);
+            assertEquals(sequential.getS7(), output.get(i).getS7(), 0.001);
         }
     }
 

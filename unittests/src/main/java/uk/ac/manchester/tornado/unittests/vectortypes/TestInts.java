@@ -30,6 +30,10 @@ import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Int3;
 import uk.ac.manchester.tornado.api.collections.types.Int4;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestInts extends TornadoTestBase {
@@ -187,5 +191,107 @@ public class TestInts extends TornadoTestBase {
         //@formatter:on
 
         assertEquals(seqReduce[0], outputReduce[0]);
+    }
+
+    public static void addVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int2.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorFloat2() {
+        int size = 16;
+
+        VectorInt2 a = new VectorInt2(size);
+        VectorInt2 b = new VectorInt2(size);
+        VectorInt2 output = new VectorInt2(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int2(i, i));
+            b.set(i, new Int2(size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::addVectorInt2, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int2 sequential = new Int2(i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+        }
+    }
+
+    public static void addVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int3.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @TornadoNotSupported
+    public void testVectorInt3() {
+        int size = 8;
+
+        VectorInt3 a = new VectorInt3(size);
+        VectorInt3 b = new VectorInt3(size);
+        VectorInt3 output = new VectorInt3(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int3(i, i, i));
+            b.set(i, new Int3(size - i, size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::addVectorInt3, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int3 sequential = new Int3(i + (size - i), i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+        }
+    }
+
+    public static void addVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int4.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @TornadoNotSupported
+    public void testVectorInt4() {
+        int size = 8;
+
+        VectorInt4 a = new VectorInt4(size);
+        VectorInt4 b = new VectorInt4(size);
+        VectorInt4 output = new VectorInt4(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int4(i, i, i, i));
+            b.set(i, new Int4(size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::addVectorInt4, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int4 sequential = new Int4(i + (size - i), i + (size - i), i + (size - i), i + size);
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+            assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+        }
     }
 }
