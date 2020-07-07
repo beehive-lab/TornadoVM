@@ -18,14 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.numpromotion;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  *
@@ -127,7 +125,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testBitwiseOr() {
 
@@ -145,14 +142,11 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         byte[] sequential = new byte[4];
         bitwiseOr(sequential, input, elements);
-        System.out.println(Arrays.toString(result));
-        System.out.println(Arrays.toString(sequential));
         for (int i = 0; i < result.length; i++) {
             assertEquals(sequential[i], result[i]);
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testBitwiseAnd() {
 
@@ -175,7 +169,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testBitwiseXor() {
 
@@ -198,7 +191,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testAddition() {
 
@@ -221,7 +213,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testSubtraction() {
 
@@ -244,9 +235,8 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
-    public void testMulitplication() {
+    public void testMultiplication() {
 
         byte[] elements = new byte[] { 4 };
         byte[] result = new byte[] { 1, 1, 1, 1 };
@@ -267,7 +257,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testDivision() {
 
@@ -290,7 +279,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testSignedLeftShift() {
 
@@ -313,7 +301,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testSignedRightShift() {
 
@@ -336,7 +323,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testUnsignedRightShift() {
 
