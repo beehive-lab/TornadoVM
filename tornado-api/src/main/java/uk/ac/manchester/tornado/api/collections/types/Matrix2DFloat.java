@@ -104,7 +104,7 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }
 
-    public float[] getFlattenedMatrix() {
+    public float[] getFlattenedArray() {
         return storage;
     }
 

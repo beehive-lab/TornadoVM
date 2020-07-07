@@ -99,7 +99,7 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
         this(width, height, new float[width * height * VECTOR_ELEMENTS]);
     }
 
-    public float[] getFlattenedMatrix() {
+    public float[] getFlattenedArray() {
         return storage;
     }
 

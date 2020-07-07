@@ -106,7 +106,7 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
         this(width, height, depth, new float[width * height * depth * VECTOR_ELEMENTS]);
     }
 
-    public float[] getFlattenedMatrix() {
+    public float[] getFlattenedArray() {
         return storage;
     }
 
