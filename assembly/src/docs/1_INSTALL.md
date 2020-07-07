@@ -4,13 +4,13 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Hardware    |
-| -------------------------- | ----------- |
-| CentOS >= 7.3              | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)           |
-| Fedora >= 21               | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)        |
-| Ubuntu >= 16.04            | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)        |
-| Mac OS X Mojave 10.14.6    | Any OpenCL compatible device (GPUs and CPUs >= 1.2)        |
-| Mac OS X Catalina 10.15.3  | Any OpenCL compatible device (GPUs and CPUs >= 1.2)          |
+| OS                         | Hardware                                                              |
+| -------------------------- | --------------------------------------------------------------------- |
+| CentOS >= 7.3              | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
+| Fedora >= 21               | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
+| Ubuntu >= 16.04            | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
+| Mac OS X Mojave 10.14.6    | Any OpenCL compatible device (GPUs and CPUs >= 1.2)                   |
+| Mac OS X Catalina 10.15.3  | Any OpenCL compatible device (GPUs and CPUs >= 1.2)                   |
 
 
 ## 1. Installation
@@ -19,6 +19,8 @@ TornadoVM can be currently executed with the following two configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+
+Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](17_MALI.md).
 
 ## 2. Running Examples
 
@@ -187,13 +189,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.6</version>
+         <version>0.7</version>
       </dependency>
       
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.6</version>
+         <version>0.7</version>
       </dependency>
    </dependencies>
 ```
@@ -202,6 +204,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.7
 * 0.6
 * 0.5
 * 0.4

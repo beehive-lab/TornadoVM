@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.benchmarks.euler;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -84,15 +85,16 @@ public class EulerTornado extends BenchmarkDriver {
         }
     }
 
-    private void runParallel(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
+    private void runParallel(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE, TornadoDevice device) {
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
+        ts.mapAllTo(device);
         ts.execute();
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         long[] input = init(size);
         long[] outputA = new long[size];
         long[] outputB = new long[size];
@@ -108,7 +110,7 @@ public class EulerTornado extends BenchmarkDriver {
         long[] outputDT = new long[size];
         long[] outputET = new long[size];
 
-        runParallel(size, input, outputAT, outputBT, outputCT, outputDT, outputET);
+        runParallel(size, input, outputAT, outputBT, outputCT, outputDT, outputET, device);
 
         for (int i = 0; i < outputA.length; i++) {
             if (outputAT[i] != outputA[i]) {
@@ -131,7 +133,8 @@ public class EulerTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        ts.mapAllTo(device);
         ts.execute();
     }
 }

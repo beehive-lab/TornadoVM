@@ -31,6 +31,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -213,15 +214,18 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
-
         final OCLDeviceContext deviceContext = getDeviceContext();
-
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final TaskMetaData sketchMeta = sketch.getMeta();
+
+        // Return the code from the cache
+        if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+            return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
+        }
 
         // copy meta data into task
-        final TaskMetaData sketchMeta = sketch.getMeta();
         final TaskMetaData taskMeta = executable.meta();
         final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
@@ -234,11 +238,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
-
-            if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-                // Return the code from the cache
-                return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
-            }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
@@ -365,16 +364,16 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private ObjectBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize) {
         ObjectBuffer result = null;
-        if (type == int[].class) {
+        if (type == float[].class) {
+            result = new OCLFloatArrayWrapper(device, batchSize);
+        } else if (type == int[].class) {
             result = new OCLIntArrayWrapper(device, batchSize);
+        } else if (type == double[].class) {
+            result = new OCLDoubleArrayWrapper(device, batchSize);
         } else if (type == short[].class) {
             result = new OCLShortArrayWrapper(device, batchSize);
         } else if (type == byte[].class) {
             result = new OCLByteArrayWrapper(device, batchSize);
-        } else if (type == float[].class) {
-            result = new OCLFloatArrayWrapper(device, batchSize);
-        } else if (type == double[].class) {
-            result = new OCLDoubleArrayWrapper(device, batchSize);
         } else if (type == long[].class) {
             result = new OCLLongArrayWrapper(device, batchSize);
         } else if (type == char[].class) {
@@ -608,11 +607,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public void flushEvents() {
         getDeviceContext().flushEvents();
-    }
-
-    @Override
-    public void markEvent() {
-        getDeviceContext().markEvent();
     }
 
     @Override

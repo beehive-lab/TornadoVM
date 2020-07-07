@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.benchmarks.hilbert;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -52,7 +53,7 @@ public class HilbertTornado extends BenchmarkDriver {
     }
 
     @Override
-    public boolean validate() {
+    public boolean validate(TornadoDevice device) {
         boolean val = true;
         float[] testData = new float[size * size];
         // @formatter:off
@@ -60,6 +61,7 @@ public class HilbertTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size)
                 .streamOut(testData);
         // @formatter:on
+        check.mapAllTo(device);
         check.execute();
         float[] seq = new float[size * size];
         ComputeKernels.hilbertComputation(seq, size, size);
@@ -75,7 +77,8 @@ public class HilbertTornado extends BenchmarkDriver {
     }
 
     @Override
-    public void benchmarkMethod() {
+    public void benchmarkMethod(TornadoDevice device) {
+        s0.mapAllTo(device);
         s0.execute();
     }
 }

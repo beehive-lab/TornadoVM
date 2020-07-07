@@ -159,13 +159,12 @@ public class BlurFilter {
             long start = System.nanoTime();
             TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
-            // @formatter:off
-            TaskSchedule parallelFilter = new TaskSchedule("blur")
-                .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH)
-                .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH)
-                .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH)
-                .streamOut(redFilter, greenFilter, blueFilter);
-            // @formatter:on
+            TaskSchedule parallelFilter = new TaskSchedule("blur") //
+                    .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
+                    .streamOut(redFilter, greenFilter, blueFilter) //
+                    .useDefaultThreadScheduler(true);
 
             parallelFilter.mapAllTo(device);
             parallelFilter.execute();

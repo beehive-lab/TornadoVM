@@ -41,6 +41,8 @@ import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
@@ -61,7 +63,6 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(canonicalizer);
 
-        // if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
         appendPhase(new ExceptionCheckingElimination());
 
         if (OptFloatingReads.getValue(options)) {
@@ -81,15 +82,9 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(canonicalizer);
 
-        // TODO disable as it introduces loop limit checks
-        // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
-        // LoopSafepointEliminationPhase()));
-        // appendPhase(new LoopSafepointInsertionPhase());
-        // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
-        // GuardLoweringPhase()));
-        // if (VerifyHeapAtReturn.getValue()) {
-        // appendPhase(new VerifyHeapAtReturnPhase());
-        // }
+        if (TornadoOptions.PARTIAL_UNROLL()) {
+            appendPhase(new TornadoPartialLoopUnroll());
+        }
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 

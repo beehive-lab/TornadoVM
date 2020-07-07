@@ -103,6 +103,4 @@ public class OCLAssemblerConstants {
     public static final String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(64,1,1)))";
     public static final String FPGA_ATTRIBUTE_SEQ = "__attribute__((reqd_work_group_size(1,1,1)))";
 
-    public static final int STACK_BASE_OFFSET = 6;
-
 }
