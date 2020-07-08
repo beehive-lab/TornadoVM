@@ -9,9 +9,11 @@ public class CUDAModule {
     public final TaskMetaData metaData;
     private int maximalBlockSize;
     public final String javaName;
+    private byte[] source;
 
     public CUDAModule(String name, byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
         moduleWrapper = cuModuleLoadData(source);
+        this.source = source;
         this.kernelFunctionName = kernelFunctionName;
         metaData = taskMetaData;
         maximalBlockSize = -1;
@@ -25,6 +27,10 @@ public class CUDAModule {
     public int getMaximalBlocks() {
         if (maximalBlockSize < 0) maximalBlockSize = calcMaximalBlockSize(moduleWrapper, kernelFunctionName);
         return maximalBlockSize;
+    }
+
+    public byte[] getSource() {
+        return source;
     }
 
     public boolean getIsPTXJITSuccess() {

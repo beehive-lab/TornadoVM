@@ -23,7 +23,7 @@
  * Authors: Juan Fumero, Michalis Papadimitriou
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.tests;
+package uk.ac.manchester.tornado.drivers.cuda.tests;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -31,27 +31,28 @@ import java.util.Arrays;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
-import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.drivers.cuda.CUDA;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
+import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompiler;
+import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
- * Test the OpenCL JIT Compiler and connection with the Tornado Runtime
+ * Test the PTX JIT Compiler and connection with the Tornado Runtime
  * Environment.
  *
  */
-public class TestOpenCLJITCompiler {
+public class TestPTXJITCompiler {
 
     public static void methodToCompile(int[] a, int[] b, double[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
@@ -71,24 +72,24 @@ public class TestOpenCLJITCompiler {
 
     public static class MetaCompilation {
         TaskMetaData taskMeta;
-        OCLInstalledCode openCLCode;
+        PTXInstalledCode ptxCode;
 
-        public MetaCompilation(TaskMetaData taskMeta, OCLInstalledCode openCLCode) {
+        public MetaCompilation(TaskMetaData taskMeta, PTXInstalledCode ptxCode) {
             this.taskMeta = taskMeta;
-            this.openCLCode = openCLCode;
+            this.ptxCode = ptxCode;
         }
 
         public TaskMetaData getTaskMeta() {
             return taskMeta;
         }
 
-        public OCLInstalledCode getOpenCLCode() {
-            return openCLCode;
+        public PTXInstalledCode getPtxCode() {
+            return ptxCode;
         }
 
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
+    public MetaCompilation compileMethod(Class<?> klass, String methodName, CUDATornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
 
         // Get the method object to be compiled
         Method methodToCompile = getMethodForName(klass, methodName);
@@ -100,26 +101,26 @@ public class TestOpenCLJITCompiler {
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
-        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
+        PTXBackend ptxBackend = tornadoRuntime.getDriver(CUDADriver.class).getDefaultBackend();
 
         // Create a new task for Tornado
         TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile, false);
-        taskMeta.setDevice(OpenCL.defaultDevice());
+        taskMeta.setDevice(CUDA.defaultDevice());
 
-        // Compile the code for OpenCL
-        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
+        // Compile the PTX code
+        PTXCompilationResult compilationResult = PTXCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (PTXProviders) ptxBackend.getProviders(), ptxBackend, 0);
 
-        // Install the OpenCL Code in the VM
-        OCLInstalledCode openCLCode = tornadoDevice.getDeviceContext().installCode(compilationResult);
+        // Install the PTX Code in the VM
+        TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(compilationResult, resolvedJavaMethod.getName());
 
-        return new MetaCompilation(taskMeta, openCLCode);
+        return new MetaCompilation(taskMeta, (PTXInstalledCode) ptxCode);
     }
 
-    public void runWithOpenCLAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
-        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
+    public void runWithPTXAPI(CUDATornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+        CUDA.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
     }
 
-    public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void run(CUDATornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
         GlobalObjectState stateA = new GlobalObjectState();
         DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
@@ -144,7 +145,7 @@ public class TestOpenCLJITCompiler {
         stack.push(c, objectStateC);
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, taskMeta, 0);
+        ptxCode.launchWithoutDependencies(stack, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
@@ -161,21 +162,23 @@ public class TestOpenCLJITCompiler {
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
-        OCLTornadoDevice tornadoDevice = OpenCL.defaultDevice();
+        CUDATornadoDevice tornadoDevice = CUDA.defaultDevice();
 
-        MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
+        MetaCompilation compileMethod = compileMethod(TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
         // Check with all internal APIs
-        run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
+        run(tornadoDevice, compileMethod.ptxCode, compileMethod.taskMeta, a, b, c);
 
-        // Check with OpenCL API
-        runWithOpenCLAPI(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
+        // Check with PTX API
+        runWithPTXAPI(tornadoDevice, compileMethod.ptxCode, compileMethod.taskMeta, a, b, c);
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {
             double seq = 0.12 * a[i] * b[i];
             if (Math.abs(c[i] - seq) > 0.01) {
+                System.err.println( i + " Fault result = " + seq + " " + c[i]);
                 correct = false;
+                break;
             }
         }
         if (!correct) {
@@ -187,8 +190,8 @@ public class TestOpenCLJITCompiler {
     }
 
     public static void main(String[] args) {
-        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLJITCompiler");
-        new TestOpenCLJITCompiler().test();
+        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.cuda.tests.TestPTXJITCompiler");
+        new TestPTXJITCompiler().test();
     }
 
 }

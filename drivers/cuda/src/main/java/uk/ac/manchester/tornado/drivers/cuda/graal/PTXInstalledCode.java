@@ -29,4 +29,8 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
     public int launchWithoutDependencies(CallStack stack, TaskMetaData meta, long batchThreads) {
         return deviceContext.enqueueKernelLaunch(module, stack, batchThreads);
     }
+
+    public String getGeneratedSourceCode() {
+        return new String(module.getSource());
+    }
 }

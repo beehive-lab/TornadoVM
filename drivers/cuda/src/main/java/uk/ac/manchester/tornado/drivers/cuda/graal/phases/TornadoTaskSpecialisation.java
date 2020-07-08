@@ -6,7 +6,9 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -16,6 +18,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
@@ -29,6 +32,9 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import static uk.ac.manchester.tornado.runtime.graal.phases.TornadoTaskSpecialisation.MAX_ITERATIONS;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
+
+    private static final int MAX_ITERATIONS = 15;
+
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
@@ -193,7 +199,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             graph.addWithoutUnique(constant);
             parameterNode.replaceAtUsages(constant);
         } else {
-            parameterNode.usages().snapshot().forEach(n -> evaluate(graph, n, args[parameterNode.index()]));
+            parameterNode.usages().snapshot().forEach(n -> {
+                evaluate(graph, n, args[parameterNode.index()]);
+            });
         }
     }
 
@@ -207,15 +215,11 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         while (hasWork) {
             final Graph.Mark mark = graph.getMark();
             if (context.hasArgs()) {
+                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "Before Phase Propagate Parameters");
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     propagateParameters(graph, param, context.getArgs());
                 }
                 getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
-            } else {
-                for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    assumeNonNull(param);
-                }
-                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase assume non null Parameters");
             }
 
             canonicalizer.apply(graph, context);
@@ -238,29 +242,49 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             deadCodeElimination.run(graph);
 
-            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
+            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration = " + iterations);
 
-            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
-                    // hasGuardingPiNodes)
-                    && (iterations < MAX_ITERATIONS);
+            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
             iterations++;
         }
+
+        graph.getNodes().filter(ParallelRangeNode.class).forEach(range -> {
+            if (range.value() instanceof PhiNode) {
+                PhiNode phiNode = (PhiNode) range.value();
+                NodeIterable<Node> usages = range.usages();
+                for (Node usage : usages) {
+                    if (usage instanceof IntegerLessThanNode) {
+                        IntegerLessThanNode less = (IntegerLessThanNode) usage;
+                        ConstantNode constant = null;
+                        if (less.getX() instanceof ConstantNode) {
+                            constant = (ConstantNode) less.getX();
+                        } else if (less.getY() instanceof ConstantNode) {
+                            constant = (ConstantNode) less.getY();
+                        }
+
+                        // we swap the values between the new Constant and the PhiNode
+                        if (constant != null) {
+                            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "Before Swapping Constant-Phi");
+                            ParallelRangeNode pr = new ParallelRangeNode(range.index(), constant, range.offset(), range.stride());
+                            graph.addOrUnique(pr);
+                            range.safeDelete();
+
+                            IntegerLessThanNode intLess = new IntegerLessThanNode(phiNode, pr);
+                            graph.addOrUnique(intLess);
+                            less.usages().first().replaceAllInputs(less, intLess);
+                            less.safeDelete();
+                            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Swapping Constant-Phi");
+                        }
+                    }
+                }
+            }
+        });
 
         if (iterations == MAX_ITERATIONS) {
             Tornado.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
         }
         Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
         Tornado.debug("valid graph? %s", graph.verify());
-    }
-
-    private void assumeNonNull(ParameterNode param) {
-        if (param.getStackKind().isObject() && param.usages().filter(IsNullNode.class).count() > 0) {
-            final IsNullNode isNullNode = (IsNullNode) param.usages().filter(IsNullNode.class).first();
-            // for (final GuardingPiNode guardingPiNode :
-            // isNullNode.usages().filter(GuardingPiNode.class).distinct()) {
-            // guardingPiNode.replaceAtUsages(param);
-            // }
-        }
     }
 }

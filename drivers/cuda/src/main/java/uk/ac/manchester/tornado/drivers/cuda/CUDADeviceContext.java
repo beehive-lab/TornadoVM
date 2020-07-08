@@ -93,6 +93,10 @@ public class CUDADeviceContext extends TornadoLogger implements Initialisable, T
         return codeCache.getCachedCode(name);
     }
 
+    public CUDACodeCache getCodeCache() {
+        return codeCache;
+    }
+
     public CUDADevice getDevice() {
         return device;
     }

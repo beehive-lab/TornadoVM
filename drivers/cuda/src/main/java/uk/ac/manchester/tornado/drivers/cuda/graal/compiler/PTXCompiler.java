@@ -34,9 +34,12 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -52,16 +55,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerationPhase.*;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 
 public class PTXCompiler {
+
+    private static final AtomicInteger compilationId = new AtomicInteger();
+
     private static final TimerKey CompilerTimer = DebugContext.timer("GraalCompiler");
     private static final TimerKey FrontEnd = DebugContext.timer("FrontEnd");
     private static final TimerKey BackEnd = DebugContext.timer("BackEnd");
@@ -455,6 +463,56 @@ public class PTXCompiler {
             } catch (IOException e) {
                 error("unable to dump source: ", e.getMessage());
             }
+        }
+
+        return kernelCompResult;
+    }
+
+    public static PTXCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, PTXProviders providers, PTXBackend backend, long batchThreads) {
+        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+        final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
+
+        StructuredGraph.Builder builder = new StructuredGraph.Builder(getTornadoRuntime().getOptions(), getDebugContext(), StructuredGraph.AllowAssumptions.YES);
+        builder.method(resolvedMethod);
+        builder.compilationId(id);
+        builder.name("compile-kernel" + resolvedMethod.getName());
+
+        final StructuredGraph kernelGraph = builder.build();
+
+        OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
+        ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
+
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(resolvedMethod.getName(), meta);
+        CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
+
+        final PTXSuitesProvider suitesProvider = (PTXSuitesProvider) providers.getSuitesProvider();
+        PTXCompilationRequest kernelCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(kernelGraph).withCodeOwner(resolvedMethod).withArgs(args)
+                .withMetaData(meta).withProviders(providers).withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts)
+                .withProfilingInfo(profilingInfo).withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(kernelCompResult).withResultBuilderFactory(factory)
+                .isKernel(true).buildGraph(true).includePrintf(false).withBatchThreads(batchThreads).build();
+
+        kernelCompilationRequest.execute();
+
+        final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
+
+        while (!workList.isEmpty()) {
+            final ResolvedJavaMethod currentMethod = workList.pop();
+            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), meta);
+            StructuredGraph.Builder builder1 = new StructuredGraph.Builder(TornadoCoreRuntime.getOptions(), getDebugContext(), StructuredGraph.AllowAssumptions.YES);
+            builder1.method(resolvedMethod);
+            builder1.compilationId(id);
+            builder1.name("internal" + currentMethod.getName());
+
+            final StructuredGraph graph = builder.build();
+            PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph).withCodeOwner(currentMethod).withProviders(providers)
+                    .withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts).withProfilingInfo(profilingInfo)
+                    .withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(compResult).withResultBuilderFactory(factory).isKernel(false).buildGraph(true)
+                    .includePrintf(false).withBatchThreads(0).build();
+
+            methodCompilationRequest.execute();
+            workList.addAll(compResult.getNonInlinedMethods());
+
+            kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
 
         return kernelCompResult;
