@@ -25,7 +25,6 @@ public class PTXAssemblerConstants {
     public static final String KERNEL_ENTRYPOINT = ".entry";
 
     public static final String ROUND_NEAREST_EVEN = "rn";
-
     public static final String ROUND_NEAREST_EVEN_INTEGER = "rni";
     public static final String ROUND_NEGATIVE_INFINITY_INTEGER = "rmi";
 

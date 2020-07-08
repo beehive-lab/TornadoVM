@@ -39,8 +39,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNegate(Value input) {
-        unimplemented();
-        return null;
+        return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NEGATE, LIRKind.value(input.getPlatformKind()), input);
     }
 
     @Override

@@ -45,7 +45,8 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         PTXKind kind = (PTXKind) var.getPlatformKind();
 
         variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(new VariableData(var, isArray));
-        return variableTable.get(kind).size() - 1;
+        int arrayCount = isArray ? 0 : (int) variableTable.get(kind).stream().filter(varData -> varData.isArray).count();
+        return variableTable.get(kind).size() - arrayCount - 1;
     }
 
     public Map<PTXKind, Set<VariableData>> getVariableTable() {

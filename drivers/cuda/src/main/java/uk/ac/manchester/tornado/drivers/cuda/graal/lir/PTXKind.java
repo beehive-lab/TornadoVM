@@ -291,6 +291,10 @@ public enum PTXKind implements PlatformKind {
         return kind == F16 || kind == F32 || kind == F64;
     }
 
+    public boolean is8Bit() {
+        return kind == U8 || kind == S8 || kind == B8;
+    }
+
     public boolean isF64() {
         return kind == F64;
     }

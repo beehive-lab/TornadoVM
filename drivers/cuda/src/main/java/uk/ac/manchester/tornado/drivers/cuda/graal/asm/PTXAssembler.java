@@ -366,6 +366,11 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXUnaryOp extends PTXOp {
         public static final PTXUnaryOp NOT = new PTXUnaryOp("not", true, ROUND_NEAREST_EVEN);
+        public static final PTXUnaryOp NEGATE = new PTXUnaryOp("neg", false, null);
+        public static final PTXUnaryOp MOV = new PTXUnaryOp(MOVE, false, null);
+        public static final PTXUnaryOp CVT_FLOAT_RNE = new PTXUnaryOp(CONVERT, false, ROUND_NEAREST_EVEN);
+        public static final PTXUnaryOp CVT_FLOAT = new PTXUnaryOp(CONVERT, false, null);
+        public static final PTXUnaryOp CVT_INT_RNI = new PTXUnaryOp(CONVERT, false, ROUND_NEAREST_EVEN_INTEGER);
 
         private final String roundingMode;
 
@@ -388,11 +393,11 @@ public class PTXAssembler extends Assembler {
             this.roundingMode = roundingMode;
         }
 
-        public void emit(PTXCompilationResultBuilder crb, Value value, Value dest) {
+        public void emit(PTXCompilationResultBuilder crb, Value value, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             PTXKind destType = (PTXKind) dest.getPlatformKind();
-            if (roundingMode != null && destType.isFloating()) {
+            if (roundingMode != null) {
                 asm.emitSymbol(DOT);
                 asm.emit(roundingMode);
             }
@@ -405,15 +410,15 @@ public class PTXAssembler extends Assembler {
                     destType = destType.toUntyped();
                 }
 
+                asm.emit("." + destType);
+
                 // we specify both types for convert
                 if (CONVERT.equals(opcode)) {
                     asm.emit("." + value.getPlatformKind());
                 }
-
-                asm.emit("." + destType);
             }
             asm.emitSymbol(TAB);
-            asm.emitValues(new Value[] { dest, value });
+            asm.emitValuesOrOp(crb, new Value[] { dest, value }, dest);
         }
     }
 
@@ -436,7 +441,7 @@ public class PTXAssembler extends Assembler {
 
         public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc") {
             @Override
-            public void emit(PTXCompilationResultBuilder crb, Value x, Value dest) {
+            public void emit(PTXCompilationResultBuilder crb, Value x, Variable dest) {
                 final PTXAssembler asm = crb.getAssembler();
                 emitOpcode(asm);
                 PTXKind destType = (PTXKind) dest.getPlatformKind();
@@ -467,7 +472,7 @@ public class PTXAssembler extends Assembler {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, Value x, Value dest) {
+        public void emit(PTXCompilationResultBuilder crb, Value x, Variable dest) {
             super.emit(crb, x, dest);
         }
     }

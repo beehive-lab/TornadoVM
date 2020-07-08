@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.COMMA;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.CONVERT;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_OPEN;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.DOT;
@@ -60,6 +61,8 @@ public class PTXVectorAssign {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
+            PTXKind destElementKind = ((PTXKind)dest.getPlatformKind()).getElementKind();
+            boolean useConvert = destElementKind.is8Bit();
             PTXVectorSplit vectorSplitData = new PTXVectorSplit(dest);
             Value[] intermValues = new Value[vectorSplitData.newKind.getVectorLength()];
 
@@ -68,13 +71,17 @@ public class PTXVectorAssign {
                     System.arraycopy(values, i * vectorSplitData.newKind.getVectorLength(), intermValues, 0, vectorSplitData.newKind.getVectorLength());
                 }
                 asm.emitSymbol(TAB);
-                asm.emitSymbol(MOVE);
+                asm.emitSymbol(useConvert ? CONVERT : MOVE);
                 if (!vectorSplitData.fullUnwrapVector) {
                     asm.emitSymbol(DOT);
                     asm.emit(VECTOR + vectorSplitData.newKind.getVectorLength());
                 }
                 asm.emitSymbol(DOT);
-                asm.emit(((PTXKind)dest.getPlatformKind()).getElementKind().toString());
+                asm.emit(destElementKind.toString());
+                if (useConvert) {
+                    asm.emitSymbol(DOT);
+                    asm.emit(destElementKind.toString());
+                }
                 asm.emitSymbol(TAB);
 
                 asm.emitSymbol(vectorSplitData.vectorNames[i]);

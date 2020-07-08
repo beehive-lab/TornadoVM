@@ -47,6 +47,8 @@ public class PTXLIRStmt {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (rhs instanceof PTXLIROp) {
                 ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
+            } else if (((PTXKind)lhs.getPlatformKind()).isVector() && ((PTXKind)rhs.getPlatformKind()).isVector()) {
+                doVectorAssign(asm);
             } else {
                 PTXKind lhsKind = (PTXKind) lhs.getPlatformKind();
                 PTXKind rhsKind = (PTXKind) rhs.getPlatformKind();
@@ -71,6 +73,36 @@ public class PTXLIRStmt {
             }
             asm.delimiter();
             asm.eol();
+        }
+
+        private void doVectorAssign(PTXAssembler asm) {
+            Variable rhsVar = (Variable) rhs;
+            Variable lhsVar = (Variable) lhs;
+            PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
+            PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
+            PTXKind destElementKind = ((PTXKind)lhsVar.getPlatformKind()).getElementKind();
+            boolean useConvert = destElementKind.is8Bit();
+
+            for (int i = 0; i < rhsVectorSplit.vectorNames.length; i++) {
+                asm.emitSymbol(TAB);
+                asm.emitSymbol(useConvert ? CONVERT : MOVE);
+                asm.emitSymbol(DOT);
+                asm.emit(destElementKind.toString());
+                if (useConvert) {
+                    asm.emitSymbol(DOT);
+                    asm.emit(destElementKind.toString());
+                }
+                asm.emitSymbol(TAB);
+
+                asm.emitSymbol(lhsVectorSplit.vectorNames[i]);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emitSymbol(rhsVectorSplit.vectorNames[i]);
+                if (i < rhsVectorSplit.vectorNames.length - 1) {
+                    asm.delimiter();
+                    asm.eol();
+                }
+            }
         }
 
         private String getFPURoundingMode(PTXKind lhs, PTXKind rhs) {
