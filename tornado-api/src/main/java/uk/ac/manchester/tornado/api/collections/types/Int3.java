@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.IntBuffer.wrap;
-
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 3x ints e.g. <int,int,int>
- *
- * @author jamesclarkson
- *
- */
 @Vector
 public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
@@ -66,7 +57,8 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
     /**
      * backing array
      */
-    @Payload final protected int[] storage;
+    @Payload
+    final protected int[] storage;
 
     /**
      * number of elements in the storage
@@ -86,6 +78,10 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         setX(x);
         setY(y);
         setZ(z);
+    }
+
+    public int[] getArray() {
+        return storage;
     }
 
     public int get(int index) {
@@ -129,7 +125,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Int3}
      */
     public Int3 duplicate() {
         Int3 vector = new Int3();
@@ -142,7 +138,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX(), getY(), getZ());
     }
 
     @Override
@@ -150,7 +146,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return toString(numberFormat);
     }
 
-    protected static final Int3 loadFromArray(final int[] array, int index) {
+    protected static Int3 loadFromArray(final int[] array, int index) {
         final Int3 result = new Int3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -171,7 +167,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return wrap(storage);
+        return IntBuffer.wrap(storage);
     }
 
     @Override

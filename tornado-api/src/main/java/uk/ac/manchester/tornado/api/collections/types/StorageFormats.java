@@ -55,9 +55,9 @@ public final class StorageFormats {
      *            column index
      * @param ld
      *            length of a column
-     * @return
+     * @return int
      */
-    public final static int toColumnMajor(int i, int j, int ld) {
+    public static int toColumnMajor(int i, int j, int ld) {
         return (j * ld) + i;
     }
 
@@ -70,21 +70,21 @@ public final class StorageFormats {
      *            column index
      * @param yMax
      *            length of a row
-     * @return
+     * @return int
      */
-    public final static int toRowMajor(int i, int j, int yMax) {
+    public static int toRowMajor(int i, int j, int yMax) {
         return (i * yMax) + j;
     }
 
-    public final static int toRowMajorVector(int i, int j, int xMax, int width) {
+    public static int toRowMajorVector(int i, int j, int xMax, int width) {
         return (i * xMax * width) + j;
     }
 
-    public final static int toRowMajor3D(int i, int j, int k, int zMax, int yMax) {
+    public static int toRowMajor3D(int i, int j, int k, int zMax, int yMax) {
         return (i * zMax * yMax) + (j * zMax) + k;
     }
 
-    public final static int toRowMajor3DVector(int i, int j, int k, int zSize, int ySize, int vectorWidth) {
+    public static int toRowMajor3DVector(int i, int j, int k, int zSize, int ySize, int vectorWidth) {
         return (i * zSize * ySize * vectorWidth) + (j * zSize) + k;
     }
 
@@ -99,9 +99,9 @@ public final class StorageFormats {
      *            length of a row
      * @param el
      *            length of each element in a row
-     * @return
+     * @return int
      */
-    public final static int toRowMajor(int i, int j, int ld, int el) {
+    public static int toRowMajor(int i, int j, int ld, int el) {
         return (i * ld) + (j * el);
     }
 
@@ -120,9 +120,9 @@ public final class StorageFormats {
      *            leading edge length 2dn dimension
      * @param el
      *            basic element length
-     * @return
+     * @return int
      */
-    public final static int toRowMajor(int i, int j, int k, int ld1, int ld2, int el) {
+    public static int toRowMajor(int i, int j, int k, int ld1, int ld2, int el) {
         return toRowMajor(i, j, ld1, el) + (k * ld2);
     }
 
@@ -139,9 +139,9 @@ public final class StorageFormats {
      *            col step
      * @param ld
      *            length of a row
-     * @return
+     * @return int
      */
-    public final static int toRowMajor(int i, int j, int incm, int incn, int ld) {
+    public static int toRowMajor(int i, int j, int incm, int incn, int ld) {
         return (i * ld * incn) + (j * incm);
     }
 
@@ -154,18 +154,18 @@ public final class StorageFormats {
      *            column index
      * @param ld
      *            length of a column
-     * @return
+     * @return int
      */
-    public final static int toFortran(int i, int j, int ld) {
+    public static int toFortran(int i, int j, int ld) {
         return ((j - 1) * ld) + (i - 1);
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major
-     * format
+     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
      * 
      * @param matrix
-     * @return
+     *            input matrix
+     * @return double[]
      */
     public static double[] toRowMajor(double[][] matrix) {
         final int N = matrix[0].length;
@@ -180,11 +180,11 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major
-     * format
+     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
      * 
      * @param matrix
-     * @return
+     *            input matrix
+     * @return float[]
      */
     public static float[] toRowMajor(float[][] matrix) {
         final int M = matrix.length;
@@ -219,11 +219,11 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major
-     * format
+     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
      * 
      * @param matrix
-     * @return
+     *            input matrix
+     * @return int[]
      */
     public static int[] toRowMajor(int[][] matrix) {
         final int M = matrix.length;
@@ -239,11 +239,11 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major
-     * format
+     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
      * 
      * @param matrix
-     * @return
+     *            input matrix
+     * @return byte[]
      */
     public static byte[] toRowMajor(byte[][] matrix) {
         final int m = matrix[0].length;

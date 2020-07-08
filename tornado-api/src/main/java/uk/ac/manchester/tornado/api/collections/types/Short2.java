@@ -41,22 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.ShortBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.ShortOps.fmt2;
-
 import java.nio.ShortBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 2x shorts e.g. <short,short>
- *
- * @author jamesclarkson
- *
- */
 @Vector
 public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
@@ -65,7 +55,8 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * backing array
      */
-    @Payload final protected short[] storage;
+    @Payload
+    final protected short[] storage;
 
     /**
      * number of elements in the storage
@@ -84,6 +75,10 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
         this();
         setX(x);
         setY(y);
+    }
+
+    public short[] getArray() {
+        return storage;
     }
 
     public short get(int index) {
@@ -118,7 +113,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Short2}
      */
     public Short2 duplicate() {
         Short2 vector = new Short2();
@@ -127,15 +122,15 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY());
+        return String.format(fmt, getX(), getY());
     }
 
     @Override
     public String toString() {
-        return toString(fmt2);
+        return toString(ShortOps.fmt2);
     }
 
-    protected static final Short2 loadFromArray(final short[] array, int index) {
+    protected static Short2 loadFromArray(final short[] array, int index) {
         final Short2 result = new Short2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -154,7 +149,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return wrap(storage);
+        return ShortBuffer.wrap(storage);
     }
 
     @Override

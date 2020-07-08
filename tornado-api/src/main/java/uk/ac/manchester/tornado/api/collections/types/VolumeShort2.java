@@ -41,10 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.ShortBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.Short2.loadFromArray;
-
 import java.nio.ShortBuffer;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
@@ -86,13 +82,17 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param depth
      *            number of rows
      */
     public VolumeShort2(int width, int height, int depth) {
         this(width, height, depth, new short[width * height * depth * elementSize]);
+    }
+
+    public short[] getArray() {
+        return storage;
     }
 
     private int toIndex(int x, int y, int z) {
@@ -101,7 +101,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     public Short2 get(int x, int y, int z) {
         final int index = toIndex(x, y, z);
-        return loadFromArray(storage, index);
+        return Short2.loadFromArray(storage, index);
     }
 
     public void set(int x, int y, int z, Short2 value) {
@@ -143,11 +143,11 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
         String str = "";
 
         for (int z = 0; z < Z(); z++) {
-            str += format("z = %d\n", z);
+            str += String.format("z = %d\n", z);
             for (int y = 0; y < Y(); y++) {
                 for (int x = 0; x < X(); x++) {
                     final Short2 point = get(x, y, z);
-                    str += format(fmt, point.getX(), point.getY()) + " ";
+                    str += String.format(fmt, point.getX(), point.getY()) + " ";
                 }
                 str += "\n";
             }
@@ -157,7 +157,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public String toString() {
-        return format("VolumeShort2 <%d x %d x %d>", Y, X, Z);
+        return String.format("VolumeShort2 <%d x %d x %d>", Y, X, Z);
     }
 
     @Override
@@ -167,7 +167,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return wrap(storage);
+        return ShortBuffer.wrap(storage);
     }
 
     @Override

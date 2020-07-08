@@ -41,10 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Double.doubleToRawLongBits;
-import static java.lang.Math.abs;
-import static java.lang.Math.ulp;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class DoubleOps {
 
@@ -60,67 +57,67 @@ public class DoubleOps {
     public static final String fmt8 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
     public static final String fmt6e = "{%e,%e,%e,%e,%e,%e}";
 
-    public static final boolean compareBits(double a, double b) {
-        long ai = doubleToRawLongBits(a);
-        long bi = doubleToRawLongBits(b);
+    public static boolean compareBits(double a, double b) {
+        long ai = Double.doubleToRawLongBits(a);
+        long bi = Double.doubleToRawLongBits(b);
 
         long diff = ai ^ bi;
         return (diff == 0);
     }
 
-    public static final boolean compareULP(double value, double expected, double ulps) {
-        final double tol = ulps * ulp(expected);
+    public static boolean compareULP(double value, double expected, double ulps) {
+        final double tol = ulps * Math.ulp(expected);
         if (value == expected) {
             return true;
         }
 
-        return abs(value - expected) < tol;
+        return Math.abs(value - expected) < tol;
     }
 
-    public static final double findMaxULP(Double2 value, Double2 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static double findMaxULP(Double2 value, Double2 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final double findMaxULP(Double3 value, Double3 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static double findMaxULP(Double3 value, Double3 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final double findMaxULP(Double4 value, Double4 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static double findMaxULP(Double4 value, Double4 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final double findMaxULP(Double6 value, Double6 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static double findMaxULP(Double6 value, Double6 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final double findMaxULP(Double8 value, Double8 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static double findMaxULP(Double8 value, Double8 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final double findMaxULP(double value, double expected) {
-        final double ULP = ulp(expected);
+    public static double findMaxULP(double value, double expected) {
+        final double ULP = Math.ulp(expected);
 
         if (value == expected) {
             return 0f;
         }
 
-        final double absValue = abs(value - expected);
+        final double absValue = Math.abs(value - expected);
         return absValue / ULP;
     }
 
-    public static final boolean compare(double a, double b) {
-        return (abs(a - b) <= EPSILON);
+    public static boolean compare(double a, double b) {
+        return (Math.abs(a - b) <= EPSILON);
     }
 
-    public static final boolean compare(double a, double b, double tol) {
-        return (abs(a - b) <= tol);
+    public static boolean compare(double a, double b, double tol) {
+        return (Math.abs(a - b) <= tol);
     }
 
-    public static final double sq(double value) {
+    public static double sq(double value) {
         return value * value;
     }
 
-    public static final void atomicAdd(double[] array, int index, double value) {
+    public static void atomicAdd(double[] array, int index, double value) {
         array[index] += value;
     }
 }
