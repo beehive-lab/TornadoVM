@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.IntBuffer.wrap;
-
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 2x ints e.g. <int,int>
- *
- * @author jamesclarkson
- *
- */
 @Vector
 public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
@@ -66,7 +57,8 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
     /**
      * backing array
      */
-    @Payload final protected int[] storage;
+    @Payload
+    final protected int[] storage;
 
     /**
      * number of elements in the storage
@@ -85,6 +77,10 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         this();
         setX(x);
         setY(y);
+    }
+
+    public int[] getArray() {
+        return storage;
     }
 
     public int get(int index) {
@@ -127,7 +123,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Int2}
      */
     public Int2 duplicate() {
         Int2 vector = new Int2();
@@ -136,7 +132,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY());
+        return String.format(fmt, getX(), getY());
     }
 
     @Override
@@ -144,7 +140,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         return toString(numberFormat);
     }
 
-    protected static final Int2 loadFromArray(final int[] array, int index) {
+    protected static Int2 loadFromArray(final int[] array, int index) {
         final Int2 result = new Int2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -163,7 +159,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return wrap(storage);
+        return IntBuffer.wrap(storage);
     }
 
     @Override

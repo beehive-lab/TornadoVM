@@ -71,11 +71,11 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
-     * @param data
+     * @param height
+     *            number of columns
+     * @param array
      *            array reference which contains data
      */
     public ImageFloat(int width, int height, float[] array) {
@@ -88,10 +88,10 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
+     * @param height
+     *            number of columns
      */
     public ImageFloat(int width, int height) {
         this(width, height, new float[width * height]);
@@ -99,6 +99,10 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     public ImageFloat(float[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
+    }
+
+    public float[] getArray() {
+        return storage;
     }
 
     public float get(int i) {
@@ -116,7 +120,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      *            row index
      * @param j
      *            column index
-     * @return
+     * @return float
      */
     public float get(int i, int j) {
         return storage[StorageFormats.toRowMajor(j, i, X)];

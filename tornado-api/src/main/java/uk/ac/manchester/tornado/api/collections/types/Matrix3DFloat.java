@@ -72,11 +72,11 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
-     * @param data
+     * @param array
      *            array reference which contains data
      */
     public Matrix3DFloat(int width, int height, int depth, float[] array) {
@@ -90,9 +90,9 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
      */
     public Matrix3DFloat(int width, int height, int depth) {
@@ -101,6 +101,10 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
 
     public Matrix3DFloat(float[][][] matrix) {
         this(matrix.length, matrix[0].length, matrix[0][0].length, StorageFormats.toRowMajor3D(matrix));
+    }
+
+    public float[] getFlattenedArray() {
+        return storage;
     }
 
     public float get(int i, int j, int k) {
