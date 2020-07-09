@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
@@ -39,7 +40,15 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         this.length = length;
         this.elemenType = elementType;
         this.elementKind = PTXKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = PTXBinaryTemplate.NEW_ARRAY;
+        this.arrayTemplate = PTXKind.resolvePrivateTemplateType(elementType);
+    }
+
+    public FixedArrayNode(PTXMemoryBase memoryRegister, PTXKind ptxKind, PTXBinaryTemplate arrayTemplate, ConstantNode length) {
+        super(TYPE, PTXStampFactory.getStampFor(ptxKind));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.elementKind = ptxKind;
+        this.arrayTemplate = arrayTemplate;
     }
 
     public PTXMemoryBase getMemoryRegister() {
@@ -66,7 +75,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
          */
         final Value lengthValue = gen.operand(length);
 
-        LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
+        LIRKind lirKind = LIRKind.value(elementKind);
         final Variable variable = ((PTXLIRGenerator)gen.getLIRGeneratorTool()).newVariable(lirKind, true);
         final PTXBinary.Expr declaration = new PTXBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 

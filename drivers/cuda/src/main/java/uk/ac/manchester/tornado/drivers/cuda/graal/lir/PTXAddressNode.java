@@ -1,7 +1,10 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -9,6 +12,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
@@ -56,8 +60,12 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
         setMemoryAccess(gen, baseValue, indexValue, tool);
     }
 
-    private boolean isLocalOrSharedMemoryAccess() {
-        return memoryRegister.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || memoryRegister.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
+    private boolean isLocalMemoryAccess() {
+        return memoryRegister.memorySpace.name().equals(PTXMemorySpace.LOCAL.name());
+    }
+
+    private boolean isSharedMemoryAccess() {
+        return memoryRegister.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
     }
 
     @Override
@@ -77,7 +85,12 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
 
     private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, PTXLIRGenerator tool) {
         Variable addressValue;
-        if (isLocalOrSharedMemoryAccess()) {
+        if (isLocalMemoryAccess()) {
+            Variable basePointer = tool.getArithmetic().emitUnaryAssign(PTXAssembler.PTXUnaryOp.MOV, LIRKind.value(PTXKind.U32), baseValue);
+            Value indexOffset = tool.getArithmetic().emitMul(indexValue, new ConstantValue(LIRKind.value(PTXKind.U32), JavaConstant.forInt(baseValue.getPlatformKind().getSizeInBytes())), false);
+            addressValue = tool.getArithmetic().emitAdd(basePointer, indexOffset, false);
+            gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, addressValue, null));
+        } else if (isSharedMemoryAccess()) {
             gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, baseValue, indexValue));
         } else {
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);

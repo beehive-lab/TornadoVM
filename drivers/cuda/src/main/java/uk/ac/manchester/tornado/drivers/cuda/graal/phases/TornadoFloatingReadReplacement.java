@@ -407,7 +407,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         private static boolean shouldBeFloatingRead(FloatableAccessNode accessNode) {
             boolean shouldReadFloat = true;
             boolean isVectorLoad = accessNode.usages().filter(VectorLoadElementNode.class).isNotEmpty();
-            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(LocalArrayNode.class).isNotEmpty();
+            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(FixedArrayNode.class).isNotEmpty();
 
             for (Node node : accessNode.inputs().snapshot()) {
                 if (node instanceof OffsetAddressNode) {

@@ -111,7 +111,7 @@ public enum PTXKind implements PlatformKind {
     public static PTXKind fromResolvedJavaType(ResolvedJavaType elementType) {
         if (!elementType.isArray()) {
             for (PTXKind k : PTXKind.values()) {
-                if (k.javaClass != null && k.javaClass.getSimpleName().equals(elementType.getUnqualifiedName())) {
+                if (k.javaClass != null && (k.javaClass.getSimpleName().equalsIgnoreCase(elementType.getJavaKind().name()) || k.javaClass.getSimpleName().equals(elementType.getUnqualifiedName()))) {
                     return k;
                 }
             }
@@ -125,6 +125,29 @@ public enum PTXKind implements PlatformKind {
 
     private static PTXAssembler.PTXBinaryTemplate resolveTemplateType(JavaKind type) {
         if (type == JavaKind.Int) {
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_INT_ARRAY;
+        } else if (type == JavaKind.Double) {
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_DOUBLE_ARRAY;
+        } else if (type == JavaKind.Float) {
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_FLOAT_ARRAY;
+        } else if (type == JavaKind.Short) {
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_SHORT_ARRAY;
+        } else if (type == JavaKind.Long) {
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_LONG_ARRAY;
+        } else if (type == JavaKind.Char) {
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_CHAR_ARRAY;
+        } else if (type == JavaKind.Byte){
+            return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_BYTE_ARRAY;
+        }
+        return null;
+    }
+
+    public static PTXAssembler.PTXBinaryTemplate resolvePrivateTemplateType(ResolvedJavaType type) {
+        return resolvePrivateTemplateType(type.getJavaKind());
+    }
+
+    public static PTXAssembler.PTXBinaryTemplate resolvePrivateTemplateType(JavaKind type) {
+        if (type == JavaKind.Int) {
             return PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_INT_ARRAY;
         } else if (type == JavaKind.Double) {
             return PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
@@ -136,7 +159,7 @@ public enum PTXKind implements PlatformKind {
             return PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
         } else if (type == JavaKind.Char) {
             return PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-        } else if (type == JavaKind.Byte){
+        } else if (type == JavaKind.Byte) {
             return PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
         }
         return null;
@@ -208,8 +231,6 @@ public enum PTXKind implements PlatformKind {
     }
 
     private boolean isUnsigned() {
-        if (!isInteger()) return false;
-
         switch (kind) {
             case U8:
             case U16:

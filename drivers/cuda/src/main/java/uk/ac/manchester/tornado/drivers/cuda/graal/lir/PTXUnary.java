@@ -116,7 +116,7 @@ public class PTXUnary {
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             //@formatter:off
-            if (isLocalOrSharedMemoryAccess()) {
+            if (isSharedMemoryAccess()) {
                 if (value != null) asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 if (index != null) asm.emitValue(index);
@@ -135,7 +135,7 @@ public class PTXUnary {
 
         public void emit(PTXAssembler asm, int index) {
             //@formatter:off
-            if (isLocalOrSharedMemoryAccess()) {
+            if (isSharedMemoryAccess()) {
                 if (value != null) asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 asm.emitConstant(index);
@@ -151,8 +151,8 @@ public class PTXUnary {
             //@formatter:on
         }
 
-        private boolean isLocalOrSharedMemoryAccess() {
-            return base.memorySpace.name().equals(PTXMemorySpace.LOCAL.name()) || base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
+        private boolean isSharedMemoryAccess() {
+            return base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
         }
 
         private boolean isVector() {

@@ -577,17 +577,24 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXBinaryTemplate extends PTXBinaryOp {
-        public static final PTXBinaryTemplate NEW_ARRAY = new PTXBinaryTemplate("new array", ".local .u8 %s[%s]");
 
-        public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", ".shared .f32 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY = new PTXBinaryTemplate("local memory array int", ".shared .s32 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new PTXBinaryTemplate("local memory array double", ".shared .f64 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY = new PTXBinaryTemplate("local memory array long", ".shared .s64 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", ".shared .s16 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".shared .u8 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", ".shared .s8 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new PTXBinaryTemplate("local memory array float", ".local .f32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_INT_ARRAY = new PTXBinaryTemplate("local memory array int", ".local .s32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new PTXBinaryTemplate("local memory array double", ".local .f64 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY = new PTXBinaryTemplate("local memory array long", ".local .s64 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", ".local .s16 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".local .u8 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", ".local .s8 %s[%s]");
 
-        public static final PTXBinaryTemplate NEW_PRIVATE_BIT32_ARRAY = new PTXBinaryTemplate("local memory array bit 32", ".local .b32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_FLOAT_ARRAY = new PTXBinaryTemplate("shared memory array float", ".shared .f32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_INT_ARRAY = new PTXBinaryTemplate("shared memory array int", ".shared .s32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_DOUBLE_ARRAY = new PTXBinaryTemplate("shared memory array double", ".shared .f64 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_LONG_ARRAY = new PTXBinaryTemplate("shared memory array long", ".shared .s64 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_SHORT_ARRAY = new PTXBinaryTemplate("shared memory array short", ".shared .s16 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_CHAR_ARRAY = new PTXBinaryTemplate("shared memory array char", ".shared .u8 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_BYTE_ARRAY = new PTXBinaryTemplate("shared memory array byte", ".shared .s8 %s[%s]");
+
+        public static final PTXBinaryTemplate NEW_LOCAL_BIT32_ARRAY = new PTXBinaryTemplate("local memory array bit 32", ".local .b32 %s[%s]");
 
         private final String template;
 

@@ -318,20 +318,18 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
-        PlatformKind pk = lirKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = lirKind;
-        PTXKind kind = PTXKind.ILLEGAL;
-        if (pk instanceof PTXKind) {
-            kind = (PTXKind) pk;
-        } else {
-            shouldNotReachHere();
-        }
-
-        final Variable var = super.newVariable(actualLIRKind);
-        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        final Variable var = super.newVariable(lirKind);
+        trace("newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
         int indexForType = res.insertVariableAndGetIndex(var, isArray);
+
+        PTXKind kind = null;
+        if (var.getPlatformKind() instanceof PTXKind) {
+            kind = (PTXKind) var.getPlatformKind();
+        } else {
+            shouldNotReachHere();
+        }
 
         if (isArray) {
             var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);

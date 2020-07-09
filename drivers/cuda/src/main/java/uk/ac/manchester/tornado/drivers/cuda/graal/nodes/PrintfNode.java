@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.nodes;
 
-import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.IterableNodeType;
@@ -59,7 +59,7 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
     @Input
     private GlobalThreadIdNode zDim;
     @Input
-    private LocalArrayNode argumentStack;
+    private FixedArrayNode argumentStack;
     @Input
     private PrintfStringNode inputString;
 
@@ -68,7 +68,7 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
         this.xDim = new GlobalThreadIdNode(ConstantNode.forInt(0));
         this.yDim = new GlobalThreadIdNode(ConstantNode.forInt(1));
         this.zDim = new GlobalThreadIdNode(ConstantNode.forInt(2));
-        this.argumentStack = new LocalArrayNode(PTXArchitecture.localSpace, PTXKind.B64, PTXAssembler.PTXBinaryTemplate.NEW_PRIVATE_BIT32_ARRAY, ConstantNode.forInt(3));
+        this.argumentStack = new FixedArrayNode(PTXArchitecture.localSpace, PTXKind.B32, PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_BIT32_ARRAY, ConstantNode.forInt(3));
         this.inputString = new PrintfStringNode(values[0]);
     }
 
@@ -87,9 +87,9 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
 
         Value format = gen.operand(inputString);
 
-        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0)), globalIDs[0]));
-        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_1)), globalIDs[1]));
-        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_2)), globalIDs[2]));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(0 * PTXKind.S32.getSizeInBytes()))), globalIDs[0]));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(1 * PTXKind.S32.getSizeInBytes()))), globalIDs[1]));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(2 * PTXKind.S32.getSizeInBytes()))), globalIDs[2]));
 
         Variable globalAddr = genTool.newVariable(LIRKind.value(PTXKind.B64));
         genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddr, format, PTXMemorySpace.GLOBAL));
