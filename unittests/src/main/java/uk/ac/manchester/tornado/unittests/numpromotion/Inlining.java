@@ -51,6 +51,10 @@ public class Inlining {
         return (v < 0) ? (255 + v) : v;
     }
 
+    public static void b2i(byte[] v, int[] result) {
+        result[0] = (v[0] < 0) ? (255 + v[0]) : v[0];
+    }
+
     public static int grey(byte r, byte g, byte b) {
         return ((29 * b2i(r) + 60 * b2i(g) + 11 * b2i(b)) / 100);
     }
@@ -162,6 +166,28 @@ public class Inlining {
         for (int i = 0; i < seq.length; i++) {
             Assert.assertEquals(seq[i], greyInts[i]);
         }
+    }
 
+    @Test
+    public void test04() {
+        byte[] rgbBytes = new byte[1];
+        int[] greyInts = new int[1];
+        int[] seq = new int[1];
+        Random r = new Random();
+        IntStream.range(0, rgbBytes.length).forEach(i -> {
+            rgbBytes[i] = (byte) -10;
+        });
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.streamIn(rgbBytes) //
+                .task("t0", Inlining::b2i, rgbBytes, greyInts)//
+                .streamOut(greyInts) //
+                .execute();
+
+        rgbToGreyKernelSmall(rgbBytes, seq);
+
+        for (int i = 0; i < seq.length; i++) {
+            Assert.assertEquals(seq[i], greyInts[i]);
+        }
     }
 }

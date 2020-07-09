@@ -20,27 +20,29 @@ package uk.ac.manchester.tornado.unittests.numpromotion;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- *
  * JVM applies "Binary Numeric Promotion"
  * https://docs.oracle.com/javase/specs/jls/se8/html/jls-5.html#jls-5.6.2
- *
+ * <p>
  * In a nutshell, byte operations are performed in bytes, but JVM narrows up the
  * result to int (signed), which leads to wrong results, because the output is
  * not a byte anymore, is an integer.
- *
+ * <p>
  * Since this is in the JLS spec, we can't do too much regarding Java semantics,
  * but a possible solution is to expose a type in TornadoVM that we can handle
  * like an intrinsic and force not to sign those operations.
- *
+ * <p>
  * Affect arithmetic, logical and shift operations when operands are byte and
  * short data types.
- *
  */
 
 public class TestNumericPromotion extends TornadoTestBase {
@@ -245,7 +247,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
                 .streamIn(result, input, elements)
-                .task("t0", TestNumericPromotion::multiplication, result, input,elements)
+                .task("t0", TestNumericPromotion::multiplication, result, input, elements)
                 .streamOut(result)
                 .execute();
         //@formatter:on
@@ -345,4 +347,33 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void testCopy() {
+
+        int size = 512;
+        byte[] input = new byte[size];
+        int[] output = new int[size];
+        int[] seq = new int[size];
+
+        Random r = new Random();
+
+        IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
+
+        new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", TestNumericPromotion::testCopy, input, output) //
+                .streamOut(output) //
+                .execute();
+
+        testCopy(input, seq);
+        for (int i = 0; i < seq.length; i++) {
+            assertEquals(seq[i], output[i]);
+        }
+    }
+
+    private static void testCopy(byte[] input, int[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[i] = input[i];
+        }
+    }
 }
