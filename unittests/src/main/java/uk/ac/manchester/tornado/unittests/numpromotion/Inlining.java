@@ -48,11 +48,15 @@ public class Inlining {
     }
 
     public static int b2i(byte v) {
-        return v < 0 ? 256 + v : v;
+        return (v < 0) ? (255 + v) : v;
     }
 
     public static int grey(byte r, byte g, byte b) {
         return ((29 * b2i(r) + 60 * b2i(g) + 11 * b2i(b)) / 100);
+    }
+
+    public static int grey(byte r) {
+        return (b2i(r) / 100);
     }
 
     public static int grey(int r, int g, int b) {
@@ -74,6 +78,13 @@ public class Inlining {
             int g = rgbBytes[i * 3 + 1];
             int b = rgbBytes[i * 3 + 2];
             greyInts[i] = grey(r, g, b);
+        }
+    }
+
+    public static void rgbToGreyKernelSmall(byte[] rgbBytes, int[] greyInts) {
+        for (@Parallel int i = 0; i < greyInts.length; i++) {
+            byte r = rgbBytes[i];
+            greyInts[i] = grey(r);
         }
     }
 
@@ -122,6 +133,31 @@ public class Inlining {
                 .execute();
 
         rgbToGreyKernelInt(rgbBytes, seq);
+
+        for (int i = 0; i < seq.length; i++) {
+            Assert.assertEquals(seq[i], greyInts[i]);
+        }
+
+    }
+
+    @Test
+    public void test03() {
+        final int size = 256;
+        byte[] rgbBytes = new byte[size];
+        int[] greyInts = new int[size];
+        int[] seq = new int[size];
+        Random r = new Random();
+        IntStream.range(0, rgbBytes.length).forEach(i -> {
+            rgbBytes[i] = (byte) -10;
+        });
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.streamIn(rgbBytes) //
+                .task("t0", Inlining::rgbToGreyKernelSmall, rgbBytes, greyInts)//
+                .streamOut(greyInts) //
+                .execute();
+
+        rgbToGreyKernelSmall(rgbBytes, seq);
 
         for (int i = 0; i < seq.length; i++) {
             Assert.assertEquals(seq[i], greyInts[i]);
