@@ -23,7 +23,6 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
@@ -65,16 +64,11 @@ public class TornadoNumericPromotionPhase extends BasePhase<TornadoSketchTierCon
             }
 
             NodeIterable<NarrowNode> filter = signExtendNode.usages().filter(NarrowNode.class);
+
             if (filter.isNotEmpty()) {
                 // Do the link
                 NarrowNode newNarrowNode = filter.first();
-                for (Node n : signExtendNode.usages()) {
-                    if (n instanceof FixedWithNextNode) {
-                        FixedWithNextNode fixedNode = (FixedWithNextNode) n;
-                        fixedNode.replaceAllInputs(signExtendNode, newNarrowNode);
-                    }
-                }
-
+                signExtendNode.replaceAtMatchingUsages(newNarrowNode, node -> !node.equals(newNarrowNode));
                 assert graph.verify();
             }
         }
