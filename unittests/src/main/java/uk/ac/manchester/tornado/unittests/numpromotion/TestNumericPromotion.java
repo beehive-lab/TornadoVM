@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +20,9 @@ package uk.ac.manchester.tornado.unittests.numpromotion;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -347,33 +343,4 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @Test
-    public void testCopy() {
-
-        int size = 512;
-        byte[] input = new byte[size];
-        int[] output = new int[size];
-        int[] seq = new int[size];
-
-        Random r = new Random();
-
-        IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
-
-        new TaskSchedule("s0") //
-                .streamIn(input) //
-                .task("t0", TestNumericPromotion::testCopy, input, output) //
-                .streamOut(output) //
-                .execute();
-
-        testCopy(input, seq);
-        for (int i = 0; i < seq.length; i++) {
-            assertEquals(seq[i], output[i]);
-        }
-    }
-
-    private static void testCopy(byte[] input, int[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[i] = input[i];
-        }
-    }
 }
