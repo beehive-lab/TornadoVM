@@ -81,29 +81,6 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
 ]
 
-## List of classes to be tested for the CUDA integration project. These should remain on this branch.
-__TEST_CUDA__ = [
-	"uk.ac.manchester.tornado.unittests.drivers.cuda.mm.ReadWriteTests",
-	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
-	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
-	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
-	"uk.ac.manchester.tornado.unittests.branching.TestConditionals",
-	"uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations",
-	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer",
-	"uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice",
-	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
-	"uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions",
-	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
-	"uk.ac.manchester.tornado.unittests.functional.TestLambdas",
-	"uk.ac.manchester.tornado.unittests.fails.TestFails",
-	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
-	"uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation",
-	"uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice",
-	"uk.ac.manchester.tornado.unittests.images.TestImages",
-]
-
-# __TEST_THE_WORLD__ = __TEST_CUDA__
-
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
 	"",
