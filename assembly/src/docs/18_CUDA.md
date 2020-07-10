@@ -4,12 +4,16 @@
 In order to run the PTX backend of Tornado, you will need a CUDA compatible device.
 
 #### Installation 
-As a first step, TornadoVM must be installed as described [here](1_INSTALL.md).
+**Step 1:**  
+You will need to setup the `CUDA Toolkit`. If you don't have it installed already, you can follow [this guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html). 
 
-Then, you will need to setup the `CUDA Toolkit`. If you don't have it installed already, you can follow [this guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html) 
+**Step 2:**  
+Make sure you follow the [environment setup](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#environment-setup) to add the required environment variables.  
+Depending on the installation, you might also have to expand your `C_INCLUDE_PATH` variable to include the CUDA headers.   
+Example: `export C_INCLUDE_PATH=/usr/local/cuda/include:${C_INCLUDE_PATH}`
 
-In order to check that the installation has been successful, you can run the following commands:
-`nvidia-smi` and `nvcc --version`
+To ensure that the installation has been successful, you can run the following commands:
+`nvidia-smi` and `nvcc --version`.
 
 The output of `nvidia-smi` should be similar to:
 ```
@@ -40,7 +44,9 @@ Built on Wed_Oct_23_19:24:38_PDT_2019
 Cuda compilation tools, release 10.2, V10.2.89
 ```
 
-Next, build TornadoVM and run `tornado --devices`. The output should look like this:
+**Step 3:**  
+Install TornadoVM as described [here](1_INSTALL.md).   
+Build TornadoVM and run `tornado --devices`. The output should look like this:
 ```
    Number of Tornado drivers: 2
    Total number of devices  : 1
@@ -69,11 +75,9 @@ Next, build TornadoVM and run `tornado --devices`. The output should look like t
    		Max WorkGroup Configuration: [256, 256, 256]
    		Device OpenCL C version: OpenCL C 2.0
 ```
-Where the first driver will always be the CUDA device detected by the PTX backend.
+Note that the first Tornado driver will always correspond to the CUDA device detected by the PTX backend.
 
 #### Possible issues
-After the installation of the `CUDA Toolkit`, please make sure that you follow the [environment setup](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#environment-setup) to include the required environment variables.
-
 In some cases the driver module might not get loaded due to a [blacklist file](https://forums.developer.nvidia.com/t/nvidia-driver-is-not-loaded-ubuntu-18-10/70495/2).
 You can remove this by running:
 `sudo rm /etc/modprobe.d/blacklist-nvidia.conf`  
