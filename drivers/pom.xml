@@ -11,8 +11,8 @@
     <modules>
         <module>opencl</module>
         <module>opencl-jni</module>
-        <module>cuda</module>
-        <module>cuda-jni</module>
+        <module>ptx</module>
+        <module>ptx-jni</module>
     </modules>
 
     <profiles>

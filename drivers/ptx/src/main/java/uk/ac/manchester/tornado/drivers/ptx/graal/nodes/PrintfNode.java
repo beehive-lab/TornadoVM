@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Authors: James Clarkson
+ *
+ */
+package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
+
+import jdk.vm.ci.meta.JavaConstant;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.IterableNodeType;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.spi.LIRLowerable;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXPrintf;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
+
+@NodeInfo(shortName = "printf")
+public class PrintfNode extends FixedWithNextNode implements LIRLowerable, IterableNodeType {
+
+    public static final NodeClass<PrintfNode> TYPE = NodeClass.create(PrintfNode.class);
+
+    @Input
+    private GlobalThreadIdNode xDim;
+    @Input
+    private GlobalThreadIdNode yDim;
+    @Input
+    private GlobalThreadIdNode zDim;
+    @Input
+    private FixedArrayNode argumentStack;
+    @Input
+    private PrintfStringNode inputString;
+
+    public PrintfNode(ValueNode... values) {
+        super(TYPE, StampFactory.forVoid());
+        this.xDim = new GlobalThreadIdNode(ConstantNode.forInt(0));
+        this.yDim = new GlobalThreadIdNode(ConstantNode.forInt(1));
+        this.zDim = new GlobalThreadIdNode(ConstantNode.forInt(2));
+        this.argumentStack = new FixedArrayNode(PTXArchitecture.localSpace, PTXKind.B32, PTXAssembler.PTXBinaryTemplate.NEW_LOCAL_BIT32_ARRAY, ConstantNode.forInt(3));
+        this.inputString = new PrintfStringNode(values[0]);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool gen) {
+        PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
+
+        Value stack = gen.operand(argumentStack);
+        Variable formatParam = genTool.newParamVariable(LIRKind.value(PTXKind.B64));
+        Variable stackParam = genTool.newParamVariable(LIRKind.value(PTXKind.B64));
+
+        Value[] globalIDs = new Value[3];
+        globalIDs[0] = gen.operand(xDim);
+        globalIDs[1] = gen.operand(yDim);
+        globalIDs[2] = gen.operand(zDim);
+
+        Value format = gen.operand(inputString);
+
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(0 * PTXKind.S32.getSizeInBytes()))), globalIDs[0]));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(1 * PTXKind.S32.getSizeInBytes()))), globalIDs[1]));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(2 * PTXKind.S32.getSizeInBytes()))), globalIDs[2]));
+
+        Variable globalAddr = genTool.newVariable(LIRKind.value(PTXKind.B64));
+        genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddr, format, PTXMemorySpace.GLOBAL));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, formatParam, null), globalAddr));
+
+        genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddr, stack, PTXMemorySpace.LOCAL));
+        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, stackParam, null), globalAddr));
+
+        genTool.append(new PTXLIRStmt.ExprStmt(new PTXPrintf(formatParam, stackParam)));
+    }
+
+}

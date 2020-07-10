@@ -45,12 +45,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-drivers-cuda</artifactId>
+      <artifactId>tornado-drivers-ptx</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-drivers-cuda-jni</artifactId>
+      <artifactId>tornado-drivers-ptx-jni</artifactId>
       <version>${project.version}</version>
       <classifier>libs</classifier>
     </dependency>

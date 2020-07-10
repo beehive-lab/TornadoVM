@@ -104,7 +104,7 @@
         <include>tornado:tornado-runtime</include>
         <include>tornado:tornado-annotation</include>
         <include>tornado:tornado-matrices</include>
-        <include>tornado:tornado-drivers-cuda</include>
+        <include>tornado:tornado-drivers-ptx</include>
         <include>tornado:tornado-drivers-opencl</include>
         <include>tornado:tornado-examples</include>
         <include>tornado:tornado-benchmarks</include>
@@ -130,7 +130,7 @@
         </includes>
       </unpackOptions>
       <includes>
-        <include>tornado:tornado-drivers-cuda-jni:jar:libs</include>
+        <include>tornado:tornado-drivers-ptx-jni:jar:libs</include>
         <include>tornado:tornado-drivers-opencl-jni:jar:libs</include>
       </includes>
     </dependencySet>
