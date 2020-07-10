@@ -184,7 +184,7 @@ public class Inlining {
                 .streamOut(greyInts) //
                 .execute();
 
-        rgbToGreyKernelSmall(rgbBytes, seq);
+        b2i(rgbBytes, seq);
 
         for (int i = 0; i < seq.length; i++) {
             Assert.assertEquals(seq[i], greyInts[i]);

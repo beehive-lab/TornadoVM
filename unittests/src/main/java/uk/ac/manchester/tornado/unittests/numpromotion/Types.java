@@ -60,6 +60,24 @@ public class Types extends TornadoTestBase {
         }
     }
 
+    private static void s2i(short[] input, int[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[i] = input[i];
+        }
+    }
+
+    private static void f2d(float[] input, double[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[i] = input[i];
+        }
+    }
+
+    private static void i2d(int[] input, double[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[i] = input[i];
+        }
+    }
+
     @Test
     public void testByteToByte() {
         int size = 512;
@@ -188,6 +206,72 @@ public class Types extends TornadoTestBase {
         i2l(input, seq);
         for (int i = 0; i < seq.length; i++) {
             assertEquals(seq[i], output[i]);
+        }
+    }
+
+    @Test
+    public void testShortToInt() {
+        int size = 512;
+        short[] input = new short[size];
+        int[] output = new int[size];
+        int[] seq = new int[size];
+
+        Random r = new Random(System.nanoTime());
+        IntStream.range(0, input.length).forEach(x -> input[x] = (short) r.nextInt(256));
+
+        new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", Types::s2i, input, output) //
+                .streamOut(output) //
+                .execute();
+
+        s2i(input, seq);
+        for (int i = 0; i < seq.length; i++) {
+            assertEquals(seq[i], output[i]);
+        }
+    }
+
+    @Test
+    public void testFloatToDouble() {
+        int size = 512;
+        float[] input = new float[size];
+        double[] output = new double[size];
+        double[] seq = new double[size];
+
+        Random r = new Random(System.nanoTime());
+        IntStream.range(0, input.length).forEach(x -> input[x] = r.nextFloat());
+
+        new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", Types::f2d, input, output) //
+                .streamOut(output) //
+                .execute();
+
+        f2d(input, seq);
+        for (int i = 0; i < seq.length; i++) {
+            assertEquals(seq[i], output[i], 0.001f);
+        }
+    }
+
+    @Test
+    public void testIntToDouble() {
+        int size = 512;
+        int[] input = new int[size];
+        double[] output = new double[size];
+        double[] seq = new double[size];
+
+        Random r = new Random(System.nanoTime());
+        IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
+
+        new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", Types::i2d, input, output) //
+                .streamOut(output) //
+                .execute();
+
+        i2d(input, seq);
+        for (int i = 0; i < seq.length; i++) {
+            assertEquals(seq[i], output[i], 0.001f);
         }
     }
 }

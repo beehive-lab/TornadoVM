@@ -206,7 +206,9 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            OCLKind oclKind = (OCLKind) getPlatformKind();
+            // OCLKind oclKind = (OCLKind) getPlatformKind();
+            OCLKind oclKind = getOCLKind();
+            System.out.println("CAST: " + oclKind);
             asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
         }
 
