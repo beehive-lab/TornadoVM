@@ -13,9 +13,9 @@ jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2);
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
  * Method:    cuEventDestroy
- * Signature: ([B)V
+ * Signature: ([B)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventDestroy
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventDestroy
   (JNIEnv *, jclass, jbyteArray);
 
 /*

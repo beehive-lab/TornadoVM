@@ -60,8 +60,8 @@ public class PTXStream extends TornadoLogger {
     private native static byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
 
     private native static byte[] cuCreateStream();
-    private native static void cuDestroyStream(byte[] streamWrapper);
-    private native static void cuStreamSynchronize(byte[] streamWrapper);
+    private native static long cuDestroyStream(byte[] streamWrapper);
+    private native static long cuStreamSynchronize(byte[] streamWrapper);
 
     private native static byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
     //@formatter:on

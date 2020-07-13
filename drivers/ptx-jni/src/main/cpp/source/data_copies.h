@@ -16,7 +16,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUDA_CHECK_ERROR("cuMemcpyDtoHAsync", cuMemcpyDtoHAsync(staging_list->staging_area, device_ptr, (size_t) length, stream)) \
 \
     RECORD_EVENT_END() \
-    if (cuEventQuery(afterEvent) != 0) cuEventSynchronize(afterEvent); \
+    if (cuEventQuery(afterEvent) != CUDA_SUCCESS) cuEventSynchronize(afterEvent); \
  \
     (*env)->Set ## J_TYPE ## ArrayRegion(env, array, host_offset / sizeof(NATIVE_J_TYPE), length / sizeof(NATIVE_J_TYPE), staging_list->staging_area); \
     set_to_unused(stream, result, staging_list); \

@@ -275,9 +275,9 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuDestroyStream
- * Signature: ([B)V
+ * Signature: ([B)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDestroyStream
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDestroyStream
   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
     CUresult result;
     CUstream stream;
@@ -286,21 +286,22 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDes
     CUDA_CHECK_ERROR("cuStreamDestroy", cuStreamDestroy(stream));
 
     free_staging_area_list();
+    return (jlong) result;
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuStreamSynchronize
- * Signature: ([B)V
+ * Signature: ([B)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamSynchronize
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamSynchronize
   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
     CUresult result;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
     CUDA_CHECK_ERROR("cuStreamSynchronize", cuStreamSynchronize(stream));
-    return;
+    return (jlong) result;
 }
 
 /*

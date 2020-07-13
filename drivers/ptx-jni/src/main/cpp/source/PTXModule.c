@@ -33,7 +33,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     CUmodule module;
     CUDA_CHECK_ERROR("cuModuleLoadData", cuModuleLoadData(&module, ptx));
 
-    if (result != 0) {
+    if (result != CUDA_SUCCESS) {
         printf("PTX to cubin JIT compilation failed! (%d)\n", result);
         fflush(stdout);
         jbyteArray error_array = (*env)->NewByteArray(env, 0);

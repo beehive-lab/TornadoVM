@@ -38,7 +38,7 @@ public class PTX {
         });
     }
 
-    private native static void cuInit();
+    private native static long cuInit();
 
     private static void initialise() {
         if (initialised) return;

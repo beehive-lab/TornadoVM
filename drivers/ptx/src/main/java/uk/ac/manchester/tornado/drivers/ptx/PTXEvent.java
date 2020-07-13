@@ -22,7 +22,7 @@ public class PTXEvent extends TornadoLogger implements Event {
         isCompleted = false;
     }
 
-    private native static void cuEventDestroy(byte[] eventWrapper);
+    private native static long cuEventDestroy(byte[] eventWrapper);
     private native static void cuEventSynchronize(byte[][] wrappers);
     private native static boolean cuEventQuery(byte[] eventWrapper);
     private native static long cuEventElapsedTime(byte[][] wrappers);

@@ -53,7 +53,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
     CUdeviceptr dev_ptr;
     CUDA_CHECK_ERROR("cuMemAlloc", cuMemAlloc(&dev_ptr, (size_t) num_bytes));
 
-    if (result != 0) return (jlong) result;
+    if (result != CUDA_SUCCESS) return (jlong) result;
     return (jlong) dev_ptr;
 }
 

@@ -35,11 +35,11 @@
 #define RECORD_EVENT_BEGIN() \
     CUevent beforeEvent, afterEvent; \
     result = cuEventCreate(&beforeEvent, CU_EVENT_DEFAULT); \
-    if (result != 0) { \
+    if (result != CUDA_SUCCESS) { \
         printf("Failed to create event! (%d)\n", result); fflush(stdout); \
     } \
     result = cuEventCreate(&afterEvent, CU_EVENT_DEFAULT); \
-    if (result != 0) { \
+    if (result != CUDA_SUCCESS) { \
         printf("Failed to create event! (%d)\n", result); fflush(stdout); \
     } \
 \

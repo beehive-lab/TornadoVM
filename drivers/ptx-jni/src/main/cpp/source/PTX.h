@@ -6,9 +6,9 @@
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTX
  * Method:    cuInit
- * Signature: ()V
+ * Signature: ()J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTX_cuInit
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTX_cuInit
   (JNIEnv *, jclass);
 
 #endif

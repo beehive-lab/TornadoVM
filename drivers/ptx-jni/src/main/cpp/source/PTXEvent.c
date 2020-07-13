@@ -27,16 +27,16 @@ void event_from_array(JNIEnv *env, CUevent *event, jbyteArray array) {
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
  * Method:    cuEventDestroy
- * Signature: ([B)V
+ * Signature: ([B)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventDestroy
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventDestroy
   (JNIEnv *env, jclass clazz, jbyteArray event_wrapper) {
     CUresult result;
     CUevent event;
     event_from_array(env, &event, event_wrapper);
 
     CUDA_CHECK_ERROR("cuEventDestroy", cuEventDestroy(event));
-    return;
+    return (jlong) result;
 }
 
 /*
@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEven
         jbyteArray array = (jbyteArray) (*env)->GetObjectArrayElement(env, wrappers, i);
         CUevent event;
         event_from_array(env, &event, array);
-        if (cuEventQuery(event) != 0){
+        if (cuEventQuery(event) != CUDA_SUCCESS){
             CUDA_CHECK_ERROR("cuEventSynchronize", cuEventSynchronize(event)); // Only wait on event if not completed yet
         }
         (*env)->DeleteLocalRef(env, array);
