@@ -5,39 +5,30 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXContext
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXContext
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern CUcontext **g_contexts;
-extern int g_contexts_length;
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxCreate
- * Signature: (I)I
+ * Signature: (I)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxCreate
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxCreate
   (JNIEnv *, jclass, jint);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxDestroy
- * Signature: (I)V
+ * Signature: (J)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
-  (JNIEnv *, jclass, jint);
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
+  (JNIEnv *, jclass, jlong);
 
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuMemAlloc
- * Signature: (IJ)J
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemAlloc
-  (JNIEnv *, jclass, jint, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

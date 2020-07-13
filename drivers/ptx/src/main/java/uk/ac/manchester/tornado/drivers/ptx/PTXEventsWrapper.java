@@ -45,7 +45,6 @@ public class PTXEventsWrapper {
             events[currentEvent].waitForEvents();
             events[currentEvent].destroy();
             events[currentEvent] = null;
-            releaseEvent(currentEvent);
         }
         events[currentEvent] = new PTXEvent(eventWrapper, description);
 

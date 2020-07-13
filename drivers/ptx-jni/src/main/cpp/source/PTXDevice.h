@@ -3,9 +3,6 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXDevice
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXDevice
-#ifdef __cplusplus
-extern "C" {
-#endif
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetName
@@ -46,7 +43,4 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDri
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMemGetInfo
   (JNIEnv *, jclass, jint);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

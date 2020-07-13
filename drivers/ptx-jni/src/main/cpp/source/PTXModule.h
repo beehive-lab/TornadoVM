@@ -5,9 +5,6 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXModule
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper);
 
@@ -27,7 +24,4 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_calcMaximalBlockSize
   (JNIEnv *, jclass, jbyteArray, jstring);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

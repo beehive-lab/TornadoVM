@@ -5,7 +5,7 @@
 
 #include "PTXModule.h"
 #include "PTXEvent.h"
-#include "../macros/data_copies.h"
+#include "data_copies.h"
 
 typedef struct area_list {
     void *staging_area;
@@ -23,8 +23,8 @@ StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) 
     if (list == NULL) {
         list = malloc(sizeof(StagingAreaList));
         CUresult result = cuMemAllocHost(&(list->staging_area), size);
-        if (result != 0) {
-            printf("Failed to allocate staging area! (%d)\n", result); fflush(stdout);
+        if (result != CUDA_SUCCESS) {
+            printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area create" ,"cuMemAllocHost", result); fflush(stdout);
         }
         list->length = size;
         list->is_used = false;
@@ -39,12 +39,14 @@ StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) 
     // Update
     else if (list->length < size) {
         CUresult result = cuMemFreeHost(list->staging_area);
-        if (result != 0) {
-            printf("Failed to free staging area! (%d)\n", result); fflush(stdout);
+        if (result != CUDA_SUCCESS) {
+            printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area update" ,"cuMemFreeHost", result);
+            fflush(stdout);
         }
         result = cuMemAllocHost(&(list->staging_area), size);
-        if (result != 0) {
-            printf("Failed to allocate staging area! (%d)\n", result); fflush(stdout);
+        if (result != CUDA_SUCCESS) {
+            printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area update" ,"cuMemAllocHost", result);
+            fflush(stdout);
         }
         list->length = size;
     }
@@ -76,8 +78,13 @@ void set_to_unused(CUstream hStream,  CUresult status, void *list) {
 }
 
 void free_staging_area_list() {
-    while(last != NULL) {
-        cuMemFreeHost(last->staging_area);
+    CUresult result;
+    while (last != NULL) {
+        result = cuMemFreeHost(last->staging_area);
+        if (result != CUDA_SUCCESS) {
+            printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "free_staging_area_list" ,"cuMemFreeHost", result);
+            fflush(stdout);
+        }
         StagingAreaList *list = last;
         last = last->prev;
         free(list);
@@ -208,12 +215,13 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
         jbyteArray stream_wrapper,
         jbyteArray args) {
 
+    CUresult result;
     CUmodule native_module;
     array_to_module(env, &native_module, module);
 
     const char *native_function_name = (*env)->GetStringUTFChars(env, function_name, 0);
     CUfunction kernel;
-    CUresult result = cuModuleGetFunction(&kernel, native_module, native_function_name);
+    CUDA_CHECK_ERROR("cuModuleGetFunction", cuModuleGetFunction(&kernel, native_module, native_function_name));
 
     size_t arg_buffer_size = (*env)->GetArrayLength(env, args);
     char arg_buffer[arg_buffer_size];
@@ -230,17 +238,17 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     stream_from_array(env, &stream, stream_wrapper);
 
     RECORD_EVENT_BEGIN()
-    result = cuLaunchKernel(kernel,
+    CUDA_CHECK_ERROR("cuLaunchKernel",
+        cuLaunchKernel(
+            kernel,
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
             (unsigned int) blockDimX, (unsigned int) blockDimY, (unsigned int) blockDimZ,
             (unsigned int) sharedMemBytes, stream,
             NULL,
             arg_config
+        )
     );
     RECORD_EVENT_END()
-    if (result != 0) {
-        printf("Failed to launch kernel: %s (%d)\n", native_function_name, result); fflush(stdout);
-    }
 
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
@@ -254,17 +262,12 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuCreateStream
   (JNIEnv *env, jclass clazz) {
+    CUresult result;
     int lowestPriority, highestPriority;
-    CUresult result = cuCtxGetStreamPriorityRange (&lowestPriority, &highestPriority);
-    if (result != 0) {
-        printf("Failed to get lowest and highest stream priorities! (%d)\n", result); fflush(stdout);
-    }
+    CUDA_CHECK_ERROR("cuCtxGetStreamPriorityRange", cuCtxGetStreamPriorityRange (&lowestPriority, &highestPriority));
 
     CUstream stream;
-    result = cuStreamCreateWithPriority(&stream, CU_STREAM_NON_BLOCKING, highestPriority);
-    if (result != 0) {
-        printf("Failed to create stream with priority: %d (%d)\n", highestPriority, result);
-    }
+    CUDA_CHECK_ERROR("cuStreamCreateWithPriority", cuStreamCreateWithPriority(&stream, CU_STREAM_NON_BLOCKING, highestPriority));
 
     return array_from_stream(env, &stream);
 }
@@ -276,13 +279,11 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDestroyStream
   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUresult result;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    CUresult result = cuStreamDestroy(stream);
-    if (result != 0) {
-        printf("Failed to destroy stream! (%d)\n", result); fflush(stdout);
-    }
+    CUDA_CHECK_ERROR("cuStreamDestroy", cuStreamDestroy(stream));
 
     free_staging_area_list();
 }
@@ -294,13 +295,11 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDes
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStreamSynchronize
   (JNIEnv *env, jclass clazz, jbyteArray stream_wrapper) {
+    CUresult result;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    CUresult result = cuStreamSynchronize(stream);
-    if (result != 0) {
-        printf("Failed to synchronize with stream! (%d)\n", result); fflush(stdout);
-    }
+    CUDA_CHECK_ERROR("cuStreamSynchronize", cuStreamSynchronize(stream));
     return;
 }
 
@@ -311,10 +310,10 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuStr
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *env, jclass clazz, jboolean is_timing, jbyteArray stream_wrapper) {
+    CUresult result;
     unsigned int flags = CU_EVENT_DEFAULT;
     if (!is_timing) flags |= CU_EVENT_DISABLE_TIMING;
 
-    CUresult result;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
     RECORD_EVENT_BEGIN()

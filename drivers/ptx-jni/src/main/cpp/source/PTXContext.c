@@ -3,104 +3,86 @@
 #include <stdio.h>
 
 #include "PTXContext.h"
-
-CUcontext **g_contexts = NULL;
-int g_contexts_length = 0;
+#include "macros.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxCreate
- * Signature: (I)I
+ * Signature: (I)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxCreate
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxCreate
   (JNIEnv *env, jclass clazz, jint device_index) {
-    if (g_contexts == NULL) {
-        int no_of_devices;
-        cuDeviceGetCount(&no_of_devices);
-        g_contexts = malloc(no_of_devices * sizeof(CUcontext*));
-    }
-
+    CUresult result;
     CUdevice dev;
-    cuDeviceGet(&dev, (int) device_index);
+
+    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(&dev, (int) device_index));
 
     CUcontext *ctx = malloc(sizeof(CUcontext));
-    CUresult result = cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, dev);
-    g_contexts[device_index] = ctx; // I assume there is one context created for each device
+    CUDA_CHECK_ERROR("cuCtxCreate", cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, dev));
 
-    g_contexts_length++;
-
-    return;
+    return (jlong) ctx;
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxDestroy
- * Signature: (I)V
+ * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
-  (JNIEnv *env, jclass clazz, jint device_index) {
-    CUcontext ctx;
-    cuCtxGetCurrent(&ctx);
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
+  (JNIEnv *env, jclass clazz, jlong cuContext) {
+    CUresult result;
+    CUcontext *ctx = (CUcontext*) cuContext;
 
-    if (ctx == NULL) {
-        ctx = *g_contexts[(int) device_index];
-    }
+    CUDA_CHECK_ERROR("cuCtxDestroy", cuCtxDestroy(*ctx));
 
-    CUresult result = cuCtxDestroy(ctx);
-
-    free(g_contexts[(int) device_index]);
-    g_contexts_length--;
-    if (g_contexts_length == 0) {
-        free(g_contexts);
-    }
-
-    return;
+    return (jlong) result;
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuMemAlloc
- * Signature: (IJ)J
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemAlloc
-  (JNIEnv *env, jclass clazz, jint device_index, jlong num_bytes) {
-    cuCtxSetCurrent(*g_contexts[(int) device_index]);
+  (JNIEnv *env, jclass clazz, jlong cuContext, jlong num_bytes) {
+    CUresult result;
+    CUcontext* ctx = (CUcontext*) cuContext;
+
+    CUDA_CHECK_ERROR("cuCtxSetCurrent", cuCtxSetCurrent(*ctx));
 
     CUdeviceptr dev_ptr;
-    CUresult result = cuMemAlloc(&dev_ptr, (size_t) num_bytes);
+    CUDA_CHECK_ERROR("cuMemAlloc", cuMemAlloc(&dev_ptr, (size_t) num_bytes));
 
-    if (result != 0) return (jlong) -1;
+    if (result != 0) return (jlong) result;
     return (jlong) dev_ptr;
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuMemFree
- * Signature: (IJ)V
+ * Signature: (JJ)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemFree
-  (JNIEnv *env, jclass clazz, jint device_index, jlong dev_ptr) {
-    cuCtxSetCurrent(*g_contexts[(int) device_index]);
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemFree
+  (JNIEnv *env, jclass clazz, jlong cuContext, jlong dev_ptr) {
+    CUresult result;
+    CUcontext* ctx = (CUcontext*) cuContext;
+    CUDA_CHECK_ERROR("cuCtxSetCurrent", cuCtxSetCurrent(*ctx));
 
-    CUresult result = cuMemFree((CUdeviceptr) dev_ptr);
+    CUDA_CHECK_ERROR("cuMemFree", cuMemFree((CUdeviceptr) dev_ptr));
 
-    return;
+    return (jlong) result;
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxSetCurrent
- * Signature: (I)V
+ * Signature: (J)J
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxSetCurrent
-  (JNIEnv *env, jclass clazz, jint device_index) {
-    CUcontext ctx;
-    cuCtxGetCurrent(&ctx);
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxSetCurrent
+  (JNIEnv *env, jclass clazz, jlong cuContext) {
+    CUresult result;
+    CUcontext* ctx = (CUcontext*) cuContext;
+    CUDA_CHECK_ERROR("cuCtxSetCurrent", cuCtxSetCurrent(*ctx));
 
-    if (ctx == NULL) {
-        ctx = *g_contexts[(int) device_index];
-        cuCtxSetCurrent(ctx);
-    }
-
-    return;
+    return (jlong) result;
 }

@@ -4,26 +4,6 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXEvent
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXEvent
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define RECORD_EVENT_BEGIN() \
-    CUevent beforeEvent, afterEvent; \
-    result = cuEventCreate(&beforeEvent, CU_EVENT_DEFAULT); \
-    if (result != 0) { \
-        printf("Failed to create event! (%d)\n", result); fflush(stdout); \
-    } \
-    result = cuEventCreate(&afterEvent, CU_EVENT_DEFAULT); \
-    if (result != 0) { \
-        printf("Failed to create event! (%d)\n", result); fflush(stdout); \
-    } \
-\
-    result = cuEventRecord(beforeEvent, stream); \
-
-
-#define RECORD_EVENT_END() \
-    result = cuEventRecord(afterEvent, stream); \
 
 
 jbyteArray array_from_event(JNIEnv *env, CUevent *event);
@@ -62,7 +42,4 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
 JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
   (JNIEnv *, jclass, jbyteArray);
 
-#ifdef __cplusplus
-}
-#endif
 #endif

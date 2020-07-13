@@ -4,6 +4,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class PTXContext extends TornadoLogger {
 
+    private final long contextPtr;
     private final PTXDevice device;
     private final PTXStream stream;
     private final PTXDeviceContext deviceContext;
@@ -15,7 +16,7 @@ public class PTXContext extends TornadoLogger {
     public PTXContext(PTXDevice device) {
         this.device = device;
 
-        cuCtxCreate(device.getIndex());
+        contextPtr = cuCtxCreate(device.getIndex());
 
         stream = new PTXStream();
         deviceContext = new PTXDeviceContext(device, stream);
@@ -24,28 +25,28 @@ public class PTXContext extends TornadoLogger {
         allocatedRegions = new long[MAX_ALLOCATED_REGIONS];
     }
 
-    private native static void cuCtxCreate(int deviceIndex);
+    private native static long cuCtxCreate(int deviceIndex);
 
-    private native static void cuCtxDestroy(int deviceIndex);
+    private native static long cuCtxDestroy(long cuContext);
 
-    private native static long cuMemAlloc(int deviceIndex, long numBytes);
+    private native static long cuMemAlloc(long cuContext, long numBytes);
 
-    private native static void cuMemFree(int deviceIndex, long devicePtr);
+    private native static long cuMemFree(long cuContext, long devicePtr);
 
-    private native static void cuCtxSetCurrent(int deviceIndex);
+    private native static long cuCtxSetCurrent(long cuContext);
 
     public void setContextForCurrentThread() {
-        cuCtxSetCurrent(device.getIndex());
+        cuCtxSetCurrent(contextPtr);
     }
 
     public void cleanup() {
         deviceContext.cleanup();
 
         for (int i = 0; i < allocatedRegionCount; i++) {
-            cuMemFree(device.getIndex(), allocatedRegions[i]);
+            cuMemFree(contextPtr, allocatedRegions[i]);
         }
 
-        cuCtxDestroy(device.getIndex());
+        cuCtxDestroy(contextPtr);
     }
 
     public PTXDeviceContext getDeviceContext() {
@@ -55,7 +56,7 @@ public class PTXContext extends TornadoLogger {
     public long allocateMemory(long numBytes) {
         long devicePtr = 0;
         try {
-            devicePtr = cuMemAlloc(device.getIndex(), numBytes);
+            devicePtr = cuMemAlloc(contextPtr, numBytes);
             allocatedRegions[allocatedRegionCount] = devicePtr;
             allocatedRegionCount++;
         } catch (Exception e) {
