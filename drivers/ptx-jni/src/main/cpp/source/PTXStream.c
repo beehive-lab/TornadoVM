@@ -1,24 +1,126 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
 #include <jni.h>
 #include <cuda.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 #include "PTXModule.h"
 #include "PTXEvent.h"
 #include "data_copies.h"
 
+/*
+    A singly linked list (with elements of type StagingAreaList) is used to keep all the allocated pinned memory through cuMemAllocHost.
+    A queue (with elements of type QueueNode) is used to hold all the free (no longer used) pinned memory regions.
+
+    On a new read/write we call get_first_free_staging_area which will try to dequeue a pinned memory region to use it.
+*/
+
+/*
+    Linked list which holds information regarding the pinned memory allocated.
+
+    next            -- next element of the list
+    staging_area    -- pointer to the pinned memory region
+    length          -- length in bytes of the memory region referenced by staging_area
+*/
 typedef struct area_list {
+    struct area_list *next;
     void *staging_area;
     size_t length;
-    bool is_used;
-    struct area_list *next;
-    struct area_list *prev;
 } StagingAreaList;
 
-StagingAreaList *head = NULL;
-StagingAreaList *last = NULL;
+/*
+    Head of the allocated pinned memory list
+ */
+static StagingAreaList *head = NULL;
 
-StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) {
+/*
+    Linked list used to implement a queue which holds the free (no longer used) pinned memory regions.
+*/
+typedef struct queue_list {
+    StagingAreaList* element;
+    struct queue_list *next;
+} QueueNode;
+
+/*
+    Pointers to the front and rear of the queue.
+*/
+static QueueNode *front = NULL;
+static QueueNode *rear = NULL;
+
+/*
+    Adds a free pinned memory region to the queue.
+*/
+static void enqueue(StagingAreaList *region) {
+    if (front == NULL) {
+        front = malloc(sizeof(QueueNode));
+        front->next = NULL;
+        front->element = region;
+
+        rear = front;
+    } else {
+        QueueNode *newRear = malloc(sizeof(QueueNode));
+        newRear->next = NULL;
+        newRear->element = region;
+
+        rear->next = newRear;
+        rear = newRear;
+    }
+}
+
+/*
+    Returns the first element (free pinned memory region) of the queue.
+*/
+static StagingAreaList* dequeue() {
+    if (front == NULL) {
+        return NULL;
+    }
+    StagingAreaList* region = front->element;
+    QueueNode *oldFront = front;
+    front = front->next;
+    free(oldFront);
+
+    return region;
+}
+
+/*
+    Free the queue.
+*/
+static void free_queue() {
+    if (front == NULL) return;
+
+    QueueNode *node;
+    while(front != NULL) {
+        node = front;
+        front = front->next;
+        free(node);
+    }
+}
+
+/*
+    Checks if the given staging region can fit the required size. If not, allocates the required pinned memory.
+*/
+static StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) {
     // Create
     if (list == NULL) {
         list = malloc(sizeof(StagingAreaList));
@@ -27,13 +129,7 @@ StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) 
             printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area create" ,"cuMemAllocHost", result); fflush(stdout);
         }
         list->length = size;
-        list->is_used = false;
-        list->prev = last;
         list->next = NULL;
-
-        // Since this is the newest list that was created update last
-        if (last != NULL) last->next = list;
-        last = list;
     }
 
     // Update
@@ -53,49 +149,49 @@ StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) 
     return list;
 }
 
-StagingAreaList *get_first_free_staging_area(size_t size) {
-    // Look for first free list
-    StagingAreaList *list = head;
-    bool found_first = false;
-    while (list != NULL && !found_first) {
-        if (!(list->is_used)) {
-            found_first = true;
-        }
-        else {
-            list = list->next;
-        }
-    }
+/*
+    Returns a StagingAreaList with pinned memory of given size.
+*/
+static StagingAreaList *get_first_free_staging_area(size_t size) {
+    // Dequeue the first free staging area
+    StagingAreaList *list = dequeue();
 
     list = check_or_init_staging_area(size, list);
     if (head == NULL) head = list;
 
-    list->is_used = true;
     return list;
 }
 
-void set_to_unused(CUstream hStream,  CUresult status, void *list) {
-    ((StagingAreaList *) list)->is_used = false;
+/*
+    Called by cuStreamAddCallback, enqueues a StagingAreaList to the free queue for memory reuse.
+*/
+static void set_to_unused(CUstream hStream,  CUresult status, void *list) {
+    StagingAreaList *stagingList = (StagingAreaList *) list;
+    enqueue(stagingList);
 }
 
-void free_staging_area_list() {
+/*
+    Free all the allocated pinned memory.
+*/
+static void free_staging_area_list() {
     CUresult result;
-    while (last != NULL) {
-        result = cuMemFreeHost(last->staging_area);
+    while (head != NULL) {
+        result = cuMemFreeHost(head->staging_area);
         if (result != CUDA_SUCCESS) {
             printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "free_staging_area_list" ,"cuMemFreeHost", result);
             fflush(stdout);
         }
-        StagingAreaList *list = last;
-        last = last->prev;
+        StagingAreaList *list = head;
+        head = head->next;
         free(list);
     }
 }
 
-void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
+static void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
     (*env)->GetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream_ptr);
 }
 
-jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
+static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUstream));
     (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUstream), (void *) stream);
     return array;
@@ -285,6 +381,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDe
 
     CUDA_CHECK_ERROR("cuStreamDestroy", cuStreamDestroy(stream));
 
+    free_queue();
     free_staging_area_list();
     return (jlong) result;
 }

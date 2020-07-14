@@ -21,10 +21,10 @@ public class PTXModule {
 
     private native static byte[] cuModuleLoadData(byte[] source);
 
-    private native static int calcMaximalBlockSize(byte[] module, String funcName);
+    private native static int cuOccupancyMaxPotentialBlockSize(byte[] module, String funcName);
 
     public int getMaximalBlocks() {
-        if (maximalBlockSize < 0) maximalBlockSize = calcMaximalBlockSize(moduleWrapper, kernelFunctionName);
+        if (maximalBlockSize < 0) maximalBlockSize = cuOccupancyMaxPotentialBlockSize(moduleWrapper, kernelFunctionName);
         return maximalBlockSize;
     }
 

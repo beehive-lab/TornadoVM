@@ -18,10 +18,10 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
- * Method:    calcMaximalBlockSize
+ * Method:    cuOccupancyMaxPotentialBlockSize
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_calcMaximalBlockSize
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuOccupancyMaxPotentialBlockSize
   (JNIEnv *, jclass, jbyteArray, jstring);
 
 #endif
