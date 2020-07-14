@@ -21,6 +21,8 @@
 
 The following drivers have been tested on Linux - CentOS 7.8
 
+* 20.27.17231: OK
+* 20.26.17199: OK
 * 20.25.17111: OK
 * 20.24.17065: OK
 * 20.22.16952: OK
@@ -81,6 +83,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+* 450.57 : OK
 * 440.100: OK
 * 440.82 : OK
 * 440.64 : OK
