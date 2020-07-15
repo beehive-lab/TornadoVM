@@ -27,7 +27,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
+import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.DUMP_EVENTS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
@@ -212,7 +212,7 @@ public class OCLContext extends TornadoLogger {
 
     public void cleanup() {
 
-        if (DUMP_OPENCL_EVENTS) {
+        if (DUMP_EVENTS) {
             for (OCLDeviceContext deviceContext : deviceContexts) {
                 deviceContext.dumpEvents();
             }

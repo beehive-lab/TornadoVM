@@ -671,6 +671,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void setContextForCurrentThread() {
-        // OpenCL device context is shared across different threads by default
+        // OpenCL device context is shared by different threads, by default
     }
 }

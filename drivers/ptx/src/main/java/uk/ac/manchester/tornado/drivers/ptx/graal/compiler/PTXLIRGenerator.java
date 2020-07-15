@@ -2,13 +2,28 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.*;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.StandardOp;
+import org.graalvm.compiler.lir.SwitchStrategy;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.phases.util.Providers;
@@ -20,7 +35,16 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.*;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXGenTool;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -191,7 +215,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
-            double trueDestinationProbability) {
+                                  double trueDestinationProbability) {
         unimplemented();
     }
 

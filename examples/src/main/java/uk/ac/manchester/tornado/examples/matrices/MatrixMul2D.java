@@ -58,9 +58,6 @@ public class MatrixMul2D {
             }
         }
 
-        //System.out.println("Computing MxM of " + size + "x" + size);
-        //System.out.println();
-
         Matrix2DFloat matrixA = new Matrix2DFloat(size, size);
         Matrix2DFloat matrixB = new Matrix2DFloat(size, size);
         Matrix2DFloat matrixCCUDA = new Matrix2DFloat(size, size);

@@ -135,7 +135,7 @@ case $key in
     shift # past argument
     ;;
     --printKernel)
-    TORNADO_FLAGS="${TORNADO_FLAGS} --vm.Dtornado.opencl.source.print=True "
+    TORNADO_FLAGS="${TORNADO_FLAGS} --vm.Dtornado.print.kernel=True "
     shift
 	;;
     --printBytecodes)

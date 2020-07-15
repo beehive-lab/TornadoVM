@@ -28,6 +28,15 @@ package uk.ac.manchester.tornado.runtime;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 
+/**
+ * Each class which implements {@link TornadoDriverProvider} must set a priority and use the same compareTo function.
+ *
+ * public int compareTo(TornadoDriverProvider o) {
+ *         return o.getPriority() - priority;
+ * }
+ *
+ * The drivers are sorted and used based on their priority. The driver with the highest priority becomes driver 0.
+ */
 public interface TornadoDriverProvider extends Comparable<TornadoDriverProvider> {
 
     String getName();

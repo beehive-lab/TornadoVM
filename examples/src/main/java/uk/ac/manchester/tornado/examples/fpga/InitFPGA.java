@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * -Dtornado.fpga.emulation=true  
  * -Dtornado.fpga.flags=v,report  
  * -Dtornado.opencl.userelative=True 
- * -Dtornado.opencl.source.print=True 
+ * -Dtornado.print.kernel=True
  *  uk.ac.manchester.tornado.examples.fpga.InitFPGA
  * </code>
  * </p>
@@ -64,7 +64,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * -Dtornado.opencl.accelerator.fpga=true   
  * -Dtornado.fpga.flags=v,report  
  * -Dtornado.opencl.userelative=True 
- * -Dtornado.opencl.source.print=True 
+ * -Dtornado.print.kernel=True
  *  uk.ac.manchester.tornado.examples.fpga.InitFPGA
  * </code>
  * </p>

@@ -8,8 +8,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
-import static org.graalvm.compiler.lir.LIRInstruction.*;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.*;
+import static org.graalvm.compiler.lir.LIRInstruction.Use;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 
 public class PTXBinary {

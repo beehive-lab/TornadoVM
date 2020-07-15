@@ -6,16 +6,16 @@ public class PTXModule {
     public final byte[] moduleWrapper;
     public final String kernelFunctionName;
     public final TaskMetaData metaData;
-    private int maximalBlockSize;
+    private int maxBlockSize;
     public final String javaName;
-    private byte[] source;
+    private final byte[] source;
 
     public PTXModule(String name, byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
         moduleWrapper = cuModuleLoadData(source);
         this.source = source;
         this.kernelFunctionName = kernelFunctionName;
         metaData = taskMetaData;
-        maximalBlockSize = -1;
+        maxBlockSize = -1;
         javaName = name;
     }
 
@@ -23,16 +23,16 @@ public class PTXModule {
 
     private native static int cuOccupancyMaxPotentialBlockSize(byte[] module, String funcName);
 
-    public int getMaximalBlocks() {
-        if (maximalBlockSize < 0) maximalBlockSize = cuOccupancyMaxPotentialBlockSize(moduleWrapper, kernelFunctionName);
-        return maximalBlockSize;
+    public int getMaxBlocks() {
+        if (maxBlockSize < 0) maxBlockSize = cuOccupancyMaxPotentialBlockSize(moduleWrapper, kernelFunctionName);
+        return maxBlockSize;
     }
 
     public byte[] getSource() {
         return source;
     }
 
-    public boolean getIsPTXJITSuccess() {
+    public boolean isPTXJITSuccess() {
         return moduleWrapper.length != 0;
     }
 }

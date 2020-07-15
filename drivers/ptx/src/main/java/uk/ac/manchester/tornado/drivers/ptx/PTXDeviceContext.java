@@ -16,9 +16,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Comparator;
+import java.util.List;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class PTXDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
@@ -71,11 +71,11 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
 
     @Override
     public boolean isInitialised() {
-        return false;
+        return memoryManager.isInitialised();
     }
 
     public PTXTornadoDevice asMapping() {
-        return new PTXTornadoDevice(device.getIndex());
+        return new PTXTornadoDevice(device.getDeviceIndex());
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result, String resolvedMethodName) {
@@ -109,11 +109,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     public void flushEvents() {
         // I don't think there is anything like this in CUDA so I am calling sync
         sync();
-    }
-
-    public void markEvent() {
-        // TODO: Implement
-        unimplemented();
     }
 
     public int enqueueBarrier() {
@@ -150,11 +145,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         memoryManager.reset();
         codeCache.reset();
         wasReset = true;
-    }
-
-    public void dumpEvents() {
-        // TODO: Implement
-        // This prints out all the current events
     }
 
     public int enqueueKernelLaunch(PTXModule module, CallStack stack, long batchThreads) {
@@ -326,4 +316,20 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     public int enqueueWriteBuffer(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }
+
+    public void dumpEvents() {
+        List<PTXEvent> events = stream.getEventsWrapper().getEvents();
+
+        final String deviceName = "PTX-" + device.getDeviceName();
+        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
+        if (events.isEmpty()) {
+            return;
+        }
+
+        System.out.println("event: device, type, info, status");
+        events.forEach((e) -> {
+            System.out.printf("event: %s, %s, %s\n", deviceName, e.getName(), e.getStatus());
+        });
+    }
+
 }

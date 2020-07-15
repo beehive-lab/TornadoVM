@@ -1,9 +1,12 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
@@ -23,7 +26,7 @@ public class PTXEventsWrapper {
         this.eventIndex = 0;
     }
 
-    protected int registerEvent(byte[][] eventWrapper, PTXEvent.EventDescription description) {
+    protected int registerEvent(byte[][] eventWrapper, int descriptorId, long tag) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -36,7 +39,7 @@ public class PTXEventsWrapper {
          * If this happens, then we log a fatal exception and gracefully exit.
          */
         if (eventWrapper == null) {
-            fatal("invalid event: event=%s\n", description.name());
+            fatal("invalid event: description=%s, tag=0x%x\n", EVENT_DESCRIPTIONS[descriptorId], tag);
             fatal("terminating application as system integrity has been compromised.");
             System.exit(-1);
         }
@@ -46,7 +49,7 @@ public class PTXEventsWrapper {
             events[currentEvent].destroy();
             events[currentEvent] = null;
         }
-        events[currentEvent] = new PTXEvent(eventWrapper, description);
+        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId, tag);
 
         findNextEventSlot();
         return currentEvent;
@@ -82,6 +85,17 @@ public class PTXEventsWrapper {
 
     protected PTXEvent getEvent(int localEventID) {
         return events[localEventID];
+    }
+
+    public List<PTXEvent> getEvents() {
+        List<PTXEvent> result = new ArrayList<>();
+        for (int i = 0; i < eventIndex; i++) {
+            if (events[i] == null) {
+                continue;
+            }
+            result.add(events[i]);
+        }
+        return result;
     }
 
 }

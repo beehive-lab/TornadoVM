@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.Arrays;
@@ -34,7 +35,7 @@ public class PTXScheduler {
 
         int[] defaultBlocks = {1, 1, 1};
         try {
-            int maxBlockThreads = module.getMaximalBlocks();
+            int maxBlockThreads = module.getMaxBlocks();
             for (int i = 0; i < module.metaData.getDims(); i++) {
                 defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(module.metaData, maxBlockThreads), module.metaData.getGlobalWork()[i]);
             }
@@ -45,6 +46,7 @@ public class PTXScheduler {
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
             }
+            throw new TornadoBailoutRuntimeException("[Error During Block Size compute] ", e);
         }
         return defaultBlocks;
     }
@@ -74,11 +76,11 @@ public class PTXScheduler {
 
         try {
             int dims = module.metaData.getDims();
-            int[] maxGridSizes = device.getDeviceMaxGridSizes();
+            long[] maxGridSizes = device.getDeviceMaxWorkGroupSize();
 
             for (int i = 0; i < dims; i++) {
                 int workSize = (int) module.metaData.getGlobalWork()[i];
-                defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], maxGridSizes[i]), 1);
+                defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], (int) maxGridSizes[i]), 1);
             }
         }
         catch (Exception e) {
@@ -87,6 +89,7 @@ public class PTXScheduler {
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
             }
+            throw new TornadoBailoutRuntimeException("[Error During Grid Size compute] ", e);
         }
 
         return defaultGrids;

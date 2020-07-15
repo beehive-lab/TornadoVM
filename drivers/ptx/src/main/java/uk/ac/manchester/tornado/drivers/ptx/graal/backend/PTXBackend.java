@@ -25,10 +25,21 @@ import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
-import uk.ac.manchester.tornado.drivers.ptx.graal.*;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeProvider;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameContext;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameMap;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameMapBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.*;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXDataBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -145,7 +156,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel, boolean isParallel, boolean includePrintf) {
+                                                                   boolean isKernel, boolean isParallel, boolean includePrintf) {
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();

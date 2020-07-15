@@ -93,7 +93,7 @@ __MAIN_TORNADO_TEST_RUNNER__ 		= "uk.ac.manchester.tornado.unittests.tools.Torna
 __MAIN_TORNADO_JUNIT_MODULE__ 		= " junit/"
 __MAIN_TORNADO_JUNIT__ 		 		= "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ 			 		= "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
-__PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.opencl.source.print=True "
+__PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__ 			 		= "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__    		= "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
 __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "

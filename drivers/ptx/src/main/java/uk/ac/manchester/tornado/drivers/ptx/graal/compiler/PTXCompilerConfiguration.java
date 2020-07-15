@@ -1,16 +1,21 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
-import org.graalvm.compiler.lir.phases.*;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
+import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase;
+import org.graalvm.compiler.lir.phases.PreAllocationOptimizationStage;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.runtime.graal.compiler.*;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerConfiguration;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
-
-import static org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.*;
-import static org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.*;
 
 public class PTXCompilerConfiguration implements TornadoCompilerConfiguration {
 
@@ -40,12 +45,12 @@ public class PTXCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options) {
+    public LIRPhaseSuite<PostAllocationOptimizationPhase.PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options) {
         return new PostAllocationOptimizationStage(options);
     }
 
     @Override
-    public LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options) {
+    public LIRPhaseSuite<PreAllocationOptimizationPhase.PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options) {
         return new PreAllocationOptimizationStage(options);
     }
 

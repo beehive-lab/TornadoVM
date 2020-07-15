@@ -3,7 +3,7 @@ package uk.ac.manchester.tornado.drivers.ptx;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class CUDAVersion {
-    private static CUDAVersion[] cudaVersions = new CUDAVersion[] {
+    private static final CUDAVersion[] cudaVersions = new CUDAVersion[] {
         // 8.0 is the first version to have PTX ISA documentation available therefore this is the oldest supported
         new CUDAVersion(8000, new CUDAComputeCapability(5, 0)),
         new CUDAVersion(9000, new CUDAComputeCapability(6, 0)),
@@ -12,6 +12,7 @@ public class CUDAVersion {
         new CUDAVersion(10000, new CUDAComputeCapability(6, 3)),
         new CUDAVersion(10010, new CUDAComputeCapability(6, 4)),
         new CUDAVersion(10020, new CUDAComputeCapability(6, 5)),
+        new CUDAVersion(11000, new CUDAComputeCapability(7, 0)),
     };
 
     private final int sdkVersion;
@@ -32,7 +33,9 @@ public class CUDAVersion {
 
     public static PTXVersion getMaxPTXVersion(int cudaVersion) {
         for (int i = cudaVersions.length - 1; i >= 0; i--) {
-            if (cudaVersion >= cudaVersions[i].sdkVersion) return cudaVersions[i].maxPTXVersion;
+            if (cudaVersion >= cudaVersions[i].sdkVersion) {
+                return cudaVersions[i].maxPTXVersion;
+            }
         }
         TornadoInternalError.shouldNotReachHere(String.format(
                 "Unsupported CUDA toolkit version: %d.%d. Please consider upgrading to version %d.%d or higher.",

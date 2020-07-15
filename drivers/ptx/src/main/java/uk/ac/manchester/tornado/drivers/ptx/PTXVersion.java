@@ -5,7 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class PTXVersion {
-    private static LinkedHashMap<CUDAComputeCapability, CUDAComputeCapability> ptxToArch = new LinkedHashMap<CUDAComputeCapability, CUDAComputeCapability>() {{
+    private static final LinkedHashMap<CUDAComputeCapability, CUDAComputeCapability> ptxToArch = new LinkedHashMap<CUDAComputeCapability, CUDAComputeCapability>() {{
+        put(new CUDAComputeCapability(7, 0), new CUDAComputeCapability(8, 0));
         put(new CUDAComputeCapability(6, 3), new CUDAComputeCapability(7, 5));
         put(new CUDAComputeCapability(6, 1), new CUDAComputeCapability(7, 2));
         put(new CUDAComputeCapability(6, 0), new CUDAComputeCapability(7, 0));
@@ -30,10 +31,11 @@ public class PTXVersion {
 
     @Override
     public String toString() {
-        return String.format("%d.%d", version.major, version.minor);
+        return String.format("%d.%d", version.getMajor(), version.getMinor());
     }
 
-    public CUDAComputeCapability getArch(CUDAComputeCapability deviceCapability) {
-        return maxArch.compareTo(deviceCapability) > 0 ? deviceCapability : maxArch;
+    public TargetArchitecture getArchitecture(CUDAComputeCapability deviceCapability) {
+        CUDAComputeCapability computeCapability = maxArch.compareTo(deviceCapability) > 0 ? deviceCapability : maxArch;
+        return new TargetArchitecture(computeCapability);
     }
 }

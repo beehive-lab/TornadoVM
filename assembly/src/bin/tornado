@@ -83,7 +83,7 @@ function print_all_options() {
   echo -e "$COLOR_CYAN Debugging Information: $COLOR_NC"
   echo ""
   echo -e "\tPrint all devices available   : --devices "
-  echo -e "\tPrint generated kernel        : -Dtornado.opencl.source.print=True "
+  echo -e "\tPrint generated kernel        : -Dtornado.print.kernel=True "
   echo -e "\tPrint kernel debug information: -Dtornado.debug=True "
   echo -e "\tEnable full debug information : -Dtornado.fullDebug=True "
   echo -e "\tDump compiled graphs into IGV : -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false "
@@ -141,7 +141,7 @@ while [[ $# -gt 0 ]]; do
     shift # past argument
     ;;
   --printKernel)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.opencl.source.print=True "
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.print.kernel=True "
     shift
     ;;
   --printBytecodes)

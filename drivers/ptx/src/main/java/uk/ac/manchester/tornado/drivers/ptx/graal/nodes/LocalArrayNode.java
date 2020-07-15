@@ -18,8 +18,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.*;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.*;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryTemplate;
 
 @NodeInfo
 public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {

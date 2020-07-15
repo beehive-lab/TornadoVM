@@ -41,6 +41,6 @@ public class PTXPlatform extends TornadoLogger {
     }
 
     public String getName() {
-        return "CUDA-PTX";
+        return "PTX";
     }
 }

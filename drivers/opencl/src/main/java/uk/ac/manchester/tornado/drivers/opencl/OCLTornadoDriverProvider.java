@@ -34,6 +34,9 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class OCLTornadoDriverProvider implements TornadoDriverProvider {
 
+    /**
+     * Check {@link TornadoDriverProvider} for documentation on priority.
+     */
     private final int priority = 0;
 
     @Override

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 
 package uk.ac.manchester.tornado.drivers.ptx;
@@ -34,11 +32,14 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class PTXTornadoDriverProvider implements TornadoDriverProvider {
 
+    /**
+     * Check {@link TornadoDriverProvider} for documentation on priority.
+     */
     private final int priority = 1;
 
     @Override
     public String getName() {
-        return "CUDA Driver Provider";
+        return "PTX Driver Provider";
     }
 
     @Override

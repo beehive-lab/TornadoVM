@@ -1,6 +1,9 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+
+import static uk.ac.manchester.tornado.drivers.ptx.PTX.DUMP_EVENTS;
 
 public class PTXContext extends TornadoLogger {
 
@@ -8,21 +11,15 @@ public class PTXContext extends TornadoLogger {
     private final PTXDevice device;
     private final PTXStream stream;
     private final PTXDeviceContext deviceContext;
-    private long[] allocatedRegions;
-    private int allocatedRegionCount;
-
-    private static final int MAX_ALLOCATED_REGIONS = 64;
+    private long allocatedRegion;
 
     public PTXContext(PTXDevice device) {
         this.device = device;
 
-        contextPtr = cuCtxCreate(device.getIndex());
+        contextPtr = cuCtxCreate(device.getDeviceIndex());
 
         stream = new PTXStream();
         deviceContext = new PTXDeviceContext(device, stream);
-
-        allocatedRegionCount = 0;
-        allocatedRegions = new long[MAX_ALLOCATED_REGIONS];
     }
 
     private native static long cuCtxCreate(int deviceIndex);
@@ -40,12 +37,12 @@ public class PTXContext extends TornadoLogger {
     }
 
     public void cleanup() {
-        deviceContext.cleanup();
-
-        for (int i = 0; i < allocatedRegionCount; i++) {
-            cuMemFree(contextPtr, allocatedRegions[i]);
+        if (DUMP_EVENTS) {
+            deviceContext.dumpEvents();
         }
 
+        deviceContext.cleanup();
+        cuMemFree(contextPtr, allocatedRegion);
         cuCtxDestroy(contextPtr);
     }
 
@@ -54,14 +51,12 @@ public class PTXContext extends TornadoLogger {
     }
 
     public long allocateMemory(long numBytes) {
-        long devicePtr = 0;
+        TornadoInternalError.guarantee(allocatedRegion == 0, "Only a single heap allocation is supported");
         try {
-            devicePtr = cuMemAlloc(contextPtr, numBytes);
-            allocatedRegions[allocatedRegionCount] = devicePtr;
-            allocatedRegionCount++;
+            allocatedRegion = cuMemAlloc(contextPtr, numBytes);
         } catch (Exception e) {
             error(e.getMessage());
         }
-        return devicePtr;
+        return allocatedRegion;
     }
 }

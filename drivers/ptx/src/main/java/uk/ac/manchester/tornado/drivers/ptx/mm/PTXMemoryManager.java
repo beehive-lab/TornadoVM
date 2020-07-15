@@ -27,7 +27,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     public PTXMemoryManager(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-        scheduleMeta = new ScheduleMetaData("mm-" + deviceContext.getDevice().getIndex());
+        scheduleMeta = new ScheduleMetaData("mm-" + deviceContext.getDevice().getDeviceIndex());
         callStackLimit = PTX.CALL_STACK_LIMIT;
         initialised = false;
         reset();

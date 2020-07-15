@@ -11,7 +11,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 public class PTXCodeCache {
 
-    private static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", FALSE));
+    private static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", FALSE));
     private final PTXDeviceContext deviceContext;
     private final ConcurrentHashMap<String, PTXInstalledCode> cache;
 
@@ -31,7 +31,7 @@ public class PTXCodeCache {
 
             PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, taskMeta);
 
-            if (module.getIsPTXJITSuccess()) {
+            if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
                 cache.put(cacheKey, code);
                 return code;

@@ -12,11 +12,11 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     private static int INIT_VAL = -1;
 
     private String name;
-    private int[] maxGridSizes;
+    private long[] maxGridSizes;
     private PTXContext context;
     private PTXVersion ptxVersion;
     private long[] maxWorkItemSizes;
-    private String targetArchitecture;
+    private TargetArchitecture targetArchitecture;
     private CUDAComputeCapability computeCapability;
 
     private int index;
@@ -99,9 +99,10 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkItemSizes;
     }
 
-    public int[] getDeviceMaxGridSizes() {
+    @Override
+    public long[] getDeviceMaxWorkGroupSize() {
         if (maxGridSizes == null) {
-            maxGridSizes = new int[3];
+            maxGridSizes = new long[3];
             maxGridSizes[0] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_GRID_DIM_X.value());
             maxGridSizes[1] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_GRID_DIM_Y.value());
             maxGridSizes[2] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_GRID_DIM_Z.value());
@@ -133,14 +134,14 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
 
     @Override
     public Object getDeviceInfo() {
-        return null;
+        return getDeviceName();
     }
 
     public ByteOrder getByteOrder() {
         return ByteOrder.LITTLE_ENDIAN;
     }
 
-    public int getIndex() {
+    public int getDeviceIndex() {
         return index;
     }
 
@@ -152,14 +153,12 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         return TornadoDeviceType.GPU;
     }
 
-    public String getTargetArchitecture() {
+    public TargetArchitecture getTargetArchitecture() {
         if (targetArchitecture == null) {
             ensurePTXVersionAvailable();
             ensureComputeCapabilityAvailable();
 
-            // TODO: Maybe this should be in a separate class?
-            CUDAComputeCapability archVersion = ptxVersion.getArch(computeCapability);
-            targetArchitecture = String.format("sm_%d%d", archVersion.major, archVersion.minor);
+            targetArchitecture = ptxVersion.getArchitecture(computeCapability);
         }
         return targetArchitecture;
     }

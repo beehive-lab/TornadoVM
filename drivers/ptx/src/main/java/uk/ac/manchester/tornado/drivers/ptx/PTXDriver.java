@@ -29,6 +29,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
@@ -47,6 +48,9 @@ public class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver
         int deviceCount = PTX.getPlatform().getDeviceCount();
         backends = new PTXBackend[deviceCount];
         info("CUDA: Has %d devices...", deviceCount);
+        if (deviceCount == 0) {
+            throw new TornadoBailoutRuntimeException("[WARNING] No PTX devices found. Deoptimizing to sequential execution.");
+        }
 
         for (int i = 0; i < deviceCount; i++) {
             installDevice(i, options, vmRuntime, vmConfig);

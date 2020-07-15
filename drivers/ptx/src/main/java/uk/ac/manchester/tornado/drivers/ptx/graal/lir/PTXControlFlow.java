@@ -72,13 +72,6 @@ public class PTXControlFlow {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             TornadoInternalError.unimplemented();
-//            asm.emitSymbol(TAB);
-//            asm.emit("slots[0] = (ulong) ");
-//            asm.emitValue(crb, actionAndReason);
-//            asm.delimiter();
-//
-//            asm.eol();
-//            asm.ret();
         }
 
     }

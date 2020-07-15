@@ -24,9 +24,22 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
-import uk.ac.manchester.tornado.drivers.ptx.mm.*;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteBuffer;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCharArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -453,7 +466,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String getDeviceName() {
-        return "cuda-" + device.getIndex();
+        return "cuda-" + device.getDeviceIndex();
     }
 
     @Override
@@ -472,7 +485,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     public PTXBackend getBackend() {
-        return findDriver().getBackend(device.getIndex());
+        return findDriver().getBackend(device.getDeviceIndex());
     }
 
     @Override
@@ -530,9 +543,12 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
     }
 
+    /**
+     * In CUDA the context is not attached to the whole process, but to individual threads
+     * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
+     */
     @Override
     public void setContextForCurrentThread() {
-        // CUDA context is not shared by default to other threads
         device.getContext().setContextForCurrentThread();
     }
 

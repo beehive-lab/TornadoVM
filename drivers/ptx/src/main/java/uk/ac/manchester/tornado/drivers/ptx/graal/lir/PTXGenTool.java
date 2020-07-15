@@ -36,9 +36,6 @@ public class PTXGenTool {
     public Value emitParameterLoad(ParameterNode paramNode, int paramOffset) {
         trace("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
-        // assert !(paramValue instanceof Variable) : "Creating a copy of a
-        // variable via this method is not supported (and potentially a bug): "
-        // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
 
         PTXKind kind = (PTXKind) lirKind.getPlatformKind();

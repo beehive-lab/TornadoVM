@@ -37,8 +37,6 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-//        LIRKind kind = tool.getLIRKind(stamp);
-//        LIRKind kind = LIRKind.value(PTXKind.U32);
         Variable result = tool.newVariable(LIRKind.value(PTXKind.U64));
         PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;
 
