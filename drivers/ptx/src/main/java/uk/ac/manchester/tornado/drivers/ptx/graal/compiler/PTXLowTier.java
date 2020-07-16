@@ -46,8 +46,6 @@ public class PTXLowTier extends TornadoLowTier {
 
         appendPhase(new AddressLoweringPhase(addressLowering));
 
-        appendPhase(new UseTrappingNullChecksPhase());
-
         appendPhase(new DeadCodeEliminationPhase(Required));
 
         appendPhase(new TornadoLoopCanonicalization());

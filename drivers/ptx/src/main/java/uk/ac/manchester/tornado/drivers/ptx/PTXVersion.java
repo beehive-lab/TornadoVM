@@ -1,30 +1,31 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class PTXVersion {
-    private static final LinkedHashMap<CUDAComputeCapability, CUDAComputeCapability> ptxToArch = new LinkedHashMap<CUDAComputeCapability, CUDAComputeCapability>() {{
-        put(new CUDAComputeCapability(7, 0), new CUDAComputeCapability(8, 0));
-        put(new CUDAComputeCapability(6, 3), new CUDAComputeCapability(7, 5));
-        put(new CUDAComputeCapability(6, 1), new CUDAComputeCapability(7, 2));
-        put(new CUDAComputeCapability(6, 0), new CUDAComputeCapability(7, 0));
-        put(new CUDAComputeCapability(5, 0), new CUDAComputeCapability(6, 2));
-    }};
+    private enum PTX_VERSION_TO_ARCHITECTURE {
+        PTX_70(new CUDAComputeCapability(7, 0), new TargetArchitecture(8, 0)),
+        PTX_63(new CUDAComputeCapability(6, 3), new TargetArchitecture(7, 5)),
+        PTX_61(new CUDAComputeCapability(6, 1), new TargetArchitecture(7, 2)),
+        PTX_60(new CUDAComputeCapability(6, 0), new TargetArchitecture(7, 0)),
+        PTX_50(new CUDAComputeCapability(5, 0), new TargetArchitecture(6, 2));
 
-    private CUDAComputeCapability version;
-    private CUDAComputeCapability maxArch;
+        private final CUDAComputeCapability ptxIsa;
+        private final TargetArchitecture targetArchitecture;
+
+        PTX_VERSION_TO_ARCHITECTURE(CUDAComputeCapability ptxIsa, TargetArchitecture targetArchitecture) {
+            this.ptxIsa = ptxIsa;
+            this.targetArchitecture = targetArchitecture;
+        }
+    }
+
+    private final CUDAComputeCapability version;
+    private TargetArchitecture maxArch;
 
     public PTXVersion(CUDAComputeCapability actual) {
         this.version = actual;
-        boolean foundArch = false;
-        Iterator<Map.Entry<CUDAComputeCapability, CUDAComputeCapability>> iterator = ptxToArch.entrySet().iterator();
-        while (iterator.hasNext() && !foundArch) {
-            Map.Entry<CUDAComputeCapability, CUDAComputeCapability> versionPair = iterator.next();
-            if (versionPair.getKey().compareTo(version) <= 0) {
-                this.maxArch = versionPair.getValue();
-                foundArch = true;
+        for (PTX_VERSION_TO_ARCHITECTURE ptxToArchitecture : PTX_VERSION_TO_ARCHITECTURE.values()) {
+            if (ptxToArchitecture.ptxIsa.compareTo(version) <= 0) {
+                this.maxArch = ptxToArchitecture.targetArchitecture;
+                break;
             }
         }
     }

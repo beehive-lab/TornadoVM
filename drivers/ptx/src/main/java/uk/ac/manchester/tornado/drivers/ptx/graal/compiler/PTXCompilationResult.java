@@ -19,12 +19,6 @@ public class PTXCompilationResult extends CompilationResult {
         this.taskMetaData = taskMetaData;
     }
 
-    public PTXCompilationResult(String functionName, String s) {
-        super(functionName);
-        byte[] code = s.getBytes();
-        this.setTargetCode(code, code.length);
-    }
-
     public void setNonInlinedMethods(Set<ResolvedJavaMethod> value) {
         nonInlinedMethods = value;
     }

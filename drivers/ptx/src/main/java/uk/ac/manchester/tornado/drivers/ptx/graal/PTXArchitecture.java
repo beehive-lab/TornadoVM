@@ -6,6 +6,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
@@ -75,6 +76,7 @@ public class PTXArchitecture extends Architecture {
         PTXKind ptxKind = PTXKind.ILLEGAL;
         switch (javaKind) {
             case Boolean:
+            case Char:
                 ptxKind = PTXKind.U8;
                 break;
             case Byte:
@@ -82,9 +84,6 @@ public class PTXArchitecture extends Architecture {
                 break;
             case Short:
                 ptxKind = (javaKind.isUnsigned()) ? PTXKind.U16 : PTXKind.S16;
-                break;
-            case Char:
-                ptxKind = PTXKind.U16;
                 break;
             case Int:
                 ptxKind = (javaKind.isUnsigned()) ? PTXKind.U32 : PTXKind.S32;
@@ -106,7 +105,7 @@ public class PTXArchitecture extends Architecture {
                 ptxKind = PTXKind.ILLEGAL;
                 break;
             default:
-                shouldNotReachHere("illegal java type for %s", javaKind.name());
+                throw new TornadoBailoutRuntimeException("illegal java type for " + javaKind.name());
         }
 
         return ptxKind;

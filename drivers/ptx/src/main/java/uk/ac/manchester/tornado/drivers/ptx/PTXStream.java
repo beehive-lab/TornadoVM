@@ -135,12 +135,13 @@ public class PTXStream extends TornadoLogger {
     }
 
     public int enqueueBarrier() {
+        cuStreamSynchronize(streamWrapper);
         return registerEvent(DESC_SYNC_BARRIER, DEFAULT_TAG);
     }
 
     public int enqueueBarrier(int[] events) {
         waitForEvents(events);
-        return enqueueBarrier();
+        return registerEvent(DESC_SYNC_BARRIER, DEFAULT_TAG);
     }
 
     public int enqueueRead(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {

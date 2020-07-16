@@ -42,7 +42,7 @@ public class PTXIntrinsics {
     /**
      * <p>
      * <code> 
-     *  barrier(CLK_LOCAL_MEM_FENCE);
+     *  barrier.sync 0;
      * </code>
      * </p>
      */
@@ -51,7 +51,7 @@ public class PTXIntrinsics {
     /**
      * <p>
      * <code> 
-     *  barrier(CLK_GLOBAL_MEM_FENCE);
+     *  barrier.sync 1;
      * </code>
      * </p>
      */
@@ -63,6 +63,7 @@ public class PTXIntrinsics {
 
     public static native void createLocalMemory(int[] array, int size);
 
+    @Fold
     public static int fmax(float a, float b) {
         return 0;
     }

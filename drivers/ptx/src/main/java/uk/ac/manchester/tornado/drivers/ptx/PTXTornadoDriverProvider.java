@@ -29,13 +29,14 @@ import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.common.enums.TornadoDriverPriority;
 
 public class PTXTornadoDriverProvider implements TornadoDriverProvider {
 
     /**
      * Check {@link TornadoDriverProvider} for documentation on priority.
      */
-    private final int priority = 1;
+    private final TornadoDriverPriority priority = TornadoDriverPriority.PTX;
 
     @Override
     public String getName() {
@@ -48,12 +49,12 @@ public class PTXTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public int getPriority() {
+    public TornadoDriverPriority getDevicePriority() {
         return priority;
     }
 
     @Override
     public int compareTo(TornadoDriverProvider o) {
-        return o.getPriority() - priority;
+        return o.getDevicePriority().value() - priority.value();
     }
 }

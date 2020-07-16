@@ -9,7 +9,7 @@ import java.nio.ByteOrder;
 
 public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
 
-    private static int INIT_VAL = -1;
+    private static final int INIT_VAL = -1;
 
     private String name;
     private long[] maxGridSizes;
@@ -19,19 +19,19 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     private TargetArchitecture targetArchitecture;
     private CUDAComputeCapability computeCapability;
 
-    private int index;
+    private final int deviceIndex;
     private int maxFrequency;
-    private int noOfWorkUnits;
+    private int numComputeUnits;
     private long localMemorySize;
     private long totalDeviceMemory;
     private long constantBufferSize;
 
-    public PTXDevice(int index) {
-        this.index = index;
+    public PTXDevice(int deviceIndex) {
+        this.deviceIndex = deviceIndex;
         constantBufferSize = INIT_VAL;
         totalDeviceMemory = INIT_VAL;
         localMemorySize = INIT_VAL;
-        noOfWorkUnits = INIT_VAL;
+        numComputeUnits = INIT_VAL;
         maxFrequency = INIT_VAL;
 
         context = new PTXContext(this);
@@ -45,7 +45,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
 
     @Override
     public String getDeviceName() {
-        if (name == null) name = cuDeviceGetName(index);
+        if (name == null) name = cuDeviceGetName(deviceIndex);
         return name;
     }
 
@@ -57,8 +57,8 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
 
     private void ensureComputeCapabilityAvailable() {
         if (computeCapability == null) {
-            int major = cuDeviceGetAttribute(index, PTXDeviceAttribute.COMPUTE_CAPABILITY_MAJOR.value());
-            int minor = cuDeviceGetAttribute(index, PTXDeviceAttribute.COMPUTE_CAPABILITY_MINOR.value());
+            int major = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.COMPUTE_CAPABILITY_MAJOR.value());
+            int minor = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.COMPUTE_CAPABILITY_MINOR.value());
             computeCapability = new CUDAComputeCapability(major, minor);
         }
     }
@@ -66,7 +66,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     @Override
     public long getDeviceGlobalMemorySize() {
         if (totalDeviceMemory == INIT_VAL) {
-            totalDeviceMemory = cuDeviceTotalMem(index);
+            totalDeviceMemory = cuDeviceTotalMem(deviceIndex);
         }
         return totalDeviceMemory;
     }
@@ -74,26 +74,26 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     @Override
     public long getDeviceLocalMemorySize() {
         if (localMemorySize == INIT_VAL) {
-            localMemorySize = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_SHARED_MEMORY_PER_BLOCK.value());
+            localMemorySize = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_SHARED_MEMORY_PER_BLOCK.value());
         }
         return localMemorySize;
     }
 
     @Override
     public int getDeviceMaxComputeUnits() {
-        if (noOfWorkUnits == INIT_VAL) {
-            noOfWorkUnits = cuDeviceGetAttribute(index, PTXDeviceAttribute.MULTIPROCESSOR_COUNT.value());
+        if (numComputeUnits == INIT_VAL) {
+            numComputeUnits = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MULTIPROCESSOR_COUNT.value());
         }
-        return noOfWorkUnits;
+        return numComputeUnits;
     }
 
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
         if (maxWorkItemSizes == null) {
             maxWorkItemSizes = new long[3];
-            maxWorkItemSizes[0] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_BLOCK_DIM_X.value());
-            maxWorkItemSizes[1] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_BLOCK_DIM_Y.value());
-            maxWorkItemSizes[2] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_BLOCK_DIM_Z.value());
+            maxWorkItemSizes[0] = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_BLOCK_DIM_X.value());
+            maxWorkItemSizes[1] = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_BLOCK_DIM_Y.value());
+            maxWorkItemSizes[2] = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_BLOCK_DIM_Z.value());
         }
 
         return maxWorkItemSizes;
@@ -103,9 +103,9 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     public long[] getDeviceMaxWorkGroupSize() {
         if (maxGridSizes == null) {
             maxGridSizes = new long[3];
-            maxGridSizes[0] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_GRID_DIM_X.value());
-            maxGridSizes[1] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_GRID_DIM_Y.value());
-            maxGridSizes[2] = cuDeviceGetAttribute(index, PTXDeviceAttribute.MAX_GRID_DIM_Z.value());
+            maxGridSizes[0] = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_GRID_DIM_X.value());
+            maxGridSizes[1] = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_GRID_DIM_Y.value());
+            maxGridSizes[2] = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.MAX_GRID_DIM_Z.value());
         }
 
         return maxGridSizes;
@@ -114,7 +114,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     @Override
     public int getDeviceMaxClockFrequency() {
         if (maxFrequency == INIT_VAL) {
-            maxFrequency = cuDeviceGetAttribute(index, PTXDeviceAttribute.CLOCK_RATE.value());
+            maxFrequency = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.CLOCK_RATE.value());
         }
         return maxFrequency;
     }
@@ -122,14 +122,14 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     @Override
     public long getDeviceMaxConstantBufferSize() {
         if (constantBufferSize == INIT_VAL) {
-            constantBufferSize = cuDeviceGetAttribute(index, PTXDeviceAttribute.TOTAL_CONSTANT_MEMORY.value());
+            constantBufferSize = cuDeviceGetAttribute(deviceIndex, PTXDeviceAttribute.TOTAL_CONSTANT_MEMORY.value());
         }
         return constantBufferSize;
     }
 
     @Override
     public long getDeviceMaxAllocationSize() {
-        return cuMemGetInfo(index);
+        return cuMemGetInfo(deviceIndex);
     }
 
     @Override
@@ -142,7 +142,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     public int getDeviceIndex() {
-        return index;
+        return deviceIndex;
     }
 
     public PTXContext getContext() {
