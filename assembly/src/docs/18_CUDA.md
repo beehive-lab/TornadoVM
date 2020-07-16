@@ -78,11 +78,11 @@ Build TornadoVM and run `tornado --devices`. The output should look like this:
 Note that the first Tornado driver will always correspond to the CUDA device detected by the PTX backend.
 
 #### Possible issues
-In some cases the driver module might not get loaded due to a [blacklist file](https://forums.developer.nvidia.com/t/nvidia-driver-is-not-loaded-ubuntu-18-10/70495/2).
+In some cases, running `nvidia-smi` might show the error `NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver`. This can happen because the driver module is not loaded due to a [blacklist file](https://forums.developer.nvidia.com/t/nvidia-driver-is-not-loaded-ubuntu-18-10/70495/2).
 You can remove this by running:
 `sudo rm /etc/modprobe.d/blacklist-nvidia.conf`  
   
-The driver can also fail to load if it is not selected in `prime-select`. In order to select it, you can run `prime-select nvidia` or `prime-select on-demand`.
+On Ubuntu, the driver can also fail to load if it is not selected in `prime-select`. In order to select it, you can run `prime-select nvidia` or `prime-select on-demand`.
 
 For older versions of the driver, you might have to point your `LIBRARY_PATH` variable to the `libcuda` library in order to build TornadoVM.  
 Example: `export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/cuda/lib64/stubs`
