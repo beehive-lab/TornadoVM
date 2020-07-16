@@ -21,15 +21,13 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define VERBOSE 0
+#ifndef _Included_ptx_utils
+#define _Included_ptx_utils
 
-#define CUDA_CHECK_ERROR(name,func) if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.ptx> Calling: %s\n",name); \
-    } \
-    result = func; \
-    if (result != CUDA_SUCCESS) { \
-        printf("uk.ac.manchester.tornado.drivers.ptx> Returned: %s = %d\n", name, result); \
-        fflush(stdout); \
-    } \
+#define PTX_PROLOGUE() CUevent beforeEvent, afterEvent; \
+    CUresult result;
 
+record_event_begin(CUevent* beforeEvent, CUevent* afterEvent, CUstream* stream);
+void record_event_end(CUevent* afterEvent, CUstream* stream);
 
+#endif

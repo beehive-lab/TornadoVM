@@ -21,15 +21,21 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define VERBOSE 0
+#include <stdio.h>
+#include <cuda.h>
 
-#define CUDA_CHECK_ERROR(name,func) if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.ptx> Calling: %s\n",name); \
-    } \
-    result = func; \
-    if (result != CUDA_SUCCESS) { \
-        printf("uk.ac.manchester.tornado.drivers.ptx> Returned: %s = %d\n", name, result); \
-        fflush(stdout); \
-    } \
+void record_event_begin(CUevent* beforeEvent, CUevent* afterEvent, CUstream* stream) {
+    CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
+    if (result != CUDA_SUCCESS) {
+        printf("Failed to create event! (%d)\n", result); fflush(stdout);
+    }
+    result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
+    if (result != CUDA_SUCCESS) {
+        printf("Failed to create event! (%d)\n", result); fflush(stdout);
+    }
+    result = cuEventRecord(*beforeEvent, *stream);
+}
 
-
+void record_event_end(CUevent* afterEvent, CUstream* stream) {
+    CUresult result = cuEventRecord(*afterEvent, *stream);
+}

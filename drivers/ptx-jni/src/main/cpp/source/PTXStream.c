@@ -28,6 +28,7 @@
 #include "PTXModule.h"
 #include "PTXEvent.h"
 #include "data_copies.h"
+#include "utils.h"
 
 /*
     A singly linked list (with elements of type StagingAreaList) is used to keep all the allocated pinned memory through cuMemAllocHost.
@@ -310,8 +311,8 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
         jlong sharedMemBytes,
         jbyteArray stream_wrapper,
         jbyteArray args) {
+    PTX_PROLOGUE()
 
-    CUresult result;
     CUmodule native_module;
     array_to_module(env, &native_module, module);
 
@@ -333,7 +334,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    RECORD_EVENT_BEGIN()
+    record_event_begin(&beforeEvent, &afterEvent, &stream);
     CUDA_CHECK_ERROR("cuLaunchKernel",
         cuLaunchKernel(
             kernel,
@@ -344,7 +345,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             arg_config
         )
     );
-    RECORD_EVENT_END()
+    record_event_end(&afterEvent, &stream);
 
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
 
@@ -408,14 +409,15 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *env, jclass clazz, jboolean is_timing, jbyteArray stream_wrapper) {
-    CUresult result;
+    PTX_PROLOGUE()
+
     unsigned int flags = CU_EVENT_DEFAULT;
     if (!is_timing) flags |= CU_EVENT_DISABLE_TIMING;
 
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
-    RECORD_EVENT_BEGIN()
-    RECORD_EVENT_END()
+    record_event_begin(&beforeEvent, &afterEvent, &stream);
+    record_event_end(&afterEvent, &stream);
 
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }

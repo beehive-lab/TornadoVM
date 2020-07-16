@@ -19,6 +19,7 @@ add_library(tornado-ptx SHARED
 	source/PTXDevice.c
 	source/PTXEvent.c
 	source/PTX.c
+	source/utils.c
 )
 
 #Support for CUDA Integration

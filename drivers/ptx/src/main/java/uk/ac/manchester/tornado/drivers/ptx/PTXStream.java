@@ -121,6 +121,9 @@ public class PTXStream extends TornadoLogger {
     }
 
     public int enqueueKernelLaunch(PTXModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
+        assert Arrays.stream(gridDim).filter(i -> i <= 0).count() == 0;
+        assert Arrays.stream(blockDim).filter(i -> i <= 0).count() == 0;
+
         if (DEBUG) {
             System.out.println("Executing: " + module.kernelFunctionName);
             System.out.println("   Blocks: " + Arrays.toString(blockDim));
