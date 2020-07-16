@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,7 @@
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[BJ[B)[B
+ * Signature: (JJ[BJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3BJ_3B
   (JNIEnv *, jclass, jlong, jlong, jbyteArray, jlong, jbyteArray);
@@ -37,7 +37,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[SJ[B)[B
+ * Signature: (JJ[SJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3SJ_3B
   (JNIEnv *, jclass, jlong, jlong, jshortArray, jlong, jbyteArray);
@@ -45,7 +45,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[CJ[B)[B
+ * Signature: (JJ[CJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3CJ_3B
   (JNIEnv *, jclass, jlong, jlong, jcharArray, jlong, jbyteArray);
@@ -53,7 +53,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[IJ[B)[B
+ * Signature: (JJ[IJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3IJ_3B
   (JNIEnv *, jclass, jlong, jlong, jintArray, jlong, jbyteArray);
@@ -61,7 +61,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[JJ[B)[B
+ * Signature: (JJ[JJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3JJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlongArray, jlong, jbyteArray);
@@ -69,7 +69,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[FJ[B)[B
+ * Signature: (JJ[FJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3FJ_3B
   (JNIEnv *, jclass, jlong, jlong, jfloatArray, jlong, jbyteArray);
@@ -77,7 +77,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
- * Signature: (JJ[DJ[B)[B
+ * Signature: (JJ[DJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3DJ_3B
   (JNIEnv *, jclass, jlong, jlong, jdoubleArray, jlong, jbyteArray);
@@ -85,7 +85,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[BJ[B)I
+ * Signature: (JJ[BJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3BJ_3B
   (JNIEnv *, jclass, jlong, jlong, jbyteArray, jlong, jbyteArray);
@@ -93,7 +93,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[SJ[B)I
+ * Signature: (JJ[SJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3SJ_3B
   (JNIEnv *, jclass, jlong, jlong, jshortArray, jlong, jbyteArray);
@@ -101,7 +101,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[CJ[B)I
+ * Signature: (JJ[CJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3CJ_3B
   (JNIEnv *, jclass, jlong, jlong, jcharArray, jlong, jbyteArray);
@@ -109,7 +109,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[IJ[B)I
+ * Signature: (JJ[IJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3IJ_3B
   (JNIEnv *, jclass, jlong, jlong, jintArray, jlong, jbyteArray);
@@ -117,7 +117,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[JJ[B)I
+ * Signature: (JJ[JJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3JJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlongArray, jlong, jbyteArray);
@@ -125,7 +125,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[FJ[B)I
+ * Signature: (JJ[FJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3FJ_3B
   (JNIEnv *, jclass, jlong, jlong, jfloatArray, jlong, jbyteArray);
@@ -133,7 +133,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJ[DJ[B)I
+ * Signature: (JJ[DJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3DJ_3B
   (JNIEnv *, jclass, jlong, jlong, jdoubleArray, jlong, jbyteArray);
@@ -141,7 +141,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[BJ[B)V
+ * Signature: (JJ[BJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3BJ_3B
   (JNIEnv *, jclass, jlong, jlong, jbyteArray, jlong, jbyteArray);
@@ -149,7 +149,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[SJ[B)V
+ * Signature: (JJ[SJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3SJ_3B
   (JNIEnv *, jclass, jlong, jlong, jshortArray, jlong, jbyteArray);
@@ -157,7 +157,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[CJ[B)V
+ * Signature: (JJ[CJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3CJ_3B
   (JNIEnv *, jclass, jlong, jlong, jcharArray, jlong, jbyteArray);
@@ -165,7 +165,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[IJ[B)V
+ * Signature: (JJ[IJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3IJ_3B
   (JNIEnv *, jclass, jlong, jlong, jintArray, jlong, jbyteArray);
@@ -173,7 +173,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[JJ[B)V
+ * Signature: (JJ[JJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3JJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlongArray, jlong, jbyteArray);
@@ -181,7 +181,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[FJ[B)V
+ * Signature: (JJ[FJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3FJ_3B
   (JNIEnv *, jclass, jlong, jlong, jfloatArray, jlong, jbyteArray);
@@ -189,7 +189,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD
- * Signature: (JJ[DJ[B)V
+ * Signature: (JJJ[DJ[I)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3DJ_3B
   (JNIEnv *, jclass, jlong, jlong, jdoubleArray, jlong, jbyteArray);
@@ -197,7 +197,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[BJ[B)[B
+ * Signature: (JJ[BJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3BJ_3B
   (JNIEnv *, jclass, jlong, jlong, jbyteArray, jlong, jbyteArray);
@@ -205,7 +205,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[SJ[B)[B
+ * Signature: (JJ[SJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3SJ_3B
   (JNIEnv *, jclass, jlong, jlong, jshortArray, jlong, jbyteArray);
@@ -213,7 +213,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[CJ[B)[B
+ * Signature: (JJ[CJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3CJ_3B
   (JNIEnv *, jclass, jlong, jlong, jcharArray, jlong, jbyteArray);
@@ -221,7 +221,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[IJ[B)[B
+ * Signature: (JJ[IJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3IJ_3B
   (JNIEnv *, jclass, jlong, jlong, jintArray, jlong, jbyteArray);
@@ -229,7 +229,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[JJ[B)[B
+ * Signature: (JJ[JJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3JJ_3B
   (JNIEnv *, jclass, jlong, jlong, jlongArray, jlong, jbyteArray);
@@ -237,7 +237,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[FJ[B)[B
+ * Signature: (JJ[FJ[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3FJ_3B
   (JNIEnv *, jclass, jlong, jlong, jfloatArray, jlong, jbyteArray);
@@ -245,7 +245,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoDAsync
- * Signature: (JJ[DJ[B)[B
+ * Signature: (JJ[DJ[I)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3DJ_3B
   (JNIEnv *, jclass, jlong, jlong, jdoubleArray, jlong, jbyteArray);
@@ -253,7 +253,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuLaunchKernel
- * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)[B
+ * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuLaunchKernel
   (JNIEnv *, jclass, jbyteArray, jstring, jint, jint, jint, jint, jint, jint, jlong, jbyteArray, jbyteArray);
@@ -285,7 +285,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuEventCreateAndRecord
- * Signature: (Z[B)[B
+ * Signature: (Z[B)[[B
  */
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *, jclass, jboolean, jbyteArray);

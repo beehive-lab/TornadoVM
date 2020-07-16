@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -200,105 +200,105 @@ static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH(Async)
- * Signature: (JJJ[BJ[I)I
+ * Signature: (JJ[BJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(B, jbyte, Byte)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH(Async)
- * Signature: (JJJ[SJ[I)I
+ * Signature: (JJ[SJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(S, jshort, Short)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoHAsync
- * Signature: (JJJ[CJ[I)I
+ * Signature: (JJ[CJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(C, jchar, Char)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH(Async)
- * Signature: (JJJ[IJ[I)I
+ * Signature: (JJ[IJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(I, jint, Int)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH(Async)
- * Signature: (JJJ[JJ[I)I
+ * Signature: (JJ[JJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(J, jlong, Long)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH(Async)
- * Signature: (JJJ[FJ[I)I
+ * Signature: (JJ[FJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(F, jfloat, Float)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH(Async)
- * Signature: (JJJ[DJ[I)I
+ * Signature: (JJ[DJ[B)[[B
  */
 COPY_ARRAY_D_TO_H(D, jdouble, Double)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[BJ[I)V
+ * Signature: (JJ[BJ[B)[[B
  */
 COPY_ARRAY_H_TO_D(B, jbyte, Byte)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[SJ[I)V
+ * Signature: (JJ[SJ[B)[[B
  */
 COPY_ARRAY_H_TO_D(S, jshort, Short)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[CJ[I)I
+ * Signature: (JJ[CJ[B)[[B
  */
 COPY_ARRAY_H_TO_D(C, jchar, Char)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[IJ[I)V
+ * Signature: (JJ[IJ[B)[[B
  */
 COPY_ARRAY_H_TO_D(I, jint, Int)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[JJ[I)V
+ * Signature: (JJ[JJ[B)[[B
  */
 COPY_ARRAY_H_TO_D(J, jlong, Long)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[FJ[I)V
+ * Signature: (JJ[FJ[B)[[B
  */
 COPY_ARRAY_H_TO_D(F, jfloat, Float)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayHtoD(Async)
- * Signature: (JJJ[DJ[I)V
+ * Signature: (JJ[DJ[I)[[B
  */
 COPY_ARRAY_H_TO_D(D, jdouble, Double)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuLaunchKernel
- * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)I
+ * Signature: ([BLjava/lang/String;IIIIIIJ[B[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuLaunchKernel(
         JNIEnv *env,
@@ -404,7 +404,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    cuEventCreateAndRecord
- * Signature: (Z[B)[B
+ * Signature: (Z[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *env, jclass clazz, jboolean is_timing, jbyteArray stream_wrapper) {
