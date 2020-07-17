@@ -49,10 +49,6 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
     protected final CanonicalizerPhase.CustomCanonicalization customCanonicalizer;
 
-    public CanonicalizerPhase.CustomCanonicalization getCustomCanonicalizer() {
-        return customCanonicalizer;
-    }
-
     public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         this.customCanonicalizer = customCanonicalizer;
 
@@ -62,7 +58,9 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        if (customCanonicalizer != null) {
+            canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        }
 
         appendPhase(canonicalizer);
 

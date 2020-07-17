@@ -8,7 +8,6 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCanonicalizer;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilerConfiguration;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
@@ -19,12 +18,10 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
     private final TornadoSuites suites;
     private final TornadoLIRSuites lirSuites;
-    private final PTXCanonicalizer canonicalizer;
 
     public PTXSuitesProvider(OptionValues options, PTXDeviceContext deviceContext, GraphBuilderConfiguration.Plugins plugins, MetaAccessProvider metaAccessProvider, PTXCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
-        canonicalizer = new PTXCanonicalizer();
-        suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, null, addressLowering);
         lirSuites = createLIRSuites();
     }
 

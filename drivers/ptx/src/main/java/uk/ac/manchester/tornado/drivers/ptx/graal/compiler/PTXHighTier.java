@@ -35,9 +35,8 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 
 public class PTXHighTier extends TornadoHighTier {
     public PTXHighTier(OptionValues options,
-                       CanonicalizerPhase.CustomCanonicalization customCanonicalizer,
                        MetaAccessProvider metaAccessProvider) {
-        super(customCanonicalizer);
+        super(null);
 
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
@@ -45,8 +44,6 @@ public class PTXHighTier extends TornadoHighTier {
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-
-        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
 
         appendPhase(canonicalizer);
 
