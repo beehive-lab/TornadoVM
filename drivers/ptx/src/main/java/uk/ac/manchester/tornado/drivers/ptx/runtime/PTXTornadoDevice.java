@@ -305,7 +305,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
         if (BENCHMARKING_MODE || !objectState.hasContents()) {
             objectState.setContents(true);
-            return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
+            return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
         }
         return null;
     }
@@ -330,7 +330,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             ensureAllocated(object, batchSize, objectState);
         }
         objectState.setContents(true);
-        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
+        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
     }
 
     /**
@@ -348,7 +348,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events == null);
+        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -370,7 +370,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-        return objectState.getBuffer().read(object, hostOffset, events, events == null);
+        return objectState.getBuffer().read(object, hostOffset, events, events != null);
     }
 
     /**

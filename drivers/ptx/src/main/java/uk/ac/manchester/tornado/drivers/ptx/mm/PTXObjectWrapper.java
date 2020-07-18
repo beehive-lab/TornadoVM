@@ -425,7 +425,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
             }
 
         }
-        return useDeps ? returnEvent : -1;
+        return returnEvent;
     }
 
     @Override
@@ -453,7 +453,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
                 }
             }
         }
-        return useDeps ? eventList : null;
+        return eventList;
     }
 
     @Override

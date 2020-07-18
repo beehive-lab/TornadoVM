@@ -141,7 +141,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
         } else {
             returnEvent = enqueueReadArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
-        return useDeps ? returnEvent : -1;
+        return returnEvent;
     }
 
     @Override
@@ -155,6 +155,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
         final int returnEvent;
         if (isFinal && onDevice) {
             returnEvent = enqueueWriteArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            listEvents.add(returnEvent);
         } else {
             // We first write the header for the object and then we write actual
             // buffer
@@ -171,7 +172,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
             listEvents.add(headerEvent);
             listEvents.add(returnEvent);
         }
-        return useDeps ? listEvents : null;
+        return listEvents;
     }
 
     private PTXByteBuffer buildArrayHeaderBatch(long arraySize) {

@@ -108,8 +108,10 @@ public class PTXStream extends TornadoLogger {
     }
 
     private void waitForEvents(int[] localEventIds) {
-        if (localEventIds == null)
+        if (localEventIds == null) {
             return;
+        }
+
         ArrayList<PTXEvent> events = new ArrayList<>();
         for (int localEventId : localEventIds) {
             PTXEvent cuEvent = this.eventsWrapper.getEvent(localEventId);

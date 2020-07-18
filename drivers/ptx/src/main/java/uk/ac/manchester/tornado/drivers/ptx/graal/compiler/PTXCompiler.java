@@ -391,6 +391,8 @@ public class PTXCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
+        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
         final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();

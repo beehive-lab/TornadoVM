@@ -7,6 +7,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.List;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
@@ -34,14 +35,16 @@ public class FieldBuffer {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: Offset 0
-        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
+        int eventId = objectBuffer.enqueueRead(getFieldValue(ref), 0, (useDeps) ? events : null, useDeps);
+        return (useDeps) ?  eventId : -1;
     }
 
     public List<Integer> enqueueWrite(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
+        List<Integer> eventsIds = objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps);
+        return (useDeps) ? eventsIds : Collections.emptyList();
     }
 
     public int getAlignment() {
