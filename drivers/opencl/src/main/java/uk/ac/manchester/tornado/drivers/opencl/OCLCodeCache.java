@@ -52,6 +52,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -358,7 +359,7 @@ public class OCLCodeCache {
 
     private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
         if (precompiledBinariesPerDevice != null) {
-            String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
+            String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class), deviceContext.getPlatformContext().getPlatformIndex());
             precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
         }
     }
