@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.ByteBuffer.wrap;
-
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 3x bytes e.g. <byte,byte,byte>
- *
- * @author James Clarkson
- *
- */
 @Vector
 public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
 
@@ -87,6 +78,10 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
         setX(x);
         setY(y);
         setZ(z);
+    }
+
+    public byte[] getArray() {
+        return storage;
     }
 
     public void set(Byte3 value) {
@@ -139,7 +134,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX(), getY(), getZ());
     }
 
     public String toString() {
@@ -167,7 +162,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return wrap(storage);
+        return ByteBuffer.wrap(storage);
     }
 
     @Override

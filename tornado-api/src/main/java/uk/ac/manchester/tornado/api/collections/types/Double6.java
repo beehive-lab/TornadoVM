@@ -41,23 +41,11 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Double.MAX_VALUE;
-import static java.lang.Double.MIN_VALUE;
-import static java.lang.String.format;
-import static java.nio.DoubleBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt6;
-
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 
-/**
- * Class that represents a vector of 3x doubles e.g. <double,double,double>
- *
- * @author jamesclarkson
- *
- */
 public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
     public static final Class<Double6> TYPE = Double6.class;
@@ -65,7 +53,8 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload final protected double[] storage;
+    @Payload
+    final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -88,6 +77,10 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         setS3(s3);
         setS4(s4);
         setS5(s5);
+    }
+
+    public double[] getArray() {
+        return storage;
     }
 
     public void set(Double6 value) {
@@ -166,7 +159,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Double6}
      */
     public Double6 duplicate() {
         final Double6 vector = new Double6();
@@ -175,15 +168,15 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
     }
 
     @Override
     public String toString() {
-        return toString(fmt6);
+        return toString(DoubleOps.fmt6);
     }
 
-    public static final Double6 loadFromArray(final double[] array, int index) {
+    public static Double6 loadFromArray(final double[] array, int index) {
         final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, array[index + i]);
@@ -204,7 +197,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return wrap(storage);
+        return DoubleBuffer.wrap(storage);
     }
 
     @Override
@@ -348,7 +341,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
      * vector wide operations
      */
     public static double min(Double6 value) {
-        double result = MAX_VALUE;
+        double result = Double.MAX_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.min(result, value.get(i));
         }
@@ -356,7 +349,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static double max(Double6 value) {
-        double result = MIN_VALUE;
+        double result = Double.MIN_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.max(result, value.get(i));
         }
@@ -375,7 +368,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Returns the vector length e.g. the sqrt of all elements squared
      *
-     * @return
+     * @return double
      */
     public static double length(Double6 value) {
         return TornadoMath.sqrt(dot(value, value));

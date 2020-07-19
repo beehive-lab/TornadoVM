@@ -48,7 +48,4 @@ public class ByteOps {
     public static final String fmt3 = "{%3d,%3d,%3d}";
     public static final String fmt4 = "{%3d,%3d,%3d,%3d}";
 
-    public static boolean compare(byte a, byte b) {
-        return a == b;
-    }
 }

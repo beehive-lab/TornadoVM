@@ -108,19 +108,6 @@ public class FloatSE3 {
         matrix.set(0, 3, value.getX());
         matrix.set(1, 3, value.getY());
         matrix.set(2, 3, value.getZ());
-
-        /*
-         * Matrix.set(matrix,1,0, -v[2]); Matrix.set(matrix,2,0, v[1]);
-         * Matrix.set(matrix,2,1, -v[0]);
-         *
-         * Matrix.set(matrix,0,1, v[2]); Matrix.set(matrix,0,2, -v[1]);
-         * Matrix.set(matrix,1,2, v[0]);
-         *
-         * Matrix.set(matrix,3,0, v[3]); Matrix.set(matrix,3,1, v[4]);
-         * Matrix.set(matrix,3,2, v[5]);
-         */
-        // Matrix.set(matrix, 3, 3, 1f);
-        // System.out.printf("matrix=\n%s\n",matrix.toString());
     }
 
     public void exp(Float6 mu) {
@@ -164,7 +151,6 @@ public class FloatSE3 {
     }
 
     private void rodrigues_so3_exp(Float3 w, float A, float B) {
-
         {
             final float wx2 = sq(w.getX());
             final float wy2 = sq(w.getY());

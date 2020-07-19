@@ -77,11 +77,11 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
-     * @param data
+     * @param array
      *            array reference which contains data
      */
     public Matrix3DFloat4(int width, int height, int depth, float[] array) {
@@ -95,13 +95,19 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
+     * @param depth
+     *            depth-rows
      */
     public Matrix3DFloat4(int width, int height, int depth) {
         this(width, height, depth, new float[width * height * depth * VECTOR_ELEMENTS]);
+    }
+
+    public float[] getFlattenedArray() {
+        return storage;
     }
 
     public Float4 get(int i, int j, int k) {

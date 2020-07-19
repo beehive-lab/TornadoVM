@@ -41,15 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
-import static java.lang.String.format;
-import static java.nio.ByteBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.Byte4.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.ByteOps.fmt4;
-import static uk.ac.manchester.tornado.api.collections.types.Float4.sqrt;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
 import java.nio.ByteBuffer;
 
 public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
@@ -78,10 +69,10 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
+     * @param height
+     *            number of columns
      * @param array
      *            array reference which contains data
      */
@@ -95,17 +86,21 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param height
-     *            number of columns
      * @param width
      *            number of rows
+     * @param height
+     *            number of columns
      */
     public ImageByte4(int width, int height) {
         this(width, height, new byte[width * height * elementSize]);
     }
 
     public ImageByte4(byte[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
+        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+    }
+
+    public byte[] getArray() {
+        return storage;
     }
 
     private int toIndex(int x, int y) {
@@ -122,7 +117,7 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 
     public Byte4 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return loadFromArray(storage, offset);
+        return Byte4.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Byte4 value) {
@@ -170,7 +165,7 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public Float4 min() {
-        Float4 result = new Float4(MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE);
+        Float4 result = new Float4(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -184,7 +179,7 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public Float4 max() {
-        Float4 result = new Float4(MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE);
+        Float4 result = new Float4(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -212,11 +207,11 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 
             }
         }
-        return sqrt(varience);
+        return Float4.sqrt(varience);
     }
 
     public String summerise() {
-        return format("ImageByte4<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
+        return String.format("ImageByte4<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
     }
 
     public String toString(String fmt) {
@@ -234,22 +229,20 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 
     public String toString(String fmt, int width, int height) {
         String str = "";
-
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 str += get(j, i).toString(fmt) + " ";
             }
             str += "\n";
         }
-
         return str;
     }
 
     @Override
     public String toString() {
-        String result = format("ImageByte4 <%d x %d>", X, Y);
+        String result = String.format("ImageByte4 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(fmt4);
+            result += "\n" + toString(ByteOps.fmt4);
         }
         return result;
     }
@@ -261,7 +254,7 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return wrap(storage);
+        return ByteBuffer.wrap(storage);
     }
 
     @Override

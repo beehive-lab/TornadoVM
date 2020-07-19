@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.DoubleBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt4;
-
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 4x doubles e.g. <double,double,double>
- *
- * @author jamesclarkson
- */
 @Vector
 public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
@@ -94,6 +85,10 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         setY(y);
         setZ(z);
         setW(w);
+    }
+
+    public double[] getArray() {
+        return storage;
     }
 
     public void set(Double4 value) {
@@ -147,12 +142,12 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY(), getZ(), getW());
+        return String.format(fmt, getX(), getY(), getZ(), getW());
     }
 
     @Override
     public String toString() {
-        return toString(fmt4);
+        return toString(DoubleOps.fmt4);
     }
 
     /**
@@ -199,7 +194,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return wrap(storage);
+        return DoubleBuffer.wrap(storage);
     }
 
     @Override

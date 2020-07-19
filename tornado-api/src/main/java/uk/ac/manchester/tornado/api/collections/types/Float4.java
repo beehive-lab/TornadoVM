@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt4;
-
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 4x floats e.g. <float,float,float>
- *
- * @author jamesclarkson
- */
 @Vector
 public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
@@ -64,7 +55,8 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload final protected float[] storage;
+    @Payload
+    final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -93,6 +85,10 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         setY(y);
         setZ(z);
         setW(w);
+    }
+
+    public float[] getArray() {
+        return storage;
     }
 
     public void set(Float4 value) {
@@ -137,7 +133,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Float4}
      */
     public Float4 duplicate() {
         final Float4 vector = new Float4();
@@ -146,18 +142,18 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY(), getZ(), getW());
+        return String.format(fmt, getX(), getY(), getZ(), getW());
     }
 
     @Override
     public String toString() {
-        return toString(fmt4);
+        return toString(FloatOps.fmt4);
     }
 
     /**
      * Cast vector into a Float2
      *
-     * @return
+     * @return {@link Float2}
      */
     public Float2 asFloat2() {
         return new Float2(getX(), getY());
@@ -175,7 +171,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return new Float2(getZ(), getW());
     }
 
-    protected static final Float4 loadFromArray(final float[] array, int index) {
+    protected static Float4 loadFromArray(final float[] array, int index) {
         final Float4 result = new Float4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -198,7 +194,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -303,9 +299,8 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return new Float4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
-    public static void normalise(Float4 value) {
-        final float len = length(value);
-        scaleByInverse(value, len);
+    public static Float4 normalise(Float4 value) {
+        return scaleByInverse(value, length(value));
     }
 
     /*
@@ -327,7 +322,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Returns the vector length e.g. the sqrt of all elements squared
      *
-     * @return
+     * @return float
      */
     public static float length(Float4 value) {
         return TornadoMath.sqrt(dot(value, value));
