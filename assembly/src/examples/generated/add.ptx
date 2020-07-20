@@ -1,6 +1,6 @@
 //PTX headers
-.version 6.0
-.target sm_60
+.version 5.0
+.target sm_62
 .address_size 64
 
 // kernel function
