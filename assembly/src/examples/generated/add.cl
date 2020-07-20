@@ -1,5 +1,5 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-__kernel void add(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
+__kernel void add(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region)
 {
   ulong ul_8, ul_10, ul_1, ul_0, ul_2, ul_12; 
   long l_5, l_7, l_6; 

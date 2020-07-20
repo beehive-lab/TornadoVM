@@ -41,15 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
-import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.findULPDistance;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.sqrt;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
 import java.nio.FloatBuffer;
 
 public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
@@ -77,12 +68,12 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Storage format for matrix
-     *
-     * @param height
-     *            number of columns
+     * 
      * @param width
      *            number of rows
-     * @param data
+     * @param height
+     *            number of columns
+     * @param array
      *            array reference which contains data
      */
     public ImageFloat3(int width, int height, float[] array) {
@@ -94,18 +85,22 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Storage format for matrix
-     *
-     * @param height
-     *            number of columns
+     * 
      * @param width
      *            number of rows
+     * @param height
+     *            number of columns
      */
     public ImageFloat3(int width, int height) {
         this(width, height, new float[width * height * elementSize]);
     }
 
     public ImageFloat3(float[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
+        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+    }
+
+    public float[] getArray() {
+        return storage;
     }
 
     private int toIndex(int x, int y) {
@@ -170,9 +165,9 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        String result = format("ImageFloat3 <%d x %d>", X, Y);
+        String result = String.format("ImageFloat3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(fmt3);
+            result += "\n" + toString(FloatOps.fmt3);
         }
         return result;
     }
@@ -189,7 +184,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float3 min() {
-        Float3 result = new Float3(MAX_VALUE, MAX_VALUE, MAX_VALUE);
+        Float3 result = new Float3(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -201,7 +196,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float3 max() {
-        Float3 result = new Float3(MIN_VALUE, MIN_VALUE, MIN_VALUE);
+        Float3 result = new Float3(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -224,11 +219,11 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
             }
         }
 
-        return sqrt(varience);
+        return Float3.sqrt(varience);
     }
 
     public String summerise() {
-        return format("ImageFloat3<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
+        return String.format("ImageFloat3<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
     }
 
     @Override
@@ -238,7 +233,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -247,8 +242,8 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public FloatingPointError calculateULP(ImageFloat3 ref) {
-        float maxULP = MIN_VALUE;
-        float minULP = MAX_VALUE;
+        float maxULP = Float.MIN_VALUE;
+        float minULP = Float.MAX_VALUE;
         float averageULP = 0f;
 
         /*
@@ -264,7 +259,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
                 final Float3 v = get(i, j);
                 final Float3 r = ref.get(i, j);
 
-                final float ulpFactor = findULPDistance(v, r);
+                final float ulpFactor = Float3.findULPDistance(v, r);
                 averageULP += ulpFactor;
                 minULP = Math.min(ulpFactor, minULP);
                 maxULP = Math.max(ulpFactor, maxULP);

@@ -41,34 +41,26 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static uk.ac.manchester.tornado.api.collections.types.Float3.floor;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.fract;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.mult;
-import static uk.ac.manchester.tornado.api.collections.types.Int3.add;
-import static uk.ac.manchester.tornado.api.collections.types.Int3.max;
-import static uk.ac.manchester.tornado.api.collections.types.Int3.min;
-import static uk.ac.manchester.tornado.api.collections.types.Int3.sub;
-
 public class VolumeOps {
 
-    public static final Float3 grad(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
+    public static Float3 grad(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
 
         final Float3 scaledPos = new Float3(((point.getX() * volume.X()) / dim.getX()) - 0.5f, ((point.getY() * volume.Y()) / dim.getY()) - 0.5f, ((point.getZ() * volume.Z()) / dim.getZ()) - 0.5f);
 
-        final Float3 tmp = floor(scaledPos);
+        final Float3 tmp = Float3.floor(scaledPos);
 
-        final Float3 factor = fract(scaledPos);
+        final Float3 factor = Float3.fract(scaledPos);
 
         final Int3 base = new Int3((int) tmp.getX(), (int) tmp.getY(), (int) tmp.getZ());
 
         // factor.frac();
         final Int3 zeros = new Int3();
-        final Int3 limits = sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
+        final Int3 limits = Int3.sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
 
-        final Int3 lowerLower = max(zeros, sub(base, 1));
-        final Int3 lowerUpper = max(zeros, base);
-        final Int3 upperLower = min(limits, add(base, 1));
-        final Int3 upperUpper = min(limits, add(base, 2));
+        final Int3 lowerLower = Int3.max(zeros, Int3.sub(base, 1));
+        final Int3 lowerUpper = Int3.max(zeros, base);
+        final Int3 upperLower = Int3.min(limits, Int3.add(base, 1));
+        final Int3 upperUpper = Int3.min(limits, Int3.add(base, 2));
 
         final Int3 lower = lowerUpper;
         final Int3 upper = upperLower;
@@ -154,26 +146,26 @@ public class VolumeOps {
                 * factor.getX()))
                 * factor.getY())) * factor.getZ());
         // @formatter:on
-        final Float3 tmp1 = mult(new Float3(dim.getX() / volume.X(), dim.getY() / volume.Y(), dim.getZ() / volume.Z()), (0.5f * 0.00003051944088f));
+        final Float3 tmp1 = Float3.mult(new Float3(dim.getX() / volume.X(), dim.getY() / volume.Y(), dim.getZ() / volume.Z()), (0.5f * 0.00003051944088f));
 
-        return mult(new Float3(gx, gy, gz), tmp1);
+        return Float3.mult(new Float3(gx, gy, gz), tmp1);
 
     }
 
-    public static final float interp(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
+    public static float interp(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
 
         final Float3 scaledPos = new Float3((point.getX() * volume.X() / dim.getX()) - 0.5f, (point.getY() * volume.Y() / dim.getY()) - 0.5f, (point.getZ() * volume.Z() / dim.getZ()) - 0.5f);
 
-        final Float3 tmp = floor(scaledPos);
-        final Float3 factor = fract(scaledPos);
+        final Float3 tmp = Float3.floor(scaledPos);
+        final Float3 factor = Float3.fract(scaledPos);
 
         final Int3 base = new Int3((int) tmp.getX(), (int) tmp.getY(), (int) tmp.getZ());
 
         final Int3 zeros = new Int3(0, 0, 0);
-        final Int3 limits = sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
+        final Int3 limits = Int3.sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
 
-        final Int3 lower = max(base, zeros);
-        final Int3 upper = min(limits, add(base, 1));
+        final Int3 lower = Int3.max(base, zeros);
+        final Int3 upper = Int3.min(limits, Int3.add(base, 1));
 
         final float factorX = (1 - factor.getX());
         final float factorY = (1 - factor.getY());
@@ -194,11 +186,11 @@ public class VolumeOps {
         return c * 0.00003051944088f;
     }
 
-    public static final float vs1(int x, int y, int z, VolumeShort2 v) {
+    public static float vs1(int x, int y, int z, VolumeShort2 v) {
         return vs(v, x, y, z);
     }
 
-    public final static float vs(final VolumeShort2 cube, int x, int y, int z) {
+    public static float vs(final VolumeShort2 cube, int x, int y, int z) {
         return cube.get(x, y, z).getX();
     }
 
