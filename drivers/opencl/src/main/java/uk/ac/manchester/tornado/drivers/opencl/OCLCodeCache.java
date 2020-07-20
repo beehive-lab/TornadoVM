@@ -359,7 +359,8 @@ public class OCLCodeCache {
 
     private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
         if (precompiledBinariesPerDevice != null) {
-            String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class), deviceContext.getPlatformContext().getPlatformIndex());
+            String[] driverAndDevice = Tornado.getProperty(id + ".device", "0:0").split(":");
+            String lookupBufferDeviceKernelName = id + String.format(".device=%s:%s", driverAndDevice[0], driverAndDevice[1]);
             precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
         }
     }
