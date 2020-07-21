@@ -61,7 +61,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage
      */
     final private int numElements;
-    final private static int elementSize = 4;
+    final private static int elementSize = 8;
 
     /**
      * Creates a vector using the provided backing array
@@ -226,4 +226,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    public float[] getArray() {
+        return storage;
+    }
 }

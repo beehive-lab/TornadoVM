@@ -56,7 +56,7 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
      * number of elements in the storage
      */
     final private int numElements;
-    final private static int elementSize = 2;
+    final private static int elementSize = 3;
 
     /**
      * Creates a vector using the provided backing arrayR R
@@ -223,6 +223,10 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
 
     public int getLength() {
         return numElements;
+    }
+
+    public int[] getArray() {
+        return storage;
     }
 
 }

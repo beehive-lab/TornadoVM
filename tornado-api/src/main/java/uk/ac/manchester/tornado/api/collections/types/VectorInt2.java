@@ -225,4 +225,8 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
         return numElements;
     }
 
+    public int[] getArray() {
+        return storage;
+    }
+
 }
