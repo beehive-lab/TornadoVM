@@ -222,4 +222,7 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    public float[] getArray() {
+        return storage;
+    }
 }

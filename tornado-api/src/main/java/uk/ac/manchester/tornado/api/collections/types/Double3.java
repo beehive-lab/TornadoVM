@@ -41,21 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
-import static java.nio.DoubleBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt3;
-
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 3x doubles e.g. <double,double,double>
- *
- * @author jamesclarkson
- */
 @Vector
 public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
@@ -87,6 +78,10 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         setZ(z);
     }
 
+    public double[] getArray() {
+        return storage;
+    }
+
     public double get(int index) {
         return storage[index];
     }
@@ -110,18 +105,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public double getZ() {
-        return get(2);
-    }
-
-    public double getS0() {
-        return get(0);
-    }
-
-    public double getS1() {
-        return get(1);
-    }
-
-    public double getS2() {
         return get(2);
     }
 
@@ -161,12 +144,12 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX(), getY(), getZ());
     }
 
     @Override
     public String toString() {
-        return toString(fmt3);
+        return toString(DoubleOps.fmt3);
     }
 
     /**
@@ -199,7 +182,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return wrap(storage);
+        return DoubleBuffer.wrap(storage);
     }
 
     @Override
@@ -209,9 +192,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * * Operations on Double3 vectors
-     */
-    /*
-     * vector = op( vector, vector )
      */
     public static Double3 add(Double3 a, Double3 b) {
         return new Double3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());

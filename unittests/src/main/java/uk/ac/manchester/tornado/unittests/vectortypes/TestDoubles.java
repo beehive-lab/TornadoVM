@@ -34,7 +34,6 @@ import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {
@@ -46,7 +45,7 @@ public class TestDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void doubleAdd2() {
+    public void testDoubleAdd2() {
         int size = 1;
         Double2 a = new Double2(1., 2.);
         Double2 b = new Double2(3., 2.);
@@ -71,7 +70,7 @@ public class TestDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void doubleAdd3() {
+    public void testDoubleAdd3() {
         int size = 1;
         Double3 a = new Double3(1., 2., 3.);
         Double3 b = new Double3(3., 2., 1.);
@@ -96,7 +95,7 @@ public class TestDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void doubleAdd4() {
+    public void testDoubleAdd4() {
         int size = 1;
         Double4 a = new Double4(1., 2., 3., 4.);
         Double4 b = new Double4(4., 3., 2., 1.);
@@ -121,7 +120,7 @@ public class TestDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void doubleAdd8() {
+    public void testDoubleAdd8() {
         int size = 1;
         Double8 a = new Double8(1., 2., 3., 4., 5., 6., 7., 8.);
         Double8 b = new Double8(8., 7., 6., 5., 4., 3., 2., 1.);
@@ -146,8 +145,7 @@ public class TestDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void testAddDouble1() {
-
+    public void testDoubleAdd() {
         int size = 8;
 
         double[] a = new double[size];
@@ -155,8 +153,8 @@ public class TestDoubles extends TornadoTestBase {
         double[] output = new double[size];
 
         for (int i = 0; i < size; i++) {
-            a[i] = (double) i;
-            b[i] = (double) i;
+            a[i] = i;
+            b[i] = i;
         }
 
         //@formatter:off
@@ -204,11 +202,9 @@ public class TestDoubles extends TornadoTestBase {
             b[i] = r.nextDouble();
         }
 
-        // Sequential computation
         dotProductFunctionMap(a, b, seqMap);
         dotProductFunctionReduce(seqMap, seqReduce);
 
-        // Parallel computation with Tornado
         //@formatter:off
         new TaskSchedule("s0")
             .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap)
@@ -228,7 +224,7 @@ public class TestDoubles extends TornadoTestBase {
 
     @Test
     public void testVectorDouble2() {
-        int size = 64;
+        int size = 256;
 
         VectorDouble2 a = new VectorDouble2(size);
         VectorDouble2 b = new VectorDouble2(size);
@@ -259,7 +255,7 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testVectorDouble3() {
         int size = 64;
 
@@ -269,7 +265,7 @@ public class TestDoubles extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             a.set(i, new Double3(i, i, i));
-            b.set(i, new Double3(size - i, size - i, size - 1));
+            b.set(i, new Double3(size - i, size - i, size - i));
         }
 
         //@formatter:off
@@ -293,7 +289,7 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testVectorDouble4() {
         int size = 64;
 
@@ -303,7 +299,7 @@ public class TestDoubles extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             a.set(i, new Double4(i, i, i, i));
-            b.set(i, new Double4(size - i, size - i, size - 1, size - 1));
+            b.set(i, new Double4(size - i, size - i, size - i, size - i));
         }
 
         //@formatter:off

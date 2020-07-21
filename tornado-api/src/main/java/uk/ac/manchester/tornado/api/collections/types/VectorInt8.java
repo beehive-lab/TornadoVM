@@ -40,12 +40,12 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
-import static uk.ac.manchester.tornado.api.collections.types.Int2.add;
-import static uk.ac.manchester.tornado.api.collections.types.Int2.loadFromArray;
+import static uk.ac.manchester.tornado.api.collections.types.Int8.add;
+import static uk.ac.manchester.tornado.api.collections.types.Int8.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
+public class VectorInt8 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * backing array
@@ -56,7 +56,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      * number of elements in the storage
      */
     final private int numElements;
-    final private static int elementSize = 2;
+    final private static int elementSize = 8;
 
     /**
      * Creates a vector using the provided backing arrayR R
@@ -64,7 +64,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorInt2(int numElements, int[] array) {
+    protected VectorInt8(int numElements, int[] array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -72,7 +72,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array
      */
-    public VectorInt2(int[] array) {
+    public VectorInt8(int[] array) {
         this(array.length / elementSize, array);
     }
 
@@ -81,7 +81,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param numElements
      */
-    public VectorInt2(int numElements) {
+    public VectorInt8(int numElements) {
         this(numElements, new int[numElements * elementSize]);
     }
 
@@ -90,13 +90,13 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the floatr at the given index of this vector
+     * Returns the float at the given index of this vector
      *
      * @param index
      *
      * @return value
      */
-    public Int2 get(int index) {
+    public Int8 get(int index) {
         return loadFromArray(storage, toIndex(index));
     }
 
@@ -106,7 +106,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      * @param index
      * @param value
      */
-    public void set(int index, Int2 value) {
+    public void set(int index, Int8 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -115,7 +115,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(VectorInt2 values) {
+    public void set(VectorInt8 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -127,7 +127,7 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      * @param values
      */
     public void set(int[] values) {
-        VectorInt2 vector = new VectorInt2(values);
+        VectorInt8 vector = new VectorInt8(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
@@ -144,8 +144,8 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return
      */
-    public VectorInt2 duplicate() {
-        VectorInt2 vector = new VectorInt2(numElements);
+    public VectorInt8 duplicate() {
+        VectorInt8 vector = new VectorInt8(numElements);
         vector.set(this);
         return vector;
     }
@@ -172,32 +172,32 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
      */
     public String toString() {
         if (numElements > 4) {
-            return format("VectorInt2 <%d>", numElements);
+            return format("VectorInt8 <%d>", numElements);
         } else {
             return toString(fmt3);
         }
     }
 
-    public Int2 sum() {
-        Int2 result = new Int2();
+    public Int8 sum() {
+        Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result = add(result, get(i));
         }
         return result;
     }
 
-    public Int2 min() {
-        Int2 result = new Int2();
+    public Int8 min() {
+        Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
-            result = Int2.min(result, get(i));
+            result = Int8.min(result, get(i));
         }
         return result;
     }
 
-    public Int2 max() {
-        Int2 result = new Int2();
+    public Int8 max() {
+        Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
-            result = Int2.max(result, get(i));
+            result = Int8.max(result, get(i));
         }
         return result;
     }

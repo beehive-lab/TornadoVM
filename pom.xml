@@ -554,7 +554,8 @@
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl
                                 </arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl
                                 </arg>
                             </compilerArgs>
                         </configuration>
@@ -788,12 +789,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.12.1</version>
+            <version>2.13.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.12.1</version>
+            <version>2.13.2</version>
         </dependency>
     </dependencies>
     <modules>

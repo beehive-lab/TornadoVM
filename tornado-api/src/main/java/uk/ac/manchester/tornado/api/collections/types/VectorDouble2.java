@@ -225,4 +225,8 @@ public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
         return numElements;
     }
 
+    public double[] getArray() {
+        return storage;
+    }
+
 }

@@ -90,12 +90,12 @@ public enum OCLKind implements PlatformKind {
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
     USHORT8(8, null, USHORT),
-    INT8(8, null, INT),
+    INT8(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, INT),
     UINT8(8, null, UINT),
     LONG8(8, null, LONG),
     ULONG8(8, null, ULONG),
     FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),
+    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),        
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
@@ -441,9 +441,7 @@ public enum OCLKind implements PlatformKind {
     }
 
     public JavaKind asJavaKind() {
-        if (kind == ILLEGAL || kind.isVector()) {
-            return JavaKind.Illegal;
-        } else {
+        if (kind != ILLEGAL && !kind.isVector()) {
             switch (kind) {
                 case BOOL:
                     return JavaKind.Boolean;
@@ -466,7 +464,7 @@ public enum OCLKind implements PlatformKind {
                 default:
                     shouldNotReachHere();
             }
-            return JavaKind.Illegal;
         }
+        return JavaKind.Illegal;
     }
 }

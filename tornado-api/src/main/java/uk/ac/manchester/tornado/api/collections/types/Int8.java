@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,37 +41,37 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
+public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
-    public static final Class<Double8> TYPE = Double8.class;
+    public static final Class<Int8> TYPE = Int8.class;
 
     /**
      * backing array
      */
     @Payload
-    final protected double[] storage;
+    final protected int[] storage;
 
     /**
      * number of elements in the storage
      */
     final private static int numElements = 8;
 
-    protected Double8(double[] storage) {
+    public Int8(int[] storage) {
         this.storage = storage;
     }
 
-    public Double8() {
-        this(new double[numElements]);
+    public Int8() {
+        this(new int[numElements]);
     }
 
-    public Double8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
+    public Int8(int s0, int s1, int s2, int s3, int s4, int s5, int s6, int s7) {
         this();
         setS0(s0);
         setS1(s1);
@@ -83,103 +83,103 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS7(s7);
     }
 
-    public double[] getArray() {
+    public int[] getArray() {
         return storage;
     }
 
-    public double get(int index) {
+    public int get(int index) {
         return storage[index];
     }
 
-    public void set(int index, double value) {
+    public void set(int index, int value) {
         storage[index] = value;
     }
 
-    public void set(Double8 value) {
+    public void set(Int8 value) {
         for (int i = 0; i < 8; i++) {
             set(i, value.get(i));
         }
     }
 
-    public double getS0() {
+    public int getS0() {
         return get(0);
     }
 
-    public double getS1() {
+    public int getS1() {
         return get(1);
     }
 
-    public double getS2() {
+    public int getS2() {
         return get(2);
     }
 
-    public double getS3() {
+    public int getS3() {
         return get(3);
     }
 
-    public double getS4() {
+    public int getS4() {
         return get(4);
     }
 
-    public double getS5() {
+    public int getS5() {
         return get(5);
     }
 
-    public double getS6() {
+    public int getS6() {
         return get(6);
     }
 
-    public double getS7() {
+    public int getS7() {
         return get(7);
     }
 
-    public void setS0(double value) {
+    public void setS0(int value) {
         set(0, value);
     }
 
-    public void setS1(double value) {
+    public void setS1(int value) {
         set(1, value);
     }
 
-    public void setS2(double value) {
+    public void setS2(int value) {
         set(2, value);
     }
 
-    public void setS3(double value) {
+    public void setS3(int value) {
         set(3, value);
     }
 
-    public void setS4(double value) {
+    public void setS4(int value) {
         set(4, value);
     }
 
-    public void setS5(double value) {
+    public void setS5(int value) {
         set(5, value);
     }
 
-    public void setS6(double value) {
+    public void setS6(int value) {
         set(6, value);
     }
 
-    public void setS7(double value) {
+    public void setS7(int value) {
         set(7, value);
     }
 
-    public Double4 getHi() {
-        return new Double4(getS4(), getS5(), getS6(), getS7());
+    public Int4 getHi() {
+        return new Int4(getS4(), getS5(), getS6(), getS7());
     }
 
-    public Double4 getLo() {
-        return new Double4(getS0(), getS1(), getS2(), getS3());
+    public Int4 getLo() {
+        return new Int4(getS0(), getS1(), getS2(), getS3());
     }
 
     /**
      * Duplicates this vector
      *
-     * @return {@link Double8}
+     * @return {@link Int8}
      */
-    public Double8 duplicate() {
-        Double8 vector = new Double8();
+    public Int8 duplicate() {
+        Int8 vector = new Int8();
         vector.set(this);
         return vector;
     }
@@ -190,31 +190,31 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        return toString(DoubleOps.fmt8);
+        return toString(IntOps.fmt8);
     }
 
-    protected static Double8 loadFromArray(final double[] array, int index) {
-        final Double8 result = new Double8();
+    protected static Int8 loadFromArray(final int[] array, int index) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, array[index + i]);
         }
         return result;
     }
 
-    protected final void storeToArray(final double[] array, int index) {
+    protected final void storeToArray(final int[] array, int index) {
         for (int i = 0; i < numElements; i++) {
             array[index + i] = get(i);
         }
     }
 
     @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
+    public void loadFromBuffer(IntBuffer buffer) {
+
     }
 
     @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+    public IntBuffer asBuffer() {
+        return null;
     }
 
     @Override
@@ -223,117 +223,119 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * * Operations on Double8 vectors
+     * * Operations on int8 vectors
      */
-    public static Double8 add(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Int8 add(Int8 a, Int8 b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
     }
 
-    public static Double8 add(Double8 a, double b) {
-        final Double8 result = new Double8();
+    public static Int8 add(Int8 a, int b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
     }
 
-    public static Double8 sub(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Int8 sub(Int8 a, Int8 b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
     }
 
-    public static Double8 sub(Double8 a, double b) {
-        final Double8 result = new Double8();
+    public static Int8 sub(Int8 a, int b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
     }
 
-    public static Double8 div(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Int8 div(Int8 a, Int8 b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
     }
 
-    public static Double8 div(Double8 a, double value) {
-        final Double8 result = new Double8();
+    public static Int8 div(Int8 a, int value) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
     }
 
-    public static Double8 mult(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Int8 mult(Int8 a, Int8 b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
     }
 
-    public static Double8 mult(Double8 a, double value) {
-        final Double8 result = new Double8();
+    public static Int8 mult(Int8 a, int value) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
     }
 
-    public static Double8 min(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Int8 min(Int8 a, Int8 b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static double min(Double8 value) {
-        double result = Double.MAX_VALUE;
+    public static int min(Int8 value) {
+        int result = Integer.MAX_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
     }
 
-    public static Double8 max(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Int8 max(Int8 a, Int8 b) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static double max(Double8 value) {
-        double result = Double.MIN_VALUE;
+    public static int max(Int8 value) {
+        int result = Integer.MIN_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
     }
 
-    public static Double8 sqrt(Double8 a) {
-        final Double8 result = new Double8();
+    public static Int8 sqrt(Int8 a) {
+        final Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
-            a.set(i, TornadoMath.sqrt(a.get(i)));
+            a.set(i, (int) TornadoMath.sqrt(a.get(i)));
         }
         return result;
     }
 
-    public static boolean isEqual(Double8 a, Double8 b) {
+    public static int dot(Int8 a, Int8 b) {
+        final Int8 m = mult(a, b);
+        return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7();
+    }
+
+    public static boolean isEqual(Int8 a, Int8 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public static double findULPDistance(Double8 value, Double8 expected) {
-        return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
-    }
 }

@@ -41,10 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.floatToRawIntBits;
-import static java.lang.Math.abs;
-import static java.lang.Math.ulp;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class FloatOps {
 
@@ -60,67 +57,67 @@ public class FloatOps {
     public static final String fmt8 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
     public static final String fmt6e = "{%e,%e,%e,%e,%e,%e}";
 
-    public static final boolean compareBits(float a, float b) {
-        long ai = floatToRawIntBits(a);
-        long bi = floatToRawIntBits(b);
+    public static boolean compareBits(float a, float b) {
+        long ai = Float.floatToRawIntBits(a);
+        long bi = Float.floatToRawIntBits(b);
 
         long diff = ai ^ bi;
         return (diff == 0);
     }
 
-    public static final boolean compareULP(float value, float expected, float ulps) {
-        final float tol = ulps * ulp(expected);
+    public static boolean compareULP(float value, float expected, float ulps) {
+        final float tol = ulps * Math.ulp(expected);
         if (value == expected) {
             return true;
         }
 
-        return abs(value - expected) < tol;
+        return Math.abs(value - expected) < tol;
     }
 
-    public static final float findMaxULP(Float2 value, Float2 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static float findMaxULP(Float2 value, Float2 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float3 value, Float3 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static float findMaxULP(Float3 value, Float3 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float4 value, Float4 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static float findMaxULP(Float4 value, Float4 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float6 value, Float6 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static float findMaxULP(Float6 value, Float6 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float8 value, Float8 expected) {
-        return findULPDistance(value.storage, expected.storage);
+    public static float findMaxULP(Float8 value, Float8 expected) {
+        return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(float value, float expected) {
-        final float ULP = ulp(expected);
+    public static float findMaxULP(float value, float expected) {
+        final float ULP = Math.ulp(expected);
 
         if (value == expected) {
             return 0f;
         }
 
-        final float absValue = abs(value - expected);
+        final float absValue = Math.abs(value - expected);
         return absValue / ULP;
     }
 
-    public static final boolean compare(float a, float b) {
-        return (abs(a - b) <= EPSILON);
+    public static boolean compare(float a, float b) {
+        return (Math.abs(a - b) <= EPSILON);
     }
 
-    public static final boolean compare(float a, float b, float tol) {
-        return (abs(a - b) <= tol);
+    public static boolean compare(float a, float b, float tol) {
+        return (Math.abs(a - b) <= tol);
     }
 
-    public static final float sq(float value) {
+    public static float sq(float value) {
         return value * value;
     }
 
-    public static final void atomicAdd(float[] array, int index, float value) {
+    public static void atomicAdd(float[] array, int index, float value) {
         array[index] += value;
     }
 }

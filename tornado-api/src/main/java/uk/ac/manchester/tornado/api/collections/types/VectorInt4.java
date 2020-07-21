@@ -56,7 +56,7 @@ public class VectorInt4 implements PrimitiveStorage<DoubleBuffer> {
      * number of elements in the storage
      */
     final private int numElements;
-    final private static int elementSize = 2;
+    final private static int elementSize = 4;
 
     /**
      * Creates a vector using the provided backing arrayR R
@@ -90,7 +90,7 @@ public class VectorInt4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the floatr at the given index of this vector
+     * Returns the float at the given index of this vector
      *
      * @param index
      *
@@ -223,6 +223,10 @@ public class VectorInt4 implements PrimitiveStorage<DoubleBuffer> {
 
     public int getLength() {
         return numElements;
+    }
+
+    public int[] getArray() {
+        return storage;
     }
 
 }
