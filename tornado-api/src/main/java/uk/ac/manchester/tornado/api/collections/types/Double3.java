@@ -108,18 +108,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return get(2);
     }
 
-    public double getS0() {
-        return get(0);
-    }
-
-    public double getS1() {
-        return get(1);
-    }
-
-    public double getS2() {
-        return get(2);
-    }
-
     public void setX(double value) {
         set(0, value);
     }
@@ -204,9 +192,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * * Operations on Double3 vectors
-     */
-    /*
-     * vector = op( vector, vector )
      */
     public static Double3 add(Double3 a, Double3 b) {
         return new Double3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());

@@ -95,7 +95,7 @@ public enum OCLKind implements PlatformKind {
     LONG8(8, null, LONG),
     ULONG8(8, null, ULONG),
     FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),    
+    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),        
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
