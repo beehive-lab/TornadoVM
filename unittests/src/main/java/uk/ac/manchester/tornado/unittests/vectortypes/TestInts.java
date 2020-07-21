@@ -29,23 +29,24 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Int3;
 import uk.ac.manchester.tornado.api.collections.types.Int4;
+import uk.ac.manchester.tornado.api.collections.types.Int8;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestInts extends TornadoTestBase {
 
-    private static void addInts2(Int2 a, Int2 b, VectorInt results) {
+    private static void addInt2(Int2 a, Int2 b, VectorInt results) {
         Int2 i2 = Int2.add(a, b);
         int r = i2.getX() + i2.getY();
         results.set(0, r);
     }
 
     @Test
-    public void addInt2() {
+    public void testAddInt2() {
         int size = 1;
         Int2 a = new Int2(1, 2);
         Int2 b = new Int2(3, 2);
@@ -53,7 +54,7 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestInts::addInts2, a, b, output)
+            .task("t0", TestInts::addInt2, a, b, output)
             .streamOut(output)
             .execute();
         //@formatter:on
@@ -63,14 +64,14 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    private static void addInts3(Int3 a, Int3 b, VectorInt results) {
+    private static void addInt3(Int3 a, Int3 b, VectorInt results) {
         Int3 i3 = Int3.add(a, b);
         int r = i3.getX() + i3.getY() + i3.getZ();
         results.set(0, r);
     }
 
     @Test
-    public void addInt3() {
+    public void testAddInt3() {
         int size = 1;
         Int3 a = new Int3(1, 2, 3);
         Int3 b = new Int3(3, 2, 1);
@@ -78,7 +79,7 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestInts::addInts3, a, b, output)
+            .task("t0", TestInts::addInt3, a, b, output)
             .streamOut(output)
             .execute();
         //@formatter:on
@@ -88,14 +89,39 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    private static void addInts4(Int4 a, Int4 b, VectorInt results) {
+    private static void addInt8(Int8 a, Int8 b, VectorInt results) {
+        Int8 i8 = Int8.add(a, b);
+        int r = i8.getS0() + i8.getS1() + i8.getS2() + i8.getS3() + i8.getS4() + i8.getS5() + i8.getS6() + i8.getS7();
+        results.set(0, r);
+    }
+
+    @Test
+    public void testAddInt8() {
+        int size = 1;
+        Int8 a = new Int8(1, 2, 3, 4, 1, 2, 3, 4);
+        Int8 b = new Int8(4, 3, 2, 1, 1, 2, 3, 4);
+        VectorInt output = new VectorInt(size);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::addInt8, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(40, output.get(i));
+        }
+    }
+
+    private static void addInt4(Int4 a, Int4 b, VectorInt results) {
         Int4 i4 = Int4.add(a, b);
         int r = i4.getX() + i4.getY() + i4.getZ() + i4.getW();
         results.set(0, r);
     }
 
     @Test
-    public void addInt4() {
+    public void testAddInt4() {
         int size = 1;
         Int4 a = new Int4(1, 2, 3, 4);
         Int4 b = new Int4(4, 3, 2, 1);
@@ -103,7 +129,7 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestInts::addInts4, a, b, output)
+            .task("t0", TestInts::addInt4, a, b, output)
             .streamOut(output)
             .execute();
         //@formatter:on
@@ -120,7 +146,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testAddInts01() {
+    public void testAddInt() {
 
         int size = 8;
 
@@ -200,7 +226,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorFloat2() {
+    public void testVectorInt2() {
         int size = 16;
 
         VectorInt2 a = new VectorInt2(size);
@@ -232,7 +258,7 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testVectorInt3() {
         int size = 8;
 
@@ -266,7 +292,7 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testVectorInt4() {
         int size = 8;
 
@@ -292,6 +318,45 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
             assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
             assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+        }
+    }
+
+    public static void addVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int8.add(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorInt8() {
+        int size = 256;
+
+        VectorInt8 a = new VectorInt8(size);
+        VectorInt8 b = new VectorInt8(size);
+        VectorInt8 output = new VectorInt8(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int8(i, i, i, i, i, i, i, i));
+            b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::addVectorInt8, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int8 sequential = new Int8(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
+            assertEquals(sequential.getS0(), output.get(i).getS0(), 0.001);
+            assertEquals(sequential.getS1(), output.get(i).getS1(), 0.001);
+            assertEquals(sequential.getS2(), output.get(i).getS2(), 0.001);
+            assertEquals(sequential.getS3(), output.get(i).getS3(), 0.001);
+            assertEquals(sequential.getS4(), output.get(i).getS4(), 0.001);
+            assertEquals(sequential.getS5(), output.get(i).getS5(), 0.001);
+            assertEquals(sequential.getS6(), output.get(i).getS6(), 0.001);
+            assertEquals(sequential.getS7(), output.get(i).getS7(), 0.001);
         }
     }
 }

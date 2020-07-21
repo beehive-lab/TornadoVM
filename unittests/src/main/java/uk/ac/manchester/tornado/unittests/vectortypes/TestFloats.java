@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestFloats extends TornadoTestBase {
@@ -201,7 +200,6 @@ public class TestFloats extends TornadoTestBase {
     @Ignore
     @Test
     public void testFloat1() {
-
         int size = 8;
 
         Float[] a = new Float[size];
@@ -241,7 +239,6 @@ public class TestFloats extends TornadoTestBase {
     @Ignore
     @Test
     public void testFloat2() {
-
         int size = 8;
 
         Float2[] a = new Float2[size];
@@ -282,7 +279,6 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat2() {
-
         int size = 16;
 
         VectorFloat2 a = new VectorFloat2(size);
@@ -399,9 +395,8 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testVectorFloat8() {
-
         int size = 8;
 
         VectorFloat8 a = new VectorFloat8(size);
