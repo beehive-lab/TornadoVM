@@ -441,9 +441,7 @@ public enum OCLKind implements PlatformKind {
     }
 
     public JavaKind asJavaKind() {
-        if (kind == ILLEGAL || kind.isVector()) {
-            return JavaKind.Illegal;
-        } else {
+        if (kind != ILLEGAL && !kind.isVector()) {
             switch (kind) {
                 case BOOL:
                     return JavaKind.Boolean;
@@ -466,7 +464,7 @@ public enum OCLKind implements PlatformKind {
                 default:
                     shouldNotReachHere();
             }
-            return JavaKind.Illegal;
         }
+        return JavaKind.Illegal;
     }
 }

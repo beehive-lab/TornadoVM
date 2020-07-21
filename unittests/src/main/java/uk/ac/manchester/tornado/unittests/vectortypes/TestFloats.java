@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestFloats extends TornadoTestBase {
@@ -47,7 +48,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
-    public void simpleDotProductFloat2() {
+    public void testSimpleDotProductFloat2() {
         Float2 a = new Float2(1f, 2f);
         Float2 b = new Float2(3f, 2f);
         VectorFloat output = new VectorFloat(1);
@@ -68,7 +69,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
-    public void simpleDotProductFloat3() {
+    public void testSimpleDotProductFloat3() {
         Float3 a = new Float3(1f, 2f, 3f);
         Float3 b = new Float3(3f, 2f, 1f);
         VectorFloat output = new VectorFloat(1);
@@ -89,7 +90,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
-    public void simpleDotProductFloat4() {
+    public void testSimpleDotProductFloat4() {
         Float4 a = new Float4(1f, 2f, 3f, 4f);
         Float4 b = new Float4(4f, 3f, 2f, 1f);
         VectorFloat output = new VectorFloat(1);
@@ -110,7 +111,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
-    public void simpleDotProductFloat6() {
+    public void testSimpleDotProductFloat6() {
         Float6 a = new Float6(1f, 2f, 3f, 4f, 5f, 6f);
         Float6 b = new Float6(6f, 5f, 4f, 3f, 2f, 1f);
         VectorFloat output = new VectorFloat(1);
@@ -131,7 +132,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
-    public void simpleDotProductFloat8() {
+    public void testSimpleDotProductFloat8() {
         Float8 a = new Float8(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f);
         Float8 b = new Float8(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f);
         VectorFloat output = new VectorFloat(1);
@@ -159,12 +160,12 @@ public class TestFloats extends TornadoTestBase {
         assertEquals(10, s1.getReturnValue("t1"), 0.001);
     }
 
-    private static void test(Float3 a, Float3 b, VectorFloat3 results) {
+    private static void testFloat3Add(Float3 a, Float3 b, VectorFloat3 results) {
         results.set(0, Float3.add(a, b));
     }
 
     @Test
-    public void simpleVectorAddition() {
+    public void testSimpleVectorAddition() {
         int size = 1;
         Float3 a = new Float3(1f, 2f, 3f);
         Float3 b = new Float3(3f, 2f, 1f);
@@ -172,7 +173,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::test, a, b, output)
+            .task("t0", TestFloats::testFloat3Add, a, b, output)
             .streamOut(output)
             .execute();
         //@formatter:on
@@ -197,8 +198,7 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
-    @Ignore
-    @Test
+    @TornadoNotSupported
     public void testFloat1() {
         int size = 8;
 
@@ -236,8 +236,7 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
-    @Ignore
-    @Test
+    @TornadoNotSupported
     public void testFloat2() {
         int size = 8;
 
