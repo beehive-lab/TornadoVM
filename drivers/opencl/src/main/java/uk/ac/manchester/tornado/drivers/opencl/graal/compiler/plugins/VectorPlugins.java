@@ -99,6 +99,7 @@ public final class VectorPlugins {
             registerVectorPlugins(ps, plugins, OCLKind.INT2, int[].class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT3, int[].class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT4, int[].class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT8, int[].class, int.class);
 
             // Adding shorts
             registerVectorPlugins(ps, plugins, OCLKind.SHORT2, short[].class, short.class);
