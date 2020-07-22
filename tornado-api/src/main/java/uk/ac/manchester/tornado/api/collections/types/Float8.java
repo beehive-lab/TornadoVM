@@ -165,11 +165,11 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         set(7, value);
     }
 
-    public Float4 getHi() {
+    public Float4 getHigh() {
         return new Float4(getS4(), getS5(), getS6(), getS7());
     }
 
-    public Float4 getLo() {
+    public Float4 getLow() {
         return new Float4(getS0(), getS1(), getS2(), getS3());
     }
 

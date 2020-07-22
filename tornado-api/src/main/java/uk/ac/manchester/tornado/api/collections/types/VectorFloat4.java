@@ -177,7 +177,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString() {
-        if (numElements > 4) {
+        if (numElements > elementSize) {
             return String.format("VectorFloat4 <%d>", numElements);
         } else {
             return toString(FloatOps.fmt4);
