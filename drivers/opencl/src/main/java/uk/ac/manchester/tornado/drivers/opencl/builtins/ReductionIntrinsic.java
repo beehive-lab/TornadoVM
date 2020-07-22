@@ -53,7 +53,7 @@ public class ReductionIntrinsic {
             OpenCLIntrinsics.localBarrier();
         }
 
-        Float2 x = op(a.getHi(), a.getLo());
+        Float2 x = op(a.getHigh(), a.getLow());
         global[OpenCLIntrinsics.get_group_id(0)] = op(x.getX(), x.getY());
     }
 
@@ -71,7 +71,7 @@ public class ReductionIntrinsic {
             OpenCLIntrinsics.localBarrier();
         }
 
-        Float2 x = OpenCLIntrinsics.op(op, a.getHi(), a.getLo());
+        Float2 x = OpenCLIntrinsics.op(op, a.getHigh(), a.getLow());
         return OpenCLIntrinsics.op(op, x.getX(), x.getY());
     }
 
