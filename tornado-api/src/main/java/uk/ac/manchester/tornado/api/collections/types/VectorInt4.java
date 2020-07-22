@@ -167,11 +167,8 @@ public class VectorInt4 implements PrimitiveStorage<DoubleBuffer> {
         return str;
     }
 
-    /**
-     *
-     */
     public String toString() {
-        if (numElements > 4) {
+        if (numElements > elementSize) {
             return format("VectorInt4 <%d>", numElements);
         } else {
             return toString(fmt3);

@@ -226,7 +226,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorInt2() {
+    public void testVectorAddInt2() {
         int size = 16;
 
         VectorInt2 a = new VectorInt2(size);
@@ -252,6 +252,72 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
+    public static void subVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int2.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorSubInt2() {
+        int size = 16;
+
+        VectorInt2 a = new VectorInt2(size);
+        VectorInt2 b = new VectorInt2(size);
+        VectorInt2 output = new VectorInt2(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int2(i, i));
+            b.set(i, new Int2(size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::subVectorInt2, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int2 sequential = new Int2(i - (size - i), i - (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+        }
+    }
+
+    public static void divVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int2.div(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorDivInt2() {
+        int size = 16;
+
+        VectorInt2 a = new VectorInt2(size);
+        VectorInt2 b = new VectorInt2(size);
+        VectorInt2 output = new VectorInt2(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int2(i, i));
+            b.set(i, new Int2(size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::divVectorInt2, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int2 sequential = new Int2(i / (size - i), i / (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+        }
+    }
+
     public static void addVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Int3.add(a.get(i), b.get(i)));
@@ -259,7 +325,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorInt3() {
+    public void testVectorAddInt3() {
         int size = 8;
 
         VectorInt3 a = new VectorInt3(size);
@@ -286,6 +352,74 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
+    public static void subVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int3.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorSubInt3() {
+        int size = 8;
+
+        VectorInt3 a = new VectorInt3(size);
+        VectorInt3 b = new VectorInt3(size);
+        VectorInt3 output = new VectorInt3(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int3(i, i, i));
+            b.set(i, new Int3(size - i, size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::subVectorInt3, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int3 sequential = new Int3(i - (size - i), i - (size - i), i - (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+        }
+    }
+
+    public static void divVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int3.div(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorDivInt3() {
+        int size = 8;
+
+        VectorInt3 a = new VectorInt3(size);
+        VectorInt3 b = new VectorInt3(size);
+        VectorInt3 output = new VectorInt3(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int3(i, i, i));
+            b.set(i, new Int3(size - i, size - i, size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::divVectorInt3, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int3 sequential = new Int3(i / (size - i), i / (size - i), i / (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+        }
+    }
+
     public static void addVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Int4.add(a.get(i), b.get(i)));
@@ -293,7 +427,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorInt4() {
+    public void testVectorAddInt4() {
         int size = 8;
 
         VectorInt4 a = new VectorInt4(size);
@@ -321,6 +455,76 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
+    public static void subVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int4.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorSubInt4() {
+        int size = 8;
+
+        VectorInt4 a = new VectorInt4(size);
+        VectorInt4 b = new VectorInt4(size);
+        VectorInt4 output = new VectorInt4(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int4(i, i, i, i));
+            b.set(i, new Int4(size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::subVectorInt4, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int4 sequential = new Int4(i - (size - i), i - (size - i), i - (size - i), i - size);
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+            assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+        }
+    }
+
+    public static void divVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int4.div(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorDivInt4() {
+        int size = 8;
+
+        VectorInt4 a = new VectorInt4(size);
+        VectorInt4 b = new VectorInt4(size);
+        VectorInt4 output = new VectorInt4(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int4(i, i, i, i));
+            b.set(i, new Int4(size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::divVectorInt4, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int4 sequential = new Int4(i / (size - i), i / (size - i), i / (size - i), i / size);
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.01);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.01);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.01);
+            assertEquals(sequential.getW(), output.get(i).getW(), 0.01);
+        }
+    }
+
     public static void addVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Int8.add(a.get(i), b.get(i)));
@@ -328,7 +532,7 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    public void testVectorInt8() {
+    public void testVectorAddInt8() {
         int size = 256;
 
         VectorInt8 a = new VectorInt8(size);
@@ -359,4 +563,83 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequential.getS7(), output.get(i).getS7(), 0.001);
         }
     }
+
+    public static void subVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int8.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorSubInt8() {
+        int size = 256;
+
+        VectorInt8 a = new VectorInt8(size);
+        VectorInt8 b = new VectorInt8(size);
+        VectorInt8 output = new VectorInt8(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int8(i, i, i, i, i, i, i, i));
+            b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::subVectorInt8, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int8 sequential = new Int8(i - (size - i), i - (size - i), i - (size - i), i - size, i - (size - i), i - (size - i), i - (size - i), i - size);
+            assertEquals(sequential.getS0(), output.get(i).getS0(), 0.001);
+            assertEquals(sequential.getS1(), output.get(i).getS1(), 0.001);
+            assertEquals(sequential.getS2(), output.get(i).getS2(), 0.001);
+            assertEquals(sequential.getS3(), output.get(i).getS3(), 0.001);
+            assertEquals(sequential.getS4(), output.get(i).getS4(), 0.001);
+            assertEquals(sequential.getS5(), output.get(i).getS5(), 0.001);
+            assertEquals(sequential.getS6(), output.get(i).getS6(), 0.001);
+            assertEquals(sequential.getS7(), output.get(i).getS7(), 0.001);
+        }
+    }
+
+    public static void divVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int8.div(a.get(i), b.get(i)));
+        }
+    }
+
+    @Test
+    public void testVectorDivInt8() {
+        int size = 256;
+
+        VectorInt8 a = new VectorInt8(size);
+        VectorInt8 b = new VectorInt8(size);
+        VectorInt8 output = new VectorInt8(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int8(i, i, i, i, i, i, i, i));
+            b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestInts::divVectorInt8, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Int8 sequential = new Int8(i / (size - i), i / (size - i), i / (size - i), i / size, i / (size - i), i / (size - i), i / (size - i), i / size);
+            assertEquals(sequential.getS0(), output.get(i).getS0(), 0.01);
+            assertEquals(sequential.getS1(), output.get(i).getS1(), 0.01);
+            assertEquals(sequential.getS2(), output.get(i).getS2(), 0.01);
+            assertEquals(sequential.getS3(), output.get(i).getS3(), 0.01);
+            assertEquals(sequential.getS4(), output.get(i).getS4(), 0.01);
+            assertEquals(sequential.getS5(), output.get(i).getS5(), 0.01);
+            assertEquals(sequential.getS6(), output.get(i).getS6(), 0.01);
+            assertEquals(sequential.getS7(), output.get(i).getS7(), 0.01);
+        }
+    }
+
 }

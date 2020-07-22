@@ -163,11 +163,11 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return new Double3(getX(), getY(), getZ());
     }
 
-    public Double2 getLo() {
+    public Double2 getLow() {
         return asDouble2();
     }
 
-    public Double2 getHi() {
+    public Double2 getHigh() {
         return new Double2(getZ(), getW());
     }
 

@@ -172,11 +172,8 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
         return str;
     }
 
-    /**
-     *
-     */
     public String toString() {
-        if (numElements > 4) {
+        if (numElements > elementSize) {
             return format("VectorFloat8 <%d>", numElements);
         } else {
             return toString(fmt4);

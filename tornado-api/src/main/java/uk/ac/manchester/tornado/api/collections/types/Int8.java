@@ -165,11 +165,11 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         set(7, value);
     }
 
-    public Int4 getHi() {
+    public Int4 getHigh() {
         return new Int4(getS4(), getS5(), getS6(), getS7());
     }
 
-    public Int4 getLo() {
+    public Int4 getLow() {
         return new Int4(getS0(), getS1(), getS2(), getS3());
     }
 

@@ -167,9 +167,6 @@ public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
         return str;
     }
 
-    /**
-     *
-     */
     public String toString() {
         if (numElements > 4) {
             return format("VectorDouble2 <%d>", numElements);

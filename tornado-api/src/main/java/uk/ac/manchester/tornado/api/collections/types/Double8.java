@@ -165,11 +165,11 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         set(7, value);
     }
 
-    public Double4 getHi() {
+    public Double4 getHigh() {
         return new Double4(getS4(), getS5(), getS6(), getS7());
     }
 
-    public Double4 getLo() {
+    public Double4 getLow() {
         return new Double4(getS0(), getS1(), getS2(), getS3());
     }
 

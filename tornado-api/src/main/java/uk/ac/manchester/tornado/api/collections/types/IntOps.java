@@ -47,8 +47,9 @@ public class IntOps {
     public static final String fmt = "%d";
     public static final String fmt2 = "{%d,%d}";
     public static final String fmt3 = "{%d,%d,%d}";
-    public static String fmt6 = "{%d,%d,%d,%d,%d,%d}";
-    public static String fmt8 = "{%d,%d,%d,%d,%d,%d}";
+    public static final String fmt4 = "{%d,%d,%d,%d}";
+    public static final String fmt6 = "{%d,%d,%d,%d,%d,%d}";
+    public static final String fmt8 = "{%d,%d,%d,%d,%d,%d,%d,%d}";
 
     public static boolean compare(float a, float b) {
         return (a == b);
