@@ -29,13 +29,11 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
@@ -50,7 +48,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationPhase.*;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
@@ -274,7 +271,7 @@ public class PTXCompiler {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
             final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel, r.includePrintf);
-            r.backend.emitCode(crb, ((PTXLIRGenerationResult) lirGenRes));
+            r.backend.emitCode(crb, ((PTXLIRGenerationResult) lirGenRes), r.installedCodeOwner);
 
             Assumptions assumptions = r.graph.getAssumptions();
             if (assumptions != null && !assumptions.isEmpty()) {
@@ -400,7 +397,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildFunctionName(resolvedMethod.getName(), task), taskMeta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), task), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -443,6 +440,8 @@ public class PTXCompiler {
 
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
+
+        kernelCompResult.addPTXHeader(backend);
 
         if (DUMP_COMPILED_METHODS) {
             final Path outDir = Paths.get("./ptx-compiled-methods");
@@ -517,34 +516,8 @@ public class PTXCompiler {
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
         }
 
+        kernelCompResult.addPTXHeader(backend);
+
         return kernelCompResult;
-    }
-
-    public static String buildFunctionName(String methodName, SchedulableTask task) {
-        StringBuilder sb = new StringBuilder(methodName);
-
-        for (Object arg : task.getArguments()) {
-            // Object is either array or primitive
-            sb.append('_');
-            Class<?> argClass = arg.getClass();
-            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-                // Only need to append value.
-                // If negative value, remove the minus sign in front
-                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
-            } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
-                // Need to append type and length
-                sb.append(argClass.getComponentType().getName());
-                sb.append(Array.getLength(arg));
-            } else {
-                sb.append(argClass.getName().replace('.', '_'));
-
-                // Since with objects there is no way to know what will be a
-                // constant differentiate using the hashcode of the object
-                sb.append('_');
-                sb.append(arg.hashCode());
-            }
-        }
-
-        return sb.toString();
     }
 }

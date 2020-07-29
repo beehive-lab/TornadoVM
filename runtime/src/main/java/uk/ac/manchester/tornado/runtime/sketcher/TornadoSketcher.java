@@ -106,6 +106,28 @@ public class TornadoSketcher {
         }
     }
 
+    /**
+     * Invalidates all the sketches and the non-inlined sketches associated with the given method.
+     *
+     * @param resolvedMethod
+     */
+    public static void invalidate(ResolvedJavaMethod resolvedMethod) {
+        Future<Sketch> futureSketch = cache.get(resolvedMethod);
+        if (futureSketch != null) {
+            try {
+                Sketch sketch = futureSketch.get();
+                StructuredGraph graph = (StructuredGraph) sketch.getGraph().getReadonlyCopy();
+                graph.getInvokes().forEach(invoke -> {
+                    cache.remove(invoke.callTarget().targetMethod());
+                });
+            } catch (InterruptedException | ExecutionException e) {
+                throw new TornadoBailoutRuntimeException("Failed to retrieve sketch", e);
+            }
+        }
+
+        cache.remove(resolvedMethod);
+    }
+
     static void buildSketch(SketchRequest request) {
         if (cache.containsKey(request.resolvedMethod)) {
             return;

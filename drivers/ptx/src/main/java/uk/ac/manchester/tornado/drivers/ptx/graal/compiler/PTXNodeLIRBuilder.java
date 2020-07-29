@@ -1,8 +1,10 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -29,10 +31,12 @@ import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
+import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
@@ -55,8 +59,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXBuiltInRegister;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXDirectCall;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
@@ -64,6 +70,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXReturnSlot;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,14 +98,97 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         return false;
     }
 
+    private LIRKind resolveStamp(Stamp stamp) {
+        LIRKind lirKind = LIRKind.Illegal;
+        if (!stamp.isEmpty()) {
+            if (stamp instanceof ObjectStamp) {
+                ObjectStamp os = (ObjectStamp) stamp;
+                ResolvedJavaType type = os.javaType(gen.getMetaAccess());
+                PTXKind ptxKind = PTXKind.fromResolvedJavaType(type);
+                if (ptxKind != PTXKind.ILLEGAL) {
+                    lirKind = LIRKind.value(ptxKind);
+                } else {
+                    lirKind = gen.getLIRKind(stamp);
+                }
+            } else {
+                lirKind = gen.getLIRKind(stamp);
+            }
+        }
+        return lirKind;
+    }
+
+    @Override
+    public void emitInvoke(Invoke x) {
+        LoweredCallTargetNode callTarget = (LoweredCallTargetNode) x.callTarget();
+
+        final Stamp stamp = x.asNode().stamp(NodeView.DEFAULT);
+        LIRKind lirKind = resolveStamp(stamp);
+        AllocatableValue result = Value.ILLEGAL;
+
+        if (lirKind != LIRKind.Illegal) {
+            result = gen.newVariable(lirKind);
+        }
+
+        CallingConvention invokeCc = new CallingConvention(0, result);
+        gen.getResult().getFrameMapBuilder().callsMethod(invokeCc);
+
+        Value[] parameters = visitInvokeArguments(invokeCc, callTarget.arguments());
+
+        LabelRef exceptionEdge = null;
+        LIRFrameState callState = stateWithExceptionEdge(x, exceptionEdge);
+
+        if (callTarget instanceof DirectCallTargetNode) {
+            emitDirectCall((DirectCallTargetNode) callTarget, result, parameters, AllocatableValue.NONE, callState);
+        } else if (callTarget instanceof IndirectCallTargetNode) {
+            emitIndirectCall((IndirectCallTargetNode) callTarget, result, parameters, AllocatableValue.NONE, callState);
+        } else {
+            shouldNotReachHere();
+        }
+
+        if (isLegal(result)) {
+            setResult(x.asNode(), result);
+        }
+
+    }
+
+    private boolean isIllegal(Value value) {
+        assert value != null;
+        return Value.ILLEGAL.equals(value);
+    }
+
+    private boolean isLegal(Value value) {
+        return !isIllegal(value);
+    }
+
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        unimplemented();
+        final PTXDirectCall call = new PTXDirectCall(callTarget, result, parameters);
+        if (isLegal(result)) {
+            append(new PTXLIRStmt.AssignStmt(gen.asAllocatable(result), call));
+        } else {
+            append(new PTXLIRStmt.ExprStmt(call));
+        }
     }
 
     @Override
     protected void emitIndirectCall(IndirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
         unimplemented();
+    }
+
+    @Override
+    public Value[] visitInvokeArguments(CallingConvention invokeCc, Collection<ValueNode> arguments) {
+        final Value[] values = new Value[arguments.size()];
+        int j = 0;
+        for (ValueNode arg : arguments) {
+            if (arg != null) {
+                Value operand = operand(arg);
+                values[j] = operand;
+                j++;
+            } else {
+                throw shouldNotReachHere("I thought we no longer have null entries for two-slot types...");
+            }
+        }
+        return values;
     }
 
     @Override
@@ -118,12 +208,13 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getPTXGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
-            unimplemented("Function calls are not implemented in PTX yet");
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
-                setResult(param, new PTXNullary.Parameter(locals[index].getName(), lirKind));
+                Variable result = getGen().newVariable(lirKind);
+                getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXNullary.Parameter(locals[index].getName(), lirKind)));
+                setResult(param, result);
                 index++;
             }
         }
@@ -234,9 +325,19 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
-            unimplemented("Unimplemented ShortCircuitOrNode");
+            emitShortCircuitOrNode((ShortCircuitOrNode) node);
+        } else {
+            super.emitNode(node);
         }
-        super.emitNode(node);
+    }
+
+    private void emitShortCircuitOrNode(ShortCircuitOrNode node) {
+        PTXArithmeticTool tool = (PTXArithmeticTool) gen.getArithmetic();
+        final Value x = operandOrConjunction(node.getX());
+        final Value y = operandOrConjunction(node.getY());
+
+        Variable result = tool.emitBinaryAssign(PTXBinaryOp.BITWISE_OR, LIRKind.value(PTXKind.PRED), x, y);
+        setResult(node, result);
     }
 
     @Override
@@ -370,11 +471,27 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             final Value y = operand(testNode.getY());
             Value andRes = gen.getArithmetic().emitAnd(x, y);
             append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, boolLirKind, andRes, new ConstantValue(boolLirKind, PrimitiveConstant.INT_0))));
+        } else if (node instanceof ShortCircuitOrNode) {
+            final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
+            final Value x = operandOrConjunction(condition.getX());
+            final Value y = operandOrConjunction(condition.getY());
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.BITWISE_OR, boolLirKind, x, y)));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
         setResult(node, pred);
         return pred;
+    }
+
+    private Value operandOrConjunction(ValueNode value) {
+        if (operand(value) != null) {
+            return operand(value);
+        } else if (value instanceof LogicNode) {
+            return emitLogicNode((LogicNode) value);
+        } else {
+            shouldNotReachHere();
+        }
+        return null;
     }
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {

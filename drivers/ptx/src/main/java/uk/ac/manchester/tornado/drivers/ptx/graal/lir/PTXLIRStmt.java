@@ -14,6 +14,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
 
 import java.nio.charset.StandardCharsets;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.*;
 
 public class PTXLIRStmt {
@@ -85,40 +86,33 @@ public class PTXLIRStmt {
             PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
             PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
             PTXKind destElementKind = ((PTXKind)lhsVar.getPlatformKind()).getElementKind();
-            boolean useConvert = destElementKind.is8Bit();
+            PTXKind srcElementKind = ((PTXKind) rhsVar.getPlatformKind()).getElementKind();
 
             for (int i = 0; i < rhsVectorSplit.vectorNames.length; i++) {
                 asm.emitSymbol(TAB);
-                asm.emitSymbol(useConvert ? CONVERT : MOVE);
-                asm.emitSymbol(DOT);
-                asm.emit(destElementKind.toString());
-                if (useConvert) {
-                    asm.emitSymbol(DOT);
+                if (destElementKind == srcElementKind) {
+                    asm.emit(MOVE + "." + destElementKind.toString());
+                } else {
+                    asm.emit(CONVERT + ".");
+                    if ((destElementKind.isFloating() || srcElementKind.isFloating()) && getFPURoundingMode(destElementKind, srcElementKind) != null) {
+                        asm.emit(getFPURoundingMode(destElementKind, srcElementKind));
+                        asm.emitSymbol(DOT);
+                    }
                     asm.emit(destElementKind.toString());
+                    asm.emitSymbol(DOT);
+                    asm.emit(srcElementKind.toString());
                 }
                 asm.emitSymbol(TAB);
-
                 asm.emitSymbol(lhsVectorSplit.vectorNames[i]);
                 asm.emitSymbol(COMMA);
                 asm.emitSymbol(SPACE);
                 asm.emitSymbol(rhsVectorSplit.vectorNames[i]);
+
                 if (i < rhsVectorSplit.vectorNames.length - 1) {
                     asm.delimiter();
                     asm.eol();
                 }
             }
-        }
-
-        private String getFPURoundingMode(PTXKind lhs, PTXKind rhs) {
-            String roundingMode = ROUND_NEAREST_EVEN;
-
-            if (!lhs.isFloating() && rhs.isFloating()) {
-                roundingMode = ROUND_NEAREST_EVEN_INTEGER;
-            }
-            if ((lhs.isF64() && rhs.isF32())) {
-                return null;
-            }
-            return roundingMode;
         }
 
         public Value getResult() {

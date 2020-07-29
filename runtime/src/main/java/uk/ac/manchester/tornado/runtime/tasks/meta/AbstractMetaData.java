@@ -380,7 +380,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    AbstractMetaData(String id) {
+    AbstractMetaData(String id, int defaultDriver, int defaultIndex) {
         this.id = id;
         shouldRecompile = true;
 
@@ -390,8 +390,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             driverIndex = a[0];
             deviceIndex = a[1];
         } else {
-            driverIndex = DEFAULT_DRIVER_INDEX;
-            deviceIndex = DEFAULT_DEVICE_INDEX;
+            driverIndex = defaultDriver;
+            deviceIndex = defaultIndex;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));

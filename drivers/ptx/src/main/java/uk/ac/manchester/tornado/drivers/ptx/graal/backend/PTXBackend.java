@@ -5,7 +5,11 @@ import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -22,11 +26,14 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeProvider;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameMap;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXFrameMapBuilder;
@@ -50,6 +57,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
@@ -58,9 +66,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     final PTXDeviceContext deviceContext;
     private boolean isInitialised;
     final PTXTargetDescription target;
-    private PTXArchitecture arch;
-    private PTXCodeProvider codeCache;
-    private OptionValues options;
+    private final PTXArchitecture architecture;
+    private final PTXCodeProvider codeCache;
+    private final OptionValues options;
 
     public PTXBackend(PTXProviders providers, PTXDeviceContext deviceContext, PTXTargetDescription target, PTXCodeProvider codeCache, OptionValues options) {
         super(providers);
@@ -69,7 +77,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         this.target = target;
         this.codeCache = codeCache;
         this.options = options;
-        arch = target.getArch();
+        architecture = target.getArch();
         isInitialised = false;
     }
 
@@ -99,8 +107,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public TornadoSuitesProvider getTornadoSuites() {
-
         return ((PTXProviders) getProviders()).getSuitesProvider();
+    }
+
+    @Override
+    public PTXTargetDescription getTarget() {
+        return target;
     }
 
     public boolean isInitialised() {
@@ -172,9 +184,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXAssembler(target, result);
     }
 
-    public void emitCode(PTXCompilationResultBuilder crb, PTXLIRGenerationResult lirGenRes) {
+    public void emitCode(PTXCompilationResultBuilder crb, PTXLIRGenerationResult lirGenRes, ResolvedJavaMethod method) {
         final PTXAssembler asm = crb.getAssembler();
-        emitPrologue(crb, asm, lirGenRes);
+        emitPrologue(crb, asm, lirGenRes, method);
         crb.emit(lirGenRes.getLIR());
         emitEpilogue(asm);
     }
@@ -183,16 +195,52 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         asm.emitLine("}");
     }
 
-    private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
+    private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, PTXLIRGenerationResult lirGenRes, ResolvedJavaMethod method) {
+        emitPrintfPrototype(crb);
         if (crb.isKernel()) {
-            emitPTXHeader(asm);
-            emitPrintfPrototype(crb);
             emitKernelFunction(asm, crb.compilationResult.getName());
             emitParamVariableDefs(asm, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
         } else {
-            unimplemented("Non-kernel function calls are not implemented id PTX yet.");
+            emitFunctionHeader(asm, method);
+            emitVariableDefs(asm, lirGenRes);
         }
+    }
+
+    private void emitFunctionHeader(PTXAssembler asm, ResolvedJavaMethod method) {
+        final CallingConvention incomingArguments = PTXCodeUtil.getCallingConvention(codeCache, method);
+        String methodName = PTXCodeUtil.makeMethodName(method);
+
+        final JavaKind returnKind = method.getSignature().getReturnKind();
+        if (returnKind == JavaKind.Void) {
+            asm.emit(".func %s (", methodName);
+        } else {
+            TornadoInternalError.unimplemented("Returning values from functions not implemented yet");
+            final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
+            PTXKind returnPtxKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getPTXKind(returnKind) : PTXKind.fromResolvedJavaType(returnType);
+            String returnStr = returnPtxKind.toString();
+        }
+
+        final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
+        final Value[] params = new Value[incomingArguments.getArgumentCount()];
+
+        for (int i = 0; i < params.length; i++) {
+            final AllocatableValue param = incomingArguments.getArgument(i);
+            PTXKind ptxKind = (PTXKind) param.getPlatformKind();
+            if (locals[i].getType().getJavaKind().isObject()) {
+                PTXKind tmpKind = PTXKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+                if (tmpKind != PTXKind.ILLEGAL) {
+                    ptxKind = tmpKind;
+                }
+            }
+            guarantee(ptxKind != PTXKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+            asm.emit(".reg .%s %s", ptxKind, locals[i].getName());
+            if (i < params.length - 1) {
+                asm.emit(", ");
+            }
+        }
+        asm.emit(") {");
+        asm.eol();
     }
 
     private void emitPrintfPrototype(PTXCompilationResultBuilder crb) {
@@ -204,17 +252,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     private void emitKernelFunction(PTXAssembler asm, String methodName) {
-
-        asm.emitLine("%s %s %s(%s) {", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, methodName, arch.getABI());
-    }
-
-    private void emitPTXHeader(PTXAssembler asm) {
-        PTXDevice device = deviceContext.getDevice();
-        String headerFormat = "%s %s";
-        asm.emitLine(headerFormat, PTXAssemblerConstants.COMPUTE_VERSION, device.getTargetPTXVersion());
-        asm.emitLine(headerFormat, PTXAssemblerConstants.TARGET_ARCH, device.getTargetArchitecture());
-        asm.emitLine(headerFormat, PTXAssemblerConstants.ADDRESS_HEADER, arch.getWordSize() * 8);
-        asm.emitLine("");
+        asm.emitLine("%s %s %s(%s) {", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, methodName, architecture.getABI());
     }
 
     private void emitParamVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {

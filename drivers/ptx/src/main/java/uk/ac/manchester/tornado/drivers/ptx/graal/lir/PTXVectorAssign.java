@@ -27,16 +27,13 @@ import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_OPEN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.VECTOR;
 
 public class PTXVectorAssign {
 
@@ -55,7 +52,6 @@ public class PTXVectorAssign {
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             PTXKind destElementKind = ((PTXKind)dest.getPlatformKind()).getElementKind();
-            boolean useConvert = destElementKind.is8Bit();
             PTXVectorSplit vectorSplitData = new PTXVectorSplit(dest);
             Value[] intermValues = new Value[vectorSplitData.newKind.getVectorLength()];
 
@@ -63,30 +59,27 @@ public class PTXVectorAssign {
                 if (vectorSplitData.newKind.getVectorLength() >= 0) {
                     System.arraycopy(values, i * vectorSplitData.newKind.getVectorLength(), intermValues, 0, vectorSplitData.newKind.getVectorLength());
                 }
-                asm.emitSymbol(TAB);
-                asm.emitSymbol(useConvert ? CONVERT : MOVE);
-                if (!vectorSplitData.fullUnwrapVector) {
-                    asm.emitSymbol(DOT);
-                    asm.emit(VECTOR + vectorSplitData.newKind.getVectorLength());
-                }
-                asm.emitSymbol(DOT);
-                asm.emit(destElementKind.toString());
-                if (useConvert) {
-                    asm.emitSymbol(DOT);
-                    asm.emit(destElementKind.toString());
-                }
-                asm.emitSymbol(TAB);
+                PTXKind valueKind = (PTXKind) values[i * vectorSplitData.newKind.getVectorLength()].getPlatformKind();
 
+                asm.emitSymbol(TAB);
+                if (destElementKind == valueKind) {
+                    asm.emit(MOVE + "." + destElementKind.toString());
+                } else {
+                    asm.emit(CONVERT + ".");
+                    if ((destElementKind.isFloating() || valueKind.isFloating()) && getFPURoundingMode(destElementKind, valueKind) != null) {
+                        asm.emit(getFPURoundingMode(destElementKind, valueKind));
+                        asm.emitSymbol(DOT);
+                    }
+                    asm.emit(destElementKind.toString());
+                    asm.emitSymbol(DOT);
+                    asm.emit(valueKind.toString());
+                }
+                asm.emitSymbol(TAB);
                 asm.emitSymbol(vectorSplitData.vectorNames[i]);
                 asm.emitSymbol(COMMA);
                 asm.emitSymbol(SPACE);
-                if (!vectorSplitData.fullUnwrapVector) {
-                    asm.emitSymbol(CURLY_BRACKETS_OPEN);
-                }
                 asm.emitValuesOrOp(crb, intermValues, dest);
-                if (!vectorSplitData.fullUnwrapVector) {
-                    asm.emitSymbol(CURLY_BRACKETS_CLOSE);
-                }
+
                 if (i < vectorSplitData.vectorNames.length - 1) {
                     asm.delimiter();
                     asm.eol();

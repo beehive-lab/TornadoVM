@@ -68,7 +68,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         return isParallel;
     }
 
-    public void addNonInLinedMethod(ResolvedJavaMethod method) {
+    public void addNonInlinedMethod(ResolvedJavaMethod method) {
         nonInlinedMethods.add(method);
     }
 

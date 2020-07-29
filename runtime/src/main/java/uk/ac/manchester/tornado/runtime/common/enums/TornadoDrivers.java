@@ -29,14 +29,16 @@ package uk.ac.manchester.tornado.runtime.common.enums;
  * The drivers will be sorted based on their priority. The driver with the highest priority will become driver 0 (default driver).
  */
 
-public enum TornadoDriverPriority {
-    PTX(1),
-    OpenCL(0);
+public enum TornadoDrivers {
+    PTX(1, "unsupported"),
+    OpenCL(0, "implemented");
 
-    public final int priority;
+    private final int priority;
+    private final String status;
 
-    TornadoDriverPriority(int priority) {
+    TornadoDrivers(int priority, String status) {
         this.priority = priority;
+        this.status = status;
     }
 
     public int value() {

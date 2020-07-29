@@ -31,14 +31,14 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.common.enums.TornadoDriverPriority;
+import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 
 public class OCLTornadoDriverProvider implements TornadoDriverProvider {
 
     /**
      * Check {@link TornadoDriverProvider} for documentation on priority.
      */
-    private final TornadoDriverPriority priority = TornadoDriverPriority.OpenCL;
+    private final TornadoDrivers priority = TornadoDrivers.OpenCL;
 
     @Override
     public String getName() {
@@ -51,7 +51,7 @@ public class OCLTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public TornadoDriverPriority getDevicePriority() {
+    public TornadoDrivers getDevicePriority() {
         return priority;
     }
 

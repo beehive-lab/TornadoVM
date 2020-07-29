@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector;
 
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -116,7 +117,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
         assert targetVector instanceof Variable;
 
-        final PTXVectorElementSelect element = new PTXVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), (Variable) targetVector, laneId());
+        final PTXVectorElementSelect element = new PTXVectorElementSelect(LIRKind.value(((PTXKind) targetVector.getPlatformKind()).getElementKind()), (Variable) targetVector, laneId());
         gen.setResult(this, element);
 
     }

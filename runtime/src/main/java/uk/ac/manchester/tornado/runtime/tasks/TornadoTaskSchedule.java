@@ -165,8 +165,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      *
-     * @param taskScheduleName
-     *            Task-Schedule name
+     * @param taskScheduleName Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         executionContext = new TornadoExecutionContext(taskScheduleName);
@@ -221,19 +220,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
 
-        // 5. Force to recompile the task-sketcher
-        int i = 0;
-        for (TaskPackage tp : taskPackages) {
-            updateTask(tp, i);
-            i++;
-        }
-
-        // 6. Clear the code cache of the TornadoVM instance
-        updateData = true;
-        if (vm != null) {
-            vm.clearInstalledCode();
-            vm.setCompileUpdate();
-        }
+        triggerRecompile();
     }
 
     @Override
@@ -251,9 +238,28 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return meta().getDevice();
     }
 
+    private void triggerRecompile() {
+        // 1. Force to recompile the task-sketcher
+        int i = 0;
+        for (TaskPackage tp : taskPackages) {
+            updateTask(tp, i);
+            i++;
+        }
+
+        // 2. Clear the code cache of the TornadoVM instance
+        updateData = true;
+        if (vm != null) {
+            vm.clearInstalledCode();
+            vm.setCompileUpdate();
+        }
+    }
+
     @Override
     public void setDevice(TornadoDevice device) {
         meta().setDevice(device);
+        // We also need to trigger a recompilation because the device might be of a different type (belong to a different backend or be a CPU/GPU)
+        triggerRecompile();
+        cleanUp();
     }
 
     @Override
@@ -267,15 +273,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return stack.getReturnValue();
     }
 
-    public void updateInner(int index, SchedulableTask task) {
-        Providers providers = getTornadoRuntime().getDriver(0).getProviders();
-        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
+    private void updateInner(int index, SchedulableTask task) {
+        int driverIndex = task.meta().getDriverIndex();
+        Providers providers = getTornadoRuntime().getDriver(driverIndex).getProviders();
+        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
         executionContext.setTask(index, task);
 
         if (task instanceof CompilableTask) {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+            TornadoSketcher.invalidate(resolvedMethod);
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
@@ -354,8 +362,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Compile a task-schedule into TornadoVM byte-code
      *
-     * @param setNewDevice:
-     *            boolean that specifies if set a new device or not.
+     * @param setNewDevice: boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
@@ -1331,10 +1338,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
      *
-     * @param policy
-     *            input policy
-     * @param numDevices
-     *            number of devices
+     * @param policy     input policy
+     * @param numDevices number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1507,12 +1512,43 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 2:
                 updateInner(index, TaskUtils.createTask(method, meta, id, (Task2) parameters[0], parameters[1], parameters[2]));
                 break;
+            case 3:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
+                break;
+            case 4:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
+                break;
+            case 5:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
+                break;
+            case 6:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
+                break;
+            case 7:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
+                break;
+            case 8:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8]));
+                break;
+            case 9:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9]));
+                break;
+            case 10:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10]));
+                break;
+            case 15:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
+                break;
             default:
                 throw new RuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
         switch (type) {
             case 0:
@@ -1560,7 +1596,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    public void updateTask(TaskPackage taskPackage, int index) {
+    private void updateTask(TaskPackage taskPackage, int index) {
         String id = taskPackage.getId();
         int type = taskPackage.getTaskType();
         Object[] parameters = taskPackage.getTaskParameters();

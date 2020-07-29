@@ -231,6 +231,11 @@ public enum PTXKind implements PlatformKind {
     }
 
     private boolean isUnsigned() {
+        boolean vectorUnsigned = kind.isVector() && kind.elementKind.isUnsigned();
+        if (vectorUnsigned) {
+            return true;
+        }
+
         switch (kind) {
             case U8:
             case U16:
@@ -305,11 +310,13 @@ public enum PTXKind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        return kind != ILLEGAL && !isFloating();
+        boolean vectorInteger = kind.isVector() && kind.elementKind.isInteger();
+        return vectorInteger || kind == S16 || kind == U16 || kind == S32 || kind == U32 || kind == S64 || kind == U64;
     }
 
     public boolean isFloating() {
-        return kind == F16 || kind == F32 || kind == F64;
+        boolean vectorFloating = kind.isVector() && kind.elementKind.isFloating();
+        return vectorFloating || kind == F16 || kind == F32 || kind == F64;
     }
 
     public boolean is8Bit() {

@@ -7,7 +7,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryTemplate;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 
@@ -47,11 +51,26 @@ public class PTXNullary {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            asm.emit(opcode.toString());
+            PTXKind lhsKind = (PTXKind) dest.getPlatformKind();
+            PTXKind rhsKind = (PTXKind) getLIRKind().getPlatformKind();
+
+            asm.emitSymbol(TAB);
+            if (lhsKind == rhsKind) {
+                asm.emit(MOVE + "." + lhsKind.toString());
+            } else {
+                asm.emit(CONVERT + ".");
+                if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                    asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                    asm.emitSymbol(DOT);
+                }
+                asm.emit(lhsKind.toString());
+                asm.emitSymbol(DOT);
+                asm.emit(rhsKind.toString());
+            }
             asm.emitSymbol(TAB);
             asm.emitValue(dest);
-            asm.emitSymbol(STMT_DELIMITER);
-            asm.eol();
+            asm.emitSymbol(", ");
+            asm.emit(opcode.toString());
         }
     }
 

@@ -54,6 +54,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+
 public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
@@ -115,14 +117,14 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
         try {
             PTXCompilationResult result;
-            if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod.getName(), executable))) {
+            if (deviceContext.shouldCompile(buildKernelName(resolvedMethod.getName(), executable))) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
             } else {
-                result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod.getName(), executable), taskMeta);
+                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable), taskMeta);
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -141,7 +143,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
         final PTXDeviceContext deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
-        String functionName = PTXCompiler.buildFunctionName(executable.getEntryPoint(), executable);
+        String functionName = buildKernelName(executable.getEntryPoint(), executable);
         if (!deviceContext.shouldCompile(functionName)) {
             return deviceContext.getInstalledCode(functionName);
         }
@@ -554,7 +556,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String toString() {
-
         return getPlatformName() + " -- " + device.getDeviceName();
     }
 }

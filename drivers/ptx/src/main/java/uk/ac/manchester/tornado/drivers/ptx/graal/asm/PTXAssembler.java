@@ -72,7 +72,7 @@ public class PTXAssembler extends Assembler {
         }
     }
 
-    private static String toString(Value value) {
+    public static String toString(Value value) {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;

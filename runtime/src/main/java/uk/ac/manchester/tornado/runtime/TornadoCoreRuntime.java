@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
@@ -122,23 +123,6 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     private static final int DEFAULT_DRIVER = 0;
 
-    // @formatter:off
-    public enum TORNADO_DRIVERS_DESCRIPTION {
-        OPENCL("implemented"),
-        PTX("unsupported");
-
-        String status;
-
-        TORNADO_DRIVERS_DESCRIPTION(String status) {
-            this.status = status;
-        }
-
-        String getStatus() {
-            return status;
-        }
-    }
-    // @formatter:on
-
     private TornadoCoreRuntime() {
         objectMappings = new WeakHashMap<>();
 
@@ -163,7 +147,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
         List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().collect(Collectors.toList());
-        drivers = new TornadoAcceleratorDriver[TORNADO_DRIVERS_DESCRIPTION.values().length];
+        drivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");

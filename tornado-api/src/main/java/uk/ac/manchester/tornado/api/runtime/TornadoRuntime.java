@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.runtime;
 
 import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
 import uk.ac.manchester.tornado.api.TornadoCI;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
@@ -62,9 +63,6 @@ public class TornadoRuntime {
         }
         if (tornadoImpl == null) {
             tornadoImpl = TornadoAPIProvider.loadTornado();
-        }
-        if (device == null) {
-            device = TornadoAPIProvider.loadDeviceImpl();
         }
     }
 
@@ -92,7 +90,11 @@ public class TornadoRuntime {
         tornadoImpl.loadTornadoSettngs(property);
     }
 
-    public static TornadoDevice createDevice(int platformIndex, int deviceIndex) {
+    public static TornadoDevice createDevice(String backendName, int platformIndex, int deviceIndex) {
+        if (device == null) {
+            device = TornadoAPIProvider.loadDeviceImpl(backendName);
+        }
+
         return device.createDevice(platformIndex, deviceIndex);
     }
 

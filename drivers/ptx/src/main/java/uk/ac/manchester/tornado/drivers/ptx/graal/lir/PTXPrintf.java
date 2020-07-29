@@ -44,7 +44,7 @@ public class PTXPrintf extends PTXLIROp {
     @Override
     public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
         asm.emitSymbol(PTXAssemblerConstants.TAB);
-        asm.emit("call.uni (_), vprintf, (");
+        asm.emit("call (_), vprintf, (");
         asm.emitValue(formatParam);
         asm.emitSymbol(PTXAssemblerConstants.COMMA);
         asm.emitSymbol(PTXAssemblerConstants.SPACE);
