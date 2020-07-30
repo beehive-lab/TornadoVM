@@ -31,6 +31,7 @@ autom4te.cache
 /drivers/opencl-jni/target/
 /drivers/ptx/target/
 /drivers/ptx-jni/target/
+/drivers/drivers-common/target/
 /assemly/target/
 /collections/target/
 /benchmarks/target/

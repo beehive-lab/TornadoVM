@@ -24,7 +24,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers;
 
 import java.util.Arrays;
 
@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
  * Run as follows:
  * <p>
  * <code>
- * $ tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceQuery
+ * $ tornado uk.ac.manchester.tornado.drivers.TornadoDeviceQuery
  * </code>
  * </p>
  *

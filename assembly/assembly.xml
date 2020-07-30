@@ -104,6 +104,7 @@
         <include>tornado:tornado-runtime</include>
         <include>tornado:tornado-annotation</include>
         <include>tornado:tornado-matrices</include>
+        <include>tornado:tornado-drivers-common</include>
         <include>tornado:tornado-drivers-ptx</include>
         <include>tornado:tornado-drivers-opencl</include>
         <include>tornado:tornado-examples</include>

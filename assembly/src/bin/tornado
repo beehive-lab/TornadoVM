@@ -63,10 +63,6 @@ function print_usage() {
   echo ""
   echo "              --options                       Print all TornadoVM options and flags, and exit"
   echo ""
-  echo "          Maven:"
-  echo ""
-  echo "              --mavenLocalInstall             Install all maven packages locally"
-  echo ""
   exit 0
 }
 
@@ -148,10 +144,6 @@ while [[ $# -gt 0 ]]; do
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.print.bytecodes=True "
     shift
     ;;
-  --mavenLocalInstall)
-    tornadoLocalInstallMaven
-    exit 0
-    ;;
   --printFlags)
     printflags=1
     shift
@@ -209,7 +201,7 @@ if [ $printflags -eq 1 ]; then
 fi
 
 if [ $printdevices -eq 1 ]; then
-  tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceQuery verbose
+  tornado uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose
   exit 0
 fi
 

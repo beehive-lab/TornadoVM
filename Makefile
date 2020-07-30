@@ -1,16 +1,15 @@
 all: build
 
+# Variables passed for build:
+# JDK - which JDK is used to build Tornado. Can be one of { jdk-8, graal-jdk-8, graal-jdk-11 }. Default: jdk-8
+# BACKEND - which backend to include in the build. Can be any combination of { opencl-backend, ptx-backend }. Default: opencl-backend
+JDK?=jdk-8
+BACKEND?=opencl-backend
 build:
-	./bin/compile.sh jdk-8
-
-graal-jdk-8: 
-	./bin/compile.sh graal-jdk-8
-
-graal-jdk-11: 
-	./bin/compile.sh graal-jdk-11
+	./bin/compile.sh $(JDK) $(BACKEND)
 
 offline:
-	./bin/compile.sh jdk-8 OFFLINE
+	./bin/compile.sh $(JDK) $(BACKEND) OFFLINE
 
 clean: 
 	mvn clean

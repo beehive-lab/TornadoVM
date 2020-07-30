@@ -34,28 +34,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-drivers-opencl</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-drivers-opencl-jni</artifactId>
-      <version>${project.version}</version>
-      <classifier>libs</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-drivers-ptx</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-drivers-ptx-jni</artifactId>
-      <version>${project.version}</version>
-      <classifier>libs</classifier>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tornado-examples</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -69,7 +47,55 @@
       <artifactId>tornado-unittests</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tornado-drivers-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>opencl-backend</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>tornado-drivers-opencl</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>tornado-drivers-opencl-jni</artifactId>
+          <version>${project.version}</version>
+          <classifier>libs</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>ptx-backend</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>tornado-drivers-ptx</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>tornado-drivers-ptx-jni</artifactId>
+          <version>${project.version}</version>
+          <classifier>libs</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+
+  </profiles>
 
   <build>
     <plugins>

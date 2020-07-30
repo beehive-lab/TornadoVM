@@ -17,11 +17,5 @@
             <artifactId>tornado-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-runtime</artifactId>
-            <version>${tornado.version}</version>
-        </dependency>
     </dependencies>
 </project>

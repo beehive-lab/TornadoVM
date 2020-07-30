@@ -248,7 +248,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 deviceIndex = i;
             }
         }
-        return new int[] { 1, deviceIndex };
+        int driverIndex = TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+        return new int[] { driverIndex, deviceIndex };
     }
 
     private boolean isJITCompilationForFPGAs(String deviceFullName) {

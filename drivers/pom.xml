@@ -7,15 +7,36 @@
 		 <version>0.7</version>
     </parent>
     <artifactId>tornado-drivers</artifactId>
+    <name>tornado-drivers</name>
     <packaging>pom</packaging>
+
     <modules>
-        <module>opencl</module>
-        <module>opencl-jni</module>
-        <module>ptx</module>
-        <module>ptx-jni</module>
+        <module>drivers-common</module>
     </modules>
 
     <profiles>
+        <profile>
+            <id>opencl-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>opencl</module>
+                <module>opencl-jni</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>ptx-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>ptx</module>
+                <module>ptx-jni</module>
+            </modules>
+        </profile>
+
         <!--        We are forced to duplicate this for the two different profiles -->
         <profile>
             <id>jdk-8</id>
@@ -59,4 +80,12 @@
             </dependencies>
         </profile>
     </profiles>
+
+    <dependencies>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-runtime</artifactId>
+            <version>${tornado.version}</version>
+        </dependency>
+    </dependencies>
 </project>
