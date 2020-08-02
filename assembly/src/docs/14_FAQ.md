@@ -4,7 +4,7 @@
 
 TornadoVM accelerates parts of your Java applications on heterogeneous hardware devices such as multicore CPUs, GPUs, and FPGAs.
 
-TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, natural language processing and signal processing. 
+TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, natural language processing and signal processing.
 
 
 ## 2. How can I use it?
@@ -32,7 +32,7 @@ TornadoVM primarily supports Java. However, with the integration with GraalVM yo
 
 ## 4. Is TornadoVM a DSL?
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL.
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL and PTX.
 
 The TornadoVM API only provides two Java annotations (`@Parallel` and `@Reduce`) plus a light API to create task-schedules (groups of Java methods to be accelerated by TornadoVM).
 
@@ -62,7 +62,7 @@ No, TornadoVM has been developed in the Beehive-Lab of the Advanced Processor Te
 
 ## 9. Does TornadoVM support only OpenCL devices?
 
-Currently, yes. However, due to its decoupled software architecture, we are adding support for other back-ends as well. Therefore users can decide which one to use.
+No. Currently, TornadoVM supports two compiler backends and therefore, is able to generate OpenCL and PTX code depending on the user hardware and preference. We are planning on implementing additional compiler backends to further increase support.
 
 ## 10. Why is it called a VM?
 
@@ -73,12 +73,12 @@ You can find more information here: [https://dl.acm.org/doi/10.1145/3313808.3313
 
 ## 11. How it interacts with OpenJDK?
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C at runtime. As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes a new backend for OpenCL C code generation). 
+TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C / PTX at runtime. As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for OpenCL C and PTX code generation).
 
 ## 12. How do I know which parts of my application are suitable for acceleration?
-Workloads with for-loops that do not have dependencies between iterations are very good candidates to offload on accelerators. Examples of this pattern are NBody computation, Black-scholes, DFT, KMeans, etc. 
+Workloads with for-loops that do not have dependencies between iterations are very good candidates to offload on accelerators. Examples of this pattern are NBody computation, Black-scholes, DFT, KMeans, etc.
 
-Besides, matrix-type applications are good candidates, such as matrix-multiplication widely used in machine and deep learning. 
+Besides, matrix-type applications are good candidates, such as matrix-multiplication widely used in machine and deep learning.
 
 
 ## 13. How can I contribute to TornadoVM?
@@ -86,17 +86,17 @@ Besides, matrix-type applications are good candidates, such as matrix-multiplica
 TornadoVM is an open-source project, and, as such, we welcome contributions.
 
 * Look at Github issues tagged with [good first issue](https://github.com/beehive-lab/TornadoVM/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
-* **Documentation**: you can help to improve install documentation, testing platforms, and scripts to easy deploy TornadoVM. 
-* **TornadoVM use-cases**: Develop use cases that use TornadoVM for acceleration: block-chain, graphical version of NBody, filters for photography, etc. 
+* **Documentation**: you can help to improve install documentation, testing platforms, and scripts to easy deploy TornadoVM.
+* **TornadoVM use-cases**: Develop use cases that use TornadoVM for acceleration: block-chain, graphical version of NBody, filters for photography, etc.
 * **TornadoVM Development / Improvements**: If you would like to contribute to the TornadoVM internals, here is a list of pending tasks/improvements:
 
     - Port all Python-2 scripts to Python-3.
     - Implement a performance plot suite when running the benchmark runner. This should plot speedups against serial Java as well as stacked bars with breakdown analysis (e.g. time spent on compilation, execution, and data transfers).
-    - Port TornadoVM to Windows 10 - port bash scripts and adapt Python scripts to build with Windows 10. 
-    
+    - Port TornadoVM to Windows 10 - port bash scripts and adapt Python scripts to build with Windows 10.
+
 [Here](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTIONS.md) you can find more information about how to contribute, code conventions, and tasks.
 
-	
+
 ## 14. Does TornadoVM supports calls to standard Java libraries?
 
 Partially yes. TornadoVM currently supports calls to the Math library. However, invocations that imply I/O are not supported.

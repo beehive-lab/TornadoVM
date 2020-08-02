@@ -3,9 +3,9 @@
 #### Prerequisites
 In order to run the PTX backend of Tornado, you will need a CUDA compatible device.
 
-#### Installation 
+#### Installation
 **Step 1:**  
-You will need to setup the `CUDA Toolkit`. If you don't have it installed already, you can follow [this guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html). 
+You will need to setup the `CUDA Toolkit`. If you don't have it installed already, you can follow [this guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
 
 **Step 2:**  
 Make sure you follow the [environment setup](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#environment-setup) to add the required environment variables.  
@@ -26,7 +26,7 @@ The output of `nvidia-smi` should be similar to:
  |   0  GeForce GTX 1650    Off  | 00000000:01:00.0 Off |                  N/A |
  | N/A   51C    P8     1W /  N/A |     73MiB /  3914MiB |      0%      Default |
  +-------------------------------+----------------------+----------------------+
-                                                                                
+
  +-----------------------------------------------------------------------------+
  | Processes:                                                       GPU Memory |
  |  GPU       PID   Type   Process name                             Usage      |
@@ -46,7 +46,7 @@ Cuda compilation tools, release 10.2, V10.2.89
 
 **Step 3:**  
 Install TornadoVM as described [here](1_INSTALL.md).   
-Build TornadoVM and run `tornado --devices`. The output should look like this:
+Build TornadoVM with the `PTX` backend selected and run `tornado --devices`. The output from a build containing both backends (PTX and OpenCL) should look like this:
 ```
    Number of Tornado drivers: 2
    Total number of devices  : 1
@@ -57,7 +57,7 @@ Build TornadoVM and run `tornado --devices`. The output should look like this:
    		Workgroup Dimensions: 3
    		Max WorkGroup Configuration: [1024, 1024, 64]
    		Device OpenCL C version: N/A
-   
+
    Total number of devices  : 2
    Tornado device=1:0
    	NVIDIA CUDA -- GeForce GTX 1650
@@ -66,7 +66,7 @@ Build TornadoVM and run `tornado --devices`. The output should look like this:
    		Workgroup Dimensions: 3
    		Max WorkGroup Configuration: [1024, 1024, 64]
    		Device OpenCL C version: OpenCL C 1.2
-   
+
    Tornado device=1:1
    	Intel(R) OpenCL HD Graphics -- Intel(R) Gen9 HD Graphics NEO
    		Global Memory Size: 24.8 GB
@@ -81,12 +81,12 @@ Note that the first Tornado driver will always correspond to the CUDA device det
 In some cases, running `nvidia-smi` might show the error `NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver`. This can happen because the driver module is not loaded due to a [blacklist file](https://forums.developer.nvidia.com/t/nvidia-driver-is-not-loaded-ubuntu-18-10/70495/2).
 You can remove this by running:
 `sudo rm /etc/modprobe.d/blacklist-nvidia.conf`  
-  
+
 On Ubuntu, the driver can also fail to load if it is not selected in `prime-select`. In order to select it, you can run `prime-select nvidia` or `prime-select on-demand`.
 
 For older versions of the driver, you might have to point your `LIBRARY_PATH` variable to the `libcuda` library in order to build TornadoVM.  
 Example: `export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/cuda/lib64/stubs`
-  
+
 After these changes, a reboot might be required for the driver module to be loaded.
 
 
@@ -103,4 +103,3 @@ We have tested the PTX backend of TornadoVM on the following configurations:
 
 Note that `Functional` denotes that there might be some issues with the backend-driver interaction.   
 Specifically, running TornadoVM on the `Quadro GP100` with the PTX backend might sometimes cause segmentation faults.   
-

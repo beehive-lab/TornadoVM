@@ -1,7 +1,7 @@
 # Benchmarking TornadoVM
 
 
-### Benchmarks 
+### Benchmarks
 
 Currently the benchmark runner script extends to the following benchmarks:
 
@@ -23,7 +23,7 @@ Currently the benchmark runner script extends to the following benchmarks:
 
 For each of the benchmarks, a Java version exists in order to obtain timing measurements. All performance and time measurements obtained through a number of iterations (e.g. 130). Also, each benchmark can be tested for various array sizes ranging from 256 to 16777216.
 
-### How to run 
+### How to run
 
 Go to the directory `<tornadovm path>/bin/sdk/bin`. Then, the run options can be found with the following command:
 
@@ -58,14 +58,14 @@ optional arguments:
 
 ### Example
 
-Example of running all benchmark for all devices available in your system with the default data size. 
+Example of running all benchmark for all devices available in your system with the default data size.
 
 
 ```bash
 $ tornado-benchmarks.py
 Running TornadoVM Benchmarks
 [INFO] This process takes between 30-60 minutes
-[INFO] TornadoVM options: -Xms24G -Xmx24G -server 
+[INFO] TornadoVM options: -Xms24G -Xmx24G -server
 bm=saxpy-101-16777216, id=java-reference      , average=7.604811e+06, median=7.521843e+06, firstIteration=1.179550e+07, best=7.355636e+06
 bm=saxpy-101-16777216, device=0:0  , average=1.852340e+07, median=1.708197e+07, firstIteration=2.788138e+07, best=1.612269e+07, speedupAvg=0.4106, speedupMedian=0.4403, speedupFirstIteration=0.4231, CV=10.5305%, deviceName=NVIDIA CUDA -- GeForce GTX 1050
 bm=saxpy-101-16777216, device=0:1  , average=4.503467e+07, median=4.482944e+07, firstIteration=6.696712e+07, best=4.236860e+07, speedupAvg=0.1689, speedupMedian=0.1678, speedupFirstIteration=0.1761, CV=4.7203%, deviceName=Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
@@ -91,14 +91,14 @@ bm=convolve-array-100-2048-2048-5, device=0:1  , average=9.842007e+07, median=9.
 
 ### Using JMH
 
-The `tornado-benchmarks.py` script is configured to use JMH. 
+The `tornado-benchmarks.py` script is configured to use JMH.
 
 
 ```bash
 $ tornado-benchmarks.py --jmh    
 ```
 
-The script runs all benchmarks using JMH. This process takes ~3.5h. 
+The script runs all benchmarks using JMH. This process takes ~3.5h.
 
 
 Additionally, each benchmark has a JMH configuration. Users can execute any benchmark from the list as follows:
@@ -107,9 +107,9 @@ Additionally, each benchmark has a JMH configuration. Users can execute any benc
 $ tornado uk.ac.manchester.tornado.benchmarks.<benchmark>.JMH<BENCHMARK>
 ```
 
-This process takes ~10mins per benchmark. 
+This process takes ~10mins per benchmark.
 
-For example: 
+For example:
 
 ```bash
 $ tornado uk.ac.manchester.tornado.benchmarks.dft.JMHDFT

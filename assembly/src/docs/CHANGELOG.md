@@ -8,14 +8,14 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
   * Support parallel reductions on FPGAs
   * Agnostic FPGA vendor compilation via [configuration files](7_FPGA.md#step-1-updatecreate-the-fpgas-configuration-file) (Intel & Xilinx)
   * Support for AWS on Xilinx FPGAs [link](16_AWS.md)
-  * Recompilation for different input data sizes supported 
+  * Recompilation for different input data sizes supported
   * New TornadoVM API calls:
-     a) Update references for re-compilation: 
+     a) Update references for re-compilation:
         `taskSchedule.updateReferences(oldRef, newRef);`
-     b) Use the default OpenCL scheduler: 
+     b) Use the default OpenCL scheduler:
         `taskSchedule.useDefaultThreadScheduler(true);`
-  * Use of JMH for benchmarking 
-  * Support for Fused Multiply-Add (FMA) instructions 
+  * Use of JMH for benchmarking
+  * Support for Fused Multiply-Add (FMA) instructions
   * Easy-selection of different devices for unit-tests
      `tornado-test.py -V --debug -J"-Dtornado.unittests.device=0:1"`
   * Bailout mechanism improved from parallel to sequential
@@ -23,7 +23,7 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
   * Support for private memory allocation
   * Assertion mode included
   * Documentation improved
-  * Several bug fixes 
+  * Several bug fixes
 
 
 ## TornadoVM 0.6

@@ -247,12 +247,12 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
             getGen().append(new PTXLIRStmt.VectorStoreStmt((Variable) input, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), access));
         } else {
             getGen().append(new PTXLIRStmt.StoreStmt(access, input));
+        }
 
-            // Store back to register if it was loaded to a register first
-            Variable valueHolder = access.assignedTo();
-            if (valueHolder != null) {
-                getGen().append(new PTXLIRStmt.AssignStmt(valueHolder, input));
-            }
+        // Store back to register if it was loaded to a register first
+        Variable valueHolder = access.assignedTo();
+        if (valueHolder != null) {
+            getGen().append(new PTXLIRStmt.AssignStmt(valueHolder, input));
         }
     }
 
