@@ -152,6 +152,7 @@ public class OCLLIRStmt {
             this.lhs = lhs;
             this.cast = cast;
             this.address = address;
+            address.assignTo(lhs);
         }
 
         public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address, Value index) {
@@ -160,6 +161,7 @@ public class OCLLIRStmt {
             this.cast = cast;
             this.address = address;
             this.index = index;
+            address.assignTo(lhs);
         }
 
         public void emitIntegerBasedIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
@@ -246,6 +248,7 @@ public class OCLLIRStmt {
             this.address = address;
             this.op = op;
             this.index = index;
+            address.assignTo(lhs);
         }
 
         @Override
