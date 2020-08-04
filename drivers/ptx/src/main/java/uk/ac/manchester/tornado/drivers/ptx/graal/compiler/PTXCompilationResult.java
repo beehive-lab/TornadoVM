@@ -12,12 +12,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PTXCompilationResult extends CompilationResult {
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.appendToTargetCodeBegin;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getCodeWithPTXHeader;
 
-    private static final String PTX_HEADER_FORMAT =
-            PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" +
-            PTXAssemblerConstants.TARGET_ARCH + " %s \n" +
-            PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
+public class PTXCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private TaskMetaData taskMetaData;
@@ -36,28 +34,13 @@ public class PTXCompilationResult extends CompilationResult {
     }
 
     public void addCompiledMethodCode(byte[] code) {
-        appendToTargetCodeBegin(code);
+        byte[] newCode = appendToTargetCodeBegin(getTargetCode(), code);
+        setTargetCode(newCode, newCode.length);
     }
 
     public void addPTXHeader(PTXBackend backend) {
-        PTXDevice device = backend.getDeviceContext().getDevice();
-        String header = String.format(PTX_HEADER_FORMAT, device.getTargetPTXVersion(), device.getTargetArchitecture(), backend.getTarget().getArch().getWordSize() * 8);
-
-        appendToTargetCodeBegin(header.getBytes());
-    }
-
-    private void appendToTargetCodeBegin(byte[] code) {
-        final byte[] oldCode = getTargetCode();
-        final int size = oldCode.length + code.length + 1;
-
-        final byte[] newCode = new byte[size];
-        Arrays.fill(newCode, (byte) 0);
-
-        final ByteBuffer buffer = ByteBuffer.wrap(newCode);
-        buffer.put(code);
-        buffer.put((byte) '\n');
-        buffer.put(oldCode);
-        setTargetCode(newCode, size);
+        byte[] newCode = getCodeWithPTXHeader(getTargetCode(), backend);
+        setTargetCode(newCode, newCode.length);
     }
 
     public TaskMetaData getTaskMeta() {

@@ -20,6 +20,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
@@ -151,7 +152,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         final Path path = Paths.get(executable.getFilename());
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
-            final byte[] source = Files.readAllBytes(path);
+            byte[] source = Files.readAllBytes(path);
+            source = PTXCodeUtil.getCodeWithPTXHeader(source, getBackend());
             return deviceContext.installCode(functionName, source, executable.meta(), executable.getEntryPoint());
         } catch (IOException e) {
             e.printStackTrace();

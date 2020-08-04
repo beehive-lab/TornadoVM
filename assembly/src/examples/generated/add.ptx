@@ -1,8 +1,3 @@
-//PTX headers
-.version 5.0
-.target sm_62
-.address_size 64
-
 // kernel function
 .visible .entry add_int8_int8_int8(.param .u64 stack_pointer) {
     // register declaration
