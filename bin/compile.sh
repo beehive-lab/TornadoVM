@@ -31,6 +31,9 @@ fi
 if [ $? -eq 0 ]; then
   ## Update the PATH if the compilation is correct
   bash ./bin/updatePATHS.sh
+
+  ## Update the compiled backends file
+  echo "tornado.backends="${selected_backends} > ${TORNADO_SDK}/etc/tornado.backend
 else
   echo -e "\n \e[91mCompilation failed\e[39m \n"
 fi

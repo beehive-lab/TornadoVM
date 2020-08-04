@@ -192,7 +192,18 @@ JAVA_FLAGS="${JAVA_FLAGS}-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVI
 if [ "$JAVA_VERSION" = "1.8" ]; then
   JAVA_FLAGS="${JAVA_FLAGS} -XX:-UseJVMCIClassLoader "
 elif [ "$JAVA_VERSION" = "11.0" ]; then
-  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${MODULE_LIST[*]}"
+  read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
+  if [[ ${selected_backends} == *"ptx-backend"* && ${selected_backends} == *"opencl-backend"* ]]; then
+    JAVA_FLAGS="${JAVA_FLAGS},${PTX_DRIVER_MODULE},${OPENCL_DRIVER_MODULE} ${OPENCL_AND_PTX_BACKENDS_EXPORTS_LIST[*]}"
+  else
+    if [[ ${selected_backends} == *"ptx-backend"* ]]; then
+      JAVA_FLAGS="${JAVA_FLAGS},${PTX_DRIVER_MODULE} ${PTX_BACKEND_EXPORTS_LIST[*]}"
+    fi
+    if [[ ${selected_backends} == *"opencl-backend"* ]]; then
+      JAVA_FLAGS="${JAVA_FLAGS},${OPENCL_DRIVER_MODULE} ${OPENCL_BACKEND_EXPORTS_LIST[*]}"
+    fi
+  fi
 fi
 
 if [ $printflags -eq 1 ]; then
