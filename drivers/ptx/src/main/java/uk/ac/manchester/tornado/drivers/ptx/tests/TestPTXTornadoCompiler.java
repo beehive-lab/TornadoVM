@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXCodeCache;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
 import uk.ac.manchester.tornado.drivers.ptx.PTXPlatform;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
@@ -39,9 +40,6 @@ public class TestPTXTornadoCompiler {
 
     // @formatter:off
     private static final String PTX_KERNEL =
-            ".version 6.5 \n" +
-            ".target sm_30 \n" +
-            ".address_size 64 \n" +
             ".visible .entry add( \n" +
             "	.param .u64 add_param_0, \n" +
             "	.param .u64 add_param_1, \n" +
@@ -93,6 +91,7 @@ public class TestPTXTornadoCompiler {
         new PTXCompilationResult("add", meta);
 
         byte[] source = PTX_KERNEL.getBytes();
+        source = PTXCodeUtil.getCodeWithPTXHeader(source, backend);
         PTXInstalledCode code = codeCache.installSource("add", source , meta, "add");
 
         String generatedSourceCode = code.getGeneratedSourceCode();
