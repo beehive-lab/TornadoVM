@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 
 public class Inlining {
 
@@ -92,7 +93,7 @@ public class Inlining {
         }
     }
 
-    @Test
+    @TornadoNotSupported
     public void test01() {
 
         final int size = 256;
@@ -144,7 +145,7 @@ public class Inlining {
 
     }
 
-    @Test
+    @TornadoNotSupported
     public void test03() {
         final int size = 256;
         byte[] rgbBytes = new byte[size];

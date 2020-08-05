@@ -79,6 +79,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations",
     "uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
 	"uk.ac.manchester.tornado.unittests.numpromotion.Types",
+	"uk.ac.manchester.tornado.unittests.numpromotion.Inlining", 
 	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
 ]
 
