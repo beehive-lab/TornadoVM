@@ -53,7 +53,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     @Test
     public void testIrregularSize01() {
 
-        final int size = 18;
+        final int size = 33554432 + 15;
         int[] input = new int[size];
         int[] result = new int[] { 0 };
 
