@@ -24,14 +24,18 @@
 
 package uk.ac.manchester.tornado.runtime.common.enums;
 
+import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_BACKEND_PRIORITY;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.PTX_BACKEND_PRIORITY;
+
 /**
  * Used to prioritize one backend over another.
  * The drivers will be sorted based on their priority. The driver with the highest priority will become driver 0 (default driver).
  */
 
 public enum TornadoDrivers {
-    PTX(1, "unsupported"),
-    OpenCL(0, "implemented");
+
+    PTX(PTX_BACKEND_PRIORITY, "unsupported"),
+    OpenCL(OPENCL_BACKEND_PRIORITY, "implemented");
 
     private final int priority;
     private final String status;
