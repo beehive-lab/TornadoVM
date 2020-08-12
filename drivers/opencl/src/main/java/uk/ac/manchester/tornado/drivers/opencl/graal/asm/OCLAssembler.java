@@ -56,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 
 public final class OCLAssembler extends Assembler {
 
@@ -1124,7 +1125,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void loadParam(Variable result, int index) {
-        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, index);
+        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, OCLCallStack.RESERVED_SLOTS + index);
     }
 
     @Deprecated
