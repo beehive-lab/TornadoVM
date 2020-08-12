@@ -24,8 +24,6 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Authors: Juan Fumero
-#
 
 import argparse
 import os
@@ -95,7 +93,6 @@ __MAIN_TORNADO_JUNIT__ 		 		= "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ 			 		= "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 		= "-Dtornado.debug=True "
-__IGNORE_INTEL_PLATFORM__    		= "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
 __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
 __GC__                       		= "-Xmx6g "
 # ################################################################################################################
@@ -103,7 +100,7 @@ __GC__                       		= "-Xmx6g "
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.8_04022020"
+__VERSION__ = "0.9_05082020"
 
 JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
@@ -238,12 +235,7 @@ def runTests(args):
 
 	stats = {"[PASS]" : 0, "[FAILED]": 0}
 
-	## Run test
-	cmd = ""
-	if (args.useOptirun):
-		cmd = "optirun " + TORNADO_CMD + __IGNORE_INTEL_PLATFORM__ + options
-	else:
-		cmd = TORNADO_CMD + options
+	cmd = TORNADO_CMD + options
 
 	if (javaVersion == JDK_11_VERSION):
 		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
@@ -316,7 +308,6 @@ def parseArguments():
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
 	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
-	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")
 	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
 	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")
 	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
