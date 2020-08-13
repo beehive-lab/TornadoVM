@@ -202,12 +202,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             emitParamVariableDefs(asm, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
         } else {
-            emitFunctionHeader(asm, method);
+            emitFunctionHeader(asm, method, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
         }
     }
 
-    private void emitFunctionHeader(PTXAssembler asm, ResolvedJavaMethod method) {
+    private void emitFunctionHeader(PTXAssembler asm, ResolvedJavaMethod method, PTXLIRGenerationResult lirGenRes) {
         final CallingConvention incomingArguments = PTXCodeUtil.getCallingConvention(codeCache, method);
         String methodName = PTXCodeUtil.makeMethodName(method);
 
@@ -215,10 +215,14 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         if (returnKind == JavaKind.Void) {
             asm.emit(".func %s (", methodName);
         } else {
-            TornadoInternalError.unimplemented("Returning values from functions not implemented yet");
             final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
             PTXKind returnPtxKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getPTXKind(returnKind) : PTXKind.fromResolvedJavaType(returnType);
-            String returnStr = returnPtxKind.toString();
+            Variable returnVar = lirGenRes.getReturnVariable(returnPtxKind);
+            if (returnPtxKind.isVector()) {
+                asm.emit(".func (.param .align 8 .b8 %s[%d]) %s (", returnVar, returnPtxKind.getSizeInBytes(), methodName);
+            } else {
+                asm.emit(".func (.reg .%s %s) %s (", returnPtxKind, returnVar, methodName);
+            }
         }
 
         final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
@@ -234,7 +238,17 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                 }
             }
             guarantee(ptxKind != PTXKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
-            asm.emit(".reg .%s %s", ptxKind, locals[i].getName());
+            if (ptxKind.isVector()) {
+                PTXVectorSplit vectorSplitData = new PTXVectorSplit(locals[i].getName(), ptxKind);
+                for (int j = 0; j < vectorSplitData.vectorNames.length; j++) {
+                    asm.emit(".reg .%s %s", ptxKind.getElementKind(), vectorSplitData.vectorNames[j]);
+                    if (j < vectorSplitData.vectorNames.length - 1) {
+                        asm.emit(", ");
+                    }
+                }
+            } else {
+                asm.emit(".reg .%s %s", ptxKind, locals[i].getName());
+            }
             if (i < params.length - 1) {
                 asm.emit(", ");
             }

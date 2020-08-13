@@ -198,7 +198,15 @@ public class PTXLIRGenerator extends LIRGenerator {
     public void emitReturn(JavaKind javaKind, Value input) {
         trace("emitReturn: input=%s", input);
         if (input != null) {
-            unimplemented("Returning values from PTX kernels is not implemented yet");
+            PTXKind returnKind = (PTXKind) input.getPlatformKind();
+            LIRKind lirKind = LIRKind.value(returnKind);
+            Variable returnVar = newReturnVariable(lirKind);
+            if (returnKind.isVector()) {
+                append(new PTXLIRStmt.VectorStoreStmt((Variable) input, new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, returnVar, null)));
+            } else {
+                append(new PTXLIRStmt.AssignStmt(returnVar, input));
+            }
+            append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
         } else {
             append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
         }
@@ -338,6 +346,21 @@ public class PTXLIRGenerator extends LIRGenerator {
     public LIRInstruction createZapArgumentSpace(StackSlot[] zappedStack, JavaConstant[] zapValues) {
         unimplemented();
         return null;
+    }
+
+    public Variable newReturnVariable(ValueKind<?> lirKind) {
+        final Variable var = super.newVariable(lirKind);
+        trace("newReturnVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+
+        PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
+        res.setReturnVariable(var);
+
+        if (!(var.getPlatformKind() instanceof PTXKind)) {
+            shouldNotReachHere();
+        }
+
+        var.setName("retVar");
+        return var;
     }
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {

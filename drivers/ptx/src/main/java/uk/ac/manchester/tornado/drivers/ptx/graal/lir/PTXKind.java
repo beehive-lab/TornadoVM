@@ -311,7 +311,7 @@ public enum PTXKind implements PlatformKind {
 
     public boolean isInteger() {
         boolean vectorInteger = kind.isVector() && kind.elementKind.isInteger();
-        return vectorInteger || kind == S16 || kind == U16 || kind == S32 || kind == U32 || kind == S64 || kind == U64;
+        return vectorInteger || kind == S8 || kind == U8 || kind == S16 || kind == U16 || kind == S32 || kind == U32 || kind == S64 || kind == U64;
     }
 
     public boolean isFloating() {

@@ -205,7 +205,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void setContextForCurrentThread() {
+    public void enableThreadSharing() {
         TornadoInternalError.unimplemented();
     }
 

@@ -215,9 +215,9 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         return null;
     }
 
-    public void emitVectorLoad(Variable result, Value index, PTXUnary.MemoryAccess address) {
+    public void emitVectorLoad(Variable result, PTXUnary.MemoryAccess address) {
         trace("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        getGen().append(new PTXLIRStmt.VectorLoadStmt(result, index, address));
+        getGen().append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
     @Override
@@ -228,7 +228,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         Variable dest = getGen().newVariable(kind);
 
         if (ptxKind.isVector()) {
-            emitVectorLoad(dest, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), (PTXUnary.MemoryAccess) address);
+            emitVectorLoad(dest, (PTXUnary.MemoryAccess) address);
         } else {
             getGen().append(new PTXLIRStmt.LoadStmt((PTXUnary.MemoryAccess) address, dest, PTXAssembler.PTXNullaryOp.LD));
         }
@@ -241,10 +241,10 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         assert kind.getPlatformKind() instanceof PTXKind;
         trace("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         PTXUnary.MemoryAccess access = (PTXUnary.MemoryAccess) address;
-        PTXKind ptxKind = (PTXKind) kind.getPlatformKind();
+        PTXKind ptxKind = (PTXKind) input.getPlatformKind();
         if (ptxKind.isVector()) {
             assert input instanceof Variable;
-            getGen().append(new PTXLIRStmt.VectorStoreStmt((Variable) input, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), access));
+            getGen().append(new PTXLIRStmt.VectorStoreStmt((Variable) input, access));
         } else {
             getGen().append(new PTXLIRStmt.StoreStmt(access, input));
         }

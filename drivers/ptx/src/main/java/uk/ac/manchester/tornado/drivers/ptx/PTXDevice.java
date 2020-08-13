@@ -145,7 +145,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         return deviceIndex;
     }
 
-    public PTXContext getContext() {
+    public PTXContext getPTXContext() {
         return context;
     }
 

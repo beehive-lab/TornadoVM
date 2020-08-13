@@ -82,7 +82,7 @@ public class TestPTXTornadoCompiler {
     public static void main(String[] args) {
 
         PTXPlatform platform = PTX.getPlatform();
-        PTXCodeCache codeCache = platform.getDevice(0).getContext().getDeviceContext().getCodeCache();
+        PTXCodeCache codeCache = platform.getDevice(0).getPTXContext().getDeviceContext().getCodeCache();
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
         PTXBackend backend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();

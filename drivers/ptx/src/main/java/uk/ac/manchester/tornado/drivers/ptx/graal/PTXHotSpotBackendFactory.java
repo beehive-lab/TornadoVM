@@ -51,7 +51,7 @@ public class PTXHotSpotBackendFactory {
 
         PTXArchitecture arch = new PTXArchitecture(PTXKind.U64, device.getByteOrder());
         PTXTargetDescription target = new PTXTargetDescription(arch);
-        PTXDeviceContext deviceContext = device.getContext().getDeviceContext();
+        PTXDeviceContext deviceContext = device.getPTXContext().getDeviceContext();
         PTXCodeProvider codeCache = new PTXCodeProvider(target);
         HotSpotGraalCompiler hotSpotGraalCompiler = ((HotSpotGraalCompiler) jvmciRuntime.getCompiler());
         HotSpotGCProvider hotSpotGCProvider = new HotSpotGCProvider(hotSpotGraalCompiler.getGraalRuntime().getVMConfig());

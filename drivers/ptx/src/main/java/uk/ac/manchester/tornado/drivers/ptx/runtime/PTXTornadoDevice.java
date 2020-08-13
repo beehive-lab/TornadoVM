@@ -552,8 +552,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
      */
     @Override
-    public void setContextForCurrentThread() {
-        device.getContext().setContextForCurrentThread();
+    public void enableThreadSharing() {
+        device.getPTXContext().enablePTXContext();
     }
 
     @Override

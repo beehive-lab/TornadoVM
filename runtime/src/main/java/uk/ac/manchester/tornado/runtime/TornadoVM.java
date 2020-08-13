@@ -46,7 +46,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -215,7 +214,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event execute(boolean isWarmup) {
-        contexts.forEach(TornadoAcceleratorDevice::setContextForCurrentThread);
+        contexts.forEach(TornadoAcceleratorDevice::enableThreadSharing);
 
         final long t0 = System.nanoTime();
         int lastEvent = -1;

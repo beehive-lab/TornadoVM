@@ -7,7 +7,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.PTX.DUMP_EVENTS;
 
 public class PTXContext extends TornadoLogger {
 
-    private final long contextPtr;
+    private final long ptxContext;
     private final PTXDevice device;
     private final PTXStream stream;
     private final PTXDeviceContext deviceContext;
@@ -16,7 +16,7 @@ public class PTXContext extends TornadoLogger {
     public PTXContext(PTXDevice device) {
         this.device = device;
 
-        contextPtr = cuCtxCreate(device.getDeviceIndex());
+        ptxContext = cuCtxCreate(device.getDeviceIndex());
 
         stream = new PTXStream();
         deviceContext = new PTXDeviceContext(device, stream);
@@ -32,8 +32,8 @@ public class PTXContext extends TornadoLogger {
 
     private native static long cuCtxSetCurrent(long cuContext);
 
-    public void setContextForCurrentThread() {
-        cuCtxSetCurrent(contextPtr);
+    public void enablePTXContext() {
+        cuCtxSetCurrent(ptxContext);
     }
 
     public void cleanup() {
@@ -42,8 +42,8 @@ public class PTXContext extends TornadoLogger {
         }
 
         deviceContext.cleanup();
-        cuMemFree(contextPtr, allocatedRegion);
-        cuCtxDestroy(contextPtr);
+        cuMemFree(ptxContext, allocatedRegion);
+        cuCtxDestroy(ptxContext);
     }
 
     public PTXDeviceContext getDeviceContext() {
@@ -53,7 +53,7 @@ public class PTXContext extends TornadoLogger {
     public long allocateMemory(long numBytes) {
         TornadoInternalError.guarantee(allocatedRegion == 0, "Only a single heap allocation is supported");
         try {
-            allocatedRegion = cuMemAlloc(contextPtr, numBytes);
+            allocatedRegion = cuMemAlloc(ptxContext, numBytes);
         } catch (Exception e) {
             error(e.getMessage());
         }

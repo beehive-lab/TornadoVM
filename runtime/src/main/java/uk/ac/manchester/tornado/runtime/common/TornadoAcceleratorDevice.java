@@ -44,6 +44,6 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * In CUDA the context is not attached to the whole process, but to individual threads
      * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
      */
-    void setContextForCurrentThread();
+    void enableThreadSharing();
 
 }

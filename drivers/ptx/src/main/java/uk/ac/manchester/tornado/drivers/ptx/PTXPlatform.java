@@ -18,7 +18,7 @@ public class PTXPlatform extends TornadoLogger {
     public void cleanup() {
         for (PTXDevice device : devices) {
             if (device != null) {
-                device.getContext().cleanup();
+                device.getPTXContext().cleanup();
             }
         }
     }

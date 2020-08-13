@@ -29,13 +29,15 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
     }
 
     private final Map<PTXKind, Set<VariableData>> variableTable;
-    private Map<PTXKind, Set<Variable>> paramTable;
+    private final Map<PTXKind, Set<Variable>> paramTable;
+    private final Map<PTXKind, Variable> returnVariables;
 
     public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, CallingConvention callingConvention) {
         super(identifier, lir, frameMapBuilder, registerAllocationConfig, callingConvention);
 
         variableTable = new HashMap<>();
         paramTable = new HashMap<>();
+        returnVariables = new HashMap<>();
     }
 
     public int insertVariableAndGetIndex(Variable var, boolean isArray) {
@@ -61,5 +63,17 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
 
     public Map<PTXKind, Set<Variable>> getParamTable() {
         return paramTable;
+    }
+
+    public void setReturnVariable(Variable var) {
+        PTXKind ptxKind = (PTXKind) var.getPlatformKind();
+
+        if (!returnVariables.containsKey(ptxKind)) {
+            returnVariables.put(ptxKind, var);
+        }
+    }
+
+    public Variable getReturnVariable(PTXKind kind) {
+        return returnVariables.get(kind);
     }
 }

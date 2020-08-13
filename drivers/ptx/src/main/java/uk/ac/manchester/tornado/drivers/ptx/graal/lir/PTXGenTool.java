@@ -28,9 +28,9 @@ public class PTXGenTool {
         gen = generator;
     }
 
-    public void emitVectorLoad(Variable result, Value index, MemoryAccess address) {
+    public void emitVectorLoad(Variable result, MemoryAccess address) {
         trace("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        gen.append(new PTXLIRStmt.VectorLoadStmt(result, index, address));
+        gen.append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int paramOffset) {
@@ -50,7 +50,7 @@ public class PTXGenTool {
             PTXArchitecture.PTXMemoryBase base = globalSpace;
             MemoryAccess address = new MemoryAccess(base, result);
 
-            emitVectorLoad(vector, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), address);
+            emitVectorLoad(vector, address);
             result = vector;
         }
 

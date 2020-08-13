@@ -8,16 +8,17 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 public class PTXVectorSplit {
     private static final int MAX_VECTOR_SIZE_BYTES = 16;
 
-    public Variable actualVector;
     public PTXKind actualKind;
-
     public String[] vectorNames;
     public PTXKind newKind;
     public boolean fullUnwrapVector;
 
     public PTXVectorSplit(Variable actualVector) {
-        this.actualVector = actualVector;
-        this.actualKind = ((PTXKind) actualVector.getPlatformKind());
+        this(actualVector.getName(), (PTXKind) actualVector.getPlatformKind());
+    }
+
+    public PTXVectorSplit(String actualVectorName, PTXKind actualKind) {
+        this.actualKind = actualKind;
 
         // if (actualKind.getSizeInBytes() <= MAX_VECTOR_SIZE_BYTES &&
         // actualKind.getVectorLength() != 3) {
@@ -33,8 +34,9 @@ public class PTXVectorSplit {
         this.newKind = lowerVectorPTXKind(actualKind);
         this.vectorNames = new String[actualKind.getVectorLength() / newKind.getVectorLength()];
         for (int i = 0; i < vectorNames.length; i++) {
-            vectorNames[i] = actualVector.getName() + i;
+            vectorNames[i] = actualVectorName + i;
         }
+
     }
 
     private PTXKind lowerVectorPTXKind(PTXKind vectorKind) {

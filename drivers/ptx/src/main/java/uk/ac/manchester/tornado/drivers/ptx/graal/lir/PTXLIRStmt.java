@@ -53,13 +53,17 @@ public class PTXLIRStmt {
             if (rhs instanceof PTXLIROp) {
                 ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
             } else if (((PTXKind)lhs.getPlatformKind()).isVector() && ((PTXKind)rhs.getPlatformKind()).isVector()) {
-                doVectorAssign(asm);
+                Variable rhsVar = (Variable) rhs;
+                Variable lhsVar = (Variable) lhs;
+                PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
+                PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
+                PTXVectorAssign.doVectorToVectorAssign(asm, lhsVectorSplit, rhsVectorSplit);
             } else {
                 PTXKind lhsKind = (PTXKind) lhs.getPlatformKind();
                 PTXKind rhsKind = (PTXKind) rhs.getPlatformKind();
 
                 asm.emitSymbol(TAB);
-                if (lhsKind == rhsKind) {
+                if (shouldEmitMove(lhsKind, rhsKind)) {
                     asm.emit(MOVE + "." + lhsKind.toString());
                 } else {
                     asm.emit(CONVERT + ".");
@@ -80,47 +84,16 @@ public class PTXLIRStmt {
             asm.eol();
         }
 
-        private void doVectorAssign(PTXAssembler asm) {
-            Variable rhsVar = (Variable) rhs;
-            Variable lhsVar = (Variable) lhs;
-            PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
-            PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
-            PTXKind destElementKind = ((PTXKind)lhsVar.getPlatformKind()).getElementKind();
-            PTXKind srcElementKind = ((PTXKind) rhsVar.getPlatformKind()).getElementKind();
-
-            for (int i = 0; i < rhsVectorSplit.vectorNames.length; i++) {
-                asm.emitSymbol(TAB);
-                if (destElementKind == srcElementKind) {
-                    asm.emit(MOVE + "." + destElementKind.toString());
-                } else {
-                    asm.emit(CONVERT + ".");
-                    if ((destElementKind.isFloating() || srcElementKind.isFloating()) && getFPURoundingMode(destElementKind, srcElementKind) != null) {
-                        asm.emit(getFPURoundingMode(destElementKind, srcElementKind));
-                        asm.emitSymbol(DOT);
-                    }
-                    asm.emit(destElementKind.toString());
-                    asm.emitSymbol(DOT);
-                    asm.emit(srcElementKind.toString());
-                }
-                asm.emitSymbol(TAB);
-                asm.emitSymbol(lhsVectorSplit.vectorNames[i]);
-                asm.emitSymbol(COMMA);
-                asm.emitSymbol(SPACE);
-                asm.emitSymbol(rhsVectorSplit.vectorNames[i]);
-
-                if (i < rhsVectorSplit.vectorNames.length - 1) {
-                    asm.delimiter();
-                    asm.eol();
-                }
-            }
-        }
-
         public Value getResult() {
             return lhs;
         }
 
         public Value getExpr() {
             return rhs;
+        }
+
+        public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
+            return lhsKind == rhsKind && !lhsKind.is8Bit();
         }
     }
 
@@ -239,14 +212,10 @@ public class PTXLIRStmt {
         @Use
         protected PTXUnary.MemoryAccess address;
 
-        @Use
-        protected Value index;
-
-        public VectorLoadStmt(Variable dest, Value index, PTXUnary.MemoryAccess address) {
+        public VectorLoadStmt(Variable dest, PTXUnary.MemoryAccess address) {
             super(TYPE);
             this.dest = dest;
             this.address = address;
-            this.index = index;
             address.assignTo(dest);
         }
 
@@ -342,14 +311,10 @@ public class PTXLIRStmt {
         @Use
         protected PTXUnary.MemoryAccess address;
 
-        @Use
-        protected Value index;
-
-        public VectorStoreStmt(Variable source, Value index, PTXUnary.MemoryAccess address) {
+        public VectorStoreStmt(Variable source, PTXUnary.MemoryAccess address) {
             super(TYPE);
             this.source = source;
             this.address = address;
-            this.index = index;
         }
 
         @Override

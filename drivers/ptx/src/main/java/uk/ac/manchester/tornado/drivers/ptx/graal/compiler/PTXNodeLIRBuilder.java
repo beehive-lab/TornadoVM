@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -57,8 +58,10 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXBuiltInRegister;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
@@ -162,12 +165,19 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        final PTXDirectCall call = new PTXDirectCall(callTarget, result, parameters);
-        if (isLegal(result)) {
-            append(new PTXLIRStmt.AssignStmt(gen.asAllocatable(result), call));
-        } else {
-            append(new PTXLIRStmt.ExprStmt(call));
+        if (isLegal(result) && ((PTXKind) result.getPlatformKind()).isVector()) {
+            PTXKind resultKind = (PTXKind) result.getPlatformKind();
+            Variable returnBuffer = getGen().newVariable(LIRKind.value(PTXKind.B8), true);
+            ConstantValue paramSize = new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(resultKind.getSizeInBytes()));
+            PTXBinary.Expr declaration = new PTXBinary.Expr(PTXAssembler.PTXBinaryTemplate.NEW_ALIGNED_PARAM_BYTE_ARRAY, LIRKind.value(PTXKind.B8), returnBuffer, paramSize);
+            ExprStmt expr = new ExprStmt(declaration);
+            append(expr);
+            append(new ExprStmt(new PTXDirectCall(callTarget, returnBuffer, parameters)));
+            append(new PTXLIRStmt.VectorLoadStmt((Variable) result, new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, returnBuffer, null)));
+            return;
         }
+
+        append(new PTXLIRStmt.ExprStmt(new PTXDirectCall(callTarget, result, parameters)));
     }
 
     @Override

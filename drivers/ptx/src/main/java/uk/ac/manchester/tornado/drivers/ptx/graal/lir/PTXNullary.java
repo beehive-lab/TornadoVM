@@ -9,10 +9,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultB
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryTemplate;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 
 public class PTXNullary {
@@ -54,23 +55,30 @@ public class PTXNullary {
             PTXKind lhsKind = (PTXKind) dest.getPlatformKind();
             PTXKind rhsKind = (PTXKind) getLIRKind().getPlatformKind();
 
-            asm.emitSymbol(TAB);
-            if (lhsKind == rhsKind) {
-                asm.emit(MOVE + "." + lhsKind.toString());
+            if (lhsKind.isVector() && rhsKind.isVector()) {
+                PTXVectorSplit destVectorSplit = new PTXVectorSplit(dest);
+                PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(opcode.toString(), rhsKind);
+                PTXVectorAssign.doVectorToVectorAssign(asm, destVectorSplit, rhsVectorSplit);
             } else {
-                asm.emit(CONVERT + ".");
-                if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
-                    asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                asm.emitSymbol(TAB);
+                if (lhsKind == rhsKind) {
+                    asm.emit(MOVE + "." + lhsKind.toString());
+                } else {
+                    asm.emit(CONVERT + ".");
+                    if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                        asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                        asm.emitSymbol(DOT);
+                    }
+                    asm.emit(lhsKind.toString());
                     asm.emitSymbol(DOT);
+                    asm.emit(rhsKind.toString());
                 }
-                asm.emit(lhsKind.toString());
-                asm.emitSymbol(DOT);
-                asm.emit(rhsKind.toString());
+                asm.emitSymbol(TAB);
+                asm.emitValue(dest);
+                asm.emitSymbol(COMMA);
+                asm.emitSymbol(SPACE);
+                asm.emit(opcode.toString());
             }
-            asm.emitSymbol(TAB);
-            asm.emitValue(dest);
-            asm.emitSymbol(", ");
-            asm.emit(opcode.toString());
         }
     }
 

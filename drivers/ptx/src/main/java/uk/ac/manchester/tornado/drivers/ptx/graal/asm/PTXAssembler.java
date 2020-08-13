@@ -593,6 +593,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryTemplate NEW_SHARED_BYTE_ARRAY = new PTXBinaryTemplate("shared memory array byte", ".shared .s8 %s[%s]");
 
         public static final PTXBinaryTemplate NEW_LOCAL_BIT32_ARRAY = new PTXBinaryTemplate("local memory array bit 32", ".local .b32 %s[%s]");
+        public static final PTXBinaryTemplate NEW_ALIGNED_PARAM_BYTE_ARRAY = new PTXBinaryTemplate("aligned param memory array byte", ".param .align 8 .b8 %s[%s]");
 
         private final String template;
 
