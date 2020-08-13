@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -475,6 +476,13 @@ public class TornadoVM extends TornadoLogger {
                 if (redeployOnDevice || !stack.isOnDevice()) {
                     stack.reset();
                 }
+
+                HashMap<Integer, Integer> map = new HashMap<>();
+                if (TornadoOptions.USER_SCHEDULING) {
+                    map.put(0, 4096);
+                }
+                stack.setHeader(map);
+
                 for (int i = 0; i < numArgs; i++) {
                     final byte argType = buffer.get();
                     final int argIndex = buffer.getInt();

@@ -101,6 +101,11 @@ public class TornadoOptions {
         return getBooleanValue("tornado.experimental.partial.unroll", "False");
     }
 
+    /**
+     * User scheduling. It does not specialize the code
+     */
+    public static final boolean USER_SCHEDULING = getBooleanValue("tornado.user.scheduling", "False");
+
     private static boolean getBooleanValue(String property, String defaultValue) {
         return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
     }

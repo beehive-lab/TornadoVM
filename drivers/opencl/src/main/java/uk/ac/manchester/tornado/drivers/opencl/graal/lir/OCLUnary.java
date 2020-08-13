@@ -102,6 +102,27 @@ public class OCLUnary {
 
     }
 
+    public static class LoadOCLStack extends UnaryConsumer {
+
+        public LoadOCLStack(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+            super(opcode, lirKind, value);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(opcode.toString());
+            asm.emit("[");
+            asm.emitValueOrOp(crb, value);
+            asm.emit("]");
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s[%s] ", opcode.toString(), value);
+        }
+
+    }
+
     public static class Barrier extends UnaryConsumer {
 
         OCLMemFenceFlags flags;

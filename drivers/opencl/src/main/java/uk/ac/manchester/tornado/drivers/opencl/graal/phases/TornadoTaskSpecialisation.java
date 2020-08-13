@@ -55,8 +55,10 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
@@ -71,6 +73,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final DeadCodeEliminationPhase deadCodeElimination;
     private final TornadoLoopUnroller loopUnroll;
     private long batchThreads;
+    private int index;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -173,12 +176,20 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
             final ConstantNode constant;
-            if (batchThreads <= 0) {
-                constant = ConstantNode.forInt(length);
+
+            if (TornadoOptions.USER_SCHEDULING) {
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
+                node.replaceAtUsages(oclStackAccessNode);
+                index++;
             } else {
-                constant = ConstantNode.forInt((int) batchThreads);
+                if (batchThreads <= 0) {
+                    constant = ConstantNode.forInt(length);
+                } else {
+                    constant = ConstantNode.forInt((int) batchThreads);
+                }
+                node.replaceAtUsages(graph.addOrUnique(constant));
             }
-            node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
         } else if (node instanceof LoadFieldNode) {
