@@ -48,7 +48,6 @@ public class OCLStackAccessNode extends FloatingNode implements LIRLowerable {
 
     public OCLStackAccessNode(ConstantNode index) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
-        System.out.println("INDEX: " + index);
         this.index = index;
     }
 

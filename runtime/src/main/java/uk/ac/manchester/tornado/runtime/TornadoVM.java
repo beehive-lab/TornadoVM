@@ -37,6 +37,8 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -98,10 +100,13 @@ public class TornadoVM extends TornadoLogger {
     private boolean finishedWarmup;
     private boolean doUpdate;
 
-    public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
+    private GridTask gridTask;
+
+    public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler, GridTask gridTask) {
 
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
+        this.gridTask = gridTask;
 
         useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
         totalTime = 0;
@@ -435,6 +440,10 @@ public class TornadoVM extends TornadoLogger {
                     tornadoVMBytecodeList.append(verbose + "\n");
                 }
 
+                if (gridTask != null && gridTask.get(task.getId()) != null) {
+                    TornadoOptions.USER_SCHEDULING = true;
+                }
+
                 if (installedCodes[taskIndex] == null) {
                     task.mapTo(device);
                     try {
@@ -478,8 +487,13 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 HashMap<Integer, Integer> map = new HashMap<>();
-                if (TornadoOptions.USER_SCHEDULING) {
-                    map.put(0, 4096);
+                if (gridTask != null && gridTask.get(task.getId()) != null) {
+                    WorkerGrid workerGrid = gridTask.get(task.getId());
+                    long[] global = workerGrid.getGlobalWork();
+                    int i = 0;
+                    for (long l : global) {
+                        map.put(i++, (int) l);
+                    }
                 }
                 stack.setHeader(map);
 
@@ -519,6 +533,7 @@ public class TornadoVM extends TornadoLogger {
 
                 // We attach the profiler
                 metadata.attachProfiler(timeProfiler);
+                metadata.setGridTask(gridTask);
 
                 try {
                     if (useDependencies) {

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
@@ -55,6 +57,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
             "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
     private TornadoProfiler profiler;
+    private GridTask gridTask;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
@@ -451,4 +454,15 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         openclUseDriverScheduling = use;
     }
 
+    public void setGridTask(GridTask gridTask) {
+        this.gridTask = gridTask;
+    }
+
+    public boolean isWorkerGridAvailable() {
+        return (gridTask != null && gridTask.get(getId()) != null);
+    }
+
+    public WorkerGrid getWorkerGrid(String taskName) {
+        return gridTask.get(taskName);
+    }
 }
