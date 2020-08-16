@@ -18,9 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.branching;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -70,6 +73,44 @@ public class TestConditionals extends TornadoTestBase {
                 .execute(); //
 
         assertEquals(10, a[0]);
+    }
+
+    public static void nestedIfElseStatement(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] > 100) {
+                if (a[i] > 200) {
+                    a[i] = 5;
+                } else {
+                    a[i] = 10;
+                }
+                a[i] += 20;
+            } else {
+                a[i] = 2;
+            }
+        }
+    }
+
+    @Test
+    public void testNestedIfElseStatement() {
+        final int size = 100;
+        int[] a = new int[size];
+        int[] serial = new int[size];
+
+        Random random = new Random();
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = random.nextInt();
+            serial[i] = a[i];
+        });
+
+        nestedIfElseStatement(serial);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestConditionals::nestedIfElseStatement, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        assertArrayEquals(serial, a);
     }
 
     public static void switchStatement(int[] a) {

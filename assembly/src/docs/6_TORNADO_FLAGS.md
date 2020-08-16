@@ -30,6 +30,9 @@ Output a list of all available devices on the current system.
 * ```-Dtornado.ns.time=true ```:  
  Converts the time to units to nanoseconds instead of milliseconds.
 
+* ```-Dtornado.{ptx,opencl}.priority=X ```:  
+Allows to define a driver priority. The drivers are sorted in descending order based on their priority. By default, the `PTX driver` has priority `1` and the `OpenCL driver` has priority `0`.
+
 * ```-Ds0.t0.global.dims=XXX,XXX```:  
 Allows to define global worksizes (problem sizes).
 
@@ -40,7 +43,7 @@ Allows to define custom local workgroum configuration and overwrite the default 
 Enable profilling for OpenCL/CUDA events such as kernel times and data tranfers.
 
 * ```-Dtornado.opencl.userelative=true ```:  
-Enable usage of relative addresses which is a prerequisite for using DMA tranfers on Alters/Intel FPGAs. Nonetheless, this flag can be used for any OpenCL device.
+Enable usage of relative addresses which is a prerequisite for using DMA tranfers on Altera/Intel FPGAs. Nonetheless, this flag can be used for any OpenCL device.
 
 * ```-Dtornado.precompiled.binary=PATH```:
  Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel.

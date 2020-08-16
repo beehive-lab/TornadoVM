@@ -6,7 +6,7 @@
   * CMake 3.6 (or newer)
   * At least one of:
     * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
-    * CUDA 8.0 +
+    * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
 
@@ -115,10 +115,16 @@ $ cd ~/tornadovm
 $ . etc/sources.env
 ```
 
-To build with GraalVM and JDK {8,11}
+To build with GraalVM and JDK 8
 
 ```bash
-$ make JDK=graal-jdk-{8,11} BACKEND={ptx,opencl}
+$ make graal-jdk-8 BACKEND={ptx,opencl}
+```
+
+To build with GraalVM and JDK 11:
+
+```bash
+$ make graal-jdk-11 BACKEND={ptx,opencl}
 ```
 
 and done!!

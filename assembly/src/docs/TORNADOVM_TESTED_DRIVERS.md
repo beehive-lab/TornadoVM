@@ -83,6 +83,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+#### OpenCL drivers
 * 450.57 : OK
 * 440.100: OK
 * 440.82 : OK
@@ -91,6 +92,12 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 * 440.40 : OK
 * 440.36 : OK
 * 435.21 : OK
+
+#### PTX drivers
+* 450.36 : OK
+* 440.100 : OK
+* 418.56: OK
+
 
 ### AMD
 

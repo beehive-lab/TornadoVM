@@ -213,7 +213,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public String getName() {
-        return "OpenCL Driver";
+        return "OpenCL";
     }
 
     @Override

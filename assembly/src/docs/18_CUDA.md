@@ -1,7 +1,7 @@
 ## Running TornadoVM using the PTX backend
 
 #### Prerequisites
-In order to run the PTX backend of Tornado, you will need a CUDA compatible device.
+In order to run the PTX backend of TornadoVM, you will need a CUDA compatible device.
 
 #### Installation
 **Step 1:**  
@@ -9,8 +9,11 @@ You will need to setup the `CUDA Toolkit`. If you don't have it installed alread
 
 **Step 2:**  
 Make sure you follow the [environment setup](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#environment-setup) to add the required environment variables.  
-Depending on the installation, you might also have to expand your `C_INCLUDE_PATH` variable to include the CUDA headers.   
-Example: `export C_INCLUDE_PATH=/usr/local/cuda/include:${C_INCLUDE_PATH}`
+Depending on the installation, you might also have to expand your `C_INCLUDE_PATH` and `LD_LIBRARY_PATH` variables to include the CUDA headers.   
+``` bash
+$ export C_INCLUDE_PATH=/usr/local/cuda/include:${C_INCLUDE_PATH}
+$ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+```
 
 To ensure that the installation has been successful, you can run the following commands:
 `nvidia-smi` and `nvcc --version`.
@@ -94,12 +97,12 @@ After these changes, a reboot might be required for the driver module to be load
 
 We have tested the PTX backend of TornadoVM on the following configurations:
 
-|GPU   |Arch   |Version   |Target   |Driver version   |CUDA version   |Status   |
+|GPU   |Arch   |PTX ISA Version   |Target   |Driver version   |CUDA version   |Status   |
 |---    |---    |---    |---    |---    |---    |---    |
 |Quadro GP100   |Pascal   |6.0   |sm_60   |384.111   |9.0   |Functional|
 |GeForce GTX 1650   |Turing   |6.5   |sm_75   |440.100   |10.2   |OK|
 |GeForce 930MX   |Maxwell   |6.4   |sm_50   |418.56   |10.1   |OK|
 |GeForce 930MX   |Maxwell   |6.5   |sm_50   |450.36   |11.0   |OK|
 
-Note that `Functional` denotes that there might be some issues with the backend-driver interaction.   
-Specifically, running TornadoVM on the `Quadro GP100` with the PTX backend might sometimes cause segmentation faults.   
+###### DISCLAIMER:
+The PTX backend might fail with the `Quadro GP100`, driver `384.111`, with segmentation faults for some of the unittest due to driver issues. This backend is under active development.   

@@ -125,6 +125,12 @@ public class TestMath extends TornadoTestBase {
         }
     }
 
+    public static void testNegate(float[] a, float[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = -a[i];
+        }
+    }
+
     @Test
     public void testMathCos() {
         final int size = 128;
@@ -360,5 +366,27 @@ public class TestMath extends TornadoTestBase {
 
         testClamp(a, seq);
         assertArrayEquals(b, seq);
+    }
+
+    @Test
+    public void testNegate() {
+        Random r = new Random();
+        final int size = 8192;
+        float[] a = new float[size];
+        float[] b = new float[size];
+        float[] seq = new float[size];
+
+        float min = -10000;
+        float max = 10000;
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = min + r.nextFloat() * (max - min);
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testNegate, a, b).streamOut(b).execute();
+
+        testNegate(a, seq);
+        assertArrayEquals(b, seq, 0.001f);
     }
 }

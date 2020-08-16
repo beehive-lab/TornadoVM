@@ -51,7 +51,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEven
  /*
   * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
   * Method:    cuEventElapsedTime
-  * Signature: ([B)V
+  * Signature: ([[B)J
   */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventElapsedTime
  (JNIEnv *env, jclass clazz, jobjectArray wrapper);
@@ -59,7 +59,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
  * Method:    cuEventQuery
- * Signature: ([B)V
+ * Signature: ([B)Z
  */
 JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
   (JNIEnv *, jclass, jbyteArray);

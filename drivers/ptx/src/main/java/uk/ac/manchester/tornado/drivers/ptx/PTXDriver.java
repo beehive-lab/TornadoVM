@@ -127,7 +127,7 @@ public class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver
 
     @Override
     public String getName() {
-        return "PTX Driver";
+        return "PTX";
     }
 
     @Override

@@ -25,7 +25,7 @@ add_library(tornado-ptx SHARED
 #Support for CUDA Integration
 FIND_PACKAGE(CUDA)
 if(CUDA_FOUND)
-	include_directories(${CUDA_INCLUDE_DIRS})
+    include_directories(${CUDA_INCLUDE_DIRS})
     link_directories(tornado-ptx ${CUDA_TOOLKIT_ROOT_DIR})
     set_property(TARGET tornado-ptx PROPERTY C_STANDARD 99)
     set_target_properties(tornado-ptx PROPERTIES LINKER_LANGUAGE C)

@@ -67,7 +67,7 @@ public class TornadoDeviceQuery {
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             final TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
-            deviceInfoBuffer.append("Total number of devices  : " + numDevices + "\n");
+            deviceInfoBuffer.append("Total number of " + driver.getName() + " devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 deviceInfoBuffer.append("Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
                 deviceInfoBuffer.append("\t" + driver.getDevice(deviceIndex)).append("\n");

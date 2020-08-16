@@ -29,7 +29,7 @@
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetName
- * Signature: (JI[B)V
+ * Signature: (I)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetName
   (JNIEnv *env, jclass clazz, jint device_id) {
@@ -45,7 +45,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cu
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetAttribute
- * Signature: (I)I
+ * Signature: (II)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetAttribute
   (JNIEnv *env, jclass clazz, jint device_id, jint attr_id) {

@@ -63,6 +63,10 @@ function print_usage() {
   echo ""
   echo "              --options                       Print all TornadoVM options and flags, and exit"
   echo ""
+  echo "          Maven:"
+  echo ""
+  echo "              --mavenLocalInstall             Install all maven packages locally"
+  echo ""
   exit 0
 }
 
@@ -86,7 +90,8 @@ function print_all_options() {
   echo ""
   echo -e "$COLOR_CYAN Define on which device the application should run (by default is 0): $COLOR_NC"
   echo ""
-  echo -e "\tChange OpenCL device to run the application: -D<taskScheduleName>.<taskName>=0:<deviceID> (e.g., -Ds0.t0.device=0:2)"
+  echo -e "\tChange the driver and device to run the application: -D<taskScheduleName>.<taskName>=<driverID>:<deviceID> (e.g., -Ds0.t0.device=1:2)"
+  echo -e "\tChange the driver order: -Dtornado.{ptx,opencl}.priority=X (e.g., -Dtornado.opencl.priority=2)"
   echo ""
   echo -e "$COLOR_CYAN Profiler: $COLOR_NC"
   echo ""
@@ -143,6 +148,10 @@ while [[ $# -gt 0 ]]; do
   --printBytecodes)
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.print.bytecodes=True "
     shift
+    ;;
+  --mavenLocalInstall)
+    tornadoLocalInstallMaven
+    exit 0
     ;;
   --printFlags)
     printflags=1

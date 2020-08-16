@@ -38,6 +38,7 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
@@ -554,11 +555,17 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
         if (dominator != null) {
             if (dominator instanceof IfNode) {
-                emitElseBranch((IfNode) dominator, (BeginNode) beginNode, end);
+                emitBranch((IfNode) dominator);
             }
             if (dominator instanceof IntegerSwitchNode) {
                 emitSwitchBreak(end);
             }
+        } else if (beginNode instanceof MergeNode) {
+            // TODO if we have nested if/else conditions then we outer condition will have a MergeNode as a successor instead of a BeginNode.
+            // I am not sure how we could check if the associated BeginNode and IfNode exist, and therefore
+            // we always generate branch instructions to the next block in this case.
+            // This is to circumvent the case when we fall through the nested if/else statements.
+            append(new PTXControlFlow.Branch(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
 
@@ -566,11 +573,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false, false));
     }
 
-    private void emitElseBranch(IfNode dominator, BeginNode beginNode, AbstractEndNode node) {
-        boolean isElse = dominator.trueSuccessor().equals(beginNode);
-        boolean hasElse = dominator.falseSuccessor() instanceof BeginNode;
+    private void emitBranch(IfNode dominator) {
+        // If we have an if/else statement, we must make sure we branch to the successor block and not `accidentally`
+        // execute the whole if/else statement
+        boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
 
-        if (isElse && hasElse) {
+        if (hasElse) {
             append(new PTXControlFlow.Branch(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }

@@ -135,7 +135,7 @@ The TornadoVM API exposes a set of data structures to developers to use specific
 The simple algorithm of vector addition can be rewritten to use the TornadoVM vector types. The TornadoVM JIT compiler will generate OpenCL vector types that match the TornadoVM vector types.
 
 
-Regarding the generated PTX code, TornadoVM currently will always lower the vector types to individual PTX variables. This is done due to issues with memory alignment in PTX.
+**Note**: Regarding the generated PTX code, TornadoVM lowers vector operations to individual PTX variables. This is due to an issue with the memory alignment in PTX.
 
 The following snippet shows the vector addition example using the TornadoVM vector types.
 

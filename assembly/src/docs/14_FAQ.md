@@ -62,7 +62,7 @@ No, TornadoVM has been developed in the Beehive-Lab of the Advanced Processor Te
 
 ## 9. Does TornadoVM support only OpenCL devices?
 
-No. Currently, TornadoVM supports two compiler backends and therefore, is able to generate OpenCL and PTX code depending on the user hardware and preference. We are planning on implementing additional compiler backends to further increase support.
+No. Currently, TornadoVM supports two compiler backends and therefore, it is able to generate OpenCL and PTX code depending on the hardware configuration.
 
 ## 10. Why is it called a VM?
 

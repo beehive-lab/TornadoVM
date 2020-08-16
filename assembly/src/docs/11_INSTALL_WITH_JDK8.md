@@ -6,7 +6,7 @@
   * CMake 3.6 (or newer)
   * At least one of:   
     * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
-    * CUDA 8.0 +
+    * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
   * JDK 8 >= 1.8.0_141

@@ -6,16 +6,20 @@ The following table includes the platforms that TornadoVM can be executed.
 
 | OS                         | Hardware                                                              |
 | -------------------------- | --------------------------------------------------------------------- |
-| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 8.0+ compatible device     |
-| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 8.0+ compatible device     |
-| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 8.0+ compatible device     |
-| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 8.0+ compatible device                   |
-| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 8.0+ compatible device                   |
+| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
+| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
 
 
 ## 1. Installation
 
-TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command: `make JDK={jdk-8, graal-jdk-8, graal-jdk-11} BACKENDS={opencl,ptx}`.
+TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command:
+
+```bash
+$ make BACKENDS={opencl,ptx}
+```
 
 As well as being built with two compiler backends, TornadoVM can be executed with the following two configurations:
 
@@ -42,7 +46,7 @@ Tornado device=<driverNumber>:<deviceNumber>
 Example output:
 ```bash
 Number of Tornado drivers: 2
-Total number of devices  : 1
+Total number of PTX devices  : 1
 Tornado device=0:0
   PTX -- GeForce GTX 1650
       Global Memory Size: 3.8 GB
@@ -51,7 +55,7 @@ Tornado device=0:0
       Max WorkGroup Configuration: [1024, 1024, 64]
       Device OpenCL C version: N/A
 
-Total number of devices  : 4
+Total number of OpenCL devices  : 4
 Tornado device=1:0
   NVIDIA CUDA -- GeForce GTX 1650
       Global Memory Size: 3.8 GB
@@ -86,7 +90,7 @@ Tornado device=1:3
 
 ```
 
-**The output might vary depending on which backends you have included in the build. To run TornadoVM, you should see at least one device.**
+**The output might vary depending on which backends you have included in the build process. To run TornadoVM, you should see at least one device.**
 
 To run on a specific device use the following option:
 
@@ -96,7 +100,7 @@ To run on a specific device use the following option:
 
 Where `s` is the *schedule name* and `t` is the task name.
 
-For example running on driver:device [1][1] (Intel HD Graphics in our example) will look like this:
+For example running on `driver:device` [1][1] (Intel HD Graphics in our example) will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D

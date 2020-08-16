@@ -49,7 +49,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxDestroy
- * Signature: (J)V
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
   (JNIEnv *env, jclass clazz, jlong cuContext) {
@@ -83,7 +83,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuMemFree
- * Signature: (JJ)V
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemFree
   (JNIEnv *env, jclass clazz, jlong cuContext, jlong dev_ptr) {
