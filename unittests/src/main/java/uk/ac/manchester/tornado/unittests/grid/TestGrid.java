@@ -31,9 +31,10 @@ import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
 
-public class TestGrid {
+public class TestGrid extends TornadoTestBase {
 
     private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -48,7 +49,7 @@ public class TestGrid {
     }
 
     @Test
-    public void testDynamicGrid() {
+    public void testDynamicGrid01() {
         final int numElements = 4096;
         float[] a = new float[numElements];
         float[] b = new float[numElements];
@@ -125,13 +126,13 @@ public class TestGrid {
         }
         Matrix2DInt matrixA = new Matrix2DInt(a);
         Matrix2DInt matrixB = new Matrix2DInt(X, Y);
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        ts.streamOut(matrixB);
+        TaskSchedule ts = new TaskSchedule("foo") //
+                .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .streamOut(matrixB);
 
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.set("foo.bar", worker);
         ts.execute(gridTask);
 
         for (int i = 0; i < X; i++) {

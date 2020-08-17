@@ -335,5 +335,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
         Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
         Tornado.debug("valid graph? %s", graph.verify());
+        index = 0;
     }
 }
