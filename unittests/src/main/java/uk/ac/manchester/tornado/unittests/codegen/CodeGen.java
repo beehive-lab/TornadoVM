@@ -52,4 +52,40 @@ public class CodeGen extends TornadoTestBase {
 
         ts.execute();
     }
+
+    public static void badCascadeKernel0() {
+        for (@Parallel int id = 0; id < 100; id++) {
+            for (int stage = 0; true; stage++) {
+            }
+        }
+    }
+
+    public static void badCascadeKernel1() {
+        for (int id = 0; id < 100; id++) {
+            boolean stillLooksLikeAFace = true;
+            for (int stage = 0; (stillLooksLikeAFace || (stage < 100)); stage++) {
+                for (int t = 0; t < id; t++) {
+                    stillLooksLikeAFace = (t == 0);
+                }
+            }
+        }
+    }
+
+    public static void badCascadeKernel2() {
+        for (@Parallel int id = 0; id < 100; id++) {
+            boolean stillLooksLikeAFace = true;
+            for (int stage = 0; (stillLooksLikeAFace || (stage < 100)); stage++) {
+                for (int t = 0; stillLooksLikeAFace && (t < id); t++) {
+                    stillLooksLikeAFace = (t == 0);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void test02() {
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", CodeGen::badCascadeKernel1);
+        ts.execute();
+    }
 }

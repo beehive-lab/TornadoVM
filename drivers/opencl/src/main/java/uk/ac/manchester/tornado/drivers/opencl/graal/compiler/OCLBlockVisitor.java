@@ -31,6 +31,8 @@ import java.util.Set;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopEndNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -149,10 +151,36 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         return null;
     }
 
-    private void checkClosingBlockInsideIf(Block b, Block pdom) {
-        if (pdom.isLoopHeader() && b.getDominator() != null && isIfBlock(b.getDominator())) {
-            if ((b.getDominator().getDominator() != null) && (isIfBlock(b.getDominator().getDominator()))) {
+    private void checkClosingBlockInsideIf(Block block, Block pdom) {
+        if (pdom.isLoopHeader() && block.getDominator() != null && isIfBlock(block.getDominator())) {
+            /*
+             * If the post-dominator is a loop Header and the dominator of the current block
+             * is an if-condition, then we generate the end-scope if we are also inside
+             * another if-condition.
+             */
+            if ((block.getDominator().getDominator() != null) && (isIfBlock(block.getDominator().getDominator()))) {
                 asm.endScope();
+            }
+        } else if ((pdom.getBeginNode() instanceof MergeNode) && (block.getDominator() != null && isIfBlock(block.getDominator()))) {
+            /*
+             * If the post-dominator is a MergeNode and the dominator of the current block
+             * is an if-condition, then we generate the end-scope if we are also inside
+             * another if-condition.
+             */
+            if ((block.getDominator().getDominator() != null) && (isIfBlock(block.getDominator().getDominator()))) {
+
+                /*
+                 * We check that the other else-if block contains the loop-exit -> loop-end
+                 * sequence. With means was a break in the code.
+                 */
+                Block[] successors = block.getDominator().getSuccessors();
+                int index = 0;
+                if (successors[index] == block) {
+                    index = 1;
+                }
+                if (successors[index].getBeginNode() instanceof LoopExitNode && successors[index].getEndNode() instanceof LoopEndNode) {
+                    asm.endScope();
+                }
             }
         }
     }
@@ -180,44 +208,59 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         return false;
     }
 
+    private void closeScope(Block block) {
+        if (block.getBeginNode() instanceof LoopExitNode) {
+            if (!(block.getDominator().getDominator() != null && block.getDominator().getDominator().getBeginNode() instanceof MergeNode)) {
+                /*
+                 * Only close scope if the loop-exit node does not depend on a merge node. In
+                 * such case, the merge will generate the correct close scope.
+                 */
+                asm.endScope();
+                closedLoops.add(block);
+            }
+        } else {
+            asm.endScope();
+            closedLoops.add(block);
+        }
+    }
+
     @Override
-    public void exit(Block b, Block value) {
-        if (b.isLoopEnd()) {
+    public void exit(Block block, Block value) {
+        if (block.isLoopEnd()) {
             // Temporary fix to remove the end scope of the most outer loop
             // without changing the loop schematics in IR level.
             loopEnds++;
             if (openclBuilder.shouldRemoveLoop()) {
                 if (loopCount - loopEnds > 0) {
                     asm.endScope();
-                    closedLoops.add(b);
+                    closedLoops.add(block);
                 }
             } else {
-                asm.endScope();
-                closedLoops.add(b);
+                closeScope(block);
             }
         }
-        if (b.getPostdominator() != null) {
-            Block pdom = b.getPostdominator();
-            if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) {
 
+        if (block.getPostdominator() != null) {
+            Block pdom = block.getPostdominator();
+            if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(block)) {
                 // Check also if the current and next blocks are not merges
                 // block with more than 2 predecessors.
                 // In that case, we do not generate end scope.
-                if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(b) && b.getPredecessorCount() > 2)) {
+                if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(block) && block.getPredecessorCount() > 2)) {
 
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
-                    if (!wasBlockAlreadyClosed(b.getDominator())) {
+                    if (!wasBlockAlreadyClosed(block.getDominator())) {
                         asm.endScope();
                     }
                 }
-            } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
-                closeSwitchStatement(b);
+            } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(block) && isSwitchBlock(block.getDominator())) {
+                closeSwitchStatement(block);
             } else {
-                checkClosingBlockInsideIf(b, pdom);
+                checkClosingBlockInsideIf(block, pdom);
             }
         } else {
-            closeBranchBlock(b);
+            closeBranchBlock(block);
         }
     }
 
