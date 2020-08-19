@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEAREST_EVEN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEAREST_EVEN_INTEGER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_TOWARD_ZERO_INTEGER;
 
 public class PTXCodeUtil {
 
@@ -132,7 +132,7 @@ public class PTXCodeUtil {
         String roundingMode = ROUND_NEAREST_EVEN;
 
         if (!lhs.isFloating() && rhs.isFloating()) {
-            roundingMode = ROUND_NEAREST_EVEN_INTEGER;
+            roundingMode = ROUND_TOWARD_ZERO_INTEGER;
         }
         if ((lhs.isF64() && rhs.isF32())) {
             return null;

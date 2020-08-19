@@ -44,7 +44,7 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
 
         PTXAssembler.PTXUnaryOp opcode = null;
         if (!resultKind.isFloating() && (valueKind.isFloating() || valueKind.getElementKind().isFloating())) {
-            opcode = PTXAssembler.PTXUnaryOp.CVT_INT_RNI;
+            opcode = PTXAssembler.PTXUnaryOp.CVT_INT_RTZ;
         } else if (resultKind.isF64() && valueKind.isF32()) {
             opcode = PTXAssembler.PTXUnaryOp.CVT_FLOAT;
         } else {

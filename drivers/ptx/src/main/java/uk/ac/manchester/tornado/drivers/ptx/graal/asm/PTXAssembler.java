@@ -368,7 +368,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryOp MOV = new PTXUnaryOp(MOVE, false, null);
         public static final PTXUnaryOp CVT_FLOAT_RNE = new PTXUnaryOp(CONVERT, false, ROUND_NEAREST_EVEN);
         public static final PTXUnaryOp CVT_FLOAT = new PTXUnaryOp(CONVERT, false, null);
-        public static final PTXUnaryOp CVT_INT_RNI = new PTXUnaryOp(CONVERT, false, ROUND_NEAREST_EVEN_INTEGER);
+        public static final PTXUnaryOp CVT_INT_RTZ = new PTXUnaryOp(CONVERT, false, ROUND_TOWARD_ZERO_INTEGER);
 
         private final String roundingMode;
 
