@@ -167,7 +167,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
              * is an if-condition, then we generate the end-scope if we are also inside
              * another if-condition.
              */
-            if ((block.getDominator().getDominator() != null) && (isIfBlock(block.getDominator().getDominator()))) {
+            Block dom2 = block.getDominator(2);
+            if (dom2 != null && isIfBlock(dom2)) {
 
                 /*
                  * We check that the other else-if block contains the loop-exit -> loop-end
@@ -267,7 +268,13 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     private void closeIfBlock(Block block, Block dom) {
         final IfNode ifNode = (IfNode) dom.getEndNode();
         if ((ifNode.falseSuccessor() == block.getBeginNode()) || (ifNode.trueSuccessor() == block.getBeginNode())) {
-            asm.endScope();
+            // We cannot close a block that has a loopEnd (already close) that is in the
+            // true branch, until the false branch has been closed.
+            boolean isLoopEnd = block.getEndNode() instanceof LoopEndNode;
+            boolean isTrueBranch = ifNode.trueSuccessor() == block.getBeginNode();
+            if (!(isTrueBranch & isLoopEnd)) {
+                asm.endScope();
+            }
         }
     }
 
