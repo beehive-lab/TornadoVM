@@ -84,6 +84,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+* 450.66 : OK
 * 450.57 : OK
 * 440.100: OK
 * 440.82 : OK
