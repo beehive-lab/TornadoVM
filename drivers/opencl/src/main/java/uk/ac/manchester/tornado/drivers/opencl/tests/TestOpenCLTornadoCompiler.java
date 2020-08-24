@@ -40,15 +40,14 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class TestOpenCLTornadoCompiler {
 
     // @formatter:off
-    private static final String OPENCL_KERNEL = "_kernel void saxpy(__global float *a, \n" + 
-            "                    __global float *b, \n" + 
-            "                     __global float *c) {    \n" +  
-            "    c[idx]  =  a[idx] + b[idx];\n" +   
-            "\n" + 
+    private static final String OPENCL_KERNEL = "__kernel void saxpy(__global float *a," + 
+            "    __global float *b, __global float *c) { " +
+            "      int idx = get_global_id(0); " + 
+            "      c[idx]  =  a[idx] + b[idx]; " + 
             "}";
     // @formatter:on
 
-    private static final boolean PRINT_KERNEL = false;
+    private static final boolean PRINT_KERNEL = true;
 
     public static void main(String[] args) {
 
