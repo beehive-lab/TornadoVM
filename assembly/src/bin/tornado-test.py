@@ -73,11 +73,12 @@ __TEST_THE_WORLD__ = [
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
     "uk.ac.manchester.tornado.unittests.arrays.TestNewArrays",
 	"uk.ac.manchester.tornado.unittests.dynsize.Resize",
-	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 	"uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations",
     "uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
 	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
 	"uk.ac.manchester.tornado.unittests.codegen.CodeGen",
+	"uk.ac.manchester.tornado.unittests.grid.TestGrid",
+	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod

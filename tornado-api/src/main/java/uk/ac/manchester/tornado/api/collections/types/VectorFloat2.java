@@ -1,8 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornadovm
- *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,9 +38,15 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static uk.ac.manchester.tornado.api.collections.types.Float2.add;
+import static uk.ac.manchester.tornado.api.collections.types.Float2.loadFromArray;
+import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
+
 import java.nio.FloatBuffer;
 
-public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
+public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
@@ -54,17 +57,15 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage
      */
     final private int numElements;
-    final private static int elementSize = 4;
+    final private static int elementSize = 2;
 
     /**
      * Creates a vector using the provided backing array
      *
      * @param numElements
-     *            Number of elements
      * @param array
-     *            Array to be stored
      */
-    protected VectorFloat4(int numElements, float[] array) {
+    protected VectorFloat2(int numElements, float[] array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -72,7 +73,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Creates a vector using the provided backing array
      */
-    public VectorFloat4(float[] array) {
+    public VectorFloat2(float[] array) {
         this(array.length / elementSize, array);
     }
 
@@ -80,14 +81,9 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Creates an empty vector with
      *
      * @param numElements
-     *            Number of elements
      */
-    public VectorFloat4(int numElements) {
+    public VectorFloat2(int numElements) {
         this(numElements, new float[numElements * elementSize]);
-    }
-
-    public float[] getArray() {
-        return storage;
     }
 
     private int toIndex(int index) {
@@ -98,22 +94,20 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Returns the float at the given index of this vector
      *
      * @param index
-     *            Position
+     *
      * @return value
      */
-    public Float4 get(int index) {
-        return Float4.loadFromArray(storage, toIndex(index));
+    public Float2 get(int index) {
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
      * Sets the float at the given index of this vector
      *
      * @param index
-     *            position
      * @param value
-     *            value to be stored
      */
-    public void set(int index, Float4 value) {
+    public void set(int index, Float2 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -121,9 +115,8 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Sets the elements of this vector to that of the provided vector
      *
      * @param values
-     *            set a {@link VectorFloat4} into the internal array
      */
-    public void set(VectorFloat4 values) {
+    public void set(VectorFloat2 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -133,10 +126,9 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Sets the elements of this vector to that of the provided array
      *
      * @param values
-     *            set an input array into the internal array
      */
     public void set(float[] values) {
-        VectorFloat4 vector = new VectorFloat4(values);
+        VectorFloat2 vector = new VectorFloat2(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
@@ -151,10 +143,10 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return {@link VectorFloat4}
+     * @return
      */
-    public VectorFloat4 duplicate() {
-        VectorFloat4 vector = new VectorFloat4(numElements);
+    public VectorFloat2 duplicate() {
+        VectorFloat2 vector = new VectorFloat2(numElements);
         vector.set(this);
         return vector;
     }
@@ -163,47 +155,47 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Prints the vector using the specified format string
      *
      * @param fmt
-     *            String Format
-     * @return String
+     *
+     * @return
      */
     public String toString(String fmt) {
-        StringBuffer sb = new StringBuffer("[");
-        sb.append("[ ");
+        String str = "";
+
         for (int i = 0; i < numElements; i++) {
-            sb.append(String.format(fmt, get(i)) + " ");
+            str += get(i).toString() + " ";
         }
-        sb.append("]");
-        return sb.toString();
+
+        return str;
     }
 
     public String toString() {
         if (numElements > elementSize) {
-            return String.format("VectorFloat4 <%d>", numElements);
+            return format("VectorFloat2 <%d>", numElements);
         } else {
-            return toString(FloatOps.fmt4);
+            return toString(fmt3);
         }
     }
 
-    public Float4 sum() {
-        Float4 result = new Float4();
+    public Float2 sum() {
+        Float2 result = new Float2();
         for (int i = 0; i < numElements; i++) {
-            result = Float4.add(result, get(i));
-        }
-        return result;
-    }
-
-    public Float4 min() {
-        Float4 result = new Float4();
-        for (int i = 0; i < numElements; i++) {
-            result = Float4.min(result, get(i));
+            result = add(result, get(i));
         }
         return result;
     }
 
-    public Float4 max() {
-        Float4 result = new Float4();
+    public Float2 min() {
+        Float2 result = new Float2();
         for (int i = 0; i < numElements; i++) {
-            result = Float4.max(result, get(i));
+            result = Float2.min(result, get(i));
+        }
+        return result;
+    }
+
+    public Float2 max() {
+        Float2 result = new Float2();
+        for (int i = 0; i < numElements; i++) {
+            result = Float2.max(result, get(i));
         }
         return result;
     }
@@ -215,7 +207,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override
@@ -227,4 +219,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    public float[] getArray() {
+        return storage;
+    }
 }

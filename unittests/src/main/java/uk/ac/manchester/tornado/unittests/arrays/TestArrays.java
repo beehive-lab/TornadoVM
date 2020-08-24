@@ -217,13 +217,11 @@ public class TestArrays extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a, b)
-            .task("t0", TestArrays::vectorAddFloat, a, b, c)
-            .streamOut(c)
-            .execute();
-        //@formatter:on
+        new TaskSchedule("s0") //
+                .streamIn(a, b) //
+                .task("t0", TestArrays::vectorAddFloat, a, b, c) //
+                .streamOut(c) //
+                .execute(); //
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);

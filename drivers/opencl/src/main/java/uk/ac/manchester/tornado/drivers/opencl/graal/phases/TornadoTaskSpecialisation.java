@@ -25,8 +25,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
@@ -47,19 +52,17 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
@@ -70,6 +73,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final DeadCodeEliminationPhase deadCodeElimination;
     private final TornadoLoopUnroller loopUnroll;
     private long batchThreads;
+    private int index;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -172,12 +176,20 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
             final ConstantNode constant;
-            if (batchThreads <= 0) {
-                constant = ConstantNode.forInt(length);
+
+            if (TornadoOptions.USER_SCHEDULING) {
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
+                node.replaceAtUsages(oclStackAccessNode);
+                index++;
             } else {
-                constant = ConstantNode.forInt((int) batchThreads);
+                if (batchThreads <= 0) {
+                    constant = ConstantNode.forInt(length);
+                } else {
+                    constant = ConstantNode.forInt((int) batchThreads);
+                }
+                node.replaceAtUsages(graph.addOrUnique(constant));
             }
-            node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
         } else if (node instanceof LoadFieldNode) {
@@ -225,9 +237,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
-            graph.addWithoutUnique(constant);
-            parameterNode.replaceAtUsages(constant);
+            if (TornadoOptions.USER_SCHEDULING) {
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
+                parameterNode.replaceAtUsages(oclStackAccessNode);
+                index++;
+            } else {
+                ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
+                graph.addWithoutUnique(constant);
+                parameterNode.replaceAtUsages(constant);
+            }
         } else {
             parameterNode.usages().snapshot().forEach(n -> {
                 evaluate(graph, n, args[parameterNode.index()]);
@@ -316,5 +335,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
         Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
         Tornado.debug("valid graph? %s", graph.verify());
+        index = 0;
     }
 }

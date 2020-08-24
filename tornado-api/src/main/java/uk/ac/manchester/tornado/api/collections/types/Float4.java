@@ -163,11 +163,11 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return new Float3(getX(), getY(), getZ());
     }
 
-    public Float2 getLo() {
+    public Float2 getLow() {
         return asFloat2();
     }
 
-    public Float2 getHi() {
+    public Float2 getHigh() {
         return new Float2(getZ(), getW());
     }
 

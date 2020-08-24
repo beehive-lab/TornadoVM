@@ -104,7 +104,7 @@ public class FloatSE3 {
         matrix.identity();
         exp(v);
 
-        Float3 value = v.getHi();
+        Float3 value = v.getHigh();
         matrix.set(0, 3, value.getX());
         matrix.set(1, 3, value.getY());
         matrix.set(2, 3, value.getZ());
@@ -115,8 +115,8 @@ public class FloatSE3 {
         final float one_20th = 1f / 20f;
 
         // VectorFloat3 result = new VectorFloat3(v.());
-        Float3 mu_lo = mu.getHi();
-        Float3 w = mu.getLo();
+        Float3 mu_lo = mu.getHigh();
+        Float3 w = mu.getLow();
         final float theta_sq = dot(w, w);
         final float theta = sqrt(theta_sq);
 

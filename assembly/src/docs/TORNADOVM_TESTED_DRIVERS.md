@@ -108,3 +108,4 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 ## Known Driver Issues 
 
 * Intel CPU OpenCL driver `18.1.0.0920` is not working with Ubuntu >= 19.04
+

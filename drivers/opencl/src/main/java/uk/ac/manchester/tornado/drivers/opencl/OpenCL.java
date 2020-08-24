@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -172,6 +173,11 @@ public class OpenCL {
         // Create stack
         final int numArgs = parameters.length;
         CallStack stack = tornadoDevice.createStack(numArgs);
+
+        // Fill header of call stack with empty values
+        stack.setHeader(new HashMap<>());
+
+        // Pass arguments to the call stack
         for (int i = 0; i < numArgs; i++) {
             stack.push(parameters[i], states.get(i));
         }
