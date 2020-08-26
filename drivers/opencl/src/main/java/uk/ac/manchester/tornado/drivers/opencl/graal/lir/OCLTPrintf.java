@@ -79,7 +79,7 @@ public class OCLTPrintf extends OCLLIROp {
         asm.emit(")");
         asm.delimiter();
         asm.eol();
-        asm.endScope();
+        asm.endScope("  -- ");
 
     }
 

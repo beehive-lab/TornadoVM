@@ -1009,9 +1009,9 @@ public final class OCLAssembler extends Assembler {
 
     }
 
-    public void endScope() {
+    public void endScope(String blockName) {
         popIndent();
-        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE);
+        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE + "  // " + blockName);
     }
 
     public void beginScope() {
