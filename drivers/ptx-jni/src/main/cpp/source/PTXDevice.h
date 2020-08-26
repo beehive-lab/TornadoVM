@@ -28,27 +28,35 @@
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXDevice
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
+ * Method:    cuDeviceGet
+ * Signature: (I)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGet
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetName
- * Signature: (I)Ljava/lang/String;
+ * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetName
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetAttribute
- * Signature: (II)I
+ * Signature: (JI)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetAttribute
-  (JNIEnv *, jclass, jint, jint);
+  (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceTotalMem
- * Signature: (I)J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceTotalMem
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
@@ -64,6 +72,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDri
  * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMemGetInfo
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass);
 
 #endif

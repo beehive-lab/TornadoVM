@@ -58,16 +58,16 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
     CUevent event;
     event_from_array(env, &event, event_wrapper);
 
-    CUDA_CHECK_ERROR("cuEventDestroy", cuEventDestroy(event));
+    CUDA_CHECK_ERROR("cuEventDestroy", cuEventDestroy(event), result);
     return (jlong) result;
 }
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
- * Method:    cuEventSynchronize
+ * Method:    tornadoCUDAEventsSynchronize
  * Signature: ([[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventSynchronize
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_tornadoCUDAEventsSynchronize
   (JNIEnv *env, jclass clazz, jobjectArray wrappers) {
     CUresult result;
     jsize events_length = (*env)->GetArrayLength(env, wrappers);
@@ -77,7 +77,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEven
         CUevent event;
         event_from_array(env, &event, array);
         if (cuEventQuery(event) != CUDA_SUCCESS){
-            CUDA_CHECK_ERROR("cuEventSynchronize", cuEventSynchronize(event)); // Only wait on event if not completed yet
+            CUDA_CHECK_ERROR("cuEventSynchronize", cuEventSynchronize(event), result); // Only wait on event if not completed yet
         }
         (*env)->DeleteLocalRef(env, array);
     }
@@ -99,7 +99,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
     event_from_array(env, &afterEvent, array2);
 
     float time;
-    CUDA_CHECK_ERROR("cuEventElapsedTime", cuEventElapsedTime(&time, beforeEvent, afterEvent));
+    CUDA_CHECK_ERROR("cuEventElapsedTime", cuEventElapsedTime(&time, beforeEvent, afterEvent), result);
     // cuEventElapsedTime returns the time in milliseconds.  We convert because the tornado profiler uses nanoseconds.
     return (jlong) (time * 1e+6);
 }
@@ -107,9 +107,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
  * Method:    cuEventQuery
- * Signature: ([B)Z
+ * Signature: ([B)J
  */
-JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
   (JNIEnv *env, jclass clazz, jbyteArray wrapper) {
     CUresult result;
     CUevent event;
@@ -122,5 +122,5 @@ JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cu
         fflush(stdout);
     }
 
-    return (jboolean) result == CUDA_SUCCESS;
+    return (unsigned long) result;
 }

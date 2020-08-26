@@ -1,7 +1,30 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -78,10 +101,14 @@ public class PTXEvent extends TornadoLogger implements Event {
 
     private native static long cuEventDestroy(byte[] eventWrapper);
 
-    private native static void cuEventSynchronize(byte[][] wrappers);
+    private native static void tornadoCUDAEventsSynchronize(byte[][] wrappers);
 
-    private native static boolean cuEventQuery(byte[] eventWrapper);
+    private native static long cuEventQuery(byte[] eventWrapper);
 
+    /**
+     * Returns the time in nanoseconds between two events.
+     * We convert from milliseconds to nanoseconds because the tornado profiler uses this measurement unit.
+     */
     private native static long cuEventElapsedTime(byte[][] wrappers);
 
     public static void waitForEventArray(PTXEvent[] events) {
@@ -90,7 +117,7 @@ public class PTXEvent extends TornadoLogger implements Event {
             wrappers[i] = events[i].eventWrapper[1];
         }
 
-        cuEventSynchronize(wrappers);
+        tornadoCUDAEventsSynchronize(wrappers);
     }
 
     @Override
@@ -103,16 +130,25 @@ public class PTXEvent extends TornadoLogger implements Event {
         return name;
     }
 
+    /**
+     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     */
     @Override
     public long getSubmitTime() {
         return -1;
     }
 
+    /**
+     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     */
     @Override
     public long getStartTime() {
         return -1;
     }
 
+    /**
+     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     */
     @Override
     public long getEndTime() {
         return -1;
@@ -130,9 +166,13 @@ public class PTXEvent extends TornadoLogger implements Event {
 
     @Override
     public TornadoExecutionStatus getStatus() {
-        if (!isCompleted) isCompleted = cuEventQuery(eventWrapper[1]);
+        if (!isCompleted) {
+            PTXEventStatus status = PTXEventStatus.getStatus(cuEventQuery(eventWrapper[1]));
 
-        return isCompleted ? TornadoExecutionStatus.COMPLETE : TornadoExecutionStatus.QUEUED;
+            isCompleted = (status == PTXEventStatus.CUDA_SUCCESS);
+            return status.toTornadoExecutionStatus();
+        }
+        return TornadoExecutionStatus.COMPLETE;
     }
 
     @Override

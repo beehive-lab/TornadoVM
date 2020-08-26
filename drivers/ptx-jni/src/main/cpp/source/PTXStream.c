@@ -119,7 +119,7 @@ static void free_queue() {
 }
 
 /*
-    Checks if the given staging region can fit the required size. If not, allocates the required pinned memory.
+    Checks if the given staging region can fit into the required size. If not, it allocates the required pinned memory.
 */
 static StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList *list) {
     // Create
@@ -127,7 +127,9 @@ static StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList 
         list = malloc(sizeof(StagingAreaList));
         CUresult result = cuMemAllocHost(&(list->staging_area), size);
         if (result != CUDA_SUCCESS) {
-            printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area create" ,"cuMemAllocHost", result); fflush(stdout);
+            printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area create" ,"cuMemAllocHost", result);
+            fflush(stdout);
+            return NULL;
         }
         list->length = size;
         list->next = NULL;
@@ -139,11 +141,13 @@ static StagingAreaList *check_or_init_staging_area(size_t size, StagingAreaList 
         if (result != CUDA_SUCCESS) {
             printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area update" ,"cuMemFreeHost", result);
             fflush(stdout);
+            return NULL;
         }
         result = cuMemAllocHost(&(list->staging_area), size);
         if (result != CUDA_SUCCESS) {
             printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "check_or_init_staging_area update" ,"cuMemAllocHost", result);
             fflush(stdout);
+            return NULL;
         }
         list->length = size;
     }
@@ -174,10 +178,10 @@ static void set_to_unused(CUstream hStream,  CUresult status, void *list) {
 /*
     Free all the allocated pinned memory.
 */
-static void free_staging_area_list() {
+static CUresult free_staging_area_list() {
     CUresult result;
     while (head != NULL) {
-        result = cuMemFreeHost(head->staging_area);
+        result &= cuMemFreeHost(head->staging_area);
         if (result != CUDA_SUCCESS) {
             printf("uk.ac.manchester.tornado.drivers.ptx> %s: %s = %d\n", "free_staging_area_list" ,"cuMemFreeHost", result);
             fflush(stdout);
@@ -186,6 +190,7 @@ static void free_staging_area_list() {
         head = head->next;
         free(list);
     }
+    return result;
 }
 
 static void stream_from_array(JNIEnv *env, CUstream *stream_ptr, jbyteArray array) {
@@ -311,14 +316,15 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
         jlong sharedMemBytes,
         jbyteArray stream_wrapper,
         jbyteArray args) {
-    PTX_PROLOGUE()
+    CUevent beforeEvent, afterEvent;
+    CUresult result;
 
     CUmodule native_module;
     array_to_module(env, &native_module, module);
 
     const char *native_function_name = (*env)->GetStringUTFChars(env, function_name, 0);
     CUfunction kernel;
-    CUDA_CHECK_ERROR("cuModuleGetFunction", cuModuleGetFunction(&kernel, native_module, native_function_name));
+    CUDA_CHECK_ERROR("cuModuleGetFunction", cuModuleGetFunction(&kernel, native_module, native_function_name), result);
 
     size_t arg_buffer_size = (*env)->GetArrayLength(env, args);
     char arg_buffer[arg_buffer_size];
@@ -334,7 +340,8 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    record_event_begin(&beforeEvent, &afterEvent, &stream);
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event_begin(&beforeEvent, &stream);
     CUDA_CHECK_ERROR("cuLaunchKernel",
         cuLaunchKernel(
             kernel,
@@ -343,8 +350,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             (unsigned int) sharedMemBytes, stream,
             NULL,
             arg_config
-        )
-    );
+        ), result);
     record_event_end(&afterEvent, &stream);
 
     (*env)->ReleaseStringUTFChars(env, function_name, native_function_name);
@@ -361,10 +367,10 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream
   (JNIEnv *env, jclass clazz) {
     CUresult result;
     int lowestPriority, highestPriority;
-    CUDA_CHECK_ERROR("cuCtxGetStreamPriorityRange", cuCtxGetStreamPriorityRange (&lowestPriority, &highestPriority));
+    CUDA_CHECK_ERROR("cuCtxGetStreamPriorityRange", cuCtxGetStreamPriorityRange (&lowestPriority, &highestPriority), result);
 
     CUstream stream;
-    CUDA_CHECK_ERROR("cuStreamCreateWithPriority", cuStreamCreateWithPriority(&stream, CU_STREAM_NON_BLOCKING, highestPriority));
+    CUDA_CHECK_ERROR("cuStreamCreateWithPriority", cuStreamCreateWithPriority(&stream, CU_STREAM_NON_BLOCKING, highestPriority), result);
 
     return array_from_stream(env, &stream);
 }
@@ -380,11 +386,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDe
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    CUDA_CHECK_ERROR("cuStreamDestroy", cuStreamDestroy(stream));
+    CUDA_CHECK_ERROR("cuStreamDestroy", cuStreamDestroy(stream), result);
 
     free_queue();
-    free_staging_area_list();
-    return (jlong) result;
+    CUresult stagingAreaResult = free_staging_area_list();
+    return (jlong) result & stagingAreaResult;
 }
 
 /*
@@ -398,7 +404,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
 
-    CUDA_CHECK_ERROR("cuStreamSynchronize", cuStreamSynchronize(stream));
+    CUDA_CHECK_ERROR("cuStreamSynchronize", cuStreamSynchronize(stream), result);
     return (jlong) result;
 }
 
@@ -409,14 +415,16 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *env, jclass clazz, jboolean is_timing, jbyteArray stream_wrapper) {
-    PTX_PROLOGUE()
+    CUevent beforeEvent, afterEvent;
+    CUresult result;
 
     unsigned int flags = CU_EVENT_DEFAULT;
     if (!is_timing) flags |= CU_EVENT_DISABLE_TIMING;
 
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
-    record_event_begin(&beforeEvent, &afterEvent, &stream);
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event_begin(&beforeEvent, &stream);
     record_event_end(&afterEvent, &stream);
 
     return wrapper_from_events(env, &beforeEvent, &afterEvent);

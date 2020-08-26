@@ -73,6 +73,7 @@ public class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver
         return getDefaultBackend().getTornadoSuites();
     }
 
+    @Override
     public PTXBackend getDefaultBackend() {
         return checkAndInitBackend(0);
     }
@@ -108,7 +109,7 @@ public class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver
 
     @Override
     public int getDeviceCount() {
-        return 1;
+        return PTX.getPlatform().getDeviceCount();
     }
 
     @Override

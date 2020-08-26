@@ -24,10 +24,8 @@
 #ifndef _Included_ptx_utils
 #define _Included_ptx_utils
 
-#define PTX_PROLOGUE() CUevent beforeEvent, afterEvent; \
-    CUresult result;
-
-record_event_begin(CUevent* beforeEvent, CUevent* afterEvent, CUstream* stream);
+CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent);
+void record_event_begin(CUevent* beforeEvent, CUstream* stream);
 void record_event_end(CUevent* afterEvent, CUstream* stream);
 
 #endif

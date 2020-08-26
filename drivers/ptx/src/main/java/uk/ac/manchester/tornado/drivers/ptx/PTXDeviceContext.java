@@ -106,7 +106,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public void flushEvents() {
-        // I don't think there is anything like this in CUDA so I am calling sync
         sync();
     }
 
@@ -154,12 +153,12 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             blocks = scheduler.calculateBlocks(module);
             grids = scheduler.calculateGrids(module, blocks);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, getKernelParams((PTXCallStack) stack), grids, blocks);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), grids, blocks);
         updateProfiler(kernelLaunchEvent, module.metaData);
         return kernelLaunchEvent;
     }
 
-    private byte[] getKernelParams(PTXCallStack stack) {
+    private byte[] writePTXStackOnDevice(PTXCallStack stack) {
         ByteBuffer args = ByteBuffer.allocate(8);
         args.order(getByteOrder());
 

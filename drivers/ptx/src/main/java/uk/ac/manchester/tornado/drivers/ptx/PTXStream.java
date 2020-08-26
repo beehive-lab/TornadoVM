@@ -73,7 +73,12 @@ public class PTXStream extends TornadoLogger {
 
     private native static byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
 
+    /**
+     * This JNI call will create a CUDA Stream through an API call to cuStreamCreateWithPriority.
+     * The priority passed to the cuStreamCreateWithPriority method will always be the greatest value returned by cuCtxGetStreamPriorityRange.
+     */
     private native static byte[] cuCreateStream();
+
     private native static long cuDestroyStream(byte[] streamWrapper);
     private native static long cuStreamSynchronize(byte[] streamWrapper);
 

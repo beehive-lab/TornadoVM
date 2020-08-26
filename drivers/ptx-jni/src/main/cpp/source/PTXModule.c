@@ -54,7 +54,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
     ptx[ptx_length] = 0; // Make sure string terminates with a 0
 
     CUmodule module;
-    CUDA_CHECK_ERROR("cuModuleLoadData", cuModuleLoadData(&module, ptx));
+    CUDA_CHECK_ERROR("cuModuleLoadData", cuModuleLoadData(&module, ptx), result);
 
     if (result != CUDA_SUCCESS) {
         printf("PTX to cubin JIT compilation failed! (%d)\n", result);
@@ -79,11 +79,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuOcc
 
     const char *native_function_name = (*env)->GetStringUTFChars(env, func_name, 0);
     CUfunction kernel;
-    CUDA_CHECK_ERROR("cuModuleGetFunction", cuModuleGetFunction(&kernel, module, native_function_name));
+    CUDA_CHECK_ERROR("cuModuleGetFunction", cuModuleGetFunction(&kernel, module, native_function_name), result);
     (*env)->ReleaseStringUTFChars(env, func_name, native_function_name);
 
     int min_grid_size;
     int block_size;
-    CUDA_CHECK_ERROR("cuOccupancyMaxPotentialBlockSize", cuOccupancyMaxPotentialBlockSize (&min_grid_size, &block_size, kernel, 0, 0, 0));
+    CUDA_CHECK_ERROR("cuOccupancyMaxPotentialBlockSize", cuOccupancyMaxPotentialBlockSize (&min_grid_size, &block_size, kernel, 0, 0, 0), result);
     return block_size;
 }

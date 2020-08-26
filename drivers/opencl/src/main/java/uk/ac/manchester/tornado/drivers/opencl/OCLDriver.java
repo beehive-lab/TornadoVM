@@ -170,6 +170,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return checkAndInitBackend(platform, device);
     }
 
+    @Override
     public OCLBackend getDefaultBackend() {
         return checkAndInitBackend(0, 0);
     }

@@ -18,9 +18,6 @@ public class PTX {
 
     public static final String PTX_JNI_LIBRARY = "tornado-ptx";
 
-    public final static boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", "False"));
-
-    public final static int CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
     private static final PTXPlatform platform;
     private static boolean initialised = false;
 

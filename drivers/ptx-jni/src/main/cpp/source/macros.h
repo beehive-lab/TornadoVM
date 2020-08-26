@@ -23,7 +23,7 @@
 
 #define VERBOSE 0
 
-#define CUDA_CHECK_ERROR(name,func) if(VERBOSE) {\
+#define CUDA_CHECK_ERROR(name,func,result) if(VERBOSE) {\
         printf("uk.ac.manchester.tornado.drivers.ptx> Calling: %s\n",name); \
     } \
     result = func; \

@@ -26,18 +26,33 @@
 
 #include "macros.h"
 
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
+ * Method:    cuDeviceGet
+ * Signature: (I)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGet
+  (JNIEnv *env, jclass clazz, jint device_id) {
+    CUresult result;
+    CUdevice *dev = malloc(sizeof(CUdevice));
+
+    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(dev, (int) device_id), result);
+
+    return (jlong) dev;
+}
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetName
- * Signature: (I)Ljava/lang/String;
+ * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetName
-  (JNIEnv *env, jclass clazz, jint device_id) {
+  (JNIEnv *env, jclass clazz, jlong cuDevice) {
     CUresult result;
-    CUdevice dev;
+    CUdevice *dev = (CUdevice *) cuDevice;
     char name[256];
-    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(&dev, (int) device_id));
-    CUDA_CHECK_ERROR("cuDeviceGetName", cuDeviceGetName(name, 256, dev));
+    CUDA_CHECK_ERROR("cuDeviceGetName", cuDeviceGetName(name, 256, *dev), result);
 
     return (*env)->NewStringUTF(env, name);
 }
@@ -45,16 +60,15 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cu
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGetAttribute
- * Signature: (II)I
+ * Signature: (JI)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetAttribute
-  (JNIEnv *env, jclass clazz, jint device_id, jint attr_id) {
+  (JNIEnv *env, jclass clazz, jlong cuDevice, jint attr_id) {
     CUresult result;
-    CUdevice dev;
-    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(&dev, (int) device_id));
+    CUdevice *dev = (CUdevice *) cuDevice;
 
     int attribute_value;
-    CUDA_CHECK_ERROR("cuDeviceGetAttribute", cuDeviceGetAttribute(&attribute_value, (CUdevice_attribute) attr_id, dev));
+    CUDA_CHECK_ERROR("cuDeviceGetAttribute", cuDeviceGetAttribute(&attribute_value, (CUdevice_attribute) attr_id, *dev), result);
 
     return (jint) attribute_value;
 }
@@ -62,17 +76,15 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceTotalMem
- * Signature: (I)J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceTotalMem
-  (JNIEnv *env, jclass clazz, jint device_id) {
+  (JNIEnv *env, jclass clazz, jlong cuDevice) {
     CUresult result;
-    CUdevice dev;
-
-    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(&dev, (int) device_id));
+    CUdevice *dev = (CUdevice *) cuDevice;
 
     size_t mem_in_bytes;
-    CUDA_CHECK_ERROR("cuDeviceTotalMem", cuDeviceTotalMem(&mem_in_bytes, dev));
+    CUDA_CHECK_ERROR("cuDeviceTotalMem", cuDeviceTotalMem(&mem_in_bytes, *dev), result);
 
     return (jlong) mem_in_bytes;
 }
@@ -80,17 +92,15 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuMemGetInfo
- * Signature: (I)J
+ * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMemGetInfo
-  (JNIEnv *env, jclass clazz, jint device_id) {
+  (JNIEnv *env, jclass clazz) {
     CUresult result;
-    CUdevice dev;
-    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(&dev, device_id));
 
     size_t free;
     size_t total;
-    CUDA_CHECK_ERROR("cuMemGetInfo", cuMemGetInfo(&free, &total));
+    CUDA_CHECK_ERROR("cuMemGetInfo", cuMemGetInfo(&free, &total), result);
 
     return free;
 }
@@ -105,7 +115,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDri
     CUresult result;
     int driver_version;
 
-    CUDA_CHECK_ERROR("cuDriverGetVersion", cuDriverGetVersion(&driver_version));
+    CUDA_CHECK_ERROR("cuDriverGetVersion", cuDriverGetVersion(&driver_version), result);
 
     return (jint) driver_version;
 }

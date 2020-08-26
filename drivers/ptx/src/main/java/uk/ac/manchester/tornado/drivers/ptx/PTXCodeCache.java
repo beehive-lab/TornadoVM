@@ -1,17 +1,16 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.jar.Pack200.Unpacker.FALSE;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 
 public class PTXCodeCache {
 
-    private static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", FALSE));
     private final PTXDeviceContext deviceContext;
     private final ConcurrentHashMap<String, PTXInstalledCode> cache;
 
@@ -37,7 +36,7 @@ public class PTXCodeCache {
                 return code;
             }
             else {
-                shouldNotReachHere("PTX JIT compilation failed!");
+                throw new TornadoBailoutRuntimeException("PTX JIT compilation failed!");
             }
         }
 

@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
@@ -53,7 +54,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;
-        callStackLimit = OpenCL.OCL_CALL_STACK_LIMIT;
+        callStackLimit = OCL_CALL_STACK_LIMIT;
         initialised = false;
         scheduleMeta = new ScheduleMetaData("mm-" + device.getDeviceId());
         reset();

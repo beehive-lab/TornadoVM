@@ -24,16 +24,20 @@
 #include <stdio.h>
 #include <cuda.h>
 
-void record_event_begin(CUevent* beforeEvent, CUevent* afterEvent, CUstream* stream) {
+CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
     if (result != CUDA_SUCCESS) {
         printf("Failed to create event! (%d)\n", result); fflush(stdout);
     }
-    result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
+    result &= cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
     if (result != CUDA_SUCCESS) {
         printf("Failed to create event! (%d)\n", result); fflush(stdout);
     }
-    result = cuEventRecord(*beforeEvent, *stream);
+    return result;
+}
+
+void record_event_begin(CUevent* beforeEvent, CUstream* stream) {
+    CUresult result = cuEventRecord(*beforeEvent, *stream);
 }
 
 void record_event_end(CUevent* afterEvent, CUstream* stream) {

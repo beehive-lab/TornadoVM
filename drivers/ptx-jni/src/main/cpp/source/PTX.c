@@ -35,7 +35,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTX_cuInit
   (JNIEnv *env, jclass clazz) {
 
     CUresult result;
-    CUDA_CHECK_ERROR("cuInit", cuInit(0));
+    CUDA_CHECK_ERROR("cuInit", cuInit(0), result);
 
     return (jlong) result;
 }

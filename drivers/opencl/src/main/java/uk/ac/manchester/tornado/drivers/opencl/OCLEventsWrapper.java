@@ -36,6 +36,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.MAX_WAIT_EVENTS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 /**
  * Class which holds mapping between OpenCL events and TornadoVM local events
@@ -45,8 +46,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
  * Only one instance of this class is created per device.
  */
 class OCLEventsWrapper {
-
-    private static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.opencl.circularevents", "True"));
 
     private final long[] events;
     private final int[] descriptors;

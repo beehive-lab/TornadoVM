@@ -49,10 +49,6 @@ public class OpenCL {
 
     private static final List<OCLPlatform> platforms = new ArrayList<>();
 
-    public final static boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", "False"));
-
-    public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
-
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
     public static final int CL_TRUE = 1;

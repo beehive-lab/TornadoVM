@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -10,10 +12,9 @@ import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 public class PTXEventsWrapper {
-
-    private static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.opencl.circularevents", "True"));
 
     private final PTXEvent[] events;
     private final BitSet retain;
@@ -33,15 +34,10 @@ public class PTXEventsWrapper {
         final int currentEvent = eventIndex;
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
-        /*
-         * TODO better error check here for PTX
-         * PTX can produce an out of resources error which results in an invalid event.
-         * If this happens, then we log a fatal exception and gracefully exit.
-         */
         if (eventWrapper == null) {
             fatal("invalid event: description=%s, tag=0x%x\n", EVENT_DESCRIPTIONS[descriptorId], tag);
             fatal("terminating application as system integrity has been compromised.");
-            System.exit(-1);
+            throw new TornadoBailoutRuntimeException("[ERROR] NULL event received from the CUDA driver !");
         }
 
         if (events[currentEvent] != null && !retain.get(currentEvent)) {

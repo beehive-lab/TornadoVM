@@ -11,6 +11,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_CALL_STACK_LIMIT;
 
 public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -28,7 +29,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public PTXMemoryManager(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         scheduleMeta = new ScheduleMetaData("mm-" + deviceContext.getDevice().getDeviceIndex());
-        callStackLimit = PTX.CALL_STACK_LIMIT;
+        callStackLimit = PTX_CALL_STACK_LIMIT;
         initialised = false;
         reset();
     }

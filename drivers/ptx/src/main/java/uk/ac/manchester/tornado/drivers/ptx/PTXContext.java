@@ -1,9 +1,10 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-import static uk.ac.manchester.tornado.drivers.ptx.PTX.DUMP_EVENTS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_EVENTS;
 
 public class PTXContext extends TornadoLogger {
 
@@ -16,13 +17,13 @@ public class PTXContext extends TornadoLogger {
     public PTXContext(PTXDevice device) {
         this.device = device;
 
-        ptxContext = cuCtxCreate(device.getDeviceIndex());
+        ptxContext = cuCtxCreate(device.getCuDevice());
 
         stream = new PTXStream();
         deviceContext = new PTXDeviceContext(device, stream);
     }
 
-    private native static long cuCtxCreate(int deviceIndex);
+    private native static long cuCtxCreate(long deviceIndex);
 
     private native static long cuCtxDestroy(long cuContext);
 
@@ -55,7 +56,7 @@ public class PTXContext extends TornadoLogger {
         try {
             allocatedRegion = cuMemAlloc(ptxContext, numBytes);
         } catch (Exception e) {
-            error(e.getMessage());
+            throw new TornadoBailoutRuntimeException("[Error during memory allocation] ", e);
         }
         return allocatedRegion;
     }

@@ -42,10 +42,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
- * Method:    cuEventSynchronize
+ * Method:    tornadoCUDAEventsSynchronize
  * Signature: ([[B)V
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventSynchronize
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_tornadoCUDAEventsSynchronize
   (JNIEnv *, jclass, jobjectArray);
 
  /*
@@ -59,9 +59,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
  * Method:    cuEventQuery
- * Signature: ([B)Z
+ * Signature: ([B)J
  */
-JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
   (JNIEnv *, jclass, jbyteArray);
 
 #endif
