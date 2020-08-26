@@ -47,7 +47,7 @@ public class TestOpenCLTornadoCompiler {
             "}";
     // @formatter:on
 
-    private static final boolean PRINT_KERNEL = true;
+    private static final boolean PRINT_KERNEL = false;
 
     public static void main(String[] args) {
 

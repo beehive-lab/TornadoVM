@@ -24,8 +24,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,7 +52,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     OCLAssembler asm;
     Set<Block> merges;
     Set<Block> closedLoops;
-    Set<Block> closedBlocks;
     Set<Block> switches;
     Set<Node> switchClosed;
     HashMap<Block, Integer> pending;
@@ -68,7 +65,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         switches = new HashSet<>();
         switchClosed = new HashSet<>();
         closedLoops = new HashSet<>();
-        closedBlocks = new HashSet<>();
         pending = new HashMap<>();
     }
 
@@ -180,7 +176,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
                 if (!(successors[index].getBeginNode() instanceof LoopExitNode)) {
                     asm.endScope(block.toString());
-                    closedBlocks.add(block);
                 }
             }
         } else if ((pdom.getBeginNode() instanceof MergeNode) && (block.getDominator() != null && isIfBlock(block.getDominator()))) {
@@ -202,7 +197,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 }
                 if (successors[index].getBeginNode() instanceof LoopExitNode && successors[index].getEndNode() instanceof LoopEndNode) {
                     asm.endScope(block.toString());
-                    closedBlocks.add(block);
                 }
             } else if (isIfBlock(block.getDominator())) {
                 IfNode ifNode = (IfNode) block.getDominator().getEndNode();
@@ -225,7 +219,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if ((numCases - 1) == blockNumber) {
             asm.endScope(block.toString());
             switchClosed.add(switchNode);
-            closedBlocks.add(block);
         }
     }
 
@@ -248,41 +241,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                  */
                 asm.endScope(block.toString());
                 closedLoops.add(block);
-                closedBlocks.add(block);
             }
         } else {
             asm.endScope(block.toString());
-            // if (block.getBeginNode() instanceof MergeNode) {
-            // if (pending.containsKey(block)) {
-            // asm.endScope(block.toString());
-            // pending.remove(block);
-            // }
-            // }
             closedLoops.add(block);
-            closedBlocks.add(block);
         }
-    }
-
-    private boolean checkCloseWithMerges(Block block, Block pdom) {
-        Block[] predecessors = pdom.getPredecessors();
-        System.out.println(Arrays.toString(predecessors));
-        HashSet<Block> pred = new HashSet<>();
-        Collections.addAll(pred, predecessors);
-        pred.remove(block);
-        System.out.println(pred);
-        boolean close = true;
-        int pendingB = 0;
-        for (Block b : pred) {
-            if (!closedBlocks.contains(b)) {
-                close = false;
-                pendingB++;
-            }
-        }
-
-        if (pendingB > 0) {
-            pending.put(pdom, pendingB);
-        }
-        return close;
     }
 
     @Override
@@ -295,7 +258,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 if (loopCount - loopEnds > 0) {
                     asm.endScope(block.toString());
                     closedLoops.add(block);
-                    closedBlocks.add(block);
                 }
             } else {
                 closeScope(block);
@@ -312,12 +274,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
                     if (!wasBlockAlreadyClosed(block.getDominator())) {
-                        // boolean close = checkCloseWithMerges(block, pdom);
-                        // if (close) {
-                        // asm.endScope(block.toString());
-                        // }
                         asm.endScope(block.toString());
-                        closedBlocks.add(block);
                     }
                 }
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(block) && isSwitchBlock(block.getDominator())) {
@@ -339,7 +296,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             boolean isTrueBranch = ifNode.trueSuccessor() == block.getBeginNode();
             if (!(isTrueBranch & isLoopEnd)) {
                 asm.endScope(block.toString());
-                closedBlocks.add(block);
             }
         }
     }
@@ -371,7 +327,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if ((numCases - 1) == blockNumber) {
             if (!switchClosed.contains(switchNode)) {
                 asm.endScope(block.toString());
-                closedBlocks.add(block);
                 switchClosed.add(switchNode);
             }
         }
@@ -408,7 +363,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             closeSwitchBlock(block, dom);
         } else if (isNestedIfNode(block) && (!isStartNode(block))) {
             asm.endScope(block.toString());
-            closedBlocks.add(block);
         }
     }
 
