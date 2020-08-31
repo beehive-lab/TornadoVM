@@ -18,6 +18,7 @@ import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -119,10 +120,17 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
 
+        LIRInstruction breakInst = null;
+
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
             if (op != null) {
                 if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                     blockComment(String.format("%d %s", op.id(), op));
+                }
+
+                if (op instanceof PTXControlFlow.LoopBreakOp) {
+                    breakInst = op;
+                    continue;
                 }
 
                 try {
@@ -130,6 +138,19 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
                 } catch (TornadoInternalError e) {
                     throw e.addContext("lir instruction", block + "@" + op.id() + " " + op + "\n");
                 }
+            }
+        }
+
+        /*
+         * Because of the way Graal handles Phi nodes, we generate the break instruction
+         * before any phi nodes are updated, therefore we need to ensure that the break
+         * is emitted as the end of the block.
+         */
+        if (breakInst != null) {
+            try {
+                emitOp(this, breakInst);
+            } catch (TornadoInternalError e) {
+                throw e.addContext("lir instruction", block + "@" + breakInst.id() + " " + breakInst + "\n");
             }
         }
     }

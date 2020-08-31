@@ -30,6 +30,7 @@ import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
@@ -173,6 +174,17 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             PTXBinary.Expr declaration = new PTXBinary.Expr(PTXAssembler.PTXBinaryTemplate.NEW_ALIGNED_PARAM_BYTE_ARRAY, LIRKind.value(PTXKind.B8), returnBuffer, paramSize);
             ExprStmt expr = new ExprStmt(declaration);
             append(expr);
+
+//            Value[] actualParams = new Value[parameters.length];
+//            for (int i = 0; i < actualParams.length; i++) {
+//                actualParams[i] = parameters[i];
+//                if (parameters[i] instanceof ConstantValue) {
+//                    Variable var = getGen().newVariable(parameters[i].getValueKind());
+//                    append(new PTXLIRStmt.AssignStmt(var, parameters[i]));
+//                    actualParams[i] = var;
+//                }
+//            }
+
             append(new ExprStmt(new PTXDirectCall(callTarget, returnBuffer, parameters)));
             append(new PTXLIRStmt.VectorLoadStmt((Variable) result, new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, returnBuffer, null)));
             return;
@@ -335,10 +347,18 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
+        } else if (node instanceof LoopExitNode) {
+            emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
         } else {
             super.emitNode(node);
+        }
+    }
+
+    private void emitLoopExit(LoopExitNode node) {
+        if (!node.loopBegin().getBlockNodes().contains((FixedNode) node.predecessor())) {
+            append(new PTXControlFlow.LoopBreakOp(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
 

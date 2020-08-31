@@ -32,6 +32,13 @@ public class PTXControlFlow {
         }
     }
 
+    public static class LoopBreakOp extends Branch {
+
+        public LoopBreakOp(LabelRef destination, boolean isConditional, boolean isLoopEdgeBack) {
+            super(destination, isConditional, isLoopEdgeBack);
+        }
+    }
+
     public static class Branch extends AbstractInstruction {
         public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
         private final LabelRef destination;

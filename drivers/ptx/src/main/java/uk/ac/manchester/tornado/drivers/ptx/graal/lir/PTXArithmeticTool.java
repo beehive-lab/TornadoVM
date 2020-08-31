@@ -1,12 +1,10 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
 import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
-import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
@@ -62,7 +60,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
         LIRKind resultKind = LIRKind.combine(a, b);
-        PTXBinaryOp op = resultKind.getPlatformKind() == PTXKind.F32 ? PTXBinaryOp.DIV_APPROX : PTXBinaryOp.DIV;
+        PTXBinaryOp op = resultKind.getPlatformKind() == PTXKind.F32 ? PTXBinaryOp.DIV_FULL : PTXBinaryOp.DIV;
         return emitBinaryAssign(op, resultKind, a, b);
     }
 

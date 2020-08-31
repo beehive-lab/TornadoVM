@@ -27,6 +27,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
@@ -127,7 +128,17 @@ public class PTXAssembler extends Assembler {
                 result = encodeString(objConst.toValueString());
             }
         } else {
-            result = constant.toValueString();
+
+            if (javaConstant.getJavaKind() == JavaKind.Float) {
+                float value = javaConstant.asFloat();
+                result = String.format("0F%08X", Float.floatToRawIntBits(value));
+            } else if (javaConstant.getJavaKind() == JavaKind.Double) {
+                double value = javaConstant.asDouble();
+                result = String.format("0D%016X", Double.doubleToRawLongBits(value));
+            } else {
+                result = constant.toValueString();
+            }
+
         }
         return result;
     }
@@ -391,6 +402,9 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryOp CVT_FLOAT_RNE = new PTXUnaryOp(CONVERT, false, ROUND_NEAREST_EVEN);
         public static final PTXUnaryOp CVT_FLOAT = new PTXUnaryOp(CONVERT, false, null);
         public static final PTXUnaryOp CVT_INT_RTZ = new PTXUnaryOp(CONVERT, false, ROUND_TOWARD_ZERO_INTEGER);
+        public static final PTXUnaryOp TESTP_NUMBER = new PTXUnaryOp(TEST_NUMBER, false, null);
+        public static final PTXUnaryOp TESTP_NORMAL = new PTXUnaryOp(TEST_NORMAL, false, null);
+        public static final PTXUnaryOp TESTP_SUBNORMAL = new PTXUnaryOp(TEST_SUBNORMAL, false, null);
 
         private final String roundingMode;
 
@@ -513,7 +527,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp MUL_LO = new PTXBinaryOp("mul.lo");
         public static final PTXBinaryOp MUL_WIDE = new PTXBinaryOp("mul.wide");
         public static final PTXBinaryOp DIV = new PTXBinaryOp("div");
-        public static final PTXBinaryOp DIV_APPROX = new PTXBinaryOp("div.approx", false);
+        public static final PTXBinaryOp DIV_FULL = new PTXBinaryOp("div.full", false);
         public static final PTXBinaryOp REM = new PTXBinaryOp("rem", false);
 
         public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
@@ -523,6 +537,13 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp SETP_GE = new PTXBinaryOp("setp.ge");
         public static final PTXBinaryOp SETP_GT = new PTXBinaryOp("setp.gt");
         public static final PTXBinaryOp SETP_NE = new PTXBinaryOp("setp.ne");
+
+        public static final PTXBinaryOp SETP_LTU = new PTXBinaryOp("setp.ltu");
+        public static final PTXBinaryOp SETP_EQU = new PTXBinaryOp("setp.equ");
+        public static final PTXBinaryOp SETP_LEU = new PTXBinaryOp("setp.leu");
+        public static final PTXBinaryOp SETP_GEU = new PTXBinaryOp("setp.geu");
+        public static final PTXBinaryOp SETP_GTU = new PTXBinaryOp("setp.gtu");
+        public static final PTXBinaryOp SETP_NEU = new PTXBinaryOp("setp.neu");
 
         private final boolean needsRounding;
 

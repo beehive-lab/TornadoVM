@@ -10,6 +10,9 @@ public class PTXAssemblerConstants {
     public static final String CONVERT = "cvt";
     public static final String CONVERT_ADDRESS = "cvta";
     public static final String MOVE = "mov";
+    public static final String TEST_NUMBER = "testp.number";
+    public static final String TEST_NORMAL = "testp.normal";
+    public static final String TEST_SUBNORMAL = "testp.subnormal";
 
     public static final String HEAP_PTR_NAME = "heap_pointer";
     public static final String STACK_PTR_NAME = "stack_pointer";

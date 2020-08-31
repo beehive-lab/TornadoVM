@@ -206,10 +206,8 @@ public class PTXLIRGenerator extends LIRGenerator {
             } else {
                 append(new PTXLIRStmt.AssignStmt(returnVar, input));
             }
-            append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
-        } else {
-            append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
         }
+        append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
     }
 
     @Override

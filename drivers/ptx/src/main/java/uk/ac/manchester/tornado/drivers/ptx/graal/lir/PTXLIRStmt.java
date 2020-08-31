@@ -42,26 +42,32 @@ public class PTXLIRStmt {
         @Use
         protected Value rhs;
 
+        private final PTXKind lhsKind;
+        private final PTXKind rhsKind;
+
         public AssignStmt(Value lhs, Value rhs) {
+            this(lhs, (PTXKind) lhs.getPlatformKind(), rhs, (PTXKind) rhs.getPlatformKind());
+        }
+
+        public AssignStmt(Value lhs, PTXKind lhsKind, Value rhs, PTXKind rhsKind) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = rhs;
+            this.lhsKind = lhsKind;
+            this.rhsKind = rhsKind;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (rhs instanceof PTXLIROp) {
                 ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
-            } else if (((PTXKind)lhs.getPlatformKind()).isVector() && ((PTXKind)rhs.getPlatformKind()).isVector()) {
+            } else if (lhsKind.isVector() && rhsKind.isVector()) {
                 Variable rhsVar = (Variable) rhs;
                 Variable lhsVar = (Variable) lhs;
                 PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
                 PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
                 PTXVectorAssign.doVectorToVectorAssign(asm, lhsVectorSplit, rhsVectorSplit);
             } else {
-                PTXKind lhsKind = (PTXKind) lhs.getPlatformKind();
-                PTXKind rhsKind = (PTXKind) rhs.getPlatformKind();
-
                 asm.emitSymbol(TAB);
                 if (shouldEmitMove(lhsKind, rhsKind)) {
                     asm.emit(MOVE + "." + lhsKind.toString());

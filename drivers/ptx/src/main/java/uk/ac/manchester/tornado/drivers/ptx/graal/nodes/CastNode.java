@@ -1,10 +1,12 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -12,6 +14,7 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
@@ -34,24 +37,34 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
     }
 
     @Override
-    public void generate(NodeLIRBuilderTool gen) {
-        LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
-        final Variable result = gen.getLIRGeneratorTool().newVariable(lirKind);
+    public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
+        PTXLIRGenerator gen = (PTXLIRGenerator) nodeLIRBuilderTool.getLIRGeneratorTool();
+        LIRKind lirKind = gen.getLIRKind(stamp);
+        final Variable result = gen.newVariable(lirKind);
 
-        Value value = gen.operand(this.value);
+        Value value = nodeLIRBuilderTool.operand(this.value);
         PTXKind valueKind = (PTXKind) value.getPlatformKind();
         PTXKind resultKind = (PTXKind) result.getPlatformKind();
 
-        PTXAssembler.PTXUnaryOp opcode = null;
+        PTXAssembler.PTXUnaryOp opcode;
         if (!resultKind.isFloating() && (valueKind.isFloating() || valueKind.getElementKind().isFloating())) {
             opcode = PTXAssembler.PTXUnaryOp.CVT_INT_RTZ;
-        } else if (resultKind.isF64() && valueKind.isF32()) {
-            opcode = PTXAssembler.PTXUnaryOp.CVT_FLOAT;
-        } else {
-            opcode = PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE;
-        }
-        gen.getLIRGeneratorTool().append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(opcode, lirKind, value)));
 
-        gen.setResult(this, result);
+            Variable nanPred = gen.newVariable(LIRKind.value(PTXKind.PRED));
+            gen.append(new PTXLIRStmt.AssignStmt(nanPred, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.TESTP_NORMAL, LIRKind.value(valueKind), value)));
+            gen.append(new PTXLIRStmt.ConditionalStatement(
+                    new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(opcode, lirKind, value)), nanPred, false));
+            gen.append(new PTXLIRStmt.ConditionalStatement(
+                    new PTXLIRStmt.AssignStmt(result, new ConstantValue(LIRKind.value(resultKind), PrimitiveConstant.INT_0)), nanPred, true));
+        } else {
+            if (resultKind.isF64() && valueKind.isF32()) {
+                opcode = PTXAssembler.PTXUnaryOp.CVT_FLOAT;
+            } else {
+                opcode = PTXAssembler.PTXUnaryOp.CVT_FLOAT_RNE;
+            }
+            gen.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(opcode, lirKind, value)));
+        }
+
+        nodeLIRBuilderTool.setResult(this, result);
     }
 }
