@@ -46,8 +46,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.*;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.*;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COLON;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT_ADDRESS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEAREST_EVEN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEGATIVE_INFINITY_INTEGER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_TOWARD_ZERO_INTEGER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NORMAL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NUMBER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_SUBNORMAL;
 
 public class PTXAssembler extends Assembler {
     private boolean pushToStack;
@@ -624,7 +640,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new PTXBinaryTemplate("local memory array double", ".local .f64 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_LONG_ARRAY = new PTXBinaryTemplate("local memory array long", ".local .s64 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new PTXBinaryTemplate("local memory array short", ".local .s16 %s[%s]");
-        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".local .u8 %s[%s]");
+        public static final PTXBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new PTXBinaryTemplate("local memory array char", ".local .u16 %s[%s]");
         public static final PTXBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new PTXBinaryTemplate("local memory array byte", ".local .s8 %s[%s]");
 
         public static final PTXBinaryTemplate NEW_SHARED_FLOAT_ARRAY = new PTXBinaryTemplate("shared memory array float", ".shared .f32 %s[%s]");
@@ -632,7 +648,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryTemplate NEW_SHARED_DOUBLE_ARRAY = new PTXBinaryTemplate("shared memory array double", ".shared .f64 %s[%s]");
         public static final PTXBinaryTemplate NEW_SHARED_LONG_ARRAY = new PTXBinaryTemplate("shared memory array long", ".shared .s64 %s[%s]");
         public static final PTXBinaryTemplate NEW_SHARED_SHORT_ARRAY = new PTXBinaryTemplate("shared memory array short", ".shared .s16 %s[%s]");
-        public static final PTXBinaryTemplate NEW_SHARED_CHAR_ARRAY = new PTXBinaryTemplate("shared memory array char", ".shared .u8 %s[%s]");
+        public static final PTXBinaryTemplate NEW_SHARED_CHAR_ARRAY = new PTXBinaryTemplate("shared memory array char", ".shared .u16 %s[%s]");
         public static final PTXBinaryTemplate NEW_SHARED_BYTE_ARRAY = new PTXBinaryTemplate("shared memory array byte", ".shared .s8 %s[%s]");
 
         public static final PTXBinaryTemplate NEW_LOCAL_BIT32_ARRAY = new PTXBinaryTemplate("local memory array bit 32", ".local .b32 %s[%s]");
@@ -699,91 +715,6 @@ public class PTXAssembler extends Assembler {
             asm.emitValue(y);
             asm.emit(", ");
             asm.emitValue(z);
-            asm.emit(")");
-        }
-    }
-
-    public static class PTXOp2 extends PTXOp {
-
-        protected PTXOp2(String opcode) {
-            super(opcode);
-        }
-
-        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1) {
-            final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
-            asm.emitValue(s0);
-            asm.emit(", ");
-            asm.emitValue(s1);
-            asm.emit(")");
-        }
-    }
-
-    public static class PTXOp3 extends PTXOp2 {
-        public PTXOp3(String opcode) {
-            super(opcode);
-        }
-
-        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1, Value s2) {
-            final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
-            asm.emitValue(s0);
-            asm.emit(", ");
-            asm.emitValue(s1);
-            asm.emit(", ");
-            asm.emitValue(s2);
-            asm.emit(")");
-        }
-    }
-
-    public static class PTXOp4 extends PTXOp3 {
-
-        protected PTXOp4(String opcode) {
-            super(opcode);
-        }
-
-        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3) {
-            final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
-            asm.emitValue(s0);
-            asm.emit(", ");
-            asm.emitValue(s1);
-            asm.emit(", ");
-            asm.emitValue(s2);
-            asm.emit(", ");
-            asm.emitValue(s3);
-            asm.emit(")");
-        }
-    }
-
-    public static class PTXOp8 extends PTXOp4 {
-
-        protected PTXOp8(String opcode) {
-            super(opcode);
-        }
-
-        public void emit(PTXCompilationResultBuilder crb, Value s0, Value s1, Value s2, Value s3, Value s4, Value s5, Value s6, Value s7) {
-            final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit("(");
-            asm.emitValue(s0);
-            asm.emit(", ");
-            asm.emitValue(s1);
-            asm.emit(", ");
-            asm.emitValue(s2);
-            asm.emit(", ");
-            asm.emitValue(s3);
-            asm.emit(", ");
-            asm.emitValue(s4);
-            asm.emit(", ");
-            asm.emitValue(s5);
-            asm.emit(", ");
-            asm.emitValue(s6);
-            asm.emit(", ");
-            asm.emitValue(s7);
             asm.emit(")");
         }
     }

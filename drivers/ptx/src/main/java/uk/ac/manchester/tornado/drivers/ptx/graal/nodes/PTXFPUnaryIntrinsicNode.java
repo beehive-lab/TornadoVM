@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
@@ -150,6 +151,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
+        trace("emitPTXFPUnaryIntrinsic: op=%s, x=%s", operation, getValue());
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value initialInput = builder.operand(getValue());
         Value result;

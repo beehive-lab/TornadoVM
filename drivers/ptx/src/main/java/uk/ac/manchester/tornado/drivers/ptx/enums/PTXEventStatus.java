@@ -27,6 +27,10 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Contains all the event statuses returned by the CUDA API.
+ * Inspired from @link{ https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html }.
+ */
 public enum PTXEventStatus {
 
     CUDA_SUCCESS(0),

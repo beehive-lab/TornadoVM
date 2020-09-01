@@ -16,6 +16,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo(shortName = "div_node")
 public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div> {
     public static final NodeClass<DivNode> TYPE = NodeClass.create(DivNode.class);
@@ -42,6 +44,7 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
     }
 
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
+        trace("emtiDiv: x=%s, y=%s", x, y);
         nodeValueMap.setResult(this, gen.emitDiv(nodeValueMap.operand(this.getX()), nodeValueMap.operand(this.getY()), null));
     }
 }

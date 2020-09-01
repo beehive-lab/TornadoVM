@@ -153,7 +153,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             byte[] source = Files.readAllBytes(path);
-            source = PTXCodeUtil.getCodeWithPTXHeader(source, getBackend());
+            source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
             return deviceContext.installCode(functionName, source, executable.meta(), executable.getEntryPoint());
         } catch (IOException e) {
             e.printStackTrace();

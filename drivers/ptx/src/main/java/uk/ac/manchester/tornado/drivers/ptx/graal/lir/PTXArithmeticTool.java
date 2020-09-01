@@ -26,21 +26,25 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
+        trace("emitAdd resultKind=%s a=%s b=%s setFlags=%b", resultKind, a, b, setFlags);
         return emitBinaryAssign(PTXBinaryOp.ADD, resultKind, a, b);
     }
 
     @Override
     protected Variable emitSub(LIRKind resultKind, Value a, Value b, boolean setFlags) {
+        trace("emitSub resultKind=%s a=%s b=%s setFlags=%b", resultKind, a, b, setFlags);
         return emitBinaryAssign(PTXBinaryOp.SUB, resultKind, a, b);
     }
 
     @Override
     public Value emitNegate(Value input) {
+        trace("emitNegate input=%s", input);
         return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NEGATE, LIRKind.value(input.getPlatformKind()), input);
     }
 
     @Override
     public Value emitMul(Value a, Value b, boolean setFlags) {
+        trace("emitMul a=%s b=%s setFlags=%b", a, b, setFlags);
         LIRKind resultKind = LIRKind.combine(a, b);
         PTXBinaryOp op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXBinaryOp.MUL : PTXBinaryOp.MUL_LO;
         return emitBinaryAssign(op, resultKind, a, b);
@@ -59,6 +63,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
+        trace("emitDiv a=%s b=%s", a, b);
         LIRKind resultKind = LIRKind.combine(a, b);
         PTXBinaryOp op = resultKind.getPlatformKind() == PTXKind.F32 ? PTXBinaryOp.DIV_FULL : PTXBinaryOp.DIV;
         return emitBinaryAssign(op, resultKind, a, b);
@@ -84,36 +89,43 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNot(Value input) {
+        trace("emitNot input=%s", input);
         return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NOT, LIRKind.value(input.getPlatformKind()), input);
     }
 
     @Override
     public Value emitAnd(Value a, Value b) {
+        trace("emitAnd a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_AND, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitOr(Value a, Value b) {
+        trace("emitOr a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_OR, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitXor(Value a, Value b) {
+        trace("emitXor a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_XOR, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitShl(Value a, Value b) {
+        trace("emitShl a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_LEFT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitShr(Value a, Value b) {
+        trace("emitShr a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitUShr(Value a, Value b) {
+        trace("emitUShr a=%s b=%s", a, b);
         return emitShr(a, b);
     }
 
@@ -131,6 +143,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNarrow(Value inputVal, int bits) {
+        trace("emitNarrow inputVal=%s bits=%d", inputVal, bits);
         PTXLIRKindTool kindTool = getGen().getLIRKindTool();
         PTXKind kind = (PTXKind) inputVal.getPlatformKind();
         LIRKind toKind;
@@ -150,11 +163,13 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
+        trace("emitSignExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
         return emitZeroExtend(inputVal, fromBits, toBits);
     }
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
+        trace("emitZeroExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
         PTXLIRKindTool kindTool = getGen().getLIRKindTool();
         PTXKind kind = (PTXKind) inputVal.getPlatformKind();
         LIRKind toKind;
@@ -184,6 +199,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMathSqrt(Value input) {
+        trace("emitMathSqrt input=%s", input);
         PTXBuiltinTool builtinTool = getGen().getPtxBuiltinTool();
         PTXKind ptxKind = (PTXKind) input.getPlatformKind();
         Variable result = getGen().newVariable(input.getValueKind());
@@ -220,6 +236,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
+        trace("emitLoad kind=%s address=%s", kind, address);
         guarantee(kind.getPlatformKind() instanceof PTXKind, "invalid LIRKind: %s", kind);
         PTXKind ptxKind = (PTXKind) kind.getPlatformKind();
 
@@ -271,6 +288,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public Value emitMultiplyAdd(Value op1, Value op2, Value op3) {
+        trace("emitMultiplyAdd op1=%s op2=%s op3=%s", op1, op2, op3);
         LIRKind resultKind = LIRKind.combine(op1, op2);
         Variable result = getGen().newVariable(resultKind);
         PTXTernaryOp op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXTernaryOp.MAD : PTXTernaryOp.MAD_LO;

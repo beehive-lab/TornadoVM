@@ -31,6 +31,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo
 public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, MemoryNode {
 
@@ -47,6 +49,7 @@ public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, M
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitPTXBarrier: ctaInstance=%d, numberOfThreads=%d", ctaInstance, numberOfThreads);
         gen.getLIRGeneratorTool().append(new PTXLIRStmt.ExprStmt(new PTXUnary.Barrier(PTXAssembler.PTXUnaryIntrinsic.BARRIER_SYNC, ctaInstance, numberOfThreads)));
     }
 }

@@ -19,12 +19,15 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 
 public class PTXArchitecture extends Architecture {
 
+    private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
+    private static final int RETURN_ADDRESS_SIZE = 0;
+
     public static final RegisterCategory PTX_ABI = new RegisterCategory("abi");
 
-    public static final PTXMemoryBase globalSpace = new PTXMemoryBase(0, PTXMemorySpace.GLOBAL);
-    public static final PTXMemoryBase paramSpace = new PTXMemoryBase(1, PTXMemorySpace.PARAM);
-    public static final PTXMemoryBase sharedSpace = new PTXMemoryBase(2, PTXMemorySpace.SHARED);
-    public static final PTXMemoryBase localSpace = new PTXMemoryBase(2, PTXMemorySpace.LOCAL);
+    public static final PTXMemoryBase globalSpace = new PTXMemoryBase(PTXMemorySpace.GLOBAL);
+    public static final PTXMemoryBase paramSpace = new PTXMemoryBase(PTXMemorySpace.PARAM);
+    public static final PTXMemoryBase sharedSpace = new PTXMemoryBase(PTXMemorySpace.SHARED);
+    public static final PTXMemoryBase localSpace = new PTXMemoryBase(PTXMemorySpace.LOCAL);
 
     public static PTXParam STACK_POINTER;
     public static PTXParam[] abiRegisters;
@@ -52,8 +55,8 @@ public class PTXArchitecture extends Architecture {
                 false,
                 null,
                 LOAD_STORE | STORE_STORE,
-                0,
-                0
+                NATIVE_CALL_DISPLACEMENT_OFFSET,
+                RETURN_ADDRESS_SIZE
         );
 
         STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, wordKind);
@@ -76,11 +79,13 @@ public class PTXArchitecture extends Architecture {
         PTXKind ptxKind = PTXKind.ILLEGAL;
         switch (javaKind) {
             case Boolean:
-            case Char:
                 ptxKind = PTXKind.U8;
                 break;
             case Byte:
                 ptxKind = PTXKind.S8;
+                break;
+            case Char:
+                ptxKind = PTXKind.U16;
                 break;
             case Short:
                 ptxKind = (javaKind.isUnsigned()) ? PTXKind.U16 : PTXKind.S16;
@@ -122,19 +127,24 @@ public class PTXArchitecture extends Architecture {
         return sb.toString();
     }
 
-    public static class PTXRegister {
-        public final int number;
-        protected String name;
+    private abstract static class PTXRegister {
         public final PTXKind ptxKind;
 
-        public PTXRegister(int number, PTXKind ptxKind) {
-            this.number = number;
+        public PTXRegister(PTXKind ptxKind) {
             this.ptxKind = ptxKind;
-            this.name = "r" + ptxKind.getTypeChar() + number;
+        }
+    }
+
+    public static class PTXParam extends PTXRegister {
+        private final String name;
+
+        public PTXParam(String name, PTXKind lirKind) {
+            super(lirKind);
+            this.name = name;
         }
 
         public String getDeclaration() {
-            return String.format(".reg .%s %s", ptxKind.toString(), name);
+            return String.format(".param .%s %s", ptxKind.toString(), name);
         }
 
         public String getName() {
@@ -142,25 +152,12 @@ public class PTXArchitecture extends Architecture {
         }
     }
 
-    public static class PTXParam extends PTXRegister {
-
-        public PTXParam(String name, PTXKind lirKind) {
-            super(0, lirKind);
-            this.name = name;
-        }
-
-        @Override
-        public String getDeclaration() {
-            return String.format(".param .%s %s", ptxKind.toString(), name);
-        }
-    }
-
     public static class PTXMemoryBase extends PTXRegister {
 
         public final PTXMemorySpace memorySpace;
 
-        public PTXMemoryBase(int number, PTXMemorySpace memorySpace) {
-            super(number, PTXKind.B64);
+        public PTXMemoryBase(PTXMemorySpace memorySpace) {
+            super(PTXKind.B64);
             this.memorySpace = memorySpace;
         }
     }
@@ -200,12 +197,7 @@ public class PTXArchitecture extends Architecture {
                     gridDim = PTXArchitecture.GridDimZ;
                     break;
                 default:
-                    shouldNotReachHere("Too many dimensions: %d", dim);
-                    threadID = null;
-                    blockDim = null;
-                    blockID = null;
-                    gridDim = null;
-                    break;
+                    throw new TornadoBailoutRuntimeException(String.format("[ERROR] Too many dimensions: %d", dim));
             }
         }
     }

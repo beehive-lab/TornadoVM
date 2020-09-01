@@ -212,10 +212,12 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitJump(LabelRef label) {
+        trace("emitJump: label=%s", label);
         append(new PTXControlFlow.Branch(label, false, false));
     }
 
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
+        trace("emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
         append(new PTXControlFlow.Branch(label, false, isLoopEdgeBack));
     }
 
@@ -291,6 +293,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        trace("emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
         LIRKind kind = LIRKind.value(PTXKind.PRED);
         Variable predicate = newVariable(kind);
         Constant[] constants = strategy.getKeyConstants();
@@ -397,7 +400,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         }
 
         final Variable var = super.newVariable(actualLIRKind);
-        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        trace("newParamVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
         int indexForType = res.insertParameterAndGetIndex(var);
@@ -416,6 +419,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public void emitParameterAlloc() {
+        trace("emitParameterAlloc");
         Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));

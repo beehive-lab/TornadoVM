@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorAssign;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
 public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
@@ -79,6 +80,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
+        trace("emitVectorValue: values=%s", values);
 
         if (origin instanceof InvokeNode) {
             gen.setResult(this, gen.operand(origin));

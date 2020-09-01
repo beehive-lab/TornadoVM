@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
@@ -117,6 +118,7 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
+        trace("emitPTXIntBinaryIntrinsic: op=%s, x=%s, y=%s", operation, x, y);
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());

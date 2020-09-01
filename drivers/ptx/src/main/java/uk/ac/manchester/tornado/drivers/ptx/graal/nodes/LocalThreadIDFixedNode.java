@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo
 public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowerable {
 
@@ -51,6 +53,7 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitLocalThreadId: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
         Variable result = tool.newVariable(kind);

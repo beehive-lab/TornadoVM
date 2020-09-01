@@ -20,6 +20,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXBuiltInRegisterArray;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.MUL_WIDE;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
@@ -36,6 +37,7 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitGlobalThreadSize: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(LIRKind.value(PTXKind.U64));
         PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;

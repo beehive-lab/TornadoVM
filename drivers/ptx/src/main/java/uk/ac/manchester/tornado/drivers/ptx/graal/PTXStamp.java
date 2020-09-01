@@ -16,10 +16,15 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 public class PTXStamp extends ObjectStamp {
 
+    private static final ResolvedJavaType STAMP_TYPE = null;
+    private static final boolean EXACT_TYPE = true;
+    private static final boolean NON_NULL = true;
+    private static final boolean ALWAYS_NULL = false;
+
     private PTXKind kind;
 
     public PTXStamp(PTXKind kind) {
-        super(null, true, true, false);
+        super(STAMP_TYPE, EXACT_TYPE, NON_NULL, ALWAYS_NULL);
         this.kind = kind;
     }
 

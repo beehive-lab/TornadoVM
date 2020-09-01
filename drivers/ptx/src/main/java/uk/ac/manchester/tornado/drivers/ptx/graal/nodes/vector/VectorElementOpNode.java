@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 /**
  * The {@code LoadIndexedNode} represents a read from an element of an array.
@@ -114,6 +115,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     public void generate(NodeLIRBuilderTool gen) {
         guarantee(vector != null, "vector is null");
         Value targetVector = gen.operand(getVector());
+        trace("emitVectorElementOp: targetVector=%s, laneId=%d", targetVector, laneId());
 
         assert targetVector instanceof Variable;
 

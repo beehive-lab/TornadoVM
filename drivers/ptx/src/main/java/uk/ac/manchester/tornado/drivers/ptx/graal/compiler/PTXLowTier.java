@@ -34,8 +34,6 @@ public class PTXLowTier extends TornadoLowTier {
 
         appendPhase(new RemoveValueProxyPhase());
 
-        // appendPhase(new ExpandLogicPhase());
-
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
          * ExpandLogic phase.

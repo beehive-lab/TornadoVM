@@ -143,6 +143,7 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatLog2(Value input) {
+        trace("genFloatLog2: input=%s", input);
         return new PTXUnary.Intrinsic(LOG2, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -217,7 +218,6 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatTrunc(Value input) {
-        trace("genFloatTrunc: trunc(%s)", input);
         unimplemented();
         return null;
     }
@@ -383,7 +383,6 @@ public class PTXBuiltinTool {
     }
 
     public Value genIntClamp(Value x, Value y, Value z) {
-        trace("genIntClamp: clamp(%s, %s, %s)", x, y, z);
         TornadoInternalError.unimplemented();
         return null;
     }

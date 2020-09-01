@@ -109,11 +109,11 @@ public class OCLCompiler {
 
     private static final AtomicInteger compilationId = new AtomicInteger();
 
-    private static final TimerKey CompilerTimer = DebugContext.timer("GraalCompiler");
-    private static final TimerKey FrontEnd = DebugContext.timer("FrontEnd");
-    private static final TimerKey BackEnd = DebugContext.timer("BackEnd");
-    private static final TimerKey EmitLIR = DebugContext.timer("EmitLIR");
-    private static final TimerKey EmitCode = DebugContext.timer("EmitCode");
+    private static final TimerKey CompilerTimer = DebugContext.timer("OpenCLGraalCompiler");
+    private static final TimerKey FrontEnd = DebugContext.timer("OpenCLFrontend");
+    private static final TimerKey BackEnd = DebugContext.timer("OpenCLBackend");
+    private static final TimerKey EmitLIR = DebugContext.timer("OpenCLEmitLIR");
+    private static final TimerKey EmitCode = DebugContext.timer("OpenCLEmitCode");
 
     private static final OCLLIRGenerationPhase LIR_GENERATION_PHASE = new OCLLIRGenerationPhase();
 
@@ -259,7 +259,7 @@ public class OCLCompiler {
     public static void emitFrontEnd(Providers providers, OCLBackend backend, ResolvedJavaMethod method, Object[] args, TaskMetaData meta, StructuredGraph graph,
             PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, boolean isKernel, boolean buildGraph,
             long batchThreads) {
-        try (DebugContext.Scope s = getDebugContext().scope("FrontEnd", new DebugDumpScope("FrontEnd")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
+        try (DebugContext.Scope s = getDebugContext().scope("OpenCLFrontend", new DebugDumpScope("OpenCLFrontend")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
 
             /*
              * Register metadata with all tornado phases
@@ -295,10 +295,10 @@ public class OCLCompiler {
 
     public static <T extends OCLCompilationResult> void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, OCLBackend backend, T compilationResult,
             CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel) {
-        try (DebugContext.Scope s = getDebugContext().scope("BackEnd", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
+        try (DebugContext.Scope s = getDebugContext().scope("OpenCLBackend", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
-            try (DebugContext.Scope s2 = getDebugContext().scope("CodeGen", lirGen, lirGen.getLIR())) {
+            try (DebugContext.Scope s2 = getDebugContext().scope("OpenCLCodeGen", lirGen, lirGen.getLIR())) {
                 int bytecodeSize = graph.method() == null ? 0 : graph.getBytecodeSize();
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
                 emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel);

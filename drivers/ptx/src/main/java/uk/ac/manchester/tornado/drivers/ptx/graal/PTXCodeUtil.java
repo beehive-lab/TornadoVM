@@ -65,7 +65,6 @@ public class PTXCodeUtil {
         LIRKind lirKind = LIRKind.value(target.arch.getPlatformKind(returnKind));
 
         Variable returnParameter = new Variable(lirKind, variableIndex);
-        variableIndex++;
 
         return new CallingConvention(0, returnParameter, inputParameters);
     }
@@ -98,21 +97,21 @@ public class PTXCodeUtil {
         return sb.toString();
     }
 
-    public static byte[] getCodeWithPTXHeader(byte[] targetCode, PTXBackend backend) {
+    public static byte[] getCodeWithAttachedPTXHeader(byte[] targetCode, PTXBackend backend) {
         PTXDevice device = backend.getDeviceContext().getDevice();
         String header = String.format(PTX_HEADER_FORMAT, device.getTargetPTXVersion(), device.getTargetArchitecture(), backend.getTarget().getArch().getWordSize() * 8);
 
-        return appendToTargetCodeBegin(targetCode, header.getBytes());
+        return prependToTargetCode(targetCode, header.getBytes());
     }
 
-    public static byte[] appendToTargetCodeBegin(byte[] targetCode, byte[] headerCode) {
-        final int size = targetCode.length + headerCode.length + 1;
+    public static byte[] prependToTargetCode(byte[] targetCode, byte[] codeToPrepend) {
+        final int size = targetCode.length + codeToPrepend.length + 1;
 
         final byte[] newCode = new byte[size];
         Arrays.fill(newCode, (byte) 0);
 
         final ByteBuffer buffer = ByteBuffer.wrap(newCode);
-        buffer.put(headerCode);
+        buffer.put(codeToPrepend);
         buffer.put((byte) '\n');
         buffer.put(targetCode);
         return newCode;

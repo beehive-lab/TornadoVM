@@ -58,7 +58,7 @@ import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXBuiltInRegister;
@@ -77,6 +77,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -124,6 +125,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitInvoke(Invoke x) {
+        trace("emitInvoke: x=%s ", x);
         LoweredCallTargetNode callTarget = (LoweredCallTargetNode) x.callTarget();
 
         final Stamp stamp = x.asNode().stamp(NodeView.DEFAULT);
@@ -167,6 +169,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
+        trace("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
         if (isLegal(result) && ((PTXKind) result.getPlatformKind()).isVector()) {
             PTXKind resultKind = (PTXKind) result.getPlatformKind();
             Variable returnBuffer = getGen().newVariable(LIRKind.value(PTXKind.B8), true);
@@ -174,17 +177,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             PTXBinary.Expr declaration = new PTXBinary.Expr(PTXAssembler.PTXBinaryTemplate.NEW_ALIGNED_PARAM_BYTE_ARRAY, LIRKind.value(PTXKind.B8), returnBuffer, paramSize);
             ExprStmt expr = new ExprStmt(declaration);
             append(expr);
-
-//            Value[] actualParams = new Value[parameters.length];
-//            for (int i = 0; i < actualParams.length; i++) {
-//                actualParams[i] = parameters[i];
-//                if (parameters[i] instanceof ConstantValue) {
-//                    Variable var = getGen().newVariable(parameters[i].getValueKind());
-//                    append(new PTXLIRStmt.AssignStmt(var, parameters[i]));
-//                    actualParams[i] = var;
-//                }
-//            }
-
             append(new ExprStmt(new PTXDirectCall(callTarget, returnBuffer, parameters)));
             append(new PTXLIRStmt.VectorLoadStmt((Variable) result, new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, returnBuffer, null)));
             return;
@@ -267,7 +259,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 final Node node = nodes.get(i);
                 if (node instanceof ValueNode) {
                     final ValueNode valueNode = (ValueNode) node;
-                    // System.out.printf("do block: node=%s\n", valueNode);
                     if (LIRGenerator.Options.TraceLIRGeneratorLevel.getValue(options) >= 3) {
                         TTY.println("LIRGen for " + valueNode);
                     }
@@ -280,7 +271,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                             } catch (final Throwable e) {
                                 System.out.println("e: " + e.toString());
                                 e.printStackTrace();
-                                throw new TornadoInternalError(e).addContext(valueNode.toString());
+                                throw new TornadoBailoutRuntimeException("[Error during LIR generation !]");
                             }
                         }
                     } else {
@@ -296,10 +287,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                                 setResult(valueNode, operand);
                             }
                         } else if (valueNode instanceof VectorValueNode) {
-                            // There can be cases in which the result of an
-                            // instruction is already set before by other
-                            // instructions. case where vector value is used as an input to a phi
-                            // node before it is assigned to
                             final VectorValueNode vectorNode = (VectorValueNode) valueNode;
                             vectorNode.generate(this);
                         }
@@ -357,7 +344,9 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopExit(LoopExitNode node) {
-        if (!node.loopBegin().getBlockNodes().contains((FixedNode) node.predecessor())) {
+        // I think the only case when there are no successors to the current block is when there is a ReturnNode in the current block.
+        // It doesn't make sense to emit the break statement if we have a return.
+        if (!node.loopBegin().getBlockNodes().contains((FixedNode) node.predecessor()) && gen.getCurrentBlock().getSuccessors().length != 0) {
             append(new PTXControlFlow.LoopBreakOp(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
@@ -371,8 +360,49 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         setResult(node, result);
     }
 
+    /**
+     * TODO
+     * A possible optimization is to perform the loop condition check once before the first iteration
+     * and then for the rest of the iterations, have the condition check before the loop back edge.
+     * This prevents an "useless" jump when the loop condition no longer holds.
+     *
+     * Currently, with this method, we will jump back to the loop header and perform the loop initialization on
+     * every iteration, instead of jumping to the first block in the loop body.
+     */
+    private void visitLoopEndImproved(LoopEndNode node) {
+        trace("visiting loopEndNode: %s", node);
+        LoopBeginNode begin = node.loopBegin();
+        final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
+
+        for (ValuePhiNode phi : phis) {
+            AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+            Value src = operand(phi.valueAt(node));
+
+            if (!dest.equals(src)) {
+                append(new PTXLIRStmt.AssignStmt(dest, src));
+            }
+        }
+
+        IfNode ifNode = null;
+        Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
+        while (nodesIterator.hasNext() && ifNode == null) {
+            FixedNode fNode = nodesIterator.next();
+            if (fNode instanceof IfNode) {
+                ifNode = (IfNode) fNode;
+            }
+        }
+
+        if (ifNode == null) {
+            shouldNotReachHere("Could not find condition");
+        }
+        final Variable predicate = emitLogicNode(ifNode.condition());
+        boolean isNegated = ifNode.trueSuccessor() instanceof LoopExitNode;
+        getGen().emitConditionalBranch(getLIRBlock(begin), predicate, isNegated, true);
+    }
+
     @Override
     public void visitLoopEnd(LoopEndNode node) {
+        trace("visiting loopEndNode: %s", node);
         LoopBeginNode begin = node.loopBegin();
         final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
 
@@ -386,22 +416,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         getGen().emitJump(getLIRBlock(begin), true);
-
-        // TODO get the first loop block and jump to it. At the moment with the
-        // commented code we make the loop condition check twice
-        // // Get first IfNode after loop begin to get the loop exit condition
-        // IfNode ifNode = null;
-        // Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
-        // while (nodesIterator.hasNext() && ifNode == null) {
-        // FixedNode fNode = nodesIterator.next();
-        // if (fNode instanceof IfNode) ifNode = (IfNode) fNode;
-        // }
-        //
-        // if (ifNode == null) shouldNotReachHere("Could not find condition");
-        // final Variable predicate = emitLogicNode(ifNode.condition());
-        // boolean isNegated = ifNode.trueSuccessor() instanceof LoopExitNode;
-        // getGen().emitConditionalBranch(getLIRBlock(begin), predicate, isNegated,
-        // true);
     }
 
     @Override
@@ -526,7 +540,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
-
         trace("visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
@@ -589,11 +602,8 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private void emitSwitchBreak(AbstractEndNode end) {
-        append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false, false));
-    }
-
     private void emitBranch(IfNode dominator) {
+        trace("emitBranch dominator: %s", dominator);
         // If we have an if/else statement, we must make sure we branch to the successor block and not `accidentally`
         // execute the whole if/else statement
         boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
@@ -601,6 +611,11 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         if (hasElse) {
             append(new PTXControlFlow.Branch(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
+    }
+
+    private void emitSwitchBreak(AbstractEndNode end) {
+        trace("emitSwitchBreak end: %s", end);
+        append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false, false));
     }
 
     public Value operandForPhi(ValuePhiNode phi) {

@@ -2,18 +2,14 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.appendToTargetCodeBegin;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getCodeWithPTXHeader;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.prependToTargetCode;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getCodeWithAttachedPTXHeader;
 
 public class PTXCompilationResult extends CompilationResult {
 
@@ -34,12 +30,12 @@ public class PTXCompilationResult extends CompilationResult {
     }
 
     public void addCompiledMethodCode(byte[] code) {
-        byte[] newCode = appendToTargetCodeBegin(getTargetCode(), code);
+        byte[] newCode = prependToTargetCode(getTargetCode(), code);
         setTargetCode(newCode, newCode.length);
     }
 
     public void addPTXHeader(PTXBackend backend) {
-        byte[] newCode = getCodeWithPTXHeader(getTargetCode(), backend);
+        byte[] newCode = getCodeWithAttachedPTXHeader(getTargetCode(), backend);
         setTargetCode(newCode, newCode.length);
     }
 

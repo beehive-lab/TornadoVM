@@ -47,6 +47,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXPrintf;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo(shortName = "printf")
 public class PrintfNode extends FixedWithNextNode implements LIRLowerable, IterableNodeType {
 
@@ -74,6 +76,7 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitPrintf: xDim=%s, yDim=%s, zDim=%s", xDim, yDim, zDim);
         PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
 
         Value stack = gen.operand(argumentStack);

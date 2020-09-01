@@ -20,6 +20,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo
 public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode {
 
@@ -38,6 +40,7 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
 
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
+        trace("emitCast: convertOp=%s, value=%s", op, value);
         PTXLIRGenerator gen = (PTXLIRGenerator) nodeLIRBuilderTool.getLIRGeneratorTool();
         LIRKind lirKind = gen.getLIRKind(stamp);
         final Variable result = gen.newVariable(lirKind);

@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo
 public class LocalGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
@@ -51,6 +53,7 @@ public class LocalGroupSizeNode extends FixedWithNextNode implements LIRLowerabl
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitLocalGroupSize: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
         Variable result = tool.newVariable(kind);

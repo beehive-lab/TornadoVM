@@ -35,7 +35,7 @@ public class PTXScheduler {
 
         int[] defaultBlocks = {1, 1, 1};
         try {
-            int maxBlockThreads = module.getMaxBlocks();
+            int maxBlockThreads = module.getMaxThreadBlocks();
             for (int i = 0; i < module.metaData.getDims(); i++) {
                 defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(module.metaData, maxBlockThreads), module.metaData.getGlobalWork()[i]);
             }

@@ -20,6 +20,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryTemplate;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class FixedArrayNode extends FixedNode implements LIRLowerable {
@@ -69,6 +70,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitFixedArray: elementKind=%s length=%s", elementKind, length);
         /*
          * using as_T reinterprets the data as type T - consider: float x = (float) 1;
          * and int value = 1, float x = &(value);

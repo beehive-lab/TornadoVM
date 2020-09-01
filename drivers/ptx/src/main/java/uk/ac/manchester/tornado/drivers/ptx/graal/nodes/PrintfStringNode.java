@@ -14,6 +14,8 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 @NodeInfo(shortName = "printfString")
 public class PrintfStringNode extends FloatingNode implements LIRLowerable {
 
@@ -29,6 +31,7 @@ public class PrintfStringNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitPrintfString: inputString=%s", inputString);
         PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
         Value inpString = gen.operand(inputString);
 

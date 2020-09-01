@@ -19,6 +19,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXTernaryOp;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, MarkGlobalThreadID {
@@ -35,6 +36,7 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitGlobalThreadId: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
         PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;

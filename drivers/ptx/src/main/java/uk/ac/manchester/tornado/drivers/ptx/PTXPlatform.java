@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class PTXPlatform extends TornadoLogger {
@@ -7,6 +8,10 @@ public class PTXPlatform extends TornadoLogger {
 
     public PTXPlatform() {
         devices = new PTXDevice[cuDeviceGetCount()];
+
+        if (devices.length == 0) {
+            throw new TornadoBailoutRuntimeException("[WARNING] No CUDA devices found. Deoptimizing to sequential execution.");
+        }
 
         for (int i = 0; i < devices.length; i++) {
             devices[i] = new PTXDevice(i);
@@ -37,6 +42,9 @@ public class PTXPlatform extends TornadoLogger {
     }
 
     public PTXDevice getDevice(int deviceIndex) {
+        if (deviceIndex >= devices.length) {
+            throw new TornadoBailoutRuntimeException("[ERROR] Device index is invalid " + deviceIndex);
+        }
         return devices[deviceIndex];
     }
 

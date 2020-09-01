@@ -29,6 +29,8 @@ public class PTXStream extends TornadoLogger {
 
     protected static final Event EMPTY_EVENT = new EmptyEvent();
 
+    private static final int DYNAMIC_SHARED_MEMORY_BYTES = 0;
+
     private final byte[] streamWrapper;
     private final PTXEventsWrapper eventsWrapper;
 
@@ -137,7 +139,7 @@ public class PTXStream extends TornadoLogger {
             System.out.println("    Grids: " + Arrays.toString(gridDim));
         }
 
-        return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], 0, streamWrapper, kernelParams),
+        return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], DYNAMIC_SHARED_MEMORY_BYTES, streamWrapper, kernelParams),
                 DESC_PARALLEL_KERNEL, module.kernelFunctionName.hashCode());
     }
 

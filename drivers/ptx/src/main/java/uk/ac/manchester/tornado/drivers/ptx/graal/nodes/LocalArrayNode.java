@@ -20,6 +20,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryTemplate;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {
@@ -51,6 +52,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitLocalArray length=%s kind=%s", length, kind);
         final Value lengthValue = gen.operand(length);
 
         LIRKind lirKind = LIRKind.value(kind);

@@ -58,8 +58,8 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -282,6 +282,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
+        trace("emitVariableDefs");
         Map<PTXKind, Set<PTXLIRGenerationResult.VariableData>> kindToVariable = lirGenRes.getVariableTable();
 
         for (PTXKind type : kindToVariable.keySet()) {

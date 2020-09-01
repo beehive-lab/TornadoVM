@@ -67,11 +67,11 @@ public class PTXCompiler {
 
     private static final AtomicInteger compilationId = new AtomicInteger();
 
-    private static final TimerKey CompilerTimer = DebugContext.timer("GraalCompiler");
-    private static final TimerKey FrontEnd = DebugContext.timer("FrontEnd");
-    private static final TimerKey BackEnd = DebugContext.timer("BackEnd");
-    private static final TimerKey EmitLIR = DebugContext.timer("EmitLIR");
-    private static final TimerKey EmitCode = DebugContext.timer("EmitCode");
+    private static final TimerKey CompilerTimer = DebugContext.timer("PTXGraalCompiler");
+    private static final TimerKey FrontEnd = DebugContext.timer("PTXFrontend");
+    private static final TimerKey BackEnd = DebugContext.timer("PTXBackend");
+    private static final TimerKey EmitLIR = DebugContext.timer("PTXEmitLIR");
+    private static final TimerKey EmitCode = DebugContext.timer("PTXEmitCode");
     private static final PTXLIRGenerationPhase LIR_GENERATION_PHASE = new PTXLIRGenerationPhase();
 
     public static class PTXCompilationRequest {
@@ -254,9 +254,9 @@ public class PTXCompiler {
     }
 
     private static void emitBackEnd(PTXCompilationRequest r, boolean isParallel) {
-        try (DebugContext.Scope s = getDebugContext().scope("BackEnd", r.graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
+        try (DebugContext.Scope s = getDebugContext().scope("PTXBackend", r.graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
             LIRGenerationResult lirGen = emitLIR(r);
-            try (DebugContext.Scope s2 = getDebugContext().scope("CodeGen", lirGen, lirGen.getLIR())) {
+            try (DebugContext.Scope s2 = getDebugContext().scope("PTXCodeGen", lirGen, lirGen.getLIR())) {
                 r.compilationResult.setHasUnsafeAccess(r.graph.hasUnsafeAccess());
                 emitCode(r, lirGen, isParallel);
             } catch (Throwable e) {
@@ -351,7 +351,7 @@ public class PTXCompiler {
      * Builds the graph and optimizes it.
      */
     private static void emitFrontEnd(PTXCompilationRequest r) {
-        try (DebugContext.Scope s = getDebugContext().scope("FrontEnd", new DebugDumpScope("FrontEnd")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
+        try (DebugContext.Scope s = getDebugContext().scope("PTXFrontend", new DebugDumpScope("PTXFrontend")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
             final TornadoHighTierContext highTierContext = new TornadoHighTierContext(r.providers, r.graphBuilderSuite, r.optimisticOpts, r.installedCodeOwner, r.args, r.meta, r.isKernel,
                     r.batchThreads);
 

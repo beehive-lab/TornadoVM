@@ -11,6 +11,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.logic.BinaryLogicalNode;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp.RELATIONAL_EQ;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(shortName = "==")
 public class LogicalEqualsNode extends BinaryLogicalNode {
@@ -23,6 +24,7 @@ public class LogicalEqualsNode extends BinaryLogicalNode {
 
     @Override
     public Value generate(LIRGeneratorTool tool, Value x, Value y) {
+        trace("emitEquals: x=%s, y=%s", x, y);
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         PTXLIRStmt.AssignStmt assign = new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(RELATIONAL_EQ, tool.getLIRKind(stamp), x, y));
         tool.append(assign);

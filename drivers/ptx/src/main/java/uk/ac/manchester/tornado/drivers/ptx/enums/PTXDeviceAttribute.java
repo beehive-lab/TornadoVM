@@ -22,6 +22,10 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.enums;
 
+/**
+ * Contains a subset of the device properties that can be queried.
+ * See @link{ https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html } for the full list.
+ */
 public enum PTXDeviceAttribute {
     MAX_THREADS_PER_BLOCK(1),
     MAX_BLOCK_DIM_X(2),
