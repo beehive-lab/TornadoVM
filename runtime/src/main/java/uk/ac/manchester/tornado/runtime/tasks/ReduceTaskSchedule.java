@@ -373,6 +373,18 @@ class ReduceTaskSchedule {
         }
     }
 
+    private Object createHostArrayForHybridMode(Object originalReduceArray, TaskPackage taskPackage, int sizeTargetDevice) {
+        hybridMode = true;
+        if (hostHybridVariables == null) {
+            hostHybridVariables = new HashMap<>();
+        }
+        Object hybridArray = createNewReduceArray(originalReduceArray);
+        Object neutralElement = getNeutralElement(originalReduceArray);
+        fillOutputArrayWithNeutral(hybridArray, neutralElement);
+        taskPackage.setNumThreadsToRun(sizeTargetDevice);
+        return hybridArray;
+    }
+
     /**
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
@@ -390,8 +402,6 @@ class ReduceTaskSchedule {
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
 
         assert metaReduceTable != null;
-
-        long start = System.nanoTime();
 
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
@@ -453,16 +463,7 @@ class ReduceTaskSchedule {
                         inputSize -= elementsReductionLeftOver;
                         final int sizeTargetDevice = inputSize;
                         if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver)) {
-                            hybridMode = true;
-
-                            if (hostHybridVariables == null) {
-                                hostHybridVariables = new HashMap<>();
-                            }
-
-                            hybridArray = createNewReduceArray(originalReduceArray);
-                            Object neutralElement = getNeutralElement(originalReduceArray);
-                            fillOutputArrayWithNeutral(hybridArray, neutralElement);
-                            taskPackage.setNumThreadsToRun(sizeTargetDevice);
+                            hybridArray = createHostArrayForHybridMode(originalReduceArray, taskPackage, sizeTargetDevice);
                         }
                     }
 
