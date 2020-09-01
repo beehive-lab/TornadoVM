@@ -455,7 +455,7 @@ class ReduceTaskSchedule {
 
                     // Analyse Input Size - if not power of 2 -> split host and device executions
                     boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
-                    Object hybridArray = null;
+                    Object hostHybridModeArray = null;
                     if (!isInputPowerOfTwo) {
                         int exp = (int) (Math.log(inputSize) / Math.log(2));
                         double closestPowerOf2 = Math.pow(2, exp);
@@ -463,26 +463,26 @@ class ReduceTaskSchedule {
                         inputSize -= elementsReductionLeftOver;
                         final int sizeTargetDevice = inputSize;
                         if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver)) {
-                            hybridArray = createHostArrayForHybridMode(originalReduceArray, taskPackage, sizeTargetDevice);
+                            hostHybridModeArray = createHostArrayForHybridMode(originalReduceArray, taskPackage, sizeTargetDevice);
                         }
                     }
 
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(DEFAULT_DRIVER_INDEX, deviceToRun, inputSize);
-                    Object newArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
+                    Object newDeviceArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
                     Object neutralElement = getNeutralElement(originalReduceArray);
-                    fillOutputArrayWithNeutral(newArray, neutralElement);
+                    fillOutputArrayWithNeutral(newDeviceArray, neutralElement);
 
-                    neutralElementsNew.put(newArray, neutralElement);
+                    neutralElementsNew.put(newDeviceArray, neutralElement);
                     neutralElementsOriginal.put(originalReduceArray, neutralElement);
 
                     // Store metadata
-                    streamReduceList.add(newArray);
+                    streamReduceList.add(newDeviceArray);
                     sizesReductionArray.add(sizeReductionArray);
-                    originalReduceVariables.put(originalReduceArray, newArray);
+                    originalReduceVariables.put(originalReduceArray, newDeviceArray);
 
                     if (hybridMode) {
-                        hostHybridVariables.put(newArray, hybridArray);
+                        hostHybridVariables.put(newDeviceArray, hostHybridModeArray);
                     }
                 }
 
