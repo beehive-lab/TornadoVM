@@ -75,6 +75,17 @@ public class CodeGen extends TornadoTestBase {
         }
     }
 
+    public static void badCascadeKernel4() {
+        for (@Parallel int id = 0; id < 100; id++) {
+            boolean stillLooksLikeAFace = true;
+            for (int stage = 0; stillLooksLikeAFace && (stage < id); stage++) {
+                for (int t = 0; t < id; t++) {
+                    stillLooksLikeAFace = (t == 0);
+                }
+            }
+        }
+    }
+
     @Test
     public void test02() {
         TaskSchedule ts = new TaskSchedule("s0") //
@@ -88,4 +99,12 @@ public class CodeGen extends TornadoTestBase {
                 .task("t0", CodeGen::badCascadeKernel3);
         ts.warmup();
     }
+
+    @Test
+    public void test04() {
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", CodeGen::badCascadeKernel4);
+        ts.warmup();
+    }
+
 }

@@ -83,7 +83,7 @@ public class OCLControlFlow {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.endScope();
+            asm.endScope("End");
         }
     }
 
