@@ -189,7 +189,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             if (dom2 != null && isIfBlock(dom2)) {
                 /*
                  * We check that the other else-if block contains the loop-exit -> loop-end
-                 * sequence. This means was a break in the code.
+                 * sequence. This means there was a break in the code.
                  */
                 Block[] successors = block.getDominator().getSuccessors();
                 int index = 0;
