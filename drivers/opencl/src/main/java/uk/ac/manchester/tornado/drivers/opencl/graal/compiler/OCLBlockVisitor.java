@@ -360,9 +360,9 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         return dom != null && //
                 dom.getDominator() != null && // We need to be inside another merge block
                 dom.getDominator().getBeginNode() instanceof MergeNode && // We check for the nested merged block
-                dom.getBeginNode() instanceof LoopBeginNode && //
+                dom.getBeginNode() instanceof LoopBeginNode && // The dominator is a loop node
                 dom.getEndNode() instanceof IfNode && //
-                block.getBeginNode() instanceof LoopExitNode && //
+                block.getBeginNode() instanceof LoopExitNode && // The current block exits the block with a return
                 block.getEndNode() instanceof ReturnNode;
     }
 
