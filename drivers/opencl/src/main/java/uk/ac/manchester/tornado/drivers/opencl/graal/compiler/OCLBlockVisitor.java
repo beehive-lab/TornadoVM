@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
@@ -355,6 +356,16 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         return block.getDominator().getBeginNode() instanceof StartNode;
     }
 
+    private boolean isReturnBranchWithMerge(Block dom, Block block) {
+        return dom != null && //
+                dom.getDominator() != null && // We need to be inside another merge block
+                dom.getDominator().getBeginNode() instanceof MergeNode && // We check for the nested merged block
+                dom.getBeginNode() instanceof LoopBeginNode && //
+                dom.getEndNode() instanceof IfNode && //
+                block.getBeginNode() instanceof LoopExitNode && //
+                block.getEndNode() instanceof ReturnNode;
+    }
+
     private void closeBranchBlock(Block block) {
         final Block dom = block.getDominator();
         if (isIfBlockNode(block)) {
@@ -362,6 +373,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         } else if (isSwitchBlockNode(block)) {
             closeSwitchBlock(block, dom);
         } else if (isNestedIfNode(block) && (!isStartNode(block))) {
+            asm.endScope(block.toString());
+        } else if (isReturnBranchWithMerge(dom, block)) {
             asm.endScope(block.toString());
         }
     }

@@ -273,7 +273,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                     if (!isLoopDependencyNode(lir.getLIRforBlock(block).get(j))) {
                         emitOp(this, lir.getLIRforBlock(block).get(j));
                         opPreEmit = lir.getLIRforBlock(block).get(j);
-                        continue;
                     }
                 }
                 break;
