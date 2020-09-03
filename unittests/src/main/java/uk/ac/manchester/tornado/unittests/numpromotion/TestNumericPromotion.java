@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,31 +18,27 @@
 
 package uk.ac.manchester.tornado.unittests.numpromotion;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
 /**
- *
  * JVM applies "Binary Numeric Promotion"
  * https://docs.oracle.com/javase/specs/jls/se8/html/jls-5.html#jls-5.6.2
- *
+ * <p>
  * In a nutshell, byte operations are performed in bytes, but JVM narrows up the
  * result to int (signed), which leads to wrong results, because the output is
  * not a byte anymore, is an integer.
- *
+ * <p>
  * Since this is in the JLS spec, we can't do too much regarding Java semantics,
  * but a possible solution is to expose a type in TornadoVM that we can handle
  * like an intrinsic and force not to sign those operations.
- *
+ * <p>
  * Affect arithmetic, logical and shift operations when operands are byte and
  * short data types.
- *
  */
 
 public class TestNumericPromotion extends TornadoTestBase {
@@ -127,7 +123,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testBitwiseOr() {
 
@@ -145,14 +140,11 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         byte[] sequential = new byte[4];
         bitwiseOr(sequential, input, elements);
-        System.out.println(Arrays.toString(result));
-        System.out.println(Arrays.toString(sequential));
         for (int i = 0; i < result.length; i++) {
             assertEquals(sequential[i], result[i]);
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testBitwiseAnd() {
 
@@ -175,7 +167,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testBitwiseXor() {
 
@@ -198,7 +189,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testAddition() {
 
@@ -221,7 +211,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testSubtraction() {
 
@@ -244,9 +233,8 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
-    public void testMulitplication() {
+    public void testMultiplication() {
 
         byte[] elements = new byte[] { 4 };
         byte[] result = new byte[] { 1, 1, 1, 1 };
@@ -255,7 +243,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
                 .streamIn(result, input, elements)
-                .task("t0", TestNumericPromotion::multiplication, result, input,elements)
+                .task("t0", TestNumericPromotion::multiplication, result, input, elements)
                 .streamOut(result)
                 .execute();
         //@formatter:on
@@ -267,7 +255,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testDivision() {
 
@@ -290,7 +277,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testSignedLeftShift() {
 
@@ -313,7 +299,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testSignedRightShift() {
 
@@ -336,7 +321,6 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
     @Test
     public void testUnsignedRightShift() {
 

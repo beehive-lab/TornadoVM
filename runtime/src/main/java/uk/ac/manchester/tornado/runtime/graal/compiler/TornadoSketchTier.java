@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNumericPromotionPhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
@@ -49,21 +50,22 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
     protected final CanonicalizerPhase.CustomCanonicalization customCanonicalizer;
 
-    public CanonicalizerPhase.CustomCanonicalization getCustomCanonicalizer() {
-        return customCanonicalizer;
-    }
-
-    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
-        this.customCanonicalizer = customCanonicalizer;
-
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+    }
 
+    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
+        this.customCanonicalizer = customCanonicalizer;
+
+        appendPhase(new TornadoNumericPromotionPhase());
+
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {

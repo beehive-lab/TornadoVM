@@ -77,14 +77,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElem
 
 /**
  * This phase modifies the functionality of the originally FloatingRead Phase
- * from Graal. The original phase reschedule and replace ReadNodes with
- * FloatingRead nodes in order to move loads closer to the actual usage. An
- * extra check is performed through shouldBeFloatingRead to check the node
- * origin of the access to prevent read associated with private memory to be
- * replaced by floating reads and schedule outside the scope of the parallel
+ * from Graal. The original phase reschedules and replaces Read-Nodes with
+ * {@link FloatingReadNode} nodes in order to move loads closer to the actual
+ * usage. An extra check is performed through shouldBeFloatingRead to check the
+ * node origin of the access to prevent read associated with private memory to
+ * be replaced by floating reads and schedule outside the scope of the parallel
  * loop.
  *
- * @org.graalvm.compiler.phases.common.FloatingReadPhase
+ * {@link org.graalvm.compiler.phases.common.FloatingReadPhase}
  */
 public class TornadoFloatingReadReplacement extends Phase {
     private boolean createFloatingReads;

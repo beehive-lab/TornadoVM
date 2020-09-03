@@ -54,10 +54,6 @@ public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAcces
         this.type = type;
     }
 
-    protected OCLWriteNode(NodeClass<? extends OCLWriteNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType) {
-        super(c, address, location, value, barrierType);
-    }
-
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         OCLStamp oclStamp = null;
