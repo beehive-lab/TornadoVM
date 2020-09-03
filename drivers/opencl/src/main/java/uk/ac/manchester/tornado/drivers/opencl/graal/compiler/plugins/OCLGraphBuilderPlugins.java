@@ -54,7 +54,9 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -68,8 +70,11 @@ public class OCLGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
         registerCompilerInstrinsicsPlugins(plugins);
-        registerTornadoInstrinsicsPlugins(plugins);
+        registerTornadoVMInstrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
+
+        // Register Atomics
+        registerTornadoVMAtomicsPlugins(plugins);
 
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
@@ -87,7 +92,23 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
+    private static void registerTornadoVMAtomicsPlugins(Registration r, Class<?> type, JavaKind kind) {
+        r.register3("atomic_add", int[].class, type, type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
+                AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, index, inc);
+                b.addPush(kind, b.append(atomicIncNode));
+                return true;
+            }
+        });
+    }
+
+    private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, TornadoVM_Intrinsics.class);
+        registerTornadoVMAtomicsPlugins(r, Integer.TYPE, JavaKind.Int);
+    }
+
+    private static void registerTornadoVMInstrinsicsPlugins(InvocationPlugins plugins) {
 
         final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
 

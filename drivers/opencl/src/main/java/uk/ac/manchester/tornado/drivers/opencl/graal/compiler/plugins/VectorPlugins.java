@@ -59,7 +59,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNod
 
 public final class VectorPlugins {
 
-    public static final void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
 
         if (ENABLE_VECTORS) {
             ps.appendNodePlugin(new NodePlugin() {

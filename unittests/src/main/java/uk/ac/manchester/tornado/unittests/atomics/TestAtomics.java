@@ -18,11 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.atomics;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 
 import org.junit.Ignore;
+import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -53,4 +57,60 @@ public class TestAtomics extends TornadoTestBase {
         //@formatter:on
     }
 
+    // Failed code that should end-up in a race condition
+    public static void atomic02(int[] a) {
+        final int SIZE = 100;
+        for (@Parallel int i = 0; i < a.length; i++) {
+            int j = i % SIZE;
+            a[j] = a[j] + 1;
+        }
+    }
+
+    @Test
+    public void testAtomic02() {
+        final int size = 1024;
+        int[] a = new int[size];
+        int[] b = new int[size];
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 1);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic02, a) //
+                .streamOut(a) //
+                .execute();
+
+        atomic02(b);
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(b[i], a[i]);
+        }
+    }
+
+    public static void atomic03(int[] a) {
+        final int SIZE = 100;
+        for (@Parallel int i = 0; i < a.length; i++) {
+            int j = i % SIZE;
+            a[j] = TornadoVM_Intrinsics.atomic_add(a, j, 1);
+        }
+    }
+
+    @Test
+    public void testAtomic03() {
+        final int size = 1024;
+        int[] a = new int[size];
+        int[] b = new int[size];
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 1);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic03, a) //
+                .streamOut(a) //
+                .execute();
+
+        atomic02(b);
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(b[i], a[i]);
+        }
+    }
 }
