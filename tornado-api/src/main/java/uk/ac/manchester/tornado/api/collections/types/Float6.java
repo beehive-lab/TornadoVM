@@ -41,23 +41,11 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
-import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt6;
-
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 
-/**
- * Class that represents a vector of 3x floats e.g. <float,float,float>
- *
- * @author jamesclarkson
- *
- */
 public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float6> TYPE = Float6.class;
@@ -65,7 +53,8 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload final protected float[] storage;
+    @Payload
+    final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -88,6 +77,10 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         setS3(s3);
         setS4(s4);
         setS5(s5);
+    }
+
+    public float[] getArray() {
+        return storage;
     }
 
     public void set(Float6 value) {
@@ -155,18 +148,18 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         set(5, value);
     }
 
-    public Float3 getHi() {
+    public Float3 getHigh() {
         return Float3.loadFromArray(storage, 0);
     }
 
-    public Float3 getLo() {
+    public Float3 getLow() {
         return Float3.loadFromArray(storage, 3);
     }
 
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Float6}
      */
     public Float6 duplicate() {
         final Float6 vector = new Float6();
@@ -175,15 +168,15 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
     }
 
     @Override
     public String toString() {
-        return toString(fmt6);
+        return toString(FloatOps.fmt6);
     }
 
-    public static final Float6 loadFromArray(final float[] array, int index) {
+    public static Float6 loadFromArray(final float[] array, int index) {
         final Float6 result = new Float6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, array[index + i]);
@@ -204,7 +197,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -348,7 +341,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      * vector wide operations
      */
     public static float min(Float6 value) {
-        float result = MAX_VALUE;
+        float result = Float.MAX_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.min(result, value.get(i));
         }
@@ -356,7 +349,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static float max(Float6 value) {
-        float result = MIN_VALUE;
+        float result = Float.MIN_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.max(result, value.get(i));
         }
@@ -375,7 +368,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Returns the vector length e.g. the sqrt of all elements squared
      *
-     * @return
+     * @return float
      */
     public static float length(Float6 value) {
         return TornadoMath.sqrt(dot(value, value));

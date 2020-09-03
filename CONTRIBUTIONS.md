@@ -25,8 +25,12 @@ The auto-formatter is set automatically by running the following script:
 python scripts/eclipseSetup.py
 ``` 
 
-For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_INTELLIJ.md).
+For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_INTELLIJ.md). Additionally, be sure that IntelliJ uses a single class import: 
 
+* Settings -> General -> Code Editing -> Formatting -> Imports optimization
+* Settings -> Code Style -> Java -> "Use single class import"
+* Settings -> Other Settings -> Save Actions -> Formatting Actions -> Optimize Imports
+* Settings -> Other Settings -> Save Actions -> Formatting Actions -> Reformat File
 
 ## Looking for tasks to contribute? 
 

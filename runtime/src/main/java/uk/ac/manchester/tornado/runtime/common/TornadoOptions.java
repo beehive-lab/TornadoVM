@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -27,17 +27,16 @@ package uk.ac.manchester.tornado.runtime.common;
 
 public class TornadoOptions {
 
+    public static boolean USER_SCHEDULING = false;
     /**
      * Option to print TornadoVM Internal Bytecodes.
-     * 
      */
     public static boolean printBytecodes = getBooleanValue("tornado.print.bytecodes", "False");
 
     /**
      * Option to debug dynamic reconfiguration policies.
-     * 
+     * <p>
      * Use `-Dtornado.dynamic.verbose=True`.
-     * 
      */
     public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", "False");
 
@@ -74,8 +73,13 @@ public class TornadoOptions {
     public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
 
     /**
+     * Enable/Disable FMA Optimizations. True by default.
+     */
+    public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
-     * 
+     *
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
@@ -85,7 +89,7 @@ public class TornadoOptions {
     /**
      * Option for saving the profiler between different runs. It can be disabled at
      * any point during runtime.
-     * 
+     *
      * @return boolean.
      */
     public static boolean isSaveProfilerEnabled() {

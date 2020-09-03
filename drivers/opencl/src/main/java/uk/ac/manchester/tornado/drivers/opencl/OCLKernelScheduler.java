@@ -24,6 +24,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -61,17 +62,27 @@ public abstract class OCLKernelScheduler {
     }
 
     public int launch(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
-        return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
-                waitEvents);
+        if (meta.isWorkerGridAvailable()) {
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            long[] global = grid.getGlobalWork();
+            long[] offset = grid.getGlobalOffset();
+            long[] local = grid.getLocalWork();
+            return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
+        } else {
+            return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
+                    waitEvents);
+        }
     }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
-        if (!meta.isGlobalWorkDefined()) {
-            calculateGlobalWork(meta, batchThreads);
-        }
 
-        if (!meta.isLocalWorkDefined()) {
-            calculateLocalWork(meta);
+        if (!meta.isWorkerGridAvailable()) {
+            if (!meta.isGlobalWorkDefined()) {
+                calculateGlobalWork(meta, batchThreads);
+            }
+            if (!meta.isLocalWorkDefined()) {
+                calculateLocalWork(meta);
+            }
         }
 
         if (meta.isDebug()) {

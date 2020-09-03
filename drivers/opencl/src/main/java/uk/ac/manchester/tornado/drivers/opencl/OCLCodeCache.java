@@ -45,12 +45,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
@@ -485,6 +484,10 @@ public class OCLCodeCache {
             } catch (IOException e) {
                 error("unable to write error log: ", e.getMessage());
             }
+        }
+
+        if (status == OCLBuildStatus.CL_BUILD_ERROR) {
+            throw new TornadoBailoutRuntimeException("Error during code compilation with the OpenCL driver");
         }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;

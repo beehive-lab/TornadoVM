@@ -41,25 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
-import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt8;
-
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-/**
- * Class that represents a vector of 8x floats e.g.
- * <float,float,float,float,float,float,float,float>
- *
- * @author jamesclarkson
- *
- */
 @Vector
 public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
@@ -68,7 +55,8 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload final protected float[] storage;
+    @Payload
+    final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -89,14 +77,13 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         setS1(s1);
         setS2(s2);
         setS3(s3);
-
         setS4(s4);
         setS5(s5);
         setS6(s6);
         setS7(s7);
     }
 
-    public float[] getStorage() {
+    public float[] getArray() {
         return storage;
     }
 
@@ -178,18 +165,18 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         set(7, value);
     }
 
-    public Float4 getHi() {
+    public Float4 getHigh() {
         return new Float4(getS4(), getS5(), getS6(), getS7());
     }
 
-    public Float4 getLo() {
+    public Float4 getLow() {
         return new Float4(getS0(), getS1(), getS2(), getS3());
     }
 
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Float8}
      */
     public Float8 duplicate() {
         Float8 vector = new Float8();
@@ -198,15 +185,15 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        return format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
     }
 
     @Override
     public String toString() {
-        return toString(fmt8);
+        return toString(FloatOps.fmt8);
     }
 
-    protected static final Float8 loadFromArray(final float[] array, int index) {
+    protected static Float8 loadFromArray(final float[] array, int index) {
         final Float8 result = new Float8();
         for (int i = 0; i < numElements; i++) {
             result.set(i, array[index + i]);
@@ -227,7 +214,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -311,7 +298,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static float min(Float8 value) {
-        float result = MAX_VALUE;
+        float result = Float.MAX_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.min(result, value.get(i));
         }
@@ -327,7 +314,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static float max(Float8 value) {
-        float result = MIN_VALUE;
+        float result = Float.MIN_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.max(result, value.get(i));
         }

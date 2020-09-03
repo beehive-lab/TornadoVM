@@ -41,9 +41,11 @@ import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
@@ -63,6 +65,7 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(canonicalizer);
 
+        appendPhase((new BoundCheckEliminationPhase()));
         appendPhase(new ExceptionCheckingElimination());
 
         if (OptFloatingReads.getValue(options)) {

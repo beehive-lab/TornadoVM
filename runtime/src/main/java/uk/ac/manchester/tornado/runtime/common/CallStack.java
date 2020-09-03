@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import java.util.HashMap;
+
 public interface CallStack {
 
     void reset();
@@ -42,4 +44,6 @@ public interface CallStack {
     boolean isOnDevice();
 
     void dump();
+
+    void setHeader(HashMap<Integer, Integer> map);
 }

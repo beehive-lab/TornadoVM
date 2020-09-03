@@ -24,14 +24,14 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CLOSE_PARENTHESIS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.OPEN_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CASE;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CLOSE_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.COLON;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.DEFAULT_CASE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.EXPR_DELIMITER;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FOR_LOOP;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.OPEN_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STMT_DELIMITER;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SWITCH;
 
@@ -58,7 +58,8 @@ public class OCLControlFlow {
     public static final class ReturnOp extends AbstractBlockEndOp {
 
         public static final LIRInstructionClass<ReturnOp> TYPE = LIRInstructionClass.create(ReturnOp.class);
-        @Use protected Value x;
+        @Use
+        protected Value x;
 
         public ReturnOp(Value x) {
             super(TYPE);
@@ -82,7 +83,7 @@ public class OCLControlFlow {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.endScope();
+            asm.endScope("End");
         }
     }
 
@@ -147,7 +148,8 @@ public class OCLControlFlow {
     public static class LoopConditionOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
-        @Use private final Value condition;
+        @Use
+        private final Value condition;
 
         public LoopConditionOp(Value condition) {
             super(TYPE);
@@ -180,7 +182,8 @@ public class OCLControlFlow {
     public static class ConditionalBranchOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass.create(ConditionalBranchOp.class);
-        @Use private final Value condition;
+        @Use
+        private final Value condition;
 
         public ConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -197,7 +200,8 @@ public class OCLControlFlow {
     public static class LinkedConditionalBranchOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<LinkedConditionalBranchOp> TYPE = LIRInstructionClass.create(LinkedConditionalBranchOp.class);
-        @Use private final Value condition;
+        @Use
+        private final Value condition;
 
         public LinkedConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -232,11 +236,14 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass.create(SwitchOp.class);
 
-        @Use private final Variable value;
+        @Use
+        private final Variable value;
 
-        @Use({ CONST }) private final Constant[] keyConstants;
+        @Use({ CONST })
+        private final Constant[] keyConstants;
 
-        @Use private final LabelRef[] keyTargets;
+        @Use
+        private final LabelRef[] keyTargets;
         private final LabelRef defaultTarget;
 
         public SwitchOp(Variable value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
@@ -275,7 +282,8 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<CaseOp> TYPE = LIRInstructionClass.create(CaseOp.class);
 
-        @Use private final Constant value;
+        @Use
+        private final Constant value;
 
         public CaseOp(Constant value) {
             super(TYPE);
@@ -351,7 +359,8 @@ public class OCLControlFlow {
     public static class DeoptOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<DeoptOp> TYPE = LIRInstructionClass.create(DeoptOp.class);
-        @Use private final Value actionAndReason;
+        @Use
+        private final Value actionAndReason;
 
         public DeoptOp(Value actionAndReason) {
             super(TYPE);

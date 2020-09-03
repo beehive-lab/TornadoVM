@@ -221,11 +221,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             kernel.setArgUnused(index);
         }
         index++;
-
-        // private memory
-        buffer.clear();
-        buffer.putLong(stack.toPrivateAddress());
-        kernel.setArg(index, buffer);
     }
 
     public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events, long batchThreads) {
@@ -331,7 +326,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private void launchKernel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
         final int task;
-        if (meta.isParallel()) {
+        if (meta.isParallel() || meta.isWorkerGridAvailable()) {
             task = submitParallel(meta, batchThreads);
         } else {
             task = submitSequential(meta);

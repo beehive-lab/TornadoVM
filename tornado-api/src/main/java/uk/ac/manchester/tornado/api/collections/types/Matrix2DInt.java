@@ -41,15 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Math.min;
-import static java.lang.String.format;
-import static java.lang.System.out;
-import static java.nio.IntBuffer.wrap;
-import static java.util.Arrays.copyOfRange;
-import static uk.ac.manchester.tornado.api.collections.types.IntOps.fmt;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
 import java.nio.IntBuffer;
+import java.util.Arrays;
 
 public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     /**
@@ -75,11 +68,11 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
-     * @param data
+     * @param array
      *            array reference which contains data
      */
     public Matrix2DInt(int width, int height, int[] array) {
@@ -92,9 +85,9 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     /**
      * Storage format for matrix
      * 
-     * @param height
-     *            number of columns
      * @param width
+     *            number of columns
+     * @param height
      *            number of rows
      */
     public Matrix2DInt(int width, int height) {
@@ -102,15 +95,19 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public Matrix2DInt(int[][] matrix) {
-        this(matrix.length, matrix[0].length, toRowMajor(matrix));
+        this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
+    }
+
+    public int[] getFlattenedArray() {
+        return storage;
     }
 
     public int get(int i, int j) {
-        return storage[toRowMajor(i, j, M)];
+        return storage[StorageFormats.toRowMajor(i, j, M)];
     }
 
     public void set(int i, int j, int value) {
-        storage[toRowMajor(i, j, M)] = value;
+        storage[StorageFormats.toRowMajor(i, j, M)] = value;
     }
 
     public int M() {
@@ -122,12 +119,12 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public VectorInt row(int row) {
-        int index = toRowMajor(row, 0, N);
-        return new VectorInt(N, copyOfRange(storage, index, N));
+        int index = StorageFormats.toRowMajor(row, 0, N);
+        return new VectorInt(N, Arrays.copyOfRange(storage, index, N));
     }
 
     public VectorInt column(int col) {
-        int index = toRowMajor(0, col, N);
+        int index = StorageFormats.toRowMajor(0, col, N);
         final VectorInt v = new VectorInt(M);
         for (int i = 0; i < M; i++) {
             v.set(i, storage[index + (i * N)]);
@@ -136,7 +133,7 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public VectorInt diag() {
-        final VectorInt v = new VectorInt(min(M, N));
+        final VectorInt v = new VectorInt(Math.min(M, N));
         for (int i = 0; i < M; i++) {
             v.set(i, storage[i * (N + 1)]);
         }
@@ -162,8 +159,8 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public void tmultiply(Matrix2DInt a, Matrix2DInt b) {
-        out.printf("tmult: M=%d (expect %d)\n", M(), a.M());
-        out.printf("tmult: N=%d (expect %d)\n", N(), b.M());
+        System.out.printf("tmult: M=%d (expect %d)\n", M(), a.M());
+        System.out.printf("tmult: N=%d (expect %d)\n", N(), b.M());
         for (int row = 0; row < M(); row++) {
             for (int col = 0; col < b.M(); col++) {
                 int sum = 0;
@@ -178,7 +175,7 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     /**
      * Transposes the matrix in-place
      * 
-     * @param m
+     * @param matrix
      *            matrix to transpose
      */
     public static void transpose(Matrix2DInt matrix) {
@@ -212,7 +209,7 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                str += format(fmt, get(i, j)) + " ";
+                str += String.format(fmt, get(i, j)) + " ";
             }
             str += "\n";
         }
@@ -221,9 +218,9 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public String toString() {
-        String result = format("MatrixInt <%d x %d>", M, N);
+        String result = String.format("MatrixInt <%d x %d>", M, N);
         if (M < 16 && N < 16) {
-            result += "\n" + toString(fmt);
+            result += "\n" + toString(IntOps.fmt);
         }
         return result;
     }
@@ -241,7 +238,7 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return wrap(storage);
+        return IntBuffer.wrap(storage);
     }
 
     @Override
