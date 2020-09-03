@@ -40,12 +40,16 @@ import org.graalvm.compiler.phases.BasePhase;
  * the sign-Extend. This deletion provokes that this node will be removed when
  * passing deadcode-elimination.
  * 
- * In this phase, we need to preserve a the Narrow node that is removed from the
- * IR. In TornadoVM, we need a custom canonicalizer, because we don't want to
- * simplify vector types, among other types. This path differs from
- * Vanilla-GraalVM compiler. By doing this, canonicalizer phases in
- * lowering-round start appearing the sub-canonicalizer phases with the
- * Sign-Extend.
+ * This phase links the Narrow node with the Sign-Extend. This phase is intended
+ * to be called after the first canonicalizer phase is passed. Currently this is
+ * done in the TornadoVM Sketcher.
+ * 
+ * More detailed explanation: In this phase, we need to preserve a the Narrow
+ * node that is removed from the IR. In TornadoVM, we need a custom
+ * canonicalizer, because we don't want to simplify vector types, among other
+ * types. This path differs from Vanilla-GraalVM compiler. By doing this,
+ * canonicalizer phases in lowering-round start appearing the sub-canonicalizer
+ * phases with the Sign-Extend.
  * 
  */
 public class TornadoNumericPromotionPhase extends BasePhase<TornadoSketchTierContext> {
