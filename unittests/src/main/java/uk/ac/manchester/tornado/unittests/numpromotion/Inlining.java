@@ -26,8 +26,9 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class Inlining {
+public class Inlining extends TornadoTestBase {
 
     public static void bitwiseOr(byte[] result, byte[] input, byte[] elements) {
         result[0] |= input[1];
@@ -39,13 +40,12 @@ public class Inlining {
         byte[] elements = new byte[] { 4 };
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
-        //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(result, input, elements)
-                .task("t0", Inlining::bitwiseOr, result, input, elements)
-                .streamOut(result)
+
+        new TaskSchedule("s0") //
+                .streamIn(result, input, elements) //
+                .task("t0", Inlining::bitwiseOr, result, input, elements) //
+                .streamOut(result) //
                 .execute();
-        //@formatter:on
     }
 
     public static int b2i(byte v) {
@@ -94,7 +94,7 @@ public class Inlining {
     }
 
     @TornadoNotSupported
-    public void test01() {
+    public void rgbToGreyKernel() {
 
         final int size = 256;
         byte[] rgbBytes = new byte[size * 3];
@@ -121,7 +121,7 @@ public class Inlining {
     }
 
     @Test
-    public void test02() {
+    public void rgbToGreyKernelInt() {
         final int size = 256;
         int[] rgbBytes = new int[size * 3];
         int[] greyInts = new int[size];
@@ -146,7 +146,7 @@ public class Inlining {
     }
 
     @TornadoNotSupported
-    public void test03() {
+    public void rgbToGreyKernelSmall() {
         final int size = 256;
         byte[] rgbBytes = new byte[size];
         int[] greyInts = new int[size];
@@ -169,12 +169,11 @@ public class Inlining {
         }
     }
 
-    @Test
-    public void test04() {
+    @TornadoNotSupported
+    public void b2i() {
         byte[] rgbBytes = new byte[1];
         int[] greyInts = new int[1];
         int[] seq = new int[1];
-        Random r = new Random();
         IntStream.range(0, rgbBytes.length).forEach(i -> {
             rgbBytes[i] = (byte) -10;
         });
