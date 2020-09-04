@@ -177,13 +177,13 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         }
     }
 
-    private void parallelizationReplacement(StructuredGraph graph, InductionVariable iv, int loopIndex, ValueNode maxIterations, List<IntegerLessThanNode> conditions)
+    private void parallelizationReplacement(StructuredGraph graph, InductionVariable inductionVar, int loopIndex, ValueNode maxIterations, List<IntegerLessThanNode> conditions)
             throws TornadoCompilationException {
-        if (iv.isConstantInit() && iv.isConstantStride()) {
+        if (inductionVar.isConstantInit() && inductionVar.isConstantStride()) {
 
-            final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+            final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) inductionVar.constantInit()));
 
-            final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
+            final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) inductionVar.constantStride()));
 
             final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(loopIndex, newInit));
 
@@ -191,7 +191,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
             final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(loopIndex, maxIterations, offset, stride));
 
-            final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
+            final ValuePhiNode phi = (ValuePhiNode) inductionVar.valueNode();
 
             final ValueNode oldStride = phi.singleBackValueOrThis();
 
@@ -200,9 +200,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                 oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
             }
 
-            iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
-            iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
-
+            inductionVar.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
+            inductionVar.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
             // only replace this node in the loop condition
             maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
 
