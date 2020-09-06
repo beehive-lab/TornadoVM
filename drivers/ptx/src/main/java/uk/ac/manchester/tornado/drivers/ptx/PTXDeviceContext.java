@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
@@ -16,6 +17,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -146,14 +148,25 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int enqueueKernelLaunch(PTXModule module, CallStack stack, long batchThreads) {
-        int[] blocks = { 1, 1, 1 };
-        int[] grids = { 1, 1, 1 };
-        if (module.metaData.isParallel()) {
+        int[] blockDimension = { 1, 1, 1 };
+        int[] gridDimension = { 1, 1, 1 };
+        if (module.metaData.isWorkerGridAvailable()) {
+            WorkerGrid grid = module.metaData.getWorkerGrid(module.metaData.getId());
+            int[] global = Arrays.stream(grid.getGlobalWork()).mapToInt(l -> (int) l).toArray();
+
+            if (grid.getLocalWork() != null) {
+                blockDimension = Arrays.stream(grid.getLocalWork()).mapToInt(l -> (int) l).toArray();
+            }
+            else {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getMaxThreadBlocks(), grid.dimension(), module.javaName);
+            }
+            gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
+        } else if (module.metaData.isParallel()) {
             scheduler.calculateGlobalWork(module.metaData, batchThreads);
-            blocks = scheduler.calculateBlocks(module);
-            grids = scheduler.calculateGrids(module, blocks);
+            blockDimension = scheduler.calculateBlockDimension(module);
+            gridDimension = scheduler.calculateGridDimension(module, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), grids, blocks);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, module.metaData);
         return kernelLaunchEvent;
     }

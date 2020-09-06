@@ -43,6 +43,7 @@ public enum PTXKind implements PlatformKind {
     INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, S32),
     INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, S32),
     INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, S32),
+    INT8(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, S32),
 
     FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, F32),
     FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, F32),

@@ -430,6 +430,8 @@ public interface TornadoAPI {
      */
     void execute();
 
+    void execute(GridTask gridTask);
+
     /**
      * Run with dynamic reconfiguration with an input policy
      * 

@@ -12,6 +12,10 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
@@ -168,27 +172,42 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>());
     }
 
-    private static void traverseControlFlowGraph(Block b, PTXBlockVisitor visitor, HashSet<Block> visited) {
-        visitor.enter(b);
-        visited.add(b);
+    private static void traverseControlFlowGraph(Block basicBlock, PTXBlockVisitor visitor, HashSet<Block> visited) {
+        visitor.enter(basicBlock);
+        visited.add(basicBlock);
 
-        Block firstDominated = b.getFirstDominated();
+        Block firstDominated = basicBlock.getFirstDominated();
         LinkedList<Block> queue = new LinkedList<>();
         queue.add(firstDominated);
 
-        if (b.isLoopHeader()) {
-            Block[] successors = b.getSuccessors();
+        if (basicBlock.isLoopHeader()) {
+            Block[] successors = basicBlock.getSuccessors();
             ArrayList<Block> last = new ArrayList<>();
+            ArrayList<Block> pending = new ArrayList<>();
+            FixedNode endNode = basicBlock.getEndNode();
+            IfNode ifNode = null;
+            if (endNode instanceof IfNode) {
+                ifNode = (IfNode) endNode;
+            }
             for (Block block : successors) {
-                boolean isInnerLoop = isLoopBlock(block, b);
+                boolean isInnerLoop = isLoopBlock(block, basicBlock);
                 if (!isInnerLoop) {
                     last.add(block);
+                    assert ifNode != null;
+                    if (ifNode.trueSuccessor() == block.getBeginNode() && block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode) {
+                        pending.add(block);
+                    } else {
+                        last.add(block);
+                    }
                 } else {
                     queue.addLast(block);
                 }
             }
             for (Block l : last) {
                 queue.addLast(l);
+            }
+            for (Block p : pending) {
+                queue.addLast(p);
             }
             queue.removeFirst();
         }
@@ -202,7 +221,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
                 firstDominated = firstDominated.getDominatedSibling();
             }
         }
-        visitor.exit(b, null);
+        visitor.exit(basicBlock, null);
     }
 
     private static boolean isLoopBlock(Block block, Block loopHeader) {

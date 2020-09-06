@@ -49,5 +49,5 @@ public class PTXAssemblerConstants {
     public static final String CURLY_BRACKETS_CLOSE = "}";
 
 
-    public static final int STACK_BASE_OFFSET = 0;
+    public static final int STACK_BASE_OFFSET = 3;
 }

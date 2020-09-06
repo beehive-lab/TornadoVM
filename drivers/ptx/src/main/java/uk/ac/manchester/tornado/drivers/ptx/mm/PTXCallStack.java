@@ -5,6 +5,7 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
@@ -12,8 +13,9 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 public class PTXCallStack extends PTXByteBuffer implements CallStack {
-    public final static int RESERVED_SLOTS = 6;
+
     public final static int RETURN_VALUE_INDEX = 0;
+    public static final int RESERVED_SLOTS = 3;
 
     private boolean onDevice;
     private byte argStart;
@@ -35,10 +37,7 @@ public class PTXCallStack extends PTXByteBuffer implements CallStack {
 
     @Override
     public void reset() {
-        for (int i = 0; i < 2; i++) {
-            buffer.putLong(i, 0);
-        }
-
+        buffer.mark();
         buffer.reset();
         onDevice = false;
     }
@@ -99,6 +98,18 @@ public class PTXCallStack extends PTXByteBuffer implements CallStack {
     @Override
     public void dump() {
         super.dump(8);
+    }
+
+    @Override
+    public void setHeader(HashMap<Integer, Integer> map) {
+        buffer.clear();
+        for (int i = 0; i < RESERVED_SLOTS; i++) {
+            if (map.containsKey(i)) {
+                buffer.putLong(map.get(i));
+            } else {
+                buffer.putLong(0);
+            }
+        }
     }
 
     @Override

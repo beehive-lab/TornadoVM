@@ -231,6 +231,11 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
+    public void execute(GridTask gridTask) {
+        taskScheduleImpl.schedule(gridTask).waitOn();
+    }
+
+    @Override
     public void executeWithProfiler(Policy policy) {
         taskScheduleImpl.scheduleWithProfile(policy).waitOn();
     }

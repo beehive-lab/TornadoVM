@@ -10,9 +10,9 @@
 BLOCK_0:
     // load arguments from the stack
 	ld.param.u64	rud0, [stack_pointer];
-	ldu.global.u64	rud1, [rud0];
-	ldu.global.u64	rud2, [rud0+8];
-	ldu.global.u64	rud3, [rud0+16];
+	ldu.global.u64	rud1, [rud0+24];
+	ldu.global.u64	rud2, [rud0+32];
+	ldu.global.u64	rud3, [rud0+40];
 
 	// getGlobalId() in rsi0
 	mov.u32	rui0, %tid.x;

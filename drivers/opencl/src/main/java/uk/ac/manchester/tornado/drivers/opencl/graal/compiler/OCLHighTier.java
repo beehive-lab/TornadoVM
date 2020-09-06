@@ -64,25 +64,25 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 
-    public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
-        super(customCanonicalizer);
-
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
+        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+    }
 
-        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+    public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+        super(customCanonicalizer);
 
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
             appendPhase(new InliningPhase(new TornadoInliningPolicy(), canonicalizer));
-
             appendPhase(new DeadCodeEliminationPhase(Optional));
-
             if (ConditionalElimination.getValue(options)) {
                 appendPhase(canonicalizer);
                 appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
@@ -124,9 +124,10 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
+
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
 
-        // After the first Lowering, Tornado replaces reductions with snippets
+        // After the first Lowering, TornadoVM replaces reductions with snippets
         // that contains method calls to barriers.
 
         appendPhase(new TornadoOpenCLIntrinsicsReplacements(metaAccessProvider));
@@ -134,6 +135,5 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoLocalMemoryAllocation());
 
         appendPhase(new ExceptionSuppression());
-
     }
 }

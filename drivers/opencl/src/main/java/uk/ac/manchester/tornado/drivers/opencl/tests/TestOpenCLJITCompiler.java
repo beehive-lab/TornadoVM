@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.tests;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -139,6 +140,10 @@ public class TestOpenCLJITCompiler {
 
         // Create stack
         CallStack stack = tornadoDevice.createStack(3);
+
+        // Fill header of call stack with empty values
+        stack.setHeader(new HashMap<>());
+
         stack.push(a, objectStateA);
         stack.push(b, objectStateB);
         stack.push(c, objectStateC);

@@ -11,6 +11,7 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
@@ -89,6 +90,11 @@ public class PTX {
         // Create stack
         final int numArgs = parameters.length;
         CallStack stack = tornadoDevice.createStack(numArgs);
+
+        // Fill header of call stack with empty values
+        stack.setHeader(new HashMap<>());
+
+        // Pass arguments to the call stack
         for (int i = 0; i < numArgs; i++) {
             stack.push(parameters[i], states.get(i));
         }

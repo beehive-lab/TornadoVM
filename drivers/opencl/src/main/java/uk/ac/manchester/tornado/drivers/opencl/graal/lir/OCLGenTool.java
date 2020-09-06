@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBa
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
@@ -129,6 +130,6 @@ public class OCLGenTool {
         OCLKind oclKind = (OCLKind) dst.getPlatformKind();
         LIRKind lirKind = LIRKind.value(oclKind);
         final OCLUnaryOp op = getParameterLoadOp(oclKind);
-        gen.append(new AssignStmt(dst, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index)))));
+        gen.append(new AssignStmt(dst, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
     }
 }

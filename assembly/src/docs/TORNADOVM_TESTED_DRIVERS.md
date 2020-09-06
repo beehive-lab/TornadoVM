@@ -21,6 +21,7 @@
 
 The following drivers have been tested on Linux - CentOS 7.8
 
+* 20.28.17293: OK
 * 20.27.17231: OK
 * 20.26.17199: OK
 * 20.25.17111: OK
@@ -84,6 +85,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
 #### OpenCL drivers
+* 450.66 : OK
 * 450.57 : OK
 * 440.100: OK
 * 440.82 : OK
@@ -114,3 +116,4 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 ## Known Driver Issues
 
 * Intel CPU OpenCL driver `18.1.0.0920` is not working with Ubuntu >= 19.04
+

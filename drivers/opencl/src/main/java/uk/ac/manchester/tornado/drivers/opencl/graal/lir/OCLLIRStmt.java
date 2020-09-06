@@ -316,9 +316,20 @@ public class OCLLIRStmt {
             this.index = index;
         }
 
-        public void emitIntegerStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // ul_12[index] = 102;
-            // __local float ul_12[512];
+        /**
+         * It emits code in the form:
+         * 
+         * <code>
+         *     ul_12[index] = value;
+         * </code>
+         * 
+         * @param crb
+         *            OpenCL Compilation Result Builder
+         * 
+         * @param asm
+         *            OpenCL Assembler
+         */
+        public void emitLocalAndPrivateStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             address.emit(crb, asm);
             asm.emit("[");
             asm.emitValue(crb, index);
@@ -331,8 +342,20 @@ public class OCLLIRStmt {
             asm.eol();
         }
 
-        public void emitNormalCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // asm.emitLine("*((__global char *) ul_12) = 102;");
+        /**
+         * It emits code in the form:
+         *
+         * <code>
+         *     *((__global <type> *) ul_13) = <value>
+         * </code>
+         *
+         * @param crb
+         *            OpenCL Compilation Result Builder
+         *
+         * @param asm
+         *            OpenCL Assembler
+         */
+        public void emitGlobalStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -350,17 +373,17 @@ public class OCLLIRStmt {
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             if (isLocalOrPrivateStore()) {
-                emitIntegerStore(crb, asm);
+                emitLocalAndPrivateStore(crb, asm);
             } else {
-                emitNormalCode(crb, asm);
+                emitGlobalStore(crb, asm);
             }
         }
 
         /**
-         * This method is used to check if emiting a store to a local or private memory
+         * This method is used to check if emitting a store to a local or private memory
          * space.
          * 
-         * @return boolean This returns if the memory base is private or local.
+         * @return It returns true if the memory base is private or local.
          */
         private boolean isLocalOrPrivateStore() {
             return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;

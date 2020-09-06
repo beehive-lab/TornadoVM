@@ -16,8 +16,10 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
@@ -39,6 +41,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final DeadCodeEliminationPhase deadCodeElimination;
     private final TornadoLoopUnroller loopUnroll;
     private long batchThreads;
+    private int index;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -140,13 +143,21 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
-            final ConstantNode constant;
-            if (batchThreads <= 0) {
-                constant = ConstantNode.forInt(length);
+
+            if (TornadoOptions.USER_SCHEDULING) {
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
+                node.replaceAtUsages(ptxStackAccessNode);
+                index++;
             } else {
-                constant = ConstantNode.forInt((int) batchThreads);
+                final ConstantNode constant;
+                if (batchThreads <= 0) {
+                    constant = ConstantNode.forInt(length);
+                } else {
+                    constant = ConstantNode.forInt((int) batchThreads);
+                }
+                node.replaceAtUsages(graph.addOrUnique(constant));
             }
-            node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
         } else if (node instanceof LoadFieldNode) {
@@ -194,9 +205,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
-            graph.addWithoutUnique(constant);
-            parameterNode.replaceAtUsages(constant);
+            if (TornadoOptions.USER_SCHEDULING) {
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
+                parameterNode.replaceAtUsages(ptxStackAccessNode);
+                index++;
+            } else {
+                ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
+                graph.addWithoutUnique(constant);
+                parameterNode.replaceAtUsages(constant);
+            }
         } else {
             parameterNode.usages().snapshot().forEach(n -> {
                 evaluate(graph, n, args[parameterNode.index()]);
@@ -285,5 +303,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
         Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
         Tornado.debug("valid graph? %s", graph.verify());
+        index = 0;
     }
 }

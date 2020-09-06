@@ -46,9 +46,9 @@ public abstract class OCLLIROp extends Value {
         return (LIRKind) this.getValueKind();
     }
 
-    public OCLKind getOCLKind() {
-        PlatformKind pk = getPlatformKind();
-        return (pk instanceof OCLKind) ? (OCLKind) pk : OCLKind.ILLEGAL;
+    public OCLKind getOCLPlatformKind() {
+        PlatformKind platformKind = getPlatformKind();
+        return (platformKind instanceof OCLKind) ? (OCLKind) platformKind : OCLKind.ILLEGAL;
     }
 
 }

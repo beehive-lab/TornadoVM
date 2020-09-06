@@ -91,6 +91,7 @@ public final class PTXVectorPlugins {
             registerVectorPlugins(ps, plugins, PTXKind.INT2, int[].class, int.class);
             registerVectorPlugins(ps, plugins, PTXKind.INT3, int[].class, int.class);
             registerVectorPlugins(ps, plugins, PTXKind.INT4, int[].class, int.class);
+            registerVectorPlugins(ps, plugins, PTXKind.INT8, int[].class, int.class);
 
             // Adding shorts
             registerVectorPlugins(ps, plugins, PTXKind.SHORT2, short[].class, short.class);
@@ -131,29 +132,6 @@ public final class PTXVectorPlugins {
         final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
 
         final Registration r = new Registration(plugins, declaringClass);
-
-        final Class<?>[] argumentTypes = new Class<?>[vectorKind.getVectorLength()];
-        for (int i = 0; i < vectorKind.getVectorLength(); i++) {
-            argumentTypes[i] = elementType;
-        }
-        final InvocationPlugin initialiser = new InvocationPlugin() {
-            @Override
-            public boolean execute(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode[] args) {
-                final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
-                if (args.length > 0) {
-                    int offset = (vector == args[0]) ? 1 : 0;
-
-                    for (int i = offset; i < args.length; i++) {
-                        vector.setElement(i - offset, args[i]);
-                    }
-                } else {
-                    vector.initialiseToDefaultValues(vector.graph());
-                }
-                return true;
-            }
-        };
-
-        r.register0("<init>", initialiser);
 
         r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
             @Override

@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.ptx.tests;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -140,6 +141,10 @@ public class TestPTXJITCompiler {
 
         // Create stack
         CallStack stack = tornadoDevice.createStack(3);
+
+        // Fill header of call stack with empty values
+        stack.setHeader(new HashMap<>());
+
         stack.push(a, objectStateA);
         stack.push(b, objectStateB);
         stack.push(c, objectStateC);

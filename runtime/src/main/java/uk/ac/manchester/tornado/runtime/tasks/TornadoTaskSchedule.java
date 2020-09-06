@@ -57,6 +57,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
+import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -161,6 +162,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoProfiler timeProfiler;
     private boolean updateData;
+    private GridTask gridTask;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -377,7 +379,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // TornadoVM byte-code generation
         result = TornadoVMGraphCompiler.compile(graph, executionContext, batchSizeBytes);
 
-        vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
+        vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler, gridTask);
 
         if (meta().shouldDumpSchedule()) {
             executionContext.print();
@@ -493,16 +495,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void deoptimizeToSequentialJava(TornadoBailoutRuntimeException e) {
-        // Execute the sequential code
+    private void dumpDeoptReason(TornadoBailoutRuntimeException e) {
+        final String RESET = "\u001B[0m";
+        final String RED = "\u001B[31m";
         if (!Tornado.DEBUG) {
-            System.out.println("[Bailout] Running the sequential implementation. Enable --debug to see the reason.");
+            System.err.println(RED + "[Bailout] Running the sequential implementation. Enable --debug to see the reason." + RESET);
         } else {
-            System.out.println(e.getMessage());
+            System.err.println(e.getMessage());
             for (StackTraceElement s : e.getStackTrace()) {
-                System.out.println("\t" + s);
+                System.err.println("\t" + s);
             }
         }
+    }
+
+    private void deoptimizeToSequentialJava(TornadoBailoutRuntimeException e) {
+        // Execute the sequential code
+        dumpDeoptReason(e);
         runAllTasksJavaSequential();
     }
 
@@ -752,6 +760,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         scheduleInner();
         cleanUp();
         return this;
+    }
+
+    @Override
+    public AbstractTaskGraph schedule(GridTask gridTask) {
+        this.gridTask = gridTask;
+        return schedule();
     }
 
     @SuppressWarnings("unchecked")

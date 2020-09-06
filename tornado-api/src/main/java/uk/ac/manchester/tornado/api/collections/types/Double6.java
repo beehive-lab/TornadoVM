@@ -148,11 +148,11 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         set(5, value);
     }
 
-    public Double3 getHi() {
+    public Double3 getHigh() {
         return Double3.loadFromArray(storage, 0);
     }
 
-    public Double3 getLo() {
+    public Double3 getLow() {
         return Double3.loadFromArray(storage, 3);
     }
 

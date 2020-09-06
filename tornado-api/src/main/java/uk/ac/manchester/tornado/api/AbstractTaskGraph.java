@@ -44,9 +44,9 @@ package uk.ac.manchester.tornado.api;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
@@ -107,6 +107,8 @@ public interface AbstractTaskGraph extends ProfileInterface {
     TaskMetaDataInterface meta();
 
     AbstractTaskGraph schedule();
+
+    AbstractTaskGraph schedule(GridTask gridTask);
 
     AbstractTaskGraph scheduleWithProfile(Policy policy);
 

@@ -34,17 +34,21 @@ import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 public class PTXHighTier extends TornadoHighTier {
-    public PTXHighTier(OptionValues options,
-                       MetaAccessProvider metaAccessProvider) {
-        super(null);
 
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
+        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+    }
 
+    public PTXHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+        super(customCanonicalizer);
+
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {

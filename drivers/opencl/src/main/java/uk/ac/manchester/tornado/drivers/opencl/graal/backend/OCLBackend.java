@@ -404,7 +404,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void emitEpilogue(OCLAssembler asm) {
-        asm.endScope();
+        asm.endScope("Prologue");
 
     }
 

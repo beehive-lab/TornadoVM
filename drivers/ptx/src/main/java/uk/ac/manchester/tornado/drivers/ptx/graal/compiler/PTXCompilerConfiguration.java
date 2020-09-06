@@ -31,7 +31,7 @@ public class PTXCompilerConfiguration implements TornadoCompilerConfiguration {
 
     @Override
     public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider) {
-        return new PTXHighTier(options, metaAccessProvider);
+        return new PTXHighTier(options, canonicalizer, metaAccessProvider);
     }
 
     @Override

@@ -28,20 +28,23 @@ public class PTXScheduler {
         }
     }
 
-    public int[] calculateBlocks(PTXModule module) {
+    public int[] calculateBlockDimension(PTXModule module) {
         if (module.metaData.isLocalWorkDefined()) {
             return Arrays.stream(module.metaData.getLocalWork()).mapToInt(l -> (int) l).toArray();
         }
+        return calculateBlockDimension(module.metaData.getGlobalWork(), module.getMaxThreadBlocks(), module.metaData.getDims(), module.javaName);
+    }
 
+    public int[] calculateBlockDimension(long[] globalWork, int maxThreadBlocks, int dimension, String javaName) {
         int[] defaultBlocks = {1, 1, 1};
         try {
-            int maxBlockThreads = module.getMaxThreadBlocks();
-            for (int i = 0; i < module.metaData.getDims(); i++) {
-                defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(module.metaData, maxBlockThreads), module.metaData.getGlobalWork()[i]);
+            int maxBlockThreads = maxThreadBlocks;
+            for (int i = 0; i < dimension; i++) {
+                defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(dimension, maxBlockThreads), globalWork[i]);
             }
         }
         catch (Exception e) {
-            warn("[CUDA-PTX] Failed to calculate blocks for " + module.javaName);
+            warn("[CUDA-PTX] Failed to calculate blocks for " + javaName);
             warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();
@@ -51,9 +54,9 @@ public class PTXScheduler {
         return defaultBlocks;
     }
 
-    private long calculateEffectiveMaxWorkItemSize(TaskMetaData metaData, int threads) {
-        if (metaData.getDims() == 0) shouldNotReachHere();
-        return (long) Math.pow(threads, (double) 1 / metaData.getDims());
+    private long calculateEffectiveMaxWorkItemSize(int dimension, int threads) {
+        if (dimension == 0) shouldNotReachHere();
+        return (long) Math.pow(threads, (double) 1 / dimension);
     }
 
     private int calculateBlockSize(long maxBlockSize, long globalWorkSize) {
@@ -71,20 +74,24 @@ public class PTXScheduler {
         return value;
     }
 
-    public int[] calculateGrids(PTXModule module, int[] blocks) {
+    public int[] calculateGridDimension(PTXModule module, int[] blockDimension) {
+        int[] globalWork = Arrays.stream(module.metaData.getGlobalWork()).mapToInt(l -> (int) l).toArray();
+        return calculateGridDimension(module.javaName, module.metaData.getDims(), globalWork, blockDimension);
+    }
+
+    public int[] calculateGridDimension(String javaName, int dimension, int[] globalWork, int[] blockDimension) {
         int[] defaultGrids = {1, 1, 1};
 
         try {
-            int dims = module.metaData.getDims();
             long[] maxGridSizes = device.getDeviceMaxWorkGroupSize();
 
-            for (int i = 0; i < dims; i++) {
-                int workSize = (int) module.metaData.getGlobalWork()[i];
-                defaultGrids[i] = Math.max(Math.min(workSize / blocks[i], (int) maxGridSizes[i]), 1);
+            for (int i = 0; i < dimension; i++) {
+                int workSize = globalWork[i];
+                defaultGrids[i] = Math.max(Math.min(workSize / blockDimension[i], (int) maxGridSizes[i]), 1);
             }
         }
         catch (Exception e) {
-            warn("[CUDA-PTX] Failed to calculate grids for " + module.javaName);
+            warn("[CUDA-PTX] Failed to calculate grids for " + javaName);
             warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
             if (DEBUG || FULL_DEBUG) {
                 e.printStackTrace();

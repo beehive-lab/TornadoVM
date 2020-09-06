@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
+import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -20,5 +21,10 @@ public abstract class PTXLIROp extends Value {
 
     public LIRKind getLIRKind() {
         return (LIRKind) this.getValueKind();
+    }
+
+    public PTXKind getPTXPlatformKind() {
+        PlatformKind platformKind = getPlatformKind();
+        return (platformKind instanceof PTXKind) ? (PTXKind) platformKind : PTXKind.ILLEGAL;
     }
 }
