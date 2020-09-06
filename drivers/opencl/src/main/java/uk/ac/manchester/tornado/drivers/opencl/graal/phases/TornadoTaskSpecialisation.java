@@ -175,6 +175,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
+            final ConstantNode constant;
 
             if (TornadoOptions.USER_SCHEDULING) {
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
@@ -182,7 +183,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 node.replaceAtUsages(oclStackAccessNode);
                 index++;
             } else {
-                final ConstantNode constant;
                 if (batchThreads <= 0) {
                     constant = ConstantNode.forInt(length);
                 } else {

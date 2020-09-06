@@ -144,6 +144,6 @@ public class TestGrid extends TornadoTestBase {
 
     @Test
     public void testDynamicGrid03() {
-        testMatrixIntegers(256, 256);
+        testMatrixIntegers(256, 128);
     }
 }
