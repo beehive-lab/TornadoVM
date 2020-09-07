@@ -28,7 +28,9 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAtomics extends TornadoTestBase {
@@ -66,7 +68,6 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    @Test
     public void testAtomic02() {
         final int size = 1024;
         int[] a = new int[size];
@@ -94,7 +95,7 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    @Test
+    @TornadoNotSupported
     public void testAtomic03() {
         final int size = 1024;
         int[] a = new int[size];
@@ -113,4 +114,32 @@ public class TestAtomics extends TornadoTestBase {
             assertEquals(b[i], a[i]);
         }
     }
+
+    public static void atomic04(int[] a) {
+        TornadoAtomicInteger tai = new TornadoAtomicInteger(0);
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = tai.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic04() {
+        final int size = 1024;
+        int[] a = new int[size];
+        int[] b = new int[size];
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 1);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic04, a) //
+                .streamOut(a) //
+                .execute();
+
+        atomic02(b);
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(b[i], a[i]);
+        }
+    }
+
 }
