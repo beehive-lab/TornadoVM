@@ -55,9 +55,9 @@ public class PTXVectorAssign {
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             PTXKind destElementKind = ((PTXKind)dest.getPlatformKind()).getElementKind();
             PTXVectorSplit vectorSplitData = new PTXVectorSplit(dest);
-            Value[] intermValues = new Value[vectorSplitData.newKind.getVectorLength()];
 
             for (int i = 0; i < vectorSplitData.vectorNames.length; i++) {
+                Value[] intermValues = new Value[vectorSplitData.newKind.getVectorLength()];
                 if (vectorSplitData.newKind.getVectorLength() >= 0) {
                     System.arraycopy(values, i * vectorSplitData.newKind.getVectorLength(), intermValues, 0, vectorSplitData.newKind.getVectorLength());
                 }

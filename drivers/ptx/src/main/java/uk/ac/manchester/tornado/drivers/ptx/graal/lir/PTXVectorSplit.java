@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
 import org.graalvm.compiler.lir.Variable;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
@@ -20,48 +21,64 @@ public class PTXVectorSplit {
     public PTXVectorSplit(String actualVectorName, PTXKind actualKind) {
         this.actualKind = actualKind;
 
-        // if (actualKind.getSizeInBytes() <= MAX_VECTOR_SIZE_BYTES &&
-        // actualKind.getVectorLength() != 3) {
-        // this.vectorNames = new String[] { actualVector.getName() };
-        // this.newKind = actualKind;
-        // return;
-        // }
-        //
-        // if (actualKind.getVectorLength() == 3) {
-        // this.fullUnwrapVector = true;
-        // }
-
         this.newKind = lowerVectorPTXKind(actualKind);
         this.vectorNames = new String[actualKind.getVectorLength() / newKind.getVectorLength()];
         for (int i = 0; i < vectorNames.length; i++) {
             vectorNames[i] = actualVectorName + i;
         }
+    }
 
+    /**
+     * This private method can be used as a replacement for the constructor above. Instead of fully unwrapping the
+     * Tornado vector to single PTX variables, it will perform unwrapping of the Tornado vector to vector types which exist in PTX.
+     */
+    private void PTXVectorSplit(String actualVectorName, PTXKind actualKind) {
+        this.actualKind = actualKind;
+
+         if (actualKind.getSizeInBytes() <= MAX_VECTOR_SIZE_BYTES &&
+            actualKind.getVectorLength() != 3) {
+            this.vectorNames = new String[] { actualVectorName };
+            this.newKind = actualKind;
+            return;
+         }
+
+         if (actualKind.getVectorLength() == 3) {
+            this.fullUnwrapVector = true;
+         }
+
+        this.newKind = lowerVectorPTXKindNotUsed(actualKind);
+        this.vectorNames = new String[actualKind.getVectorLength() / newKind.getVectorLength()];
+        for (int i = 0; i < vectorNames.length; i++) {
+            vectorNames[i] = actualVectorName + i;
+        }
+    }
+
+    /**
+     * The OpenCL Nvidia driver fully unwraps vector types to variables. For
+     * now, we do the same due to memory alignment issues (loads and stores on
+     * vector types must be aligned by the size of the vector in PTX). The method below
+     * does what we should normally do if memory alignment wouldn't be an
+     * issue.
+     */
+    private PTXKind lowerVectorPTXKindNotUsed(PTXKind vectorKind) {
+         switch (vectorKind) {
+            case DOUBLE3:
+                return PTXKind.F64;
+            case DOUBLE4:
+            case DOUBLE8:
+                return PTXKind.DOUBLE2;
+            case FLOAT8: return PTXKind.FLOAT4;
+            case FLOAT3: return PTXKind.F32;
+            case INT3: return PTXKind.S32;
+            case CHAR3: return PTXKind.U8;
+            default: TornadoInternalError.shouldNotReachHere();
+         }
+         return null;
     }
 
     private PTXKind lowerVectorPTXKind(PTXKind vectorKind) {
         fullUnwrapVector = true;
         return vectorKind.getElementKind();
-
-        // TODO the OpenCL Nvidia driver fully unwraps vector types to variables. For
-        // now, we do the same due to memory alignment issues (loads and stores on
-        // vector types must be aligned by the size of the vector in PTX). The commented
-        // code below does what we should normally do if memory alignment wouldn't be an
-        // issue.
-
-        // switch (vectorKind) {
-        // case DOUBLE3:
-        // return PTXKind.F64;
-        // case DOUBLE4:
-        // case DOUBLE8:
-        // return PTXKind.DOUBLE2;
-        // case FLOAT8: return PTXKind.FLOAT4;
-        // case FLOAT3: return PTXKind.F32;
-        // case INT3: return PTXKind.S32;
-        // case CHAR3: return PTXKind.U8;
-        // default: TornadoInternalError.shouldNotReachHere();
-        // }
-        // return null;
     }
 
     public String getVectorElement(int laneId) {

@@ -57,7 +57,7 @@ public class PTXWriteNode extends AbstractWriteNode implements LIRLowerableAcces
     public void generate(NodeLIRBuilderTool gen) {
         PTXStamp oclStamp = null;
         if (type == JavaKind.Char) {
-            oclStamp = new PTXStamp(PTXKind.U8);
+            oclStamp = new PTXStamp(PTXKind.U16);
         } else if (type == JavaKind.Short) {
             oclStamp = new PTXStamp(PTXKind.S16);
         }

@@ -47,7 +47,13 @@ public class PTXAssemblerConstants {
     public static final String SQUARE_BRACKETS_CLOSE = "]";
     public static final String CURLY_BRACKETS_OPEN = "{";
     public static final String CURLY_BRACKETS_CLOSE = "}";
+    public static final String ROUND_BRACKETS_OPEN = "(";
+    public static final String ROUND_BRACKETS_CLOSE = ")";
 
+    public static final String BRANCH = "bra";
+    public static final String UNI = "uni";
+
+    public static final String CALL = "call";
 
     public static final int STACK_BASE_OFFSET = 3;
 }

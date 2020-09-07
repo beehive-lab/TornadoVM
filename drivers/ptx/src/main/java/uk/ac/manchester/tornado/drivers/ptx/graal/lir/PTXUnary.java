@@ -121,9 +121,9 @@ public class PTXUnary {
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             //@formatter:off
             if (isSharedMemoryAccess()) {
-                if (value != null) asm.emitValue(value);
+                asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                if (index != null) asm.emitValue(index);
+                asm.emitValue(index);
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             } else {
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
@@ -156,7 +156,7 @@ public class PTXUnary {
         }
 
         private boolean isSharedMemoryAccess() {
-            return base.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
+            return base.memorySpace.index() == PTXMemorySpace.SHARED.index();
         }
 
         private boolean isVector() {

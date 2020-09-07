@@ -38,6 +38,12 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
         this.value = value;
     }
 
+    /**
+     * Generates the PTX LIR instructions for a cast between two variables. It covers the following cases:
+     *  - if the result is not a FPU number and the value is a FPU number, then we perform a conversion which rounds towards zero (as Java does).
+     *  Also, we check if the value is an exceptional case such as NaN, +/- infinity. For this case, we put 0 in the result.
+     *  - if both operands are FPU, then we do a simple convert operation with the proper rounding modifier (if needed).
+     */
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
         trace("emitCast: convertOp=%s, value=%s", op, value);

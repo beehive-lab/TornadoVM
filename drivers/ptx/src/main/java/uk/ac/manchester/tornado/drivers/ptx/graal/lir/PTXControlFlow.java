@@ -8,7 +8,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AbstractInstruction;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.BRANCH;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.UNI;
 
 public class PTXControlFlow {
 
@@ -55,8 +58,8 @@ public class PTXControlFlow {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
-            asm.emit("bra");
-            if (!isConditional) asm.emit(".uni");
+            asm.emit(BRANCH);
+            if (!isConditional) asm.emit(DOT + UNI);
             asm.emitSymbol(TAB);
 
             if (isLoopEdgeBack) asm.emitLoop(destination.label().getBlockId());

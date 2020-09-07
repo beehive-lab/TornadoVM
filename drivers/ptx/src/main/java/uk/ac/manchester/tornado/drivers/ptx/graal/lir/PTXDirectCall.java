@@ -10,6 +10,13 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CALL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COLON;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_BRACKETS_CLOSE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_BRACKETS_OPEN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 
 public class PTXDirectCall extends PTXLIROp {
@@ -30,12 +37,12 @@ public class PTXDirectCall extends PTXLIROp {
         final String methodName = PTXCodeUtil.makeMethodName(target.targetMethod());
 
         asm.emitSymbol(TAB);
-        asm.emitSymbol("call ");
+        asm.emitSymbol(CALL + SPACE);
         if (result != null && !Value.ILLEGAL.equals(result)) {
             asm.emit("(%s), ", PTXAssembler.toString(result));
         }
         asm.emit(methodName);
-        asm.emit(", (");
+        asm.emit(COMMA + SPACE + ROUND_BRACKETS_OPEN);
         int i = 0;
         for (Value param : parameters) {
             PTXKind paramKind = (PTXKind) param.getPlatformKind();
@@ -45,19 +52,19 @@ public class PTXDirectCall extends PTXLIROp {
                 for (int j = 0; j < vectorSplit.vectorNames.length; j++) {
                     asm.emit(vectorSplit.vectorNames[j]);
                     if (j < vectorSplit.vectorNames.length - 1) {
-                        asm.emit(", ");
+                        asm.emit(COMMA + SPACE);
                     }
                 }
             } else {
                 asm.emit(PTXAssembler.toString(param));
             }
             if (i < parameters.length - 1) {
-                asm.emit(", ");
+                asm.emit(COMMA + SPACE);
             }
 
             i++;
         }
-        asm.emit(")");
+        asm.emit(ROUND_BRACKETS_CLOSE);
 
         crb.addNonInlinedMethod(target.targetMethod());
     }

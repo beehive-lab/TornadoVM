@@ -40,7 +40,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultB
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXReturnSlot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,11 +95,7 @@ public class PTXAssembler extends Assembler {
     }
 
     public void emitValue(Value value) {
-        if (value instanceof PTXReturnSlot) {
-            ((PTXReturnSlot) value).emit(this);
-        } else {
-            emit(toString(value));
-        }
+        emit(toString(value));
     }
 
     public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
@@ -277,10 +272,6 @@ public class PTXAssembler extends Assembler {
 
     private static String encodeString(String str) {
         return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
-    }
-
-    public void loopBreak() {
-        emitLine("LOOP_BREAK");
     }
 
     public void emitConstant(ConstantValue constant) {

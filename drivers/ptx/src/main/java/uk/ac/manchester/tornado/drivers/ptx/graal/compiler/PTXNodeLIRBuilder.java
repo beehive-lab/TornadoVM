@@ -59,6 +59,7 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXBuiltInRegister;
@@ -71,7 +72,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXDirectCall;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXReturnSlot;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
@@ -267,7 +267,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                         if (!peephole(valueNode)) {
                             try {
                                 doRoot(valueNode);
-                                platformPatch(isKernel);
                             } catch (final Throwable e) {
                                 System.out.println("e: " + e.toString());
                                 e.printStackTrace();
@@ -303,30 +302,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         if (hasOperand(instr)) {
             getDebugContext().log("Operand for %s = %s", instr, operand(instr));
         }
-    }
-
-    private void platformPatch(boolean isKernel) {
-        final List<LIRInstruction> insns = getLIRGeneratorTool().getResult().getLIR().getLIRforBlock(gen.getCurrentBlock());
-        final int index = insns.size() - 1;
-        final LIRInstruction op = insns.get(index);
-
-        if (!isKernel) {
-            return;
-        }
-
-        if (op instanceof ExprStmt) {
-            ExprStmt expr = (ExprStmt) op;
-            if (expr.getExpr() instanceof PTXUnary.Expr && ((PTXUnary.Expr) expr.getExpr()).getOpcode().equals(PTXNullaryOp.RETURN)) {
-                PTXUnary.Expr returnExpr = (PTXUnary.Expr) expr.getExpr();
-                append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.value(ILLEGAL))));
-                insns.remove(index);
-                LIRKind lirKind = LIRKind.value(returnExpr.getPlatformKind());
-                final AllocatableValue slotAddress = new PTXReturnSlot(lirKind);
-                // double check this works properly
-                insns.set(index, new AssignStmt(slotAddress, returnExpr.getValue()));
-            }
-        }
-
     }
 
     @Override

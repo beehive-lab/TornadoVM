@@ -43,10 +43,6 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
         this.index = index;
     }
 
-    public PTXAddressNode(ValueNode base, PTXMemoryBase memoryRegister) {
-        this(base, null, memoryRegister);
-    }
-
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         PTXLIRGenerator tool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
@@ -60,11 +56,11 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
     }
 
     private boolean isLocalMemoryAccess() {
-        return memoryRegister.memorySpace.name().equals(PTXMemorySpace.LOCAL.name());
+        return memoryRegister.memorySpace.index() == PTXMemorySpace.LOCAL.index();
     }
 
     private boolean isSharedMemoryAccess() {
-        return memoryRegister.memorySpace.name().equals(PTXMemorySpace.SHARED.name());
+        return memoryRegister.memorySpace.index() == PTXMemorySpace.SHARED.index();
     }
 
     @Override

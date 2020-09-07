@@ -70,9 +70,9 @@ public class PTXLIRStmt {
             } else {
                 asm.emitSymbol(TAB);
                 if (shouldEmitMove(lhsKind, rhsKind)) {
-                    asm.emit(MOVE + "." + lhsKind.toString());
+                    asm.emit(MOVE + DOT + lhsKind.toString());
                 } else {
-                    asm.emit(CONVERT + ".");
+                    asm.emit(CONVERT + DOT);
                     if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
                         asm.emit(getFPURoundingMode(lhsKind, rhsKind));
                         asm.emitSymbol(DOT);
@@ -83,7 +83,7 @@ public class PTXLIRStmt {
                 }
                 asm.emitSymbol(TAB);
                 asm.emitValue(lhs);
-                asm.emitSymbol(", ");
+                asm.emitSymbol(COMMA + SPACE);
                 asm.emitValue(rhs);
             }
             asm.delimiter();
@@ -127,7 +127,7 @@ public class PTXLIRStmt {
 
             PTXNullaryOp.CVTA.emit(crb, null);
             asm.emitSymbol(DOT);
-            asm.emitSymbol(srcMemorySpace.name());
+            asm.emitSymbol(srcMemorySpace.getName());
             asm.emitSymbol(DOT);
             asm.emitSymbol(destKind.is64Bit() ? PTXKind.U64.toString() : PTXKind.U32.toString());
             asm.emitSymbol(SPACE);
@@ -194,7 +194,7 @@ public class PTXLIRStmt {
             // ld.u64 %rd9, [%rd8];
             loadOp.emit(crb, null);
             asm.emitSymbol(DOT);
-            asm.emit(address.getBase().memorySpace.name());
+            asm.emit(address.getBase().memorySpace.getName());
             asm.emitSymbol(DOT);
             asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
@@ -232,7 +232,7 @@ public class PTXLIRStmt {
             for (int i = 0; i < vectorSplitData.vectorNames.length; i++) {
                 PTXNullaryOp.LD.emit(crb, null);
                 asm.emitSymbol(DOT);
-                asm.emit(address.getBase().memorySpace.name());
+                asm.emit(address.getBase().memorySpace.getName());
                 if (!vectorSplitData.fullUnwrapVector) {
                     asm.emitSymbol(DOT);
                     asm.emit(VECTOR + vectorSplitData.newKind.getVectorLength());
@@ -279,7 +279,7 @@ public class PTXLIRStmt {
             // st.global.u32 [%rd19], %r10;
             PTXNullaryOp.ST.emit(crb, null);
             asm.emitSymbol(DOT);
-            asm.emit(address.getBase().memorySpace.name());
+            asm.emit(address.getBase().memorySpace.getName());
             asm.emitSymbol(DOT);
             asm.emit(rhs.getPlatformKind().toString());
             asm.emitSymbol(TAB);
@@ -330,7 +330,7 @@ public class PTXLIRStmt {
             for (int i = 0; i < vectorSplitData.vectorNames.length; i++) {
                 PTXNullaryOp.ST.emit(crb, null);
                 asm.emitSymbol(DOT);
-                asm.emit(address.getBase().memorySpace.name());
+                asm.emit(address.getBase().memorySpace.getName());
                 if (!vectorSplitData.fullUnwrapVector) {
                     asm.emitSymbol(DOT);
                     asm.emit(VECTOR + vectorSplitData.newKind.getVectorLength());
