@@ -67,49 +67,13 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     // @formatter:off
     public enum Operation {
-        ACOS, 
-        ACOSH, 
-        ACOSPI, 
-        ASIN, 
-        ASINH, 
-        ASINPI, 
-        ATAN,
-        ATANH, 
-        ATANPI,
-        CBRT, 
-        CEIL,
-        COS, 
-        COSH, 
-        COSPI, 
-        ERFC, 
-        ERF, 
-        EXP, 
-        EXP2, 
-        EXP10, 
-        EXPM1, 
+        COS,
+        EXP,
         FABS,
         FLOOR,
-        ILOGB,
-        LGAMMA, 
-        LOG, 
-        LOG2, 
-        LOG10, 
-        LOG1P, 
-        LOGB,
-        NAN,
-        REMQUO, 
-        RINT,
-        ROUND, 
-        RSQRT, 
+        LOG,
         SIN,
-        SINH, 
-        SINPI, 
-        SQRT, 
-        TAN, 
-        TANH, 
-        TANPI, 
-        TGAMMA, 
-        TRUNC
+        SQRT
     }
     // @formatter:on
 
@@ -152,14 +116,15 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
         trace("emitPTXFPUnaryIntrinsic: op=%s, x=%s", operation, getValue());
-        PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
+        PTXArithmeticTool lirGenPTX = (PTXArithmeticTool) lirGen;
+        PTXBuiltinTool gen = lirGenPTX.getGen().getPtxBuiltinTool();
         Value initialInput = builder.operand(getValue());
         Value result;
 
         Value auxValue = initialInput;
         Variable auxVar;
 
-        if ((operation() == Operation.COS || operation() == Operation.SIN || operation == Operation.LOG || operation == Operation.EXP) && !((PTXKind)initialInput.getPlatformKind()).isF32()) {
+        if (shouldConvertInput(initialInput)) {
             // sin, cos only operate on f32 values. We must convert
             auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
             auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, initialInput)).getResult();
@@ -173,11 +138,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
                 result = gen.genFloatAbs(auxValue);
                 break;
             case EXP:
-                // we use e^a = 2^(a*log2(e))
-                Value log2e = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float)(Math.log10(Math.exp(1)) / Math.log10(2))));
-                Value aMulLog2e = lirGen.emitMul(auxValue, log2e, false);
-                result = gen.genFloatExp2(aMulLog2e);
-                break;
+                generateExp(builder, lirGenPTX, gen, initialInput);
+                return;
             case SIN:
                 result = gen.genFloatSin(auxValue);
                 break;
@@ -188,12 +150,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
                 result = gen.genFloatFloor(auxValue);
                 break;
             case LOG:
-                // we use  log_e(a) = log_2(a) / log_2(e)
-                Variable var = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
-                Value nominator = builder.getLIRGeneratorTool().append(new AssignStmt(var, gen.genFloatLog2(auxValue))).getResult();
-                Value denominator = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float)(Math.log10(Math.exp(1)) / Math.log10(2))));
-                result = lirGen.emitDiv(nominator, denominator, null);
-                break;
+                generateLog(builder, lirGenPTX, gen, initialInput);
+                return;
             default:
                 throw shouldNotReachHere();
         }
@@ -201,13 +159,83 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         auxVar = builder.getLIRGeneratorTool().newVariable(auxValue.getValueKind());
         auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, result)).getResult();
 
-        if ((operation() == Operation.COS || operation() == Operation.SIN || operation == Operation.LOG || operation == Operation.EXP) && !((PTXKind)initialInput.getPlatformKind()).isF32()) {
+        if (shouldConvertInput(initialInput)) {
             // sin, cos only operate on f32 values. We must convert back
             auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(initialInput.getPlatformKind()));
             builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, auxValue));
         }
 
         builder.setResult(this, auxVar);
+    }
+
+    /**
+     * Generates the instructions to compute exponential function in Java: e ^ a, where e is Euler's constant
+     * and a is an arbitrary number.
+     *
+     * Because PTX cannot perform this computation directly, we use the functions available to obtain the result.
+     *  b = e ^ a  = 2^(a * log2(e))
+     *
+     * Because the log function only operates on single precision FPU,
+     * we must convert the input and output to and from double precision FPU, if necessary.
+     */
+    public void generateExp(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x) {
+        Value auxValue = x;
+        Variable auxVar;
+        if (shouldConvertInput(x)) {
+            auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
+            auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, x)).getResult();
+        }
+
+        // we use e^a = 2^(a*log2(e))
+        Value log2e = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float)(Math.log10(Math.exp(1)) / Math.log10(2))));
+        Value aMulLog2e = lirGen.emitMul(auxValue, log2e, false);
+        Value result = gen.genFloatExp2(aMulLog2e);
+
+        auxVar = builder.getLIRGeneratorTool().newVariable(auxValue.getValueKind());
+        auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, result)).getResult();
+
+        if (shouldConvertInput(x)) {
+            auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(x.getPlatformKind()));
+            auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, auxValue)).getResult();
+        }
+        builder.setResult(this, auxValue);
+    }
+
+    /**
+     * Generates the instructions to compute logarithmic function in Java: log_e(a), where e is Euler's constant
+     * and a is an arbitrary number.
+     *
+     * Because PTX cannot perform this computation directly, we use the log_2 function to obtain the result.
+     *  b = log_e(a) = log_2(a) / log_2(e)
+     *
+     * Because the log function only operates on single precision FPU,
+     * we must convert the input and output to and from double precision FPU, if necessary.
+     */
+    public void generateLog(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x) {
+        Value auxValue = x;
+        Variable auxVar;
+        if (shouldConvertInput(x)) {
+            auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
+            auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, x)).getResult();
+        }
+
+        // we use  log_e(a) = log_2(a) / log_2(e)
+        Variable var = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
+        Value nominator = builder.getLIRGeneratorTool().append(new AssignStmt(var, gen.genFloatLog2(auxValue))).getResult();
+        Value denominator = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float)(Math.log10(Math.exp(1)) / Math.log10(2))));
+        Value result = lirGen.emitDiv(nominator, denominator, null);
+
+        if (shouldConvertInput(x)) {
+            auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(x.getPlatformKind()));
+            result = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, result)).getResult();
+        }
+        builder.setResult(this, result);
+    }
+
+    private boolean shouldConvertInput(Value input) {
+        return (operation() == Operation.COS || operation() == Operation.SIN ||
+                operation() == Operation.EXP || operation() == Operation.LOG) &&
+                !((PTXKind) input.getPlatformKind()).isF32();
     }
 
     private static double doCompute(double value, Operation op) {

@@ -22,6 +22,10 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemo
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryTemplate;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
+/**
+ * Generates the LIR for declaring a CUDA shared (local in OpenCL) memory array.
+ * The terminology used in this class refers to the OpenCL Programming Model.
+ */
 @NodeInfo
 public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {
 

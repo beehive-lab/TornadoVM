@@ -58,7 +58,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     @Input ValueNode lane;
 
-    protected final PTXKind ptxKind;
+    private final PTXKind ptxKind;;
 
     protected VectorElementOpNode(NodeClass<? extends VectorElementOpNode> c, PTXKind kind, ValueNode vector, ValueNode lane) {
         super(c, StampFactory.forKind(kind.asJavaKind()));
@@ -68,20 +68,17 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
         Stamp vstamp = vector.stamp(NodeView.DEFAULT);
         PTXKind vectorKind = PTXKind.ILLEGAL;
-        if (vstamp instanceof ObjectStamp) {
+        if (vstamp instanceof PTXStamp) {
+            final PTXStamp vectorStamp = (PTXStamp) vector.stamp(NodeView.DEFAULT);
+            vectorKind = vectorStamp.getPTXKind();
+            guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
+        } else if (vstamp instanceof ObjectStamp) {
             ObjectStamp ostamp = (ObjectStamp) vector.stamp(NodeView.DEFAULT);
-            // System.out.printf("ostamp: type=%s\n", ostamp.type());
 
             if (ostamp.type() != null) {
                 vectorKind = PTXKind.fromResolvedJavaType(ostamp.type());
                 guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
-                guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), ptxKind);
             }
-        } else if (vstamp instanceof PTXStamp) {
-            final PTXStamp vectorStamp = (PTXStamp) vector.stamp(NodeView.DEFAULT);
-            vectorKind = vectorStamp.getPTXKind();
-            guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
-            guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), ptxKind);
         } else {
             shouldNotReachHere("invalid type on vector operation: %s (stamp=%s (class=%s))", vector, vector.stamp(NodeView.DEFAULT), vector.stamp(NodeView.DEFAULT).getClass().getName());
         }

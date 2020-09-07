@@ -38,6 +38,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
+/**
+ * Generates the LIR for getting the CUDA block size (local group size in OpenCL).
+ * The terminology used in this class refers to the OpenCL Programming Model.
+ */
 @NodeInfo
 public class LocalGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 

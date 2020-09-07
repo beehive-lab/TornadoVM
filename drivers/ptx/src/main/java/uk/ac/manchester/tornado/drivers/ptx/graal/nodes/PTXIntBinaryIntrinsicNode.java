@@ -60,17 +60,8 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
 
     //@formatter:off
     public enum Operation {
-        ABS_DIFF, 
-        ABS_SAT, 
-        HADD, 
-        RHADD, 
-        MAX, 
+        MAX,
         MIN, 
-        MUL_HI, 
-        ROTATE, 
-        SUB_SAT, 
-        UPSAMPLE, 
-        MUL24
     }
     //@formatter:on
 

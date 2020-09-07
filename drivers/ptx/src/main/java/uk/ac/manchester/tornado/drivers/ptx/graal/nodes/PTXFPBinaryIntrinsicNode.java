@@ -69,30 +69,9 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     // @formatter:off
     public enum Operation {
-        ATAN2, 
-        ATAN2PI, 
-        COPYSIGN, 
-        FDIM, 
-        FMA, 
         FMAX, 
-        FMIN, 
-        FMOD, 
-        FRACT, 
-        FREXP, 
-        HYPOT, 
-        LDEXP, 
-        MAD, 
-        MAXMAG, 
-        MINMAG, 
-        MODF, 
-        NEXTAFTER, 
-        POW, 
-        POWN, 
-        POWR, 
-        REMAINDER, 
-        REMQUO, 
-        ROOTN, 
-        SINCOS
+        FMIN,
+        POW
     }
     // @formatter:on
 
@@ -168,6 +147,18 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     }
 
+    /**
+     * Generates the instructions to compute the power function (x ^ y).
+     *
+     * Because PTX cannot perform this computation directly, we use the functions available to obtain the result.
+     * The pseudocode below illustrates what we do to compute z = x ^ y :
+     *      if (x < 0) x = -x;
+     *      z = 2^(y * log2(x));
+     *      if (x < 0 && y % 2 == 1) z = -z;
+     *
+     * Because the log function only operates on single precision FPU ,
+     * we must convert the inputs and output to and from double precision FPU, if necessary.
+     */
     private void generatePow(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x, Value y) {
         LIRGeneratorTool genTool = builder.getLIRGeneratorTool();
         Value a = x;

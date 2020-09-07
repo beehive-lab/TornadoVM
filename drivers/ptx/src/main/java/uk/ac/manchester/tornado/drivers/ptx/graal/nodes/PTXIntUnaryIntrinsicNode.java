@@ -61,7 +61,7 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
     protected final Operation operation;
 
     public enum Operation {
-        ABS, CLZ, POPCOUNT
+        ABS, POPCOUNT
     }
 
     public Operation operation() {
@@ -103,10 +103,6 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
                 result = gen.genIntAbs(x);
                 valueKind = result.getValueKind();
                 break;
-            case CLZ:
-                result = gen.genIntClz(x);
-                valueKind = result.getValueKind();
-                break;
             case POPCOUNT:
                 result = gen.genIntPopcount(x);
                 valueKind = LIRKind.value(PTXKind.U32);
@@ -124,8 +120,6 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         switch (op) {
             case ABS:
                 return Math.abs(value);
-            case CLZ:
-                return Long.numberOfLeadingZeros(value);
             case POPCOUNT:
                 return Long.bitCount(value);
             default:
@@ -137,8 +131,6 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         switch (op) {
             case ABS:
                 return Math.abs(value);
-            case CLZ:
-                return Integer.numberOfLeadingZeros(value);
             case POPCOUNT:
                 return Integer.bitCount(value);
             default:
