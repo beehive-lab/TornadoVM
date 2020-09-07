@@ -43,23 +43,14 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         }
     }
 
-    public static void testConstant(int[] input, @Reduce int[] output) {
-        for (@Parallel int i = 0; i < 20; i++) {
-            int value = (input[i] + 10);
-            output[0] += value;
-        }
-    }
-
     @Test
     public void testIrregularSize01() {
 
-        final int size = 18;
+        final int size = 33554432 + 15;
         int[] input = new int[size];
         int[] result = new int[] { 0 };
 
-        IntStream.range(0, size).parallel().forEach(i -> {
-            input[i] = i;
-        });
+        IntStream.range(0, size).parallel().forEach(i -> input[i] = i);
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
