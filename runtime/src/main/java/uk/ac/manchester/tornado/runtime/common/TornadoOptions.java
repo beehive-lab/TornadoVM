@@ -96,6 +96,8 @@ public class TornadoOptions {
         return getBooleanValue("tornado.profiler.save", "False");
     }
 
+    public static final boolean DEBUG_LOW_TIER = getBooleanValue("tornado.debug.lowtier", "True");;
+
     public static boolean PARTIAL_UNROLL() {
         return getBooleanValue("tornado.experimental.partial.unroll", "False");
     }

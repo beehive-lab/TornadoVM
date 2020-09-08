@@ -162,6 +162,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private void checkClosingBlockInsideIf(Block block, Block pdom) {
         if (pdom.isLoopHeader() && block.getDominator() != null && isIfBlock(block.getDominator())) {
+
             /*
              * If the post-dominator is a loop Header and the dominator of the current block
              * is an if-condition, then we generate the end-scope if we are also inside
@@ -169,8 +170,15 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
              * (because the block was already closed)
              */
             if ((block.getDominator().getDominator() != null) && (isIfBlock(block.getDominator().getDominator()))) {
+
+                if (block.getBeginNode() instanceof MergeNode) {
+                    return;
+                }
+
                 Block[] successors = block.getDominator().getSuccessors();
                 int index = 0;
+                // If-else block. If the block is not in the true-branch, then is in the false
+                // branch
                 if (successors[index] == block) {
                     index = 1;
                 }

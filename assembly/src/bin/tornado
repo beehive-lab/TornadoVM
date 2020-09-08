@@ -137,7 +137,7 @@ while [[ $# -gt 0 ]]; do
     shift # past argument
     ;;
   --igv)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false"
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false"
     shift # past argument
     ;;
   --printKernel)
