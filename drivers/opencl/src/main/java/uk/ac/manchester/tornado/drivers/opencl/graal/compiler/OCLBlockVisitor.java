@@ -249,6 +249,15 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
     }
 
+    private boolean isBlockInABreak(Block block, Block pdom) {
+        return (pdom.getEndNode() instanceof ReturnNode && //
+                block.getBeginNode() instanceof LoopExitNode && //
+                block.getEndNode() instanceof EndNode && //
+                block.getDominator() != null && //
+                block.getDominator().getEndNode() instanceof IfNode && //
+                block.getDominator().getBeginNode() instanceof LoopBeginNode);
+    }
+
     @Override
     public void exit(Block block, Block value) {
         if (block.isLoopEnd()) {
@@ -274,7 +283,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(block) && block.getPredecessorCount() > 2)) {
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
-                    if (!wasBlockAlreadyClosed(block.getDominator())) {
+                    if (!wasBlockAlreadyClosed(block.getDominator()) && !isBlockInABreak(block, pdom)) {
                         asm.endScope(block.toString());
                     }
                 }
