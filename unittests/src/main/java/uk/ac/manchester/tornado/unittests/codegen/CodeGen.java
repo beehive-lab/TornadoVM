@@ -94,10 +94,7 @@ public class CodeGen extends TornadoTestBase {
 
     private boolean isRunningOnCPU() {
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        if (device.getDeviceType() == TornadoDeviceType.CPU) {
-            return true;
-        }
-        return false;
+        return device.getDeviceType() == TornadoDeviceType.CPU;
     }
 
     @Test
