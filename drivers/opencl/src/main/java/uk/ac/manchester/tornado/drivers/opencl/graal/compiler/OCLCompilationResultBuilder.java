@@ -81,7 +81,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private int loops = 0;
     private boolean isParallel;
     private OCLDeviceContext deviceContext;
-    HashSet<Block> reescheduled;
+    HashSet<Block> rescheduledBasicBlocks;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
@@ -358,8 +358,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     private void traverseControlFlowGraph(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
         traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
-        if (reescheduled != null) {
-            reescheduled.clear();
+        if (rescheduledBasicBlocks != null) {
+            rescheduledBasicBlocks.clear();
         }
     }
 
@@ -369,10 +369,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         visitor.exit(block, null);
         visited.add(block);
         pending.remove(block);
-        if (reescheduled == null) {
-            reescheduled = new HashSet<>();
+        if (rescheduledBasicBlocks == null) {
+            rescheduledBasicBlocks = new HashSet<>();
         }
-        reescheduled.add(block);
+        rescheduledBasicBlocks.add(block);
     }
 
     private void traverseControlFlowGraph(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
@@ -436,7 +436,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
 
-        if (reescheduled == null || (!reescheduled.contains(basicBlock))) {
+        if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
             visitor.exit(basicBlock, null);
         }
     }
