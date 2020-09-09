@@ -733,8 +733,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public AbstractTaskGraph schedule() {
 
         if (bailout) {
-            runAllTasksJavaSequential();
-            return this;
+            if (!TornadoOptions.RECOVER_BAILOUT) {
+                throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled");
+            } else {
+                runAllTasksJavaSequential();
+                return this;
+            }
         }
 
         timeProfiler.clean();
