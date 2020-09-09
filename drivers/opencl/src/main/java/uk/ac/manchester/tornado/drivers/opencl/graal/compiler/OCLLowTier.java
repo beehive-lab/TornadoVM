@@ -86,7 +86,7 @@ public class OCLLowTier extends TornadoLowTier {
             appendPhase(new TornadoFeatureExtraction());
         }
 
-        if (TornadoOptions.DEBUG_LOW_TIER) {
+        if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {
             appendPhase(new DumpLowTierGraph());
         }
 

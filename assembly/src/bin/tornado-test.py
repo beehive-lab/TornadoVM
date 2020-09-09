@@ -94,7 +94,8 @@ __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__ 		= "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT_MODULE__ 		= " junit/"
 __MAIN_TORNADO_JUNIT__ 		 		= "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__ 			 		= "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
+__IGV_OPTIONS__ 			 		= "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
+__IGV_LAST_PHASE__ 			 		= "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 		= "-Dtornado.debug=True "
 __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
@@ -140,7 +141,9 @@ def composeAllOptions(args):
 
 	options = options + __GC__
 
-	if (args.igv):
+	if (args.dumpIGVLastTier):
+		options = options + __IGV_LAST_PHASE__
+	elif (args.igv):
 		options = options + __IGV_OPTIONS__
 
 	if (args.debugTornado):
@@ -310,6 +313,7 @@ def parseArguments():
 	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
+	parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False, help="Dump OpenCL Low-TIER GraalIR into IGV")
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
 	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
 	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
