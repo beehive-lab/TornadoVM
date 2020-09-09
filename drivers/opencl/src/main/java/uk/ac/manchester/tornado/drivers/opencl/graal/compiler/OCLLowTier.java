@@ -49,13 +49,16 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization
 
 public class OCLLowTier extends TornadoLowTier {
 
-    public OCLLowTier(OptionValues options, AddressLowering addressLowering) {
-        CanonicalizerPhase canonicalizer;
+    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
         if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+            return CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
-            canonicalizer = CanonicalizerPhase.create();
+            return CanonicalizerPhase.create();
         }
+    }
+
+    public OCLLowTier(OptionValues options, AddressLowering addressLowering) {
+        CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER));
 
@@ -81,6 +84,10 @@ public class OCLLowTier extends TornadoLowTier {
 
         if (TornadoOptions.FEATURE_EXTRACTION) {
             appendPhase(new TornadoFeatureExtraction());
+        }
+
+        if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {
+            appendPhase(new DumpLowTierGraph());
         }
 
     }

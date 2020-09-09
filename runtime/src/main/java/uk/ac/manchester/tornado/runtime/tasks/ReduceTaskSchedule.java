@@ -69,12 +69,15 @@ class ReduceTaskSchedule {
     private ArrayList<Object> streamOutObjects;
     private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
+    private HashMap<Object, Object> hostHybridVariables;
     private ArrayList<Thread> threadSequentialExecution;
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
     private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
     private CachedGraph<?> sketchGraph;
+    private boolean hybridMode;
+    private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
@@ -147,24 +150,34 @@ class ReduceTaskSchedule {
     }
 
     private Object createNewReduceArray(Object reduceVariable, int size) {
-
         if (size == 1) {
             return reduceVariable;
         }
-
-        Object newArray;
         if (reduceVariable instanceof int[]) {
-            newArray = new int[size];
+            return new int[size];
         } else if (reduceVariable instanceof float[]) {
-            newArray = new float[size];
+            return new float[size];
         } else if (reduceVariable instanceof double[]) {
-            newArray = new double[size];
+            return new double[size];
         } else if (reduceVariable instanceof long[]) {
-            newArray = new long[size];
+            return new long[size];
         } else {
             throw new TornadoRuntimeException("[ERROR] reduce type not supported yet: " + reduceVariable.getClass());
         }
-        return newArray;
+    }
+
+    private Object createNewReduceArray(Object reduceVariable) {
+        if (reduceVariable instanceof int[]) {
+            return new int[1];
+        } else if (reduceVariable instanceof float[]) {
+            return new float[1];
+        } else if (reduceVariable instanceof double[]) {
+            return new double[1];
+        } else if (reduceVariable instanceof long[]) {
+            return new long[1];
+        } else {
+            throw new TornadoRuntimeException("[ERROR] reduce type not supported yet: " + reduceVariable.getClass());
+        }
     }
 
     private Object getNeutralElement(Object originalArray) {
@@ -192,8 +205,10 @@ class ReduceTaskSchedule {
      *            {@link TaskPackage} metadata that stores the method parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
+     * @param hostHybridVariables
+     *            HashMap that relates the GPU buffer with the new CPU buffer.
      */
-    private static void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code) {
+    private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code, HashMap<Object, Object> hostHybridVariables) {
         try {
             // Execute the generated binary with Graal with
             // the host loop-bound
@@ -202,14 +217,13 @@ class ReduceTaskSchedule {
             int numArgs = taskPackage.getTaskParameters().length - 1;
             Object[] args = new Object[numArgs];
             for (int i = 0; i < numArgs; i++) {
-                args[i] = taskPackage.getTaskParameters()[i + 1];
+                Object argument = taskPackage.getTaskParameters()[i + 1];
+                args[i] = hostHybridVariables.getOrDefault(argument, argument);
             }
 
             // 2. Run the binary
             code.executeVarargs(args);
 
-            // 3. The result is returned in the corresponding object from the
-            // parameter list
         } catch (InvalidInstalledCodeException e) {
             e.printStackTrace();
         }
@@ -223,31 +237,27 @@ class ReduceTaskSchedule {
      *            index of the target device within the Tornado device list.
      * @return boolean
      */
-    private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver, final boolean isPowerOfTwo) {
-        if (!isPowerOfTwo && elementsReductionLeftOver > 0) {
+    private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver) {
+        if (elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
-            return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA || deviceType == TornadoDeviceType.ACCELERATOR;
+            return (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA || deviceType == TornadoDeviceType.ACCELERATOR);
         }
         return false;
     }
 
-    private void runHostThreads() {
+    private void joinHostThreads() {
         if (threadSequentialExecution != null && !threadSequentialExecution.isEmpty()) {
-            for (Thread t : threadSequentialExecution) {
-                t.run();
-            }
-            for (Thread t : threadSequentialExecution) {
+            threadSequentialExecution.stream().forEach(thread -> {
                 try {
-                    t.join();
-                } catch (InterruptedException ie) {
-                    ie.printStackTrace();
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            }
+            });
         }
     }
 
     private static class CompilationThread extends Thread {
-
         private Object codeTask;
         private final long sizeTargetDevice;
         private InstalledCode code;
@@ -271,38 +281,39 @@ class ReduceTaskSchedule {
         }
     }
 
-    private static class SequentialExecutionThread extends Thread {
+    private class SequentialExecutionThread extends Thread {
 
         final CompilationThread compilationThread;
         private TaskPackage taskPackage;
+        private HashMap<Object, Object> hostHybridVariables;
 
-        SequentialExecutionThread(CompilationThread c, TaskPackage taskPackage) {
-            this.compilationThread = c;
+        SequentialExecutionThread(CompilationThread compilationThread, TaskPackage taskPackage, HashMap<Object, Object> hostHybridVariables) {
+            this.compilationThread = compilationThread;
             this.taskPackage = taskPackage;
+            this.hostHybridVariables = hostHybridVariables;
+            this.compilationThread.start();
         }
 
         @Override
         public void run() {
             try {
+                // We need to wait for the compilation to be finished
                 compilationThread.join();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            runBinaryCodeForReduction(taskPackage, compilationThread.getCode());
+            runBinaryCodeForReduction(taskPackage, compilationThread.getCode(), hostHybridVariables);
         }
     }
 
-    private void createThreads(Object codeTask, final TaskPackage taskPackage, final long sizeTargetDevice) {
+    private void createThreads(final TaskPackage taskPackage, final long sizeTargetDevice, HashMap<Object, Object> hostHybridVariables) {
         if (threadSequentialExecution == null) {
             threadSequentialExecution = new ArrayList<>();
         }
 
+        Object codeTask = taskPackage.getTaskParameters()[0];
         CompilationThread compilationThread = new CompilationThread(codeTask, sizeTargetDevice);
-        compilationThread.start();
-        threadSequentialExecution.add(new SequentialExecutionThread(compilationThread, taskPackage));
-
-        // We change the amount of threads to run on the device-side
-        taskPackage.setNumThreadsToRun(sizeTargetDevice);
+        threadSequentialExecution.add(new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables));
     }
 
     private void updateStreamInOutVariables(HashMap<Integer, MetaReduceTasks> tableReduce) {
@@ -362,6 +373,18 @@ class ReduceTaskSchedule {
         }
     }
 
+    private Object createHostArrayForHybridMode(Object originalReduceArray, TaskPackage taskPackage, int sizeTargetDevice) {
+        hybridMode = true;
+        if (hostHybridVariables == null) {
+            hostHybridVariables = new HashMap<>();
+        }
+        Object hybridArray = createNewReduceArray(originalReduceArray);
+        Object neutralElement = getNeutralElement(originalReduceArray);
+        fillOutputArrayWithNeutral(hybridArray, neutralElement);
+        taskPackage.setNumThreadsToRun(sizeTargetDevice);
+        return hybridArray;
+    }
+
     /**
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
@@ -402,7 +425,6 @@ class ReduceTaskSchedule {
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
             ArrayList<Integer> listOfReduceIndexParameters;
-            MetaReduceTasks metaReduceTasks;
             TaskPackage taskPackage = taskPackages.get(taskNumber);
 
             ArrayList<Object> streamReduceList = new ArrayList<>();
@@ -413,9 +435,10 @@ class ReduceTaskSchedule {
 
             if (tableReduce.containsKey(taskNumber)) {
 
-                metaReduceTasks = tableReduce.get(taskNumber);
+                MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 listOfReduceIndexParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
 
+                int inputSize = 0;
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
                     Object originalReduceArray = taskPackage.getTaskParameters()[paramIndex + 1];
@@ -426,43 +449,49 @@ class ReduceTaskSchedule {
                         continue;
                     }
 
-                    int inputSize = metaReduceTasks.getInputSize(taskNumber);
+                    inputSize = metaReduceTasks.getInputSize(taskNumber);
 
                     updateGlobalAndLocalDimensionsFPGA(targetDeviceToRun, taskScheduleReduceName, taskPackage, inputSize);
 
-                    // Analyse Input Size - if not power of 2 -> split host and
-                    // device executions
+                    // Analyse Input Size - if not power of 2 -> split host and device executions
                     boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
+                    Object hostHybridModeArray = null;
                     if (!isInputPowerOfTwo) {
                         int exp = (int) (Math.log(inputSize) / Math.log(2));
                         double closestPowerOf2 = Math.pow(2, exp);
-                        long elementsReductionLeftOver = (long) (inputSize - closestPowerOf2);
+                        int elementsReductionLeftOver = (int) (inputSize - closestPowerOf2);
                         inputSize -= elementsReductionLeftOver;
-
                         final int sizeTargetDevice = inputSize;
-                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, false)) {
-                            Object codeTask = taskPackage.getTaskParameters()[0];
-                            createThreads(codeTask, taskPackage, sizeTargetDevice);
+                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver)) {
+                            hostHybridModeArray = createHostArrayForHybridMode(originalReduceArray, taskPackage, sizeTargetDevice);
                         }
                     }
 
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(DEFAULT_DRIVER_INDEX, deviceToRun, inputSize);
-                    Object newArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
+                    Object newDeviceArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
                     Object neutralElement = getNeutralElement(originalReduceArray);
-                    fillOutputArrayWithNeutral(newArray, neutralElement);
+                    fillOutputArrayWithNeutral(newDeviceArray, neutralElement);
 
-                    neutralElementsNew.put(newArray, neutralElement);
+                    neutralElementsNew.put(newDeviceArray, neutralElement);
                     neutralElementsOriginal.put(originalReduceArray, neutralElement);
 
-                    taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
-
                     // Store metadata
-                    streamReduceList.add(newArray);
+                    streamReduceList.add(newDeviceArray);
                     sizesReductionArray.add(sizeReductionArray);
-                    originalReduceVariables.put(originalReduceArray, newArray);
+                    originalReduceVariables.put(originalReduceArray, newDeviceArray);
+
+                    if (hybridMode) {
+                        hostHybridVariables.put(newDeviceArray, hostHybridModeArray);
+                    }
                 }
+
                 streamReduceTable.put(taskNumber, streamReduceList);
+
+                if (hybridMode) {
+                    createThreads(taskPackage, inputSize, hostHybridVariables);
+                    threadSequentialExecution.stream().forEach(Thread::start);
+                }
             }
         }
 
@@ -542,6 +571,13 @@ class ReduceTaskSchedule {
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
                         }
+
+                        if (hybridMode) {
+                            if (hybridMergeTable == null) {
+                                hybridMergeTable = new HashMap<>();
+                            }
+                            hybridMergeTable.put(newArray, operation);
+                        }
                         counterSeqName.incrementAndGet();
                     }
                 }
@@ -573,33 +609,129 @@ class ReduceTaskSchedule {
         }
     }
 
+    private int operateFinalReduction(int a, int b, REDUCE_OPERATION operation) {
+        switch (operation) {
+            case ADD:
+                return a + b;
+            case MUL:
+                return a * b;
+            case MAX:
+                return Math.max(a, b);
+            case MIN:
+                return Math.min(a, b);
+            default:
+                throw new TornadoRuntimeException("Operation not supported");
+        }
+    }
+
+    private float operateFinalReduction(float a, float b, REDUCE_OPERATION operation) {
+        switch (operation) {
+            case ADD:
+                return a + b;
+            case MUL:
+                return a * b;
+            case MAX:
+                return Math.max(a, b);
+            case MIN:
+                return Math.min(a, b);
+            default:
+                throw new TornadoRuntimeException("Operation not supported");
+        }
+    }
+
+    private double operateFinalReduction(double a, double b, REDUCE_OPERATION operation) {
+        switch (operation) {
+            case ADD:
+                return a + b;
+            case MUL:
+                return a * b;
+            case MAX:
+                return Math.max(a, b);
+            case MIN:
+                return Math.min(a, b);
+            default:
+                throw new TornadoRuntimeException("Operation not supported");
+        }
+    }
+
+    private long operateFinalReduction(long a, long b, REDUCE_OPERATION operation) {
+        switch (operation) {
+            case ADD:
+                return a + b;
+            case MUL:
+                return a * b;
+            case MAX:
+                return Math.max(a, b);
+            case MIN:
+                return Math.min(a, b);
+            default:
+                throw new TornadoRuntimeException("Operation not supported");
+        }
+    }
+
+    private void updateVariableFromAccelerator(Object originalReduceVariable, Object newArray) {
+        switch (newArray.getClass().getTypeName()) {
+            case "int[]":
+                ((int[]) originalReduceVariable)[0] = ((int[]) newArray)[0];
+                break;
+            case "float[]":
+                ((float[]) originalReduceVariable)[0] = ((float[]) newArray)[0];
+                break;
+            case "double[]":
+                ((double[]) originalReduceVariable)[0] = ((double[]) newArray)[0];
+                break;
+            case "long[]":
+                ((long[]) originalReduceVariable)[0] = ((long[]) newArray)[0];
+                break;
+            default:
+                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+        }
+    }
+
+    private void mergeHybridMode(Object originalReduceVariable, Object newArray) {
+        switch (newArray.getClass().getTypeName()) {
+            case "int[]":
+                int a = ((int[]) hostHybridVariables.get(newArray))[0];
+                int b = ((int[]) newArray)[0];
+                ((int[]) originalReduceVariable)[0] = operateFinalReduction(a, b, hybridMergeTable.get(newArray));
+                break;
+            case "float[]":
+                float af = ((float[]) hostHybridVariables.get(newArray))[0];
+                float bf = ((float[]) newArray)[0];
+                ((float[]) originalReduceVariable)[0] = operateFinalReduction(af, bf, hybridMergeTable.get(newArray));
+                break;
+            case "double[]":
+                double ad = ((double[]) hostHybridVariables.get(newArray))[0];
+                double bd = ((double[]) newArray)[0];
+                ((double[]) originalReduceVariable)[0] = operateFinalReduction(ad, bd, hybridMergeTable.get(newArray));
+                break;
+            case "long[]":
+                long al = ((long[]) hostHybridVariables.get(newArray))[0];
+                long bl = ((long[]) newArray)[0];
+                ((long[]) originalReduceVariable)[0] = operateFinalReduction(al, bl, hybridMergeTable.get(newArray));
+                break;
+            default:
+                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+        }
+    }
+
     /**
      * Copy out the result back to the original buffer.
+     *
+     * <p>
+     * If the hybrid mode is enabled, it performs the final 1D reduction between the
+     * two elements left (one from the accelerator and the other from the CPU)
+     * </p>
      */
     private void updateOutputArray() {
-
-        if (getHostThreadReduction() != null) {
-            runHostThreads();
-        }
-
+        joinHostThreads();
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
             Object originalReduceVariable = pair.getKey();
             Object newArray = pair.getValue();
-            switch (newArray.getClass().getTypeName()) {
-                case "int[]":
-                    ((int[]) originalReduceVariable)[0] = ((int[]) newArray)[0];
-                    break;
-                case "float[]":
-                    ((float[]) originalReduceVariable)[0] = ((float[]) newArray)[0];
-                    break;
-                case "double[]":
-                    ((double[]) originalReduceVariable)[0] = ((double[]) newArray)[0];
-                    break;
-                case "long[]":
-                    ((long[]) originalReduceVariable)[0] = ((long[]) newArray)[0];
-                    break;
-                default:
-                    throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+            if (hostHybridVariables != null && hostHybridVariables.containsKey(newArray)) {
+                mergeHybridMode(originalReduceVariable, newArray);
+            } else {
+                updateVariableFromAccelerator(originalReduceVariable, newArray);
             }
         }
     }
