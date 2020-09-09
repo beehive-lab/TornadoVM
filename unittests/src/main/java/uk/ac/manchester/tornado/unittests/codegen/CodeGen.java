@@ -26,6 +26,9 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class CodeGen extends TornadoTestBase {
@@ -89,8 +92,19 @@ public class CodeGen extends TornadoTestBase {
         }
     }
 
+    private boolean isRunningOnCPU() {
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        if (device.getDeviceType() == TornadoDeviceType.CPU) {
+            return true;
+        }
+        return false;
+    }
+
     @Test
     public void test02() {
+        if (isRunningOnCPU()) {
+            return;
+        }
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", CodeGen::badCascadeKernel2);
         ts.warmup();
@@ -98,6 +112,9 @@ public class CodeGen extends TornadoTestBase {
 
     @Test
     public void test03() {
+        if (isRunningOnCPU()) {
+            return;
+        }
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", CodeGen::badCascadeKernel3);
         ts.warmup();
@@ -105,6 +122,9 @@ public class CodeGen extends TornadoTestBase {
 
     @Test
     public void test04() {
+        if (isRunningOnCPU()) {
+            return;
+        }
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", CodeGen::badCascadeKernel4);
         ts.warmup();
@@ -137,7 +157,8 @@ public class CodeGen extends TornadoTestBase {
 
         new TaskSchedule("break") //
                 .task("task", CodeGen::breakStatement, a) //
-                .streamOut(a).execute(); //
+                .streamOut(a) //
+                .execute(); //
 
         assertArrayEquals(serial, a);
     }

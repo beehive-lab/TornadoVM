@@ -171,16 +171,17 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
              */
             if ((block.getDominator().getDominator() != null) && (isIfBlock(block.getDominator().getDominator()))) {
 
-                if (block.getBeginNode() instanceof MergeNode) {
-                    return;
-                }
-
                 Block[] successors = block.getDominator().getSuccessors();
                 int index = 0;
-                // If-else block. If the block is not in the true-branch, then is in the false
-                // branch
                 if (successors[index] == block) {
                     index = 1;
+                }
+
+                // If the current block is a merge-block, and the block does not correspond with
+                // any of the if-branches of the dominator, then we do not need the
+                // close-bracket.
+                if (successors[index] != block && block.getBeginNode() instanceof MergeNode) {
+                    return;
                 }
 
                 if (!(successors[index].getBeginNode() instanceof LoopExitNode)) {

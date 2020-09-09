@@ -363,18 +363,22 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
+    private void rescheduleBasicBlock(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+        Block block = pending.get(basicBlock);
+        visitor.enter(block);
+        visitor.exit(block, null);
+        visited.add(block);
+        pending.remove(block);
+        if (reescheduled == null) {
+            reescheduled = new HashSet<>();
+        }
+        reescheduled.add(block);
+    }
+
     private void traverseControlFlowGraph(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
 
         if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
-            Block block = pending.get(basicBlock);
-            visitor.enter(block);
-            visitor.exit(block, null);
-            visited.add(block);
-            pending.remove(block);
-            if (reescheduled == null) {
-                reescheduled = new HashSet<>();
-            }
-            reescheduled.add(block);
+            rescheduleBasicBlock(basicBlock, visitor, visited, pending);
         }
         visitor.enter(basicBlock);
         visited.add(basicBlock);
@@ -382,11 +386,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         Block firstDominated = basicBlock.getFirstDominated();
         LinkedList<Block> queue = new LinkedList<>();
         queue.add(firstDominated);
-        LinkedList<Block> pendingList = new LinkedList<>();
 
         if (basicBlock.isLoopHeader()) {
             Block[] successors = basicBlock.getSuccessors();
             LinkedList<Block> last = new LinkedList<>();
+            LinkedList<Block> pendingList = new LinkedList<>();
+
             FixedNode endNode = basicBlock.getEndNode();
             IfNode ifNode = null;
             if (endNode instanceof IfNode) {
@@ -399,9 +404,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                     if (ifNode.trueSuccessor() == block.getBeginNode() && block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode) {
                         pendingList.addFirst(block);
                         if (block.getPostdominator().getBeginNode() instanceof MergeNode) {
+                            // We may need to reschedule this block if it is not closed before visiting the
+                            // postDominator.
                             pending.put(block.getPostdominator(), block);
                         }
-                        // last.addLast(block);
                     } else {
                         last.addLast(block);
                     }
@@ -430,9 +436,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
 
-        if (reescheduled == null) {
-            visitor.exit(basicBlock, null);
-        } else if (!reescheduled.contains(basicBlock)) {
+        if (reescheduled == null || (!reescheduled.contains(basicBlock))) {
             visitor.exit(basicBlock, null);
         }
     }
