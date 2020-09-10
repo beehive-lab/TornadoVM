@@ -17,15 +17,17 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Random;
-import java.util.stream.IntStream;
 
 /**
  * Test to check TornadoVM is able to bailout to the Java sequential
@@ -103,7 +105,7 @@ public class CodeFail extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Test(expected = TornadoBailoutRuntimeException.class)
     public void codeFail03() {
         final int size = 128;
         int[] input = new int[size];

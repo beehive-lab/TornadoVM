@@ -100,6 +100,7 @@ __PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 		= "-Dtornado.debug=True "
 __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
 __GC__                       		= "-Xmx6g "
+__BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
@@ -139,7 +140,7 @@ def composeAllOptions(args):
 	else:
 		options = options + "False "
 
-	options = options + __GC__
+	options = options + __GC__ + __BASE_OPTIONS__
 
 	if (args.dumpIGVLastTier):
 		options = options + __IGV_LAST_PHASE__

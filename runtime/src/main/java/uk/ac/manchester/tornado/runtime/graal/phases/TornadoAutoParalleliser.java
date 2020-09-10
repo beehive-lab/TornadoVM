@@ -128,12 +128,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                 final IntegerLessThanNode lessThan = conditions.get(0);
                 maxIterations = lessThan.getY();
 
-                try {
-                    parallelizationReplacement(graph, iv, parallelDepth, maxIterations, conditions);
-                } catch (TornadoCompilationException compE) {
-                    System.out.println(compE.getMessage());
-                    continue;
-                }
+                parallelizationReplacement(graph, iv, parallelDepth, maxIterations, conditions);
 
                 parallelDepth++;
             }
