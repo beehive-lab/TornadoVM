@@ -164,6 +164,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean updateData;
     private GridTask gridTask;
 
+    private static String RESET = "\u001B[0m";
+    private static String RED = "\u001B[31m";
+    private static String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
+
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      *
@@ -1597,7 +1601,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
             if (!Tornado.DEBUG) {
-                System.out.println("WARNING: Code Bailout to Java sequential. Use --debug to see the reason");
+                System.out.println(WARNING_DEOPT_MESSAGE);
             } else {
                 e.printStackTrace();
             }
@@ -1626,7 +1630,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
             if (!Tornado.DEBUG) {
-                System.out.println("WARNING: Code Bailout to Java sequential. Use --debug to see the reason");
+                System.out.println(WARNING_DEOPT_MESSAGE);
             } else {
                 e.printStackTrace();
             }
