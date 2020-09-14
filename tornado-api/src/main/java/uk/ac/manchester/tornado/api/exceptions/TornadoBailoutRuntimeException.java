@@ -28,13 +28,15 @@ public class TornadoBailoutRuntimeException extends RuntimeException {
 
     private final String message;
     private Exception e;
+    final String RESET = "\u001B[0m";
+    final String RED = "\u001B[31m";
 
     public TornadoBailoutRuntimeException(final String msg) {
-        message = msg;
+        message = RED + msg + RESET;
     }
 
     public TornadoBailoutRuntimeException(final String msg, Exception e) {
-        message = msg;
+        message = RED + msg + RESET;
         this.e = e;
     }
 
