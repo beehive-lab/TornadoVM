@@ -135,6 +135,10 @@ public class TornadoOptions {
         return getBooleanValue("tornado.profiler.save", "False");
     }
 
+    public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
+
+    public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");
+
     public static boolean PARTIAL_UNROLL() {
         return getBooleanValue("tornado.experimental.partial.unroll", "False");
     }

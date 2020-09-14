@@ -49,6 +49,7 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
@@ -166,11 +167,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
                     maxIterations = lessThan.getY();
 
-                    try {
-                        parallelizationReplacement(graph, iv, loopIndex, maxIterations, conditions);
-                    } catch (TornadoCompilationException compE) {
-                        System.out.println(compE.getMessage());
-                    }
+                    parallelizationReplacement(graph, iv, loopIndex, maxIterations, conditions);
+
                     loopIndex++;
                 }
             }
@@ -206,7 +204,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
 
         } else {
-            throw new TornadoCompilationException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device!");
+            throw new TornadoBailoutRuntimeException("Failed to parallelize because of non-constant loop strides. \nSequential code will run on the device!");
         }
     }
 }

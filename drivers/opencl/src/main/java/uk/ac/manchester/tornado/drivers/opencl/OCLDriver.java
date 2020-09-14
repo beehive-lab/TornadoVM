@@ -34,10 +34,8 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -116,6 +114,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         flatBackends[0] = flatBackends[device];
         flatBackends[device] = tmp;
         OCLBackend backend = flatBackends[0];
+
         if (!backend.isInitialised()) {
             backend.init();
         }
