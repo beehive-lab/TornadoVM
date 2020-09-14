@@ -35,7 +35,15 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAtomics extends TornadoTestBase {
 
-    public static void atomic01(@Atomic int[] a, int sum) {
+    /**
+     * This test is just an example. This approach is not supported in TornadoVM.
+     * 
+     * @param a
+     *            input array
+     * @param sum
+     *            initial value to sum
+     */
+    private static void atomic01(@Atomic int[] a, int sum) {
         for (@Parallel int i = 0; i < a.length; i++) {
             sum += a[i];
         }
