@@ -11,6 +11,7 @@ import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXMulAddPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
@@ -54,6 +55,10 @@ public class PTXLowTier extends TornadoLowTier {
 
         if (TornadoOptions.FEATURE_EXTRACTION) {
             appendPhase(new TornadoFeatureExtraction());
+        }
+
+        if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {
+            appendPhase(new DumpLowTierGraph());
         }
 
     }

@@ -428,33 +428,4 @@ public class TestConditionals extends TornadoTestBase {
             assertEquals(10, value);
         }
     }
-
-    public static void breakStatement(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] == 5) {
-                break;
-            }
-            a[i] += 5;
-        }
-        a[0] = 0;
-    }
-
-    @Test
-    public void testBreak() {
-        final int size = 8192;
-        int[] a = new int[size];
-
-        Arrays.fill(a, 10);
-        a[12] = 5;
-
-        int[] serial = Arrays.copyOf(a, a.length);
-
-        breakStatement(serial);
-
-        new TaskSchedule("s0") //
-                .task("t0", TestConditionals::breakStatement, a) //
-                .streamOut(a).execute(); //
-
-        assertArrayEquals(serial, a);
-    }
 }

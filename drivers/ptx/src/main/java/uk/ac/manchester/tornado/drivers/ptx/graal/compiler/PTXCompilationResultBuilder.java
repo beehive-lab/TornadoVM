@@ -16,6 +16,7 @@ import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
@@ -25,6 +26,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -39,6 +41,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private PTXAssembler asm;
     private PTXDeviceContext deviceContext;
+    HashSet<Block> rescheduledBasicBlocks;
     private boolean includePrintf;
 
     public PTXCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
@@ -168,11 +171,30 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private static void traverseControlFlowGraph(ControlFlowGraph cfg, PTXBlockVisitor visitor) {
-        traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>());
+    private void traverseControlFlowGraph(ControlFlowGraph cfg, PTXBlockVisitor visitor) {
+        traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
+        if (rescheduledBasicBlocks != null) {
+            rescheduledBasicBlocks.clear();
+        }
     }
 
-    private static void traverseControlFlowGraph(Block basicBlock, PTXBlockVisitor visitor, HashSet<Block> visited) {
+    private void rescheduleBasicBlock(Block basicBlock, PTXBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+        Block block = pending.get(basicBlock);
+        visitor.enter(block);
+        visitor.exit(block, null);
+        visited.add(block);
+        pending.remove(block);
+        if (rescheduledBasicBlocks == null) {
+            rescheduledBasicBlocks = new HashSet<>();
+        }
+        rescheduledBasicBlocks.add(block);
+    }
+
+    private void traverseControlFlowGraph(Block basicBlock, PTXBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+        if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
+            rescheduleBasicBlock(basicBlock, visitor, visited, pending);
+        }
+
         visitor.enter(basicBlock);
         visited.add(basicBlock);
 
@@ -182,8 +204,8 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
         if (basicBlock.isLoopHeader()) {
             Block[] successors = basicBlock.getSuccessors();
-            ArrayList<Block> last = new ArrayList<>();
-            ArrayList<Block> pending = new ArrayList<>();
+            LinkedList<Block> last = new LinkedList<>();
+            LinkedList<Block> pendingList = new LinkedList<>();
             FixedNode endNode = basicBlock.getEndNode();
             IfNode ifNode = null;
             if (endNode instanceof IfNode) {
@@ -195,19 +217,26 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
                     last.add(block);
                     assert ifNode != null;
                     if (ifNode.trueSuccessor() == block.getBeginNode() && block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode) {
-                        pending.add(block);
+                        pendingList.addFirst(block);
+                        if (block.getPostdominator().getBeginNode() instanceof MergeNode) {
+                            // We may need to reschedule this block if it is not closed before visiting the
+                            // postDominator.
+                            pending.put(block.getPostdominator(), block);
+                        }
                     } else {
-                        last.add(block);
+                        last.addLast(block);
                     }
                 } else {
                     queue.addLast(block);
                 }
             }
+
+            for (Block l : pendingList) {
+                last.addLast(l);
+            }
+
             for (Block l : last) {
                 queue.addLast(l);
-            }
-            for (Block p : pending) {
-                queue.addLast(p);
             }
             queue.removeFirst();
         }
@@ -216,12 +245,14 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
             firstDominated = block;
             while (firstDominated != null) {
                 if (!visited.contains(firstDominated)) {
-                    traverseControlFlowGraph(firstDominated, visitor, visited);
+                    traverseControlFlowGraph(firstDominated, visitor, visited, pending);
                 }
                 firstDominated = firstDominated.getDominatedSibling();
             }
         }
-        visitor.exit(basicBlock, null);
+        if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
+            visitor.exit(basicBlock, null);
+        }
     }
 
     private static boolean isLoopBlock(Block block, Block loopHeader) {

@@ -5,6 +5,7 @@ module tornado.drivers.ptx {
     requires transitive jdk.internal.vm.compiler;
     requires transitive tornado.api;
     requires transitive tornado.runtime;
+    requires tornado.drivers.common;
 
     exports uk.ac.manchester.tornado.drivers.ptx;
     exports uk.ac.manchester.tornado.drivers.ptx.enums;
@@ -16,7 +17,6 @@ module tornado.drivers.ptx {
     exports uk.ac.manchester.tornado.drivers.ptx.graal.meta;
     exports uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
     exports uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc;
-    exports uk.ac.manchester.tornado.drivers.ptx.graal.nodes.logic;
     exports uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector;
     exports uk.ac.manchester.tornado.drivers.ptx.graal.phases;
     exports uk.ac.manchester.tornado.drivers.ptx.mm;

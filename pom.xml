@@ -358,7 +358,7 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
-                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.opencl,tornado.drivers.ptx,tornado.runtime
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.opencl,tornado.drivers.ptx,tornado.drivers.common,tornado.runtime
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
@@ -386,7 +386,7 @@
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.target=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>
-                                    jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.opencl,tornado.drivers.ptx,tornado.runtime
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.opencl,tornado.drivers.ptx,tornado.drivers.common,tornado.runtime
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
@@ -414,7 +414,7 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
-                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.opencl,tornado.drivers.ptx,tornado.runtime
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.opencl,tornado.drivers.ptx,tornado.drivers.common,tornado.runtime
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
