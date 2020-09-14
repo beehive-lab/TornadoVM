@@ -34,7 +34,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.PTX_BACKEND_PRIORI
 
 public enum TornadoDrivers {
 
-    PTX(PTX_BACKEND_PRIORITY, "unsupported"),
+    PTX(PTX_BACKEND_PRIORITY, "implemented"),
     OpenCL(OPENCL_BACKEND_PRIORITY, "implemented");
 
     private final int priority;

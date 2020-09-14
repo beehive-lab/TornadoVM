@@ -421,7 +421,7 @@ public class PTXCompiler {
 
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
-            Sketch currentSketch = TornadoSketcher.lookup(currentMethod);
+            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex());
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 

@@ -26,6 +26,9 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 
 public class PTXObjectWrapper implements ObjectBuffer {
+
+    private static final int PTX_OBJECT_ALIGNMENT = 64;
+
     private final boolean vectorObject;
     private int vectorStorageIndex;
     private long bufferOffset;
@@ -458,7 +461,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
 
     @Override
     public int getAlignment() {
-        return 64;
+        return PTX_OBJECT_ALIGNMENT;
     }
 
     public FieldBuffer getField(String name) {

@@ -32,7 +32,7 @@ import org.graalvm.compiler.phases.Phase;
  * After canonicalization, we might end up with a Guard of type Bounds Check
  * Exception without any array access. For those cases, we clean the graph and
  * remove also the guard (deopt) node and avoid empty basic blocks before the
- * OpenCL code generation.
+ * PTX code generation.
  */
 public class BoundCheckEliminationPhase extends Phase {
 

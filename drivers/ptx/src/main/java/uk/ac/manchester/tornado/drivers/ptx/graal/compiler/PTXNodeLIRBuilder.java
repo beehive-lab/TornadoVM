@@ -627,6 +627,11 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         return gen.getLIRKind(stamp);
     }
 
+    /**
+     * Currently we are breaking the SSA form since we are reusing the registers to which the built-in
+     * variables have been assigned previously.
+     * We do this because PTX only allows for the built-ins to be used in <b>mov</b> and <b>cvt</b> instructions.
+     */
     public Variable getBuiltInAllocation(PTXBuiltInRegister builtIn) {
         if (builtInAllocations.containsKey(builtIn.getName()))
             return builtInAllocations.get(builtIn.getName());

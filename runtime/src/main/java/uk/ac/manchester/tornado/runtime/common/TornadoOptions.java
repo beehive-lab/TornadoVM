@@ -104,6 +104,18 @@ public class TornadoOptions {
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", "True"));
 
+
+    /**
+     * Sets the array memory alignment for PTX devices. Default is 128 bytes.
+     */
+    public static final int PTX_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.ptx.array.align", "128"));
+
+    /**
+     * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
+     */
+    public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
+
+
     /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      *

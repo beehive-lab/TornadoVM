@@ -10,7 +10,10 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 public class FieldBuffer {
     private final Field field;

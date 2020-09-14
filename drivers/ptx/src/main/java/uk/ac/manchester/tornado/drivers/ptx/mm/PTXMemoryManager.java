@@ -34,13 +34,6 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
         reset();
     }
 
-    public void init(PTXBackend backend, long address) {
-        deviceHeapPointer = address;
-        initialised = true;
-        info("Located heap @ 0x%x (%s) on %s", deviceHeapPointer, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getDeviceName());
-        scheduleMeta.setDevice(backend.getDeviceContext().asMapping());
-    }
-
     public void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;

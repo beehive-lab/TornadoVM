@@ -14,7 +14,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 public class PTXCallStack extends PTXByteBuffer implements CallStack {
 
-    public final static int RETURN_VALUE_INDEX_WITHIN_STACK = 0;
     public static final int RESERVED_SLOTS = 3;
 
     private boolean onDevice;

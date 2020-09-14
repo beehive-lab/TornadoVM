@@ -259,9 +259,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void setDevice(TornadoDevice device) {
         meta().setDevice(device);
-        // We also need to trigger a recompilation because the device might be of a different type (belong to a different backend or be a CPU/GPU)
-        triggerRecompile();
-        cleanUp();
+
+        // Make sure that a sketch is available for the device.
+        for (int i = 0; i < executionContext.getTaskCount(); i++) {
+            executionContext.getTask(i).meta().setDevice(device);
+            updateInner(i, executionContext.getTask(i));
+        }
     }
 
     @Override
@@ -285,10 +288,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (task instanceof CompilableTask) {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            TornadoSketcher.invalidate(resolvedMethod);
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex());
             this.graph = lookup.getGraph();
         }
     }
@@ -306,7 +308,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex());
             this.graph = lookup.getGraph();
         }
 

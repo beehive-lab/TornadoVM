@@ -81,7 +81,7 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
 
     @Override
     public boolean inferStamp() {
-        return true;// updateStamp(createStamp(origin, kind.getElementKind()));
+        return true;
     }
 
     public boolean canResolve() {

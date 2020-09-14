@@ -145,9 +145,8 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
             final AllocatableValue result = tool.newVariable(LIRKind.value(getOCLKind()));
 
             /*
-             * two cases: 1. when this vector state has elements assigned
-             * individually 2. when this vector is assigned by a vector
-             * operation
+             * two cases: 1. when the state of this vector has elements assigned individually
+             * 2. when this vector is assigned by a vector operation
              */
             final int numValues = values.count();
             final ValueNode firstValue = values.first();

@@ -16,25 +16,11 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_BLOCK;
-import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_ITERATION;
 
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
-    private ValueNode blockSize;
 
-    private void replaceOffsetNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
-        if (schedule == PER_BLOCK) {
-            replacePerBlock(graph, offset);
-        } else if (schedule == PER_ITERATION) {
-            replacePerIteration(graph, offset, range);
-        }
-    }
-
-    private void replacePerIteration(StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
-
+    private void replaceOffsetNode(StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
         final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
 
         final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(index));
@@ -47,60 +33,15 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         offset.safeDelete();
     }
 
-    private void replacePerBlock(StructuredGraph graph, ParallelOffsetNode offset) {
-        final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(offset.index(), graph)));
-        final MulNode newOffset = graph.addOrUnique(new MulNode(threadId, blockSize));
-        offset.replaceAtUsages(newOffset);
-        offset.safeDelete();
-    }
-
-    private void replaceStrideNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelStrideNode stride) {
-        if (schedule == PER_BLOCK) {
-            replacePerBlock(stride);
-        } else if (schedule == PER_ITERATION) {
-            replacePerIteration(graph, stride);
-        }
-    }
-
-    private void replacePerIteration(StructuredGraph graph, ParallelStrideNode stride) {
+    private void replaceStrideNode(StructuredGraph graph, ParallelStrideNode stride) {
         final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(stride.index()));
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
         stride.replaceAtUsages(threadCount);
         stride.safeDelete();
     }
 
-    private void replacePerBlock(ParallelStrideNode stride) {
-        stride.replaceAtUsages(stride.value());
-        stride.safeDelete();
-    }
-
-    private void replaceRangeNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelRangeNode range) {
-        if (schedule == PER_BLOCK) {
-            replacePerBlock(graph, range);
-        } else if (schedule == PER_ITERATION) {
-            replacePerIteration(range);
-        }
-    }
-
-    private void replacePerIteration(ParallelRangeNode range) {
+    private void replaceRangeNode(ParallelRangeNode range) {
         range.replaceAtUsages(range.value());
-    }
-
-    // CPU-Scheduling with Stride
-    private void replacePerBlock(StructuredGraph graph, ParallelRangeNode range) {
-        unimplemented();
-        // buildBlockSize(graph, range);
-
-        final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(range.index(), graph)));
-        final MulNode newOffset = graph.addOrUnique(new MulNode(threadId, blockSize));
-        final AddNode newRange = graph.addOrUnique(new AddNode(newOffset, blockSize));
-
-        // Stride of 2
-        final MulNode stride = graph.addOrUnique(new MulNode(newRange, range.stride().value()));
-        //final ValueNode adjustedRange = graph.addOrUnique(OCLIntBinaryIntrinsicNode.create(stride, range.value(), OCLIntBinaryIntrinsicNode.Operation.MIN, JavaKind.Int));
-
-        //range.replaceAtUsages(adjustedRange);
-        range.safeDelete();
     }
 
     @Override
@@ -117,9 +58,9 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
             if (context.getMeta().enableParallelization() && maxWorkItemSizes[node.index()] > 1) {
                 ParallelOffsetNode offset = node.offset();
                 ParallelStrideNode stride = node.stride();
-                replaceRangeNode(strategy, graph, node);
-                replaceOffsetNode(strategy, graph, offset, node);
-                replaceStrideNode(strategy, graph, stride);
+                replaceRangeNode(node);
+                replaceOffsetNode(graph, offset, node);
+                replaceStrideNode(graph, stride);
 
             } else {
                 serialiseLoop(node);

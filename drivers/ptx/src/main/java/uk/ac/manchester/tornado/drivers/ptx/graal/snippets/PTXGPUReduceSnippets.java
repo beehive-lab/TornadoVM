@@ -18,8 +18,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Juan Fumero
- *
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.snippets;
 
@@ -51,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 /**
  * Tornado-Graal snippets for GPUs reductions using OpenCL semantics.
  */
-public class PTXReduceSnippets implements Snippets {
+public class PTXGPUReduceSnippets implements Snippets {
 
     /**
      * Dummy value for local memory allocation. The actual value to be allocated is
@@ -804,44 +802,44 @@ public class PTXReduceSnippets implements Snippets {
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         // Add
-        private final SnippetInfo partialReduceIntSnippet = snippet(PTXReduceSnippets.class, "partialReduceIntAdd");
-        private final SnippetInfo partialReduceIntSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceIntAddCarrierValue");
-        private final SnippetInfo partialReduceLongSnippet = snippet(PTXReduceSnippets.class, "partialReduceLongAdd");
-        private final SnippetInfo partialReduceLongSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceLongAddCarrierValue");
-        private final SnippetInfo partialReduceAddFloatSnippet = snippet(PTXReduceSnippets.class, "partialReduceFloatAdd");
-        private final SnippetInfo partialReduceAddFloatSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceFloatAddCarrierValue");
-        private final SnippetInfo partialReduceAddDoubleSnippet = snippet(PTXReduceSnippets.class, "partialReduceDoubleAdd");
-        private final SnippetInfo partialReduceAddDoubleSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceDoubleAddCarrierValue");
+        private final SnippetInfo partialReduceIntSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntAdd");
+        private final SnippetInfo partialReduceIntSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntAddCarrierValue");
+        private final SnippetInfo partialReduceLongSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongAdd");
+        private final SnippetInfo partialReduceLongSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongAddCarrierValue");
+        private final SnippetInfo partialReduceAddFloatSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatAdd");
+        private final SnippetInfo partialReduceAddFloatSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatAddCarrierValue");
+        private final SnippetInfo partialReduceAddDoubleSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleAdd");
+        private final SnippetInfo partialReduceAddDoubleSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleAddCarrierValue");
 
         // Mul
-        private final SnippetInfo partialReduceIntMultSnippet = snippet(PTXReduceSnippets.class, "partialReduceIntMult");
-        private final SnippetInfo partialReduceIntMultSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceIntMultCarrierValue");
-        private final SnippetInfo partialReduceLongMultSnippet = snippet(PTXReduceSnippets.class, "partialReduceLongMult");
-        private final SnippetInfo partialReduceLongMultSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceLongMultCarrierValue");
-        private final SnippetInfo partialReduceFloatMultSnippet = snippet(PTXReduceSnippets.class, "partialReduceFloatMult");
-        private final SnippetInfo partialReduceFloatMultSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceFloatMultCarrierValue");
-        private final SnippetInfo partialReduceDoubleMultSnippet = snippet(PTXReduceSnippets.class, "partialReduceDoubleMult");
-        private final SnippetInfo partialReduceDoubleMultSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceDoubleMultCarrierValue");
+        private final SnippetInfo partialReduceIntMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMult");
+        private final SnippetInfo partialReduceIntMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMultCarrierValue");
+        private final SnippetInfo partialReduceLongMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMult");
+        private final SnippetInfo partialReduceLongMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMultCarrierValue");
+        private final SnippetInfo partialReduceFloatMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMult");
+        private final SnippetInfo partialReduceFloatMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMultCarrierValue");
+        private final SnippetInfo partialReduceDoubleMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMult");
+        private final SnippetInfo partialReduceDoubleMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMultCarrierValue");
 
         // Max
-        private final SnippetInfo partialReduceIntMaxSnippet = snippet(PTXReduceSnippets.class, "partialReduceIntMax");
-        private final SnippetInfo partialReduceIntMaxSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceIntMaxCarrierValue");
-        private final SnippetInfo partialReduceLongMaxSnippet = snippet(PTXReduceSnippets.class, "partialReduceLongMax");
-        private final SnippetInfo partialReduceLongMaxSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceLongMaxCarrierValue");
-        private final SnippetInfo partialReduceMaxFloatSnippet = snippet(PTXReduceSnippets.class, "partialReduceFloatMax");
-        private final SnippetInfo partialReduceMaxFloatSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceFloatMaxCarrierValue");
-        private final SnippetInfo partialReduceMaxDoubleSnippet = snippet(PTXReduceSnippets.class, "partialReduceDoubleMax");
-        private final SnippetInfo partialReduceMaxDoubleSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceDoubleMaxCarrierValue");
+        private final SnippetInfo partialReduceIntMaxSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMax");
+        private final SnippetInfo partialReduceIntMaxSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMaxCarrierValue");
+        private final SnippetInfo partialReduceLongMaxSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMax");
+        private final SnippetInfo partialReduceLongMaxSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMaxCarrierValue");
+        private final SnippetInfo partialReduceMaxFloatSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMax");
+        private final SnippetInfo partialReduceMaxFloatSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMaxCarrierValue");
+        private final SnippetInfo partialReduceMaxDoubleSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMax");
+        private final SnippetInfo partialReduceMaxDoubleSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMaxCarrierValue");
 
         // Min
-        private final SnippetInfo partialReduceIntMinSnippet = snippet(PTXReduceSnippets.class, "partialReduceIntMin");
-        private final SnippetInfo partialReduceIntMinSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceIntMinCarrierValue");
-        private final SnippetInfo partialReduceLongMinSnippet = snippet(PTXReduceSnippets.class, "partialReduceLongMin");
-        private final SnippetInfo partialReduceLongMinSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceLongMinCarrierValue");
-        private final SnippetInfo partialReduceMinFloatSnippet = snippet(PTXReduceSnippets.class, "partialReduceFloatMin");
-        private final SnippetInfo partialReduceMinFloatSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceFloatMinCarrierValue");
-        private final SnippetInfo partialReduceMinDoubleSnippet = snippet(PTXReduceSnippets.class, "partialReduceDoubleMin");
-        private final SnippetInfo partialReduceMinDoubleSnippetCarrierValue = snippet(PTXReduceSnippets.class, "partialReduceDoubleMinCarrierValue");
+        private final SnippetInfo partialReduceIntMinSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMin");
+        private final SnippetInfo partialReduceIntMinSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMinCarrierValue");
+        private final SnippetInfo partialReduceLongMinSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMin");
+        private final SnippetInfo partialReduceLongMinSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMinCarrierValue");
+        private final SnippetInfo partialReduceMinFloatSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMin");
+        private final SnippetInfo partialReduceMinFloatSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMinCarrierValue");
+        private final SnippetInfo partialReduceMinDoubleSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMin");
+        private final SnippetInfo partialReduceMinDoubleSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMinCarrierValue");
 
         public Templates(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, debugHandlersFactories, providers, snippetReflection, target);

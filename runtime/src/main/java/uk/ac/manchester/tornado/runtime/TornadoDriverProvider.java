@@ -32,8 +32,10 @@ import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 /**
  * Each class which implements {@link TornadoDriverProvider} must set a {@link TornadoDrivers} and use the same compareTo function.
  *
- * public int compareTo(TornadoDriverProvider o) {
- *         return o.getDevicePriority().value() - priority.value();
+ * {@code
+ *  public int compareTo(TornadoDriverProvider o) {
+ *             return o.getDevicePriority().value() - priority.value();
+ *  }
  * }
  *
  * The drivers are sorted and used based on their priority. The driver with the highest priority becomes driver 0.

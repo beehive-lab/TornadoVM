@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
-import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXReduceSnippets;
+import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -81,7 +81,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private TornadoVMConfig vmConfig;
     private static boolean gpuSnippet = false;
 
-    private PTXReduceSnippets.Templates GPUReduceSnippets;
+    private PTXGPUReduceSnippets.Templates GPUReduceSnippets;
 
     public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TargetDescription target, boolean useCompressedOops,
             TornadoVMConfig vmConfig) {
@@ -99,7 +99,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
-        this.GPUReduceSnippets = new PTXReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+        this.GPUReduceSnippets = new PTXGPUReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
     @Override

@@ -217,7 +217,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex());
         final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
@@ -451,7 +451,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if buffer size has changed
+        // We re-allocate if the buffer size has changed
         final ObjectBuffer buffer = state.getBuffer();
         try {
             buffer.allocate(object, batchSize);

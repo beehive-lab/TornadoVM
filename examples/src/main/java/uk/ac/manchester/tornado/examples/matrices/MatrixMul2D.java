@@ -90,9 +90,9 @@ public class MatrixMul2D {
         long[] execTimesCUDA = new long[TIMING_ITERATIONS];
 
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
-            start = System.nanoTime();
+            start = System.currentTimeMillis();
             cudaTask.execute();
-            stop = System.nanoTime();
+            stop = System.currentTimeMillis();
             execTimesCUDA[i] = stop - start;
         }
 
@@ -123,9 +123,9 @@ public class MatrixMul2D {
         long[] execTimesOCL = new long[TIMING_ITERATIONS];
 
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
-            start = System.nanoTime();
+            start = System.currentTimeMillis();
             oclTask.execute();
-            stop = System.nanoTime();
+            stop = System.currentTimeMillis();
             execTimesOCL[i] = stop - start;
         }
 
@@ -137,16 +137,16 @@ public class MatrixMul2D {
         // Time sequential
         long[] execTimesSequential = new long[TIMING_ITERATIONS];
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
-            start = System.nanoTime();
+            start = System.currentTimeMillis();
             matrixMultiplication(matrixA, matrixB, matrixCSeq, size);
-            stop = System.nanoTime();
+            stop = System.currentTimeMillis();
             execTimesSequential[i] = stop - start;
         }
 
         // Compute execution times
-        double nsecCUDAElapsedTime = Arrays.stream(execTimesCUDA).average().orElse(Double.NaN);
-        double nsecOCLElapsedTime = Arrays.stream(execTimesOCL).average().orElse(Double.NaN);
-        double nsecSeqElapsedTime = Arrays.stream(execTimesSequential).average().orElse(Double.NaN);
+        double msecCUDAElapsedTime = Arrays.stream(execTimesCUDA).average().orElse(Double.NaN);
+        double msecOCLElapsedTime = Arrays.stream(execTimesOCL).average().orElse(Double.NaN);
+        double msecSeqElapsedTime = Arrays.stream(execTimesSequential).average().orElse(Double.NaN);
 
         boolean correctResult = true;
         if (CHECK_RESULT) {
@@ -173,11 +173,20 @@ public class MatrixMul2D {
             printMatrices(size, matrixCCUDA, matrixCOCL);
         }
 
-        //System.out.println("CUDA-PTX Execution: " + nsecCUDAElapsedTime + " ns");
-        //System.out.println("OPENCL   Execution: " + nsecOCLElapsedTime + " ns");
-        //System.out.println("           Speedup: " + (double) nsecOCLElapsedTime / nsecCUDAElapsedTime);
-        //System.out.println();
+        // Compute Gigaflops and performance
+        double flops = 2 * Math.pow(size, 3);
+        double CUDAGigaFlops = (1.0E-9 * flops) / (msecCUDAElapsedTime / 1000.0f);
+        double OpenCLGigaFlops = (1.0E-9 * flops) / (msecOCLElapsedTime / 1000.0f);
+        double CUDAspeedup = msecSeqElapsedTime / msecCUDAElapsedTime;
+        double OpenCLspeedup = msecSeqElapsedTime / msecOCLElapsedTime;
 
-        System.out.printf("%d, %f, %f\n", size, nsecSeqElapsedTime/nsecOCLElapsedTime, nsecSeqElapsedTime/nsecCUDAElapsedTime);
+        String formatCUDAFGlops = String.format("%.2f", CUDAGigaFlops);
+        String formatOpenCLFGlops = String.format("%.2f", OpenCLGigaFlops);
+
+        System.out.println("\tOpenCL Execution: " + formatOpenCLFGlops + " GFlops, Total time = " + msecOCLElapsedTime + " ms");
+        System.out.println("\tPTX Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + msecCUDAElapsedTime + " ms");
+        System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
+        System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
+        System.out.println();
     }
 }

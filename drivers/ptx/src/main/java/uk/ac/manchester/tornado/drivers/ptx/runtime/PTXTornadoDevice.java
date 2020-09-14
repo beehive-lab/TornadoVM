@@ -107,7 +107,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex());
 
         // copy meta data into task
         final TaskMetaData sketchMeta = sketch.getMeta();
@@ -163,12 +163,22 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public boolean isFullJITMode(SchedulableTask task) {
-        return false;
+        return true;
     }
 
     @Override
     public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
-        return null;
+        String methodName;
+        if (task instanceof PrebuiltTask) {
+            PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+            methodName = prebuiltTask.getEntryPoint();
+        } else {
+            CompilableTask compilableTask = (CompilableTask) task;
+            ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+            methodName = resolvedMethod.getName();
+        }
+        String functionName = buildKernelName(methodName, task);
+        return getDeviceContext().getInstalledCode(functionName);
     }
 
     /**
@@ -216,7 +226,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if buffer size has changed
+        // We re-allocate if the buffer size has changed
         final ObjectBuffer buffer = state.getBuffer();
         try {
             buffer.allocate(object, batchSize);
@@ -253,9 +263,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 result = createArrayWrapper(type, getDeviceContext(), batchSize);
             } else {
                 final Class<?> componentType = type.getComponentType();
-                if (RuntimeUtilities.isPrimitiveArray(componentType)) {
-                    //result = createMultiArrayWrapper(componentType, type, device, batchSize);
-                } else {
+                if (!RuntimeUtilities.isPrimitiveArray(componentType)) {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }

@@ -14,10 +14,12 @@ import java.util.List;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_ARRAY_ALIGNMENT;
 
 public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
-    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.ptx.array.align", "128"));
 
     private int arrayHeaderSize;
     private long bytesToAllocate;
@@ -233,7 +235,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public int getAlignment() {
-        return ARRAY_ALIGNMENT;
+        return PTX_ARRAY_ALIGNMENT;
     }
 
     @Override
