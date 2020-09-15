@@ -107,7 +107,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
         final TaskMetaData sketchMeta = sketch.getMeta();
@@ -118,7 +118,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
         try {
             PTXCompilationResult result;
-            if (deviceContext.shouldCompile(buildKernelName(resolvedMethod.getName(), executable))) {
+            if (!deviceContext.isCached(buildKernelName(resolvedMethod.getName(), executable))) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
@@ -145,7 +145,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         final PTXDeviceContext deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
         String functionName = buildKernelName(executable.getEntryPoint(), executable);
-        if (!deviceContext.shouldCompile(functionName)) {
+        if (deviceContext.isCached(functionName)) {
             return deviceContext.getInstalledCode(functionName);
         }
 

@@ -1016,8 +1016,8 @@ public class GraphicsTests extends TornadoTestBase {
         final int size = 128;
         Random r = new Random();
 
-        float min = -100;
-        float max = 100;
+        float min = 1;
+        float max = 2;
 
         VolumeShort2 volume = new VolumeShort2(size, size, size);
         VectorFloat3 output = new VectorFloat3(size * size);
@@ -1032,7 +1032,7 @@ public class GraphicsTests extends TornadoTestBase {
         }
 
         Float3 dim = new Float3(random(r, min, max), random(r, min, max), random(r, min, max));
-        Float3 point = new Float3(random(r, min, max), random(r, min, max), random(r, min, max));
+        Float3 point = new Float3(random(r, 0, 1), random(r, 0, 1), random(r, 0, 1));
 
         GraphicsTests.volumeOps(outputSeq, volume, dim, point);
 
@@ -1040,15 +1040,15 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::volumeOps, output, volume, dim, point)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < output.getLength(); i++) {
             Float3 o = output.get(i);
             Float3 s = outputSeq.get(i);
-            Assert.assertEquals(s.getS0(), o.getS0(), 0.01f);
-            Assert.assertEquals(s.getS1(), o.getS1(), 0.01f);
-            Assert.assertEquals(s.getS2(), o.getS2(), 0.01f);
+            Assert.assertEquals("difference on index " + i + " s0", s.getS0(), o.getS0(), 0.01f);
+            Assert.assertEquals("difference on index " + i + " s1", s.getS1(), o.getS1(), 0.01f);
+            Assert.assertEquals("difference on index " + i + " s2", s.getS2(), o.getS2(), 0.01f);
         }
 
     }

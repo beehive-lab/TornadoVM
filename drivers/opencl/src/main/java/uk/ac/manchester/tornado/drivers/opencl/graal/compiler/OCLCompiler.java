@@ -500,7 +500,7 @@ public class OCLCompiler {
 
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
-            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex());
+            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
             final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), currentMethod.getName(), taskMeta, backend);
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 

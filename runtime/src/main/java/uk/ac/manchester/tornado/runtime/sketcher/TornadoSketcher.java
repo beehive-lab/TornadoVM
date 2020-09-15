@@ -35,7 +35,9 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExec
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -68,34 +70,29 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class TornadoSketcher {
 
-    private static class TornadoSketcherKey {
+    private static class TornadoSketcherCacheEntry {
 
-        private ResolvedJavaMethod method;
-        private int driverIndex;
+        private final int driverIndex;
+        private final int deviceIndex;
+        private final Future<Sketch> sketchFuture;
 
-        private TornadoSketcherKey(ResolvedJavaMethod method, int driverIndex) {
-            this.method = method;
+        private TornadoSketcherCacheEntry(int driverIndex, int deviceIndex, Future<Sketch> sketchFuture) {
             this.driverIndex = driverIndex;
+            this.deviceIndex = deviceIndex;
+            this.sketchFuture = sketchFuture;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            TornadoSketcherKey other = (TornadoSketcherKey) o;
-            return driverIndex == other.driverIndex &&
-                    method.equals(other.method);
+        public boolean matchesDriverAndDevice(int driverIndex, int deviceIndex) {
+            return this.driverIndex == driverIndex && this.deviceIndex == deviceIndex;
         }
 
-        @Override
-        public int hashCode() {
-            // TODO looks like ResolvedJavaMethod.hashCode() returns a pointer to the metaspace.
-            //  Is it possible that after a full GC we get another instance of ResolvedJavaMethod which has the same hashCode ? ...
-            // Same problem is with the implementation of equals.
-            return method.hashCode() + driverIndex;
+        public Future<Sketch> getSketchFuture() {
+            return sketchFuture;
         }
     }
     private static final AtomicInteger sketchId = new AtomicInteger(0);
 
-    private static final Map<TornadoSketcherKey, Future<Sketch>> cache = new ConcurrentHashMap<>();
+    private static final Map<ResolvedJavaMethod, List<TornadoSketcherCacheEntry>> cache = new ConcurrentHashMap<>();
 
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
 
@@ -122,44 +119,44 @@ public class TornadoSketcher {
         openCLTokens.add("complex");
     }
 
-    public static Sketch lookup(ResolvedJavaMethod resolvedMethod, int driverIndex) {
-        TornadoSketcherKey sketcherKey = new TornadoSketcherKey(resolvedMethod, driverIndex);
-        guarantee(cache.containsKey(sketcherKey), "cache miss for: %s", resolvedMethod.getName());
+    private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
+        List<TornadoSketcherCacheEntry> entries = cache.get(method);
+        if (entries == null) {
+            return false;
+        }
+
+        for (TornadoSketcherCacheEntry entry : entries) {
+            if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static Sketch lookup(ResolvedJavaMethod resolvedMethod, int driverIndex, int deviceIndex) {
+        Sketch sketch = null;
+        guarantee(cache.containsKey(resolvedMethod), "cache miss for: %s", resolvedMethod.getName());
         try {
-            return cache.get(sketcherKey).get();
+            List<TornadoSketcherCacheEntry> entries = cache.get(resolvedMethod);
+            for (TornadoSketcherCacheEntry entry : entries) {
+                if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
+                    sketch = entry.getSketchFuture().get();
+                    break;
+                }
+            }
+            guarantee(sketch != null, "No sketch available for %d:%d %s", driverIndex, deviceIndex, resolvedMethod.getName());
         } catch (InterruptedException | ExecutionException e) {
             throw new TornadoInternalError(e);
         }
-    }
-
-    /**
-     * Invalidates all the sketches and the non-inlined sketches associated with the given method.
-     */
-    public static void invalidate(ResolvedJavaMethod resolvedMethod, int driverIndex) {
-        TornadoSketcherKey sketcherKey = new TornadoSketcherKey(resolvedMethod, driverIndex);
-        Future<Sketch> futureSketch = cache.get(sketcherKey);
-        if (futureSketch != null) {
-            try {
-                Sketch sketch = futureSketch.get();
-                StructuredGraph graph = (StructuredGraph) sketch.getGraph().getReadonlyCopy();
-                graph.getInvokes().forEach(invoke -> {
-                    TornadoSketcherKey key = new TornadoSketcherKey(invoke.callTarget().targetMethod(), driverIndex);
-                    cache.remove(key);
-                });
-            } catch (InterruptedException | ExecutionException e) {
-                throw new TornadoBailoutRuntimeException("Failed to retrieve sketch", e);
-            }
-        }
-
-        cache.remove(sketcherKey);
+        return sketch;
     }
 
     static void buildSketch(SketchRequest request) {
-        TornadoSketcherKey sketcherKey = new TornadoSketcherKey(request.resolvedMethod, request.meta.getDriverIndex());
-        if (cache.containsKey(sketcherKey)) {
+        if (cacheContainsSketch(request.resolvedMethod, request.meta.getDriverIndex(), request.meta.getDeviceIndex())) {
             return;
         }
-        cache.put(sketcherKey, request);
+        List<TornadoSketcherCacheEntry> sketches = cache.computeIfAbsent(request.resolvedMethod, k -> new ArrayList<>());
+        sketches.add(new TornadoSketcherCacheEntry(request.meta.getDriverIndex(), request.meta.getDeviceIndex(), request));
         try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
             request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
         } catch (Throwable e) {

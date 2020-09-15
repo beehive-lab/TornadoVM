@@ -1,8 +1,10 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCallStack;
@@ -19,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
+
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 
 public class PTXDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
@@ -196,8 +200,14 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         }
     }
 
-    public boolean shouldCompile(String name) {
-        return !codeCache.isCached(name);
+
+    public boolean isCached(String cacheKey) {
+        return codeCache.isCached(cacheKey);
+    }
+
+    @Override
+    public boolean isCached(String methodName, SchedulableTask task) {
+        return codeCache.isCached(buildKernelName(methodName, task));
     }
 
     public void cleanup() {

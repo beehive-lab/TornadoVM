@@ -266,8 +266,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // Make sure that a sketch is available for the device.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
-            executionContext.getTask(i).meta().setDevice(device);
-            updateInner(i, executionContext.getTask(i));
+            SchedulableTask task = executionContext.getTask(i);
+            task.meta().setDevice(device);
+            if (task instanceof CompilableTask) {
+                ResolvedJavaMethod method = getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+                if (!meta().getDevice().getDeviceContext().isCached(method.getName(), task)) {
+                    updateInner(i, executionContext.getTask(i));
+                }
+            }
         }
     }
 
@@ -294,7 +300,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex());
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
         }
     }
@@ -312,7 +318,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex());
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
         }
 

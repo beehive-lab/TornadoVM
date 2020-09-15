@@ -618,8 +618,8 @@ public class OCLCodeCache {
         return lookupCode;
     }
 
-    public boolean isCached(String id, String entryPoint) {
-        return cache.containsKey(id + "-" + entryPoint);
+    public boolean isCached(String key) {
+        return cache.containsKey(key);
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

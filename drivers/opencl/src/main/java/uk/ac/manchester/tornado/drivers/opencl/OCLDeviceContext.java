@@ -28,6 +28,7 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.OCLUtils.buildCodeCacheKey;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
@@ -35,8 +36,10 @@ import java.nio.ByteOrder;
 import java.util.Comparator;
 import java.util.List;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -503,8 +506,13 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return codeCache.installFPGASource(id, entryPoint, code, shouldCompile);
     }
 
-    public boolean isCached(String id, String entryPoint) {
-        return codeCache.isCached(id, entryPoint);
+    public boolean isCached(String cacheKey) {
+        return codeCache.isCached(cacheKey);
+    }
+
+    @Override
+    public boolean isCached(String methodName, SchedulableTask task) {
+        return codeCache.isCached(buildCodeCacheKey(task.getId(), methodName));
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

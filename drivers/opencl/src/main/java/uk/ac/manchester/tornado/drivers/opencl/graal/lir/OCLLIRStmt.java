@@ -337,7 +337,7 @@ public class OCLLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, rhs);
+            asm.emitValueOrOp(crb, rhs);
             asm.delimiter();
             asm.eol();
         }
@@ -364,7 +364,7 @@ public class OCLLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, rhs);
+            asm.emitValueOrOp(crb, rhs);
             asm.delimiter();
             asm.eol();
         }

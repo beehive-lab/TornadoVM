@@ -288,7 +288,7 @@ public class PTXLIRStmt {
             asm.emitSymbol(COMMA);
             asm.space();
 
-            asm.emitValue(rhs);
+            asm.emitValueOrOp(crb, rhs, null);
             asm.delimiter();
             asm.eol();
         }
