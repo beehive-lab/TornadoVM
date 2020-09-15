@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
@@ -40,13 +41,16 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryInt
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -56,7 +60,10 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -64,6 +71,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
@@ -74,7 +82,10 @@ public class OCLGraphBuilderPlugins {
         registerOpenCLBuiltinPlugins(plugins);
 
         // Register Atomics
-        registerTornadoVMAtomicsPlugins(plugins);
+        // registerTornadoVMAtomicsPlugins(plugins);
+
+        // Register TornadoAtomicInteger
+        registerTornadoAtomicInteger(ps, plugins);
 
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
@@ -106,6 +117,53 @@ public class OCLGraphBuilderPlugins {
     private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, TornadoVM_Intrinsics.class);
         registerTornadoVMAtomicsPlugins(r, Integer.TYPE, JavaKind.Int);
+    }
+
+    private static void registerTornadoAtomicInteger(final Plugins ps, InvocationPlugins plugins) {
+
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                if (method.getName().equals("<init>")) {
+                    final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        final Class<?> declaringClass = OCLKind.INTEGER_ATOMIC.getJavaClass();
+        final Registration r = new Registration(plugins, declaringClass);
+        JavaKind returnedJavaKind = OCLKind.INT.asJavaKind();
+
+        r.register1("incrementAndGet", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+
+        r.register1("decrementAndGet", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+
+    }
+
+    private static TornadoAtomicIntegerNode resolveReceiverAtomic(ValueNode thisObject) {
+        TornadoAtomicIntegerNode atomicNode = null;
+        if (thisObject instanceof PiNode) {
+            thisObject = ((PiNode) thisObject).getOriginalNode();
+        }
+        if (thisObject instanceof TornadoAtomicIntegerNode) {
+            atomicNode = (TornadoAtomicIntegerNode) thisObject;
+        }
+        guarantee(atomicNode != null, "unable to resolve vector");
+        return atomicNode;
     }
 
     private static void registerTornadoVMInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -363,6 +421,7 @@ public class OCLGraphBuilderPlugins {
 
     public static void registerNewInstancePlugins(Plugins plugins) {
         plugins.appendNodePlugin(new OCLVectorNodePlugin());
+        plugins.appendNodePlugin(new OCLAtomicIntegerPlugin());
     }
 
     public static void registerParameterPlugins(Plugins plugins) {

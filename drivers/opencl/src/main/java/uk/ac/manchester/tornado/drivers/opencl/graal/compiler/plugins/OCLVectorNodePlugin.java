@@ -56,8 +56,10 @@ public class OCLVectorNodePlugin implements NodePlugin {
     private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {
         OCLKind vectorKind = resolveOCLKind(type);
         if (vectorKind != OCLKind.ILLEGAL) {
-            b.push(JavaKind.Object, b.append(new VectorValueNode(vectorKind)));
-            return true;
+            if (vectorKind.isVector()) {
+                b.push(JavaKind.Object, b.append(new VectorValueNode(vectorKind)));
+                return true;
+            }
         }
 
         return false;

@@ -226,7 +226,11 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic GROUP_SIZE = new OCLUnaryIntrinsic("get_group_size");
 
         public static final OCLUnaryIntrinsic ATOMIC_INC = new OCLUnaryIntrinsic("atomic_inc");
+        public static final OCLUnaryIntrinsic ATOMIC_FETCH_ADD_EXPLICIT = new OCLUnaryIntrinsic("atomic_fetch_add_explicit");
+        public static final OCLUnaryIntrinsic ATOMIC_VAR_INIT = new OCLUnaryIntrinsic("ATOMIC_VAR_INIT");
         public static final OCLUnaryIntrinsic ATOMIC_DEC = new OCLUnaryIntrinsic("atomic_dec");
+
+        public static final OCLUnaryIntrinsic MEMORY_ORDER_RELAXED = new OCLUnaryIntrinsic("memory_order_relaxed");
 
         public static final OCLUnaryIntrinsic BARRIER = new OCLUnaryIntrinsic("barrier");
         public static final OCLUnaryIntrinsic MEM_FENCE = new OCLUnaryIntrinsic("mem_fence");

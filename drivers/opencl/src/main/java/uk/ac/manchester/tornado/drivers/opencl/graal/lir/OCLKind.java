@@ -33,6 +33,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
@@ -106,7 +107,9 @@ public enum OCLKind implements PlatformKind {
     ULONG16(16, null, ULONG),
     FLOAT16(16, null, FLOAT),
     DOUBLE16(16, null, DOUBLE),
-    ILLEGAL(0, null);
+    ILLEGAL(0, null),
+    
+    INTEGER_ATOMIC(4, uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger.TYPE);
     // @formatter:on
 
     public static OCLKind fromResolvedJavaType(ResolvedJavaType type) {
@@ -164,17 +167,6 @@ public enum OCLKind implements PlatformKind {
 
     public static OCLAssembler.OCLBinaryTemplate resolvePrivateTemplateType(ResolvedJavaType type) {
         return resolvePrivateTemplateType(type.getJavaKind());
-    }
-
-    public static OCLKind fromClass(Class<?> type) {
-        if (!type.isArray()) {
-            for (OCLKind k : OCLKind.values()) {
-                if (k.javaClass != null && k.javaClass.getSimpleName().equals(type.getSimpleName())) {
-                    return k;
-                }
-            }
-        }
-        return ILLEGAL;
     }
 
     private final int size;
@@ -380,9 +372,8 @@ public enum OCLKind implements PlatformKind {
         return JavaConstant.NULL_POINTER;
     }
 
-    public static final OCLKind resolveToVectorKind(ResolvedJavaType type) {
+    public static OCLKind resolveToVectorKind(ResolvedJavaType type) {
         if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
-
             String typeName = type.getName();
             int index = typeName.lastIndexOf("/");
             String simpleName = typeName.substring(index + 1, typeName.length() - 1).toUpperCase();
@@ -398,7 +389,7 @@ public enum OCLKind implements PlatformKind {
         return size;
     }
 
-    public final static int lookupTypeIndex(OCLKind kind) {
+    public static int lookupTypeIndex(OCLKind kind) {
         switch (kind) {
             case SHORT:
                 return 0;
@@ -423,7 +414,7 @@ public enum OCLKind implements PlatformKind {
         return lookupTypeIndex(getElementKind());
     }
 
-    public final static int lookupLengthIndex(int length) {
+    public static int lookupLengthIndex(int length) {
         switch (length) {
             case 2:
                 return 0;
@@ -461,6 +452,8 @@ public enum OCLKind implements PlatformKind {
                     return JavaKind.Float;
                 case DOUBLE:
                     return JavaKind.Double;
+                case INTEGER_ATOMIC:
+                    return JavaKind.fromJavaClass(TornadoAtomicInteger.TYPE);
                 default:
                     shouldNotReachHere();
             }

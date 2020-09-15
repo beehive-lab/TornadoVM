@@ -43,6 +43,8 @@ package uk.ac.manchester.tornado.api.atomics;
 
 public class TornadoAtomicInteger {
 
+    public static final Class<TornadoAtomicInteger> TYPE = TornadoAtomicInteger.class;
+
     private int value;
 
     public TornadoAtomicInteger(int initialValue) {

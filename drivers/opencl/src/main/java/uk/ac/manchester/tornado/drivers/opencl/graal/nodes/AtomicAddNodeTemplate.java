@@ -32,7 +32,6 @@ public class AtomicAddNodeTemplate extends FloatingNode implements LIRLowerable 
         this.array = array;
         this.index = index;
         this.inc = inc;
-
     }
 
     @Override
