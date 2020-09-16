@@ -19,8 +19,10 @@
 package uk.ac.manchester.tornado.unittests.atomics;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.HashSet;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -117,14 +119,14 @@ public class TestAtomics extends TornadoTestBase {
                 .streamOut(a) //
                 .execute();
 
-        atomic02(b);
+        atomic03(b);
         for (int i = 0; i < a.length; i++) {
             assertEquals(b[i], a[i]);
         }
     }
 
     public static void atomic04(int[] a) {
-        TornadoAtomicInteger tai = new TornadoAtomicInteger(155);
+        TornadoAtomicInteger tai = new TornadoAtomicInteger(12);
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = tai.incrementAndGet();
         }
@@ -132,22 +134,31 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic04() {
-        final int size = 1024;
+        final int size = 32;
         int[] a = new int[size];
-        int[] b = new int[size];
-
         Arrays.fill(a, 1);
-        Arrays.fill(b, 1);
 
         new TaskSchedule("s0") //
                 .task("t0", TestAtomics::atomic04, a) //
                 .streamOut(a) //
                 .execute();
 
-        atomic02(b);
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(b[i], a[i]);
-        }
-    }
+        // On GPUs and FPGAs, threads within the same work-group run in parallel.
+        // Increments will be performed atomically when using TornadoAtomicInteger.
+        // However the order is not guaranteed. For this test, we need to check that
+        // there are not repeated values in the output array.
+        HashSet<Integer> set = new HashSet<>();
 
+        boolean repeated = false;
+        for (int j : a) {
+            System.out.println(j);
+            if (!set.contains(j)) {
+                set.add(j);
+            } else {
+                repeated = true;
+                break;
+            }
+        }
+        assertTrue(!repeated);
+    }
 }

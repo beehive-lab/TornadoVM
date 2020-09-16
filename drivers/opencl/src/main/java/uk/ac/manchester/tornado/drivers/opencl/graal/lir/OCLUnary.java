@@ -125,6 +125,9 @@ public class OCLUnary {
 
         AllocatableValue lhs;
 
+        /*
+         * The opcode is the initializer intrinsic to use
+         */
         public IntrinsicAtomicDeclaration(OCLUnaryOp opcode, AllocatableValue lhs, Value initialValue) {
             super(opcode, LIRKind.Illegal, initialValue);
             this.lhs = lhs;
@@ -132,13 +135,17 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.emit("__global atomic_int ");
-            asm.emitValue(crb, lhs);
-            asm.emit(OCLAssemblerConstants.ASSIGN);
-            asm.emit("ATOMIC_VAR_INIT");
-            asm.emit(OCLAssemblerConstants.OPEN_PARENTHESIS);
-            asm.emitValue(crb, value);
-            asm.emit(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+            StringBuffer lineGlobalScope = new StringBuffer();
+            lineGlobalScope.append("__global atomic_int ");
+            lineGlobalScope.append(asm.getStringValue(crb, lhs));
+            lineGlobalScope.append(OCLAssemblerConstants.ASSIGN);
+            lineGlobalScope.append(opcode.toString());
+            lineGlobalScope.append(OCLAssemblerConstants.OPEN_PARENTHESIS);
+            lineGlobalScope.append(asm.getStringValue(crb, value));
+            lineGlobalScope.append(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+            lineGlobalScope.append(OCLAssemblerConstants.STMT_DELIMITER);
+            lineGlobalScope.append("\n");
+            asm.emitLineGlobal(lineGlobalScope.toString());
         }
     }
 
