@@ -131,16 +131,13 @@ public class OCLGraphBuilderPlugins {
                         // args[1] = arguments to the invoke node being substituted
                         ValueNode initialValue = args[1];
                         if (initialValue instanceof ConstantNode) {
-                            ConstantNode c = (ConstantNode) initialValue;
                             int value = Integer.parseInt(((ConstantNode) initialValue).getValue().toValueString());
-                            System.out.println("VALUE: " + value);
                             if (value == 0) {
                                 atomic.setInitialValue(initialValue);
                             } else {
                                 atomic.setInitialValueAtUsages(initialValue);
                             }
                         }
-                        atomic.setInitialValue(initialValue);
                     }
                     return true;
                 }

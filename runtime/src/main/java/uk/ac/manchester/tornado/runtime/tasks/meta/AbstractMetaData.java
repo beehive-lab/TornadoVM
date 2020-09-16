@@ -309,14 +309,12 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public String composeBuiltOptions(String rawFlags) {
         rawFlags = rawFlags.replace(",", " ");
-
         for (String str : rawFlags.split(" ")) {
             if (!openCLBuiltOptions.contains(str)) {
                 rawFlags = " ";
+                break;
             }
         }
-
-        System.out.println("FLAGS: " + rawFlags);
         return rawFlags;
     }
 
