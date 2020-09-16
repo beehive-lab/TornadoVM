@@ -34,7 +34,11 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     }
 
     public void setInitialValue(ValueNode valueNode) {
-        this.initialValue.replaceAtUsages(valueNode);
+        initialValue = valueNode;
+    }
+
+    public void setInitialValueAtUsages(ValueNode valueNode) {
+        initialValue.replaceAtUsages(valueNode);
     }
 
     public ValueNode getInitialValue() {

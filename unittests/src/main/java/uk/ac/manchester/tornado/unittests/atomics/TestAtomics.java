@@ -126,7 +126,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     public static void atomic04(int[] a) {
-        TornadoAtomicInteger tai = new TornadoAtomicInteger(12);
+        TornadoAtomicInteger tai = new TornadoAtomicInteger(1);
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = tai.incrementAndGet();
         }
@@ -134,14 +134,19 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic04() {
-        final int size = 32;
+        final int size = 4096;
         int[] a = new int[size];
         Arrays.fill(a, 1);
 
-        new TaskSchedule("s0") //
+        TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", TestAtomics::atomic04, a) //
-                .streamOut(a) //
-                .execute();
+                .streamOut(a); //
+
+        ts.execute();
+
+        if (!ts.isFinished()) {
+            assertTrue(false);
+        }
 
         // On GPUs and FPGAs, threads within the same work-group run in parallel.
         // Increments will be performed atomically when using TornadoAtomicInteger.
@@ -151,7 +156,6 @@ public class TestAtomics extends TornadoTestBase {
 
         boolean repeated = false;
         for (int j : a) {
-            System.out.println(j);
             if (!set.contains(j)) {
                 set.add(j);
             } else {

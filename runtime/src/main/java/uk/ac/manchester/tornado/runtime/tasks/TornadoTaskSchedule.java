@@ -162,6 +162,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoProfiler timeProfiler;
     private boolean updateData;
+    private boolean isFinished;
     private GridTask gridTask;
 
     private static String RESET = "\u001B[0m";
@@ -245,6 +246,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void useDefaultThreadScheduler(boolean use) {
         executionContext.setDefaultThreadScheduler(use);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return this.isFinished;
     }
 
     @Override
@@ -731,6 +737,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void cleanUp() {
         updateData = false;
+        isFinished = true;
     }
 
     @Override

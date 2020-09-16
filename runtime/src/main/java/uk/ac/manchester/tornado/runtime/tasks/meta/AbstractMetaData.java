@@ -55,7 +55,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private boolean deviceManuallySet;
     private long numThreads;
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
-            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
+            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w", "-cl-std=CL2.0"));
     private TornadoProfiler profiler;
     private GridTask gridTask;
 
@@ -315,6 +315,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
                 rawFlags = " ";
             }
         }
+
+        System.out.println("FLAGS: " + rawFlags);
         return rawFlags;
     }
 
@@ -423,7 +425,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
         dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
 
-        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
+        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w -cl-std=CL2.0" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
 
         openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
