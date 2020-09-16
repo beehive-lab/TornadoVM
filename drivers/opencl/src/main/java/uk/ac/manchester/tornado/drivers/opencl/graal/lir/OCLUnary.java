@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBa
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode.OCLMemFenceFlags;
@@ -133,9 +134,11 @@ public class OCLUnary {
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("__global atomic_int ");
             asm.emitValue(crb, lhs);
-            asm.emit(" = ATOMIC_VAR_INIT(");
+            asm.emit(OCLAssemblerConstants.ASSIGN);
+            asm.emit("ATOMIC_VAR_INIT");
+            asm.emit(OCLAssemblerConstants.OPEN_PARENTHESIS);
             asm.emitValue(crb, value);
-            asm.emit(")");
+            asm.emit(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         }
     }
 
