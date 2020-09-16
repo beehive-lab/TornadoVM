@@ -82,7 +82,7 @@ public class OCLGraphBuilderPlugins {
         registerOpenCLBuiltinPlugins(plugins);
 
         // Register Atomics
-        // registerTornadoVMAtomicsPlugins(plugins);
+        registerTornadoVMAtomicsPlugins(plugins);
 
         // Register TornadoAtomicInteger
         registerTornadoAtomicInteger(ps, plugins);
@@ -126,6 +126,12 @@ public class OCLGraphBuilderPlugins {
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                 if (method.getName().equals("<init>")) {
                     final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
+                    if (args.length > 1) {
+                        // args[0] = current node (new node)
+                        // args[1] = arguments to the invoke node being substituted
+                        ValueNode initialValue = args[1];
+                        atomic.setInitialValue(initialValue);
+                    }
                     return true;
                 }
                 return false;

@@ -124,8 +124,8 @@ public class OCLUnary {
 
         AllocatableValue lhs;
 
-        public IntrinsicAtomicDeclaration(OCLUnaryOp opcode, AllocatableValue lhs) {
-            super(opcode, LIRKind.Illegal, null);
+        public IntrinsicAtomicDeclaration(OCLUnaryOp opcode, AllocatableValue lhs, Value initialValue) {
+            super(opcode, LIRKind.Illegal, initialValue);
             this.lhs = lhs;
         }
 
@@ -133,7 +133,9 @@ public class OCLUnary {
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("__global atomic_int ");
             asm.emitValue(crb, lhs);
-            asm.emit(" = ATOMIC_VAR_INIT(0)");
+            asm.emit(" = ATOMIC_VAR_INIT(");
+            asm.emitValue(crb, value);
+            asm.emit(")");
         }
     }
 

@@ -124,7 +124,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     public static void atomic04(int[] a) {
-        TornadoAtomicInteger tai = new TornadoAtomicInteger(0);
+        TornadoAtomicInteger tai = new TornadoAtomicInteger(155);
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = tai.incrementAndGet();
         }
