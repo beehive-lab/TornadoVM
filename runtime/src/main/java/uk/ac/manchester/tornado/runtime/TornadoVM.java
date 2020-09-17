@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -267,6 +268,9 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
+                if (object instanceof TornadoVMContext) {
+                    continue;
+                }
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
@@ -508,6 +512,11 @@ public class TornadoVM extends TornadoLogger {
                     if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
                         stack.push(constants.get(argIndex));
                     } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
+                        Object o = objects.get(argIndex);
+                        if (o instanceof TornadoVMContext) {
+                            continue;
+                        }
+
                         final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                         final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
