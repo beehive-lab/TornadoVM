@@ -59,6 +59,8 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
 	"uk.ac.manchester.tornado.unittests.api.TestAPI",
+	"uk.ac.manchester.tornado.unittests.api.TestVectorAdditionTornadoVMContextApi",
+	"uk.ac.manchester.tornado.unittests.api.TestMatrixMultiplicationTornadoVMContextApi",
 	"uk.ac.manchester.tornado.unittests.math.TestMath",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
 	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
