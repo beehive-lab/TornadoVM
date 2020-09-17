@@ -111,6 +111,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
@@ -178,6 +179,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof InstanceOfNode) {
             // ignore InstanceOfNode nodes
+        } else if (node instanceof ThreadIdNode) {
+            lowerThreadIdNode((ThreadIdNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -268,6 +271,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 graph.replaceFixedWithFloating(integerDivRemNode, rem);
                 break;
         }
+    }
+
+    private void lowerThreadIdNode(ThreadIdNode threadIdNode) {
+        StructuredGraph graph = threadIdNode.graph();
+
+        GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
     }
 
     @Override
