@@ -31,6 +31,9 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -97,6 +100,12 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
+    /**
+     * Approach using a compiler-instrinsic in TornadoVM.
+     * 
+     * @param a
+     *            input array
+     */
     public static void atomic03(int[] a) {
         final int SIZE = 100;
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -125,11 +134,18 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    public static void atomic04(int[] a) {
+    /**
+     * Approach using an API for Atomics. This provides atomics using the Java
+     * semantics (block a single elements). Note that, in OpenCL, this single
+     * elements has to be present in the device's global memory.
+     * 
+     * @param input
+     *            input array
+     */
+    public static void atomic04(int[] input) {
         TornadoAtomicInteger tai = new TornadoAtomicInteger(0);
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = tai.incrementAndGet();
-            // a[i] = i;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = tai.incrementAndGet();
         }
     }
 
@@ -157,11 +173,57 @@ public class TestAtomics extends TornadoTestBase {
 
         boolean repeated = false;
         for (int j : a) {
+            System.out.println(j);
             if (!set.contains(j)) {
                 set.add(j);
             } else {
                 repeated = true;
-                break;
+                // break;
+            }
+        }
+        assertTrue(!repeated);
+    }
+
+    /**
+     * How to test?
+     * 
+     * <code>    
+     * $ tornado-test.py -V -pk --debug uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
+     * </code>
+     */
+    @Test
+    public void testAtomic05_precompiled() {
+        final int size = 32;
+        int[] a = new int[size];
+        int[] b = new int[1];
+        Arrays.fill(a, 0);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+
+        // @formatter:off
+        new TaskSchedule("s0")
+                .prebuiltTask("t0",
+                        "add",
+                        tornadoSDK + "/examples/generated/atomics.cl",
+                        new Object[] { a, b },
+                        new Access[] { Access.WRITE, Access.WRITE },
+                        defaultDevice,
+                        new int[] { 32 })
+                .streamOut(a)
+                .execute();
+        // @formatter:on
+
+        HashSet<Integer> set = new HashSet<>();
+
+        boolean repeated = false;
+        for (int j : a) {
+            System.out.println(j);
+            if (!set.contains(j)) {
+                set.add(j);
+            } else {
+                repeated = true;
+                // break;
             }
         }
         assertTrue(!repeated);
