@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -40,10 +41,11 @@ public class TornadoContextReplacement extends BasePhase<TornadoSketchTierContex
                     }
 
                     Node unboxNode = node.successors().first();
-                    unboxNode.replaceAtUsages(node);
-
-                    node.replaceFirstSuccessor(unboxNode, unboxNode.successors().first());
-                    unboxNode.safeDelete();
+                    if (unboxNode instanceof UnboxNode) {
+                        unboxNode.replaceAtUsages(node);
+                        node.replaceFirstSuccessor(unboxNode, unboxNode.successors().first());
+                        unboxNode.safeDelete();
+                    }
 
                     graph.addWithoutUnique(threadIdNode);
                     threadIdNode.replaceFirstSuccessor(null, node.successors().first());
