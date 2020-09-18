@@ -40,9 +40,4 @@ public final class OCLUtils {
         }
     }
 
-    public static String buildCodeCacheKey(String id, String entryPoint) {
-        return id + "-" + entryPoint;
-
-    }
-
 }

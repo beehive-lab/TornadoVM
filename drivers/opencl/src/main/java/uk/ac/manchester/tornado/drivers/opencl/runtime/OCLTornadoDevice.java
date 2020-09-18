@@ -85,8 +85,6 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.OCLUtils.buildCodeCacheKey;
-
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private final OCLDevice device;
@@ -223,7 +221,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
-        if (!task.shouldCompile() && deviceContext.isCached(buildCodeCacheKey(task.getId(), resolvedMethod.getName()))) {
+        if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
             return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
         }
 
@@ -266,7 +264,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
-        if (deviceContext.isCached(buildCodeCacheKey(task.getId(), executable.getEntryPoint()))) {
+        if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
             return deviceContext.getInstalledCode(task.getId(), executable.getEntryPoint());
         }
 
