@@ -183,12 +183,14 @@ public class OCLCodeCache {
             String binaryFile = binaries[i];
             String taskAndDeviceInfo = binaries[i + 1];
             String task = taskAndDeviceInfo.split("\\.")[0] + "." + taskAndDeviceInfo.split("\\.")[1];
-            addNewEntryInBitstreamHashMap(task, binaryFile);
+            String[] driverAndDevice = taskAndDeviceInfo.split("=")[1].split(":");
+            int driverIndex = Integer.parseInt(driverAndDevice[0]);
+            int deviceIndex = Integer.parseInt(driverAndDevice[1]);
+            addNewEntryInBitstreamHashMap(task, binaryFile, driverIndex, deviceIndex);
 
             // For each entry, we should add also an entry for
             // lookup-buffer-address
-            String device = taskAndDeviceInfo.split("\\.")[2];
-            addNewEntryInBitstreamHashMap("oclbackend.lookupBufferAddress", binaryFile);
+            addNewEntryInBitstreamHashMap("oclbackend.lookupBufferAddress", binaryFile, driverIndex, deviceIndex);
         }
     }
 
@@ -357,9 +359,13 @@ public class OCLCodeCache {
     }
 
     private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
+        String[] driverAndDevice = Tornado.getProperty(id + ".device", "0:0").split(":");
+        addNewEntryInBitstreamHashMap(id, bitstreamDirectory, Integer.parseInt(driverAndDevice[0]), Integer.parseInt(driverAndDevice[1]));
+    }
+
+    private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory, int driverIndex, int deviceIndex) {
         if (precompiledBinariesPerDevice != null) {
-            String[] driverAndDevice = Tornado.getProperty(id + ".device", "0:0").split(":");
-            String lookupBufferDeviceKernelName = id + String.format(".device=%s:%s", driverAndDevice[0], driverAndDevice[1]);
+            String lookupBufferDeviceKernelName = id + String.format(".device=%s:%s", driverIndex, deviceIndex);
             precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
         }
     }
