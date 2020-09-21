@@ -8,7 +8,6 @@ Example:
 $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddInt 100000
 {
     "s0": {
-        "DEVICE": "GeForce GTX 1650",  
         "COPY_OUT_TIME": "36576",
         "TOTAL_TASK_SCHEDULE_TIME": "104699731",
         "TOTAL_GRAAL_COMPILE_TIME": "36462460",
@@ -17,6 +16,9 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
         "TOTAL_DRIVER_COMPILE_TIME": "710824",
         "TOTAL_BYTE_CODE_GENERATION": "7031446",
         "s0.t0": {
+            "DEVICE": "GeForce GTX 1650",   
+            "TASK_COPY_OUT_SIZE_BYTES": "8216",
+            "TASK_COPY_IN_SIZE_BYTES": "32892",
             "TASK_COMPILE_GRAAL_TIME": "36462460",
             "TASK_COMPILE_DRIVER_TIME": "710824",
             "TASK_KERNEL_TIME": "25600"
