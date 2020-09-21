@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
@@ -46,13 +47,13 @@ public class FeatureExtractionUtilities {
     private FeatureExtractionUtilities() {
     }
 
-    public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name) {
+    public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name, TornadoDeviceContext deviceContext) {
         name = name.split("-")[1];
         if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name);
+            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.toString());
             File fileLog = new File(TornadoOptions.PROFILER_DIRECTORY + FEATURE_FILE);
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);

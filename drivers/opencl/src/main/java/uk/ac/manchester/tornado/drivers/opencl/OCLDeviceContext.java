@@ -28,6 +28,23 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DEFAULT_TAG;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_PARALLEL_KERNEL;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_BYTE;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_DOUBLE;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_FLOAT;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_INT;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_LONG;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_SHORT;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SERIAL_KERNEL;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SYNC_BARRIER;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SYNC_MARKER;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_BYTE;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_DOUBLE;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_FLOAT;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_INT;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_LONG;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_SHORT;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
@@ -47,24 +64,6 @@ import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DEFAULT_TAG;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_PARALLEL_KERNEL;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_BYTE;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_DOUBLE;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_FLOAT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_INT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_LONG;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_SHORT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SERIAL_KERNEL;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SYNC_BARRIER;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SYNC_MARKER;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_BYTE;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_DOUBLE;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_FLOAT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_INT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_LONG;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_SHORT;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
@@ -125,17 +124,13 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return str.split(";");
     }
 
-    boolean printOCLKernelTime() {
-        return PRINT_OCL_KERNEL_TIME;
-    }
-
     public OCLDevice getDevice() {
         return device;
     }
 
     @Override
     public String toString() {
-        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
+        return String.format(getDevice().getDeviceName());
     }
 
     public OCLContext getPlatformContext() {
@@ -458,6 +453,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         }
 
         return useRelativeAddresses;
+    }
+
+    @Override
+    public int getDeviceIndex() {
+        return device.getIndex();
     }
 
     public long getBumpBuffer() {
