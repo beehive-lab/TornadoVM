@@ -37,6 +37,11 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void signDeviceForTask(ProfilerType type, String taskName, String deviceInfo) {
+
+    }
+
+    @Override
     public void stop(ProfilerType type) {
     }
 

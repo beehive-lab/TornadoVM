@@ -29,6 +29,8 @@ public interface TornadoProfiler {
 
     void start(ProfilerType type, String taskName);
 
+    void signDeviceForTask(ProfilerType type, String taskName, String deviceInfo);
+
     void stop(ProfilerType type);
 
     void stop(ProfilerType type, String taskName);

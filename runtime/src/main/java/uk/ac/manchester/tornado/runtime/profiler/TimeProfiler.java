@@ -32,12 +32,14 @@ public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<ProfilerType, Long> profilerTime;
     private HashMap<String, HashMap<ProfilerType, Long>> taskTimers;
+    private HashMap<String, HashMap<ProfilerType, String>> taskDeviceIdentifiers;
 
     private StringBuffer indent;
 
     public TimeProfiler() {
         profilerTime = new HashMap<>();
         taskTimers = new HashMap<>();
+        taskDeviceIdentifiers = new HashMap<>();
         indent = new StringBuffer("");
     }
 
@@ -56,6 +58,16 @@ public class TimeProfiler implements TornadoProfiler {
         HashMap<ProfilerType, Long> profilerType = taskTimers.get(taskName);
         profilerType.put(type, start);
         taskTimers.put(taskName, profilerType);
+    }
+
+    @Override
+    public void signDeviceForTask(ProfilerType type, String taskName, String deviceInfo) {
+        if (!taskDeviceIdentifiers.containsKey(taskName)) {
+            taskDeviceIdentifiers.put(taskName, new HashMap<>());
+        }
+        HashMap<ProfilerType, String> profilerType = taskDeviceIdentifiers.get(taskName);
+        profilerType.put(type, deviceInfo);
+        taskDeviceIdentifiers.put(taskName, profilerType);
     }
 
     @Override
@@ -144,6 +156,7 @@ public class TimeProfiler implements TornadoProfiler {
             json.append(indent.toString() + "\"" + p + "\"" + ": {\n");
             increaseIndent();
             counter++;
+            json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
             for (ProfilerType p2 : taskTimers.get(p).keySet()) {
                 json.append(indent.toString() + "\"" + p2 + "\"" + ": " + "\"" + taskTimers.get(p).get(p2) + "\",\n");
             }
