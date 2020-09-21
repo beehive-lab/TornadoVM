@@ -29,10 +29,13 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     private boolean ATOMIC_2_0 = false;
 
+    // How many atomics integers per graph
     public static HashMap<StructuredGraph, Integer> globalAtomics = new HashMap<>();
 
     @Input
     ValueNode initialValue;
+
+    private int indexFromGlobalMemory;
 
     public TornadoAtomicIntegerNode(OCLKind kind) {
         super(TYPE, OCLStampFactory.getStampFor(kind));
@@ -40,11 +43,11 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         this.initialValue = ConstantNode.forInt(0);
     }
 
-    public void setInitialValue(ValueNode valueNode) {
+    public synchronized void setInitialValue(ValueNode valueNode) {
         initialValue = valueNode;
     }
 
-    public void setInitialValueAtUsages(ValueNode valueNode) {
+    public synchronized void setInitialValueAtUsages(ValueNode valueNode) {
         initialValue.replaceAtUsages(valueNode);
     }
 
@@ -66,8 +69,23 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         gen.setResult(this, result);
     }
 
+    public int getIndexFromGlobalMemory() {
+        return this.indexFromGlobalMemory;
+    }
+
+    private void assignIndex() {
+        if (!globalAtomics.containsKey(this.graph())) {
+            globalAtomics.put(this.graph(), 0);
+            this.indexFromGlobalMemory = 0;
+        } else {
+            this.indexFromGlobalMemory = globalAtomics.get(this.graph()) + 1;
+            globalAtomics.put(this.graph(), indexFromGlobalMemory);
+        }
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        assignIndex();
         if (ATOMIC_2_0) {
             generateExpressionForOpenCL2_0(gen);
         } else {

@@ -37,7 +37,6 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
 
     AtomicsBuffer(long offset, int numArgs, OCLDeviceContext device) {
         super(device, offset, numArgs * 4);
-        System.out.println("ATOMICS BUFFER - offset = " + offset);
         buffer.clear();
         numAtomics = 0;
         onDevice = false;
