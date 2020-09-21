@@ -127,8 +127,11 @@ public class OCLGraphBuilderPlugins {
                 if (method.getName().equals("<init>")) {
                     final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
                     if (args.length > 1) {
+                        // ========================================================
+                        // DOCUMENTATION:
                         // args[0] = current node (new node)
                         // args[1] = arguments to the invoke node being substituted
+                        // ========================================================
                         ValueNode initialValue = args[1];
                         if (initialValue instanceof ConstantNode) {
                             int value = Integer.parseInt(((ConstantNode) initialValue).getValue().toValueString());

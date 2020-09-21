@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -25,21 +25,15 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+public interface DeviceBuffer {
 
-public interface TornadoAcceleratorDevice extends TornadoDevice {
+    void reset();
 
-    TornadoSchedulingStrategy getPreferredSchedule();
+    int getNumberOfAtomics();
 
-    CallStack createStack(int numArgs);
+    void push(int value);
 
-    DeviceBuffer createBuffer(int intElements);
+    boolean isOnDevice();
 
-    TornadoInstalledCode installCode(SchedulableTask task);
-
-    boolean isFullJITMode(SchedulableTask task);
-
-    TornadoInstalledCode getCodeFromCache(SchedulableTask task);
-
+    long toAtomicAddress();
 }

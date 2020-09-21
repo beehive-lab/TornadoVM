@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
@@ -61,6 +62,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
+    private DeviceBuffer deviceBuffer;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
@@ -465,4 +467,5 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     public WorkerGrid getWorkerGrid(String taskName) {
         return gridTask.get(taskName);
     }
+
 }

@@ -24,7 +24,7 @@ public class OCLAtomicIntegerPlugin implements NodePlugin {
         OCLKind kind = resolveOCLKind(type);
         if (kind != OCLKind.ILLEGAL) {
             if (kind == OCLKind.INTEGER_ATOMIC) {
-                b.push(JavaKind.Object, b.append(new TornadoAtomicIntegerNode(kind)));
+                b.push(JavaKind.Object, b.append(new TornadoAtomicIntegerNode(kind, b.getGraph())));
                 return true;
             }
         }

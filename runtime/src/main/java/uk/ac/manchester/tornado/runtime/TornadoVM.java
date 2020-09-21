@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -84,6 +85,7 @@ public class TornadoVM extends TornadoLogger {
     private final List<Object> objects;
     private final GlobalObjectState[] globalStates;
     private final CallStack[] stacks;
+    private final DeviceBuffer[] atomicsList;
     private final int[][] events;
     private final int[] eventsIndicies;
     private final List<TornadoAcceleratorDevice> contexts;
@@ -123,6 +125,7 @@ public class TornadoVM extends TornadoLogger {
         buffer.getInt();
         int taskCount = buffer.getInt();
         stacks = graphContext.getFrames();
+        atomicsList = new DeviceBuffer[stacks.length];
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndicies = new int[events.length];
 
@@ -427,6 +430,13 @@ public class TornadoVM extends TornadoLogger {
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
 
                 final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
+                if (atomicsList[stackIndex] == null) {
+                    atomicsList[stackIndex] = device.createBuffer(10);
+                }
+                DeviceBuffer atomicBuffer = atomicsList[stackIndex];
+
+                atomicBuffer.push(150);
+                atomicBuffer.push(160);
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
@@ -537,9 +547,9 @@ public class TornadoVM extends TornadoLogger {
 
                 try {
                     if (useDependencies) {
-                        lastEvent = installedCode.launchWithDependencies(stack, metadata, batchThreads, waitList);
+                        lastEvent = installedCode.launchWithDependencies(stack, atomicBuffer, metadata, batchThreads, waitList);
                     } else {
-                        lastEvent = installedCode.launchWithoutDependencies(stack, metadata, batchThreads);
+                        lastEvent = installedCode.launchWithoutDependencies(stack, atomicBuffer, metadata, batchThreads);
                     }
                     if (eventList != -1) {
                         eventsIndicies[eventList] = 0;

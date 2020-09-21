@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
+import java.util.HashMap;
+
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -7,6 +9,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -23,6 +26,10 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     public static final NodeClass<TornadoAtomicIntegerNode> TYPE = NodeClass.create(TornadoAtomicIntegerNode.class);
 
     private final OCLKind kind;
+
+    private boolean ATOMIC_2_0 = false;
+
+    public static HashMap<StructuredGraph, Integer> globalAtomics = new HashMap<>();
 
     @Input
     ValueNode initialValue;
@@ -45,12 +52,26 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         return this.initialValue;
     }
 
-    @Override
-    public void generate(NodeLIRBuilderTool gen) {
+    private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(StampFactory.intValue()));
         tool.append(new OCLLIRStmt.RelocatedExpressionStmt(new OCLUnary.IntrinsicAtomicDeclaration(OCLAssembler.OCLUnaryIntrinsic.ATOMIC_VAR_INIT, result, gen.operand(initialValue))));
         gen.setResult(this, result);
+    }
 
+    private void generateExpressionForOpenCL1_0(NodeLIRBuilderTool gen) {
+        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
+        Variable result = tool.newVariable(tool.getLIRKind(StampFactory.intValue()));
+        tool.append(new OCLLIRStmt.RelocatedExpressionStmt(new OCLUnary.IntrinsicAtomicDeclaration(OCLAssembler.OCLUnaryIntrinsic.ATOMIC_VAR_INIT, result, gen.operand(initialValue))));
+        gen.setResult(this, result);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool gen) {
+        if (ATOMIC_2_0) {
+            generateExpressionForOpenCL2_0(gen);
+        } else {
+            generateExpressionForOpenCL1_0(gen);
+        }
     }
 }

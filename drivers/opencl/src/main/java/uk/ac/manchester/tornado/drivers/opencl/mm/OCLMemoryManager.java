@@ -41,10 +41,12 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private final ScheduleMetaData scheduleMeta;
     private final long callStackLimit;
     private long callStackPosition;
+    private long deviceBufferPosition;
     private long deviceBufferAddress;
     private final OCLDeviceContext deviceContext;
     private long deviceHeapPointer;
     private long constantPointer;
+    private long atomicsRegion;
     private long heapLimit;
     private long heapPosition;
     private boolean initialised;
@@ -86,6 +88,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     public final void reset() {
         callStackPosition = 0;
+        deviceBufferPosition = 0;
         heapPosition = callStackLimit;
         Tornado.info("Reset heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, true), deviceContext.getDevice().getDeviceName());
     }
@@ -127,6 +130,11 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return callStack;
     }
 
+    public AtomicsBuffer createDeviceBuffer(final int maxArgs) {
+        AtomicsBuffer atomicInteger = new AtomicsBuffer(deviceBufferPosition, maxArgs, deviceContext);
+        return atomicInteger;
+    }
+
     public long getBytesRemaining() {
         return heapLimit - heapPosition;
     }
@@ -147,14 +155,19 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     /**
-     * Allocate space on the device
+     * Allocate regions on the device.
      * 
      * @param numBytes
+     *            Number of bytes to allocate in the global region.
      */
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
         this.constantPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
+
+        final int numberOfElements = 100;
+        this.atomicsRegion = deviceContext.getPlatformContext().createBufferInteger(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numberOfElements);
+        System.out.println("ATOMIC ADDRESS AFTER CREATION: " + atomicsRegion);
     }
 
     public void init(OCLBackend backend, long address) {
@@ -183,6 +196,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     long toConstantAddress() {
         return constantPointer;
+    }
+
+    long toAtomicAddress() {
+        return atomicsRegion;
     }
 
     public long toRelativeAddress() {

@@ -28,26 +28,6 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-
-import java.nio.ByteOrder;
-import java.util.Comparator;
-import java.util.List;
-
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.Initialisable;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DEFAULT_TAG;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_PARALLEL_KERNEL;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_BYTE;
@@ -65,6 +45,26 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_FLOAT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_INT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_SHORT;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.Initialisable;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
@@ -181,17 +181,18 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int enqueueTask(OCLKernel kernel, int[] events) {
-        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null), DESC_SERIAL_KERNEL, kernel.getId(), queue);
+        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null), DESC_SERIAL_KERNEL, kernel.getOclKernelID(),
+                queue);
     }
 
     public int enqueueTask(OCLKernel kernel) {
-        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, null), DESC_SERIAL_KERNEL, kernel.getId(), queue);
+        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, null), DESC_SERIAL_KERNEL, kernel.getOclKernelID(), queue);
     }
 
     public int enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
         return eventsWrapper.registerEvent(
                 queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, eventsWrapper.serialiseEvents(waitEvents, queue) ? eventsWrapper.waitEventsBuffer : null),
-                DESC_PARALLEL_KERNEL, kernel.getId(), queue);
+                DESC_PARALLEL_KERNEL, kernel.getOclKernelID(), queue);
     }
 
     public ByteOrder getByteOrder() {
@@ -202,6 +203,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
      * Asynchronous writes to device
      */
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
+        System.out.println("ARRAY BEING WRITTEN: " + Arrays.toString(array));
         return eventsWrapper.registerEvent(
                 queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, eventsWrapper.serialiseEvents(waitEvents, queue) ? eventsWrapper.waitEventsBuffer : null),
                 DESC_WRITE_BYTE, offset, queue);
@@ -214,6 +216,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
+        System.out.println("ARRAY BEING WRITTEN INTEGER!!!!!!!: " + Arrays.toString(array));
         return eventsWrapper.registerEvent(
                 queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, eventsWrapper.serialiseEvents(waitEvents, queue) ? eventsWrapper.waitEventsBuffer : null),
                 DESC_WRITE_INT, offset, queue);

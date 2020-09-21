@@ -188,7 +188,7 @@ public class TestAtomics extends TornadoTestBase {
      * How to test?
      * 
      * <code>    
-     * $ tornado-test.py -V -pk --debug uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
+     * $ tornado-test.py -V -pk --debug -J"-Ddevice=0" uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
      * </code>
      */
     @Test
@@ -198,7 +198,10 @@ public class TestAtomics extends TornadoTestBase {
         int[] b = new int[1];
         Arrays.fill(a, 0);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String deviceToRun = System.getProperties().getProperty("device", "0");
+        int deviceNumber = Integer.parseInt(deviceToRun);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceNumber);
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
         // @formatter:off

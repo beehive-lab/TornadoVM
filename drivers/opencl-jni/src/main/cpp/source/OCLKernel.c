@@ -58,10 +58,34 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
 
     jbyte *value = (array == NULL) ? NULL : (*env)->GetPrimitiveArrayCritical(env, array, NULL);
 
+    printf("[native] SIZE : %d  vs sizeof(cl_mem):%d\n", size, sizeof(cl_mem));
+    printf("[native] value : %d\n", value);
+
     OPENCL_SOFT_ERROR("clSetKernelArg", clSetKernelArg((cl_kernel) kernel_id, (cl_uint) index, (size_t) size, (void*) value),);
 
-    if (value != NULL)
+    if (value != NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    }
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
+ * Method:    clSetKernelArgRef
+ * Signature: (JIJ)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clSetKernelArgRef
+(JNIEnv *env, jclass clazz, jlong kernel_id, jint index, jlong array) {
+
+    //jbyte *value = (array == NULL) ? NULL : (*env)->GetPrimitiveArrayCritical(env, array, NULL);
+
+    printf("NEW FUNCTION!!!!");
+
+    //cl_mem devicePtr = (cl_mem) array;
+    clSetKernelArg( (cl_kernel) kernel_id, (cl_uint) index, sizeof(cl_mem),  (void*) array);
+
+    //if (value != NULL) {
+    //    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+   //}
 }
 
 /*

@@ -62,6 +62,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, J, long)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, F, float)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
 
+
 #define WRITE_ARRAY(CLASSNAME,SIG,TYPE) \
     JNIEXPORT jlong JNICALL CLASSNAME ## _writeArrayToDevice__J_3 ## SIG ## JZJJJ_3J \
         (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jlong hostOffset, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) {\
@@ -70,6 +71,9 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
             JNI_ACQUIRE_ARRAY(jbyte, buffer, array1); \
+            printf("devicePTR: %ld\n", device_ptr);\
+            printf("OFFSET: %ld\n", offset);\
+            printf("HOST OFFSET: %ld\n", hostOffset);\
 	        if(PRINT_DATA_SIZES) { \
 	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \
