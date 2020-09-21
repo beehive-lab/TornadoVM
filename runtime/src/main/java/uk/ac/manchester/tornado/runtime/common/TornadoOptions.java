@@ -72,7 +72,7 @@ public class TornadoOptions {
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "True");
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -85,7 +85,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "True");
+        return getBooleanValue("tornado.profiler", "False");
     }
 
     /**
@@ -95,7 +95,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isSaveProfilerEnabled() {
-        return getBooleanValue("tornado.profiler.save", "True");
+        return getBooleanValue("tornado.profiler.save", "False");
     }
 
     /**

@@ -29,6 +29,10 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 public class EmptyProfiler implements TornadoProfiler {
 
     @Override
+    public void add(ProfilerType type, String taskName, long value) {
+    }
+
+    @Override
     public void start(ProfilerType type) {
     }
 

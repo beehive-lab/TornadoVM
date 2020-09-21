@@ -287,6 +287,8 @@ public class TornadoVM extends TornadoLogger {
                     eventsIndicies[eventList] = 0;
                 }
 
+                timeProfiler.add(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+
                 if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
@@ -357,6 +359,8 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
+                timeProfiler.add(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
 
                 lastEvent = device.streamOutBlocking(object, offset, objectState, waitList);
                 if (eventList != -1) {
@@ -524,7 +528,7 @@ public class TornadoVM extends TornadoLogger {
                     }
                 }
 
-                TaskMetaData metadata = null;
+                TaskMetaData metadata;
                 if (task.meta() instanceof TaskMetaData) {
                     metadata = (TaskMetaData) task.meta();
                 } else {
