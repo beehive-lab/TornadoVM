@@ -167,7 +167,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
         final int numberOfElements = 100;
         this.atomicsRegion = deviceContext.getPlatformContext().createBufferInteger(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numberOfElements);
-        System.out.println("ATOMIC ADDRESS AFTER CREATION: " + atomicsRegion);
     }
 
     public void init(OCLBackend backend, long address) {

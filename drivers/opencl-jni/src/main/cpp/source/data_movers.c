@@ -71,9 +71,6 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
             JNI_ACQUIRE_ARRAY(jbyte, buffer, array1); \
-            printf("devicePTR: %ld\n", device_ptr);\
-            printf("OFFSET: %ld\n", offset);\
-            printf("HOST OFFSET: %ld\n", hostOffset);\
 	        if(PRINT_DATA_SIZES) { \
 	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \

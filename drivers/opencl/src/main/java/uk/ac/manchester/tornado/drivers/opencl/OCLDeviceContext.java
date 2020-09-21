@@ -49,7 +49,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -203,7 +202,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
      * Asynchronous writes to device
      */
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        System.out.println("ARRAY BEING WRITTEN: " + Arrays.toString(array));
         return eventsWrapper.registerEvent(
                 queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, eventsWrapper.serialiseEvents(waitEvents, queue) ? eventsWrapper.waitEventsBuffer : null),
                 DESC_WRITE_BYTE, offset, queue);
@@ -216,7 +214,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        System.out.println("ARRAY BEING WRITTEN INTEGER!!!!!!!: " + Arrays.toString(array));
         return eventsWrapper.registerEvent(
                 queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, eventsWrapper.serialiseEvents(waitEvents, queue) ? eventsWrapper.waitEventsBuffer : null),
                 DESC_WRITE_INT, offset, queue);

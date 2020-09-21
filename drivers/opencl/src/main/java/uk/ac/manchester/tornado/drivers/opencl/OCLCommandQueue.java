@@ -31,7 +31,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.
 import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -252,7 +251,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     public long enqueueWrite(long devicePtr, boolean blocking, long offset, long bytes, int[] array, long hostOffset, long[] waitEvents) {
         guarantee(array != null, "null array");
-        System.out.println("WRITE ARRAY TO DEVICE: " + Arrays.toString(array));
         try {
             return writeArrayToDevice(commandQueue, array, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
         } catch (OCLException e) {

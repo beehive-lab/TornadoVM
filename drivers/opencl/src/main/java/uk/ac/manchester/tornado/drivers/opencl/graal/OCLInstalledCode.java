@@ -224,11 +224,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // Atomics in Global Memory
         if (atomicSpace != null) {
-            System.out.println("ATOMIC SPACE!!!!!!!!!!!!");
             AtomicsBuffer atomicsBuffer = (AtomicsBuffer) atomicSpace;
             atomicsBuffer.enqueueWrite();
             buffer.clear();
-            System.out.println("ATOMIC ADDRESS: " + atomicsBuffer.toAtomicAddress());
             buffer.putLong(stack.toAtomicAddress());
             kernel.setArg(index, buffer);
         } else {
