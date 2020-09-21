@@ -8,6 +8,7 @@ Example:
 $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddInt 100000
 {
     "s0": {
+        "DEVICE": "GeForce GTX 1650",  
         "COPY_OUT_TIME": "36576",
         "TOTAL_TASK_SCHEDULE_TIME": "104699731",
         "TOTAL_GRAAL_COMPILE_TIME": "36462460",
@@ -59,6 +60,10 @@ The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full r
 ### Save profiler into a file
 
 Use the option `-Dtornado.profiler=True -Dtornado.profiler.save=True`.  This option is set to `False` by default.
+
+### Specify a custom path for storing profile logs
+
+Use the option `-Dtornado.profiler.dumps.dir=PATH`. The default option is the TornadoVM home directory.
 
 
 ### Parsing Json files
@@ -163,6 +168,7 @@ $ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.co
 $ cat tornado-features.json 
 {
     "nBody": { 
+        "DEVICE": "GeForce GTX 1650",
         "Global Memory Loads":  "15",
         "Global Memory Stores":  "6",
         "Constant Memory Loads":  "0",
