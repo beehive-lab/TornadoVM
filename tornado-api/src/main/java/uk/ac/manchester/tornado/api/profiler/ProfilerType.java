@@ -31,6 +31,8 @@ public enum ProfilerType {
     // @formatter:off
     COPY_IN_TIME("CopyIn-Time"),
     COPY_OUT_TIME("CopyOut-Time"),
+    COPY_IN_SIZE("CopyIn-Size (Bytes)"),
+    COPY_OUT_SIZE("CopyOut-Size (Bytes)"),
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver-"),
     TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal-"),
     TASK_KERNEL_TIME("Task-Kernel-"),
