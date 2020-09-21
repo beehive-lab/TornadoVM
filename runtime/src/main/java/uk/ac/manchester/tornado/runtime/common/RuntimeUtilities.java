@@ -40,6 +40,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -396,6 +398,17 @@ public class RuntimeUtilities {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getTornadoInstanceIP() {
+        String localIP = null;
+        try {
+            InetAddress IP = InetAddress.getLocalHost();
+            localIP = IP.getHostAddress();
+        } catch (UnknownHostException e) {
+            System.out.println("Exception occurred" + e.getMessage());
+        }
+        return localIP;
     }
 
     public static void profilerFileWriter(String jsonProfile) {
