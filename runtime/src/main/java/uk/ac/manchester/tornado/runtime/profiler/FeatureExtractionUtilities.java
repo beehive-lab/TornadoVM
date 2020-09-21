@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
@@ -52,7 +53,7 @@ public class FeatureExtractionUtilities {
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
             String json = jsonHandler.createJSon(encodeFeatureMap(entry), name);
-            File fileLog = new File(FEATURE_FILE);
+            File fileLog = new File(TornadoOptions.PROFILER_DIRECTORY + FEATURE_FILE);
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);
                 file.write("\n");
@@ -97,7 +98,6 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.CAST, 0);
         myMap.put(ProfilerCodeFeatures.F_MATH, 0);
         myMap.put(ProfilerCodeFeatures.I_MATH, 0);
-
         return myMap;
     }
 }

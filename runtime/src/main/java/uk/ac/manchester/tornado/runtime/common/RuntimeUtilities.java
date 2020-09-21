@@ -33,8 +33,10 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -343,7 +345,7 @@ public class RuntimeUtilities {
     }
 
     public static void systemCall(String[] command, boolean printStandardOutput) throws IOException {
-        String stdOutput = null;
+        String stdOutput;
         StringBuffer standardOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
         final String lineSeparator = System.lineSeparator();
@@ -393,6 +395,15 @@ public class RuntimeUtilities {
             fis.write(binary);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void profilerFileWriter(String jsonProfile) {
+        try (FileWriter fileWriter = new FileWriter(TornadoOptions.PROFILER_DIRECTORY + "profiler-app.json", true)) {
+            PrintWriter printWriter = new PrintWriter(fileWriter);
+            printWriter.println(jsonProfile);
+        } catch (IOException e) {
+            throw new TornadoRuntimeException("JSon profiler file cannot be appened");
         }
     }
 

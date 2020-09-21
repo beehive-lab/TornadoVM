@@ -28,12 +28,10 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -482,12 +480,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         if (TornadoOptions.isSaveProfilerEnabled()) {
             String jsonFile = timeProfiler.createJson(new StringBuffer(), this.getId());
-            try (FileWriter fileWriter = new FileWriter("profiler-app.json", true)) {
-                PrintWriter printWriter = new PrintWriter(fileWriter);
-                printWriter.println(jsonFile);
-            } catch (IOException e) {
-                throw new TornadoRuntimeException("JSon profiler file cannot be appened");
-            }
+            profilerFileWriter(jsonFile);
         }
     }
 

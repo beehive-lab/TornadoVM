@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+
 public class TornadoOptions {
 
     public static boolean USER_SCHEDULING = false;
@@ -70,7 +72,7 @@ public class TornadoOptions {
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "True");
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -83,7 +85,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "False");
+        return getBooleanValue("tornado.profiler", "True");
     }
 
     /**
@@ -93,13 +95,24 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isSaveProfilerEnabled() {
-        return getBooleanValue("tornado.profiler.save", "False");
+        return getBooleanValue("tornado.profiler.save", "True");
     }
+
+    /**
+     * Option to redirect profiler and feature extraction output.
+     */
+    public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dumps.dir", "");
 
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
 
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");
 
+    /**
+     * Option for enabling partial unroll of counted loops with a default factor of
+     * 2.
+     *
+     * @return boolean.
+     */
     public static boolean PARTIAL_UNROLL() {
         return getBooleanValue("tornado.experimental.partial.unroll", "False");
     }
