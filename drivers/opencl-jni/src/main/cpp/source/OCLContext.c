@@ -171,7 +171,6 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
     cl_mem mem;
 	if (host_ptr == 0) {	
 	    OPENCL_CHECK_ERROR("createBufferInteger",
-                 //clCreateBuffer  (context, CL_MEM_READ_ONLY, sizeof(int), NULL, NULL);
             mem = clCreateBuffer((cl_context) context_id, CL_MEM_READ_WRITE, sizeof(int) * size, NULL, &error_id), NULL);
 	} else {
 	    OPENCL_CHECK_ERROR("createBufferInteger",

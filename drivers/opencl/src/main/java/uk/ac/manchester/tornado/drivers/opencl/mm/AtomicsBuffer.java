@@ -90,7 +90,6 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
 
     @Override
     public void push(int value) {
-        // buffer.putInt(value);
         atomicsList[numAtomics] = value;
         numAtomics++;
     }
