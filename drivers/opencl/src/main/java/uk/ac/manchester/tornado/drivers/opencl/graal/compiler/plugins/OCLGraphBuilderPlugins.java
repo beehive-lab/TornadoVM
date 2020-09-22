@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
@@ -84,11 +83,11 @@ public class OCLGraphBuilderPlugins {
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
 
-        // Register TornadoAtomicInteger
-        registerTornadoAtomicInteger(ps, plugins);
-
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
+
+        // Register TornadoAtomicInteger
+        registerTornadoAtomicInteger(ps, plugins);
     }
 
     private static void registerCompilerInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -119,14 +118,19 @@ public class OCLGraphBuilderPlugins {
         registerTornadoVMAtomicsPlugins(r, Integer.TYPE, JavaKind.Int);
     }
 
+    private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
+        return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger")
+                || method.getDeclaringClass().toJavaName().equals("java.util.concurrent.atomic.AtomicInteger");
+    }
+
     private static void registerTornadoAtomicInteger(final Plugins ps, InvocationPlugins plugins) {
 
         ps.appendNodePlugin(new NodePlugin() {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                if (method.getName().equals("<init>")) {
+                if (isMethodFromAtomicClass(method) && method.getName().equals("<init>")) {
                     final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
-                    if (args.length > 1) {
+                    if (atomic != null && args.length > 1) {
                         // ========================================================
                         // DOCUMENTATION:
                         // args[0] = current node (new node)
@@ -141,8 +145,8 @@ public class OCLGraphBuilderPlugins {
                                 atomic.setInitialValueAtUsages(initialValue);
                             }
                         }
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             }
@@ -153,6 +157,7 @@ public class OCLGraphBuilderPlugins {
         JavaKind returnedJavaKind = OCLKind.INT.asJavaKind();
 
         r.register1("incrementAndGet", Receiver.class, new InvocationPlugin() {
+
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get())));
@@ -165,34 +170,6 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
                 return true;
-            }
-        });
-
-        // java.util.concurrent.atomic.AtomicInteger
-        ps.appendNodePlugin(new NodePlugin() {
-            @Override
-            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                if (method.getName().equals("<init>")) {
-                    final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
-                    if (args.length > 1) {
-                        // ========================================================
-                        // DOCUMENTATION:
-                        // args[0] = current node (new node)
-                        // args[1] = arguments to the invoke node being substituted
-                        // ========================================================
-                        ValueNode initialValue = args[1];
-                        if (initialValue instanceof ConstantNode) {
-                            int value = Integer.parseInt(((ConstantNode) initialValue).getValue().toValueString());
-                            if (value == 0) {
-                                atomic.setInitialValue(initialValue);
-                            } else {
-                                atomic.setInitialValueAtUsages(initialValue);
-                            }
-                        }
-                    }
-                    return true;
-                }
-                return false;
             }
         });
 
@@ -225,7 +202,6 @@ public class OCLGraphBuilderPlugins {
         if (thisObject instanceof TornadoAtomicIntegerNode) {
             atomicNode = (TornadoAtomicIntegerNode) thisObject;
         }
-        guarantee(atomicNode != null, "unable to resolve vector");
         return atomicNode;
     }
 

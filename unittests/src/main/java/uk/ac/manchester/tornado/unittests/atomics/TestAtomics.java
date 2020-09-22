@@ -82,6 +82,7 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
+    @Ignore
     public void testAtomic02() {
         final int size = 1024;
         int[] a = new int[size];
@@ -306,6 +307,48 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", TestAtomics::atomic07, a) //
+                .streamOut(a); //
+
+        ts.execute();
+
+        if (!ts.isFinished()) {
+            assertTrue(false);
+        }
+
+        // On GPUs and FPGAs, threads within the same work-group run in parallel.
+        // Increments will be performed atomically when using TornadoAtomicInteger.
+        // However the order is not guaranteed. For this test, we need to check that
+        // there are not repeated values in the output array.
+        HashSet<Integer> set = new HashSet<>();
+
+        boolean repeated = false;
+        for (int j : a) {
+            System.out.println(j);
+            if (!set.contains(j)) {
+                set.add(j);
+            } else {
+                repeated = true;
+                // break;
+            }
+        }
+        assertTrue(!repeated);
+    }
+
+    public static void atomic08(int[] input) {
+        AtomicInteger ai = new AtomicInteger(200);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = ai.decrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic08() {
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic08, a) //
                 .streamOut(a); //
 
         ts.execute();

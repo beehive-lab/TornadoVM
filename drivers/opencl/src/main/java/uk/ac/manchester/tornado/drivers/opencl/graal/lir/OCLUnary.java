@@ -139,7 +139,7 @@ public class OCLUnary {
 
         @Override
         public String toString() {
-            return String.format("%s(&%s[%s], 1)", opcode.toString(), arrayName, index);
+            return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
         }
     }
 

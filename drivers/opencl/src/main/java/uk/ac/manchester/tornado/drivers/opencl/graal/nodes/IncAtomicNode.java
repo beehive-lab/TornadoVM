@@ -53,7 +53,7 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
             int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
 
             OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
-                    OCLAssembler.OCLUnaryIntrinsic.ATOMIC_ADD, //
+                    OCLAssembler.OCLUnaryIntrinsic.ATOMIC_INC, //
                     tool.getLIRKind(stamp), //
                     generator.operand(atomicNode), //
                     indexFromGlobal);

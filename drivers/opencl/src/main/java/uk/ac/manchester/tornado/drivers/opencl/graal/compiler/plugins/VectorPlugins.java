@@ -133,7 +133,7 @@ public final class VectorPlugins {
         if (thisObject instanceof VectorValueNode) {
             vector = (VectorValueNode) thisObject;
         }
-        guarantee(vector != null, "unable to resolve vector");
+        guarantee(vector != null, "[Vector Plugins] unable to resolve vector");
         return vector;
     }
 
