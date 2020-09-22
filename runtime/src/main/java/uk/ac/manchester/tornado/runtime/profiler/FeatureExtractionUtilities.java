@@ -36,12 +36,13 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
 
-    private static final String FEATURE_FILE = "tornado-features.json";
+    private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dir", "");
+    private static final String FEATURE_FILE = Tornado.getProperty("tornado.features.filename", "tornado-features");
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
@@ -54,7 +55,7 @@ public class FeatureExtractionUtilities {
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
             String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.getDeviceName());
-            File fileLog = new File(TornadoOptions.PROFILER_DIRECTORY + FEATURE_FILE);
+            File fileLog = new File(FEATURES_DIRECTORY + FEATURE_FILE + ".json");
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);
                 file.write("\n");

@@ -85,7 +85,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "True");
+        return getBooleanValue("tornado.profiler", "False");
     }
 
     /**
@@ -95,11 +95,11 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isSaveProfilerEnabled() {
-        return getBooleanValue("tornado.profiler.save", "True");
+        return getBooleanValue("tornado.profiler.save", "False");
     }
 
     /**
-     * Option to redirect profiler and feature extraction output.
+     * Option to redirect profiler output.
      */
     public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dumps.dir", "");
 
@@ -107,7 +107,10 @@ public class TornadoOptions {
 
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");
 
-    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "True   ");
+    /**
+     * Option to log the IP of the current machine on the profiler logs.
+     */
+    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "False");
 
     /**
      * Option for enabling partial unroll of counted loops with a default factor of

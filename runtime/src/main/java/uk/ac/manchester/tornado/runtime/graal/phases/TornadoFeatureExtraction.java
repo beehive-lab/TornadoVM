@@ -65,7 +65,6 @@ import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 
 public class TornadoFeatureExtraction extends Phase {
-
     private TornadoDeviceContext tornadoDeviceContext;
 
     public TornadoFeatureExtraction(TornadoDeviceContext tornadoDeviceContext) {
