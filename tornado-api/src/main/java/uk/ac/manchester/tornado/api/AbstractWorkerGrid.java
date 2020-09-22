@@ -43,9 +43,9 @@ package uk.ac.manchester.tornado.api;
 
 public abstract class AbstractWorkerGrid implements WorkerGrid {
 
-    protected long globalWork[];
-    protected long localWork[];
-    protected long globalOffset[];
+    protected long[] globalWork;
+    protected long[] localWork;
+    protected long[] globalOffset;
 
     public AbstractWorkerGrid(long x, long y, long z) {
         globalWork = new long[] { x, y, z };
