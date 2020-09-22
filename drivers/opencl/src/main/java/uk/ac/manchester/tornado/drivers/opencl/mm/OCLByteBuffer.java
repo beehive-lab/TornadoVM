@@ -292,6 +292,10 @@ public class OCLByteBuffer {
         return deviceContext.getMemoryManager().toAtomicAddress();
     }
 
+    public void allocateAtomicRegion() {
+        deviceContext.getMemoryManager().allocaAtomicRegion();
+    }
+
     public long toRelativeAddress() {
         return deviceContext.getMemoryManager().toRelativeDeviceAddress(offset);
     }

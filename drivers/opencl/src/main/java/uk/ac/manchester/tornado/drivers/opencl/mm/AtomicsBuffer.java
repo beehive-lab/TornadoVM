@@ -41,6 +41,7 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
         numAtomics = 0;
         onDevice = false;
         this.atomicsList = arr;
+        allocateAtomicRegion();
     }
 
     @Override

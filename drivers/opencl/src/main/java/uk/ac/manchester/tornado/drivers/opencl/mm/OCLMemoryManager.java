@@ -53,6 +53,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     private static final int STACK_ALIGNMENT_SIZE = 128;
 
+    private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
+
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;
         callStackLimit = OpenCL.OCL_CALL_STACK_LIMIT;
@@ -164,9 +166,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
         this.constantPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
-
-        final int numberOfElements = 100;
-        this.atomicsRegion = deviceContext.getPlatformContext().createBufferInteger(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numberOfElements);
     }
 
     public void init(OCLBackend backend, long address) {
@@ -199,6 +198,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     long toAtomicAddress() {
         return atomicsRegion;
+    }
+
+    void allocaAtomicRegion() {
+        this.atomicsRegion = deviceContext.getPlatformContext().createBufferInteger(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, MAX_NUMBER_OF_ATOMICS_PER_KERNEL);
     }
 
     public long toRelativeAddress() {
