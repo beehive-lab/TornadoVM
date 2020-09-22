@@ -47,9 +47,7 @@ import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
@@ -57,6 +55,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBu
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLAddressLowering;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
+import uk.ac.manchester.tornado.drivers.opencl.TornadoContext;
 import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
@@ -72,7 +72,7 @@ public class OCLHotSpotBackendFactory {
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
-    public static OCLBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
+    public static OCLBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, TornadoContext tornadoContext, OCLTargetDevice device) {
         JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmciBackend.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmciBackend.getConstantReflection();
@@ -95,7 +95,7 @@ public class OCLHotSpotBackendFactory {
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch, device.getDeviceDoubleFPConfig() != 0, device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
-        OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
+        OCLDeviceContextInterface deviceContext = tornadoContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
         OCLLoweringProvider lowerer;
@@ -119,7 +119,7 @@ public class OCLHotSpotBackendFactory {
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            return new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
+            return new OCLBackend(options, providers, target, codeCache, tornadoContext, deviceContext);
         }
     }
 

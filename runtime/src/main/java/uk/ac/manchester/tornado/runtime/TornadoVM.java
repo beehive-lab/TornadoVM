@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -237,7 +238,7 @@ public class TornadoVM extends TornadoLogger {
                 final int contextIndex = buffer.getInt();
                 final long sizeBatch = buffer.getLong();
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
 
@@ -261,7 +262,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
 
@@ -306,7 +307,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
 
@@ -344,7 +345,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
 
@@ -380,7 +381,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
 
@@ -464,7 +465,7 @@ public class TornadoVM extends TornadoLogger {
                     }
                 }
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     popArgumentsFromStack(numArgs);
                     continue;
                 }
@@ -553,7 +554,7 @@ public class TornadoVM extends TornadoLogger {
                 }
             } else if (op == TornadoVMBytecodes.ADD_DEP.value()) {
                 final int eventList = buffer.getInt();
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
                 if (useDependencies && lastEvent != -1) {
@@ -572,7 +573,7 @@ public class TornadoVM extends TornadoLogger {
                 final int eventList = buffer.getInt();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
-                if (isWarmup) {
+                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
                     continue;
                 }
 

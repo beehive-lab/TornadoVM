@@ -36,14 +36,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
+public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
 
     private final long id;
     private final int index;
@@ -399,7 +398,8 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return OCLLocalMemType.toLocalMemType(buffer.getInt());
     }
 
-    boolean isLittleEndian() {
+    @Override
+    public boolean isLittleEndian() {
         if (deviceEndianLittle != -1) {
             return deviceEndianLittle == CL_TRUE;
         }
@@ -423,14 +423,14 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
+        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         return sb.toString();
     }
 
     @Override
     public Object getDeviceInfo() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
+        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         sb.append(String.format("freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
         sb.append(String.format("global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getDeviceGlobalMemorySize(), false),
                 humanReadableByteCount(getDeviceLocalMemorySize(), false)));

@@ -30,6 +30,8 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLPlatform;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
+import uk.ac.manchester.tornado.drivers.opencl.TornadoContext;
+import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatform;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
@@ -51,7 +53,7 @@ public class TestOpenCLTornadoCompiler {
 
     public static void main(String[] args) {
 
-        OCLPlatform platform = OpenCL.getPlatform(0);
+        OCLPlatform platform = (OCLPlatform) OpenCL.getPlatform(0);
         // Create context for the platform
         OCLContext oclContext = platform.createContext();
 
