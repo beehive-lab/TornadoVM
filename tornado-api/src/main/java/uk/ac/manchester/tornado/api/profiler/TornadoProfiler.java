@@ -25,13 +25,13 @@ package uk.ac.manchester.tornado.api.profiler;
 
 public interface TornadoProfiler {
 
-    void add(ProfilerType type, String taskName, long value);
+    void addValueToMetric(ProfilerType type, String taskName, long value);
 
     void start(ProfilerType type);
 
     void start(ProfilerType type, String taskName);
 
-    void signDeviceForTask(ProfilerType type, String taskName, String deviceInfo);
+    void registerDeviceName(ProfilerType type, String taskName, String deviceInfo);
 
     void stop(ProfilerType type);
 

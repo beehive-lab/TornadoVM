@@ -47,13 +47,13 @@ public class FeatureExtractionUtilities {
     private FeatureExtractionUtilities() {
     }
 
-    public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name, TornadoDeviceContext deviceContext) {
+    public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name, TornadoDeviceContext deviceContext) {
         name = name.split("-")[1];
         if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.toString());
+            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.getDeviceName());
             File fileLog = new File(TornadoOptions.PROFILER_DIRECTORY + FEATURE_FILE);
             try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
                 file.write(json);

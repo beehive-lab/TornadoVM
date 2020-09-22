@@ -72,7 +72,7 @@ public class TornadoOptions {
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "True");
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -85,7 +85,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "False");
+        return getBooleanValue("tornado.profiler", "True");
     }
 
     /**
@@ -95,7 +95,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isSaveProfilerEnabled() {
-        return getBooleanValue("tornado.profiler.save", "False");
+        return getBooleanValue("tornado.profiler.save", "True");
     }
 
     /**
@@ -106,6 +106,8 @@ public class TornadoOptions {
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
 
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");
+
+    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "True   ");
 
     /**
      * Option for enabling partial unroll of counted loops with a default factor of

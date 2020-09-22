@@ -59,4 +59,6 @@ public interface TornadoDeviceContext {
 
     int getDeviceIndex();
 
+    String getDeviceName();
+
 }

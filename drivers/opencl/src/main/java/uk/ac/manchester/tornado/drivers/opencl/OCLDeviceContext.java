@@ -130,7 +130,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     @Override
     public String toString() {
-        return String.format(getDevice().getDeviceName());
+        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
+    }
+
+    @Override
+    public String getDeviceName() {
+        return String.format(device.getDeviceName());
     }
 
     public OCLContext getPlatformContext() {

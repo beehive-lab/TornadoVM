@@ -400,7 +400,7 @@ public class RuntimeUtilities {
         }
     }
 
-    public String getTornadoInstanceIP() {
+    public static String getTornadoInstanceIP() {
         String localIP = null;
         try {
             InetAddress IP = InetAddress.getLocalHost();

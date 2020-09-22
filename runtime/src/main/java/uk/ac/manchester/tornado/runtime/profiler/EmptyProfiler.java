@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 public class EmptyProfiler implements TornadoProfiler {
 
     @Override
-    public void add(ProfilerType type, String taskName, long value) {
+    public void addValueToMetric(ProfilerType type, String taskName, long value) {
     }
 
     @Override
@@ -41,7 +41,7 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void signDeviceForTask(ProfilerType type, String taskName, String deviceInfo) {
+    public void registerDeviceName(ProfilerType type, String taskName, String deviceInfo) {
 
     }
 

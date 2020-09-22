@@ -27,6 +27,8 @@ import java.util.HashMap;
 
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class TimeProfiler implements TornadoProfiler {
 
@@ -46,7 +48,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void add(ProfilerType type, String taskName, long value) {
+    public void addValueToMetric(ProfilerType type, String taskName, long value) {
         if (!taskThroughputMetrics.containsKey(taskName)) {
             taskThroughputMetrics.put(taskName, new HashMap<>());
         }
@@ -73,7 +75,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void signDeviceForTask(ProfilerType type, String taskName, String deviceInfo) {
+    public void registerDeviceName(ProfilerType type, String taskName, String deviceInfo) {
         if (!taskDeviceIdentifiers.containsKey(taskName)) {
             taskDeviceIdentifiers.put(taskName, new HashMap<>());
         }
@@ -168,6 +170,9 @@ public class TimeProfiler implements TornadoProfiler {
             json.append(indent.toString() + "\"" + p + "\"" + ": {\n");
             increaseIndent();
             counter++;
+            if (TornadoOptions.LOG_IP) {
+                json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
+            }
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
             for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {
                 json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
