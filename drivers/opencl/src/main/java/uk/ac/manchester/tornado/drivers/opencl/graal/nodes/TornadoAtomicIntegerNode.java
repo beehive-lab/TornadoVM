@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -14,6 +15,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -30,7 +32,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     private boolean ATOMIC_2_0 = false;
 
     // How many atomics integers per graph
-    public static HashMap<StructuredGraph, Integer> globalAtomics = new HashMap<>();
+    public static HashMap<StructuredGraph, ArrayList<Integer>> globalAtomics = new HashMap<>();
 
     @Input
     ValueNode initialValue;
@@ -43,11 +45,11 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         this.initialValue = ConstantNode.forInt(0);
     }
 
-    public synchronized void setInitialValue(ValueNode valueNode) {
+    public void setInitialValue(ValueNode valueNode) {
         initialValue = valueNode;
     }
 
-    public synchronized void setInitialValueAtUsages(ValueNode valueNode) {
+    public void setInitialValueAtUsages(ValueNode valueNode) {
         initialValue.replaceAtUsages(valueNode);
     }
 
@@ -65,7 +67,6 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     private void generateExpressionForOpenCL1_0(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(StampFactory.intValue()));
-        tool.append(new OCLLIRStmt.RelocatedExpressionStmt(new OCLUnary.IntrinsicAtomicDeclaration(OCLAssembler.OCLUnaryIntrinsic.ATOMIC_VAR_INIT, result, gen.operand(initialValue))));
         gen.setResult(this, result);
     }
 
@@ -73,13 +74,26 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         return this.indexFromGlobalMemory;
     }
 
-    private void assignIndex() {
+    private int getIntFromValueNode() {
+        if (initialValue instanceof ConstantNode) {
+            ConstantNode c = (ConstantNode) initialValue;
+            return Integer.parseInt(c.getValue().toValueString());
+        } else {
+            throw new TornadoRuntimeException("Value node not implemented for Atomics");
+        }
+    }
+
+    private synchronized void assignIndex() {
         if (!globalAtomics.containsKey(this.graph())) {
-            globalAtomics.put(this.graph(), 0);
+            ArrayList<Integer> al = new ArrayList<>();
+            al.add(getIntFromValueNode());
+            globalAtomics.put(this.graph(), al);
             this.indexFromGlobalMemory = 0;
         } else {
-            this.indexFromGlobalMemory = globalAtomics.get(this.graph()) + 1;
-            globalAtomics.put(this.graph(), indexFromGlobalMemory);
+            ArrayList<Integer> al = new ArrayList<>(globalAtomics.get(this.graph()));
+            this.indexFromGlobalMemory = al.size();
+            al.add(getIntFromValueNode());
+            globalAtomics.put(this.graph(), al);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -34,7 +34,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     CallStack createStack(int numArgs);
 
-    DeviceBuffer createBuffer(int intElements);
+    DeviceBuffer createBuffer(int[] buffer);
 
     TornadoInstalledCode installCode(SchedulableTask task);
 
@@ -42,4 +42,5 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     TornadoInstalledCode getCodeFromCache(SchedulableTask task);
 
+    int[] checkAtomicsForTask(SchedulableTask task);
 }

@@ -35,6 +35,7 @@ import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
@@ -118,6 +119,27 @@ public class OCLUnary {
         @Override
         public String toString() {
             return String.format("%s(&%s, 1, memory_order_relaxed)", opcode.toString(), value.toString());
+        }
+    }
+
+    public static class IntrinsicAtomicInc extends UnaryConsumer {
+
+        private int index;
+        private static final String arrayName = OCLArchitecture.atomicSpace.getName();
+
+        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
+            super(opcode, lirKind, value);
+            this.index = index;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(toString());
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s(&%s[%s], 1)", opcode.toString(), arrayName, index);
         }
     }
 

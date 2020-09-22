@@ -120,6 +120,8 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
+    void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
+
     void addScalaTask(String id, Object function, Object[] args);
 
     String getTaskScheduleName();

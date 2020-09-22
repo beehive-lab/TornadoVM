@@ -60,6 +60,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -430,13 +431,6 @@ public class TornadoVM extends TornadoLogger {
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
 
                 final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
-                if (atomicsList[stackIndex] == null) {
-                    atomicsList[stackIndex] = device.createBuffer(10);
-                }
-                DeviceBuffer atomicBuffer = atomicsList[stackIndex];
-
-                atomicBuffer.push(150);
-                atomicBuffer.push(160);
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
@@ -489,6 +483,18 @@ public class TornadoVM extends TornadoLogger {
                 if (installedCode == null) {
                     // There was an error during compilation -> bailout
                     throw new TornadoBailoutRuntimeException("Code generator Failed");
+                }
+
+                int[] atomicsArray;
+                if (task instanceof PrebuiltTask) {
+                    atomicsArray = ((PrebuiltTask) task).getAtomics();
+                } else {
+                    atomicsArray = device.checkAtomicsForTask(task);
+                }
+
+                DeviceBuffer bufferAtomics = null;
+                if (atomicsArray != null) {
+                    bufferAtomics = device.createBuffer(atomicsArray);
                 }
 
                 final Access[] accesses = task.getArgumentsAccess();
@@ -547,9 +553,9 @@ public class TornadoVM extends TornadoLogger {
 
                 try {
                     if (useDependencies) {
-                        lastEvent = installedCode.launchWithDependencies(stack, atomicBuffer, metadata, batchThreads, waitList);
+                        lastEvent = installedCode.launchWithDependencies(stack, bufferAtomics, metadata, batchThreads, waitList);
                     } else {
-                        lastEvent = installedCode.launchWithoutDependencies(stack, atomicBuffer, metadata, batchThreads);
+                        lastEvent = installedCode.launchWithoutDependencies(stack, bufferAtomics, metadata, batchThreads);
                     }
                     if (eventList != -1) {
                         eventsIndicies[eventList] = 0;

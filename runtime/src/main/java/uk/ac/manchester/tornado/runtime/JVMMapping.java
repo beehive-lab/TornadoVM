@@ -136,7 +136,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public DeviceBuffer createBuffer(int intElements) {
+    public DeviceBuffer createBuffer(int[] arr) {
         return null;
     }
 
@@ -207,6 +207,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+        return null;
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task) {
         return null;
     }
 

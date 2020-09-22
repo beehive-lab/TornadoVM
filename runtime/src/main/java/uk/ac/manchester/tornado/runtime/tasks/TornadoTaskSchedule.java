@@ -1650,6 +1650,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions, atomics));
+    }
+
+    @Override
     public void addScalaTask(String id, Object function, Object[] args) {
         addInner(TaskUtils.scalaTask(id, function, args));
     }

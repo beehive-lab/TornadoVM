@@ -35,12 +35,12 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
     private boolean onDevice;
     private int[] atomicsList;
 
-    AtomicsBuffer(long offset, int numArgs, OCLDeviceContext device) {
-        super(device, offset, numArgs * 4);
+    AtomicsBuffer(long offset, int[] arr, OCLDeviceContext device) {
+        super(device, offset, arr.length * 4);
         buffer.clear();
         numAtomics = 0;
         onDevice = false;
-        this.atomicsList = new int[numArgs];
+        this.atomicsList = arr;
     }
 
     @Override

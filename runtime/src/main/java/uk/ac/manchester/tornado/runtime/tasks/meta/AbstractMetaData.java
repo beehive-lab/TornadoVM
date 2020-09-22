@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import org.graalvm.compiler.nodes.StructuredGraph;
+
 import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -63,6 +65,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
     private DeviceBuffer deviceBuffer;
+    private StructuredGraph graph;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
@@ -468,4 +471,15 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return gridTask.get(taskName);
     }
 
+    @Override
+    public void setCompiledGraph(Object graph) {
+        if (graph instanceof StructuredGraph) {
+            this.graph = (StructuredGraph) graph;
+        }
+    }
+
+    @Override
+    public Object getCompiledGraph() {
+        return graph;
+    }
 }

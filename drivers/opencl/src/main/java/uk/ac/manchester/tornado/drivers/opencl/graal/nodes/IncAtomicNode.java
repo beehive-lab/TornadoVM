@@ -19,6 +19,8 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
 
     public static final NodeClass<IncAtomicNode> TYPE = NodeClass.create(IncAtomicNode.class);
 
+    private static boolean ATOMIC_2_0 = false;
+
     @Input
     ValueNode atomicNode;
 
@@ -27,8 +29,7 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
         this.atomicNode = atomicValue;
     }
 
-    @Override
-    public void generate(NodeLIRBuilderTool generator) {
+    private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
 
@@ -40,5 +41,36 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
         OCLLIRStmt.AssignStmt assignStmt = new OCLLIRStmt.AssignStmt(result, intrinsicAtomicFetch);
         tool.append(assignStmt);
         generator.setResult(this, result);
+    }
+
+    private void generateExpressionForOpenCL1_0(NodeLIRBuilderTool generator) {
+        LIRGeneratorTool tool = generator.getLIRGeneratorTool();
+        Variable result = tool.newVariable(tool.getLIRKind(stamp));
+
+        if (atomicNode instanceof TornadoAtomicIntegerNode) {
+            TornadoAtomicIntegerNode atomicIntegerNode = (TornadoAtomicIntegerNode) atomicNode;
+
+            int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
+
+            OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
+                    OCLAssembler.OCLUnaryIntrinsic.ATOMIC_ADD, //
+                    tool.getLIRKind(stamp), //
+                    generator.operand(atomicNode), //
+                    indexFromGlobal);
+
+            OCLLIRStmt.AssignStmt assignStmt = new OCLLIRStmt.AssignStmt(result, intrinsicAtomicAdd);
+            tool.append(assignStmt);
+            generator.setResult(this, result);
+        }
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool generator) {
+
+        if (ATOMIC_2_0) {
+            generateExpressionForOpenCL2_0(generator);
+        } else {
+            generateExpressionForOpenCL1_0(generator);
+        }
     }
 }

@@ -130,8 +130,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return callStack;
     }
 
-    public AtomicsBuffer createDeviceBuffer(final int maxArgs) {
-        AtomicsBuffer atomicInteger = new AtomicsBuffer(deviceBufferPosition, maxArgs, deviceContext);
+    public AtomicsBuffer createDeviceBuffer(final int[] arr) {
+        AtomicsBuffer atomicInteger = new AtomicsBuffer(deviceBufferPosition, arr, deviceContext);
         return atomicInteger;
     }
 
