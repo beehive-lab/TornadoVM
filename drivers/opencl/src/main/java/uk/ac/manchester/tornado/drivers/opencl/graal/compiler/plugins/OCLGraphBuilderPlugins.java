@@ -148,9 +148,56 @@ public class OCLGraphBuilderPlugins {
             }
         });
 
-        final Class<?> declaringClass = OCLKind.INTEGER_ATOMIC.getJavaClass();
-        final Registration r = new Registration(plugins, declaringClass);
+        Class<?> declaringClass = OCLKind.INTEGER_ATOMIC.getJavaClass();
+        Registration r = new Registration(plugins, declaringClass);
         JavaKind returnedJavaKind = OCLKind.INT.asJavaKind();
+
+        r.register1("incrementAndGet", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+
+        r.register1("decrementAndGet", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+
+        // java.util.concurrent.atomic.AtomicInteger
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                if (method.getName().equals("<init>")) {
+                    final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
+                    if (args.length > 1) {
+                        // ========================================================
+                        // DOCUMENTATION:
+                        // args[0] = current node (new node)
+                        // args[1] = arguments to the invoke node being substituted
+                        // ========================================================
+                        ValueNode initialValue = args[1];
+                        if (initialValue instanceof ConstantNode) {
+                            int value = Integer.parseInt(((ConstantNode) initialValue).getValue().toValueString());
+                            if (value == 0) {
+                                atomic.setInitialValue(initialValue);
+                            } else {
+                                atomic.setInitialValueAtUsages(initialValue);
+                            }
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        declaringClass = java.util.concurrent.atomic.AtomicInteger.class;
+        r = new Registration(plugins, declaringClass);
 
         r.register1("incrementAndGet", Receiver.class, new InvocationPlugin() {
             @Override

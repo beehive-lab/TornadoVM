@@ -23,7 +23,7 @@ public class OCLAtomicIntegerPlugin implements NodePlugin {
     private boolean createAtomicIntegerInstance(GraphBuilderContext b, ResolvedJavaType type) {
         OCLKind kind = resolveOCLKind(type);
         if (kind != OCLKind.ILLEGAL) {
-            if (kind == OCLKind.INTEGER_ATOMIC) {
+            if (kind == OCLKind.INTEGER_ATOMIC || kind == OCLKind.INTEGER_ATOMIC_JAVA) {
                 b.push(JavaKind.Object, b.append(new TornadoAtomicIntegerNode(kind)));
                 return true;
             }

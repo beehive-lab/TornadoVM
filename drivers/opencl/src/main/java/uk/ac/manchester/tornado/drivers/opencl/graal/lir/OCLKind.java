@@ -109,7 +109,8 @@ public enum OCLKind implements PlatformKind {
     DOUBLE16(16, null, DOUBLE),
     ILLEGAL(0, null),
     
-    INTEGER_ATOMIC(4, uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger.TYPE);
+    INTEGER_ATOMIC(4, uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger.TYPE),
+    INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
 
     public static OCLKind fromResolvedJavaType(ResolvedJavaType type) {
