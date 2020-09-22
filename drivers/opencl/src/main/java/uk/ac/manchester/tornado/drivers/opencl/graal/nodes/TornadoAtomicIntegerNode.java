@@ -99,10 +99,10 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        assignIndex();
         if (ATOMIC_2_0) {
             generateExpressionForOpenCL2_0(gen);
         } else {
+            assignIndex();
             generateExpressionForOpenCL1_0(gen);
         }
     }
