@@ -72,7 +72,7 @@ public class TornadoOptions {
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "True");
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -89,19 +89,9 @@ public class TornadoOptions {
     }
 
     /**
-     * Option for saving the profiler between different runs. It can be disabled at
-     * any point during runtime.
-     *
-     * @return boolean.
-     */
-    public static boolean isSaveProfilerEnabled() {
-        return getBooleanValue("tornado.profiler.save", "False");
-    }
-
-    /**
      * Option to redirect profiler output.
      */
-    public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dumps.dir", "");
+    public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
 
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
 
@@ -110,11 +100,11 @@ public class TornadoOptions {
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
-    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "False");
+    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "True");
 
     /**
-     * Option for enabling partial unroll of counted loops with a default factor of
-     * 2.
+     * Option for enabling partial loop unrolling. The unroll factor can be
+     * configured to take any integer value of power of 2 and less than 32.
      *
      * @return boolean.
      */
