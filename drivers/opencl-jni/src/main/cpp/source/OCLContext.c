@@ -155,31 +155,6 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
     return (*env)->NewObject(env, resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) error_id);
 }
 
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
- * Method:    createBufferInteger
- * Signature: (JJJJ)Luk/ac/manchester/tornado/drivers/opencl/OCLContext/OCLBufferResultInteger;
- */
-JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createBufferInteger
-(JNIEnv *env, jclass clazz, jlong context_id, jlong flags, jlong size, jlong host_ptr) {
-    OPENCL_PROLOGUE;
-
-    jclass resultClass = (*env)->FindClass(env, "uk/ac/manchester/tornado/drivers/opencl/OCLContext$OCLBufferResult");
-    jmethodID constructorId = (*env)->GetMethodID(env, resultClass, "<init>", "(JJI)V");
-
-    cl_mem mem;
-	if (host_ptr == 0) {	
-	    OPENCL_CHECK_ERROR("createBufferInteger",
-            mem = clCreateBuffer((cl_context) context_id, CL_MEM_READ_WRITE, sizeof(int) * size, NULL, &error_id), NULL);
-	} else {
-	    OPENCL_CHECK_ERROR("createBufferInteger",
-            mem = clCreateBuffer((cl_context) context_id, CL_MEM_READ_WRITE, sizeof(int) * size, (void *) host_ptr, &error_id), NULL);
-	}
-
-    return (*env)->NewObject(env, resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) error_id);
-}
-
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    createSubBuffer

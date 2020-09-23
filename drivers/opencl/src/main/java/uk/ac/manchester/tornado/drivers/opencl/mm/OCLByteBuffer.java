@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
  */
 public class OCLByteBuffer {
 
+    private static final int BYTES_PER_INTEGER = 4;
     protected ByteBuffer buffer;
     protected long bytes;
 
@@ -99,13 +100,15 @@ public class OCLByteBuffer {
      * 
      * @param fromBuffer
      *            buffer to enqueue
+     * @param array
+     *            integer array to copy to the device.
      * @param events
      *            list of events
      * @return event status
      */
     public int enqueueWrite(long fromBuffer, final int[] array, final int[] events) {
         // XXX: offset 0
-        return deviceContext.enqueueWriteBuffer(fromBuffer, 0, 4 * array.length, array, 0, events);
+        return deviceContext.enqueueWriteBuffer(fromBuffer, 0, BYTES_PER_INTEGER * array.length, array, 0, events);
     }
 
     public void dump() {
@@ -293,7 +296,7 @@ public class OCLByteBuffer {
     }
 
     public void allocateAtomicRegion() {
-        deviceContext.getMemoryManager().allocaAtomicRegion();
+        deviceContext.getMemoryManager().allocateAtomicRegion();
     }
 
     public long toRelativeAddress() {

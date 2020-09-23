@@ -103,8 +103,6 @@ public class OCLContext extends TornadoLogger {
     // creates an empty buffer on the device
     native static OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
 
-    native static OCLBufferResult createBufferInteger(long contextId, long flags, long size, long hostPointer) throws OCLException;
-
     native static long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
 
     native static void clReleaseMemObject(long memId) throws OCLException;
@@ -290,10 +288,6 @@ public class OCLContext extends TornadoLogger {
         return createBuffer(flags, bytes, 0L);
     }
 
-    public long createBufferInteger(long flags, long numberOfElements) {
-        return createBufferInteger(flags, numberOfElements, 0L);
-    }
-
     private long createBuffer(long flags, long bytes, long hostPointer) {
         long devicePtr = 0;
         try {
@@ -301,19 +295,6 @@ public class OCLContext extends TornadoLogger {
             devicePtr = result.getBuffer();
             allocatedRegions.add(devicePtr);
             info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), devicePtr);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-        return devicePtr;
-    }
-
-    private long createBufferInteger(long flags, long numberOfElements, long hostPointer) {
-        long devicePtr = 0;
-        try {
-            final OCLBufferResult result = createBufferInteger(contextID, flags, numberOfElements, hostPointer);
-            devicePtr = result.getBuffer();
-            allocatedRegions.add(devicePtr);
-            info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(numberOfElements, false), devicePtr);
         } catch (OCLException e) {
             error(e.getMessage());
         }

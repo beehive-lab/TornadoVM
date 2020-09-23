@@ -35,12 +35,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -127,8 +122,12 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
             final AllocatableValue result = tool.newVariable(LIRKind.value(getOCLKind()));
 
             /*
-             * two cases: 1. when this vector state has elements assigned individually 2.
-             * when this vector is assigned by a vector operation
+             * Two cases:
+             * 
+             * 1. when this vector state has elements assigned individually.
+             * 
+             * 2.when this vector is assigned by a vector operation
+             * 
              */
             final int numValues = values.count();
             final ValueNode firstValue = values.first();

@@ -38,7 +38,7 @@ public class OCLTargetDescription extends TargetDescription {
     private static final int STACK_ALIGNMENT = 8;
     private static final boolean INLINE_OBJECTS = true;
     private final boolean supportsFP64;
-    private String extensions;
+    private final String extensions;
 
     public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
         this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS, supportsFP64, extensions);
@@ -98,7 +98,7 @@ public class OCLTargetDescription extends TargetDescription {
         return -1;
     }
 
-    public final static int lookupTypeIndex(OCLKind kind) {
+    public static int lookupTypeIndex(OCLKind kind) {
         switch (kind) {
             case UCHAR:
                 return 0;

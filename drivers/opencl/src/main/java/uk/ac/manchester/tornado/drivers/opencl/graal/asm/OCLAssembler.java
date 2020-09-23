@@ -23,18 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.FLOAT;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.*;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -822,7 +813,6 @@ public final class OCLAssembler extends Assembler {
 
         if (((OCLTargetDescription) target).supportsFP64()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
-            // emitLine("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics: enable");
         }
 
         if (EMIT_INTRINSICS) {
