@@ -205,6 +205,7 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public void clean() {
+        taskThroughputMetrics.clear();
         profilerTime.clear();
         taskTimers.clear();
         indent = new StringBuffer("");
