@@ -41,12 +41,14 @@ All timers are printed in nanoseconds.
 * *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C code is generated, the time that the driver takes to generate the final binary, such as the PTX for NVIDIA).
 
 
-Then, for each task within a task-schedule, there are usually three timers:
+Then, for each task within a task-schedule, there are usually three timers, one device identifier and two data transfer metrics:
 
+* *DEVICE*: device name as provided by the OpenCL driver.
+* *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for a given task.
+* *TASK_COPY_OUT_SIZE_BYTES*: size in bytes of total bytes copied-out for a given task.
 * *TASK_COMPILE_GRAAL_TIME*: time that takes to compile a given task with Graal.
 * *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task with the OpenCL driver.
 * *TASK_KERNEL_TIME*: kernel execution for the given task (Java method).
-
 
 
 #### Note
@@ -61,16 +63,11 @@ The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full r
 
 ### Save profiler into a file
 
-Use the option `-Dtornado.profiler=True -Dtornado.profiler.save=True`.  This option is set to `False` by default.
-
-### Specify a custom path for storing profile logs
-
-Use the option `-Dtornado.profiler.dumps.dir=PATH`. The default option is the TornadoVM home directory.
-
+Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dumps.dir=PATH`.  `PATH` needs to contain the finename and extension (e.g. profiler-log.json). 
 
 ### Parsing Json files
 
-TornadoVM creates the file `profiler-app.json` with multiple entries for the application (one per task-schedule invocation).
+TornadoVM creates the above-mentioned specified file with multiple entries for the application (one per task-schedule invocation).
 
 TornadoVM's distribution includes a set of utilities for parsing and obtaining statistics:
 
@@ -159,11 +156,9 @@ long compilationTime = schedule.getCompileTime();
 
 ## Code feature extraction for the OpenCL generated code
 
-To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`. This will generate a Json file in the local directory called `tornado-features.json`.
-
+To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`. 
 
 Example:
-
 
 ```bash
 $ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.compute.NBody 1024 1
@@ -196,3 +191,6 @@ $ cat tornado-features.json
 }
 
 ```
+### Save features into a file
+
+Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=PATH`.  `PATH` needs to contain the finename and extension (e.g. features.json). 
