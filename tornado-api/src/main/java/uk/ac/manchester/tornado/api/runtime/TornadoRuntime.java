@@ -91,10 +91,7 @@ public class TornadoRuntime {
     }
 
     public static TornadoDevice createDevice(String backendName, int platformIndex, int deviceIndex) {
-        if (device == null) {
-            device = TornadoAPIProvider.loadDeviceImpl(backendName);
-        }
-
+        device = TornadoAPIProvider.loadDeviceImpl(backendName);
         return device.createDevice(platformIndex, deviceIndex);
     }
 
