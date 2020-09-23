@@ -39,6 +39,7 @@ public class OCLTargetDescription extends TargetDescription {
     private static final boolean INLINE_OBJECTS = true;
     private final boolean supportsFP64;
     private final String extensions;
+    private final boolean supportsInt64Atomics;
 
     public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
         this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS, supportsFP64, extensions);
@@ -48,6 +49,7 @@ public class OCLTargetDescription extends TargetDescription {
         super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
         this.supportsFP64 = supportsFP64;
         this.extensions = extensions;
+        supportsInt64Atomics = extensions.contains("cl_khr_int64_base_atomics");
     }
 
     //@formatter:off
@@ -72,6 +74,10 @@ public class OCLTargetDescription extends TargetDescription {
 
     public boolean supportsFP64() {
         return supportsFP64;
+    }
+
+    public boolean supportsInt64Atomics() {
+        return supportsInt64Atomics;
     }
 
     public String getExtensions() {

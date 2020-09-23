@@ -175,7 +175,6 @@ public class TestAtomics extends TornadoTestBase {
 
         boolean repeated = false;
         for (int j : a) {
-            System.out.println(j);
             if (!set.contains(j)) {
                 set.add(j);
             } else {
