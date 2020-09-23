@@ -412,7 +412,7 @@ public class RuntimeUtilities {
     }
 
     public static void profilerFileWriter(String jsonProfile) {
-        try (FileWriter fileWriter = new FileWriter(TornadoOptions.PROFILER_DIRECTORY + "profiler-app.json", true)) {
+        try (FileWriter fileWriter = new FileWriter(TornadoOptions.PROFILER_DIRECTORY, true)) {
             PrintWriter printWriter = new PrintWriter(fileWriter);
             printWriter.println(jsonProfile);
         } catch (IOException e) {

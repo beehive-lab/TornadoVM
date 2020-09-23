@@ -478,7 +478,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
         }
 
-        if (TornadoOptions.isSaveProfilerEnabled()) {
+        if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {
             String jsonFile = timeProfiler.createJson(new StringBuffer(), this.getId());
             profilerFileWriter(jsonFile);
         }

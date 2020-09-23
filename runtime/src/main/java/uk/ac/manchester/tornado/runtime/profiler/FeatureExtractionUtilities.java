@@ -41,8 +41,7 @@ import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
 
-    private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dir", "");
-    private static final String FEATURE_FILE = Tornado.getProperty("tornado.features.filename", "tornado-features");
+    private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dump.dir", "");
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
@@ -55,12 +54,16 @@ public class FeatureExtractionUtilities {
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
             String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.getDeviceName());
-            File fileLog = new File(FEATURES_DIRECTORY + FEATURE_FILE + ".json");
-            try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
-                file.write(json);
-                file.write("\n");
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (!FEATURES_DIRECTORY.isEmpty()) {
+                File fileLog = new File(FEATURES_DIRECTORY);
+                try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
+                    file.write(json);
+                    file.write("\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println(json);
             }
         }
     }
