@@ -283,11 +283,8 @@ public class TornadoVM extends TornadoLogger {
                 } else {
                     allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
                 }
-                if (eventList != -1) {
-                    eventsIndicies[eventList] = 0;
-                }
 
-                timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+                resetEventIndices(eventList);
 
                 if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
                     for (Integer e : allEvents) {
@@ -296,6 +293,7 @@ public class TornadoVM extends TornadoLogger {
                         long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                         value += event.getExecutionTime();
                         timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                        timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
                     }
                 }
 
@@ -323,9 +321,9 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
                 List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
-                if (eventList != -1) {
-                    eventsIndicies[eventList] = 0;
-                }
+
+                resetEventIndices(eventList);
+
                 if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
@@ -333,6 +331,7 @@ public class TornadoVM extends TornadoLogger {
                         long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
                         value += event.getExecutionTime();
                         timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                        timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
                     }
                 }
 
@@ -360,18 +359,17 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
-
                 lastEvent = device.streamOutBlocking(object, offset, objectState, waitList);
-                if (eventList != -1) {
-                    eventsIndicies[eventList] = 0;
-                }
+
+                resetEventIndices(eventList);
+
                 if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
                     Event event = device.resolveEvent(lastEvent);
                     event.waitForEvents();
                     long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
                     value += event.getExecutionTime();
                     timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+                    timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
                 }
 
             } else if (op == TornadoVMBytecodes.STREAM_OUT_BLOCKING.value()) {
@@ -406,11 +404,10 @@ public class TornadoVM extends TornadoLogger {
                     long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
                     value += event.getExecutionTime();
                     timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+                    timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
                 }
 
-                if (eventList != -1) {
-                    eventsIndicies[eventList] = 0;
-                }
+                resetEventIndices(eventList);
 
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
                 final int stackIndex = buffer.getInt();
@@ -545,9 +542,9 @@ public class TornadoVM extends TornadoLogger {
                     } else {
                         lastEvent = installedCode.launchWithoutDependencies(stack, metadata, batchThreads);
                     }
-                    if (eventList != -1) {
-                        eventsIndicies[eventList] = 0;
-                    }
+
+                    resetEventIndices(eventList);
+
                 } catch (Exception e) {
                     String re = e.toString();
                     if (Tornado.DEBUG) {
@@ -591,9 +588,8 @@ public class TornadoVM extends TornadoLogger {
                     TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
                 }
 
-                if (eventList != -1) {
-                    eventsIndicies[eventList] = 0;
-                }
+                resetEventIndices(eventList);
+
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (TornadoOptions.printBytecodes) {
                     tornadoVMBytecodeList.append(String.format("END\n"));
@@ -639,6 +635,12 @@ public class TornadoVM extends TornadoLogger {
         }
 
         return barrier;
+    }
+
+    private void resetEventIndices(int eventList) {
+        if (eventList != -1) {
+            eventsIndicies[eventList] = 0;
+        }
     }
 
     private void popArgumentsFromStack(int numArgs) {
