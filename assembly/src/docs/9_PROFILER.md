@@ -63,11 +63,11 @@ The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full r
 
 ### Save profiler into a file
 
-Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dumps.dir=PATH`.  `PATH` needs to contain the finename and extension (e.g. profiler-log.json). 
+Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dumps.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. profiler-log.json). 
 
 ### Parsing Json files
 
-TornadoVM creates the above-mentioned specified file with multiple entries for the application (one per task-schedule invocation).
+TornadoVM creates the `profiler-app.json` file with multiple entries for the application (one per task-schedule invocation).
 
 TornadoVM's distribution includes a set of utilities for parsing and obtaining statistics:
 
@@ -193,4 +193,4 @@ $ cat tornado-features.json
 ```
 ### Save features into a file
 
-Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=PATH`.  `PATH` needs to contain the finename and extension (e.g. features.json). 
+Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. features.json). 
