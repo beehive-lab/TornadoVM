@@ -45,7 +45,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLVectorElementSelect;
 
@@ -57,9 +56,11 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
 
-    @Input(InputType.Extension) ValueNode vector;
+    @Input(InputType.Extension)
+    ValueNode vector;
 
-    @Input ValueNode lane;
+    @Input
+    ValueNode lane;
 
     protected final OCLKind oclKind;
 
@@ -68,23 +69,15 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         this.oclKind = kind;
         this.vector = vector;
         this.lane = lane;
-
-        Stamp vstamp = vector.stamp(NodeView.DEFAULT);
-        OCLKind vectorKind = OCLKind.ILLEGAL;
-        if (vstamp instanceof ObjectStamp) {
-            ObjectStamp ostamp = (ObjectStamp) vector.stamp(NodeView.DEFAULT);
-            // System.out.printf("ostamp: type=%s\n", ostamp.type());
-
-            if (ostamp.type() != null) {
-                vectorKind = OCLKind.fromResolvedJavaType(ostamp.type());
+        Stamp vectorStamp = vector.stamp(NodeView.DEFAULT);
+        OCLKind vectorKind;
+        if (vectorStamp instanceof ObjectStamp) {
+            ObjectStamp objectStamp = (ObjectStamp) vector.stamp(NodeView.DEFAULT);
+            if (objectStamp.type() != null) {
+                vectorKind = OCLKind.fromResolvedJavaType(objectStamp.type());
                 guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
                 guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
             }
-        } else if (vstamp instanceof OCLStamp) {
-            final OCLStamp vectorStamp = (OCLStamp) vector.stamp(NodeView.DEFAULT);
-            vectorKind = vectorStamp.getOCLKind();
-            guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
-            guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
         } else {
             shouldNotReachHere("invalid type on vector operation: %s (stamp=%s (class=%s))", vector, vector.stamp(NodeView.DEFAULT), vector.stamp(NodeView.DEFAULT).getClass().getName());
         }
@@ -98,7 +91,6 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     @Override
     public boolean inferStamp() {
-        // return false;
         return updateStamp(StampFactory.forKind(oclKind.asJavaKind()));
     }
 
@@ -111,25 +103,14 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         return vector;
     }
 
-    public OCLKind getOCLKind() {
-        return oclKind;
-    }
-
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         guarantee(vector != null, "vector is null");
-        // System.out.printf("vector = %s,
-        // origin=%s\n",vector,vector.getOrigin());
         Value targetVector = gen.operand(getVector());
-        // if (targetVector == null && vector.getOrigin() instanceof Invoke) {
-        // targetVector = gen.operand(vector.getOrigin());
-        // }
-
-        guarantee(targetVector != null, "vector is null 2");
+        guarantee(targetVector != null, "vector is null");
         final OCLVectorElementSelect element = new OCLVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector,
                 new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(laneId())));
         gen.setResult(this, element);
-
     }
 
 }

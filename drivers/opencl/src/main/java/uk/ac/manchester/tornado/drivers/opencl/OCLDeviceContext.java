@@ -181,17 +181,18 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int enqueueTask(OCLKernel kernel, int[] events) {
-        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null), DESC_SERIAL_KERNEL, kernel.getId(), queue);
+        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null), DESC_SERIAL_KERNEL, kernel.getOclKernelID(),
+                queue);
     }
 
     public int enqueueTask(OCLKernel kernel) {
-        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, null), DESC_SERIAL_KERNEL, kernel.getId(), queue);
+        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, null), DESC_SERIAL_KERNEL, kernel.getOclKernelID(), queue);
     }
 
     public int enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
         return eventsWrapper.registerEvent(
                 queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, eventsWrapper.serialiseEvents(waitEvents, queue) ? eventsWrapper.waitEventsBuffer : null),
-                DESC_PARALLEL_KERNEL, kernel.getId(), queue);
+                DESC_PARALLEL_KERNEL, kernel.getOclKernelID(), queue);
     }
 
     public ByteOrder getByteOrder() {

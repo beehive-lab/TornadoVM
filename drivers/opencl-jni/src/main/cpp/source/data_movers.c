@@ -62,6 +62,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, J, long)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, F, float)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
 
+
 #define WRITE_ARRAY(CLASSNAME,SIG,TYPE) \
     JNIEXPORT jlong JNICALL CLASSNAME ## _writeArrayToDevice__J_3 ## SIG ## JZJJJ_3J \
         (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jlong hostOffset, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) {\

@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class GridTask {
 
-    private ConcurrentHashMap<String, WorkerGrid> gridTaskMap;
+    private final ConcurrentHashMap<String, WorkerGrid> gridTaskMap;
 
     public GridTask() {
         gridTaskMap = new ConcurrentHashMap<>();

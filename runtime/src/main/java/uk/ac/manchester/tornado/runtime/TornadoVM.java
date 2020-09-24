@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -59,6 +60,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -85,7 +87,7 @@ public class TornadoVM extends TornadoLogger {
     private final GlobalObjectState[] globalStates;
     private final CallStack[] stacks;
     private final int[][] events;
-    private final int[] eventsIndicies;
+    private final int[] eventsIndexes;
     private final List<TornadoAcceleratorDevice> contexts;
     private final TornadoInstalledCode[] installedCodes;
 
@@ -124,13 +126,13 @@ public class TornadoVM extends TornadoLogger {
         int taskCount = buffer.getInt();
         stacks = graphContext.getFrames();
         events = new int[buffer.getInt()][MAX_EVENTS];
-        eventsIndicies = new int[events.length];
+        eventsIndexes = new int[events.length];
 
         installedCodes = new TornadoInstalledCode[taskCount];
 
         for (int i = 0; i < events.length; i++) {
             Arrays.fill(events[i], -1);
-            eventsIndicies[i] = 0;
+            eventsIndexes[i] = 0;
         }
 
         debug("found %d contexts", contexts.size());
@@ -284,7 +286,7 @@ public class TornadoVM extends TornadoLogger {
                     allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
                 }
 
-                resetEventIndices(eventList);
+                resetEventIndexes(eventList);
 
                 if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
                     for (Integer e : allEvents) {
@@ -322,7 +324,7 @@ public class TornadoVM extends TornadoLogger {
 
                 List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
 
-                resetEventIndices(eventList);
+                resetEventIndexes(eventList);
 
                 if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
                     for (Integer e : allEvents) {
@@ -361,7 +363,7 @@ public class TornadoVM extends TornadoLogger {
 
                 lastEvent = device.streamOutBlocking(object, offset, objectState, waitList);
 
-                resetEventIndices(eventList);
+                resetEventIndexes(eventList);
 
                 if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
                     Event event = device.resolveEvent(lastEvent);
@@ -407,7 +409,7 @@ public class TornadoVM extends TornadoLogger {
                     timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
                 }
 
-                resetEventIndices(eventList);
+                resetEventIndexes(eventList);
 
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
                 final int stackIndex = buffer.getInt();
@@ -482,6 +484,18 @@ public class TornadoVM extends TornadoLogger {
                     throw new TornadoBailoutRuntimeException("Code generator Failed");
                 }
 
+                int[] atomicsArray;
+                if (task instanceof PrebuiltTask) {
+                    atomicsArray = ((PrebuiltTask) task).getAtomics();
+                } else {
+                    atomicsArray = device.checkAtomicsForTask(task);
+                }
+
+                DeviceBuffer bufferAtomics = null;
+                if (atomicsArray != null) {
+                    bufferAtomics = device.createBuffer(atomicsArray);
+                }
+
                 final Access[] accesses = task.getArgumentsAccess();
                 if (redeployOnDevice || !stack.isOnDevice()) {
                     stack.reset();
@@ -529,7 +543,7 @@ public class TornadoVM extends TornadoLogger {
                 if (task.meta() instanceof TaskMetaData) {
                     metadata = (TaskMetaData) task.meta();
                 } else {
-                    throw new RuntimeException("task.meta is not instanceof TaskMetada");
+                    throw new RuntimeException("task.meta is not instanceof TaskMetadata");
                 }
 
                 // We attach the profiler
@@ -538,12 +552,12 @@ public class TornadoVM extends TornadoLogger {
 
                 try {
                     if (useDependencies) {
-                        lastEvent = installedCode.launchWithDependencies(stack, metadata, batchThreads, waitList);
+                        lastEvent = installedCode.launchWithDependencies(stack, bufferAtomics, metadata, batchThreads, waitList);
                     } else {
-                        lastEvent = installedCode.launchWithoutDependencies(stack, metadata, batchThreads);
+                        lastEvent = installedCode.launchWithoutDependencies(stack, bufferAtomics, metadata, batchThreads);
                     }
 
-                    resetEventIndices(eventList);
+                    resetEventIndexes(eventList);
 
                 } catch (Exception e) {
                     String re = e.toString();
@@ -564,9 +578,9 @@ public class TornadoVM extends TornadoLogger {
                         tornadoVMBytecodeList.append(verbose + "\n");
                     }
 
-                    TornadoInternalError.guarantee(eventsIndicies[eventList] < events[eventList].length, "event list is too small");
-                    events[eventList][eventsIndicies[eventList]] = lastEvent;
-                    eventsIndicies[eventList]++;
+                    TornadoInternalError.guarantee(eventsIndexes[eventList] < events[eventList].length, "event list is too small");
+                    events[eventList][eventsIndexes[eventList]] = lastEvent;
+                    eventsIndexes[eventList]++;
                 }
 
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
@@ -588,11 +602,11 @@ public class TornadoVM extends TornadoLogger {
                     TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
                 }
 
-                resetEventIndices(eventList);
+                resetEventIndexes(eventList);
 
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (TornadoOptions.printBytecodes) {
-                    tornadoVMBytecodeList.append(String.format("END\n"));
+                    tornadoVMBytecodeList.append("END\n");
                 }
                 break;
             } else {
@@ -637,9 +651,9 @@ public class TornadoVM extends TornadoLogger {
         return barrier;
     }
 
-    private void resetEventIndices(int eventList) {
+    private void resetEventIndexes(int eventList) {
         if (eventList != -1) {
-            eventsIndicies[eventList] = 0;
+            eventsIndexes[eventList] = 0;
         }
     }
 
@@ -679,15 +693,15 @@ public class TornadoVM extends TornadoLogger {
 
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = (TaskMetaData) task.meta();
-            for (final TornadoEvents eventset : meta.getProfiles()) {
-                final BitSet profiles = eventset.getProfiles();
+            for (final TornadoEvents eventSet : meta.getProfiles()) {
+                final BitSet profiles = eventSet.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
 
-                    if (!(eventset.getDevice() instanceof TornadoAcceleratorDevice)) {
+                    if (!(eventSet.getDevice() instanceof TornadoAcceleratorDevice)) {
                         throw new RuntimeException("TornadoDevice not found");
                     }
 
-                    TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventset.getDevice();
+                    TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventSet.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
                         System.out.printf("task: %s %s %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(),

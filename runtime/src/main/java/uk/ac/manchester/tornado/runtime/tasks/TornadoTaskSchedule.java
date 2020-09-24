@@ -160,6 +160,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoProfiler timeProfiler;
     private boolean updateData;
+    private boolean isFinished;
     private GridTask gridTask;
 
     private static String RESET = "\u001B[0m";
@@ -243,6 +244,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void useDefaultThreadScheduler(boolean use) {
         executionContext.setDefaultThreadScheduler(use);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return this.isFinished;
     }
 
     @Override
@@ -724,6 +730,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void cleanUp() {
         updateData = false;
+        isFinished = true;
     }
 
     @Override
@@ -1633,6 +1640,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
+    }
+
+    @Override
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions, atomics));
     }
 
     @Override

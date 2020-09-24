@@ -49,6 +49,10 @@ public class OCLReturnSlot extends AllocatableValue {
         asm.emit("%s[%d]", FRAME_REF_NAME, RETURN_VALUE_INDEX);
     }
 
+    public String getStringFormat() {
+        return String.format("%s[%d]", FRAME_REF_NAME, RETURN_VALUE_INDEX);
+    }
+
     @Override
     public String toString() {
         return "RETURN_SLOT";

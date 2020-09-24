@@ -888,6 +888,35 @@ public class OCLLIRStmt {
         }
     }
 
+    @Opcode("RELOCATED_EXPR")
+    public static class RelocatedExpressionStmt extends ExprStmt {
+
+        public static final LIRInstructionClass<RelocatedExpressionStmt> TYPE = LIRInstructionClass.create(RelocatedExpressionStmt.class);
+
+        @Use
+        protected Value expr;
+
+        public RelocatedExpressionStmt(OCLLIROp expr) {
+            super(expr);
+            this.expr = expr;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            if (expr instanceof OCLLIROp) {
+                ((OCLLIROp) expr).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, expr);
+            }
+            asm.eol();
+        }
+
+        public Value getExpr() {
+            return expr;
+        }
+    }
+
     @Opcode("Pragma")
     public static class PragmaExpr extends AbstractInstruction {
 
