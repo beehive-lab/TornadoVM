@@ -90,6 +90,7 @@
       <includes>
         <include>add.cl</include>
         <include>atomics.cl</include>
+        <include>add.ptx</include>
       </includes>
       <fileMode>0666</fileMode>
     </fileSet>
@@ -104,6 +105,8 @@
         <include>tornado:tornado-runtime</include>
         <include>tornado:tornado-annotation</include>
         <include>tornado:tornado-matrices</include>
+        <include>tornado:tornado-drivers-common</include>
+        <include>tornado:tornado-drivers-ptx</include>
         <include>tornado:tornado-drivers-opencl</include>
         <include>tornado:tornado-examples</include>
         <include>tornado:tornado-benchmarks</include>
@@ -129,6 +132,7 @@
         </includes>
       </unpackOptions>
       <includes>
+        <include>tornado:tornado-drivers-ptx-jni:jar:libs</include>
         <include>tornado:tornado-drivers-opencl-jni:jar:libs</include>
       </includes>
     </dependencySet>

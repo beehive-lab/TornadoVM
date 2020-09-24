@@ -12,12 +12,14 @@ public static void reductionAddFloats(float[] input, @Reduce float[] result) {
  }
 ```
 
-The code is very similar to a Java sequential reduction but with `@Reduce` and `@Parallel` annotations. The `@Reduce` annotation is associated with a variable, in this case, with the `result` float array. Then, we annotate the loop with `@Parallel`. The OpenCL JIT compiler generates OpenCL parallel version for this code that can run on GPU and CPU.
+The code is very similar to a Java sequential reduction but with `@Reduce` and `@Parallel` annotations. The `@Reduce` annotation is associated with a variable, in this case, with the `result` float array. Then, we annotate the loop with `@Parallel`. The OpenCL/PTX JIT compilers generate OpenCL/PTX parallel version for this code that can run on GPU and CPU.
 
 
 ### Create the TaskSchedule
 
-TornadoVM generates different OpenCL code depending on the target device. Internally, if the target is a GPU, TornadoVM performs full and parallel reductions using the threads within the same OpenCL work-group. If the target is a CPU, TornadoVM performs full reductions within the same thread-id. Besides, TornadoVM automatically resizes the output variables according to the number of work-groups and threads selected. 
+TornadoVM generates different OpenCL code depending on the target device. Internally, if the target is a GPU, TornadoVM performs full and parallel reductions using the threads within the same OpenCL work-group. If the target is a CPU, TornadoVM performs full reductions within the same thread-id. Besides, TornadoVM automatically resizes the output variables according to the number of work-groups and threads selected.
+
+For PTX code generation, TornadoVM will always perform full and parallel reductions using the threads within the same CUDA block.
 
 
 ```java
@@ -46,11 +48,11 @@ The generated GPU-OpenCL C code that corresponds to the previous Java code is as
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable  
 __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
-  float f_31, f_30, f_36, f_24; 
-  int i_21, i_20, i_19, i_18, i_17, i_16, i_15, i_14, i_9, i_41, i_8, i_7, i_6, i_5, i_4, i_3, i_34, i_33, i_32, i_25, i_22; 
-  bool z_23, z_35; 
-  ulong ul_40, ul_0, ul_13, ul_29, ul_1, ul_2; 
-  long l_38, l_39, l_37, l_12, l_28, l_10, l_26, l_11, l_27; 
+  float f_31, f_30, f_36, f_24;
+  int i_21, i_20, i_19, i_18, i_17, i_16, i_15, i_14, i_9, i_41, i_8, i_7, i_6, i_5, i_4, i_3, i_34, i_33, i_32, i_25, i_22;
+  bool z_23, z_35;
+  ulong ul_40, ul_0, ul_13, ul_29, ul_1, ul_2;
+  long l_38, l_39, l_37, l_12, l_28, l_10, l_26, l_11, l_27;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -171,7 +173,7 @@ public void testSumFloats() {
 
 ## Map/Reduce
 
-This section shows an example of how to perform map/reduce operations with TornadoVM. 
+This section shows an example of how to perform map/reduce operations with TornadoVM.
 Each of the operations corresponds to a task as follows in the next example:
 
 
@@ -208,7 +210,7 @@ public class ReduceExample {
             .task("t0", ReduceExample::map01, a, b, c)
             .task("t1", ReduceExample::reduce01, c, result)
             .streamOut(result)
-            .execute(); 
+            .execute();
     }
 }
 ```

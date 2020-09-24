@@ -84,14 +84,15 @@ function print_all_options() {
   echo -e "$COLOR_CYAN Debugging Information: $COLOR_NC"
   echo ""
   echo -e "\tPrint all devices available   : --devices "
-  echo -e "\tPrint generated kernel        : -Dtornado.opencl.source.print=True "
+  echo -e "\tPrint generated kernel        : -Dtornado.print.kernel=True "
   echo -e "\tPrint kernel debug information: -Dtornado.debug=True "
   echo -e "\tEnable full debug information : -Dtornado.fullDebug=True "
   echo -e "\tDump compiled graphs into IGV : -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false "
   echo ""
   echo -e "$COLOR_CYAN Define on which device the application should run (by default is 0): $COLOR_NC"
   echo ""
-  echo -e "\tChange OpenCL device to run the application: -D<taskScheduleName>.<taskName>=0:<deviceID> (e.g., -Ds0.t0.device=0:2)"
+  echo -e "\tChange the driver and device to run the application: -D<taskScheduleName>.<taskName>=<driverID>:<deviceID> (e.g., -Ds0.t0.device=1:2)"
+  echo -e "\tChange the driver order: -Dtornado.{ptx,opencl}.priority=X (e.g., -Dtornado.opencl.priority=2)"
   echo ""
   echo -e "$COLOR_CYAN Profiler: $COLOR_NC"
   echo ""
@@ -146,7 +147,7 @@ while [[ $# -gt 0 ]]; do
     shift
     ;;
   --printKernel)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.opencl.source.print=True "
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.print.kernel=True "
     shift
     ;;
   --printBytecodes)
@@ -189,7 +190,8 @@ PROVIDERS=" \
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
 -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
--Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory \
+-Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
+-Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
@@ -204,7 +206,18 @@ JAVA_FLAGS="${JAVA_FLAGS}-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVI
 if [ "$JAVA_VERSION" = "1.8" ]; then
   JAVA_FLAGS="${JAVA_FLAGS} -XX:-UseJVMCIClassLoader "
 elif [ "$JAVA_VERSION" = "11.0" ]; then
-  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${MODULE_LIST[*]}"
+  read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
+  if [[ ${selected_backends} == *"ptx-backend"* && ${selected_backends} == *"opencl-backend"* ]]; then
+    JAVA_FLAGS="${JAVA_FLAGS},${PTX_DRIVER_MODULE},${OPENCL_DRIVER_MODULE} ${OPENCL_AND_PTX_BACKENDS_EXPORTS_LIST[*]}"
+  else
+    if [[ ${selected_backends} == *"ptx-backend"* ]]; then
+      JAVA_FLAGS="${JAVA_FLAGS},${PTX_DRIVER_MODULE} ${PTX_BACKEND_EXPORTS_LIST[*]}"
+    fi
+    if [[ ${selected_backends} == *"opencl-backend"* ]]; then
+      JAVA_FLAGS="${JAVA_FLAGS},${OPENCL_DRIVER_MODULE} ${OPENCL_BACKEND_EXPORTS_LIST[*]}"
+    fi
+  fi
 fi
 
 if [ $printflags -eq 1 ]; then
@@ -213,7 +226,7 @@ if [ $printflags -eq 1 ]; then
 fi
 
 if [ $printdevices -eq 1 ]; then
-  tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceQuery verbose
+  tornado uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose
   exit 0
 fi
 

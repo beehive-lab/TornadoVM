@@ -72,7 +72,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     public void enoughDevices() {
         super.before();
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        if (driver.getDeviceCount() <= 2) {
+        if (driver.getDeviceCount() < 2) {
             throw new UnsupportedConfigurationException("Not enough devices to run tests");
         }
     }

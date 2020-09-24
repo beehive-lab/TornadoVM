@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEA
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_ARRAY_ALIGNMENT;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -45,8 +46,6 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
-
-    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
 
     private final int arrayHeaderSize;
 
@@ -241,7 +240,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public int getAlignment() {
-        return ARRAY_ALIGNMENT;
+        return OPENCL_ARRAY_ALIGNMENT;
     }
 
     private OCLByteBuffer getArrayHeader() {

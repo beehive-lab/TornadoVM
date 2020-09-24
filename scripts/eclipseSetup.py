@@ -14,6 +14,8 @@ class Colors:
 __TORNADO_PROJECTS__ = [
 			"benchmarks",
 			"matrices",
+			"drivers/drivers-common"
+			"drivers/ptx"
 			"drivers/opencl",
 			"examples",
 			"runtime",

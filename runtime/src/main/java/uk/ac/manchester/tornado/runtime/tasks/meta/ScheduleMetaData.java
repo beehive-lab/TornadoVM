@@ -27,7 +27,10 @@ package uk.ac.manchester.tornado.runtime.tasks.meta;
 
 public class ScheduleMetaData extends AbstractMetaData {
 
+    private static final int DEFAULT_DRIVER_INDEX = 0;
+    private static final int DEFAULT_DEVICE_INDEX = 0;
+
     public ScheduleMetaData(String id) {
-        super(id);
+        super(id, DEFAULT_DRIVER_INDEX, DEFAULT_DEVICE_INDEX);
     }
 }

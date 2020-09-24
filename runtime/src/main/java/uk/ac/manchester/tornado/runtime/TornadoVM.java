@@ -222,6 +222,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event execute(boolean isWarmup) {
+        contexts.forEach(TornadoAcceleratorDevice::enableThreadSharing);
 
         final long t0 = System.nanoTime();
         int lastEvent = -1;

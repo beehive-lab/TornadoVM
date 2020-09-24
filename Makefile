@@ -1,19 +1,22 @@
 all: build
 
+# Variable passed for build:
+# BACKEND - which backend to include in the build. Can be any combination of { opencl, ptx }. Default: opencl
+BACKEND?=opencl
 build:
-	./bin/compile.sh jdk-8
+	./bin/compile.sh jdk-8 $(BACKEND)
 
-graal-jdk-8: 
-	./bin/compile.sh graal-jdk-8
+graal-jdk-8:
+	./bin/compile.sh graal-jdk-8 $(BACKEND)
 
-graal-jdk-11: 
-	./bin/compile.sh graal-jdk-11
+graal-jdk-11:
+	./bin/compile.sh graal-jdk-11 $(BACKEND)
 
 offline:
-	./bin/compile.sh jdk-8 OFFLINE
+	./bin/compile.sh jdk-8 $(BACKEND) OFFLINE
 
 clean: 
-	mvn clean
+	mvn -Popencl-backend,ptx-backend clean
 
 example:
 	tornado --printKernel --debug uk.ac.manchester.tornado.examples.VectorAddInt 8192
@@ -21,7 +24,7 @@ example:
 tests:
 	tornado-test.py --ea --verbose
 	tornado-test.py --ea -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
-	test-native.sh 
+	test-native.sh
 
 test-slam:
 	tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 

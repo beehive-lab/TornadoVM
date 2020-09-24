@@ -52,8 +52,10 @@ import java.nio.ByteOrder;
 import java.util.Comparator;
 import java.util.List;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -510,7 +512,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public boolean isCached(String id, String entryPoint) {
-        return codeCache.isCached(id, entryPoint);
+        return codeCache.isCached(id + "-" + entryPoint);
+    }
+
+    @Override
+    public boolean isCached(String methodName, SchedulableTask task) {
+        return codeCache.isCached(task.getId() + "-" + methodName);
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

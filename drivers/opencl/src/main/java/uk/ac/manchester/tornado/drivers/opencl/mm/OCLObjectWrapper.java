@@ -56,6 +56,8 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
+    private static final int OPENCL_OBJECT_ALIGNMENT = 64;
+
     private final boolean vectorObject;
     private int vectorStorageIndex;
     private long bufferOffset;
@@ -487,7 +489,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     @Override
     public int getAlignment() {
-        return 64;
+        return OPENCL_OBJECT_ALIGNMENT;
     }
 
     public FieldBuffer getField(String name) {
