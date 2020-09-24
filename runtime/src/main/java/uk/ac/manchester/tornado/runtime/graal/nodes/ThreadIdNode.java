@@ -8,7 +8,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
-@NodeInfo(shortName = "ThreadId")
+@NodeInfo(shortName = "GlobalThreadId")
 public class ThreadIdNode extends FixedWithNextNode implements Lowerable {
 
     @Input
