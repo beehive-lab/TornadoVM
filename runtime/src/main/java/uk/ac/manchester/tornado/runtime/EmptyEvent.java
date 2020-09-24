@@ -51,6 +51,11 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public long getDriverDispatchTime() {
+        return 0;
+    }
+
+    @Override
     public double getExecutionTimeInSeconds() {
         return 0;
     }

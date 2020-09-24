@@ -29,6 +29,7 @@ package uk.ac.manchester.tornado.api.profiler;
 public enum ProfilerType {
 
     // @formatter:off
+    DISPATCH_TIME("Dispatch-Time"),
     COPY_IN_TIME("CopyIn-Time"),
     COPY_OUT_TIME("CopyOut-Time"),
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver-"),

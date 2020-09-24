@@ -291,9 +291,13 @@ public class TornadoVM extends TornadoLogger {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
                         event.waitForEvents();
-                        long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        value += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                        long copyInValue = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        copyInValue += event.getExecutionTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInValue);
+
+                        long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
+                        dispatchValue += event.getDriverDispatchTime();
+                        timeProfiler.setTimer(ProfilerType.DISPATCH_TIME, dispatchValue);
                     }
                 }
 
@@ -328,12 +332,15 @@ public class TornadoVM extends TornadoLogger {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
                         event.waitForEvents();
-                        long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        value += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                        long copyInValue = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        copyInValue += event.getExecutionTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInValue);
+
+                        long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
+                        dispatchValue += event.getDriverDispatchTime();
+                        timeProfiler.setTimer(ProfilerType.DISPATCH_TIME, dispatchValue);
                     }
                 }
-
             } else if (op == TornadoVMBytecodes.STREAM_OUT.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();

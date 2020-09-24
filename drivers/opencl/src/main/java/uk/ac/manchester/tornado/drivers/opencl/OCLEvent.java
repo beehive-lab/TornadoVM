@@ -103,7 +103,8 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    OCLEvent() {}
+    OCLEvent() {
+    }
 
     OCLEvent(final OCLEventsWrapper eventsWrapper, final OCLCommandQueue queue, final int event, final long oclEventID) {
         this.eventsWrapper = eventsWrapper;
@@ -151,15 +152,15 @@ public class OCLEvent extends TornadoLogger implements Event {
         }
     }
 
-    long getCLSubmitTime() {
+    long getCLProfilingCommandSubmitTime() {
         return readEventTime(CL_PROFILING_COMMAND_SUBMIT);
     }
 
-    long getCLStartTime() {
+    long getCLProfilingCommandStartTime() {
         return readEventTime(CL_PROFILING_COMMAND_START);
     }
 
-    long getCLEndTime() {
+    long getCLProfilingCommandEndTime() {
         return readEventTime(CL_PROFILING_COMMAND_END);
     }
 
@@ -228,12 +229,17 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public long getExecutionTime() {
-        return (getCLEndTime() - getCLStartTime());
+        return (getCLProfilingCommandEndTime() - getCLProfilingCommandStartTime());
+    }
+
+    @Override
+    public long getDriverDispatchTime() {
+        return (getCLProfilingCommandStartTime() - getCLProfilingCommandSubmitTime());
     }
 
     @Override
     public double getExecutionTimeInSeconds() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLProfilingCommandStartTime(), getCLProfilingCommandEndTime());
     }
 
     @Override
@@ -243,17 +249,17 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public long getSubmitTime() {
-        return getCLSubmitTime();
+        return getCLProfilingCommandSubmitTime();
     }
 
     @Override
     public long getStartTime() {
-        return getCLStartTime();
+        return getCLProfilingCommandStartTime();
     }
 
     @Override
     public long getEndTime() {
-        return getCLEndTime();
+        return getCLProfilingCommandEndTime();
     }
 
     void release() {
