@@ -46,7 +46,9 @@ public class TornadoVMContext implements ExecutionContext {
     public final Integer threadIdx = 0; // get_global_id(0)
     public final Integer threadIdy = 0; // get_global_id(1)
     public final Integer threadIdz = 0; // get_global_id(2)
-    public final Integer groupID = 0; // get_group_size
+    public final Integer groupIdx = 0; // get_group_id(0)
+    public final Integer groupIdy = 0; // get_group_id(1)
+    public final Integer groupIdz = 0; // get_group_id(2)
 
     public final Integer localIdx = 0; // get_local_id(0);
     public final Integer localIdy = 0; // get_local_id(0);
@@ -95,11 +97,11 @@ public class TornadoVMContext implements ExecutionContext {
         return threadIdz;
     }
 
-    public int getGroupSize(int dim) {
+    public int getLocalGroupSize(int dim) {
         return (int) grid.getLocalWork()[dim];
     }
 
-    public int getSize(int dim) {
+    public int getGlobalGroupSize(int dim) {
         return (int) grid.getGlobalWork()[dim];
     }
 }
