@@ -12,6 +12,7 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
         "TOTAL_TASK_SCHEDULE_TIME": "104699731",
         "TOTAL_GRAAL_COMPILE_TIME": "36462460",
         "TOTAL_KERNEL_TIME": "25600",
+        "DISPATCH_TIME": "61952",
         "COPY_IN_TIME": "88288",
         "TOTAL_DRIVER_COMPILE_TIME": "710824",
         "TOTAL_BYTE_CODE_GENERATION": "7031446",
@@ -31,6 +32,7 @@ All timers are printed in nanoseconds.
 
 * *COPY_IN_TIME*: OpenCL timers for copy in (host to device)
 * *COPY_OUT_TIME*: OpenCL timers for copy out (device to host)
+* *DISPATCH_TIME*: time spent for dispatching a submitted OpenCL command
 * *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
 * *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation
 * *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
@@ -86,6 +88,7 @@ Entry,0
     TASK_COMPILE_GRAAL_TIME,46868099
     TOTAL_GRAAL_COMPILE_TIME,46868099
     TOTAL_DRIVER_COMPILE_TIME,952126
+    DISPATCH_TIME,31008
     EndEntry,0
 
 MEDIANS    ### Print median values for each timer
@@ -94,6 +97,7 @@ MEDIANS    ### Print median values for each timer
     s0.t0-TASK_KERNEL_TIME,25184.0
     COPY_IN_TIME,74016.0
     COPY_OUT_TIME,32816.0
+    DISPATCH_TIME,31008.0
 ```
 
 
@@ -118,6 +122,8 @@ public interface ProfileInterface {
 
     long getReadTime();
 
+    long getDispatchTime();
+
     long getDeviceWriteTime();
 
     long getDeviceKernelTime();
@@ -141,6 +147,9 @@ long copyInTime = schedule.getDeviceWriteTime();
 
 // Query copy-out total time (from Device to Host)
 long copyOutTime = schedule.getDeviceReadTime();
+
+// Query dispatch time
+long dispatchTime = schedule.getDispatchTime();
 
 // Query total kernel time
 long kernelTime = schedule.getDeviceKernelTime();
