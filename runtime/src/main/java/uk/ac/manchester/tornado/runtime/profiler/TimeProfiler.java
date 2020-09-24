@@ -174,8 +174,10 @@ public class TimeProfiler implements TornadoProfiler {
                 json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
             }
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
-            for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {
-                json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
+            if (!taskThroughputMetrics.isEmpty()) {
+                for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {
+                    json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
+                }
             }
             for (ProfilerType p2 : taskTimers.get(p).keySet()) {
                 json.append(indent.toString() + "\"" + p2 + "\"" + ": " + "\"" + taskTimers.get(p).get(p2) + "\",\n");
