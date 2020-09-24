@@ -94,25 +94,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.*;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
@@ -181,6 +170,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             // ignore InstanceOfNode nodes
         } else if (node instanceof ThreadIdNode) {
             lowerThreadIdNode((ThreadIdNode) node);
+        } else if (node instanceof ThreadLocalIdNode) {
+            lowerLocalThreadIdNode((ThreadLocalIdNode) node);
+        } else if (node instanceof TornadoVMContextGroupIdNode) {
+            lowerGetGroupIdNode((TornadoVMContextGroupIdNode) node);
+        } else if (node instanceof LocalWorkGroupNode) {
+            lowerLocalWorkGroupNode((LocalWorkGroupNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -278,6 +273,24 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
         graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
+    }
+
+    private void lowerLocalThreadIdNode(ThreadLocalIdNode threadLocalIdNode) {
+        StructuredGraph graph = threadLocalIdNode.graph();
+        LocalThreadIdNode localThreadIdNode = graph.addOrUnique(new LocalThreadIdNode(ConstantNode.forInt(threadLocalIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadLocalIdNode, localThreadIdNode);
+    }
+
+    private void lowerGetGroupIdNode(TornadoVMContextGroupIdNode getGroupIdNode) {
+        StructuredGraph graph = getGroupIdNode.graph();
+        GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
+    }
+
+    private void lowerLocalWorkGroupNode(LocalWorkGroupNode localWorkGroupNode) {
+        StructuredGraph graph = localWorkGroupNode.graph();
+        LocalThreadSizeNode threadSizeNode = graph.addOrUnique(new LocalThreadSizeNode(localWorkGroupNode.getIndex()));
+        graph.replaceFixedWithFloating(localWorkGroupNode, threadSizeNode);
     }
 
     @Override
