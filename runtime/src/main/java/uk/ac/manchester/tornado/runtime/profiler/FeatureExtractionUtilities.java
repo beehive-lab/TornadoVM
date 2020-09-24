@@ -34,30 +34,36 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
 
-    private static final String FEATURE_FILE = "tornado-features.json";
+    private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dump.dir", "");
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
     }
 
-    public static void emitFeatureProfiletoJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name) {
+    public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name, TornadoDeviceContext deviceContext) {
         name = name.split("-")[1];
         if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name);
-            File fileLog = new File(FEATURE_FILE);
-            try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
-                file.write(json);
-                file.write("\n");
-            } catch (IOException e) {
-                e.printStackTrace();
+            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.getDeviceName());
+            if (!FEATURES_DIRECTORY.isEmpty()) {
+                File fileLog = new File(FEATURES_DIRECTORY);
+                try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
+                    file.write(json);
+                    file.write("\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println(json);
             }
         }
     }
@@ -97,7 +103,6 @@ public class FeatureExtractionUtilities {
         myMap.put(ProfilerCodeFeatures.CAST, 0);
         myMap.put(ProfilerCodeFeatures.F_MATH, 0);
         myMap.put(ProfilerCodeFeatures.I_MATH, 0);
-
         return myMap;
     }
 }

@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.profiler;
 public enum ProfilerCodeFeatures {
 
     // @formatter:off
+    DEVICE ("Target Devices"),
     GLOBAL_LOADS ("Global Memory Loads"),
     GLOBAL_STORES ("Global Memory Stores"),
     LOCAL_LOADS ("Local Memory Loads"),

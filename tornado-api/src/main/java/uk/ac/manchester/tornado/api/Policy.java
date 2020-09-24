@@ -43,14 +43,12 @@ package uk.ac.manchester.tornado.api;
 
 public enum Policy {
 
-    // @formatter:off
-    PERFORMANCE ("Performance"), 
-    END_2_END ("End_2_End"),
-    LATENCY("Latency"),
-    ENERGY ("Energy");
-    // @formatter:on
+    PERFORMANCE("Performance"), //
+    END_2_END("End_2_End"), //
+    LATENCY("Latency"), //
+    ENERGY("Energy"); //
 
-    private String policy;
+    private final String policy;
 
     Policy(String policy) {
         this.policy = policy;

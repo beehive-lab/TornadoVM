@@ -139,9 +139,16 @@ public class OpenCL {
      * Execute an OpenCL code compiled by Tornado on the target device
      * 
      * @param tornadoDevice
+     *            OpenCL device to run the application.
      * @param openCLCode
+     *            OpenCL code to run.
      * @param taskMeta
+     *            TaskMetadata.
+     * @param accesses
+     *            Access of each parameter
      * @param parameters
+     *            List of parameters.
+     * 
      */
     public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
@@ -183,7 +190,7 @@ public class OpenCL {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {

@@ -31,7 +31,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -60,6 +60,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
@@ -73,6 +74,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -183,7 +185,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistibutedMemory() {
+    public boolean isDistributedMemory() {
         return true;
     }
 
@@ -202,6 +204,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public CallStack createStack(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
+    }
+
+    @Override
+    public DeviceBuffer createBuffer(int[] arr) {
+        return getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
     }
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
@@ -234,6 +241,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
+            // profiler
+            profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
@@ -251,8 +260,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
-            return installedCode;
 
+            return installedCode;
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
@@ -329,6 +338,21 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
         String entry = getTaskEntryName(task);
         return getDeviceContext().getInstalledCode(task.getId(), entry);
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task) {
+        if (TornadoAtomicIntegerNode.globalAtomics.containsKey(task.meta().getCompiledGraph())) {
+            ArrayList<Integer> values = TornadoAtomicIntegerNode.globalAtomics.get(task.meta().getCompiledGraph());
+            int[] atomicsArray = new int[values.size()];
+            int j = 0;
+            for (Integer i : values) {
+                atomicsArray[j++] = i;
+            }
+            return atomicsArray;
+        } else {
+            return null;
+        }
     }
 
     private boolean isJITTaskForFGPA(SchedulableTask task) {

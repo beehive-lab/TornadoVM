@@ -73,7 +73,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
     OPENCL_SOFT_ERROR("clGetCommandQueueInfo",
             clGetCommandQueueInfo((cl_command_queue) queue_id, (cl_command_queue_info) param_name, len, (void *) value, &return_size),);
 
-
     (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
 
 }

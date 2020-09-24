@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -20,12 +18,8 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
-
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
 
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
@@ -35,33 +29,26 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 
-public class OCLVectorNodePlugin implements NodePlugin {
+public class OCLAtomicIntegerPlugin implements NodePlugin {
 
     @Override
     public boolean handleNewInstance(GraphBuilderContext b, ResolvedJavaType type) {
-        if (!ENABLE_VECTORS) {
+        if (type.getAnnotation(Vector.class) != null) {
             return false;
         }
-
-        if (type.getAnnotation(Vector.class) != null) {
-            return createVectorInstance(b, type);
-        }
-
-        return false;
-
+        return createAtomicIntegerInstance(b, type);
     }
 
-    private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {
-        OCLKind vectorKind = resolveOCLKind(type);
-        if (vectorKind != OCLKind.ILLEGAL) {
-            if (vectorKind.isVector()) {
-                b.push(JavaKind.Object, b.append(new VectorValueNode(vectorKind)));
+    private boolean createAtomicIntegerInstance(GraphBuilderContext b, ResolvedJavaType type) {
+        OCLKind kind = resolveOCLKind(type);
+        if (kind != OCLKind.ILLEGAL) {
+            if (kind == OCLKind.INTEGER_ATOMIC || kind == OCLKind.INTEGER_ATOMIC_JAVA) {
+                b.push(JavaKind.Object, b.append(new TornadoAtomicIntegerNode(kind)));
                 return true;
             }
         }
-
         return false;
     }
 
@@ -69,8 +56,6 @@ public class OCLVectorNodePlugin implements NodePlugin {
         if (type instanceof HotSpotResolvedJavaType) {
             return OCLKind.fromResolvedJavaType(type);
         }
-
         return OCLKind.ILLEGAL;
     }
-
 }

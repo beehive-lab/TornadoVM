@@ -57,4 +57,8 @@ public interface TornadoDeviceContext {
 
     boolean useRelativeAddresses();
 
+    int getDeviceIndex();
+
+    String getDeviceName();
+
 }

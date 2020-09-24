@@ -37,13 +37,13 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLKernel extends TornadoLogger {
 
-    private final long id;
+    private final long oclKernelID;
     private final OCLDeviceContext deviceContext;
     private final ByteBuffer buffer;
     private String kernelName;
 
     public OCLKernel(long id, OCLDeviceContext deviceContext) {
-        this.id = id;
+        this.oclKernelID = id;
         this.deviceContext = deviceContext;
         this.buffer = ByteBuffer.allocate(1024);
         this.buffer.order(OpenCL.BYTE_ORDER);
@@ -57,11 +57,22 @@ public class OCLKernel extends TornadoLogger {
 
     native static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws OCLException;
 
+    native static void clSetKernelArgRef(long kernelId, int index, long buffer) throws OCLException;
+
     native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws OCLException;
 
     public void setArg(int index, ByteBuffer buffer) {
         try {
-            clSetKernelArg(id, index, buffer.position(), buffer.array());
+            clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());
+        } catch (OCLException e) {
+            error(e.getMessage());
+        }
+    }
+
+    public void setArgRef(int index, long devicePtr) {
+        System.out.println("Calling the new function");
+        try {
+            clSetKernelArgRef(oclKernelID, index, devicePtr);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -69,7 +80,7 @@ public class OCLKernel extends TornadoLogger {
 
     public void setArgUnused(int index) {
         try {
-            clSetKernelArg(id, index, 8, null);
+            clSetKernelArg(oclKernelID, index, 8, null);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -85,7 +96,7 @@ public class OCLKernel extends TornadoLogger {
         long maxSize = deviceContext.getDevice().getDeviceLocalMemorySize();
         guarantee(size <= maxSize, "local allocation is too large for device");
         try {
-            clSetKernelArg(id, index, size, null);
+            clSetKernelArg(oclKernelID, index, size, null);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -93,7 +104,7 @@ public class OCLKernel extends TornadoLogger {
 
     public void cleanup() {
         try {
-            clReleaseKernel(id);
+            clReleaseKernel(oclKernelID);
         } catch (OCLException e) {
             e.printStackTrace();
         }
@@ -107,14 +118,14 @@ public class OCLKernel extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         try {
-            clGetKernelInfo(id, OCLKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
+            clGetKernelInfo(oclKernelID, OCLKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
             kernelName = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException | OCLException e) {
             e.printStackTrace();
         }
     }
 
-    public long getId() {
-        return id;
+    public long getOclKernelID() {
+        return oclKernelID;
     }
 }

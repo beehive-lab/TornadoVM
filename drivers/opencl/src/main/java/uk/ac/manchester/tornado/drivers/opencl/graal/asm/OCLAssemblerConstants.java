@@ -40,6 +40,7 @@ public class OCLAssemblerConstants {
     public static final String GLOBAL_REGION_NAME = "_global_region";
     public static final String LOCAL_REGION_NAME = "_local_region";
     public static final String PRIVATE_REGION_NAME = "_private_region";
+    public static final String ATOMICS_REGION_NAME = "_atomics";
     public static final String CONSTANT_REGION_NAME = "_constant_region";
 
     public static final String HEAP_REF_NAME = "_heap_base";

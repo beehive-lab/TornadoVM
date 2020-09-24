@@ -28,12 +28,10 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -162,6 +160,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoProfiler timeProfiler;
     private boolean updateData;
+    private boolean isFinished;
     private GridTask gridTask;
 
     private static String RESET = "\u001B[0m";
@@ -245,6 +244,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void useDefaultThreadScheduler(boolean use) {
         executionContext.setDefaultThreadScheduler(use);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return this.isFinished;
     }
 
     @Override
@@ -480,14 +484,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
         }
 
-        if (TornadoOptions.isSaveProfilerEnabled()) {
+        if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {
             String jsonFile = timeProfiler.createJson(new StringBuffer(), this.getId());
-            try (FileWriter fileWriter = new FileWriter("profiler-app.json", true)) {
-                PrintWriter printWriter = new PrintWriter(fileWriter);
-                printWriter.println(jsonFile);
-            } catch (IOException e) {
-                throw new TornadoRuntimeException("JSon profiler file cannot be appened");
-            }
+            profilerFileWriter(jsonFile);
         }
     }
 
@@ -731,6 +730,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void cleanUp() {
         updateData = false;
+        isFinished = true;
     }
 
     @Override
@@ -1640,6 +1640,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
+    }
+
+    @Override
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions, atomics));
     }
 
     @Override
