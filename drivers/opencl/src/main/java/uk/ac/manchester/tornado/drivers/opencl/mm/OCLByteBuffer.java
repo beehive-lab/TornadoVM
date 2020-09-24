@@ -106,9 +106,8 @@ public class OCLByteBuffer {
      *            list of events
      * @return event status
      */
-    public int enqueueWrite(long fromBuffer, final int[] array, final int[] events) {
-        // XXX: offset 0
-        return deviceContext.enqueueWriteBuffer(fromBuffer, 0, BYTES_PER_INTEGER * array.length, array, 0, events);
+    public int enqueueWrite(long fromBuffer, final int[] array, final int offset, final int[] events) {
+        return deviceContext.enqueueWriteBuffer(fromBuffer, offset, BYTES_PER_INTEGER * array.length, array, 0, events);
     }
 
     public void dump() {

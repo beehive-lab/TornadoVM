@@ -25,8 +25,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.*;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.*;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
@@ -54,14 +60,24 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
         registerCompilerInstrinsicsPlugins(plugins);
-        registerTornadoVMInstrinsicsPlugins(plugins);
+        registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
         // Register Atomics
@@ -176,7 +192,7 @@ public class OCLGraphBuilderPlugins {
         return atomicNode;
     }
 
-    private static void registerTornadoVMInstrinsicsPlugins(InvocationPlugins plugins) {
+    private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
 
         final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
 

@@ -179,7 +179,7 @@ public class TestAtomics extends TornadoTestBase {
                 set.add(j);
             } else {
                 repeated = true;
-                // break;
+                break;
             }
         }
         assertTrue(!repeated);
@@ -326,7 +326,7 @@ public class TestAtomics extends TornadoTestBase {
                 set.add(j);
             } else {
                 repeated = true;
-                // break;
+                break;
             }
         }
         assertTrue(!repeated);
@@ -367,7 +367,7 @@ public class TestAtomics extends TornadoTestBase {
                 set.add(j);
             } else {
                 repeated = true;
-                // break;
+                break;
             }
         }
         assertTrue(!repeated);

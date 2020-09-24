@@ -26,7 +26,9 @@
 package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -47,7 +49,14 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;

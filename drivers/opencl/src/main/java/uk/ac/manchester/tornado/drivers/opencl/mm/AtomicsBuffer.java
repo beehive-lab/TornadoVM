@@ -34,6 +34,7 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
     private int numAtomics;
     private boolean onDevice;
     private int[] atomicsList;
+    private final static int OFFSET = 0;
 
     AtomicsBuffer(long offset, int[] arr, OCLDeviceContext device) {
         super(device, offset, arr.length * 4);
@@ -62,13 +63,13 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
     @Override
     public int enqueueWrite() {
         onDevice = true;
-        return enqueueWrite(toAtomicAddress(), atomicsList, null);
+        return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null);
     }
 
     @Override
     public int enqueueWrite(int[] events) {
         onDevice = true;
-        return enqueueWrite(toAtomicAddress(), atomicsList, events);
+        return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, events);
     }
 
     @Override
