@@ -125,6 +125,16 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         return device;
     }
 
+    @Override
+    public String getDeviceName() {
+        return device.getDeviceName();
+    }
+
+    @Override
+    public int getDeviceIndex() {
+        return device.getDeviceIndex();
+    }
+
     public ByteOrder getByteOrder() {
         return device.getByteOrder();
     }

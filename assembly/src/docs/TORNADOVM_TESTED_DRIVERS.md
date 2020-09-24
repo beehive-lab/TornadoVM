@@ -54,7 +54,7 @@ The following drivers have been tested on Linux - CentOS 7.8
 * 19.23.13131: OK
 
 The following drivers have been tested on Linux - Ubuntu 20.04
-
+* 20.28.17293: OK
 * 20.22.16952: OK
 * 20.16.16582: OK
 * 20.13.16352: OK
@@ -74,8 +74,8 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 ##### Intel CPU
 
 [Link](https://software.intel.com/en-us/articles/opencl-drivers)
-
-* 18.1.0.0920 : OK
+* 2020.10.4.0.15 : OK
+* 18.1.0.0920 : OK 
 * 1.2.0.37  (Old version for CentOS) : OK
 
 ### NVIDIA

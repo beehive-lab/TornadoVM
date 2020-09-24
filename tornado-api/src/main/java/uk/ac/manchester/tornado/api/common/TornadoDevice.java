@@ -46,7 +46,6 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
@@ -200,7 +199,7 @@ public interface TornadoDevice {
 
     long[] getDeviceMaxWorkgroupDimensions();
 
-    boolean isDistibutedMemory();
+    boolean isDistributedMemory();
 
     String getDeviceOpenCLCVersion();
 

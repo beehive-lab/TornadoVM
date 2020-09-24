@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXMulAddPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -47,7 +48,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 public class PTXLowTier extends TornadoLowTier {
-    public PTXLowTier(OptionValues options, AddressLowering addressLowering) {
+    public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
@@ -78,7 +79,7 @@ public class PTXLowTier extends TornadoLowTier {
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {
-            appendPhase(new TornadoFeatureExtraction());
+            appendPhase(new TornadoFeatureExtraction(tornadoDeviceContext));
         }
 
         if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {

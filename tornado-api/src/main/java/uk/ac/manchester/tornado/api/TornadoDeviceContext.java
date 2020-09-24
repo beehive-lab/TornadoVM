@@ -60,4 +60,8 @@ public interface TornadoDeviceContext {
 
     boolean isCached(String methodName, SchedulableTask task);
 
+    int getDeviceIndex();
+
+    String getDeviceName();
+
 }

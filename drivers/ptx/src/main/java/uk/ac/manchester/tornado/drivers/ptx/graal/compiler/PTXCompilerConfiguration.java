@@ -64,8 +64,8 @@ public class PTXCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoLowTier createLowTier(OptionValues options, AddressLoweringPhase.AddressLowering addressLowering) {
-        return new PTXLowTier(options, addressLowering);
+    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
+        return new PTXLowTier(options, deviceContext, addressLowering);
     }
 
     @Override
