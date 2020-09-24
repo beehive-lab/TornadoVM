@@ -145,16 +145,15 @@ public class TornadoSketcher {
             graph.maybeCompress();
 
             // Compile all non-inlined call-targets into a single compilation-unit
+            graph.getInvokes() //
+                    .forEach(invoke -> { //
+                        if (openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
+                            throw new TornadoRuntimeException(
+                                    "[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
+                        }
+                        getTornadoExecutor().execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier));
+                    });
 
-            // @formatter:off
-            graph.getInvokes()
-                 .forEach(invoke -> {
-                     if (openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
-                         throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
-                     }
-                     getTornadoExecutor().execute(new SketchRequest(meta,invoke.callTarget().targetMethod(),providers,graphBuilderSuite,sketchTier));
-                 });
-            // @formatter:on
             return new Sketch(CachedGraph.fromReadonlyCopy(graph), meta);
 
         } catch (Throwable e) {

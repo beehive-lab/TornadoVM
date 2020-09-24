@@ -41,45 +41,20 @@
  */
 package uk.ac.manchester.tornado.api;
 
-public abstract class AbstractWorkerGrid implements WorkerGrid {
+public class TornadoVM_Intrinsics {
 
-    protected long[] globalWork;
-    protected long[] localWork;
-    protected long[] globalOffset;
-
-    public AbstractWorkerGrid(long x, long y, long z) {
-        globalWork = new long[] { x, y, z };
-        globalOffset = new long[] { 0, 0, 0 };
+    /**
+     * Compute (old + value) and store result at location pointed by p. The function
+     * returns old.
+     * 
+     * @param array
+     * @param index
+     * @param value
+     * @return old value
+     */
+    public synchronized static int atomic_add(int[] array, int index, int value) {
+        int old = array[index];
+        array[index] = array[index] + value;
+        return old;
     }
-
-    @Override
-    public long[] getGlobalWork() {
-        return globalWork;
-    }
-
-    @Override
-    public long[] getLocalWork() {
-        return localWork;
-    }
-
-    @Override
-    public long[] getGlobalOffset() {
-        return globalOffset;
-    }
-
-    @Override
-    public void setGlobalWork(long x, long y, long z) {
-        globalWork = new long[] { x, y, z };
-    }
-
-    @Override
-    public void setLocalWork(long x, long y, long z) {
-        localWork = new long[] { x, y, z };
-    }
-
-    @Override
-    public void setGlobalOffset(long x, long y, long z) {
-        globalOffset = new long[] { x, y, z };
-    }
-
 }

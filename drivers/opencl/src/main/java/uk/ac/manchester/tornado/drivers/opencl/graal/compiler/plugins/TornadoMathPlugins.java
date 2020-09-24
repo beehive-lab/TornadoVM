@@ -54,10 +54,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsic
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 
-
 public class TornadoMathPlugins {
 
-    public static final void registerTornadoMathPlugins(final InvocationPlugins plugins) {
+    public static void registerTornadoMathPlugins(final InvocationPlugins plugins) {
         Registration registration = new Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);

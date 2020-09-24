@@ -79,10 +79,10 @@ public class TaskUtils {
     }
 
     /**
-     * When obtaining the method to be compiled it returns a lambda expression
-     * that contains the invocation to the actual code. The actual code is an
-     * INVOKE that is inside the apply method of the lambda. This method
-     * searches for the nested method with the actual code to be compiled.
+     * When obtaining the method to be compiled it returns a lambda expression that
+     * contains the invocation to the actual code. The actual code is an INVOKE that
+     * is inside the apply method of the lambda. This method searches for the nested
+     * method with the actual code to be compiled.
      * 
      * @param task
      *            Input Tornado task that corresponds to the user code.
@@ -91,10 +91,9 @@ public class TaskUtils {
         final Class<?> type = task.getClass();
 
         /*
-         * task should implement one of the TaskX interfaces... ...so we look
-         * for the apply function. Note: apply will perform some type casting
-         * and then call the function we really want to use, so we need to
-         * resolve the nested function.
+         * task should implement one of the TaskX interfaces... ...so we look for the
+         * apply function. Note: apply will perform some type casting and then call the
+         * function we really want to use, so we need to resolve the nested function.
          */
         Method entryPoint = null;
         for (Method m : type.getDeclaredMethods()) {
@@ -105,8 +104,8 @@ public class TaskUtils {
 
         guarantee(entryPoint != null, "unable to find entry point");
         /*
-         * Fortunately we can do a bit of JVMCI magic to resolve the function to
-         * a Method.
+         * Fortunately we can do a bit of JVMCI magic to resolve the function to a
+         * Method.
          */
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
@@ -252,6 +251,15 @@ public class TaskUtils {
         }
 
         return new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain);
+    }
+
+    public static PrebuiltTask createTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dims, int[] atomics) {
+        final DomainTree domain = new DomainTree(dims.length);
+        for (int i = 0; i < dims.length; i++) {
+            domain.set(i, new IntDomain(0, 1, dims[i]));
+        }
+
+        return new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain, atomics);
     }
 
     private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {

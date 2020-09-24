@@ -60,8 +60,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
 
     OPENCL_SOFT_ERROR("clSetKernelArg", clSetKernelArg((cl_kernel) kernel_id, (cl_uint) index, (size_t) size, (void*) value),);
 
-    if (value != NULL)
+    if (value != NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    }
 }
 
 /*
