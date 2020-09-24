@@ -57,6 +57,8 @@ public interface ProfileInterface {
 
     long getReadTime();
 
+    long getDispatchTime();
+
     long getDeviceWriteTime();
 
     long getDeviceKernelTime();

@@ -356,6 +356,11 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
+    public long getDispatchTime() {
+        return taskScheduleImpl.getDispatchTime();
+    }
+
+    @Override
     public long getDeviceWriteTime() {
         return taskScheduleImpl.getDeviceWriteTime();
     }
