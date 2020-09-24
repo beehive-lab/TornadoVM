@@ -46,7 +46,7 @@ public interface TornadoCompilerConfiguration {
 
     public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider);
 
-    public TornadoLowTier createLowTier(OptionValues options, AddressLowering addressLowering);
+    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLowering addressLowering);
 
     public TornadoMidTier createMidTier(OptionValues options);
 

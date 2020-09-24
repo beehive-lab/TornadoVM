@@ -61,8 +61,8 @@ public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoLowTier createLowTier(OptionValues options, AddressLowering addressLowering) {
-        return new OCLLowTier(options, addressLowering);
+    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLowering addressLowering) {
+        return new OCLLowTier(options, deviceContext, addressLowering);
     }
 
     @Override
