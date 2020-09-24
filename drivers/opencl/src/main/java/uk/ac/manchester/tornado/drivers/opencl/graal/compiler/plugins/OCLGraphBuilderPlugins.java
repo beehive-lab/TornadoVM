@@ -71,7 +71,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
+import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 
 public class OCLGraphBuilderPlugins {
 
@@ -82,6 +84,8 @@ public class OCLGraphBuilderPlugins {
 
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
+        // Register TornadoVMContext Plugins
+        registerTornadoVMContextPlugins(plugins);
 
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
@@ -192,8 +196,23 @@ public class OCLGraphBuilderPlugins {
         return atomicNode;
     }
 
-    private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
+    private static void registerLocalBarrierPlugins(Registration r, JavaKind kind) {
+        r.register1("localBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL);
+                b.addPush(kind, b.append(localBarrierNode));
+                return true;
+            }
+        });
+    }
 
+    private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, TornadoVMContext.class);
+        registerLocalBarrierPlugins(r, JavaKind.Void);
+    }
+
+    private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
         final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
 
             @Override
