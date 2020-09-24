@@ -27,18 +27,34 @@ import java.util.HashMap;
 
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<ProfilerType, Long> profilerTime;
     private HashMap<String, HashMap<ProfilerType, Long>> taskTimers;
+    private HashMap<String, HashMap<ProfilerType, Long>> taskThroughputMetrics;
+    private HashMap<String, HashMap<ProfilerType, String>> taskDeviceIdentifiers;
 
     private StringBuffer indent;
 
     public TimeProfiler() {
         profilerTime = new HashMap<>();
         taskTimers = new HashMap<>();
+        taskDeviceIdentifiers = new HashMap<>();
+        taskThroughputMetrics = new HashMap<>();
         indent = new StringBuffer("");
+    }
+
+    @Override
+    public void addValueToMetric(ProfilerType type, String taskName, long value) {
+        if (!taskThroughputMetrics.containsKey(taskName)) {
+            taskThroughputMetrics.put(taskName, new HashMap<>());
+        }
+        HashMap<ProfilerType, Long> profilerType = taskThroughputMetrics.get(taskName);
+        profilerType.put(type, profilerType.get(type) != null ? profilerType.get(type) + value : value);
+        taskThroughputMetrics.put(taskName, profilerType);
     }
 
     @Override
@@ -56,6 +72,16 @@ public class TimeProfiler implements TornadoProfiler {
         HashMap<ProfilerType, Long> profilerType = taskTimers.get(taskName);
         profilerType.put(type, start);
         taskTimers.put(taskName, profilerType);
+    }
+
+    @Override
+    public void registerDeviceName(ProfilerType type, String taskName, String deviceInfo) {
+        if (!taskDeviceIdentifiers.containsKey(taskName)) {
+            taskDeviceIdentifiers.put(taskName, new HashMap<>());
+        }
+        HashMap<ProfilerType, String> profilerType = taskDeviceIdentifiers.get(taskName);
+        profilerType.put(type, deviceInfo);
+        taskDeviceIdentifiers.put(taskName, profilerType);
     }
 
     @Override
@@ -144,6 +170,15 @@ public class TimeProfiler implements TornadoProfiler {
             json.append(indent.toString() + "\"" + p + "\"" + ": {\n");
             increaseIndent();
             counter++;
+            if (TornadoOptions.LOG_IP) {
+                json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
+            }
+            json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
+            if (!taskThroughputMetrics.isEmpty()) {
+                for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {
+                    json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
+                }
+            }
             for (ProfilerType p2 : taskTimers.get(p).keySet()) {
                 json.append(indent.toString() + "\"" + p2 + "\"" + ": " + "\"" + taskTimers.get(p).get(p2) + "\",\n");
             }
@@ -172,6 +207,7 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public void clean() {
+        taskThroughputMetrics.clear();
         profilerTime.clear();
         taskTimers.clear();
         indent = new StringBuffer("");

@@ -124,10 +124,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return str.split(";");
     }
 
-    boolean printOCLKernelTime() {
-        return PRINT_OCL_KERNEL_TIME;
-    }
-
     public OCLDevice getDevice() {
         return device;
     }
@@ -135,6 +131,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public String toString() {
         return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
+    }
+
+    @Override
+    public String getDeviceName() {
+        return String.format(device.getDeviceName());
     }
 
     public OCLContext getPlatformContext() {
@@ -458,6 +459,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         }
 
         return useRelativeAddresses;
+    }
+
+    @Override
+    public int getDeviceIndex() {
+        return device.getIndex();
     }
 
     public long getBumpBuffer() {
