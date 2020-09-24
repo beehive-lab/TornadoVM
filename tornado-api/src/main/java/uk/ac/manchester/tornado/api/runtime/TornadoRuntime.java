@@ -87,7 +87,7 @@ public class TornadoRuntime {
     }
 
     public static void loadSettings(String property) {
-        tornadoImpl.loadTornadoSettngs(property);
+        tornadoImpl.loadTornadoSettings(property);
     }
 
     public static TornadoDevice createDevice(String backendName, int platformIndex, int deviceIndex) {

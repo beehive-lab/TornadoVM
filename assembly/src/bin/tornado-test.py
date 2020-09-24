@@ -80,6 +80,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
 	"uk.ac.manchester.tornado.unittests.codegen.CodeGen",
 	"uk.ac.manchester.tornado.unittests.grid.TestGrid",
+	"uk.ac.manchester.tornado.unittests.atomics.TestAtomics",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 

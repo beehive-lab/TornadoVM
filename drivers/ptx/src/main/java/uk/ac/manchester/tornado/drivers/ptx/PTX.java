@@ -123,7 +123,7 @@ public class PTX {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {

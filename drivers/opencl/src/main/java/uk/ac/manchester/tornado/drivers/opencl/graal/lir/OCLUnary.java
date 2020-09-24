@@ -34,12 +34,15 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.Variable;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode.OCLMemFenceFlags;
@@ -102,6 +105,72 @@ public class OCLUnary {
             return String.format("%s(%s)", opcode.toString(), value);
         }
 
+    }
+
+    public static class IntrinsicAtomicFetch extends UnaryConsumer {
+
+        public IntrinsicAtomicFetch(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+            super(opcode, lirKind, value);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(toString());
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s(&%s, 1, memory_order_relaxed)", opcode.toString(), value.toString());
+        }
+    }
+
+    public static class IntrinsicAtomicInc extends UnaryConsumer {
+
+        private int index;
+        private static final String arrayName = OCLArchitecture.atomicSpace.getName();
+
+        public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
+            super(opcode, lirKind, value);
+            this.index = index;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(toString());
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+        }
+    }
+
+    public static class IntrinsicAtomicDeclaration extends UnaryConsumer {
+
+        AllocatableValue lhs;
+
+        /*
+         * The opcode is the initializer intrinsic to use
+         */
+        public IntrinsicAtomicDeclaration(OCLUnaryOp opcode, AllocatableValue lhs, Value initialValue) {
+            super(opcode, LIRKind.Illegal, initialValue);
+            this.lhs = lhs;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            StringBuffer lineGlobalScope = new StringBuffer();
+            lineGlobalScope.append("__global atomic_int ");
+            lineGlobalScope.append(asm.getStringValue(crb, lhs));
+            lineGlobalScope.append(OCLAssemblerConstants.ASSIGN);
+            lineGlobalScope.append(opcode.toString());
+            lineGlobalScope.append(OCLAssemblerConstants.OPEN_PARENTHESIS);
+            lineGlobalScope.append(asm.getStringValue(crb, value));
+            lineGlobalScope.append(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+            lineGlobalScope.append(OCLAssemblerConstants.STMT_DELIMITER);
+            lineGlobalScope.append("\n");
+            asm.emitLineGlobal(lineGlobalScope.toString());
+        }
     }
 
     public static class LoadOCLStack extends UnaryConsumer {

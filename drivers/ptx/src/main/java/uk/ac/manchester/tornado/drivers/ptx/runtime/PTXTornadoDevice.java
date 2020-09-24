@@ -60,7 +60,9 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
@@ -76,6 +78,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
@@ -112,6 +115,18 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     public CallStack createStack(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
+
+    @Override
+    public DeviceBuffer createBuffer(int[] arr) {
+        throw new TornadoRuntimeException("[PTX] Atomics not implemented !");
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task) {
+        Tornado.debug("[PTX] Atomics not implemented ! Returning null");
+        return null;
+    }
+
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {

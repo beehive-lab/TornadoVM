@@ -207,7 +207,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         final OCLByteBuffer parameters = deviceContext.getMemoryManager().getSubBuffer(0, 16);
         parameters.putLong(0);
 
-        int task = lookupCode.executeTask(parameters, meta);
+        int task = lookupCode.executeTask(parameters, null, meta);
         lookupCode.readValue(parameters, meta, task);
         lookupCode.resolveEvent(parameters, meta, task);
 
@@ -405,7 +405,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private void emitEpilogue(OCLAssembler asm) {
         asm.endScope(" kernel");
-
     }
 
     private void addVariableDef(Map<OCLKind, Set<Variable>> kindToVariable, Variable value) {

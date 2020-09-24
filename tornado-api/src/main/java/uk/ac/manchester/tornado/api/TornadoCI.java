@@ -49,6 +49,6 @@ public interface TornadoCI {
 
     String getTornadoProperty(String key, String defaultValue);
 
-    void loadTornadoSettngs(String filename);
+    void loadTornadoSettings(String filename);
 
 }

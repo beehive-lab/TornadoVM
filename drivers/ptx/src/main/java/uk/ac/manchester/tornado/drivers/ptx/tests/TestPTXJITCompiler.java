@@ -148,7 +148,7 @@ public class TestPTXJITCompiler {
         stack.push(c, objectStateC);
 
         // Run the code
-        ptxCode.launchWithoutDependencies(stack, taskMeta, 0);
+        ptxCode.launchWithoutDependencies(stack, null, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);

@@ -40,13 +40,16 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryInt
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -54,7 +57,12 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -62,17 +70,24 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
         registerCompilerInstrinsicsPlugins(plugins);
-        registerTornadoInstrinsicsPlugins(plugins);
+        registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
+
+        // Register Atomics
+        registerTornadoVMAtomicsPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
+
+        // Register TornadoAtomicInteger
+        registerTornadoAtomicInteger(ps, plugins);
     }
 
     private static void registerCompilerInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -87,7 +102,97 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
+    private static void registerTornadoVMAtomicsPlugins(Registration r, Class<?> type, JavaKind kind) {
+        r.register3("atomic_add", int[].class, type, type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
+                AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, index, inc);
+                b.addPush(kind, b.append(atomicIncNode));
+                return true;
+            }
+        });
+    }
+
+    private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, TornadoVM_Intrinsics.class);
+        registerTornadoVMAtomicsPlugins(r, Integer.TYPE, JavaKind.Int);
+    }
+
+    private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
+        return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger")
+                || method.getDeclaringClass().toJavaName().equals("java.util.concurrent.atomic.AtomicInteger");
+    }
+
+    private static void registerAtomicCall(Registration r, JavaKind returnedJavaKind) {
+        r.register1("incrementAndGet", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new IncAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+
+        r.register1("decrementAndGet", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+    }
+
+    private static void registerTornadoAtomicInteger(final Plugins ps, InvocationPlugins plugins) {
+
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                if (isMethodFromAtomicClass(method) && method.getName().equals("<init>")) {
+                    final TornadoAtomicIntegerNode atomic = resolveReceiverAtomic(args[0]);
+                    if (atomic != null && args.length > 1) {
+                        // ========================================================
+                        // DOCUMENTATION:
+                        // args[0] = current node (new node)
+                        // args[1] = arguments to the invoke node being substituted
+                        // ========================================================
+                        ValueNode initialValue = args[1];
+                        if (initialValue instanceof ConstantNode) {
+                            int value = Integer.parseInt(((ConstantNode) initialValue).getValue().toValueString());
+                            if (value == 0) {
+                                atomic.setInitialValue(initialValue);
+                            } else {
+                                atomic.setInitialValueAtUsages(initialValue);
+                            }
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+
+        Class<?> declaringClass = OCLKind.INTEGER_ATOMIC.getJavaClass();
+        Registration r1 = new Registration(plugins, declaringClass);
+        JavaKind returnedJavaKind = OCLKind.INT.asJavaKind();
+
+        registerAtomicCall(r1, returnedJavaKind);
+
+        declaringClass = java.util.concurrent.atomic.AtomicInteger.class;
+        Registration r2 = new Registration(plugins, declaringClass);
+        registerAtomicCall(r2, returnedJavaKind);
+    }
+
+    private static TornadoAtomicIntegerNode resolveReceiverAtomic(ValueNode thisObject) {
+        TornadoAtomicIntegerNode atomicNode = null;
+        if (thisObject instanceof PiNode) {
+            thisObject = ((PiNode) thisObject).getOriginalNode();
+        }
+        if (thisObject instanceof TornadoAtomicIntegerNode) {
+            atomicNode = (TornadoAtomicIntegerNode) thisObject;
+        }
+        return atomicNode;
+    }
+
+    private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
 
         final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
 
@@ -342,6 +447,7 @@ public class OCLGraphBuilderPlugins {
 
     public static void registerNewInstancePlugins(Plugins plugins) {
         plugins.appendNodePlugin(new OCLVectorNodePlugin());
+        plugins.appendNodePlugin(new OCLAtomicIntegerPlugin());
     }
 
     public static void registerParameterPlugins(Plugins plugins) {

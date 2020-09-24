@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import org.graalvm.compiler.nodes.StructuredGraph;
+
 import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -41,6 +43,7 @@ import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
@@ -55,12 +58,14 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private boolean deviceManuallySet;
     private long numThreads;
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
-            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
+            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w", "-cl-std=CL2.0"));
     private TornadoProfiler profiler;
     private GridTask gridTask;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
+    private DeviceBuffer deviceBuffer;
+    private StructuredGraph graph;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
@@ -311,10 +316,10 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public String composeBuiltOptions(String rawFlags) {
         rawFlags = rawFlags.replace(",", " ");
-
         for (String str : rawFlags.split(" ")) {
             if (!openCLBuiltOptions.contains(str)) {
                 rawFlags = " ";
+                break;
             }
         }
         return rawFlags;
@@ -425,7 +430,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
         dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
 
-        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
+        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w -cl-std=CL2.0" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
 
         openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
@@ -466,5 +471,17 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public WorkerGrid getWorkerGrid(String taskName) {
         return gridTask.get(taskName);
+    }
+
+    @Override
+    public void setCompiledGraph(Object graph) {
+        if (graph instanceof StructuredGraph) {
+            this.graph = (StructuredGraph) graph;
+        }
+    }
+
+    @Override
+    public Object getCompiledGraph() {
+        return graph;
     }
 }

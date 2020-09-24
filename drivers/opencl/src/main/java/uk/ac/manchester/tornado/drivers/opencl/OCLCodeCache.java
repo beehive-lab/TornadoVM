@@ -507,7 +507,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
+            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             if (meta.shouldPrintCompileTimes()) {
                 debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
@@ -566,7 +566,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
+            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             cache.put(entryPoint, code);
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
                 cache.put("internal-" + entryPoint, code);

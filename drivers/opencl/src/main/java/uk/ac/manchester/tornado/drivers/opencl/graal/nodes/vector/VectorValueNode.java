@@ -64,9 +64,11 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
 
     public static final NodeClass<VectorValueNode> TYPE = NodeClass.create(VectorValueNode.class);
 
-    @OptionalInput(InputType.Association) private ValueNode origin;
+    @OptionalInput(InputType.Association)
+    private ValueNode origin;
 
-    @Input NodeInputList<ValueNode> values;
+    @Input
+    NodeInputList<ValueNode> values;
 
     private final OCLKind kind;
 
@@ -74,26 +76,6 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         super(TYPE, OCLStampFactory.getStampFor(kind));
         this.kind = kind;
         this.values = new NodeInputList<>(this, kind.getVectorLength());
-    }
-
-    public VectorValueNode(OCLKind kind, ValueNode origin) {
-        this(kind);
-        this.origin = origin;
-    }
-
-    public VectorValueNode(OCLKind kind, ValueNode origin, ValueNode value) {
-        this(kind, origin);
-        values.add(value);
-    }
-
-    public VectorValueNode(OCLKind kind, ValueNode origin, ValueNode[] inputs) {
-        this(kind, origin);
-
-        assert (inputs.length == kind.getVectorLength());
-
-        for (int i = 0; i < kind.getVectorLength(); i++) {
-            values.add(inputs[i]);
-        }
     }
 
     public void initialiseToDefaultValues(StructuredGraph graph) {
@@ -145,8 +127,12 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
             final AllocatableValue result = tool.newVariable(LIRKind.value(getOCLKind()));
 
             /*
-             * two cases: 1. when the state of this vector has elements assigned individually
-             * 2. when this vector is assigned by a vector operation
+             * Two cases:
+             *
+             * 1. when this vector state has elements assigned individually.
+             *
+             * 2.when this vector is assigned by a vector operation
+             *
              */
             final int numValues = values.count();
             final ValueNode firstValue = values.first();

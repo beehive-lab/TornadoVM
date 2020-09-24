@@ -39,47 +39,25 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.atomics;
 
-public abstract class AbstractWorkerGrid implements WorkerGrid {
+public class TornadoAtomicInteger {
 
-    protected long[] globalWork;
-    protected long[] localWork;
-    protected long[] globalOffset;
+    public static final Class<TornadoAtomicInteger> TYPE = TornadoAtomicInteger.class;
 
-    public AbstractWorkerGrid(long x, long y, long z) {
-        globalWork = new long[] { x, y, z };
-        globalOffset = new long[] { 0, 0, 0 };
+    private int value;
+
+    public TornadoAtomicInteger(int initialValue) {
+        this.value = initialValue;
     }
 
-    @Override
-    public long[] getGlobalWork() {
-        return globalWork;
+    public synchronized int incrementAndGet() {
+        value++;
+        return value;
     }
 
-    @Override
-    public long[] getLocalWork() {
-        return localWork;
+    public synchronized int decrementAndGet() {
+        value--;
+        return value;
     }
-
-    @Override
-    public long[] getGlobalOffset() {
-        return globalOffset;
-    }
-
-    @Override
-    public void setGlobalWork(long x, long y, long z) {
-        globalWork = new long[] { x, y, z };
-    }
-
-    @Override
-    public void setLocalWork(long x, long y, long z) {
-        localWork = new long[] { x, y, z };
-    }
-
-    @Override
-    public void setGlobalOffset(long x, long y, long z) {
-        globalOffset = new long[] { x, y, z };
-    }
-
 }

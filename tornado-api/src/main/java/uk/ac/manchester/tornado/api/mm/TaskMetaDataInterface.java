@@ -66,6 +66,10 @@ public interface TaskMetaDataInterface {
 
     long getNumThreads();
 
+    void setCompiledGraph(Object graph);
+
+    Object getCompiledGraph();
+
     int getDriverIndex();
 
     int getDeviceIndex();
