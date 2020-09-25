@@ -101,8 +101,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * @param device
      */
     public void setDevice(TornadoDevice device) {
-        this.driverIndex = DEFAULT_DRIVER_INDEX;
-        this.deviceIndex = getDeviceIndex(DEFAULT_DRIVER_INDEX, device);
+        this.driverIndex = device.getDriverIndex();
+        this.deviceIndex = getDeviceIndex(driverIndex, device);
         if (device instanceof TornadoAcceleratorDevice) {
             this.device = (TornadoAcceleratorDevice) device;
         }
@@ -116,15 +116,17 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * @param device
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
-        this.driverIndex = deviceIndex;
+        this.driverIndex = driverIndex;
         this.deviceIndex = getDeviceIndex(driverIndex, device);
         this.device = device;
     }
 
+    @Override
     public int getDriverIndex() {
         return driverIndex;
     }
 
+    @Override
     public int getDeviceIndex() {
         return deviceIndex;
     }
@@ -386,7 +388,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    AbstractMetaData(String id) {
+    AbstractMetaData(String id, int defaultDriver, int defaultIndex) {
         this.id = id;
         shouldRecompile = true;
 
@@ -396,8 +398,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             driverIndex = a[0];
             deviceIndex = a[1];
         } else {
-            driverIndex = DEFAULT_DRIVER_INDEX;
-            deviceIndex = DEFAULT_DEVICE_INDEX;
+            driverIndex = defaultDriver;
+            deviceIndex = defaultIndex;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));

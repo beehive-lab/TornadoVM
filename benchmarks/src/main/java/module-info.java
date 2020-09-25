@@ -8,7 +8,7 @@ module tornado.benchmarks {
     requires transitive lucene.core;
     requires transitive tornado.api;
     requires transitive tornado.matrices;
-    
+
     exports uk.ac.manchester.tornado.benchmarks;
     exports uk.ac.manchester.tornado.benchmarks.addImage;
     exports uk.ac.manchester.tornado.benchmarks.addImage.generated;

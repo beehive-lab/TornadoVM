@@ -105,6 +105,7 @@ public class TestOpenCLJITCompiler {
 
         // Create a new task for Tornado
         TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile, false);
+        taskMeta.setDevice(OpenCL.defaultDevice());
 
         // Compile the code for OpenCL
         OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend);

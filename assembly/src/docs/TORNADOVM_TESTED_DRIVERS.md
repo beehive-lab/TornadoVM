@@ -5,7 +5,7 @@
 * 1.2 (Mar 15 2020)
   * AMD Radeon Pro 560 Compute Engine
   * Intel(R) HD Graphics 630
-  * Intel(R) Core(TM) i7-7820HQ CPU 
+  * Intel(R) Core(TM) i7-7820HQ CPU
 
 * 1.2 (Jan 23 2020)
    * Intel(R) Core(TM) i5-5257U CPU
@@ -13,7 +13,7 @@
 
 ## List of supported drivers for Linux
 
-### Intel 
+### Intel
 
 ##### Drivers from Intel Compute HD Graphics (Intel Compute Runtime) - NEO
 
@@ -54,7 +54,7 @@ The following drivers have been tested on Linux - CentOS 7.8
 * 19.23.13131: OK
 
 The following drivers have been tested on Linux - Ubuntu 20.04
-* 20.28.17293: OK   
+* 20.28.17293: OK
 * 20.22.16952: OK
 * 20.16.16582: OK
 * 20.13.16352: OK
@@ -78,12 +78,13 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 * 18.1.0.0920 : OK 
 * 1.2.0.37  (Old version for CentOS) : OK
 
-### NVIDIA 
+### NVIDIA
 
 ##### NVIDIA GPUs
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+#### OpenCL drivers
 * 450.66 : OK
 * 450.57 : OK
 * 440.100: OK
@@ -91,8 +92,14 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 * 440.64 : OK
 * 440.59 : OK
 * 440.40 : OK
-* 440.36 : OK 
-* 435.21 : OK 
+* 440.36 : OK
+* 435.21 : OK
+
+#### PTX drivers
+* 450.36 : OK
+* 440.100 : OK
+* 418.56: OK
+
 
 ### AMD
 
@@ -106,7 +113,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 * 1.0, xocc v2018.2 OK
 
-## Known Driver Issues 
+## Known Driver Issues
 
 * Intel CPU OpenCL driver `18.1.0.0920` is not working with Ubuntu >= 19.04
 

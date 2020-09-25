@@ -6,16 +6,22 @@ The following table includes the platforms that TornadoVM can be executed.
 
 | OS                         | Hardware                                                              |
 | -------------------------- | --------------------------------------------------------------------- |
-| CentOS >= 7.3              | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
-| Fedora >= 21               | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
-| Ubuntu >= 16.04            | Any OpenCL compatible device (GPUs and CPUs >= 1.2, FPGAs >= 1.0)     |
-| Mac OS X Mojave 10.14.6    | Any OpenCL compatible device (GPUs and CPUs >= 1.2)                   |
-| Mac OS X Catalina 10.15.3  | Any OpenCL compatible device (GPUs and CPUs >= 1.2)                   |
+| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
+| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
 
 
 ## 1. Installation
 
-TornadoVM can be currently executed with the following two configurations:
+TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command:
+
+```bash
+$ make BACKENDS={opencl,ptx}
+```
+
+As well as being built with two compiler backends, TornadoVM can be executed with the following two configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
@@ -39,17 +45,34 @@ Tornado device=<driverNumber>:<deviceNumber>
 ```
 Example output:
 ```bash
-Number of Tornado drivers: 1
-Total number of devices  : 4
+Number of Tornado drivers: 2
+Total number of PTX devices  : 1
 Tornado device=0:0
-	NVIDIA CUDA -- GeForce GTX 1050
-		Global Memory Size: 3.9 GB
-		Local Memory Size: 48.0 KB
-		Workgroup Dimensions: 3
-		Max WorkGroup Configuration: [1024, 1024, 64]
-		Device OpenCL C version: OpenCL C 1.2
+  PTX -- GeForce GTX 1650
+      Global Memory Size: 3.8 GB
+      Local Memory Size: 48.0 KB
+      Workgroup Dimensions: 3
+      Max WorkGroup Configuration: [1024, 1024, 64]
+      Device OpenCL C version: N/A
 
-Tornado device=0:1
+Total number of OpenCL devices  : 4
+Tornado device=1:0
+  NVIDIA CUDA -- GeForce GTX 1650
+      Global Memory Size: 3.8 GB
+      Local Memory Size: 48.0 KB
+      Workgroup Dimensions: 3
+      Max WorkGroup Configuration: [1024, 1024, 64]
+      Device OpenCL C version: OpenCL C 1.2
+
+Tornado device=1:1
+  Intel(R) OpenCL HD Graphics -- Intel(R) Gen9 HD Graphics NEO
+      Global Memory Size: 24.8 GB
+      Local Memory Size: 64.0 KB
+      Workgroup Dimensions: 3
+      Max WorkGroup Configuration: [256, 256, 256]
+      Device OpenCL C version: OpenCL C 2.0
+
+Tornado device=1:2
 	Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 		Global Memory Size: 31.0 GB
 		Local Memory Size: 32.0 KB
@@ -57,7 +80,7 @@ Tornado device=0:1
 		Max WorkGroup Configuration: [8192, 8192, 8192]
 		Device OpenCL C version: OpenCL C 1.2
 
-Tornado device=0:2
+Tornado device=1:3
 	AMD Accelerated Parallel Processing -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 		Global Memory Size: 31.0 GB
 		Local Memory Size: 32.0 KB
@@ -65,17 +88,9 @@ Tornado device=0:2
 		Max WorkGroup Configuration: [1024, 1024, 1024]
 		Device OpenCL C version: OpenCL C 1.2
 
-Tornado device=0:3
-	Intel(R) OpenCL HD Graphics -- Intel(R) Gen9 HD Graphics NEO
-		Global Memory Size: 24.8 GB
-		Local Memory Size: 64.0 KB
-		Workgroup Dimensions: 3
-		Max WorkGroup Configuration: [256, 256, 256]
-		Device OpenCL C version: OpenCL C 2.0
-
 ```
 
-**The output might vary depending on your OpenCL installation. To run TornadoVM, you should see at least one device.**
+**The output might vary depending on which backends you have included in the build process. To run TornadoVM, you should see at least one device.**
 
 To run on a specific device use the following option:
 
@@ -85,10 +100,10 @@ To run on a specific device use the following option:
 
 Where `s` is the *schedule name* and `t` is the task name.
 
-For example running on device [1] (Intel HD Graphics in our example) will look like this:
+For example running on `driver:device` [1][1] (Intel HD Graphics in our example) will look like this:
 
 ```bash
-$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+$ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```
 
 The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
@@ -126,7 +141,7 @@ To test just a method of a unittest class:
 $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
 ```
 
-To see the OpenCL generated kernel for a unittest:
+To see the OpenCL/PTX generated kernel for a unittest:
 
 ```bash
 $ tornado-test.py --verbose -pk uk.ac.manchester.tornado.unittests.TestHello#testHello
@@ -191,7 +206,7 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
          <artifactId>tornado-api</artifactId>
          <version>0.7</version>
       </dependency>
-      
+
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>

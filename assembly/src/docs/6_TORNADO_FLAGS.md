@@ -19,19 +19,19 @@ All flags needs Java prefix of ```-D```. An example of tornado using a flag is t
 Enables full debugging log to be output in the. command line.  
 
 * `` --printKernel ``:  
-Print the generated OpenCL kernel in the command line.
+Print the generated OpenCL/PTX kernel in the command line.
 
 * ```--debug ```:  
 Print minor debug in fo such as number of parallel threads used.
 
 * ```--devices```:  
-Output a list of all OpenCL-ready devices on the current system.
+Output a list of all available devices on the current system.
 
 * ```-Dtornado.ns.time=true ```:  
- Converts the time to units to nanoseconds instead of milliseconds. 
-  
-* ```-Dtornado.debug.compiletimes=true ```:  
-Print method compiliation times.
+ Converts the time to units to nanoseconds instead of milliseconds.
+
+* ```-Dtornado.{ptx,opencl}.priority=X ```:
+Allows to define a driver priority. The drivers are sorted in descending order based on their priority. By default, the `PTX driver` has priority `1` and the `OpenCL driver` has priority `0`.
 
 * ```-Ds0.t0.global.dims=XXX,XXX```:  
 Allows to define global worksizes (problem sizes).
@@ -40,34 +40,31 @@ Allows to define global worksizes (problem sizes).
 Allows to define custom local workgroum configuration and overwrite the default values provided by the TornadoScheduler.  
 
 * ```-Dtornado.profiling.enable=true ```:  
-Enable profilling for OpenCL events such as kernel times and data tranfers.
+Enable profilling for OpenCL/CUDA events such as kernel times and data tranfers.
 
 * ```-Dtornado.opencl.userelative=true ```:  
-Enable usage of relative addresses which is a prerequisite for using DMA tranfers on Alters/Intel FPGAs. Nonetheless, this flag can be used for any type of devices. 
- 
-* ```-Dtornado.opencl.timer.kernel=true ```:  
-Print kernel times for OpenCL compute kernels.
+Enable usage of relative addresses which is a prerequisite for using DMA tranfers on Altera/Intel FPGAs. Nonetheless, this flag can be used for any OpenCL device.
 
 * ```-Dtornado.precompiled.binary=PATH```:
- Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel. 
- 
+ Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel.
+
 * ```-Dtornado.fpga.conf.file=FILE```:
- Provides the absolute path of the FPGA configuation file. 
- 
+ Provides the absolute path of the FPGA configuation file.
+
 * ```-Dtornado.opencl.blocking=true```:  
-Allows to force API blocking calls. 
+Allows to force OpenCL API blocking calls.
 
 * `-Dtornado.profiler=True`:  
 It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default.
 
 * `-Dtornado.opencl.compiler.options=LIST_OF_OPTIONS`:  
-It allows to pass the compile options specified by the OpenCL ``CLBuildProgram`` [specification](https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html) to TornadoVM at runtime. By default it doesn't enable any. 
+It allows to pass the compile options specified by the OpenCL ``CLBuildProgram`` [specification](https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html) to TornadoVM at runtime. By default it doesn't enable any.
 
 ##### Optimizations
 
 * `-Dtornado.enable.fma=True`:  
 It enables Fused-Multiply-Add optimizations. This option is enabled by default. However, for some platforms, such as the Xilinx FPGA using SDAccel 2018.2 and OpenCL 1.0, this option must be disabled as it causes runtime errors. See issue on [Github](https://github.com/beehive-lab/TornadoVM/issues/24).
 
-* `-Dtornado.experimental.partial.unroll=True`:  
+* `-Dtornado.experimental.partial.unroll=True`:
 It enables the compiler to force partial unroll on counted loops with a factor of 2. The unroll factor can be configured with the `tornado.partial.unroll.factor=FACTOR` that the FACTOR value can take integer values up to 32.
 

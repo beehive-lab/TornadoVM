@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
+import uk.ac.manchester.tornado.unittests.common.PTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -153,6 +154,8 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic04() {
+        checkForPTX();
+
         final int size = 32;
         int[] a = new int[size];
         Arrays.fill(a, 1);
@@ -185,6 +188,12 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
     }
 
+    private void checkForPTX() {
+        if ("PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex()).getName())) {
+            throw new PTXNotSupported("Atomic tests are not supported for the PTX backend");
+        }
+    }
+
     /**
      * How to test?
      * 
@@ -194,6 +203,8 @@ public class TestAtomics extends TornadoTestBase {
      */
     @Test
     public void testAtomic05_precompiled() {
+        checkForPTX();
+
         final int size = 32;
         int[] a = new int[size];
         int[] b = new int[1];
@@ -245,6 +256,8 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic06() {
+        checkForPTX();
+
         final int size = 2048;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -300,6 +313,8 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic07() {
+        checkForPTX();
+
         final int size = 32;
         int[] a = new int[size];
         Arrays.fill(a, 1);
@@ -341,6 +356,8 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic08() {
+        checkForPTX();
+
         final int size = 32;
         int[] a = new int[size];
         Arrays.fill(a, 1);

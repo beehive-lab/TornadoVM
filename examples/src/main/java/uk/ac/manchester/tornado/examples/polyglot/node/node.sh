@@ -135,7 +135,7 @@ case $key in
     shift # past argument
     ;;
     --printKernel)
-    TORNADO_FLAGS="${TORNADO_FLAGS} --vm.Dtornado.opencl.source.print=True "
+    TORNADO_FLAGS="${TORNADO_FLAGS} --vm.Dtornado.print.kernel=True "
     shift
 	;;
     --printBytecodes)
@@ -166,7 +166,8 @@ PROVIDERS=" \
 --vm.Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
 --vm.Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
 --vm.Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
---vm.Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory \
+--vm.Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
+--vm.Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
 --vm.Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 --vm.Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 

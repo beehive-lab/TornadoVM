@@ -52,6 +52,8 @@ public interface TornadoRuntimeCI {
 
     TornadoDriver getDriver(int index);
 
+    void setDefaultDriver(int index);
+
     <D extends TornadoDriver> D getDriver(Class<D> type);
 
     int getNumDrivers();
@@ -60,4 +62,5 @@ public interface TornadoRuntimeCI {
 
     TornadoGlobalObjectState resolveObject(Object object);
 
+    <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass);
 }

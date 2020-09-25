@@ -216,6 +216,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public void enableThreadSharing() {
+        TornadoInternalError.unimplemented();
+    }
+
+    @Override
     public long getMaxAllocMemory() {
         return Runtime.getRuntime().maxMemory();
     }
@@ -243,6 +248,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public Object getDeviceInfo() {
         return null;
+    }
+
+    @Override
+    public int getDriverIndex() {
+        return 0;
     }
 
 }
