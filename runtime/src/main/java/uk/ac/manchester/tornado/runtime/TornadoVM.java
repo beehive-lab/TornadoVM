@@ -293,9 +293,9 @@ public class TornadoVM extends TornadoLogger {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
                         event.waitForEvents();
-                        long copyInValue = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        copyInValue += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInValue);
+                        long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        copyInTimer += event.getExecutionTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
                         timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
 
                         long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
@@ -335,9 +335,9 @@ public class TornadoVM extends TornadoLogger {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
                         event.waitForEvents();
-                        long copyInValue = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        copyInValue += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInValue);
+                        long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        copyInTimer += event.getExecutionTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
                         timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
 
                         long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
@@ -712,8 +712,8 @@ public class TornadoVM extends TornadoLogger {
                     TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventSet.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(),
-                                profile.getEndTime());
+                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getQueuedTime(), profile.getSubmitTime(),
+                                profile.getStartTime(), profile.getEndTime());
                     }
                 }
             }
