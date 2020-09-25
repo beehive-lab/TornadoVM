@@ -197,7 +197,18 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerLocalBarrierPlugins(Registration r) {
-        r.register1("localBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+        r.register1("localBarrier", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL);
+                b.add(localBarrierNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerGlobalBarrierPlugins(Registration r) {
+        r.register1("globalBarrier", Receiver.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL);
@@ -210,6 +221,7 @@ public class OCLGraphBuilderPlugins {
     private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, TornadoVMContext.class);
         registerLocalBarrierPlugins(r);
+        registerGlobalBarrierPlugins(r);
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
