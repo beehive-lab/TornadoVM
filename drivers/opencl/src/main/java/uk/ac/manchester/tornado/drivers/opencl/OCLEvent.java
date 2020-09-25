@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionS
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.createOCLCommandExecutionStatus;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
@@ -103,7 +104,8 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    OCLEvent() {}
+    OCLEvent() {
+    }
 
     OCLEvent(final OCLEventsWrapper eventsWrapper, final OCLCommandQueue queue, final int event, final long oclEventID) {
         this.eventsWrapper = eventsWrapper;
@@ -149,6 +151,10 @@ public class OCLEvent extends TornadoLogger implements Event {
         } catch (OCLException e) {
             e.printStackTrace();
         }
+    }
+
+    long getCLQueuedTime() {
+        return readEventTime(CL_PROFILING_COMMAND_QUEUED);
     }
 
     long getCLSubmitTime() {
@@ -232,6 +238,11 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
+    public long getDriverDispatchTime() {
+        return (getCLStartTime() - getCLQueuedTime());
+    }
+
+    @Override
     public double getExecutionTimeInSeconds() {
         return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
     }
@@ -239,6 +250,11 @@ public class OCLEvent extends TornadoLogger implements Event {
     @Override
     public double getTotalTimeInSeconds() {
         return getExecutionTimeInSeconds();
+    }
+
+    @Override
+    public long getQueuedTime() {
+        return getCLQueuedTime();
     }
 
     @Override

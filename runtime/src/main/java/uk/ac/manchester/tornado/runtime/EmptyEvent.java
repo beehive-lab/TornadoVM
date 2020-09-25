@@ -51,6 +51,11 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public long getDriverDispatchTime() {
+        return 0;
+    }
+
+    @Override
     public double getExecutionTimeInSeconds() {
         return 0;
     }
@@ -68,6 +73,11 @@ public class EmptyEvent implements Event {
     @Override
     public void waitOn() {
 
+    }
+
+    @Override
+    public long getQueuedTime() {
+        return 0;
     }
 
     @Override
