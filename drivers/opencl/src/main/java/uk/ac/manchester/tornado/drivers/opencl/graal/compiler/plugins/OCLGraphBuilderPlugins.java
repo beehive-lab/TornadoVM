@@ -83,7 +83,7 @@ public class OCLGraphBuilderPlugins {
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
 
-        TornadoMathPlugins.registerTornadoMathPlugins(plugins);
+        OCLMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
 
         // Register TornadoAtomicInteger

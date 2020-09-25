@@ -29,12 +29,14 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -238,6 +240,7 @@ public class OCLUnary {
         private final OCLMemoryBase base;
         private final boolean needsBase;
         private Value index;
+        private AllocatableValue assignedTo;
 
         MemoryAccess(OCLMemoryBase base, Value value, boolean needsBase) {
             super(null, LIRKind.Illegal, value);
@@ -279,6 +282,14 @@ public class OCLUnary {
 
         public Value getIndex() {
             return index;
+        }
+
+        public void assignTo(AllocatableValue loadedTo) {
+            assignedTo = loadedTo;
+        }
+
+        public AllocatableValue assignedTo() {
+            return assignedTo;
         }
 
         @Override

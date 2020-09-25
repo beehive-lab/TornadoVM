@@ -43,7 +43,7 @@ public class InstanceReduction extends TornadoTestBase {
     }
 
     @Test
-    public void testReductionIntanceClass() {
+    public void testReductionInstanceClass() {
 
         float[] input = new float[N];
         float[] result = new float[1];

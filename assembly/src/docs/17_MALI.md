@@ -1,8 +1,8 @@
 ## Execution of TornadoVM on ARM Mali GPUs
 
 
-#### Installation 
-The installation of TornadoVM to run on ARM Mali GPUs requires JDK11 with GraalVM. See the [INSTALL WITH GRAALVM](10_INSTALL_WITH_GRAALVM.md) document for details about the installation. 
+#### Installation
+The installation of TornadoVM to run on ARM Mali GPUs requires JDK11 with GraalVM. See the [INSTALL WITH GRAALVM](10_INSTALL_WITH_GRAALVM.md) document for details about the installation.
 
 
 The OpenCL driver for Mali GPUs on Linux that has been tested is:
@@ -26,5 +26,4 @@ cl_khr_fp64
 However, this extension is not available on Bifrost GPUs.
 
 
-The rest of the unittests should pass. 
-
+The rest of the unittests should pass.

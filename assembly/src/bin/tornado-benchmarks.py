@@ -40,7 +40,7 @@ except:
 	sys.exit(0)
 
 class Colors:
-	RED   = "\033[1;31m"  
+	RED   = "\033[1;31m"
 	BLUE  = "\033[1;34m"
 	CYAN  = "\033[1;36m"
 	GREEN = "\033[0;32m"
@@ -165,7 +165,7 @@ def runDefaultSizePerBenchmark(args):
 	options = composeAllOptions(args)
 	print Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET
 	for b in __BENCHMARKS__:
-		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b 
+		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b
 		os.system(command)
 
 def parseArguments():

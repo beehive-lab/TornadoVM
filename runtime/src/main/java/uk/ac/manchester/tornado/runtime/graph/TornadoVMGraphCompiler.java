@@ -265,8 +265,8 @@ public class TornadoVMGraphCompiler {
                 CompilableTask t2 = (CompilableTask) context.getTask(dependentTask.getTaskIndex());
                 ResolvedJavaMethod rm1 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
                 ResolvedJavaMethod rm2 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
-                Sketch sketch1 = TornadoSketcher.lookup(rm1);
-                Sketch sketch2 = TornadoSketcher.lookup(rm2);
+                Sketch sketch1 = TornadoSketcher.lookup(rm1, t1.meta().getDriverIndex(), t1.meta().getDeviceIndex());
+                Sketch sketch2 = TornadoSketcher.lookup(rm2, t2.meta().getDriverIndex(), t1.meta().getDeviceIndex());
                 StructuredGraph g1 = (StructuredGraph) sketch1.getGraph().getReadonlyCopy();
                 StructuredGraph g2 = (StructuredGraph) sketch2.getGraph().getReadonlyCopy();
                 System.out.printf("dependent task: %s on %s merges = %d\n", t1.getId(), t2.getId(), Arrays.toString(argMerges));

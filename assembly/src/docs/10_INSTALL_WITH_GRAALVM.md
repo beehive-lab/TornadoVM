@@ -4,7 +4,9 @@
 
   * Maven Version 3.6.3
   * CMake 3.6 (or newer)
-  * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
+  * At least one of:
+    * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
+    * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
 
@@ -29,7 +31,7 @@ For OSX:
 ```bash
 $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.0/graalvm-ce-java11-darwin-amd64-19.3.0.tar.gz
 ```
-then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice. 
+then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice.
 
 
 ### 2. Download TornadoVM
@@ -99,7 +101,7 @@ Install cmake:
 ```bash
 $ brew install cmake
 ```
-then 
+then
 
 ```bash
 export CMAKE_ROOT=/usr/local
@@ -116,13 +118,13 @@ $ . etc/sources.env
 To build with GraalVM and JDK 8
 
 ```bash
-$ make graal-jdk-8
+$ make graal-jdk-8 BACKEND={ptx,opencl}
 ```
 
 To build with GraalVM and JDK 11:
 
 ```bash
-$ make graal-jdk-11
+$ make graal-jdk-11 BACKEND={ptx,opencl}
 ```
 
 and done!!
@@ -161,4 +163,3 @@ In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (
 ```bash
 $ apt-get install ocl-icd-opencl-dev
 ```
-

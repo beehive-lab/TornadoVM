@@ -58,8 +58,7 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.type.annotations.Constant;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
@@ -99,7 +98,7 @@ public class ReduceCodeAnalysis {
         // Match VALUE_NODE with OPERATION
         ArrayList<REDUCE_OPERATION> operations = new ArrayList<>();
         for (ValueNode operation : reduceOperation) {
-            if (operation instanceof OCLReduceAddNode) {
+            if (operation instanceof TornadoReduceAddNode) {
                 operations.add(REDUCE_OPERATION.ADD);
             } else if (operation instanceof AddNode) {
                 operations.add(REDUCE_OPERATION.ADD);

@@ -63,10 +63,6 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         this.index = index;
     }
 
-    public OCLAddressNode(ValueNode base, OCLMemoryBase memoryRegister) {
-        this(base, null, memoryRegister);
-    }
-
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         OCLLIRGenerator tool = (OCLLIRGenerator) gen.getLIRGeneratorTool();

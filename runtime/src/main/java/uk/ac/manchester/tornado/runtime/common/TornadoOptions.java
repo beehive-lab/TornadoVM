@@ -80,6 +80,43 @@ public class TornadoOptions {
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
 
     /**
+     * Enable/Disable events dumping on program finish. False by default.
+     */
+    public final static boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", "False"));
+
+    /**
+     * Sets the call stack limit in bytes for the OpenCL backend. Default is 8192.
+     */
+    public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
+
+    /**
+     * Sets the call stack limit in bytes for the PTX backend. Default is 8192.
+     */
+    public final static int PTX_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
+
+    /**
+     * Prints the generated code by the TornadoVM compiler. Default is False.
+     */
+    public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
+
+    /**
+     * Once the internal buffers storing events are full, it will start to circulate old events and overwrite them with new ones. Default is True.
+     */
+    public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", "True"));
+
+
+    /**
+     * Sets the array memory alignment for PTX devices. Default is 128 bytes.
+     */
+    public static final int PTX_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.ptx.array.align", "128"));
+
+    /**
+     * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
+     */
+    public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
+
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      *
      * @return boolean.

@@ -1,8 +1,8 @@
 # Examples in TornadoVM
 
-In the TornadoVM SDK you can find a number of examples in the `examples` directory. 
+In the TornadoVM SDK you can find a number of examples in the `examples` directory.
 
-This document describes how to program and run a full example in TornadoVM. 
+This document describes how to program and run a full example in TornadoVM.
 
 
 ## 1. Run a simple example within TornadoVM: Vector Addition
@@ -10,13 +10,13 @@ This document describes how to program and run a full example in TornadoVM.
 
 Below you can find a snapshot of the `TestArrays` example code in TornadoVM (full code listing can be found in the `examples` directory).  
 
-In this example, we will run the `vectorAdd` method on a heterogeneous device. TornadoVM will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device. During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
+In this example, we will run the `vectorAdd` method on a heterogeneous device. TornadoVM will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL/CUDA device. During the execution process, the code will be compiled from Java bytecode to OpenCL C/PTX and afterwards it will run on the OpenCL/CUDA compatible device, transparently.
 
 As you can see in the example below, the accelerated `vectorAdd` method performs a double vector addition. Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method. The only difference is the addition of the `@Parallel` annotation that instructs TornadoVM that the loop has to be computed in parallel (i.e. using the global identifier in OpenCL).
 
 The `testVectorAddition` method prepares the input data and creates a TornadoVM `task`. TornadoVM `tasks` cannot execute directly; instead they must be part of a `TaskSchedule`. This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed. Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
 
-Once the method `execute` is invoked, TornadoVM builds the data dependency graph, compiles the referenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
+Once the method `execute` is invoked, TornadoVM builds the data dependency graph, compiles the referenced Java method to OpenCL C/PTX, and executes the generated application on the available OpenCL/CUDA device.
 
 
 ```java
@@ -49,7 +49,7 @@ public class VectorAddFloat {
                 .task("t0", VectorAddFloat::vectorAdd, a, b, c)
         .streamOut(c);
         //@formatter:on
-       
+
         task.execute();
         vectorAdd(a, b, result);
         boolean wrongResult = false;
@@ -81,7 +81,7 @@ Alternatively, you can use the standard JDK 1.8 and define all jars in `share/ja
 $ javac.py examples/TestTornado.java
 ```
 
-To run, just execute `tornado`. If you want to see the auto-generated OpenCL C code, you can run with the following option:
+To run, just execute `tornado`. If you want to see the auto-generated OpenCL C/PTX code, you can run with the following option:
 
 
 ```bash
@@ -131,8 +131,11 @@ Similarly, you can execute the code on the rest of the devices.
 
 ## 3. Vector Addition using Vector Types
 
-The TornadoVM API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc. 
+The TornadoVM API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc.
 The simple algorithm of vector addition can be rewritten to use the TornadoVM vector types. The TornadoVM JIT compiler will generate OpenCL vector types that match the TornadoVM vector types.
+
+
+**Note**: Regarding the generated PTX code, TornadoVM lowers vector operations to individual PTX variables. This is due to an issue with the memory alignment in PTX.
 
 The following snippet shows the vector addition example using the TornadoVM vector types.
 
@@ -146,18 +149,18 @@ public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b,
 }
 ```
 
-The type `VectorFloat4` is a collection in TornadoVM, that contains a list of `Float4` element types. 
+The type `VectorFloat4` is a collection in TornadoVM, that contains a list of `Float4` element types.
 When TornadoVM compiles this code to OpenCL, it will use the OpenCL type `float4`.
-Note that `Float4` provides a static method called `add`. 
-These are intrinsics to the compiler. 
+Note that `Float4` provides a static method called `add`.
+These are intrinsics to the compiler.
 
 
 TornadoVM exposes `Float2`, `Float3`, `Float4`, `Float6` and `Float8` vector types.
 Vector operations are also exposed for `int` and `double` types (e.g. `Double8`, `Int4`).
 
 
-The following code shows a snippet of the generated OpenCL C code using the vector types. 
-First, it loads the data from global memory to local memory for the two input arrays. 
+The following code shows a snippet of the generated OpenCL C code using the vector types.
+First, it loads the data from global memory to local memory for the two input arrays.
 Then, it performs the addition and finally stores the result in the new position in global memory.
 
 ```c
@@ -188,7 +191,7 @@ private static void mandelbrotTornado(int size, short[] output) {
     final int iterations = 10000;
     float space = 2.0f / size;
 
-    // This will be mapped to 2D kernel in OpenCL 
+    // This will be mapped to 2D kernel in OpenCL
     for (@Parallel int i = 0; i < size; i++) {
         for (@Parallel int j = 0; j < size; j++) {
             float Zr = 0.0f;
@@ -209,9 +212,9 @@ private static void mandelbrotTornado(int size, short[] output) {
                 Zr = 1 * ZrN - ZiN + Cr;
                 ZiN = Zi * Zi;
                 ZrN = Zr * Zr;
-                
+
                 }
-                
+
             }
             short r = (short) ((y * 255) / iterations);
             output[i * size + j] = r;
@@ -224,16 +227,16 @@ private static void mandelbrotTornado(int size, short[] output) {
 
 ## 5. Parallel Breadth-First Search (BFS) within TornadoVM
 
-The following code shows the core method for the parallel BFS using TornadoVM. 
-Note that the only two annotations needed are in the loops to indicate a 2D kernel on the GPU. 
+The following code shows the core method for the parallel BFS using TornadoVM.
+Note that the only two annotations needed are in the loops to indicate a 2D kernel on the GPU.
 
 This algorithm receives an input adjacency matrix and an array with the current depth (depth per level in a graph)
-and updates the depth of the current node. 
-This is also an iterative algorithm that will keep computing until the variable `h_true` does not change. 
+and updates the depth of the current node.
+This is also an iterative algorithm that will keep computing until the variable `h_true` does not change.
 
 
 ```java
-private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, 
+private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes,
                            int[] h_true, int[] currentDepth) {
 
   for (@Parallel int from = 0; from < numNodes; from++) {
@@ -248,7 +251,7 @@ private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes,
                   vertices[to] = dfirst + 1;
                   h_true[0] = 0;
               }
-              
+
               if (BIDIRECTIONAL) {
               	if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
               		vertices[from] = dsecond + 1;
@@ -267,7 +270,7 @@ The following Java snippet shows the data preparation, task definition, and invo
 
 ```java
    public void tornadoBFS(int rootNode, int numNodes) throws IOException {
-        
+
         vertices = new int[numNodes];
         adjacencyMatrix = new int[numNodes * numNodes];
 
@@ -282,23 +285,23 @@ The following Java snippet shows the data preparation, task definition, and invo
         TaskSchedule s0 = new TaskSchedule("s0");
         s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
         s0.streamOut(vertices).execute();
-        
+
         modify = new int[] { 1 };
         Arrays.fill(modify, 1);
-        
+
         currentDepth = new int[] { 0 };
-        
+
         TornadoDevice device = TornadoRuntime.getTornadoRuntime()
 					      .getDefaultDevice();
         TaskSchedule s1 = new TaskSchedule("s1");
         s1.streamIn(vertices, adjacencyMatrix, modify,currentDepth)
 					.mapAllTo(device);
-        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, 
+        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix,
 			numNodes, modify, currentDepth);
         s1.streamOut(vertices, modify);
-        
+
         boolean done = false;
-        
+
         while (!done) {
             // 2. Parallel BFS
             boolean allDone = true;
@@ -318,18 +321,18 @@ The following Java snippet shows the data preparation, task definition, and invo
             }
             Arrays.fill(modify, 1);
         }
-        
+
         if (PRINT_SOLUTION) {
         	System.out.println("Solution: " + Arrays.toString(vertices));
         }
     }
 ```
- 
+
 
 ## 6. Resizing input data at runtime
 
 TornadoVM supports dynamic recompilation of expressions when the input data is resized.
-To do so, TornadoVM exposes an API call (`taskSchedule.updateReference`). 
+To do so, TornadoVM exposes an API call (`taskSchedule.updateReference`).
 The re-compilation invalidates the code installed in the code cache and installs a new one with the upcoming data size.
 
 
@@ -339,7 +342,7 @@ The syntax is as follows:
 ts.updateReference(oldReference, newReference);
 ```
 
-The API call `updateReference` updates all the references to the new data. Additionally, it compiles a new sketcher, because the sketcher specializes pre-compilation depending on the input data size. The code cache is erased and the OpenCL stack is reset to accommodate the new data.
+The API call `updateReference` updates all the references to the new data. Additionally, it compiles a new sketcher, because the sketcher specializes pre-compilation depending on the input data size. The code cache is erased and the OpenCL/PTX stack is reset to accommodate the new data.
 
 ```java
     float[] a = createArray(1024);

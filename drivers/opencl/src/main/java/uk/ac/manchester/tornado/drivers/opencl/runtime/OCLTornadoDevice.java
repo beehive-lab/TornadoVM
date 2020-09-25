@@ -224,7 +224,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
         final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
@@ -461,7 +461,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-
         final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
         buffer.allocate(object, batchSize);
         state.setBuffer(buffer);
@@ -476,7 +475,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if buffer size has changed
+        // We re-allocate if the buffer size has changed
         final ObjectBuffer buffer = state.getBuffer();
         try {
             buffer.allocate(object, batchSize);
@@ -689,4 +688,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return device.getDeviceInfo();
     }
 
+    @Override
+    public int getDriverIndex() {
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+    }
+
+    @Override
+    public void enableThreadSharing() {
+        // OpenCL device context is shared by different threads, by default
+    }
 }
