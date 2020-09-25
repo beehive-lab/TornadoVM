@@ -239,7 +239,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public long getDriverDispatchTime() {
-        return (getCLStartTime() - getCLSubmitTime());
+        return (getCLStartTime() - getCLQueuedTime());
     }
 
     @Override
