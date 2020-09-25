@@ -21,12 +21,12 @@ public class TestReductionTornadoVMContext {
         int id = localGroupSize * groupID + localIdx;
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
+            context.globalBarrier();
             if (localIdx < stride) {
                 a[id] += a[id + stride];
             }
         }
-        context.localBarrier();
+        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -70,13 +70,11 @@ public class TestReductionTornadoVMContext {
     }
 
     public static void main(String[] args) {
-        final int size = 16;
+        final int size = 1024;
         float[] input = new float[size];
         float[] reduce = new float[2];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         float sequential = computeSequential(input);
-
-        Arrays.fill(input, 5);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
