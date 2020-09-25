@@ -196,12 +196,12 @@ public class OCLGraphBuilderPlugins {
         return atomicNode;
     }
 
-    private static void registerLocalBarrierPlugins(Registration r, JavaKind kind) {
+    private static void registerLocalBarrierPlugins(Registration r) {
         r.register1("localBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL);
-                b.addPush(kind, b.append(localBarrierNode));
+                OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL);
+                b.add(localBarrierNode);
                 return true;
             }
         });
@@ -209,7 +209,7 @@ public class OCLGraphBuilderPlugins {
 
     private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, TornadoVMContext.class);
-        registerLocalBarrierPlugins(r, JavaKind.Void);
+        registerLocalBarrierPlugins(r);
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
