@@ -1760,6 +1760,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
+    public long getDispatchTime() {
+        return timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
+    }
+
+    @Override
     public long getDeviceWriteTime() {
         return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
     }

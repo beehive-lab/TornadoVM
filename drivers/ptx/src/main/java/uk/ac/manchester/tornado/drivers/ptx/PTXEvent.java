@@ -74,15 +74,15 @@ public class PTXEvent extends TornadoLogger implements Event {
     protected static final int DESC_SYNC_BARRIER = 15;
     protected static final int EVENT_NONE = 16;
 
-
     /**
-     * Wrapper containing two serialized CUevent structs.
-     * Between the two events, on the same CUDA stream has been registered another API call described by the value of {@link PTXEvent#description}.
-     * We measure the time difference between the two events to get the duration of the API call.
+     * Wrapper containing two serialized CUevent structs. Between the two events, on
+     * the same CUDA stream has been registered another API call described by the
+     * value of {@link PTXEvent#description}. We measure the time difference between
+     * the two events to get the duration of the API call.
      *
      * <p>
-     * The first position (eventWrapper[0]) contains the beforeEvent
-     * The second position eventWrapper[1] contains the afterEvent.
+     * The first position (eventWrapper[0]) contains the beforeEvent The second
+     * position eventWrapper[1] contains the afterEvent.
      */
     private final byte[][] eventWrapper;
 
@@ -106,8 +106,9 @@ public class PTXEvent extends TornadoLogger implements Event {
     private native static long cuEventQuery(byte[] eventWrapper);
 
     /**
-     * Returns the time in nanoseconds between two events.
-     * We convert from milliseconds to nanoseconds because the tornado profiler uses this measurement unit.
+     * Returns the time in nanoseconds between two events. We convert from
+     * milliseconds to nanoseconds because the tornado profiler uses this
+     * measurement unit.
      */
     private native static long cuEventElapsedTime(byte[][] wrappers);
 
@@ -122,7 +123,7 @@ public class PTXEvent extends TornadoLogger implements Event {
 
     @Override
     public void waitForEvents() {
-        waitForEventArray(new PTXEvent[]{this});
+        waitForEventArray(new PTXEvent[] { this });
     }
 
     @Override
@@ -131,7 +132,17 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     /**
-     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
+     */
+    @Override
+    public long getQueuedTime() {
+        return -1;
+    }
+
+    /**
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
      */
     @Override
     public long getSubmitTime() {
@@ -139,7 +150,8 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     /**
-     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
      */
     @Override
     public long getStartTime() {
@@ -147,7 +159,8 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     /**
-     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
      */
     @Override
     public long getEndTime() {

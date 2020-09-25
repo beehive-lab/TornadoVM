@@ -61,6 +61,7 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(ts.getDataTransfersTime() > 0);
         assertTrue(ts.getReadTime() > 0);
         assertTrue(ts.getWriteTime() > 0);
+        assertTrue(ts.getDispatchTime() > 0);
         assertTrue(ts.getDeviceReadTime() > 0);
         assertTrue(ts.getDeviceWriteTime() > 0);
         assertTrue(ts.getDeviceKernelTime() > 0);
@@ -99,6 +100,7 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(ts.getDataTransfersTime(), 0);
         assertEquals(ts.getReadTime(), 0);
         assertEquals(ts.getWriteTime(), 0);
+        assertEquals(ts.getDispatchTime(), 0);
         assertEquals(ts.getDeviceReadTime(), 0);
         assertEquals(ts.getDeviceWriteTime(), 0);
         assertEquals(ts.getDeviceKernelTime(), 0);

@@ -47,6 +47,8 @@ public interface ProfiledAction {
 
     String getName();
 
+    long getQueuedTime();
+
     long getSubmitTime();
 
     long getStartTime();
@@ -54,6 +56,8 @@ public interface ProfiledAction {
     long getEndTime();
 
     long getExecutionTime();
+
+    long getDriverDispatchTime();
 
     double getExecutionTimeInSeconds();
 

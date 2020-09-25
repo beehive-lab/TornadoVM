@@ -47,7 +47,7 @@ class TornadoVMJsonReader:
 
     def __init__(self):
         self.timers = dict()
-        self.ignoreStrings = ["TOTAL_BYTE_CODE_GENERATION", "TOTAL_GRAAL_COMPILE_TIME", "TOTAL_DRIVER_COMPILE_TIME", "TASK_COMPILE_GRAAL_TIME", "TASK_COMPILE_DRIVER_TIME"]
+        self.ignoreStrings = ["TOTAL_BYTE_CODE_GENERATION", "TOTAL_GRAAL_COMPILE_TIME", "TOTAL_DRIVER_COMPILE_TIME", "TASK_COMPILE_GRAAL_TIME", "TASK_COMPILE_DRIVER_TIME", "DEVICE", "IP"]
 
     def ignore(self, keyString):
         if keyString in self.ignoreStrings:
