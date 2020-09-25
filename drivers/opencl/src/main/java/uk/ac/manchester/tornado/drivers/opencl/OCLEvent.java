@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionS
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.createOCLCommandExecutionStatus;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
@@ -152,15 +153,19 @@ public class OCLEvent extends TornadoLogger implements Event {
         }
     }
 
-    long getCLProfilingCommandSubmitTime() {
+    long getCLQueuedTime() {
+        return readEventTime(CL_PROFILING_COMMAND_QUEUED);
+    }
+
+    long getCLSubmitTime() {
         return readEventTime(CL_PROFILING_COMMAND_SUBMIT);
     }
 
-    long getCLProfilingCommandStartTime() {
+    long getCLStartTime() {
         return readEventTime(CL_PROFILING_COMMAND_START);
     }
 
-    long getCLProfilingCommandEndTime() {
+    long getCLEndTime() {
         return readEventTime(CL_PROFILING_COMMAND_END);
     }
 
@@ -229,17 +234,17 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public long getExecutionTime() {
-        return (getCLProfilingCommandEndTime() - getCLProfilingCommandStartTime());
+        return (getCLEndTime() - getCLStartTime());
     }
 
     @Override
     public long getDriverDispatchTime() {
-        return (getCLProfilingCommandStartTime() - getCLProfilingCommandSubmitTime());
+        return (getCLStartTime() - getCLSubmitTime());
     }
 
     @Override
     public double getExecutionTimeInSeconds() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLProfilingCommandStartTime(), getCLProfilingCommandEndTime());
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
     }
 
     @Override
@@ -248,18 +253,23 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
+    public long getQueuedTime() {
+        return getCLQueuedTime();
+    }
+
+    @Override
     public long getSubmitTime() {
-        return getCLProfilingCommandSubmitTime();
+        return getCLSubmitTime();
     }
 
     @Override
     public long getStartTime() {
-        return getCLProfilingCommandStartTime();
+        return getCLStartTime();
     }
 
     @Override
     public long getEndTime() {
-        return getCLProfilingCommandEndTime();
+        return getCLEndTime();
     }
 
     void release() {
