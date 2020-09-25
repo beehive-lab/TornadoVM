@@ -47,6 +47,8 @@ public interface ProfiledAction {
 
     String getName();
 
+    long getQueuedTime();
+
     long getSubmitTime();
 
     long getStartTime();
