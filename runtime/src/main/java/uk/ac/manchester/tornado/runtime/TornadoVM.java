@@ -223,6 +223,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event execute(boolean isWarmup) {
+        isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         contexts.forEach(TornadoAcceleratorDevice::enableThreadSharing);
 
         final long t0 = System.nanoTime();
@@ -241,7 +242,7 @@ public class TornadoVM extends TornadoLogger {
                 final int contextIndex = buffer.getInt();
                 final long sizeBatch = buffer.getLong();
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
 
@@ -265,7 +266,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
 
@@ -314,7 +315,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
 
@@ -356,7 +357,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
 
@@ -393,7 +394,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
 
@@ -476,7 +477,7 @@ public class TornadoVM extends TornadoLogger {
                     }
                 }
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     popArgumentsFromStack(numArgs);
                     continue;
                 }
@@ -577,7 +578,7 @@ public class TornadoVM extends TornadoLogger {
                 }
             } else if (op == TornadoVMBytecodes.ADD_DEP.value()) {
                 final int eventList = buffer.getInt();
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
                 if (useDependencies && lastEvent != -1) {
@@ -596,7 +597,7 @@ public class TornadoVM extends TornadoLogger {
                 final int eventList = buffer.getInt();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
-                if (isWarmup || VIRTUAL_DEVICE_ENABLED) {
+                if (isWarmup) {
                     continue;
                 }
 

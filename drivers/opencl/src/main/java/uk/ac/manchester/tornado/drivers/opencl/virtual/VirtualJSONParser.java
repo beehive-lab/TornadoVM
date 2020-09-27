@@ -19,7 +19,8 @@ public class VirtualJSONParser {
         doubleFPSupport,
         maxWorkItemSizes,
         deviceAddressBits,
-        deviceType
+        deviceType,
+        deviceExtensions
         ;
 
         JsonKey() {
@@ -44,13 +45,15 @@ public class VirtualJSONParser {
         long[] maxWorkItemSizes = (long[]) getEntryForKey(JsonKey.maxWorkItemSizes, jsonEntries);
         int deviceAddressBits = (int) getEntryForKey(JsonKey.deviceAddressBits, jsonEntries);
         OCLDeviceType deviceType = (OCLDeviceType) getEntryForKey(JsonKey.deviceType, jsonEntries);
+        String deviceExtensions = (String) getEntryForKey(JsonKey.deviceExtensions, jsonEntries);
 
-        return new VirtualDeviceDescriptor(deviceName, doubleFPSupport, maxWorkItemSizes, deviceAddressBits, deviceType);
+        return new VirtualDeviceDescriptor(deviceName, doubleFPSupport, maxWorkItemSizes, deviceAddressBits, deviceType, deviceExtensions);
     }
 
     private static Object getEntryForKey(JsonKey jsonKey, Map<JsonKey, String> jsonEntries) {
         switch (jsonKey) {
             case deviceName:
+            case deviceExtensions:
                 return jsonEntries.get(jsonKey);
             case doubleFPSupport:
                 return Boolean.parseBoolean(jsonEntries.get(jsonKey));

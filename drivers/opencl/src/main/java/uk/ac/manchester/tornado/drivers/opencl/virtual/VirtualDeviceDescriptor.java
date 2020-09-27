@@ -33,13 +33,15 @@ public class VirtualDeviceDescriptor {
     private final long[] maxWorkItemSizes;
     private final int deviceAddressBits;
     private final OCLDeviceType deviceType;
+    private final String deviceExtensions;
 
-    public VirtualDeviceDescriptor(String deviceName, boolean doubleFPSupport, long[] maxWorkItemSizes, int deviceAddressBits, OCLDeviceType deviceType) {
+    public VirtualDeviceDescriptor(String deviceName, boolean doubleFPSupport, long[] maxWorkItemSizes, int deviceAddressBits, OCLDeviceType deviceType, String deviceExtensions) {
         this.deviceName = deviceName;
         this.doubleFPSupport = doubleFPSupport;
         this.maxWorkItemSizes = maxWorkItemSizes;
         this.deviceAddressBits = deviceAddressBits;
         this.deviceType = deviceType;
+        this.deviceExtensions = deviceExtensions;
     }
 
     public String getDeviceName() {
@@ -60,5 +62,9 @@ public class VirtualDeviceDescriptor {
 
     public int getDeviceAddressBits() {
         return deviceAddressBits;
+    }
+
+    public String getDeviceExtensions() {
+        return deviceExtensions;
     }
 }

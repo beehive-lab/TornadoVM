@@ -50,6 +50,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     private final OCLDeviceType deviceType;
     private final int deviceMaxClockFrequency;
     private final int deviceAddressBits;
+    private final String deviceExtensions;
 
     private static final int INIT_VALUE = -1;
 
@@ -70,6 +71,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
         this.singleFPConfig = INIT_VALUE;
         this.maxWorkItemSizes = info.getMaxWorkItemSizes();
         this.deviceType = info.deviceType();
+        this.deviceExtensions = info.getDeviceExtensions();
     }
 
     public long getId() {
@@ -110,7 +112,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     }
 
     public String getDeviceExtensions() {
-        return "DummyDeviceExtension";
+        return deviceExtensions;
     }
 
     @Override
