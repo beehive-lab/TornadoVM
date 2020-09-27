@@ -25,30 +25,27 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_FILE;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualInfo;
+import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
+import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 public class OpenCL {
 
@@ -119,15 +116,7 @@ public class OpenCL {
 
     private static void initializeVirtual() {
         if (!initialised) {
-            File file = new File(VIRTUAL_DEVICE_FILE);
-            ObjectMapper mapper = new ObjectMapper();
-
-            VirtualInfo info = null;
-            try {
-                info = mapper.readValue(file, VirtualInfo.class);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            VirtualDeviceDescriptor info = VirtualJSONParser.getDeviceDescriptor();
 
             VirtualOCLPlatform platform = new VirtualOCLPlatform(info);
             platforms.add(platform);

@@ -34,7 +34,7 @@ public class VirtualOCLPlatform extends TornadoLogger implements TornadoPlatform
     private final OCLTargetDevice device;
     private VirtualOCLContext context;
 
-    public VirtualOCLPlatform(VirtualInfo info) {
+    public VirtualOCLPlatform(VirtualDeviceDescriptor info) {
         this.index = 0;
         this.device = new VirtualOCLDevice(info);
     }

@@ -26,42 +26,39 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
-public class VirtualInfo {
+public class VirtualDeviceDescriptor {
 
-    private boolean doubleFPSupport;
-    private long[] maxWorkItemSizes;
-    private int deviceAddressBits;
-    private OCLDeviceType deviceType;
+    private final String deviceName;
+    private final boolean doubleFPSupport;
+    private final long[] maxWorkItemSizes;
+    private final int deviceAddressBits;
+    private final OCLDeviceType deviceType;
+
+    public VirtualDeviceDescriptor(String deviceName, boolean doubleFPSupport, long[] maxWorkItemSizes, int deviceAddressBits, OCLDeviceType deviceType) {
+        this.deviceName = deviceName;
+        this.doubleFPSupport = doubleFPSupport;
+        this.maxWorkItemSizes = maxWorkItemSizes;
+        this.deviceAddressBits = deviceAddressBits;
+        this.deviceType = deviceType;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
 
     public long[] getMaxWorkItemSizes() {
         return maxWorkItemSizes;
-    }
-
-    public void setMaxWorkItemSizes(long[] maxWorkItemSizes) {
-        this.maxWorkItemSizes = maxWorkItemSizes;
     }
 
     public long getDoubleFPSupport() {
         return doubleFPSupport ? 1 : 0;
     }
 
-    public void setDoubleFPSupport(boolean doubleFPSupport) {
-        this.doubleFPSupport = doubleFPSupport;
-    }
-
     public OCLDeviceType deviceType() {
         return deviceType;
     }
 
-    public void setDeviceType(OCLDeviceType deviceType) {
-        this.deviceType = deviceType;
-    }
-
     public int getDeviceAddressBits() {
         return deviceAddressBits;
-    }
-
-    public void setDeviceAddressBits(int deviceAddressBits) {
-        this.deviceAddressBits = deviceAddressBits;
     }
 }

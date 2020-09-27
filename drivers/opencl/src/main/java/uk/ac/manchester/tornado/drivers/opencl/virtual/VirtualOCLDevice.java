@@ -53,8 +53,8 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
 
     private static final int INIT_VALUE = -1;
 
-    public VirtualOCLDevice(VirtualInfo info) {
-        this.name = "DummyDeviceName";
+    public VirtualOCLDevice(VirtualDeviceDescriptor info) {
+        this.name = info.getDeviceName();
         this.index = 0;
         this.deviceEndianLittle = true;
         this.maxComputeUnits = INIT_VALUE;
