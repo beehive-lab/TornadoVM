@@ -50,6 +50,7 @@ import java.lang.reflect.Method;
 import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.TornadoCI;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 
 public class TornadoAPIProvider {
@@ -93,10 +94,11 @@ public class TornadoAPIProvider {
         return tornado;
     }
 
-    public static AbstractFactoryDevice loadDeviceImpl() {
+    public static AbstractFactoryDevice loadDeviceImpl(String backendName) {
         AbstractFactoryDevice device = null;
+        String systemProperty = "tornado.load.device.implementation." + backendName.toLowerCase();
         try {
-            String tornadoDeviceImplementation = System.getProperty("tornado.load.device.implementation");
+            String tornadoDeviceImplementation = System.getProperty(systemProperty);
             Class<?> klass = Class.forName(tornadoDeviceImplementation);
             Constructor<?> constructor = klass.getConstructor();
             device = (AbstractFactoryDevice) constructor.newInstance();

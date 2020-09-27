@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -29,8 +29,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 
-    int launchWithDependencies(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents);
+    int launchWithDependencies(CallStack stack, DeviceBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
 
-    int launchWithoutDependencies(CallStack stack, TaskMetaData meta, long batchThreads);
-
+    int launchWithoutDependencies(CallStack stack, DeviceBuffer atomicSpace, TaskMetaData meta, long batchThreads);
 }

@@ -34,6 +34,8 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.PTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -149,6 +151,13 @@ public class TornadoHelper {
                 // fail, it simply can't be run on current configuration
                 if (result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).count() > 0) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    continue;
+                }
+
+                if (result.getFailures().stream().filter(e -> (e.getException() instanceof PTXNotSupported)).count() > 0) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [PTX CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     continue;

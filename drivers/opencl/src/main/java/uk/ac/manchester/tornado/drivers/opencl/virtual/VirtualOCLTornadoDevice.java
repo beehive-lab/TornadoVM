@@ -30,23 +30,22 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -61,10 +60,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_PRINT_SOURCE;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 
 public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
@@ -153,7 +153,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistibutedMemory() {
+    public boolean isDistributedMemory() {
         return true;
     }
 
@@ -170,10 +170,15 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
+    @Override
+    public DeviceBuffer createBuffer(int[] arr) {
+        return null;
+    }
+
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
         final TaskMetaData sketchMeta = sketch.getMeta();
 
         // copy meta data into task
@@ -190,7 +195,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
-            if (OPENCL_PRINT_SOURCE) {
+            if (PRINT_SOURCE) {
                 String sourceCode = new String(result.getTargetCode());
                 System.out.println(sourceCode);
             }
@@ -212,7 +217,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         try {
             final byte[] source = Files.readAllBytes(path);
 
-            if (OPENCL_PRINT_SOURCE) {
+            if (PRINT_SOURCE) {
                 String sourceCode = new String(source);
                 System.out.println(sourceCode);
             }
@@ -241,6 +246,12 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
         return null;
     }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task) {
+        return null;
+    }
+
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
@@ -393,6 +404,16 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public Object getDeviceInfo() {
         return device.getDeviceInfo();
+    }
+
+    @Override
+    public int getDriverIndex() {
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+    }
+
+    @Override
+    public void enableThreadSharing() {
+        // OpenCL device context is shared by different threads, by default
     }
 
 }

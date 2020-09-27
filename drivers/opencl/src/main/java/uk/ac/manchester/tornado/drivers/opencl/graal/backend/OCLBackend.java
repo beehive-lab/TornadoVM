@@ -83,10 +83,12 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
@@ -211,7 +213,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         final OCLByteBuffer parameters = deviceContext.getMemoryManager().getSubBuffer(0, 16);
         parameters.putLong(0);
 
-        int task = lookupCode.executeTask(parameters, meta);
+        int task = lookupCode.executeTask(parameters, null, meta);
         lookupCode.readValue(parameters, meta, task);
         lookupCode.resolveEvent(parameters, meta, task);
 
@@ -243,23 +245,24 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * @return
      */
     public int[] getDriverAndDevice() {
-        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDeviceCount();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
-            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
+            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
             OCLTargetDevice dev = device.getDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }
         }
-        return new int[] { 0, deviceIndex };
+        int driverIndex = TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+        return new int[] { driverIndex, deviceIndex };
     }
 
     private boolean isJITCompilationForFPGAs(String deviceFullName) {
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
-        OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+        TornadoDevice device = getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
         if (!isDeviceAnFPGAAccelerator() || !isFPGA(platformName)) {
             return false;
@@ -278,6 +281,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public TaskMetaData compileLookupBufferKernel() {
 
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        meta.setDevice(deviceContext.asMapping());
+
         OCLCodeCache codeCache = deviceContext.getCodeCache();
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
@@ -411,7 +416,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private void emitEpilogue(OCLAssembler asm) {
         asm.endScope(" kernel");
-
     }
 
     private void addVariableDef(Map<OCLKind, Set<Variable>> kindToVariable, Variable value) {

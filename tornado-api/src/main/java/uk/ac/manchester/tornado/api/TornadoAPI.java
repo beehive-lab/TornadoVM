@@ -370,6 +370,8 @@ public interface TornadoAPI {
      */
     TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
+    TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
+
     /**
      * Obtains the task-schedule name that was assigned.
      * 
@@ -493,4 +495,6 @@ public interface TornadoAPI {
     TaskSchedule useDefaultThreadScheduler(boolean use);
 
     void updateReference(Object oldRef, Object newRef);
+
+    boolean isFinished();
 }

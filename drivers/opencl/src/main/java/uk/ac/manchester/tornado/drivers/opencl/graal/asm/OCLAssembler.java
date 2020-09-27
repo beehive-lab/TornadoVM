@@ -226,7 +226,13 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic GROUP_SIZE = new OCLUnaryIntrinsic("get_group_size");
 
         public static final OCLUnaryIntrinsic ATOMIC_INC = new OCLUnaryIntrinsic("atomic_inc");
+        public static final OCLUnaryIntrinsic ATOMIC_FETCH_ADD_EXPLICIT = new OCLUnaryIntrinsic("atomic_fetch_add_explicit");
+        public static final OCLUnaryIntrinsic ATOMIC_FETCH_SUB_EXPLICIT = new OCLUnaryIntrinsic("atomic_fetch_sub_explicit");
+        public static final OCLUnaryIntrinsic ATOMIC_ADD = new OCLUnaryIntrinsic("atomic_add");
+        public static final OCLUnaryIntrinsic ATOMIC_VAR_INIT = new OCLUnaryIntrinsic("ATOMIC_VAR_INIT");
         public static final OCLUnaryIntrinsic ATOMIC_DEC = new OCLUnaryIntrinsic("atomic_dec");
+
+        public static final OCLUnaryIntrinsic MEMORY_ORDER_RELAXED = new OCLUnaryIntrinsic("memory_order_relaxed");
 
         public static final OCLUnaryIntrinsic BARRIER = new OCLUnaryIntrinsic("barrier");
         public static final OCLUnaryIntrinsic MEM_FENCE = new OCLUnaryIntrinsic("mem_fence");
@@ -239,7 +245,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
         public static final OCLUnaryIntrinsic SIN = new OCLUnaryIntrinsic("sin");
         public static final OCLUnaryIntrinsic COS = new OCLUnaryIntrinsic("cos");
-        
+
         public static final OCLUnaryIntrinsic LOCAL_MEMORY = new OCLUnaryIntrinsic("__local");
 
         public static final OCLUnaryIntrinsic POPCOUNT = new OCLUnaryIntrinsic("popcount");
@@ -754,53 +760,53 @@ public final class OCLAssembler extends Assembler {
 
     private void emitAtomicIntrinsics() {
         //@formatter:off
-        emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" + 
-                "   union {\n" + 
-                "       unsigned int intVal;\n" + 
-                "       float floatVal;\n" + 
-                "   } newVal;\n" + 
-                "   union {\n" + 
-                "       unsigned int intVal;\n" + 
-                "       float floatVal;\n" + 
+        emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       float floatVal;\n" +
+                "   } newVal;\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       float floatVal;\n" +
                 "   } prevVal;\n" +
                 "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "   do {\n" + 
-                "       prevVal.floatVal = *source;\n" + 
-                "       newVal.floatVal = prevVal.floatVal + operand;\n" + 
-                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" + 
+                "   do {\n" +
+                "       prevVal.floatVal = *source;\n" +
+                "       newVal.floatVal = prevVal.floatVal + operand;\n" +
+                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
                 "   newVal.intVal) != prevVal.intVal);" +
                 "}");
-        
-        emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" + 
-                "{\n" + 
-                "    union {\n" + 
-                "        unsigned int u32;\n" + 
-                "        float f32;\n" + 
-                "    } next, expected, current;\n" + 
-                "    current.f32 = *addr;\n" + 
+
+        emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" +
+                "{\n" +
+                "    union {\n" +
+                "        unsigned int u32;\n" +
+                "        float f32;\n" +
+                "    } next, expected, current;\n" +
+                "    current.f32 = *addr;\n" +
                 "barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "    do {\n" + 
-                "       expected.f32 = current.f32;\n" + 
-                "       next.f32 = expected.f32 + val;\n" + 
-                "       current.u32 = atomic_cmpxchg( (volatile __global unsigned int *)addr,\n" + 
-                "       expected.u32, next.u32);\n" + 
-                "    } while( current.u32 != expected.u32 );\n" + 
+                "    do {\n" +
+                "       expected.f32 = current.f32;\n" +
+                "       next.f32 = expected.f32 + val;\n" +
+                "       current.u32 = atomic_cmpxchg( (volatile __global unsigned int *)addr,\n" +
+                "       expected.u32, next.u32);\n" +
+                "    } while( current.u32 != expected.u32 );\n" +
                 "}");
-        
-        emitLine("inline void atomicMul_Tornado_Int(volatile __global int *source, const float operand) {\n" + 
-                "   union {\n" + 
-                "       unsigned int intVal;\n" + 
-                "       int value;\n" + 
-                "   } newVal;\n" + 
-                "   union {\n" + 
-                "       unsigned int intVal;\n" + 
-                "       int value;\n" + 
+
+        emitLine("inline void atomicMul_Tornado_Int(volatile __global int *source, const float operand) {\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       int value;\n" +
+                "   } newVal;\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       int value;\n" +
                 "   } prevVal;\n" +
                 "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "   do {\n" + 
-                "       prevVal.value = *source;\n" + 
-                "       newVal.value = prevVal.value * operand;\n" + 
-                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" + 
+                "   do {\n" +
+                "       prevVal.value = *source;\n" +
+                "       newVal.value = prevVal.value * operand;\n" +
+                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
                 "   newVal.intVal) != prevVal.intVal);" +
                 "}");
         //@formatter:on
@@ -816,6 +822,10 @@ public final class OCLAssembler extends Assembler {
 
         if (((OCLTargetDescription) target).supportsFP64()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
+        }
+
+        if (((OCLTargetDescription) target).supportsInt64Atomics()) {
+            emitLine("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  ");
         }
 
         if (EMIT_INTRINSICS) {
@@ -991,7 +1001,14 @@ public final class OCLAssembler extends Assembler {
 
     public void emit(String str) {
         emitSubString(str);
+    }
 
+    public void emitLineGlobal(String str) {
+        int size = position();
+        byte[] codeCopy = copy(0, size);
+        String s = new String(codeCopy);
+        str += s;
+        emitString(str, 0);
     }
 
     public void emit(String fmt, Object... args) {
@@ -1092,6 +1109,14 @@ public final class OCLAssembler extends Assembler {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
             emit(toString(value));
+        }
+    }
+
+    public String getStringValue(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLReturnSlot) {
+            return ((OCLReturnSlot) value).getStringFormat();
+        } else {
+            return toString(value);
         }
     }
 

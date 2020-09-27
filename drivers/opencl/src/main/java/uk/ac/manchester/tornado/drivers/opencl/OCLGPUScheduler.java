@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLGPUScheduler extends OCLKernelScheduler {
 
     private long maxComputeUnits;
-    private long maxWorkGroupSize;
+    private long[] maxWorkGroupSize;
 
     private static final int WARP_SIZE = 32;
     private boolean ADJUST_IRREGULAR = false;

@@ -28,12 +28,10 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -162,6 +160,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoProfiler timeProfiler;
     private boolean updateData;
+    private boolean isFinished;
     private GridTask gridTask;
 
     private static String RESET = "\u001B[0m";
@@ -171,8 +170,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      *
-     * @param taskScheduleName
-     *            Task-Schedule name
+     * @param taskScheduleName Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         executionContext = new TornadoExecutionContext(taskScheduleName);
@@ -227,24 +225,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
 
-        // 5. Force to recompile the task-sketcher
-        int i = 0;
-        for (TaskPackage tp : taskPackages) {
-            updateTask(tp, i);
-            i++;
-        }
-
-        // 6. Clear the code cache of the TornadoVM instance
-        updateData = true;
-        if (vm != null) {
-            vm.clearInstalledCode();
-            vm.setCompileUpdate();
-        }
+        triggerRecompile();
     }
 
     @Override
     public void useDefaultThreadScheduler(boolean use) {
         executionContext.setDefaultThreadScheduler(use);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return this.isFinished;
     }
 
     @Override
@@ -257,9 +248,37 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return meta().getDevice();
     }
 
+    private void triggerRecompile() {
+        // 1. Force to recompile the task-sketcher
+        int i = 0;
+        for (TaskPackage tp : taskPackages) {
+            updateTask(tp, i);
+            i++;
+        }
+
+        // 2. Clear the code cache of the TornadoVM instance
+        updateData = true;
+        if (vm != null) {
+            vm.clearInstalledCode();
+            vm.setCompileUpdate();
+        }
+    }
+
     @Override
     public void setDevice(TornadoDevice device) {
         meta().setDevice(device);
+
+        // Make sure that a sketch is available for the device.
+        for (int i = 0; i < executionContext.getTaskCount(); i++) {
+            SchedulableTask task = executionContext.getTask(i);
+            task.meta().setDevice(device);
+            if (task instanceof CompilableTask) {
+                ResolvedJavaMethod method = getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+                if (!meta().getDevice().getDeviceContext().isCached(method.getName(), task)) {
+                    updateInner(i, executionContext.getTask(i));
+                }
+            }
+        }
     }
 
     @Override
@@ -273,9 +292,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return stack.getReturnValue();
     }
 
-    public void updateInner(int index, SchedulableTask task) {
-        Providers providers = getTornadoRuntime().getDriver(0).getProviders();
-        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
+    private void updateInner(int index, SchedulableTask task) {
+        int driverIndex = task.meta().getDriverIndex();
+        Providers providers = getTornadoRuntime().getDriver(driverIndex).getProviders();
+        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
         executionContext.setTask(index, task);
 
@@ -284,15 +304,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
         }
     }
 
     @Override
     public void addInner(SchedulableTask task) {
-        Providers providers = getTornadoRuntime().getDriver(0).getProviders();
-        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
+        int driverIndex = task.meta().getDriverIndex();
+        Providers providers = getTornadoRuntime().getDriver(driverIndex).getProviders();
+        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
         int index = executionContext.addTask(task);
 
@@ -301,7 +322,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
         }
 
@@ -359,8 +380,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Compile a task-schedule into TornadoVM byte-code
      *
-     * @param setNewDevice:
-     *            boolean that specifies if set a new device or not.
+     * @param setNewDevice: boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
@@ -480,14 +500,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
         }
 
-        if (TornadoOptions.isSaveProfilerEnabled()) {
+        if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {
             String jsonFile = timeProfiler.createJson(new StringBuffer(), this.getId());
-            try (FileWriter fileWriter = new FileWriter("profiler-app.json", true)) {
-                PrintWriter printWriter = new PrintWriter(fileWriter);
-                printWriter.println(jsonFile);
-            } catch (IOException e) {
-                throw new TornadoRuntimeException("JSon profiler file cannot be appened");
-            }
+            profilerFileWriter(jsonFile);
         }
     }
 
@@ -731,6 +746,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void cleanUp() {
         updateData = false;
+        isFinished = true;
     }
 
     @Override
@@ -1352,10 +1368,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
      *
-     * @param policy
-     *            input policy
-     * @param numDevices
-     *            number of devices
+     * @param policy     input policy
+     * @param numDevices number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1528,12 +1542,43 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 2:
                 updateInner(index, TaskUtils.createTask(method, meta, id, (Task2) parameters[0], parameters[1], parameters[2]));
                 break;
+            case 3:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
+                break;
+            case 4:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
+                break;
+            case 5:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
+                break;
+            case 6:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
+                break;
+            case 7:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
+                break;
+            case 8:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8]));
+                break;
+            case 9:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9]));
+                break;
+            case 10:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10]));
+                break;
+            case 15:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
+                break;
             default:
                 throw new RuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
         switch (type) {
             case 0:
@@ -1581,7 +1626,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    public void updateTask(TaskPackage taskPackage, int index) {
+    private void updateTask(TaskPackage taskPackage, int index) {
         String id = taskPackage.getId();
         int type = taskPackage.getTaskType();
         Object[] parameters = taskPackage.getTaskParameters();
@@ -1640,6 +1685,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
+    }
+
+    @Override
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions, atomics));
     }
 
     @Override
@@ -1707,6 +1757,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public long getReadTime() {
         return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+    }
+
+    @Override
+    public long getDispatchTime() {
+        return timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
     }
 
     @Override

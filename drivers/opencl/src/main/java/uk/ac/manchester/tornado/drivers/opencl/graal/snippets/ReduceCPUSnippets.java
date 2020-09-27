@@ -43,8 +43,8 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
@@ -392,9 +392,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddIntSnippet : partialReduceAddIntSnippetCarrierValue;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulIntSnippet : partialReduceMulIntSnippetCarrierValue;
             } else if (value instanceof OCLIntBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeInteger((OCLIntBinaryIntrinsicNode) value, extra);
@@ -407,9 +407,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferLongSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddLongSnippet : partialReduceAddLongSnippetCarrierValue;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulLongSnippet : partialReduceMulLongSnippetCarrierValue;
             } else if (value instanceof OCLIntBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeLong((OCLIntBinaryIntrinsicNode) value, extra);
@@ -433,9 +433,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddFloatSnippet : partialReduceAddFloatSnippetCarrierValue;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulFloatSnippet : partialReduceMulFloatSnippetCarrierValue;
             } else if (value instanceof OCLFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNode((OCLFPBinaryIntrinsicNode) value, extra);
@@ -459,9 +459,9 @@ public class ReduceCPUSnippets implements Snippets {
         @Override
         public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
-            if (value instanceof OCLReduceAddNode) {
+            if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddDoubleSnippet : partialReduceAddDoubleSnippetCarrierValue;
-            } else if (value instanceof OCLReduceMulNode) {
+            } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulDoubleSnippet : partialReduceMulDoubleSnippetCarrierValue;
             } else if (value instanceof OCLFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeDouble((OCLFPBinaryIntrinsicNode) value, extra);

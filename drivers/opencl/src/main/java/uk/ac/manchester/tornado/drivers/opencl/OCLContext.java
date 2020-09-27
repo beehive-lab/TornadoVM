@@ -27,15 +27,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_EVENTS;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -71,27 +70,22 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
         }
     }
 
-    private final long id;
+    private final long contextID;
     private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
     private final OCLCommandQueue[] queues;
     private final List<OCLProgram> programs;
-    private final long[] allocatedRegions;
-    private int allocatedRegionCount;
+    private final ArrayList<Long> allocatedRegions;
     private final OCLPlatform platform;
-
-    private static final int MAX_ALLOCATED_REGIONS = 64;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLTargetDevice> devices) {
         this.platform = platform;
-        this.id = id;
+        this.contextID = id;
         this.devices = devices;
         this.deviceContexts = new ArrayList<>(devices.size());
         this.queues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
-        this.allocatedRegions = new long[MAX_ALLOCATED_REGIONS];
-        this.allocatedRegionCount = 0;
-        Arrays.fill(this.allocatedRegions, -1);
+        this.allocatedRegions = new ArrayList<>();
     }
 
     native static void clReleaseContext(long id) throws OCLException;
@@ -145,7 +139,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
         OCLTargetDevice device = devices.get(index);
         long queueId;
         try {
-            queueId = clCreateCommandQueue(id, device.getId(), properties);
+            queueId = clCreateCommandQueue(contextID, device.getId(), properties);
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
@@ -189,7 +183,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
         OCLProgram program = null;
 
         try {
-            program = new OCLProgram(clCreateProgramWithSource(id, source, lengths), deviceContext);
+            program = new OCLProgram(clCreateProgramWithSource(contextID, source, lengths), deviceContext);
             programs.add(program);
         } catch (OCLException e) {
             error(e.getMessage());
@@ -202,7 +196,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
         OCLProgram program = null;
 
         try {
-            program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
+            program = new OCLProgram(clCreateProgramWithBinary(contextID, deviceId, binary, lengths), deviceContext);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -212,7 +206,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
 
     public void cleanup() {
 
-        if (DUMP_OPENCL_EVENTS) {
+        if (DUMP_EVENTS) {
             for (OCLDeviceContext deviceContext : deviceContexts) {
                 deviceContext.dumpEvents();
             }
@@ -225,8 +219,8 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
             }
             long t1 = System.nanoTime();
 
-            for (int i = 0; i < allocatedRegionCount; i++) {
-                clReleaseMemObject(allocatedRegions[i]);
+            for (Long allocatedRegion : allocatedRegions) {
+                clReleaseMemObject(allocatedRegion);
             }
             long t2 = System.nanoTime();
 
@@ -237,7 +231,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
             }
 
             long t3 = System.nanoTime();
-            clReleaseContext(id);
+            clReleaseContext(contextID);
             long t4 = System.nanoTime();
 
             if (Tornado.FULL_DEBUG) {
@@ -255,7 +249,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
 
     @Override
     public String toString() {
-        return String.format("id=0x%x, device count=%d", id, getNumDevices());
+        return String.format("id=0x%x, device count=%d", contextID, getNumDevices());
     }
 
     public OCLDeviceContext createDeviceContext(int index) {
@@ -297,10 +291,9 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
     private long createBuffer(long flags, long bytes, long hostPointer) {
         long devicePtr = 0;
         try {
-            final OCLBufferResult result = createBuffer(id, flags, bytes, hostPointer);
+            final OCLBufferResult result = createBuffer(contextID, flags, bytes, hostPointer);
             devicePtr = result.getBuffer();
-            allocatedRegions[allocatedRegionCount] = devicePtr;
-            allocatedRegionCount++;
+            allocatedRegions.add(devicePtr);
             info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), devicePtr);
         } catch (OCLException e) {
             error(e.getMessage());

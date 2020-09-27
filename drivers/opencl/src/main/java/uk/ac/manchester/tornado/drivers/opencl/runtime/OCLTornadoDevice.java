@@ -31,7 +31,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
@@ -74,6 +75,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -184,7 +186,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistibutedMemory() {
+    public boolean isDistributedMemory() {
         return true;
     }
 
@@ -205,6 +207,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
+    @Override
+    public DeviceBuffer createBuffer(int[] arr) {
+        return getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
+    }
+
     private boolean isOpenCLPreLoadBinary(OCLDeviceContextInterface deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = deviceContext.getCodeCache();
         return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
@@ -218,7 +225,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
         final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
@@ -235,6 +242,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
+            // profiler
+            profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
@@ -252,8 +261,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
-            return installedCode;
 
+            return installedCode;
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
@@ -330,6 +339,21 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
         String entry = getTaskEntryName(task);
         return getDeviceContext().getInstalledCode(task.getId(), entry);
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task) {
+        if (TornadoAtomicIntegerNode.globalAtomics.containsKey(task.meta().getCompiledGraph())) {
+            ArrayList<Integer> values = TornadoAtomicIntegerNode.globalAtomics.get(task.meta().getCompiledGraph());
+            int[] atomicsArray = new int[values.size()];
+            int j = 0;
+            for (Integer i : values) {
+                atomicsArray[j++] = i;
+            }
+            return atomicsArray;
+        } else {
+            return null;
+        }
     }
 
     private boolean isJITTaskForFGPA(SchedulableTask task) {
@@ -438,7 +462,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-
         final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
         buffer.allocate(object, batchSize);
         state.setBuffer(buffer);
@@ -453,7 +476,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if buffer size has changed
+        // We re-allocate if the buffer size has changed
         final ObjectBuffer buffer = state.getBuffer();
         try {
             buffer.allocate(object, batchSize);
@@ -666,4 +689,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return device.getDeviceInfo();
     }
 
+    @Override
+    public int getDriverIndex() {
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+    }
+
+    @Override
+    public void enableThreadSharing() {
+        // OpenCL device context is shared by different threads, by default
+    }
 }

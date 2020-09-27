@@ -54,6 +54,8 @@ public interface TornadoDriver {
 
     TornadoDevice getDevice(int index);
 
+    TornadoDeviceType getTypeDefaultDevice();
+
     String getName();
 
     int getNumPlatforms();

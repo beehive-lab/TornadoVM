@@ -59,7 +59,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNod
 
 public final class VectorPlugins {
 
-    public static final void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
 
         if (ENABLE_VECTORS) {
             ps.appendNodePlugin(new NodePlugin() {
@@ -70,7 +70,7 @@ public final class VectorPlugins {
                         return false;
                     }
                     if (method.getName().equals("<init>")) {
-                        final VectorValueNode vector = resolveReceiver(b, vectorKind, args[0]);
+                        final VectorValueNode vector = resolveReceiver(args[0]);
                         if (args.length > 1) {
                             int offset = (vector == args[0]) ? 1 : 0;
                             for (int i = offset; i < args.length; i++) {
@@ -90,29 +90,29 @@ public final class VectorPlugins {
             });
 
             // Adding floats
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT2, float[].class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT3, float[].class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT4, float[].class, float.class);
-            registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT2, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT3, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT4, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT8, float[].class, float.class);
 
             // Adding ints
-            registerVectorPlugins(ps, plugins, OCLKind.INT2, int[].class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT3, int[].class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT4, int[].class, int.class);
-            registerVectorPlugins(ps, plugins, OCLKind.INT8, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT2, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT3, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT4, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT8, int[].class, int.class);
 
             // Adding shorts
-            registerVectorPlugins(ps, plugins, OCLKind.SHORT2, short[].class, short.class);
+            registerVectorPlugins(plugins, OCLKind.SHORT2, short[].class, short.class);
 
             // Adding char
-            registerVectorPlugins(ps, plugins, OCLKind.CHAR3, byte[].class, byte.class);
-            registerVectorPlugins(ps, plugins, OCLKind.CHAR4, byte[].class, byte.class);
+            registerVectorPlugins(plugins, OCLKind.CHAR3, byte[].class, byte.class);
+            registerVectorPlugins(plugins, OCLKind.CHAR4, byte[].class, byte.class);
 
             // Adding double
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE2, double[].class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, double[].class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, double[].class, double.class);
-            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, double[].class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE2, double[].class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE3, double[].class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE4, double[].class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE8, double[].class, double.class);
 
             /*
              * Geometric BIFS for floating point vectors
@@ -125,7 +125,7 @@ public final class VectorPlugins {
 
     }
 
-    private static VectorValueNode resolveReceiver(GraphBuilderContext b, OCLKind vectorKind, ValueNode thisObject) {
+    private static VectorValueNode resolveReceiver(ValueNode thisObject) {
         VectorValueNode vector = null;
         if (thisObject instanceof PiNode) {
             thisObject = ((PiNode) thisObject).getOriginalNode();
@@ -133,16 +133,16 @@ public final class VectorPlugins {
         if (thisObject instanceof VectorValueNode) {
             vector = (VectorValueNode) thisObject;
         }
-        guarantee(vector != null, "unable to resolve vector");
+        guarantee(vector != null, "[Vector Plugins] unable to resolve vector");
         return vector;
     }
 
-    private static VectorValueNode resolveReceiver(GraphBuilderContext b, OCLKind vectorKind, Receiver receiver) {
+    private static VectorValueNode resolveReceiver(Receiver receiver) {
         ValueNode thisObject = receiver.get();
-        return resolveReceiver(b, vectorKind, thisObject);
+        return resolveReceiver(thisObject);
     }
 
-    private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+    private static void registerVectorPlugins(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
         final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
@@ -168,7 +168,7 @@ public final class VectorPlugins {
         });
 
         r.register2("add", declaringClass, declaringClass, new InvocationPlugin() {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode input1, ValueNode input2) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
@@ -178,7 +178,7 @@ public final class VectorPlugins {
         });
 
         r.register2("loadFromArray", storageType, int.class, new InvocationPlugin() {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode array, ValueNode index) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
@@ -190,9 +190,9 @@ public final class VectorPlugins {
         });
 
         r.register3("storeToArray", Receiver.class, storageType, int.class, new InvocationPlugin() {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode array, ValueNode index) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                ValueNode value = reciever.get();
+                ValueNode value = receiver.get();
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 // No need to set stamp as it is inferred from the stamp of the incoming value

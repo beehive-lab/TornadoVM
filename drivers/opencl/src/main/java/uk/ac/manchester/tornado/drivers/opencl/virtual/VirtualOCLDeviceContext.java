@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
@@ -63,6 +64,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     public OCLTargetDevice getDevice() {
         return device;
+    }
+
+    @Override
+    public String getDeviceName() {
+        return String.format(device.getDeviceName());
     }
 
     @Override
@@ -154,6 +160,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
+    public int getDeviceIndex() {
+        return device.getIndex();
+    }
+
+    @Override
     public boolean useRelativeAddresses() {
         if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES && printOnce) {
             System.out.println("Warning: -Dtornado.opencl.userelative was set to False. TornadoVM changed it to True because it is required for FPGA execution.");
@@ -189,5 +200,10 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     public OCLCodeCache getCodeCache() {
         return null;
+    }
+
+    @Override
+    public boolean isCached(String methodName, SchedulableTask task) {
+        return false;
     }
 }

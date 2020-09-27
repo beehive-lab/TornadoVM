@@ -169,6 +169,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return checkAndInitBackend(platform, device);
     }
 
+    @Override
     public OCLBackend getDefaultBackend() {
         return checkAndInitBackend(0, 0);
     }
@@ -212,26 +213,10 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public String getName() {
-        return "OpenCL Driver";
+        return "OpenCL";
     }
 
     public TornadoDeviceType getTypeDefaultDevice() {
-        OCLDeviceType deviceType = ((OCLTornadoDevice) getDefaultDevice()).getDevice().getDeviceType();
-        switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
-                return TornadoDeviceType.CPU;
-            case CL_DEVICE_TYPE_GPU:
-                return TornadoDeviceType.GPU;
-            case CL_DEVICE_TYPE_ACCELERATOR:
-                return TornadoDeviceType.ACCELERATOR;
-            case CL_DEVICE_TYPE_CUSTOM:
-                return TornadoDeviceType.CUSTOM;
-            case CL_DEVICE_TYPE_ALL:
-                return TornadoDeviceType.ALL;
-            case CL_DEVICE_TYPE_DEFAULT:
-                return TornadoDeviceType.DEFAULT;
-            default:
-                throw new RuntimeException("Device not supported");
-        }
+        return getDefaultDevice().getDeviceType();
     }
 }

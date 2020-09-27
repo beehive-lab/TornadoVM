@@ -41,6 +41,8 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
@@ -57,7 +59,7 @@ public class OCLLowTier extends TornadoLowTier {
         }
     }
 
-    public OCLLowTier(OptionValues options, AddressLowering addressLowering) {
+    public OCLLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER));
@@ -83,7 +85,7 @@ public class OCLLowTier extends TornadoLowTier {
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {
-            appendPhase(new TornadoFeatureExtraction());
+            appendPhase(new TornadoFeatureExtraction(tornadoDeviceContext));
         }
 
         if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {

@@ -60,19 +60,23 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 
 public class TornadoFeatureExtraction extends Phase {
+    private TornadoDeviceContext tornadoDeviceContext;
+
+    public TornadoFeatureExtraction(TornadoDeviceContext tornadoDeviceContext) {
+        this.tornadoDeviceContext = tornadoDeviceContext;
+    }
 
     protected void run(StructuredGraph graph) {
-
         LinkedHashMap<ProfilerCodeFeatures, Integer> IRFeatures;
 
         IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.initializeFeatureMap());
 
-        FeatureExtractionUtilities.emitFeatureProfiletoJsonFile(IRFeatures, graph.name);
-
+        FeatureExtractionUtilities.emitFeatureProfileJsonFile(IRFeatures, graph.name, tornadoDeviceContext);
     }
 
     private LinkedHashMap<ProfilerCodeFeatures, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<ProfilerCodeFeatures, Integer> initMap) {

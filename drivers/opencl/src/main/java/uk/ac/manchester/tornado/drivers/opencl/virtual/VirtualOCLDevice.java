@@ -43,7 +43,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     private final long localMemorySize;
     private final int maxWorkItemDimensions;
     private final long[] maxWorkItemSizes;
-    private final long maxWorkGroupSize;
+    private final long[] maxWorkGroupSize;
     private final long maxConstantBufferSize;
     private final long doubleFPConfig;
     private final long singleFPConfig;
@@ -62,7 +62,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
         this.globalMemorySize = INIT_VALUE;
         this.localMemorySize = INIT_VALUE;
         this.maxWorkItemDimensions = INIT_VALUE;
-        this.maxWorkGroupSize = INIT_VALUE;
+        this.maxWorkGroupSize = null;
         this.maxConstantBufferSize = INIT_VALUE;
         this.deviceMaxClockFrequency = INIT_VALUE;
         this.deviceAddressBits = info.getDeviceAddressBits();
@@ -147,7 +147,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
         return maxWorkItemSizes;
     }
 
-    public long getDeviceMaxWorkGroupSize() {
+    public long[] getDeviceMaxWorkGroupSize() {
         return maxWorkGroupSize;
     }
 

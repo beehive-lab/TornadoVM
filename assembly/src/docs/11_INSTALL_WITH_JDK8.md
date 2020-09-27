@@ -4,7 +4,9 @@
 
   * Maven Version 3.6.3
   * CMake 3.6 (or newer)
-  * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
+  * At least one of:   
+    * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
+    * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
   * JDK 8 >= 1.8.0_141
@@ -86,12 +88,12 @@ export CMAKE_ROOT=/opt/cmake-3.10.1
 
 ### 4. Compile TornadoVM
 
-**Important:** The build process in TornadoVM will override the file in `~/.m2/settings.xml`. 
+**Important:** The build process in TornadoVM will override the file in `~/.m2/settings.xml`.
 
 ```bash
 $ cd ~/tornadovm
 $ . etc/sources.env
-$ make
+$ make BACKEND={ptx,opencl}
 ```
 and done!!
 

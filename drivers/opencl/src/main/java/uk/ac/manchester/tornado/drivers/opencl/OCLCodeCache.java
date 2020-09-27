@@ -34,7 +34,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_PRINT_SOURCE;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -182,12 +183,14 @@ public class OCLCodeCache {
             String binaryFile = binaries[i];
             String taskAndDeviceInfo = binaries[i + 1];
             String task = taskAndDeviceInfo.split("\\.")[0] + "." + taskAndDeviceInfo.split("\\.")[1];
-            addNewEntryInBitstreamHashMap(task, binaryFile);
+            String[] driverAndDevice = taskAndDeviceInfo.split("=")[1].split(":");
+            int driverIndex = Integer.parseInt(driverAndDevice[0]);
+            int deviceIndex = Integer.parseInt(driverAndDevice[1]);
+            addNewEntryInBitstreamHashMap(task, binaryFile, driverIndex, deviceIndex);
 
             // For each entry, we should add also an entry for
             // lookup-buffer-address
-            String device = taskAndDeviceInfo.split("\\.")[2];
-            addNewEntryInBitstreamHashMap("oclbackend.lookupBufferAddress", binaryFile);
+            addNewEntryInBitstreamHashMap("oclbackend.lookupBufferAddress", binaryFile, driverIndex, deviceIndex);
         }
     }
 
@@ -356,8 +359,13 @@ public class OCLCodeCache {
     }
 
     private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
+        String[] driverAndDevice = Tornado.getProperty(id + ".device", "0:0").split(":");
+        addNewEntryInBitstreamHashMap(id, bitstreamDirectory, Integer.parseInt(driverAndDevice[0]), Integer.parseInt(driverAndDevice[1]));
+    }
+
+    private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory, int driverIndex, int deviceIndex) {
         if (precompiledBinariesPerDevice != null) {
-            String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
+            String lookupBufferDeviceKernelName = id + String.format(".device=%s:%s", driverIndex, deviceIndex);
             precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
         }
     }
@@ -374,7 +382,7 @@ public class OCLCodeCache {
 
         appendSourceToFile(id, entryPoint, source);
 
-        if (OPENCL_PRINT_SOURCE) {
+        if (PRINT_SOURCE) {
             String sourceCode = new String(source);
             System.out.println(sourceCode);
         }
@@ -450,7 +458,7 @@ public class OCLCodeCache {
             appendSourceToFile(id, entryPoint, source);
         }
 
-        if (OPENCL_PRINT_SOURCE) {
+        if (PRINT_SOURCE) {
             String sourceCode = new String(source);
             System.out.println(sourceCode);
         }
@@ -499,7 +507,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
+            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             if (meta.shouldPrintCompileTimes()) {
                 debug("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
@@ -558,7 +566,7 @@ public class OCLCodeCache {
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
-            debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
+            debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             cache.put(entryPoint, code);
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
                 cache.put("internal-" + entryPoint, code);
@@ -616,8 +624,8 @@ public class OCLCodeCache {
         return lookupCode;
     }
 
-    public boolean isCached(String id, String entryPoint) {
-        return cache.containsKey(id + "-" + entryPoint);
+    public boolean isCached(String key) {
+        return cache.containsKey(key);
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

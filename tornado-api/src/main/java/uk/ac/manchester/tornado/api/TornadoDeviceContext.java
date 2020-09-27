@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDeviceContext {
@@ -56,5 +57,11 @@ public interface TornadoDeviceContext {
     boolean isPlatformFPGA();
 
     boolean useRelativeAddresses();
+
+    boolean isCached(String methodName, SchedulableTask task);
+
+    int getDeviceIndex();
+
+    String getDeviceName();
 
 }

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
 public interface TornadoAcceleratorDevice extends TornadoDevice {
 
@@ -34,10 +34,20 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     CallStack createStack(int numArgs);
 
+    DeviceBuffer createBuffer(int[] buffer);
+
     TornadoInstalledCode installCode(SchedulableTask task);
 
     boolean isFullJITMode(SchedulableTask task);
 
     TornadoInstalledCode getCodeFromCache(SchedulableTask task);
+
+    int[] checkAtomicsForTask(SchedulableTask task);
+
+    /**
+     * In CUDA the context is not attached to the whole process, but to individual threads
+     * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
+     */
+    void enableThreadSharing();
 
 }

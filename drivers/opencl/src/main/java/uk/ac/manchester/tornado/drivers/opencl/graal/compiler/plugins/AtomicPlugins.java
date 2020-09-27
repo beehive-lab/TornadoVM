@@ -37,9 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 public class AtomicPlugins {
 
     public static void registerPlugins(InvocationPlugins plugins) {
-
         registerAtomicPlugins(plugins);
-
     }
 
     private static void registerAtomicPlugins(InvocationPlugins plugins) {

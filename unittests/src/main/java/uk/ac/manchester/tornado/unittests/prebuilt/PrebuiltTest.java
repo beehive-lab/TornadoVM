@@ -46,12 +46,14 @@ public class PrebuiltTest extends TornadoTestBase {
         Arrays.fill(b, 2);
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String filePath = tornadoSDK + "/examples/generated/";
+        filePath += defaultDevice.getDeviceName().contains("cuda") ? "add.ptx" : "add.cl";
 
         // @formatter:off
         new TaskSchedule("s0")
             .prebuiltTask("t0", 
                         "add", 
-                        tornadoSDK + "/examples/generated/add.cl",
+                        filePath,
                         new Object[] { a, b, c },
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, 
                         defaultDevice,

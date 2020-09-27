@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.mm;
 
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 
 public interface TaskMetaDataInterface {
@@ -64,4 +65,14 @@ public interface TaskMetaDataInterface {
     void setNumThreads(long threads);
 
     long getNumThreads();
+
+    void setCompiledGraph(Object graph);
+
+    Object getCompiledGraph();
+
+    int getDriverIndex();
+
+    int getDeviceIndex();
+
+    void setDevice(TornadoDevice device);
 }

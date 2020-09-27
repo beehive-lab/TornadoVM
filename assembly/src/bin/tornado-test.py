@@ -80,6 +80,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
 	"uk.ac.manchester.tornado.unittests.codegen.CodeGen",
 	"uk.ac.manchester.tornado.unittests.grid.TestGrid",
+	"uk.ac.manchester.tornado.unittests.atomics.TestAtomics",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 
@@ -96,7 +97,7 @@ __MAIN_TORNADO_JUNIT_MODULE__ 		= " junit/"
 __MAIN_TORNADO_JUNIT__ 		 		= "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ 			 		= "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
 __IGV_LAST_PHASE__ 			 		= "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
-__PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.opencl.source.print=True "
+__PRINT_OPENCL_KERNEL__ 	 		= "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__ 			 		= "-Dtornado.debug=True "
 __PRINT_EXECUTION_TIMER__    		= "-Dtornado.debug.executionTime=True "
 __GC__                       		= "-Xmx6g "

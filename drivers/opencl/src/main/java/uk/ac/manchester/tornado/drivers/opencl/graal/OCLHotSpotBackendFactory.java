@@ -114,7 +114,8 @@ public class OCLHotSpotBackendFactory {
 
             suites = new OCLSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider,  plugins, suites, hotSpotGCProvider);
+            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites,
+                    hotSpotGCProvider);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }

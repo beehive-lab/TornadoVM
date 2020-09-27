@@ -12,10 +12,14 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
         "TOTAL_TASK_SCHEDULE_TIME": "104699731",
         "TOTAL_GRAAL_COMPILE_TIME": "36462460",
         "TOTAL_KERNEL_TIME": "25600",
+        "DISPATCH_TIME": "61952",
         "COPY_IN_TIME": "88288",
         "TOTAL_DRIVER_COMPILE_TIME": "710824",
         "TOTAL_BYTE_CODE_GENERATION": "7031446",
         "s0.t0": {
+            "DEVICE": "GeForce GTX 1650",
+            "TASK_COPY_OUT_SIZE_BYTES": "8216",
+            "TASK_COPY_IN_SIZE_BYTES": "32892",
             "TASK_COMPILE_GRAAL_TIME": "36462460",
             "TASK_COMPILE_DRIVER_TIME": "710824",
             "TASK_KERNEL_TIME": "25600"
@@ -24,31 +28,34 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
 }
 ```
 
-All timers are printed in nanoseconds. 
+All timers are printed in nanoseconds.
 
 
 #### Explanation
 
 * *COPY_IN_TIME*: OpenCL timers for copy in (host to device)
 * *COPY_OUT_TIME*: OpenCL timers for copy out (device to host)
+* *DISPATCH_TIME*: time spent for dispatching a submitted OpenCL command
 * *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
 * *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation
 * *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
-* *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C)
-* *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C code is generated, the time that the driver takes to generate the final binary, such as the PTX for NVIDIA).
+* *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C / PTX)
+* *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
 
 
-Then, for each task within a task-schedule, there are usually three timers:
+Then, for each task within a task-schedule, there are usually three timers, one device identifier and two data transfer metrics:
 
+* *DEVICE*: device name as provided by the OpenCL driver.
+* *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for a given task.
+* *TASK_COPY_OUT_SIZE_BYTES*: size in bytes of total bytes copied-out for a given task.
 * *TASK_COMPILE_GRAAL_TIME*: time that takes to compile a given task with Graal.
-* *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task with the OpenCL driver.
+* *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task with the OpenCL/CUDA driver.
 * *TASK_KERNEL_TIME*: kernel execution for the given task (Java method).
-
 
 
 #### Note
 
-When the task-schedule is executed multiple times, timers related to compilation will not appear in the Json time-report. This is because the generated binary is cached and there is no compilation after the second iteration. 
+When the task-schedule is executed multiple times, timers related to compilation will not appear in the Json time-report. This is because the generated binary is cached and there is no compilation after the second iteration.
 
 
 ### Print timers at the end of the execution
@@ -58,23 +65,22 @@ The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full r
 
 ### Save profiler into a file
 
-Use the option `-Dtornado.profiler=True -Dtornado.profiler.save=True`.  This option is set to `False` by default.
-
+Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dumps.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. profiler-log.json).
 
 ### Parsing Json files
 
-TornadoVM creates the file `profiler-app.json` with multiple entries for the application (one per task-schedule invocation).
+TornadoVM creates the `profiler-app.json` file with multiple entries for the application (one per task-schedule invocation).
 
 TornadoVM's distribution includes a set of utilities for parsing and obtaining statistics:
 
 ```bash
 $ createJsonFile.py profiler-app.json output.json
-$ readJsonFile.py output.json 
+$ readJsonFile.py output.json
 
 ['readJsonFile.py', 'output.json']
 Processing file: output.json
 Num entries = 10
-Entry,0 
+Entry,0
     TOTAL_BYTE_CODE_GENERATION,6783852
     TOTAL_KERNEL_TIME,26560
     TOTAL_TASK_SCHEDULE_TIME,59962224
@@ -86,6 +92,7 @@ Entry,0
     TASK_COMPILE_GRAAL_TIME,46868099
     TOTAL_GRAAL_COMPILE_TIME,46868099
     TOTAL_DRIVER_COMPILE_TIME,952126
+    DISPATCH_TIME,31008
     EndEntry,0
 
 MEDIANS    ### Print median values for each timer
@@ -94,12 +101,13 @@ MEDIANS    ### Print median values for each timer
     s0.t0-TASK_KERNEL_TIME,25184.0
     COPY_IN_TIME,74016.0
     COPY_OUT_TIME,32816.0
+    DISPATCH_TIME,31008.0
 ```
 
 
 ### Task-Schedule API augmented with profiling calls
 
-TornadoVM Task-Schedules have a set of methods to query profile metrics such as kernel time, data transfers and compilation time. 
+TornadoVM Task-Schedules have a set of methods to query profile metrics such as kernel time, data transfers and compilation time.
 
 ```java
 public interface ProfileInterface {
@@ -117,6 +125,8 @@ public interface ProfileInterface {
     long getWriteTime();
 
     long getReadTime();
+
+    long getDispatchTime();
 
     long getDeviceWriteTime();
 
@@ -142,6 +152,9 @@ long copyInTime = schedule.getDeviceWriteTime();
 // Query copy-out total time (from Device to Host)
 long copyOutTime = schedule.getDeviceReadTime();
 
+// Query dispatch time
+long dispatchTime = schedule.getDispatchTime();
+
 // Query total kernel time
 long kernelTime = schedule.getDeviceKernelTime();
 
@@ -150,19 +163,18 @@ long compilationTime = schedule.getCompileTime();
 ```
 
 
-## Code feature extraction for the OpenCL generated code
+## Code feature extraction for the OpenCL/PTX generated code
 
-To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`. This will generate a Json file in the local directory called `tornado-features.json`.
-
+To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`.
 
 Example:
 
-
 ```bash
 $ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.compute.NBody 1024 1
-$ cat tornado-features.json 
+$ cat tornado-features.json
 {
-    "nBody": { 
+    "nBody": {
+        "DEVICE": "GeForce GTX 1650",
         "Global Memory Loads":  "15",
         "Global Memory Stores":  "6",
         "Constant Memory Loads":  "0",
@@ -188,3 +200,6 @@ $ cat tornado-features.json
 }
 
 ```
+### Save features into a file
+
+Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. features.json).

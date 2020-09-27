@@ -33,11 +33,15 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -292,6 +296,10 @@ public class RuntimeUtilities {
         return duration * 1e-9;
     }
 
+    public static double elapsedTimeInSeconds(long duration) {
+        return duration * 1e-9;
+    }
+
     public static double elapsedTimeInMilliSeconds(long start, long end) {
         return BigDecimal.valueOf((end - start) * 1e-6).setScale(5, RoundingMode.HALF_UP).doubleValue();
     }
@@ -343,7 +351,7 @@ public class RuntimeUtilities {
     }
 
     public static void systemCall(String[] command, boolean printStandardOutput) throws IOException {
-        String stdOutput = null;
+        String stdOutput;
         StringBuffer standardOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
         final String lineSeparator = System.lineSeparator();
@@ -393,6 +401,26 @@ public class RuntimeUtilities {
             fis.write(binary);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static String getTornadoInstanceIP() {
+        String localIP = null;
+        try {
+            InetAddress IP = InetAddress.getLocalHost();
+            localIP = IP.getHostAddress();
+        } catch (UnknownHostException e) {
+            System.out.println("Exception occurred" + e.getMessage());
+        }
+        return localIP;
+    }
+
+    public static void profilerFileWriter(String jsonProfile) {
+        try (FileWriter fileWriter = new FileWriter(TornadoOptions.PROFILER_DIRECTORY, true)) {
+            PrintWriter printWriter = new PrintWriter(fileWriter);
+            printWriter.println(jsonProfile);
+        } catch (IOException e) {
+            throw new TornadoRuntimeException("JSon profiler file cannot be appened");
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -324,9 +324,10 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         return maxWorkItemSizes;
     }
 
-    public long getDeviceMaxWorkGroupSize() {
+    @Override
+    public long[] getDeviceMaxWorkGroupSize() {
         if (maxWorkGroupSize != -1) {
-            return maxWorkGroupSize;
+            return new long[]{maxWorkGroupSize};
         }
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
@@ -334,7 +335,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue(), buffer.array());
 
         maxWorkGroupSize = buffer.getLong();
-        return maxWorkGroupSize;
+        return new long[]{maxWorkGroupSize};
     }
 
     @Override

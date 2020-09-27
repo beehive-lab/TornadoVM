@@ -56,11 +56,13 @@ public final class Tornado implements TornadoCI {
 
     private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
 
+    public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "1"));
+    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "0"));
+
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "False"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
     public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));
     public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
-    public static final boolean PRINT_COMPILE_TIMES = Boolean.parseBoolean(settings.getProperty("tornado.debug.compiletimes", "False"));
     public static final boolean FORCE_ALL_TO_GPU = Boolean.parseBoolean(settings.getProperty("tornado.opencl.forcegpu", "False"));
     public static final boolean USE_SYNC_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.syncflush", "False"));
     public static final boolean USE_VM_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.vmflush", "True"));
@@ -113,8 +115,7 @@ public final class Tornado implements TornadoCI {
          */
         Set<String> localKeys = loadProperties.stringPropertyNames();
         Set<String> systemKeys = settings.stringPropertyNames();
-        Set<String> diff = new HashSet<>();
-        diff.addAll(localKeys);
+        Set<String> diff = new HashSet<>(localKeys);
         diff.removeAll(systemKeys);
 
         for (String key : diff) {
@@ -128,47 +129,47 @@ public final class Tornado implements TornadoCI {
         loadSettings(tornadoRoot + "/etc/tornado.properties");
     }
 
-    public static final void debug(final String pattern, final Object... args) {
+    public static void debug(final String pattern, final Object... args) {
         debug(String.format(pattern, args));
     }
 
-    public static final void error(final String msg) {
+    public static void error(final String msg) {
         log.error(msg);
     }
 
-    public static final void error(final String pattern, final Object... args) {
+    public static void error(final String pattern, final Object... args) {
         error(String.format(pattern, args));
     }
 
-    public static final void fatal(final String msg) {
+    public static void fatal(final String msg) {
         log.fatal(msg);
     }
 
-    public static final void fatal(final String pattern, final Object... args) {
+    public static void fatal(final String pattern, final Object... args) {
         fatal(String.format(pattern, args));
     }
 
-    public static final void info(final String msg) {
+    public static void info(final String msg) {
         log.info(msg);
     }
 
-    public static final void info(final String pattern, final Object... args) {
+    public static void info(final String pattern, final Object... args) {
         info(String.format(pattern, args));
     }
 
-    public static final void trace(final String msg) {
+    public static void trace(final String msg) {
         log.trace(msg);
     }
 
-    public static final void trace(final String pattern, final Object... args) {
+    public static void trace(final String pattern, final Object... args) {
         trace(String.format(pattern, args));
     }
 
-    public static final void warn(final String msg) {
+    public static void warn(final String msg) {
         log.warn(msg);
     }
 
-    public static final void warn(final String pattern, final Object... args) {
+    public static void warn(final String pattern, final Object... args) {
         warn(String.format(pattern, args));
     }
 
@@ -189,7 +190,7 @@ public final class Tornado implements TornadoCI {
     }
 
     @Override
-    public void loadTornadoSettngs(String filename) {
+    public void loadTornadoSettings(String filename) {
         loadSettings(filename);
     }
 

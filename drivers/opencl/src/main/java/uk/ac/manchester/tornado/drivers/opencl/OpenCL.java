@@ -55,10 +55,6 @@ public class OpenCL {
 
     private static final List<TornadoPlatform> platforms = new ArrayList<>();
 
-    public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(getProperty("tornado.opencl.events.dump", "False"));
-
-    public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
-
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
     public static final int CL_TRUE = 1;
@@ -158,9 +154,16 @@ public class OpenCL {
      * Execute an OpenCL code compiled by Tornado on the target device
      * 
      * @param tornadoDevice
+     *            OpenCL device to run the application.
      * @param openCLCode
+     *            OpenCL code to run.
      * @param taskMeta
+     *            TaskMetadata.
+     * @param accesses
+     *            Access of each parameter
      * @param parameters
+     *            List of parameters.
+     * 
      */
     public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
@@ -202,7 +205,7 @@ public class OpenCL {
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {
