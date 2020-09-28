@@ -100,10 +100,10 @@ public class TornadoOptions {
     public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
 
     /**
-     * Once the internal buffers storing events are full, it will start to circulate old events and overwrite them with new ones. Default is True.
+     * Once the internal buffers storing events are full, it will start to circulate
+     * old events and overwrite them with new ones. Default is True.
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", "True"));
-
 
     /**
      * Sets the array memory alignment for PTX devices. Default is 128 bytes.
@@ -114,7 +114,6 @@ public class TornadoOptions {
      * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
      */
     public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
-
 
     /**
      * Option to enable profiler. It can be disabled at any point during runtime.
@@ -138,6 +137,11 @@ public class TornadoOptions {
      * Option to log the IP of the current machine on the profiler logs.
      */
     public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "True");
+
+    /**
+     * Option to log the IP of the current machine on the profiler logs.
+     */
+    public static final boolean PROF_PORT = getBooleanValue("tornado.send.logs", "");
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be
