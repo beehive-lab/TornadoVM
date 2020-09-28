@@ -85,6 +85,16 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void registerDeviceID(ProfilerType type, String taskName, String deviceID) {
+        if (!taskDeviceIdentifiers.containsKey(taskName)) {
+            taskDeviceIdentifiers.put(taskName, new HashMap<>());
+        }
+        HashMap<ProfilerType, String> profilerType = taskDeviceIdentifiers.get(taskName);
+        profilerType.put(type, deviceID);
+        taskDeviceIdentifiers.put(taskName, profilerType);
+    }
+
+    @Override
     public void stop(ProfilerType type) {
         long end = System.nanoTime();
         long start = profilerTime.get(type);
@@ -173,6 +183,7 @@ public class TimeProfiler implements TornadoProfiler {
             if (TornadoOptions.LOG_IP) {
                 json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
             }
+            json.append(indent.toString() + "\"" + ProfilerType.DEVICE_ID + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE_ID) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
             if (!taskThroughputMetrics.isEmpty()) {
                 for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {

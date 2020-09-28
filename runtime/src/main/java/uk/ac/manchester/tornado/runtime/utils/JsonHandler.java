@@ -26,8 +26,10 @@ package uk.ac.manchester.tornado.runtime.utils;
 
 import java.util.HashMap;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 
 public class JsonHandler {
 
@@ -41,7 +43,7 @@ public class JsonHandler {
         indent.delete(0, 4);
     }
 
-    public String createJSon(HashMap<String, Integer> entry, String name, String device) {
+    public String createJSon(HashMap<String, Integer> entry, String name, TornadoDeviceContext device) {
         indent = new StringBuffer();
         StringBuffer json = new StringBuffer("");
         json.append("{\n");
@@ -51,7 +53,8 @@ public class JsonHandler {
         if (TornadoOptions.LOG_IP) {
             json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
         }
-        json.append(indent.toString() + "\"" + "DEVICE" + "\":  \"" + device + "\",\n");
+        json.append(indent.toString() + "\"" + ProfilerCodeFeatures.DEVICE_ID + "\":  \"" + device.getDevicePlatform() + ":" + device.getDeviceIndex() + "\",\n");
+        json.append(indent.toString() + "\"" + ProfilerCodeFeatures.DEVICE + "\":  \"" + device.getDeviceName() + "\",\n");
         for (String s : entry.keySet()) {
             json.append(indent.toString() + "\"" + s + "\":  \"" + entry.get(s) + "\",\n");
         }

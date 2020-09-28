@@ -52,7 +52,6 @@ import java.nio.ByteOrder;
 import java.util.Comparator;
 import java.util.List;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -466,6 +465,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public int getDeviceIndex() {
         return device.getIndex();
+    }
+
+    @Override
+    public int getDevicePlatform() {
+        return context.getPlatformIndex();
     }
 
     public long getBumpBuffer() {
