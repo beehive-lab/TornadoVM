@@ -17,6 +17,7 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
         "TOTAL_DRIVER_COMPILE_TIME": "710824",
         "TOTAL_BYTE_CODE_GENERATION": "7031446",
         "s0.t0": {
+            "DEVICE_ID": "0:2",
             "DEVICE": "GeForce GTX 1650",
             "TASK_COPY_OUT_SIZE_BYTES": "8216",
             "TASK_COPY_IN_SIZE_BYTES": "32892",
@@ -39,12 +40,13 @@ All timers are printed in nanoseconds.
 * *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
 * *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation
 * *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
-* *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C / PTX)
+* *TOTAL_GRAAL_COMPILE_TIME*: Total compila tion with Graal (from Java to OpenCL C / PTX)
 * *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
 
 
 Then, for each task within a task-schedule, there are usually three timers, one device identifier and two data transfer metrics:
 
+* *DEVICE_ID*: platform and device ID index.
 * *DEVICE*: device name as provided by the OpenCL driver.
 * *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for a given task.
 * *TASK_COPY_OUT_SIZE_BYTES*: size in bytes of total bytes copied-out for a given task.
@@ -174,6 +176,7 @@ $ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.co
 $ cat tornado-features.json
 {
     "nBody": {
+        "DEVICE_ID": "0:2",
         "DEVICE": "GeForce GTX 1650",
         "Global Memory Loads":  "15",
         "Global Memory Stores":  "6",
