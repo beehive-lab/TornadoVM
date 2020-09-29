@@ -21,7 +21,7 @@ public class TestReductionTornadoVMContext {
         int id = localGroupSize * groupID + localIdx;
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.globalBarrier();
+            context.localBarrier();
             if (localIdx < stride) {
                 a[id] += a[id + stride];
             }
