@@ -29,4 +29,6 @@ public interface TornadoPlatform {
     TornadoContext createContext();
 
     String getName();
+
+    String getVendor();
 }

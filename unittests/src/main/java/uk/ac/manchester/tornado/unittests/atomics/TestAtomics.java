@@ -188,13 +188,6 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
     }
 
-    private void checkForPTX() {
-        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
-        if ("PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
-            throw new PTXNotSupported("Atomic tests are not supported for the PTX backend");
-        }
-    }
-
     /**
      * How to test?
      * 

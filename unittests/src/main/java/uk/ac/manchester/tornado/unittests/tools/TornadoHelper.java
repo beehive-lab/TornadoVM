@@ -124,8 +124,14 @@ public class TornadoHelper {
         int successCounter = 0;
         int failedCounter = 0;
 
-        bufferConsole.append("Test: " + klass + "\n");
-        bufferFile.append("Test: " + klass + "\n");
+        bufferConsole.append("Test: " + klass);
+        bufferFile.append("Test: " + klass);
+        if (methodName != null) {
+            bufferConsole.append("#" + methodName);
+            bufferFile.append("#" + methodName);
+        }
+        bufferConsole.append("\n");
+        bufferFile.append("\n");
 
         for (Method m : methodsToTest) {
             String message = String.format("%-50s", "\tRunning test: " + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);

@@ -71,4 +71,12 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
     Event resolveEvent(int event);
 
     void flushEvents();
+
+    TornadoContext getPlatformContext();
+
+    long getDeviceId();
+
+    OCLProgram createProgramWithSource(byte[] source, long[] lengths);
+
+    OCLProgram createProgramWithBinary(byte[] binary, long[] lengths);
 }

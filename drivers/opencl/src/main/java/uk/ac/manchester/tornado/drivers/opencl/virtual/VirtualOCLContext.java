@@ -63,7 +63,7 @@ public class VirtualOCLContext extends TornadoLogger implements TornadoContext {
     }
 
 
-    int getPlatformIndex() {
+    public int getPlatformIndex() {
         return platform.getIndex();
     }
 

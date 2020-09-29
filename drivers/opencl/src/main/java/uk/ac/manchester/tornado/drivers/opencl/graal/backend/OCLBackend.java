@@ -116,10 +116,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBui
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.TornadoContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -248,8 +249,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDeviceCount();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
-            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
-            OCLTargetDevice dev = device.getDevice();
+            TornadoAcceleratorDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
+            OCLTargetDevice dev = (OCLTargetDevice) device.getDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }
@@ -307,6 +308,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
+
+            if (VIRTUAL_DEVICE_ENABLED) {
+                RuntimeUtilities.maybePrintSource(result.getTargetCode());
+            }
 
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
@@ -376,6 +381,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public void init() {
         if (VIRTUAL_DEVICE_ENABLED) {
+            compileLookupBufferKernel();
             backEndInitialized = true;
             return;
         }

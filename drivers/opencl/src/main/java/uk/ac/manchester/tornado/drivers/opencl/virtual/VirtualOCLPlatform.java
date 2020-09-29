@@ -55,6 +55,11 @@ public class VirtualOCLPlatform extends TornadoLogger implements TornadoPlatform
     }
 
     @Override
+    public String getVendor() {
+        return null;
+    }
+
+    @Override
     public String toString() {
         return getClass().getName();
     }

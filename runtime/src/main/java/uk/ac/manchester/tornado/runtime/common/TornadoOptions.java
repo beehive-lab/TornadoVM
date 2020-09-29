@@ -100,6 +100,11 @@ public class TornadoOptions {
     public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
 
     /**
+     * Prints the generated code by the TornadoVM compiler. Default is False.
+     */
+    public static final String PRINT_SOURCE_DIRECTORY = getProperty("tornado.print.kernel.dir", "");
+
+    /**
      * Once the internal buffers storing events are full, it will start to circulate old events and overwrite them with new ones. Default is True.
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", "True"));

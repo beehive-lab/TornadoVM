@@ -42,10 +42,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -60,11 +60,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 
 public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
@@ -195,10 +193,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
-            if (PRINT_SOURCE) {
-                String sourceCode = new String(result.getTargetCode());
-                System.out.println(sourceCode);
-            }
+            RuntimeUtilities.maybePrintSource(result.getTargetCode());
 
             return null;
         } catch (Exception e) {
@@ -217,10 +212,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         try {
             final byte[] source = Files.readAllBytes(path);
 
-            if (PRINT_SOURCE) {
-                String sourceCode = new String(source);
-                System.out.println(sourceCode);
-            }
+            RuntimeUtilities.maybePrintSource(source);
         } catch (IOException e) {
             e.printStackTrace();
         }

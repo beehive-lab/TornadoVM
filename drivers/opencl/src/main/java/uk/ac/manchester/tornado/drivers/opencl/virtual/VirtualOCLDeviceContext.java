@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -46,10 +47,12 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     private boolean wasReset;
     private boolean useRelativeAddresses;
     private boolean printOnce = true;
+    private final OCLCodeCache codeCache;
 
     protected VirtualOCLDeviceContext(OCLTargetDevice device, VirtualOCLContext context) {
         this.device = device;
         this.context = context;
+        this.codeCache = new OCLCodeCache(this);
 
         setRelativeAddressesFlag();
     }
@@ -78,6 +81,21 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     public VirtualOCLContext getPlatformContext() {
         return context;
+    }
+
+    @Override
+    public long getDeviceId() {
+        return 0;
+    }
+
+    @Override
+    public OCLProgram createProgramWithSource(byte[] source, long[] lengths) {
+        return null;
+    }
+
+    @Override
+    public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
+        return null;
     }
 
     @Override
@@ -199,7 +217,7 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     public OCLCodeCache getCodeCache() {
-        return null;
+        return codeCache;
     }
 
     @Override

@@ -35,4 +35,6 @@ public interface TornadoContext {
     TornadoPlatform getPlatform();
 
     void createCommandQueue(int index);
+
+    int getPlatformIndex();
 }

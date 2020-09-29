@@ -32,56 +32,70 @@ import subprocess
 import sys
 import time
 
+class TestEntry:
+	def __init__(self, testName, testMethods, testParameters):
+		self.testName = testName
+		self.testMethods = testMethods
+		self.testParameters = testParameters
+
 ## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
-	"uk.ac.manchester.tornado.unittests.TestHello",
-	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
-	"uk.ac.manchester.tornado.unittests.functional.TestLambdas",
-	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats",
-	"uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles",
-	"uk.ac.manchester.tornado.unittests.vectortypes.TestInts",
-	"uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation",
-	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest",
-	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer",
-	"uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice",
-	"uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice",
-	"uk.ac.manchester.tornado.unittests.images.TestImages",
-	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
-	"uk.ac.manchester.tornado.unittests.branching.TestConditionals",
-	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
-	"uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions",
-	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong",
-	"uk.ac.manchester.tornado.unittests.reductions.InstanceReduction",
-	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
-	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
-	"uk.ac.manchester.tornado.unittests.api.TestAPI",
-	"uk.ac.manchester.tornado.unittests.math.TestMath",
-	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
-	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
-	"uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap",
-	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
-	"uk.ac.manchester.tornado.unittests.fields.TestFields",
-	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
-	"uk.ac.manchester.tornado.unittests.reductions.MultipleReductions",
-	"uk.ac.manchester.tornado.unittests.bitsets.BitSetTests",
-	"uk.ac.manchester.tornado.unittests.fails.TestFails",
-    "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection",
-    "uk.ac.manchester.tornado.unittests.arrays.TestNewArrays",
-	"uk.ac.manchester.tornado.unittests.dynsize.Resize",
-	"uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations",
-    "uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion",
-	"uk.ac.manchester.tornado.unittests.numpromotion.Types",
-	"uk.ac.manchester.tornado.unittests.numpromotion.Inlining", 
-	"uk.ac.manchester.tornado.unittests.fails.CodeFail",
-	"uk.ac.manchester.tornado.unittests.codegen.CodeGen",
-	"uk.ac.manchester.tornado.unittests.grid.TestGrid",
-	"uk.ac.manchester.tornado.unittests.atomics.TestAtomics",
-	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	TestEntry("uk.ac.manchester.tornado.unittests.TestHello", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails", None, None),
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection", None, None),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations", None, None),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic", None, None),
+	TestEntry("uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel", ["testVirtualDeviceKernelGPU"],
+			  ["-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json", "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True", "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_ROOT"] + "/virtualKernelOut.out"]),
+	TestEntry("uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel", ["testVirtualDeviceKernelCPU"],
+			  ["-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json" ,"-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True", "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_ROOT"] + "/virtualKernelOut.out"]),
+	TestEntry("uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction", ["testVirtualDeviceFeaturesGPU"],
+			  ["-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json", "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True", "-Dtornado.features.dump.dir=" + os.environ["TORNADO_ROOT"] + "/virtualFeaturesOut.out"]),
+	TestEntry("uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction", ["testVirtualDeviceFeaturesCPU"],
+			  ["-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json", "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True", "-Dtornado.features.dump.dir=" + os.environ["TORNADO_ROOT"] + "/virtualFeaturesOut.out"])
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
@@ -236,6 +250,12 @@ def runCommandWithStats(command, stats):
 	
 	return processStats(out, stats)
 
+def appendTestRunnerClassToCmd(cmd):
+	if (javaVersion == JDK_11_VERSION):
+		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
+	else:
+		cmd += " " + __MAIN_TORNADO_TEST_RUNNER__
+	return cmd
 
 def runTests(args):
 	""" Run the tests using the TornadoTestRunner program """	
@@ -246,22 +266,32 @@ def runTests(args):
 
 	cmd = TORNADO_CMD + options
 
-	if (javaVersion == JDK_11_VERSION):
-		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
-	else:
-		cmd += " " + __MAIN_TORNADO_TEST_RUNNER__
-
 	if (args.testClass != None):
+		command = appendTestRunnerClassToCmd(cmd)
 		if (args.fast):
-			cmd = cmd + " " + args.testClass
-			os.system(cmd)
+			command = command + " " + args.testClass
+			os.system(command)
 		else:
-			runSingleCommand(cmd, args)
+			runSingleCommand(command, args)
 	else:
 		start = time.time()
 		for t in __TEST_THE_WORLD__:
-			command = cmd + t
-			if (args.fast):
+			command = cmd
+			if t.testParameters:
+				for testParam in t.testParameters:
+					command += " " + testParam
+
+			command = appendTestRunnerClassToCmd(command)
+			command += " " + t.testName
+			if t.testMethods:
+				for testMethod in t.testMethods:
+					testMethodCmd = command + "#" + testMethod
+					if (args.fast):
+						os.system(testMethodCmd)
+					else:
+						print testMethodCmd
+						stats = runCommandWithStats(testMethodCmd, stats)
+			elif (args.fast):
 				os.system(command)
 			else:
 				print command
@@ -270,7 +300,7 @@ def runTests(args):
 		end = time.time()
 		print Colors.CYAN
 
-		if (args.fast == False):
+		if args.fast == False and args.verbose == True:
 			print Colors.GREEN
 			print "=================================================="
 			print Colors.BLUE + "              Unit tests report " + Colors.GREEN
@@ -297,12 +327,28 @@ def runWithJUnit(args):
 		cmd += " " + __MAIN_TORNADO_JUNIT__
 
 	if (args.testClass != None):
-		cmd = cmd + args.testClass
-		os.system(cmd)
+		command = appendTestRunnerClassToCmd(cmd)
+		command = command + args.testClass
+		os.system(command)
 	else:	
 		for t in __TEST_THE_WORLD__:
-			command = cmd + t
-			os.system(command)
+			command = cmd
+			if t.testParameters:
+				for testParam in t.testParameters:
+					command += " " + testParam
+
+			command = appendTestRunnerClassToCmd(command)
+			command += " " + t.testName
+			if t.testMethods:
+				for testMethod in t.testMethods:
+					testMethodCmd = command + "#" + testMethod
+					if (args.fast):
+						os.system(testMethodCmd)
+					else:
+						print testMethodCmd
+						stats = runCommandWithStats(testMethodCmd, stats)
+			else:
+				os.system(command)
 
 
 def parseArguments():

@@ -301,7 +301,7 @@ public class OCLContext extends TornadoLogger implements TornadoContext {
         return devicePtr;
     }
 
-    int getPlatformIndex() {
+    public int getPlatformIndex() {
         return platform.getIndex();
     }
 
