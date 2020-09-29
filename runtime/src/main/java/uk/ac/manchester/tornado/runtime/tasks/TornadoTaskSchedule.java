@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerF
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -91,6 +92,7 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -500,6 +502,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());
         } else {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
+        }
+
+        if (!TornadoOptions.PROF_PORT.isEmpty()) {
+            TornadoVMClient tornadoVMClient = new TornadoVMClient();
+            try {
+                tornadoVMClient.sentLogOverSocket(timeProfiler.createJson(new StringBuffer(), this.getId()));
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
 
         if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {

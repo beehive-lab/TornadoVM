@@ -416,12 +416,6 @@ public class RuntimeUtilities {
     }
 
     public static void profilerFileWriter(String jsonProfile) {
-        TornadoVMClient tornadoVMClient = new TornadoVMClient();
-        try {
-            tornadoVMClient.sentLogOverSocket(jsonProfile);
-        } catch (IOException e) {
-            System.out.println(e);
-        }
         try (FileWriter fileWriter = new FileWriter(TornadoOptions.PROFILER_DIRECTORY, true)) {
             PrintWriter printWriter = new PrintWriter(fileWriter);
             printWriter.println(jsonProfile);

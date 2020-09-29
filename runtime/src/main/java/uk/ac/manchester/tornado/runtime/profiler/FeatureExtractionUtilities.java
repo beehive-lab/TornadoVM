@@ -37,6 +37,8 @@ import java.util.Map;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
@@ -64,6 +66,15 @@ public class FeatureExtractionUtilities {
                 }
             } else {
                 System.out.println(json);
+            }
+
+            if (!TornadoOptions.PROF_PORT.isEmpty()) {
+                TornadoVMClient tornadoVMClient = new TornadoVMClient();
+                try {
+                    tornadoVMClient.sentLogOverSocket(json);
+                } catch (IOException e) {
+                    System.out.println(e);
+                }
             }
         }
     }
