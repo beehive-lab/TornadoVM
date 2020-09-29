@@ -185,7 +185,7 @@ public class TimeProfiler implements TornadoProfiler {
             }
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE_ID + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE_ID) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");
-            if (!taskThroughputMetrics.isEmpty()) {
+            if (taskThroughputMetrics.containsKey(p)) {
                 for (ProfilerType p1 : taskThroughputMetrics.get(p).keySet()) {
                     json.append(indent.toString() + "\"" + p1 + "\"" + ": " + "\"" + taskThroughputMetrics.get(p).get(p1) + "\",\n");
                 }
