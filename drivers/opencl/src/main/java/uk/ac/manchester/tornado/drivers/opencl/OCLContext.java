@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLContext extends TornadoLogger implements TornadoContext {
+public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment {
 
     public static class OCLBufferResult {
 

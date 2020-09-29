@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import java.util.List;
 
-public interface TornadoContext {
+public interface OCLExecutionEnvironment {
     int getNumDevices();
 
     List<OCLTargetDevice> devices();

@@ -119,7 +119,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
@@ -139,7 +139,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
-    final TornadoContext tornadoContext;
+    final OCLExecutionEnvironment tornadoContext;
     final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
@@ -152,7 +152,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
-    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, TornadoContext openclContext, OCLDeviceContextInterface deviceContext) {
+    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLExecutionEnvironment openclContext, OCLDeviceContextInterface deviceContext) {
         super(providers);
         this.options = options;
         this.target = target;

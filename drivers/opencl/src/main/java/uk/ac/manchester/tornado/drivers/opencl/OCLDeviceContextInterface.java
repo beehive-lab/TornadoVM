@@ -72,7 +72,7 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     void flushEvents();
 
-    TornadoContext getPlatformContext();
+    OCLExecutionEnvironment getPlatformContext();
 
     long getDeviceId();
 

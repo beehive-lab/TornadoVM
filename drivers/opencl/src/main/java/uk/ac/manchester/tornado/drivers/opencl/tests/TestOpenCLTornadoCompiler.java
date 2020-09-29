@@ -30,8 +30,6 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLPlatform;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoContext;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatform;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;

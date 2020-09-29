@@ -25,13 +25,13 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class VirtualOCLContext extends TornadoLogger implements TornadoContext {
+public class VirtualOCLContext extends TornadoLogger implements OCLExecutionEnvironment {
 
     private final List<OCLTargetDevice> devices;
     private final VirtualOCLPlatform platform;
