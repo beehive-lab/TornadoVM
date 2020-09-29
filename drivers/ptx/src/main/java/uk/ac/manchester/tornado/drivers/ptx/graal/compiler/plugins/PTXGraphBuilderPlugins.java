@@ -23,9 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -39,6 +48,10 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
@@ -46,25 +59,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNod
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
 
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
-
 public class PTXGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
         registerTornadoInstrinsicsPlugins(plugins);
         registerPTXBuiltinPlugins(plugins);
-
         PTXMathPlugins.registerTornadoMathPlugins(plugins);
         PTXVectorPlugins.registerPlugins(ps, plugins);
     }
@@ -106,7 +105,8 @@ public class PTXGraphBuilderPlugins {
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.usages().first();
                     // need to remove all nodes from the graph that operate on the new array,
-                    // however, we cannot remove all inputs as they may be used by the currently unbuilt part of the graph.
+                    // however, we cannot remove all inputs as they may be used by the currently
+                    // unbuilt part of the graph.
                     // We also need to ensure that we do not leave any gaps in between fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
@@ -232,10 +232,6 @@ public class PTXGraphBuilderPlugins {
                 return true;
             }
         });
-
-    }
-
-    public static void registerClassInitializationPlugins(Plugins plugins) {
 
     }
 
