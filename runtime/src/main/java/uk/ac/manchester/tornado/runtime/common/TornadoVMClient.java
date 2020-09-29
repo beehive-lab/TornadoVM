@@ -29,17 +29,18 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+
 public class TornadoVMClient {
     private String host;
     private int port;
 
     public TornadoVMClient() {
-        if (!TornadoOptions.PROF_PORT.isEmpty()) {
-            this.host = TornadoOptions.PROF_PORT.split(":")[0];
-            this.port = Integer.parseInt(TornadoOptions.PROF_PORT.split(":")[1]);
-        } else {
-            host = "127.0.0.1";
-            port = 0000;
+        this.host = TornadoOptions.PROF_PORT.split(":")[0];
+        this.port = Integer.parseInt(TornadoOptions.PROF_PORT.split(":")[1]);
+
+        if (!validIP(host)) {
+            throw new TornadoRuntimeException("Invalid IP address. Check the argument passed with -Dtornado.send.logs=IP:PORT");
         }
     }
 
@@ -53,7 +54,33 @@ public class TornadoVMClient {
         } catch (IOException e) {
             System.out.println(e.toString());
         }
+    }
 
+    private boolean validIP(String ip) {
+        try {
+            if (ip == null || ip.isEmpty()) {
+                return false;
+            }
+
+            String[] parts = ip.split("\\.");
+            if (parts.length != 4) {
+                return false;
+            }
+
+            for (String s : parts) {
+                int i = Integer.parseInt(s);
+                if ((i < 0) || (i > 255)) {
+                    return false;
+                }
+            }
+            if (ip.endsWith(".")) {
+                return false;
+            }
+
+            return true;
+        } catch (NumberFormatException numberFormatException) {
+            return false;
+        }
     }
 
 }
