@@ -72,7 +72,7 @@ public class TornadoOptions {
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "True");
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -121,7 +121,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "False");
+        return getBooleanValue("tornado.profiler", "True");
     }
 
     /**
@@ -141,7 +141,7 @@ public class TornadoOptions {
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
-    public static final boolean PROF_PORT = getBooleanValue("tornado.send.logs", "");
+    public static final String PROF_PORT = getProperty("tornado.send.logs", "");
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be

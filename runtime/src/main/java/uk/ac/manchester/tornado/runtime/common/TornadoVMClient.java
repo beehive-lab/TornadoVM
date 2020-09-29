@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
@@ -39,8 +40,8 @@ public class TornadoVMClient {
         this.host = TornadoOptions.PROF_PORT.split(":")[0];
         this.port = Integer.parseInt(TornadoOptions.PROF_PORT.split(":")[1]);
 
-        if (!validIP(host)) {
-            throw new TornadoRuntimeException("Invalid IP address. Check the argument passed with -Dtornado.send.logs=IP:PORT");
+        if (!isValidInet4Address(host) || !TornadoOptions.PROF_PORT.isEmpty()) {
+            throw new TornadoRuntimeException("Invalid IP address. \n Check the argument passed with -Dtornado.send.logs=IP:PORT");
         }
     }
 
@@ -56,29 +57,16 @@ public class TornadoVMClient {
         }
     }
 
-    private boolean validIP(String ip) {
+    public static boolean isValidInet4Address(String ip) {
+        String[] groups = ip.split("\\.");
+
+        if (groups.length != 4)
+            return false;
+
         try {
-            if (ip == null || ip.isEmpty()) {
-                return false;
-            }
+            return Arrays.stream(groups).filter(s -> s.length() > 1 && s.startsWith("0")).map(Integer::parseInt).filter(i -> (i >= 0 && i <= 255)).count() == 4;
 
-            String[] parts = ip.split("\\.");
-            if (parts.length != 4) {
-                return false;
-            }
-
-            for (String s : parts) {
-                int i = Integer.parseInt(s);
-                if ((i < 0) || (i > 255)) {
-                    return false;
-                }
-            }
-            if (ip.endsWith(".")) {
-                return false;
-            }
-
-            return true;
-        } catch (NumberFormatException numberFormatException) {
+        } catch (NumberFormatException e) {
             return false;
         }
     }
