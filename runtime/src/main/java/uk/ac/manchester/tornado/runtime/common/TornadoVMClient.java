@@ -28,9 +28,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class TornadoVMClient {
     private String host;
@@ -40,33 +37,54 @@ public class TornadoVMClient {
         this.host = TornadoOptions.PROF_PORT.split(":")[0];
         this.port = Integer.parseInt(TornadoOptions.PROF_PORT.split(":")[1]);
 
-        if (!isValidInet4Address(host) || !TornadoOptions.PROF_PORT.isEmpty()) {
-            throw new TornadoRuntimeException("Invalid IP address. \n Check the argument passed with -Dtornado.send.logs=IP:PORT");
+        if (!isValidInet4Address(host) || TornadoOptions.PROF_PORT.isEmpty()) {
+            System.out.println("Invalid IP address. \nCheck the argument passed with -Dtornado.send.logs=IP:PORT");
         }
     }
 
     public void sentLogOverSocket(String outputFile) throws IOException {
+        Socket socket = openSocket();
+
+        if (socket.isConnected()) {
+            try (OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)) {
+                out.write(outputFile);
+            } catch (IOException e) {
+                System.out.println(e.toString());
+            }
+        }
+    }
+
+    private Socket openSocket() throws IOException {
         Socket socket;
 
         socket = new Socket(host, port);
 
-        try (OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)) {
-            out.write(outputFile);
-        } catch (IOException e) {
-            System.out.println(e.toString());
-        }
+        return socket;
     }
 
     public static boolean isValidInet4Address(String ip) {
-        String[] groups = ip.split("\\.");
-
-        if (groups.length != 4)
-            return false;
-
         try {
-            return Arrays.stream(groups).filter(s -> s.length() > 1 && s.startsWith("0")).map(Integer::parseInt).filter(i -> (i >= 0 && i <= 255)).count() == 4;
+            if (ip == null || ip.isEmpty()) {
+                return false;
+            }
 
-        } catch (NumberFormatException e) {
+            String[] parts = ip.split("\\.");
+            if (parts.length != 4) {
+                return false;
+            }
+
+            for (String s : parts) {
+                int i = Integer.parseInt(s);
+                if ((i < 0) || (i > 255)) {
+                    return false;
+                }
+            }
+            if (ip.endsWith(".")) {
+                return false;
+            }
+
+            return true;
+        } catch (NumberFormatException nfe) {
             return false;
         }
     }
