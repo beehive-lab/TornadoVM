@@ -136,12 +136,12 @@ public class TornadoOptions {
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
-    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "False");
+    public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", "False");
 
     /**
-     * Option to log the IP of the current machine on the profiler logs.
+     * Option to sent the feature extraction and profiler logs to a specific port.
      */
-    public static final String PROF_PORT = getProperty("tornado.send.logs", "");
+    public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be

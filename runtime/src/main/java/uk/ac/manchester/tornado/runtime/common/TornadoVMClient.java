@@ -34,10 +34,10 @@ public class TornadoVMClient {
     private int port;
 
     public TornadoVMClient() {
-        this.host = TornadoOptions.PROF_PORT.split(":")[0];
-        this.port = Integer.parseInt(TornadoOptions.PROF_PORT.split(":")[1]);
+        this.host = TornadoOptions.SOCKET_PORT.split(":")[0];
+        this.port = Integer.parseInt(TornadoOptions.SOCKET_PORT.split(":")[1]);
 
-        if (!isValidInet4Address(host) || TornadoOptions.PROF_PORT.isEmpty()) {
+        if (!isValidInet4Address(host) || TornadoOptions.SOCKET_PORT.isEmpty()) {
             System.out.println("Invalid IP address. \nCheck the argument passed with -Dtornado.send.logs=IP:PORT");
         }
     }
@@ -48,6 +48,7 @@ public class TornadoVMClient {
         if (socket.isConnected()) {
             try (OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)) {
                 out.write(outputFile);
+                // socket.close();
             } catch (IOException e) {
                 System.out.println(e.toString());
             }

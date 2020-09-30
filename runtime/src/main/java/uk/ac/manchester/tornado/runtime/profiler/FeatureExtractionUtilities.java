@@ -68,7 +68,7 @@ public class FeatureExtractionUtilities {
                 System.out.println(json);
             }
 
-            if (!TornadoOptions.PROF_PORT.isEmpty()) {
+            if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
                 TornadoVMClient tornadoVMClient = new TornadoVMClient();
                 try {
                     tornadoVMClient.sentLogOverSocket(json);

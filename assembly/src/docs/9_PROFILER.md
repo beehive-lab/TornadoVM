@@ -40,7 +40,7 @@ All timers are printed in nanoseconds.
 * *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
 * *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation
 * *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
-* *TOTAL_GRAAL_COMPILE_TIME*: Total compila tion with Graal (from Java to OpenCL C / PTX)
+* *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C / PTX)
 * *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
 
 
@@ -206,3 +206,7 @@ $ cat tornado-features.json
 ### Save features into a file
 
 Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. features.json).
+
+### Send log over a socket.
+
+Use the option `-Dtornado.dump.to.ip=IP:PORT`.  
