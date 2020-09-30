@@ -72,7 +72,7 @@ public class TornadoOptions {
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "True");
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -121,7 +121,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "True");
+        return getBooleanValue("tornado.profiler", "False");
     }
 
     /**
@@ -136,7 +136,7 @@ public class TornadoOptions {
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
-    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "True");
+    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "False");
 
     /**
      * Option to log the IP of the current machine on the profiler logs.
