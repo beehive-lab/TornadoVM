@@ -55,6 +55,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -137,6 +138,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public String getDeviceName() {
         return String.format(device.getDeviceName());
+    }
+
+    @Override
+    public int getDriverIndex() {
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
     }
 
     public OCLContext getPlatformContext() {

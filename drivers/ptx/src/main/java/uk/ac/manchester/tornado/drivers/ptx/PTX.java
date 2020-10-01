@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTX {
-
     public static final String PTX_JNI_LIBRARY = "tornado-ptx";
 
     private static final PTXPlatform platform;
@@ -62,8 +61,9 @@ public class PTX {
     private native static long cuInit();
 
     private static void initialise() {
-        if (initialised)
+        if (initialised) {
             return;
+        }
 
         cuInit();
         initialised = true;

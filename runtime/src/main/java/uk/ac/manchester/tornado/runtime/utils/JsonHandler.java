@@ -53,7 +53,7 @@ public class JsonHandler {
         if (TornadoOptions.LOG_IP) {
             json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
         }
-        json.append(indent.toString() + "\"" + ProfilerCodeFeatures.DEVICE_ID + "\":  \"" + device.getDeviceIndex() + ":" + device.getDevicePlatform() + "\",\n");
+        json.append(indent.toString() + "\"" + ProfilerCodeFeatures.DEVICE_ID + "\":  \"" + device.getDriverIndex() + ":" + device.getDevicePlatform() + "\",\n");
         json.append(indent.toString() + "\"" + ProfilerCodeFeatures.DEVICE + "\":  \"" + device.getDeviceName() + "\",\n");
         for (String s : entry.keySet()) {
             json.append(indent.toString() + "\"" + s + "\":  \"" + entry.get(s) + "\",\n");

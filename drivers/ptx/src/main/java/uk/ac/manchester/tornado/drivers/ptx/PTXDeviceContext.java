@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCallStack;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
@@ -132,6 +133,11 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public int getDeviceIndex() {
         return device.getDeviceIndex();
+    }
+
+    @Override
+    public int getDriverIndex() {
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
     }
 
     @Override
