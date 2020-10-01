@@ -331,16 +331,18 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void printThreadDims() {
-        System.out.printf("task info: %s\n", getId());
-        System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
-        System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
-        System.out.printf("\tdims              : %s\n", domain == null ? "0" : Integer.toString(domain.getDepth()));
+        StringBuilder deviceDebug = new StringBuilder();
+        deviceDebug.append("task info: " + getId() + "\n");
+        deviceDebug.append("\tplatform          : " + getDevice().getPlatformName() + "\n");
+        deviceDebug.append("\tdevice            : " + getDevice().getDescription() + "\n");
+        deviceDebug.append("\tdims              : " + (domain == null ? "0" : domain.getDepth()) + "\n");
         long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;
-        System.out.printf("\tglobal work offset: %s\n", formatWorkDimensionArray(go, "0"));
+        deviceDebug.append("\tglobal work offset: " + formatWorkDimensionArray(go, "0") + "\n");
         long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-        System.out.printf("\tglobal work size  : %s\n", formatWorkDimensionArray(gw, "1"));
+        deviceDebug.append("\tglobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
         long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
-        System.out.printf("\tlocal  work size  : %s\n", lw == null ? "null" : formatWorkDimensionArray(lw, "1"));
+        deviceDebug.append("\tlocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
+        System.out.println(deviceDebug);
     }
 
     @Override
