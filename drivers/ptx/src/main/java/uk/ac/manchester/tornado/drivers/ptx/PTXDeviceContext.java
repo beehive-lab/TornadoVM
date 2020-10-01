@@ -136,7 +136,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
 
     @Override
     public int getDevicePlatform() {
-        return device.getPTXContext().getDeviceContext().getDevicePlatform();
+        return 0;
     }
 
     public ByteOrder getByteOrder() {
