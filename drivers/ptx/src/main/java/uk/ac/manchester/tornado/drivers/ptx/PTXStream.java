@@ -23,14 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DEFAULT_TAG;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_PARALLEL_KERNEL;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_READ_BYTE;
@@ -47,6 +39,14 @@ import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_INT;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_LONG;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_SHORT;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXStream extends TornadoLogger {
 
@@ -162,8 +162,8 @@ public class PTXStream extends TornadoLogger {
             System.out.println("    Grids: " + Arrays.toString(gridDim));
         }
 
-        return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], DYNAMIC_SHARED_MEMORY_BYTES, streamWrapper, kernelParams),
-                DESC_PARALLEL_KERNEL, module.kernelFunctionName.hashCode());
+        return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], DYNAMIC_SHARED_MEMORY_BYTES,
+                streamWrapper, kernelParams), DESC_PARALLEL_KERNEL, module.kernelFunctionName.hashCode());
     }
 
     public int enqueueBarrier() {

@@ -22,8 +22,9 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryTemplate;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -34,15 +35,15 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryTemplate;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class FixedArrayNode extends FixedNode implements LIRLowerable {
@@ -100,7 +101,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         final Value lengthValue = gen.operand(length);
 
         LIRKind lirKind = LIRKind.value(elementKind);
-        final Variable variable = ((PTXLIRGenerator)gen.getLIRGeneratorTool()).newVariable(lirKind, true);
+        final Variable variable = ((PTXLIRGenerator) gen.getLIRGeneratorTool()).newVariable(lirKind, true);
         final PTXBinary.Expr declaration = new PTXBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
         final PTXLIRStmt.ExprStmt expr = new PTXLIRStmt.ExprStmt(declaration);

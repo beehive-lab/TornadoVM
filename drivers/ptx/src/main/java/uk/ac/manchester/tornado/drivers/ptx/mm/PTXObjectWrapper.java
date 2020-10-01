@@ -23,6 +23,24 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -32,21 +50,6 @@ import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 
 public class PTXObjectWrapper implements ObjectBuffer {
 
@@ -265,7 +268,6 @@ public class PTXObjectWrapper implements ObjectBuffer {
                 }
             }
         }
-
     }
 
     private void serialise(Object object) {
@@ -393,9 +395,8 @@ public class PTXObjectWrapper implements ObjectBuffer {
     }
 
     protected void dump(int width) {
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities
-                                  .humanReadableByteCount(bytesToAllocate, true),
-                          RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytesToAllocate, true),
+                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
@@ -449,7 +450,6 @@ public class PTXObjectWrapper implements ObjectBuffer {
                     returnEvent = deviceContext.enqueueMarker(internalEvents);
 
             }
-
         }
         return returnEvent;
     }
@@ -529,4 +529,3 @@ public class PTXObjectWrapper implements ObjectBuffer {
     }
 
 }
-

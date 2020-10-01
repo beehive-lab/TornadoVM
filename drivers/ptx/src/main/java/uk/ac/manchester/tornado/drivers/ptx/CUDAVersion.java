@@ -26,15 +26,16 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class CUDAVersion {
     private static final CUDAVersion[] cudaVersions = new CUDAVersion[] {
-        // 8.0 is the first version to have PTX ISA documentation available therefore this is the oldest supported
-        new CUDAVersion(8000, new CUDAComputeCapability(5, 0)),
-        new CUDAVersion(9000, new CUDAComputeCapability(6, 0)),
-        new CUDAVersion(9010, new CUDAComputeCapability(6, 1)),
-        new CUDAVersion(9020, new CUDAComputeCapability(6, 2)),
-        new CUDAVersion(10000, new CUDAComputeCapability(6, 3)),
-        new CUDAVersion(10010, new CUDAComputeCapability(6, 4)),
-        new CUDAVersion(10020, new CUDAComputeCapability(6, 5)),
-        new CUDAVersion(11000, new CUDAComputeCapability(7, 0)),
+            // 8.0 is the first version to have PTX ISA documentation available therefore
+            // this is the oldest supported
+            new CUDAVersion(8000, new CUDAComputeCapability(5, 0)), //
+            new CUDAVersion(9000, new CUDAComputeCapability(6, 0)), //
+            new CUDAVersion(9010, new CUDAComputeCapability(6, 1)), //
+            new CUDAVersion(9020, new CUDAComputeCapability(6, 2)), //
+            new CUDAVersion(10000, new CUDAComputeCapability(6, 3)), //
+            new CUDAVersion(10010, new CUDAComputeCapability(6, 4)), //
+            new CUDAVersion(10020, new CUDAComputeCapability(6, 5)), //
+            new CUDAVersion(11000, new CUDAComputeCapability(7, 0)), //
     };
 
     private final int sdkVersion;
@@ -59,13 +60,8 @@ public class CUDAVersion {
                 return cudaVersions[i].maxPTXVersion;
             }
         }
-        TornadoInternalError.shouldNotReachHere(String.format(
-                "Unsupported CUDA toolkit version: %d.%d. Please consider upgrading to version %d.%d or higher.",
-                extractMajorVersion(cudaVersion),
-                extractMinorVersion(cudaVersion),
-                extractMajorVersion(cudaVersions[0].sdkVersion),
-                extractMinorVersion(cudaVersions[0].sdkVersion)
-        ));
+        TornadoInternalError.shouldNotReachHere(String.format("Unsupported CUDA toolkit version: %d.%d. Please consider upgrading to version %d.%d or higher.", extractMajorVersion(cudaVersion),
+                extractMinorVersion(cudaVersion), extractMajorVersion(cudaVersions[0].sdkVersion), extractMinorVersion(cudaVersions[0].sdkVersion)));
         return null;
     }
 }

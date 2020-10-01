@@ -21,15 +21,14 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.RegisterConfig;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.code.RegisterConfig;
+
 public class PTXFrameMap extends FrameMap {
-    public PTXFrameMap(CodeCacheProvider codeCache,
-                       RegisterConfig registerConfig,
-                       ReferenceMapBuilderFactory mapBuilderFactory) {
+    public PTXFrameMap(CodeCacheProvider codeCache, RegisterConfig registerConfig, ReferenceMapBuilderFactory mapBuilderFactory) {
         super(codeCache, registerConfig, mapBuilderFactory);
     }
 
@@ -45,9 +44,6 @@ public class PTXFrameMap extends FrameMap {
 
     @Override
     protected int alignFrameSize(int size) {
-        return NumUtil.roundUp(
-                size + returnAddressSize(),
-                getTarget().stackAlignment
-        ) - returnAddressSize();
+        return NumUtil.roundUp(size + returnAddressSize(), getTarget().stackAlignment) - returnAddressSize();
     }
 }

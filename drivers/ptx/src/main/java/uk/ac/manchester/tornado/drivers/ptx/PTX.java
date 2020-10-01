@@ -23,6 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
@@ -32,11 +35,6 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 public class PTX {
 
@@ -64,7 +62,8 @@ public class PTX {
     private native static long cuInit();
 
     private static void initialise() {
-        if (initialised) return;
+        if (initialised)
+            return;
 
         cuInit();
         initialised = true;

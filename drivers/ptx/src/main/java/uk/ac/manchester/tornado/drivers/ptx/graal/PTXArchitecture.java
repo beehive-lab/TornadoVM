@@ -21,22 +21,22 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+
+import java.nio.ByteOrder;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.Variable;
+
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
-
-import java.nio.ByteOrder;
-
-import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class PTXArchitecture extends Architecture {
 
@@ -70,19 +70,11 @@ public class PTXArchitecture extends Architecture {
     public static PTXBuiltInRegister GridDimZ = new PTXBuiltInRegister("%nctaid.z");
 
     public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
-        super("Tornado PTX",
-                wordKind,
-                byteOrder,
-                false,
-                null,
-                LOAD_STORE | STORE_STORE,
-                NATIVE_CALL_DISPLACEMENT_OFFSET,
-                RETURN_ADDRESS_SIZE
-        );
+        super("Tornado PTX", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
 
         STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, wordKind);
 
-        abiRegisters = new PTXParam[]{STACK_POINTER};
+        abiRegisters = new PTXParam[] { STACK_POINTER };
     }
 
     @Override
@@ -133,7 +125,6 @@ public class PTXArchitecture extends Architecture {
             default:
                 throw new TornadoBailoutRuntimeException("illegal java type for " + javaKind.name());
         }
-
         return ptxKind;
     }
 

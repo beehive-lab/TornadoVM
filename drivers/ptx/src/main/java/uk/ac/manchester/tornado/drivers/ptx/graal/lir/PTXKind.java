@@ -22,16 +22,16 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public enum PTXKind implements PlatformKind {
     // @formatter:off
@@ -159,7 +159,7 @@ public enum PTXKind implements PlatformKind {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_LONG_ARRAY;
         } else if (type == JavaKind.Char) {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_CHAR_ARRAY;
-        } else if (type == JavaKind.Byte){
+        } else if (type == JavaKind.Byte) {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_BYTE_ARRAY;
         }
         return null;
@@ -226,27 +226,35 @@ public enum PTXKind implements PlatformKind {
     }
 
     public String getRegisterTypeString() {
-        return  "r" + getTypeChar() + getSizeChar();
+        return "r" + getTypeChar() + getSizeChar();
     }
 
     public char getSizeChar() {
         int actualSize = elementKind == null ? size : elementKind.size;
         switch (actualSize) {
-            case 1: return 'b';
-            case 2: return 'h';
-            case 4: return 'i';
-            case 8: return 'd';
-            default: shouldNotReachHere("size = " + actualSize);
+            case 1:
+                return 'b';
+            case 2:
+                return 'h';
+            case 4:
+                return 'i';
+            case 8:
+                return 'd';
+            default:
+                shouldNotReachHere("size = " + actualSize);
         }
         return 0;
     }
 
     @Override
     public char getTypeChar() {
-        if (this == PTXKind.PRED) return 'p';
-        if (isFloating()) return 'f';
+        if (this == PTXKind.PRED)
+            return 'p';
+        if (isFloating())
+            return 'f';
         if (isInteger()) {
-            if (isUnsigned()) return 'u';
+            if (isUnsigned())
+                return 'u';
             return 's';
         }
 
@@ -263,8 +271,10 @@ public enum PTXKind implements PlatformKind {
             case U8:
             case U16:
             case U32:
-            case U64: return true;
-            default: return false;
+            case U64:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -364,10 +374,14 @@ public enum PTXKind implements PlatformKind {
 
     public PTXKind toUntyped() {
         switch (size) {
-            case 1: return this == PRED ? PTXKind.PRED : PTXKind.B8;
-            case 2: return PTXKind.B16;
-            case 4: return PTXKind.B32;
-            case 8: return PTXKind.B64;
+            case 1:
+                return this == PRED ? PTXKind.PRED : PTXKind.B8;
+            case 2:
+                return PTXKind.B16;
+            case 4:
+                return PTXKind.B32;
+            case 8:
+                return PTXKind.B64;
             default:
                 shouldNotReachHere("can't cast to untyped: " + this);
                 return null;

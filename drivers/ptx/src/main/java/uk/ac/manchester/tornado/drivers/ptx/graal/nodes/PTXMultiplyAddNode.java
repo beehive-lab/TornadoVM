@@ -21,7 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -30,6 +29,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 
 @NodeInfo(shortName = "MulAdd")
@@ -44,7 +45,7 @@ public class PTXMultiplyAddNode extends FloatingNode implements ArithmeticLIRLow
     protected ValueNode z;
 
     public PTXMultiplyAddNode(ValueNode x, ValueNode y, ValueNode z) {
-        super(TYPE,  StampFactory.forKind(x.getStackKind()));
+        super(TYPE, StampFactory.forKind(x.getStackKind()));
 
         this.x = x;
         this.y = y;
