@@ -139,7 +139,8 @@ public class TornadoOptions {
     public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", "False");
 
     /**
-     * Option to sent the feature extraction and profiler logs to a specific port.
+     * Option to sent the feature extraction and/or profiler logs to a specific
+     * port.
      */
     public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
 

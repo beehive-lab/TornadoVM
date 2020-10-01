@@ -27,19 +27,28 @@ package uk.ac.manchester.tornado.runtime.common;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class TornadoVMClient {
     private String host;
     private int port;
 
     public TornadoVMClient() {
-        this.host = TornadoOptions.SOCKET_PORT.split(":")[0];
-        this.port = Integer.parseInt(TornadoOptions.SOCKET_PORT.split(":")[1]);
-
-        if (!isValidInet4Address(host) || TornadoOptions.SOCKET_PORT.isEmpty()) {
-            System.out.println("Invalid IP address. \nCheck the argument passed with -Dtornado.send.logs=IP:PORT");
+        if (validArgument()) {
+            this.host = TornadoOptions.SOCKET_PORT.split(":")[0];
+            this.port = Integer.parseInt(TornadoOptions.SOCKET_PORT.split(":")[1]);
         }
+
+        if (!isValidInet4Address(host) || TornadoOptions.SOCKET_PORT.isEmpty() || !validArgument()) {
+            throw new TornadoRuntimeException("Invalid IP address. \nCheck the argument passed with -Dtornado.send.logs=IP:PORT");
+        }
+    }
+
+    private boolean validArgument() {
+        return TornadoOptions.SOCKET_PORT.split(":").length == 2;
     }
 
     public void sentLogOverSocket(String outputFile) throws IOException {
@@ -48,17 +57,23 @@ public class TornadoVMClient {
         if (socket.isConnected()) {
             try (OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)) {
                 out.write(outputFile);
-                // socket.close();
             } catch (IOException e) {
                 System.out.println(e.toString());
             }
         }
+        socket.close();
     }
 
-    private Socket openSocket() throws IOException {
-        Socket socket;
+    private Socket openSocket() {
+        Socket socket = null;
 
-        socket = new Socket(host, port);
+        try {
+            socket = new Socket(host, port);
+        } catch (UnknownHostException u) {
+            System.out.println(u);
+        } catch (IOException i) {
+            System.out.println(i);
+        }
 
         return socket;
     }
