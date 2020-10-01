@@ -198,7 +198,6 @@ public enum PTXKind implements PlatformKind {
 
     public static PTXKind resolveToVectorKind(ResolvedJavaType type) {
         if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
-
             String typeName = type.getName();
             int index = typeName.lastIndexOf("/");
             String simpleName = typeName.substring(index + 1, typeName.length() - 1).toUpperCase();
@@ -248,16 +247,18 @@ public enum PTXKind implements PlatformKind {
 
     @Override
     public char getTypeChar() {
-        if (this == PTXKind.PRED)
+        if (this == PTXKind.PRED) {
             return 'p';
-        if (isFloating())
+        }
+        if (isFloating()) {
             return 'f';
+        }
         if (isInteger()) {
-            if (isUnsigned())
+            if (isUnsigned()) {
                 return 'u';
+            }
             return 's';
         }
-
         return 'b';
     }
 
