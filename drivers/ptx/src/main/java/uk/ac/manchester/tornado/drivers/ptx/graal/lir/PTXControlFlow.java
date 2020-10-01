@@ -24,18 +24,19 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.LabelRef;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AbstractInstruction;
-
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.BRANCH;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.UNI;
+
+import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.LabelRef;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AbstractInstruction;
 
 public class PTXControlFlow {
 
@@ -83,11 +84,16 @@ public class PTXControlFlow {
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emitSymbol(TAB);
             asm.emit(BRANCH);
-            if (!isConditional) asm.emit(DOT + UNI);
+            if (!isConditional) {
+                asm.emit(DOT + UNI);
+            }
             asm.emitSymbol(TAB);
 
-            if (isLoopEdgeBack) asm.emitLoop(destination.label().getBlockId());
-            else emitBlockRef(destination, asm);
+            if (isLoopEdgeBack) {
+                asm.emitLoop(destination.label().getBlockId());
+            } else {
+                emitBlockRef(destination, asm);
+            }
             asm.delimiter();
             asm.eol();
         }
@@ -96,7 +102,8 @@ public class PTXControlFlow {
     public static class DeoptOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<DeoptOp> TYPE = LIRInstructionClass.create(DeoptOp.class);
-        @Use private final Value actionAndReason;
+        @Use
+        private final Value actionAndReason;
 
         public DeoptOp(Value actionAndReason) {
             super(TYPE);

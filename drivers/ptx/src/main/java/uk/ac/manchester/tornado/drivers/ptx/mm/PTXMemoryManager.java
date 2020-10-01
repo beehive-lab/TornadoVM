@@ -23,18 +23,16 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_CALL_STACK_LIMIT;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_CALL_STACK_LIMIT;
 
 public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -60,15 +58,13 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;
-        Tornado.info("Reset heap @ 0x%x (%s) on %s",
-                     deviceHeapPointer,
-                     RuntimeUtilities.humanReadableByteCount(heapLimit, true),
-                     deviceContext.getDevice().getDeviceName()
-        );
+        Tornado.info("Reset heap @ 0x%x (%s) on %s", deviceHeapPointer, RuntimeUtilities.humanReadableByteCount(heapLimit, true), deviceContext.getDevice().getDeviceName());
     }
 
     @Override
-    public long getCallStackSize() { return callStackLimit; }
+    public long getCallStackSize() {
+        return callStackLimit;
+    }
 
     @Override
     public long getCallStackAllocated() {
@@ -91,7 +87,9 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     @Override
-    public long getHeapAllocated() { return heapPosition - callStackLimit; }
+    public long getHeapAllocated() {
+        return heapPosition - callStackLimit;
+    }
 
     @Override
     public boolean isInitialised() {
@@ -108,7 +106,6 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
             fatal("Out of call-stack memory");
             System.exit(-1);
         }
-
         return callStack;
     }
 
@@ -118,14 +115,8 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
         if (headerStart + bytes < heapLimit) {
             heapPosition = headerStart + bytes;
         } else {
-            throw new TornadoOutOfMemoryException("Out of memory on the target device -> " +
-                            deviceContext.getDevice().getDeviceName() +
-                            ". [Heap Limit is: " +
-                            RuntimeUtilities.humanReadableByteCount(heapLimit, true) +
-                            " and the application requires: " +
-                            RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true) +
-                            "]"
-            );
+            throw new TornadoOutOfMemoryException("Out of memory on the target device -> " + deviceContext.getDevice().getDeviceName() + ". [Heap Limit is: "
+                    + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true) + "]");
         }
         return headerStart;
     }
@@ -151,9 +142,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public long toAbsoluteDeviceAddress(long address) {
         long result = address;
 
-        guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped arround: %d + %d = %d", address,
-                  deviceHeapPointer, address + deviceHeapPointer
-        );
+        guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped arround: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
         result += deviceHeapPointer;
 
         return result;

@@ -24,16 +24,6 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
-
 import static org.graalvm.compiler.lir.LIRInstruction.Use;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.paramSpace;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryOp;
@@ -42,6 +32,17 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SQUARE_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SQUARE_BRACKETS_OPEN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
 
 public class PTXUnary {
 
@@ -143,7 +144,6 @@ public class PTXUnary {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            //@formatter:off
             if (isSharedMemoryAccess()) {
                 asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
@@ -151,32 +151,39 @@ public class PTXUnary {
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             } else {
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                if (name != null) asm.emit(name);
-                if (value != null) asm.emitValue(value);
+                if (name != null) {
+                    asm.emit(name);
+                }
+                if (value != null) {
+                    asm.emitValue(value);
+                }
                 if (index != null && ((ConstantValue) index).getJavaConstant().asInt() != 0) {
                     asm.emitConstant((ConstantValue) index);
                 }
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             }
-            //@formatter:on
         }
 
         public void emit(PTXAssembler asm, int index) {
-            //@formatter:off
             if (isSharedMemoryAccess()) {
-                if (value != null) asm.emitValue(value);
+                if (value != null) {
+                    asm.emitValue(value);
+                }
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 asm.emitConstant(index);
             } else {
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                if (name != null) asm.emit(name);
-                if (value != null) asm.emitValue(value);
+                if (name != null) {
+                    asm.emit(name);
+                }
+                if (value != null) {
+                    asm.emitValue(value);
+                }
                 if (index != 0) {
                     asm.emitConstant(index);
                 }
             }
             asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
-            //@formatter:on
         }
 
         private boolean isSharedMemoryAccess() {

@@ -23,15 +23,15 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.Arrays;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.FULL_DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXScheduler {
 
@@ -42,7 +42,9 @@ public class PTXScheduler {
     }
 
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
-        if (meta.isGlobalWorkDefined()) return;
+        if (meta.isGlobalWorkDefined()) {
+            return;
+        }
 
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
@@ -59,14 +61,13 @@ public class PTXScheduler {
     }
 
     public int[] calculateBlockDimension(long[] globalWork, int maxThreadBlocks, int dimension, String javaName) {
-        int[] defaultBlocks = {1, 1, 1};
+        int[] defaultBlocks = { 1, 1, 1 };
         try {
             int maxBlockThreads = maxThreadBlocks;
             for (int i = 0; i < dimension; i++) {
                 defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(dimension, maxBlockThreads), globalWork[i]);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             warn("[CUDA-PTX] Failed to calculate blocks for " + javaName);
             warn("[CUDA-PTX] Falling back to blocks: " + Arrays.toString(defaultBlocks));
             if (DEBUG || FULL_DEBUG) {
@@ -78,7 +79,9 @@ public class PTXScheduler {
     }
 
     private long calculateEffectiveMaxWorkItemSize(int dimension, int threads) {
-        if (dimension == 0) shouldNotReachHere();
+        if (dimension == 0) {
+            shouldNotReachHere();
+        }
         return (long) Math.pow(threads, (double) 1 / dimension);
     }
 
@@ -103,7 +106,7 @@ public class PTXScheduler {
     }
 
     public int[] calculateGridDimension(String javaName, int dimension, int[] globalWork, int[] blockDimension) {
-        int[] defaultGrids = {1, 1, 1};
+        int[] defaultGrids = { 1, 1, 1 };
 
         try {
             long[] maxGridSizes = device.getDeviceMaxWorkGroupSize();
@@ -112,8 +115,7 @@ public class PTXScheduler {
                 int workSize = globalWork[i];
                 defaultGrids[i] = Math.max(Math.min(workSize / blockDimension[i], (int) maxGridSizes[i]), 1);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             warn("[CUDA-PTX] Failed to calculate grids for " + javaName);
             warn("[CUDA-PTX] Falling back to grid: " + Arrays.toString(defaultGrids));
             if (DEBUG || FULL_DEBUG) {
@@ -121,7 +123,6 @@ public class PTXScheduler {
             }
             throw new TornadoBailoutRuntimeException("[Error During Grid Size compute] ", e);
         }
-
         return defaultGrids;
     }
 }

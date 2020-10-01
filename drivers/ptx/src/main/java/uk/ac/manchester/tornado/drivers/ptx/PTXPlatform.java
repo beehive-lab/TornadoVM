@@ -55,7 +55,7 @@ public class PTXPlatform extends TornadoLogger {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("name=%s, num. devices=%d" ,getName(), devices.length));
+        sb.append(String.format("name=%s, num. devices=%d", getName(), devices.length));
 
         return sb.toString().trim();
     }

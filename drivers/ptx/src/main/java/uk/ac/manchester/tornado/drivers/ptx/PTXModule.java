@@ -47,7 +47,9 @@ public class PTXModule {
     private native static int cuOccupancyMaxPotentialBlockSize(byte[] module, String funcName);
 
     public int getMaxThreadBlocks() {
-        if (maxBlockSize < 0) maxBlockSize = cuOccupancyMaxPotentialBlockSize(moduleWrapper, kernelFunctionName);
+        if (maxBlockSize < 0) {
+            maxBlockSize = cuOccupancyMaxPotentialBlockSize(moduleWrapper, kernelFunctionName);
+        }
         return maxBlockSize;
     }
 

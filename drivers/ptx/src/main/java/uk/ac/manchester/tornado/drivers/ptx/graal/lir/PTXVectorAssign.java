@@ -44,14 +44,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction.Use;
-import org.graalvm.compiler.lir.Variable;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
@@ -61,6 +53,14 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt.shouldEmitMove;
 
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.LIRInstruction.Use;
+import org.graalvm.compiler.lir.Variable;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+
 public class PTXVectorAssign {
 
     /**
@@ -68,7 +68,8 @@ public class PTXVectorAssign {
      */
     public static class AssignVectorExpr extends PTXLIROp {
 
-        @Use protected Value[] values;
+        @Use
+        protected Value[] values;
 
         public AssignVectorExpr(PTXKind ptxKind, Value... values) {
             super(LIRKind.value(ptxKind));
@@ -77,7 +78,7 @@ public class PTXVectorAssign {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            PTXKind destElementKind = ((PTXKind)dest.getPlatformKind()).getElementKind();
+            PTXKind destElementKind = ((PTXKind) dest.getPlatformKind()).getElementKind();
             PTXVectorSplit vectorSplitData = new PTXVectorSplit(dest);
 
             for (int i = 0; i < vectorSplitData.vectorNames.length; i++) {

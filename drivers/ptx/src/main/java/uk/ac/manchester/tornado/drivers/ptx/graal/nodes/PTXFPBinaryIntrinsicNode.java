@@ -21,10 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -41,6 +40,11 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
@@ -50,9 +54,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
@@ -65,13 +66,11 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
     public static final NodeClass<PTXFPBinaryIntrinsicNode> TYPE = NodeClass.create(PTXFPBinaryIntrinsicNode.class);
     protected final Operation operation;
 
-    // @formatter:off
     public enum Operation {
-        FMAX, 
-        FMIN,
-        POW
+        FMAX, //
+        FMIN, //
+        POW //
     }
-    // @formatter:on
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool) {
@@ -148,14 +147,13 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
     /**
      * Generates the instructions to compute the power function (x ^ y).
      *
-     * Because PTX cannot perform this computation directly, we use the functions available to obtain the result.
-     * The pseudocode below illustrates what we do to compute z = x ^ y :
-     *      if (x < 0) x = -x;
-     *      z = 2^(y * log2(x));
-     *      if (x < 0 && y % 2 == 1) z = -z;
+     * Because PTX cannot perform this computation directly, we use the functions
+     * available to obtain the result. The pseudocode below illustrates what we do
+     * to compute z = x ^ y : if (x < 0) x = -x; z = 2^(y * log2(x)); if (x < 0 && y
+     * % 2 == 1) z = -z;
      *
-     * Because the log function only operates on single precision FPU ,
-     * we must convert the inputs and output to and from double precision FPU, if necessary.
+     * Because the log function only operates on single precision FPU , we must
+     * convert the inputs and output to and from double precision FPU, if necessary.
      */
     private void generatePow(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x, Value y) {
         LIRGeneratorTool genTool = builder.getLIRGeneratorTool();

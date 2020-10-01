@@ -23,19 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 
 public class PTXEventsWrapper {
 
