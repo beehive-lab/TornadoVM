@@ -105,11 +105,15 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(ts.getDataTransfersTime(), 0);
         assertEquals(ts.getReadTime(), 0);
         assertEquals(ts.getWriteTime(), 0);
-        assertEquals(ts.getDispatchTime(), 0);
         assertEquals(ts.getDeviceReadTime(), 0);
         assertEquals(ts.getDeviceWriteTime(), 0);
         assertEquals(ts.getDeviceKernelTime(), 0);
         assertEquals(ts.getDeviceKernelTime(), 0);
+
+        if (!checkForPTX()) {
+            assertTrue(ts.getDispatchTime() > 0);
+        }
+
     }
 
     private boolean checkForPTX() {
