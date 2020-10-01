@@ -39,23 +39,29 @@ public class PTXLIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getIntegerKind(int bits) {
-        if (bits <= 8)
+        if (bits <= 8) {
             return LIRKind.value(PTXKind.S8);
-        if (bits <= 16)
+        }
+        if (bits <= 16) {
             return LIRKind.value(PTXKind.S16);
-        if (bits <= 32)
+        }
+        if (bits <= 32) {
             return LIRKind.value(PTXKind.S32);
-        if (bits <= 64)
+        }
+        if (bits <= 64) {
             return LIRKind.value(PTXKind.S64);
+        }
         throw shouldNotReachHere();
     }
 
     @Override
     public LIRKind getFloatingKind(int bits) {
-        if (bits == 32)
+        if (bits == 32) {
             return LIRKind.value(PTXKind.F32);
-        if (bits == 64)
+        }
+        if (bits == 64) {
             return LIRKind.value(PTXKind.F64);
+        }
         throw shouldNotReachHere();
     }
 

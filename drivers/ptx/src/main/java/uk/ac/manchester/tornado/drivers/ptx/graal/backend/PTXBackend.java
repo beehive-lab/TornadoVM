@@ -141,8 +141,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public void init() {
-        if (isInitialised)
+        if (isInitialised) {
             return;
+        }
 
         allocateHeapMemoryOnDevice();
 

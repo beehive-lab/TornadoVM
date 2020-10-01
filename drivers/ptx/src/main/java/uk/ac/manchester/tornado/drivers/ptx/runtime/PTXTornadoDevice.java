@@ -359,8 +359,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.isValid())
+        if (!objectState.isValid()) {
             ensureAllocated(object, batchSize, objectState);
+        }
 
         if (BENCHMARKING_MODE || !objectState.hasContents()) {
             objectState.setContents(true);

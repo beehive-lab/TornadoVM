@@ -42,8 +42,9 @@ public class PTXScheduler {
     }
 
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
-        if (meta.isGlobalWorkDefined())
+        if (meta.isGlobalWorkDefined()) {
             return;
+        }
 
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
@@ -78,8 +79,9 @@ public class PTXScheduler {
     }
 
     private long calculateEffectiveMaxWorkItemSize(int dimension, int threads) {
-        if (dimension == 0)
+        if (dimension == 0) {
             shouldNotReachHere();
+        }
         return (long) Math.pow(threads, (double) 1 / dimension);
     }
 
@@ -121,7 +123,6 @@ public class PTXScheduler {
             }
             throw new TornadoBailoutRuntimeException("[Error During Grid Size compute] ", e);
         }
-
         return defaultGrids;
     }
 }

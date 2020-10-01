@@ -215,8 +215,9 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         args.order(getByteOrder());
 
         // Stack pointer
-        if (!stack.isOnDevice())
+        if (!stack.isOnDevice()) {
             stack.write();
+        }
         long address = stack.getAddress();
         args.putLong(address);
 
