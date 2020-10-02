@@ -21,9 +21,15 @@ pipeline {
                 checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/TornadoVM-Internal.git']]])
            }
         }
-        stage('Build with JDK-8') {
+        stage('[PTX] Build with JDK-8') {
             steps {
-                sh 'make'
+                sh 'make BACKEND=ptx'
+            }
+        }
+
+        stage('[OpenCL] Build with JDK-8') {
+            steps {
+                sh 'make BACKEND=opencl'
                 sh 'bash bin/bin/tornadoLocalInstallMaven'
             }
         }
