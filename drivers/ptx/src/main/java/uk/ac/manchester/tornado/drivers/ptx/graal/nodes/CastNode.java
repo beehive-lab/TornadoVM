@@ -22,8 +22,8 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -35,14 +35,15 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
-
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode {
@@ -61,10 +62,13 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
     }
 
     /**
-     * Generates the PTX LIR instructions for a cast between two variables. It covers the following cases:
-     *  - if the result is not a FPU number and the value is a FPU number, then we perform a conversion which rounds towards zero (as Java does).
-     *  Also, we check if the value is an exceptional case such as NaN, +/- infinity. For this case, we put 0 in the result.
-     *  - if both operands are FPU, then we do a simple convert operation with the proper rounding modifier (if needed).
+     * Generates the PTX LIR instructions for a cast between two variables. It
+     * covers the following cases: - if the result is not a FPU number and the value
+     * is a FPU number, then we perform a conversion which rounds towards zero (as
+     * Java does). Also, we check if the value is an exceptional case such as NaN,
+     * +/- infinity. For this case, we put 0 in the result. - if both operands are
+     * FPU, then we do a simple convert operation with the proper rounding modifier
+     * (if needed).
      */
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
@@ -83,10 +87,8 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
 
             Variable nanPred = gen.newVariable(LIRKind.value(PTXKind.PRED));
             gen.append(new PTXLIRStmt.AssignStmt(nanPred, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.TESTP_NORMAL, LIRKind.value(valueKind), value)));
-            gen.append(new PTXLIRStmt.ConditionalStatement(
-                    new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(opcode, lirKind, value)), nanPred, false));
-            gen.append(new PTXLIRStmt.ConditionalStatement(
-                    new PTXLIRStmt.AssignStmt(result, new ConstantValue(LIRKind.value(resultKind), PrimitiveConstant.INT_0)), nanPred, true));
+            gen.append(new PTXLIRStmt.ConditionalStatement(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Expr(opcode, lirKind, value)), nanPred, false));
+            gen.append(new PTXLIRStmt.ConditionalStatement(new PTXLIRStmt.AssignStmt(result, new ConstantValue(LIRKind.value(resultKind), PrimitiveConstant.INT_0)), nanPred, true));
         } else {
             if (resultKind.isF64() && valueKind.isF32()) {
                 opcode = PTXAssembler.PTXUnaryOp.CVT_FLOAT;

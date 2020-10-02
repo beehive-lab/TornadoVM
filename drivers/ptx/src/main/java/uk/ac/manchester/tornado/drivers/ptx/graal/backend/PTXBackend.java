@@ -22,16 +22,14 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.backend;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -48,9 +46,18 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
@@ -74,14 +81,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.IntStream;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -142,8 +141,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public void init() {
-        if (isInitialised)
+        if (isInitialised) {
             return;
+        }
 
         allocateHeapMemoryOnDevice();
 
@@ -190,7 +190,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-                                                                   boolean isKernel, boolean isParallel, boolean includePrintf) {
+            boolean isKernel, boolean isParallel, boolean includePrintf) {
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
@@ -321,7 +321,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                     if (vectorSplitData.fullUnwrapVector) {
                         IntStream.range(0, vectorSplitData.vectorNames.length).forEach(i -> asm.emitLine("\t.reg .%s %s;", type.getElementKind(), vectorSplitData.vectorNames[i]));
                     } else {
-                        IntStream.range(0, vectorSplitData.vectorNames.length).forEach(i -> asm.emitLine("\t.reg .v%d .%s %s;", vectorSplitData.newKind.getVectorLength(), type.getElementKind(), vectorSplitData.vectorNames[i]));
+                        IntStream.range(0, vectorSplitData.vectorNames.length)
+                                .forEach(i -> asm.emitLine("\t.reg .v%d .%s %s;", vectorSplitData.newKind.getVectorLength(), type.getElementKind(), vectorSplitData.vectorNames[i]));
                     }
                 }
             }

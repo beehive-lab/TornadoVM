@@ -151,11 +151,6 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistributedMemory() {
-        return true;
-    }
-
-    @Override
     public void ensureLoaded() {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {

@@ -30,6 +30,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 
@@ -41,10 +42,13 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
 
     public static final NodeClass<VectorStoreElementProxyNode> TYPE = NodeClass.create(VectorStoreElementProxyNode.class);
 
-    @Input ValueNode value;
+    @Input
+    ValueNode value;
 
-    @OptionalInput(InputType.Association) ValueNode origin;
-    @OptionalInput(InputType.Association) ValueNode laneOrigin;
+    @OptionalInput(InputType.Association)
+    ValueNode origin;
+    @OptionalInput(InputType.Association)
+    ValueNode laneOrigin;
 
     public ValueNode value() {
         return value;
@@ -60,8 +64,8 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
     public boolean tryResolve() {
         if (canResolve()) {
             /*
-             * If we can resolve this node properly, this operation should be
-             * applied to the vector node and this node should be discarded.
+             * If we can resolve this node properly, this operation should be applied to the
+             * vector node and this node should be discarded.
              */
             final VectorValueNode vector = (VectorValueNode) origin;
             vector.setElement(laneOrigin.asJavaConstant().asInt(), value);

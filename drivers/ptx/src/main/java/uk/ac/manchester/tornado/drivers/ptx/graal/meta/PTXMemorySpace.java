@@ -27,10 +27,10 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.meta;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 
 public enum PTXMemorySpace {
-    GLOBAL(0, PTXAssemblerConstants.GLOBAL_MEM_MODIFIER),
-    PARAM(1, PTXAssemblerConstants.PARAM_MEM_MODIFIER),
-    SHARED(2, PTXAssemblerConstants.SHARED_MEM_MODIFIER),
-    LOCAL(3, PTXAssemblerConstants.LOCAL_MEM_MODIFIER);
+    GLOBAL(0, PTXAssemblerConstants.GLOBAL_MEM_MODIFIER), //
+    PARAM(1, PTXAssemblerConstants.PARAM_MEM_MODIFIER), //
+    SHARED(2, PTXAssemblerConstants.SHARED_MEM_MODIFIER), //
+    LOCAL(3, PTXAssemblerConstants.LOCAL_MEM_MODIFIER); //
 
     private final int index;
     private final String name;

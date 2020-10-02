@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PTXCodeCache {
 
@@ -52,8 +52,7 @@ public class PTXCodeCache {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
                 cache.put(cacheKey, code);
                 return code;
-            }
-            else {
+            } else {
                 throw new TornadoBailoutRuntimeException("PTX JIT compilation failed!");
             }
         }

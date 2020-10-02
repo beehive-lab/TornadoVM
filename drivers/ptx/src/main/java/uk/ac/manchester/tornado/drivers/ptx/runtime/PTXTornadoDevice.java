@@ -23,6 +23,16 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.runtime;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -72,17 +82,6 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-
 public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
@@ -98,7 +97,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         }
         return driver;
     }
-
 
     public PTXTornadoDevice(final int deviceIndex) {
         this.deviceIndex = deviceIndex;
@@ -126,7 +124,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         Tornado.debug("[PTX] Atomics not implemented ! Returning null");
         return null;
     }
-
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
@@ -159,6 +156,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             if (!deviceContext.isCached(resolvedMethod.getName(), executable)) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 // profiler
+                profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
                 profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
@@ -225,11 +223,14 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * It allocates an object in the pre-defined heap of the target device. It also
      * ensure that there is enough space for the input object.
      *
-     * @param object    to be allocated
-     * @param batchSize size of the object to be allocated. If this value is <= 0, then it
-     *                  allocates the sizeof(object).
-     * @param state     state of the object in the target device
-     *                  {@link TornadoDeviceObjectState}
+     * @param object
+     *            to be allocated
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
+     * @param state
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
      * @return an event ID
      */
     @Override
@@ -341,19 +342,26 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     /**
      * It allocates and copy in the content of the object to the target device.
      *
-     * @param object      to be allocated
-     * @param objectState state of the object in the target device
-     *                    {@link TornadoDeviceObjectState}
-     * @param events      list of pending events (dependencies)
-     * @param batchSize   size of the object to be allocated. If this value is <= 0, then it
-     *                    allocates the sizeof(object).
-     * @param hostOffset  offset in bytes for the copy within the host input array (or
-     *                    object)
+     * @param object
+     *            to be allocated
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of pending events (dependencies)
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
      * @return an event ID
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.isValid()) ensureAllocated(object, batchSize, objectState);
+        if (!objectState.isValid()) {
+            ensureAllocated(object, batchSize, objectState);
+        }
 
         if (BENCHMARKING_MODE || !objectState.hasContents()) {
             objectState.setContents(true);
@@ -366,14 +374,19 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * It always copies in the input data (object) from the host to the target
      * device.
      *
-     * @param object      to be copied
-     * @param batchSize   size of the object to be allocated. If this value is <= 0, then it
-     *                    allocates the sizeof(object).
-     * @param hostOffset  offset in bytes for the copy within the host input array (or
-     *                    object)
-     * @param objectState state of the object in the target device
-     *                    {@link TornadoDeviceObjectState}
-     * @param events      list of previous events
+     * @param object
+     *            to be copied
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of previous events
      * @return and event ID
      */
     @Override
@@ -389,12 +402,16 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * It copies a device buffer from the target device to the host. Copies are
      * non-blocking
      *
-     * @param object      to be copied.
-     * @param hostOffset  offset in bytes for the copy within the host input array (or
-     *                    object)
-     * @param objectState state of the object in the target device
-     *                    {@link TornadoDeviceObjectState}
-     * @param events      of pending events
+     * @param object
+     *            to be copied.
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            of pending events
      * @return and event ID
      */
     @Override
@@ -411,12 +428,16 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * It copies a device buffer from the target device to the host. Copies are
      * blocking between the device and the host.
      *
-     * @param object      to be copied.
-     * @param hostOffset  offset in bytes for the copy within the host input array (or
-     *                    object)
-     * @param objectState state of the object in the target device
-     *                    {@link TornadoDeviceObjectState}
-     * @param events      of pending events
+     * @param object
+     *            to be copied.
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            of pending events
      * @return and event ID
      */
     @Override
@@ -428,7 +449,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     /**
      * It resolves an pending event.
      *
-     * @param event ID
+     * @param event
+     *            ID
      * @return an object of type {@link Event}
      */
     @Override
@@ -486,7 +508,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         hash = 89 * hash + this.deviceIndex;
         return hash;
     }
-
 
     @Override
     public void flush() {
@@ -576,11 +597,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistributedMemory() {
-        return false;
-    }
-
-    @Override
     public String getDeviceOpenCLCVersion() {
         return "N/A";
     }
@@ -596,8 +612,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     /**
-     * In CUDA the context is not attached to the whole process, but to individual threads
-     * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
+     * In CUDA the context is not attached to the whole process, but to individual
+     * threads Therefore, in the case of new threads executing a task schedule, we
+     * must make sure that the context is set for that thread.
      */
     @Override
     public void enableThreadSharing() {

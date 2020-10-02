@@ -105,7 +105,8 @@ public class TornadoOptions {
     public static final String PRINT_SOURCE_DIRECTORY = getProperty("tornado.print.kernel.dir", "");
 
     /**
-     * Once the internal buffers storing events are full, it will start to circulate old events and overwrite them with new ones. Default is True.
+     * Once the internal buffers storing events are full, it will start to circulate
+     * old events and overwrite them with new ones. Default is True.
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", "True"));
 
@@ -150,7 +151,13 @@ public class TornadoOptions {
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
-    public static final boolean LOG_IP = getBooleanValue("tornado.profiler.log.ip", "True");
+    public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", "False");
+
+    /**
+     * Option to sent the feature extraction and/or profiler logs to a specific
+     * port.
+     */
+    public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be

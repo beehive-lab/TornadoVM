@@ -25,11 +25,11 @@ package uk.ac.manchester.tornado.drivers.ptx;
 
 public class PTXVersion {
     private enum PTX_VERSION_TO_ARCHITECTURE {
-        PTX_70(new CUDAComputeCapability(7, 0), new TargetArchitecture(8, 0)),
-        PTX_63(new CUDAComputeCapability(6, 3), new TargetArchitecture(7, 5)),
-        PTX_61(new CUDAComputeCapability(6, 1), new TargetArchitecture(7, 2)),
-        PTX_60(new CUDAComputeCapability(6, 0), new TargetArchitecture(7, 0)),
-        PTX_50(new CUDAComputeCapability(5, 0), new TargetArchitecture(6, 2));
+        PTX_70(new CUDAComputeCapability(7, 0), new TargetArchitecture(8, 0)), //
+        PTX_63(new CUDAComputeCapability(6, 3), new TargetArchitecture(7, 5)), //
+        PTX_61(new CUDAComputeCapability(6, 1), new TargetArchitecture(7, 2)), //
+        PTX_60(new CUDAComputeCapability(6, 0), new TargetArchitecture(7, 0)), //
+        PTX_50(new CUDAComputeCapability(5, 0), new TargetArchitecture(6, 2)); //
 
         private final CUDAComputeCapability ptxIsa;
         private final TargetArchitecture targetArchitecture;

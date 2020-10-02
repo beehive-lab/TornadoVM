@@ -25,8 +25,10 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
@@ -72,6 +74,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     @Override
     public String getDeviceName() {
         return String.format(device.getDeviceName());
+    }
+
+    @Override
+    public int getDriverIndex() {
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
     }
 
     @Override
@@ -180,6 +187,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     @Override
     public int getDeviceIndex() {
         return device.getIndex();
+    }
+
+    @Override
+    public int getDevicePlatform() {
+        return context.getPlatformIndex();
     }
 
     @Override

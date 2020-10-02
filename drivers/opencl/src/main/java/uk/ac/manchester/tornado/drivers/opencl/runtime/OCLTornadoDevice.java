@@ -186,11 +186,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistributedMemory() {
-        return true;
-    }
-
-    @Override
     public void ensureLoaded() {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {
@@ -243,6 +238,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
             // profiler
+            profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
             profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());

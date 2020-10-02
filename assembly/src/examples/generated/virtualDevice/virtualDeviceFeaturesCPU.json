@@ -1,7 +1,7 @@
 {
   "maxReduction": {
-    "IP": "127.0.1.1",
-    "DEVICE":  "testDevice",
+    "Device ID":  "0:0",
+    "Device":  "testDevice",
     "Global Memory Loads":  "2",
     "Global Memory Stores":  "1",
     "Constant Memory Loads":  "0",
@@ -30,8 +30,8 @@
 
 {
   "rMax": {
-    "IP": "127.0.1.1",
-    "DEVICE":  "testDevice",
+    "Device ID":  "0:0",
+    "Device":  "testDevice",
     "Global Memory Loads":  "13",
     "Global Memory Stores":  "1",
     "Constant Memory Loads":  "0",

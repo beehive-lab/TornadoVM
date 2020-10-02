@@ -179,7 +179,7 @@ public class TestPTXJITCompiler {
         for (int i = 0; i < c.length; i++) {
             double seq = 0.12 * a[i] * b[i];
             if (Math.abs(c[i] - seq) > 0.01) {
-                System.err.println( i + " Fault result = " + seq + " " + c[i]);
+                System.err.println(i + " Fault result = " + seq + " " + c[i]);
                 correct = false;
                 break;
             }
