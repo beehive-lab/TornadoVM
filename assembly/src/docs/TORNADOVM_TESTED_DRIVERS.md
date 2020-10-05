@@ -21,6 +21,7 @@
 
 The following drivers have been tested on Linux - CentOS 7.8
 
+* 20.37.17906: OK
 * 20.28.17293: OK
 * 20.27.17231: OK
 * 20.26.17199: OK
@@ -85,20 +86,24 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
 #### OpenCL drivers
-* 450.66 : OK
-* 450.57 : OK
-* 440.100: OK
-* 440.82 : OK
-* 440.64 : OK
-* 440.59 : OK
-* 440.40 : OK
-* 440.36 : OK
-* 435.21 : OK
+
+* 450.80.02: OK
+* 450.66   : OK
+* 450.57   : OK
+* 440.100  : OK
+* 440.82   : OK
+* 440.64   : OK
+* 440.59   : OK
+* 440.40   : OK
+* 440.36   : OK
+* 435.21   : OK
 
 #### PTX drivers
-* 450.36 : OK
-* 440.100 : OK
-* 418.56: OK
+
+* 450.80.02: OK
+* 450.36   : OK
+* 440.100  : OK
+* 418.56:   OK
 
 
 ### AMD
