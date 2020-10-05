@@ -9,10 +9,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_FILE;
 
 public class VirtualJSONParser {
+
+    private static final Pattern pattern =  Pattern.compile(" |\",|\"|\t|]|\\[");
 
     private enum JsonKey {
         deviceName,
@@ -31,7 +35,8 @@ public class VirtualJSONParser {
         String json = readVirtualDeviceJson();
         HashMap<JsonKey, String> jsonEntries = new HashMap<>();
         for (String line : json.split("\n")) {
-            String[] keyValue = line.replaceAll(" |\",|\"|\t|]|\\[", "").split(":");
+            Matcher matcher = pattern.matcher(line);
+            String[] keyValue = matcher.replaceAll("").split(":");
             String key = keyValue[0];
             String value = keyValue.length > 1 ? keyValue[1] : null;
             if (value != null) {

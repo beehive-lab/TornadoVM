@@ -52,8 +52,8 @@ public class VirtualDeviceDescriptor {
         return maxWorkItemSizes;
     }
 
-    public long getDoubleFPSupport() {
-        return doubleFPSupport ? 1 : 0;
+    public boolean getDoubleFPSupport() {
+        return doubleFPSupport;
     }
 
     public OCLDeviceType deviceType() {

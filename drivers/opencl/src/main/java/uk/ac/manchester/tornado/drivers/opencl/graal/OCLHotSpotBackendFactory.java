@@ -93,7 +93,7 @@ public class OCLHotSpotBackendFactory {
         }
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
-        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDeviceDoubleFPConfig() != 0, device.getDeviceExtensions());
+        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDeviceDoubleFPConfig(), device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
         OCLDeviceContextInterface deviceContext = tornadoContext.createDeviceContext(device.getIndex());
 

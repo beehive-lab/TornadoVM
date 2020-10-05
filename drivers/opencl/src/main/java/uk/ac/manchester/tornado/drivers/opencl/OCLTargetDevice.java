@@ -40,7 +40,7 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
 
     ByteOrder getByteOrder();
 
-    long getDeviceDoubleFPConfig();
+    boolean getDeviceDoubleFPConfig();
 
     String getDeviceExtensions();
 

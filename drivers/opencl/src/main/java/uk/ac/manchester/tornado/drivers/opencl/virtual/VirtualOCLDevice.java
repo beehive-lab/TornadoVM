@@ -45,7 +45,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     private final long[] maxWorkItemSizes;
     private final long[] maxWorkGroupSize;
     private final long maxConstantBufferSize;
-    private final long doubleFPConfig;
+    private final boolean doubleFPConfig;
     private final long singleFPConfig;
     private final OCLDeviceType deviceType;
     private final int deviceMaxClockFrequency;
@@ -158,7 +158,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
         return maxConstantBufferSize;
     }
 
-    public long getDeviceDoubleFPConfig() {
+    public boolean getDeviceDoubleFPConfig() {
         return doubleFPConfig;
     }
 

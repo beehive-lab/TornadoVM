@@ -352,15 +352,15 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         return maxConstantBufferSize;
     }
 
-    public long getDeviceDoubleFPConfig() {
+    public boolean getDeviceDoubleFPConfig() {
         if (doubleFPConfig != -1) {
-            return doubleFPConfig;
+            return doubleFPConfig != 0;
         }
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue(), buffer.array());
         doubleFPConfig = buffer.getLong();
-        return doubleFPConfig;
+        return doubleFPConfig != 0;
     }
 
     public long getDeviceSingleFPConfig() {
