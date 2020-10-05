@@ -26,7 +26,11 @@ pipeline {
                 sh 'make BACKEND=ptx'
             }
         }
-
+        stage('[OpenCL + PTX] Build with JDK-8') {
+            steps {
+                sh 'make BACKEND=opencl,ptx'
+            }
+        }
         stage('[OpenCL] Build with JDK-8') {
             steps {
                 sh 'make BACKEND=opencl'
