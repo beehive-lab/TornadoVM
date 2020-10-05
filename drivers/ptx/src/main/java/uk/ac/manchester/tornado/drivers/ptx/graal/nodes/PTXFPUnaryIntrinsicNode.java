@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
@@ -41,15 +41,16 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
@@ -167,14 +168,14 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     /**
-     * Generates the instructions to compute exponential function in Java: e ^ a, where e is Euler's constant
-     * and a is an arbitrary number.
+     * Generates the instructions to compute exponential function in Java: e ^ a,
+     * where e is Euler's constant and a is an arbitrary number.
      *
-     * Because PTX cannot perform this computation directly, we use the functions available to obtain the result.
-     *  b = e ^ a  = 2^(a * log2(e))
+     * Because PTX cannot perform this computation directly, we use the functions
+     * available to obtain the result. b = e ^ a = 2^(a * log2(e))
      *
-     * Because the log function only operates on single precision FPU,
-     * we must convert the input and output to and from double precision FPU, if necessary.
+     * Because the log function only operates on single precision FPU, we must
+     * convert the input and output to and from double precision FPU, if necessary.
      */
     public void generateExp(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x) {
         Value auxValue = x;
@@ -185,7 +186,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         }
 
         // we use e^a = 2^(a*log2(e))
-        Value log2e = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float)(Math.log10(Math.exp(1)) / Math.log10(2))));
+        Value log2e = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float) (Math.log10(Math.exp(1)) / Math.log10(2))));
         Value aMulLog2e = lirGen.emitMul(auxValue, log2e, false);
         Value result = gen.genFloatExp2(aMulLog2e);
 
@@ -200,14 +201,14 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     /**
-     * Generates the instructions to compute logarithmic function in Java: log_e(a), where e is Euler's constant
-     * and a is an arbitrary number.
+     * Generates the instructions to compute logarithmic function in Java: log_e(a),
+     * where e is Euler's constant and a is an arbitrary number.
      *
-     * Because PTX cannot perform this computation directly, we use the log_2 function to obtain the result.
-     *  b = log_e(a) = log_2(a) / log_2(e)
+     * Because PTX cannot perform this computation directly, we use the log_2
+     * function to obtain the result. b = log_e(a) = log_2(a) / log_2(e)
      *
-     * Because the log function only operates on single precision FPU,
-     * we must convert the input and output to and from double precision FPU, if necessary.
+     * Because the log function only operates on single precision FPU, we must
+     * convert the input and output to and from double precision FPU, if necessary.
      */
     public void generateLog(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x) {
         Value auxValue = x;
@@ -217,10 +218,10 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, x)).getResult();
         }
 
-        // we use  log_e(a) = log_2(a) / log_2(e)
+        // we use log_e(a) = log_2(a) / log_2(e)
         Variable var = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
         Value nominator = builder.getLIRGeneratorTool().append(new AssignStmt(var, gen.genFloatLog2(auxValue))).getResult();
-        Value denominator = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float)(Math.log10(Math.exp(1)) / Math.log10(2))));
+        Value denominator = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat((float) (Math.log10(Math.exp(1)) / Math.log10(2))));
         Value result = lirGen.emitDiv(nominator, denominator, null);
 
         if (shouldConvertInput(x)) {
@@ -231,9 +232,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     private boolean shouldConvertInput(Value input) {
-        return (operation() == Operation.COS || operation() == Operation.SIN ||
-                operation() == Operation.EXP || operation() == Operation.LOG) &&
-                !((PTXKind) input.getPlatformKind()).isF32();
+        return (operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP || operation() == Operation.LOG) && !((PTXKind) input.getPlatformKind()).isF32();
     }
 
     private static double doCompute(double value, Operation op) {

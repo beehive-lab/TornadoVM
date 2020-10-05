@@ -88,8 +88,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorLoadElement
  * be replaced by floating reads and schedule outside the scope of the parallel
  * loop.
  *
- * @org.graalvm.compiler.phases.common.FloatingReadPhase
- * {@link org.graalvm.compiler.phases.common.FloatingReadPhase}
+ * @org.graalvm.compiler.phases.common.FloatingReadPhase {@link org.graalvm.compiler.phases.common.FloatingReadPhase}
  */
 public class TornadoFloatingReadReplacement extends Phase {
     private boolean createFloatingReads;
@@ -241,8 +240,7 @@ public class TornadoFloatingReadReplacement extends Phase {
 
         EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener(EnumSet.of(NODE_ADDED, ZERO_USAGES));
         try (Graph.NodeEventScope nes = graph.trackNodeEvents(listener)) {
-            ReentrantNodeIterator.apply(new FloatingReadClosure(modifiedInLoops, createFloatingReads, createMemoryMapNodes), graph.start(),
-                    new MemoryMapImpl(graph.start()));
+            ReentrantNodeIterator.apply(new FloatingReadClosure(modifiedInLoops, createFloatingReads, createMemoryMapNodes), graph.start(), new MemoryMapImpl(graph.start()));
         }
 
         for (Node n : removeExternallyUsedNodes(listener.getNodes())) {
@@ -476,8 +474,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             return loopInfo.exitStates;
         }
 
-        private static void createMemoryPhi(LoopBeginNode loop, MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis,
-                LocationIdentity location) {
+        private static void createMemoryPhi(LoopBeginNode loop, MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis, LocationIdentity location) {
             MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
             phi.addInput(ValueNodeUtil.asNode(initialState.getLastLocationAccess(location)));
             phis.put(location, phi);

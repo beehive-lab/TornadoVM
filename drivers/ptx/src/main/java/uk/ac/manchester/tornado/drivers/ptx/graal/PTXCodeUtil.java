@@ -21,6 +21,16 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEAREST_EVEN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_TOWARD_ZERO_INTEGER;
+
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.Variable;
+
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.TargetDescription;
@@ -28,8 +38,6 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
@@ -38,19 +46,9 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_NEAREST_EVEN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_TOWARD_ZERO_INTEGER;
-
 public class PTXCodeUtil {
 
-    private static final String PTX_HEADER_FORMAT =
-            PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" +
-            PTXAssemblerConstants.TARGET_ARCH + " %s \n" +
-            PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
+    private static final String PTX_HEADER_FORMAT = PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" + PTXAssemblerConstants.TARGET_ARCH + " %s \n" + PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
 
     /**
      * Create a calling convention from a {@link ResolvedJavaMethod}.

@@ -23,17 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
@@ -41,6 +30,17 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEA
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_ARRAY_ALIGNMENT;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
@@ -79,7 +79,9 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public long getBufferOffset() { return bufferOffset; }
+    public long getBufferOffset() {
+        return bufferOffset;
+    }
 
     @Override
     public long toAbsoluteAddress() {
@@ -87,7 +89,9 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public long toRelativeAddress() { return bufferOffset; }
+    public long toRelativeAddress() {
+        return bufferOffset;
+    }
 
     @Override
     public void read(Object reference) {
@@ -97,7 +101,8 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
         T array = cast(reference);
-        if (array == null) throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        if (array == null)
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
@@ -239,13 +244,8 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
             bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
 
             if (Tornado.FULL_DEBUG) {
-                info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x",
-                        kind.getJavaName(),
-                        humanReadableByteCount(bytesToAllocate, true),
-                        arrayLengthOffset,
-                        arrayHeaderSize,
-                        bufferOffset
-                );
+                info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,
+                        arrayHeaderSize, bufferOffset);
 
                 info("allocated: %s", toString());
             }

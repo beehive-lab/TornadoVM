@@ -12,10 +12,12 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
         "TOTAL_TASK_SCHEDULE_TIME": "104699731",
         "TOTAL_GRAAL_COMPILE_TIME": "36462460",
         "TOTAL_KERNEL_TIME": "25600",
+        "DISPATCH_TIME": "61952",
         "COPY_IN_TIME": "88288",
         "TOTAL_DRIVER_COMPILE_TIME": "710824",
         "TOTAL_BYTE_CODE_GENERATION": "7031446",
         "s0.t0": {
+            "DEVICE_ID": "0:2",
             "DEVICE": "GeForce GTX 1650",
             "TASK_COPY_OUT_SIZE_BYTES": "8216",
             "TASK_COPY_IN_SIZE_BYTES": "32892",
@@ -32,9 +34,10 @@ All timers are printed in nanoseconds.
 
 #### Explanation
 
-* *COPY_IN_TIME*: OpenCL/CUDA timers for copy in (host to device)
-* *COPY_OUT_TIME*: OpenCL/CUDA timers for copy out (device to host)
-* *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL/CUDA kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
+* *COPY_IN_TIME*: OpenCL timers for copy in (host to device)
+* *COPY_OUT_TIME*: OpenCL timers for copy out (device to host)
+* *DISPATCH_TIME*: time spent for dispatching a submitted OpenCL command
+* *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
 * *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation
 * *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
 * *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C / PTX)
@@ -43,6 +46,7 @@ All timers are printed in nanoseconds.
 
 Then, for each task within a task-schedule, there are usually three timers, one device identifier and two data transfer metrics:
 
+* *DEVICE_ID*: platform and device ID index.
 * *DEVICE*: device name as provided by the OpenCL driver.
 * *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for a given task.
 * *TASK_COPY_OUT_SIZE_BYTES*: size in bytes of total bytes copied-out for a given task.
@@ -90,6 +94,7 @@ Entry,0
     TASK_COMPILE_GRAAL_TIME,46868099
     TOTAL_GRAAL_COMPILE_TIME,46868099
     TOTAL_DRIVER_COMPILE_TIME,952126
+    DISPATCH_TIME,31008
     EndEntry,0
 
 MEDIANS    ### Print median values for each timer
@@ -98,6 +103,7 @@ MEDIANS    ### Print median values for each timer
     s0.t0-TASK_KERNEL_TIME,25184.0
     COPY_IN_TIME,74016.0
     COPY_OUT_TIME,32816.0
+    DISPATCH_TIME,31008.0
 ```
 
 
@@ -121,6 +127,8 @@ public interface ProfileInterface {
     long getWriteTime();
 
     long getReadTime();
+
+    long getDispatchTime();
 
     long getDeviceWriteTime();
 
@@ -146,6 +154,9 @@ long copyInTime = schedule.getDeviceWriteTime();
 // Query copy-out total time (from Device to Host)
 long copyOutTime = schedule.getDeviceReadTime();
 
+// Query dispatch time
+long dispatchTime = schedule.getDispatchTime();
+
 // Query total kernel time
 long kernelTime = schedule.getDeviceKernelTime();
 
@@ -165,6 +176,7 @@ $ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.co
 $ cat tornado-features.json
 {
     "nBody": {
+        "DEVICE_ID": "0:2",
         "DEVICE": "GeForce GTX 1650",
         "Global Memory Loads":  "15",
         "Global Memory Stores":  "6",
@@ -194,3 +206,7 @@ $ cat tornado-features.json
 ### Save features into a file
 
 Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. features.json).
+
+### Send log over a socket.
+
+Use the option `-Dtornado.dump.to.ip=IP:PORT`.  

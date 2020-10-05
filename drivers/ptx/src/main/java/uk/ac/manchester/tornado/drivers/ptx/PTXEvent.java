@@ -1,25 +1,25 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornadovm
- *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+* This file is part of Tornado: A heterogeneous programming framework:
+* https://github.com/beehive-lab/tornadovm
+*
+* Copyright (c) 2020, APT Group, Department of Computer Science,
+* School of Engineering, The University of Manchester. All rights reserved.
+* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+*
+* This code is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License version 2 only, as
+* published by the Free Software Foundation.
+*
+* This code is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* version 2 for more details (a copy is included in the LICENSE file that
+* accompanied this code).
+*
+* You should have received a copy of the GNU General Public License version
+* 2 along with this work; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import uk.ac.manchester.tornado.api.common.Event;
@@ -27,8 +27,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class PTXEvent extends TornadoLogger implements Event {
 
@@ -74,15 +72,15 @@ public class PTXEvent extends TornadoLogger implements Event {
     protected static final int DESC_SYNC_BARRIER = 15;
     protected static final int EVENT_NONE = 16;
 
-
     /**
-     * Wrapper containing two serialized CUevent structs.
-     * Between the two events, on the same CUDA stream has been registered another API call described by the value of {@link PTXEvent#description}.
-     * We measure the time difference between the two events to get the duration of the API call.
+     * Wrapper containing two serialized CUevent structs. Between the two events, on
+     * the same CUDA stream has been registered another API call described by the
+     * value of {@link PTXEvent#description}. We measure the time difference between
+     * the two events to get the duration of the API call.
      *
      * <p>
-     * The first position (eventWrapper[0]) contains the beforeEvent
-     * The second position eventWrapper[1] contains the afterEvent.
+     * The first position (eventWrapper[0]) contains the beforeEvent The second
+     * position eventWrapper[1] contains the afterEvent.
      */
     private final byte[][] eventWrapper;
 
@@ -106,8 +104,9 @@ public class PTXEvent extends TornadoLogger implements Event {
     private native static long cuEventQuery(byte[] eventWrapper);
 
     /**
-     * Returns the time in nanoseconds between two events.
-     * We convert from milliseconds to nanoseconds because the tornado profiler uses this measurement unit.
+     * Returns the time in nanoseconds between two events. We convert from
+     * milliseconds to nanoseconds because the tornado profiler uses this
+     * measurement unit.
      */
     private native static long cuEventElapsedTime(byte[][] wrappers);
 
@@ -122,7 +121,7 @@ public class PTXEvent extends TornadoLogger implements Event {
 
     @Override
     public void waitForEvents() {
-        waitForEventArray(new PTXEvent[]{this});
+        waitForEventArray(new PTXEvent[] { this });
     }
 
     @Override
@@ -131,7 +130,17 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     /**
-     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
+     */
+    @Override
+    public long getQueuedTime() {
+        return -1;
+    }
+
+    /**
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
      */
     @Override
     public long getSubmitTime() {
@@ -139,7 +148,8 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     /**
-     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
      */
     @Override
     public long getStartTime() {
@@ -147,7 +157,8 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     /**
-     * The CUDA API does not provide any call to get such information. Therefore, this method always returns -1.
+     * The CUDA API does not provide any call to get such information. Therefore,
+     * this method always returns -1.
      */
     @Override
     public long getEndTime() {
@@ -157,6 +168,11 @@ public class PTXEvent extends TornadoLogger implements Event {
     @Override
     public long getExecutionTime() {
         return cuEventElapsedTime(eventWrapper);
+    }
+
+    @Override
+    public long getDriverDispatchTime() {
+        return 0;
     }
 
     @Override

@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import java.nio.ByteOrder;
+
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXDeviceAttribute;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
-import java.nio.ByteOrder;
 
 public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
 
@@ -67,15 +67,21 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         targetArchitecture = ptxVersion.getArchitecture(computeCapability);
 
         context = new PTXContext(this);
-        // CUcontext for the CUDevice must be created first before cuMemGetInfo returns a valid value.
+        // CUcontext for the CUDevice must be created first before cuMemGetInfo returns
+        // a valid value.
         maxAllocationSize = cuMemGetInfo();
     }
 
     private native static long cuDeviceGet(int deviceId);
+
     private native static String cuDeviceGetName(long cuDevice);
+
     private native static int cuDeviceGetAttribute(long cuDevice, int attribute);
+
     private native static long cuDeviceTotalMem(long cuDevice);
+
     private native static long cuMemGetInfo();
+
     private native static int cuDriverGetVersion();
 
     @Override

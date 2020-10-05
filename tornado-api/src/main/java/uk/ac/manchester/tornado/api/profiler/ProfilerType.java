@@ -30,8 +30,10 @@ public enum ProfilerType {
 
     // @formatter:off
     IP("System IP"),
+    DISPATCH_TIME("Dispatch-Time"),
     COPY_IN_TIME("CopyIn-Time"),
     COPY_OUT_TIME("CopyOut-Time"),
+    DEVICE_ID("Device-ID"),
     DEVICE("Device"),
     TASK_COPY_IN_SIZE_BYTES("CopyIn-Size (Bytes)"),
     TASK_COPY_OUT_SIZE_BYTES("CopyOut-Size (Bytes)"),

@@ -21,8 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -36,14 +37,14 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
@@ -56,12 +57,10 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
     public static final NodeClass<PTXIntBinaryIntrinsicNode> TYPE = NodeClass.create(PTXIntBinaryIntrinsicNode.class);
     protected final Operation operation;
 
-    //@formatter:off
     public enum Operation {
-        MAX,
-        MIN, 
+        MAX, //
+        MIN, //
     }
-    //@formatter:on
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool) {

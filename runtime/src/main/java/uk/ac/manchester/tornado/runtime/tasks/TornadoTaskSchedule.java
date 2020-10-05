@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerF
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -91,6 +92,7 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -170,7 +172,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      *
-     * @param taskScheduleName Task-Schedule name
+     * @param taskScheduleName
+     *            Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         executionContext = new TornadoExecutionContext(taskScheduleName);
@@ -380,7 +383,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Compile a task-schedule into TornadoVM byte-code
      *
-     * @param setNewDevice: boolean that specifies if set a new device or not.
+     * @param setNewDevice:
+     *            boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
@@ -498,6 +502,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());
         } else {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
+        }
+
+        if (!TornadoOptions.SOCKET_PORT.isEmpty() && TornadoOptions.isProfilerEnabled()) {
+            TornadoVMClient tornadoVMClient = new TornadoVMClient();
+            try {
+                tornadoVMClient.sentLogOverSocket(timeProfiler.createJson(new StringBuffer(), this.getId()));
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
 
         if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {
@@ -1368,8 +1381,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
      *
-     * @param policy     input policy
-     * @param numDevices number of devices
+     * @param policy
+     *            input policy
+     * @param numDevices
+     *            number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1555,30 +1570,31 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 updateInner(index, TaskUtils.createTask(method, meta, id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
                 break;
             case 7:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
+                updateInner(index,
+                        TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
                 break;
             case 8:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
-                        parameters[8]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8]));
                 break;
             case 9:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
-                        parameters[8], parameters[9]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9]));
                 break;
             case 10:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
-                        parameters[8], parameters[9], parameters[10]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9], parameters[10]));
                 break;
             case 15:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
-                        parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
                 throw new RuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
         switch (type) {
             case 0:
@@ -1757,6 +1773,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public long getReadTime() {
         return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+    }
+
+    @Override
+    public long getDispatchTime() {
+        return timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
     }
 
     @Override

@@ -22,17 +22,19 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.enums;
 
-import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+
 /**
- * Contains all the event statuses returned by the CUDA API.
- * Inspired from @link{ https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html }.
+ * Contains all the event statuses returned by the CUDA API. Inspired
+ * from @link{
+ * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html }.
  */
 public enum PTXEventStatus {
 
+    // @formatter:off
     CUDA_SUCCESS(0),
     CUDA_ERROR_INVALID_VALUE(1),
     CUDA_ERROR_OUT_OF_MEMORY(2),
@@ -109,6 +111,7 @@ public enum PTXEventStatus {
     CUDA_ERROR_TIMEOUT(909),
     CUDA_ERROR_GRAPH_EXEC_UPDATE_FAILURE(910),
     CUDA_ERROR_UNKNOWN(999);
+    // @formatter:on
 
     private static final Map<Long, PTXEventStatus> map = new HashMap<>(values().length);
 

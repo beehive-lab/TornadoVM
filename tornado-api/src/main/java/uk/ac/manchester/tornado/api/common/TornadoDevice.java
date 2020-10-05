@@ -199,8 +199,6 @@ public interface TornadoDevice {
 
     long[] getDeviceMaxWorkgroupDimensions();
 
-    boolean isDistributedMemory();
-
     String getDeviceOpenCLCVersion();
 
     Object getDeviceInfo();

@@ -52,10 +52,10 @@ import java.nio.ByteOrder;
 import java.util.Comparator;
 import java.util.List;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -138,6 +138,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public String getDeviceName() {
         return String.format(device.getDeviceName());
+    }
+
+    @Override
+    public int getDriverIndex() {
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
     }
 
     public OCLContext getPlatformContext() {
@@ -425,10 +430,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         events.sort(Comparator.comparingLong(OCLEvent::getCLSubmitTime).thenComparingLong(OCLEvent::getCLStartTime));
 
         long base = events.get(0).getCLSubmitTime();
-        System.out.println("event: device,type,info,submitted,start,end,status");
+        System.out.println("event: device,type,info,queued,submitted,start,end,status");
         events.forEach((e) -> {
-            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getOclEventID(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base,
-                    e.getStatus());
+            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getOclEventID(), e.getCLQueuedTime() - base, e.getCLSubmitTime() - base, e.getCLStartTime() - base,
+                    e.getCLEndTime() - base, e.getStatus());
         });
     }
 
@@ -466,6 +471,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public int getDeviceIndex() {
         return device.getIndex();
+    }
+
+    @Override
+    public int getDevicePlatform() {
+        return context.getPlatformIndex();
     }
 
     public long getBumpBuffer() {

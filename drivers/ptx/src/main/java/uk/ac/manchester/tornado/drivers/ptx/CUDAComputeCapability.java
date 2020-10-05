@@ -34,8 +34,9 @@ public class CUDAComputeCapability implements Comparable<CUDAComputeCapability> 
 
     @Override
     public int compareTo(CUDAComputeCapability other) {
-        if (this.major != other.major) return this.major - other.major;
-
+        if (this.major != other.major) {
+            return this.major - other.major;
+        }
         return this.minor - other.minor;
     }
 
