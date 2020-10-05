@@ -76,7 +76,7 @@ import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 public class OCLGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
-        registerCompilerInstrinsicsPlugins(plugins);
+        registerCompilerIntrinsicsPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
@@ -90,7 +90,7 @@ public class OCLGraphBuilderPlugins {
         registerTornadoAtomicInteger(ps, plugins);
     }
 
-    private static void registerCompilerInstrinsicsPlugins(InvocationPlugins plugins) {
+    private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, CompilerInternals.class);
 
         r.register0("getSlotsAddress", new InvocationPlugin() {
@@ -102,12 +102,12 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    private static void registerTornadoVMAtomicsPlugins(Registration r, Class<?> type, JavaKind kind) {
-        r.register3("atomic_add", int[].class, type, type, new InvocationPlugin() {
+    private static void registerTornadoVMAtomicsPlugins(Registration r) {
+        r.register3("atomic_add", int[].class, Integer.TYPE, Integer.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode inc) {
                 AtomicAddNodeTemplate atomicIncNode = new AtomicAddNodeTemplate(array, index, inc);
-                b.addPush(kind, b.append(atomicIncNode));
+                b.addPush(JavaKind.Int, b.append(atomicIncNode));
                 return true;
             }
         });
@@ -115,7 +115,7 @@ public class OCLGraphBuilderPlugins {
 
     private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, TornadoVM_Intrinsics.class);
-        registerTornadoVMAtomicsPlugins(r, Integer.TYPE, JavaKind.Int);
+        registerTornadoVMAtomicsPlugins(r);
     }
 
     private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
@@ -214,8 +214,8 @@ public class OCLGraphBuilderPlugins {
                 int length = ((JavaConstant) lengthNode.getValue()).asInt();
 
                 ValueNode[] actualArgs = new ValueNode[4 + length];
-                for (int i = 0; i < idCount; i++) {
-                    actualArgs[i] = args[i];
+                if (idCount >= 0) {
+                    System.arraycopy(args, 0, actualArgs, 0, idCount);
                 }
 
                 for (int i = idCount; i < 3; i++) {
@@ -341,7 +341,7 @@ public class OCLGraphBuilderPlugins {
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);
         registerOpenCLOverridesForType(r, Long.TYPE, JavaKind.Long);
-        registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
+        registerFPIntrinsics(r);
 
         Registration longReg = new Registration(plugins, Long.class);
         longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
@@ -362,43 +362,43 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
-        r.register2("pow", type, type, new InvocationPlugin() {
+    private static void registerFPIntrinsics(Registration r) {
+        r.register2("pow", Double.TYPE, Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, POW, kind)));
+                b.push(JavaKind.Double, b.append(OCLFPBinaryIntrinsicNode.create(x, y, POW, JavaKind.Double)));
                 return true;
             }
         });
 
-        r.register1("sin", type, new InvocationPlugin() {
+        r.register1("sin", Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SIN, kind)));
+                b.push(JavaKind.Double, b.append(OCLFPUnaryIntrinsicNode.create(value, SIN, JavaKind.Double)));
                 return true;
             }
         });
 
-        r.register1("cos", type, new InvocationPlugin() {
+        r.register1("cos", Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, COS, kind)));
+                b.push(JavaKind.Double, b.append(OCLFPUnaryIntrinsicNode.create(value, COS, JavaKind.Double)));
                 return true;
             }
         });
 
-        r.register1("log", type, new InvocationPlugin() {
+        r.register1("log", Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, LOG, kind)));
+                b.push(JavaKind.Double, b.append(OCLFPUnaryIntrinsicNode.create(value, LOG, JavaKind.Double)));
                 return true;
             }
         });
 
-        r.register1("exp", type, new InvocationPlugin() {
+        r.register1("exp", Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, EXP, kind)));
+                b.push(JavaKind.Double, b.append(OCLFPUnaryIntrinsicNode.create(value, EXP, JavaKind.Double)));
                 return true;
             }
         });
@@ -438,10 +438,6 @@ public class OCLGraphBuilderPlugins {
                 return true;
             }
         });
-
-    }
-
-    public static void registerClassInitializationPlugins(Plugins plugins) {
 
     }
 
