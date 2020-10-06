@@ -50,6 +50,10 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
         this.atomicNode = atomicValue;
     }
 
+    public ValueNode getAtomicNode() {
+        return this.atomicNode;
+    }
+
     private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
@@ -72,6 +76,12 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
             TornadoAtomicIntegerNode atomicIntegerNode = (TornadoAtomicIntegerNode) atomicNode;
 
             int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
+
+            if (atomicNode == null) {
+                System.out.println("ATOMIC NODE iS NULL");
+            } else {
+                System.out.println("ATOMIC NODE iS NOT NULL!!!!!!!! " + atomicNode);
+            }
 
             OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
                     OCLAssembler.OCLUnaryIntrinsic.ATOMIC_INC, //

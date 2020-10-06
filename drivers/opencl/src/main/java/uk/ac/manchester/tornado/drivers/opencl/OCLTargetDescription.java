@@ -131,18 +131,6 @@ public class OCLTargetDescription extends TargetDescription {
         }
     }
 
-    public OCLKind getVectorByLength(OCLKind oclKind, int vectorLength) {
-        if (lookupTypeIndex(oclKind) == -1) {
-            return OCLKind.ILLEGAL;
-        }
-
-        if (vectorLength == 1) {
-            return oclKind;
-        }
-
-        return VECTOR_LOOKUP_TABLE[lookupTypeIndex(oclKind)][lookupLengthIndex(vectorLength)];
-    }
-
     public OCLKind getOCLKind(JavaKind javaKind, int vectorLength) {
         int index = -1;
         switch (javaKind) {
