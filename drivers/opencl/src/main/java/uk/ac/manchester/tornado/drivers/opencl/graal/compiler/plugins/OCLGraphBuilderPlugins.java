@@ -37,11 +37,13 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -50,6 +52,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -73,6 +76,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AllocateLocalMemoryNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 
 public class OCLGraphBuilderPlugins {
@@ -218,10 +222,24 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
+    private static void registerLocalMemoryPlugins(Registration r, JavaKind kind) {
+        r.register2("allocateLocal", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                AllocateLocalMemoryNode allocateLocalMemoryNode = new AllocateLocalMemoryNode(size, StampFactory.forKind(JavaKind.Float));
+                b.push(kind, allocateLocalMemoryNode);
+                return true;
+            }
+        });
+    }
+
     private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, TornadoVMContext.class);
         registerLocalBarrierPlugins(r);
         registerGlobalBarrierPlugins(r);
+
+        JavaKind returnedJavaKind = JavaKind.fromJavaClass(float[].class);
+        registerLocalMemoryPlugins(r, returnedJavaKind);
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
