@@ -76,7 +76,7 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     @Override
-    public float[] allocateLocal(int size, Class<?> type) {
+    public float[] allocateLocal(int size) { // , Class<?> type) {
         return new float[size];
     }
 
