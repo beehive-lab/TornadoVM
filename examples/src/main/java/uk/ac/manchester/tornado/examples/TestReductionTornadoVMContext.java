@@ -32,6 +32,28 @@ public class TestReductionTornadoVMContext {
         }
     }
 
+    // Reduction in Local memory using the API 2.0
+    public static void reductionLocal(float[] a, float[] b, TornadoVMContext context) {
+        int globalIdx = context.threadIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.getLocalGroupSize(0);
+        int groupID = context.groupIdx; // Expose Group ID
+        int id = localGroupSize * groupID + localIdx;
+
+        float[] localA = context.allocateLocal(256);
+        localA[localIdx] = a[globalIdx];
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[id] += localA[id + stride];
+            }
+        }
+        context.localBarrier();
+        if (localIdx == 0) {
+            b[groupID] = localA[id];
+        }
+    }
+
     public static float computeSequential(float[] input) {
         float acc = 0;
         for (float v : input) {
@@ -81,7 +103,7 @@ public class TestReductionTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input).task("t0", TestReductionTornadoVMContext::reduction, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input).task("t0", TestReductionTornadoVMContext::reductionLocal, input, reduce, context).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(size, 1, 1);
