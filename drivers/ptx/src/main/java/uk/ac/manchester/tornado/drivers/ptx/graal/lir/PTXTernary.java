@@ -24,15 +24,16 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
+import static org.graalvm.compiler.lir.LIRInstruction.Use;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
+
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXTernaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-
-import static org.graalvm.compiler.lir.LIRInstruction.Use;
 
 public class PTXTernary {
 
@@ -70,7 +71,7 @@ public class PTXTernary {
     }
 
     public static class Expr extends TernaryConsumer {
-        public Expr(PTXTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z)  {
+        public Expr(PTXTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {
             super(opcode, lirKind, x, y, z);
         }
     }

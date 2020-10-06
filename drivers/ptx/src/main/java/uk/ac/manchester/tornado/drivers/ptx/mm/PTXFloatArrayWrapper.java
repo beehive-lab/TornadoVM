@@ -33,11 +33,16 @@ public class PTXFloatArrayWrapper extends PTXArrayWrapper<float[]> {
 
     /**
      * Copy data from the device to the main host
-     * @param address    Device Buffer ID
-     * @param bytes      Bytes to be copied back to the host
-     * @param value      Host array that resides the final data
+     * 
+     * @param address
+     *            Device Buffer ID
+     * @param bytes
+     *            Bytes to be copied back to the host
+     * @param value
+     *            Host array that resides the final data
      * @param hostOffset
-     * @param waitEvents List of events to wait for.
+     * @param waitEvents
+     *            List of events to wait for.
      * @return Event information
      */
     @Override
@@ -53,11 +58,15 @@ public class PTXFloatArrayWrapper extends PTXArrayWrapper<float[]> {
     /**
      * Copy data that resides in the host to the target device.
      *
-     * @param address    Device Buffer ID
-     * @param bytes      Bytes to be copied
-     * @param value      Host array to be copied
+     * @param address
+     *            Device Buffer ID
+     * @param bytes
+     *            Bytes to be copied
+     * @param value
+     *            Host array to be copied
      * @param hostOffset
-     * @param waitEvents List of events to wait for.
+     * @param waitEvents
+     *            List of events to wait for.
      * @return Event information
      */
     @Override

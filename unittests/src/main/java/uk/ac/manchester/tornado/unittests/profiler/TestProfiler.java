@@ -17,16 +17,17 @@
  */
 package uk.ac.manchester.tornado.unittests.profiler;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class TestProfiler extends TornadoTestBase {
 
@@ -40,7 +41,8 @@ public class TestProfiler extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        // testProfilerDisabled might execute first. We must make sure that the code cache is reset.
+        // testProfilerDisabled might execute first. We must make sure that the code
+        // cache is reset.
         // Otherwise we get 0 compile time.
         TornadoRuntime.getTornadoRuntime().getDefaultDevice().reset();
 
@@ -61,13 +63,16 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(ts.getDataTransfersTime() > 0);
         assertTrue(ts.getReadTime() > 0);
         assertTrue(ts.getWriteTime() > 0);
-        assertTrue(ts.getDispatchTime() > 0);
         assertTrue(ts.getDeviceReadTime() > 0);
         assertTrue(ts.getDeviceWriteTime() > 0);
         assertTrue(ts.getDeviceKernelTime() > 0);
 
         assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());
         assertEquals(ts.getTornadoCompilerTime() + ts.getDriverInstallTime(), ts.getCompileTime());
+
+        if (!checkForPTX()) {
+            assertTrue(ts.getDispatchTime() > 0);
+        }
 
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
@@ -100,10 +105,19 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(ts.getDataTransfersTime(), 0);
         assertEquals(ts.getReadTime(), 0);
         assertEquals(ts.getWriteTime(), 0);
-        assertEquals(ts.getDispatchTime(), 0);
         assertEquals(ts.getDeviceReadTime(), 0);
         assertEquals(ts.getDeviceWriteTime(), 0);
         assertEquals(ts.getDeviceKernelTime(), 0);
         assertEquals(ts.getDeviceKernelTime(), 0);
+
+        if (!checkForPTX()) {
+            assertEquals(ts.getDispatchTime(), 0);
+        }
+
     }
+
+    private boolean checkForPTX() {
+        return "PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex()).getName());
+    }
+
 }

@@ -21,13 +21,14 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.spi.LIRKindTool;
+
+import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 
 public class PTXLIRKindTool implements LIRKindTool {
     private PTXTargetDescription target;
@@ -38,17 +39,29 @@ public class PTXLIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getIntegerKind(int bits) {
-        if (bits <= 8) return LIRKind.value(PTXKind.S8);
-        if (bits <= 16) return LIRKind.value(PTXKind.S16);
-        if (bits <= 32) return LIRKind.value(PTXKind.S32);
-        if (bits <= 64) return LIRKind.value(PTXKind.S64);
+        if (bits <= 8) {
+            return LIRKind.value(PTXKind.S8);
+        }
+        if (bits <= 16) {
+            return LIRKind.value(PTXKind.S16);
+        }
+        if (bits <= 32) {
+            return LIRKind.value(PTXKind.S32);
+        }
+        if (bits <= 64) {
+            return LIRKind.value(PTXKind.S64);
+        }
         throw shouldNotReachHere();
     }
 
     @Override
     public LIRKind getFloatingKind(int bits) {
-        if (bits == 32) return LIRKind.value(PTXKind.F32);
-        if (bits == 64) return LIRKind.value(PTXKind.F64);
+        if (bits == 32) {
+            return LIRKind.value(PTXKind.F32);
+        }
+        if (bits == 64) {
+            return LIRKind.value(PTXKind.F64);
+        }
         throw shouldNotReachHere();
     }
 

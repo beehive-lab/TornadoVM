@@ -121,13 +121,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public boolean isDistributedMemory() {
-        return false;
-    }
-
-    @Override
     public void ensureLoaded() {
-
     }
 
     @Override

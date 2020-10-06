@@ -24,30 +24,31 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CALL;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COLON;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ROUND_BRACKETS_OPEN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.DirectCallTargetNode;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+
 public class PTXDirectCall extends PTXLIROp {
 
     protected DirectCallTargetNode target;
-    @LIRInstruction.Def protected Value result;
-    @LIRInstruction.Use protected Value[] parameters;
+    @LIRInstruction.Def
+    protected Value result;
+    @LIRInstruction.Use
+    protected Value[] parameters;
 
     public PTXDirectCall(DirectCallTargetNode target, Value result, Value[] parameters) {
         super(LIRKind.value(result.getPlatformKind()));
@@ -85,7 +86,6 @@ public class PTXDirectCall extends PTXLIROp {
             if (i < parameters.length - 1) {
                 asm.emit(COMMA + SPACE);
             }
-
             i++;
         }
         asm.emit(ROUND_BRACKETS_CLOSE);

@@ -27,6 +27,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
+
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXMultiplyAddNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorElementOpNode;
 
@@ -51,7 +52,8 @@ public class PTXMulAddPhase extends Phase {
                 graph.addWithoutUnique(newNode);
 
                 mul.removeUsage(addNode);
-                if (mul.hasNoUsages()) mul.safeDelete();
+                if (mul.hasNoUsages())
+                    mul.safeDelete();
                 addNode.replaceAtUsages(newNode);
                 addNode.safeDelete();
             }

@@ -37,6 +37,8 @@ import java.util.Map;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
@@ -53,7 +55,7 @@ public class FeatureExtractionUtilities {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
             task.put(name, encodeFeatureMap(entry));
             JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext.getDeviceName());
+            String json = jsonHandler.createJSon(encodeFeatureMap(entry), name, deviceContext);
             if (!FEATURES_DIRECTORY.isEmpty()) {
                 File fileLog = new File(FEATURES_DIRECTORY);
                 try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
@@ -64,6 +66,15 @@ public class FeatureExtractionUtilities {
                 }
             } else {
                 System.out.println(json);
+            }
+
+            if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
+                TornadoVMClient tornadoVMClient = new TornadoVMClient();
+                try {
+                    tornadoVMClient.sentLogOverSocket(json);
+                } catch (IOException e) {
+                    System.out.println(e);
+                }
             }
         }
     }

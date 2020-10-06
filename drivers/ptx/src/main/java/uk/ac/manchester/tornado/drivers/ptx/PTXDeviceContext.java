@@ -23,11 +23,19 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCallStack;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
@@ -38,14 +46,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-
 
 public class PTXDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
@@ -135,6 +135,16 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         return device.getDeviceIndex();
     }
 
+    @Override
+    public int getDriverIndex() {
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
+    }
+
+    @Override
+    public int getDevicePlatform() {
+        return 0;
+    }
+
     public ByteOrder getByteOrder() {
         return device.getByteOrder();
     }
@@ -192,8 +202,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
 
             if (grid.getLocalWork() != null) {
                 blockDimension = Arrays.stream(grid.getLocalWork()).mapToInt(l -> (int) l).toArray();
-            }
-            else {
+            } else {
                 blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getMaxThreadBlocks(), grid.dimension(), module.javaName);
             }
             gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
@@ -212,8 +221,9 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         args.order(getByteOrder());
 
         // Stack pointer
-        if (!stack.isOnDevice())
+        if (!stack.isOnDevice()) {
             stack.write();
+        }
         long address = stack.getAddress();
         args.putLong(address);
 
