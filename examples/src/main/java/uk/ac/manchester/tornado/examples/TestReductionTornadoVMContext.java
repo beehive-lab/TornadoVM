@@ -40,7 +40,7 @@ public class TestReductionTornadoVMContext {
         int groupID = context.groupIdx; // Expose Group ID
         int id = localGroupSize * groupID + localIdx;
 
-        float[] localA = context.allocateFloatLocalArray(256);
+        float[] localA = context.allocateFloatLocalArray(1024);
         localA[localIdx] = a[globalIdx];
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
@@ -50,7 +50,7 @@ public class TestReductionTornadoVMContext {
         }
         context.localBarrier();
         if (localIdx == 0) {
-            b[groupID] = localA[id];
+            b[groupID] = localA[localIdx];
         }
     }
 
