@@ -335,6 +335,12 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public void emitStore(ValueKind<?> lirKind, Value address, Value input, LIRFrameState state) {
         trace("emitStore: kind=%s, address=%s, input=%s", lirKind, address, input);
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
@@ -404,6 +410,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+        unimplemented();
     }
 
     @Override

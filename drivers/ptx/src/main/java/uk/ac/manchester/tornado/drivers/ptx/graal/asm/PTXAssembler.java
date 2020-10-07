@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultB
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -116,6 +117,8 @@ public class PTXAssembler extends Assembler {
             }
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
+        } else if (value instanceof PTXVectorElementSelect) {
+            return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }

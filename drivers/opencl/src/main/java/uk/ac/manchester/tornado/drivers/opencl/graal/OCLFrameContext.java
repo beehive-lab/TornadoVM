@@ -28,6 +28,8 @@ import org.graalvm.compiler.lir.asm.FrameContext;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 public class OCLFrameContext extends TornadoLogger implements FrameContext {
 
     @Override
@@ -45,6 +47,11 @@ public class OCLFrameContext extends TornadoLogger implements FrameContext {
     public void leave(CompilationResultBuilder crb) {
         trace("FrameContext.leave()");
 
+    }
+
+    @Override
+    public void returned(CompilationResultBuilder crb) {
+        unimplemented();
     }
 
 }
