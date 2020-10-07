@@ -47,7 +47,13 @@ public interface ExecutionContext {
 
     void globalBarrier();
 
-    float[] allocateLocal(int size); // , Class<?> type);
+    int[] allocateIntLocalArray(int size);
+
+    long[] allocateLongLocalArray(int size);
+
+    float[] allocateFloatLocalArray(int size);
+
+    double[] allocateDoubleLocalArray(int size);
 
     void launch(FunctionalInterface f, WorkerGrid grid);
 

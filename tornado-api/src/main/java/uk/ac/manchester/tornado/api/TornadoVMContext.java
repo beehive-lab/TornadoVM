@@ -76,8 +76,23 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     @Override
-    public float[] allocateLocal(int size) { // , Class<?> type) {
+    public int[] allocateIntLocalArray(int size) {
+        return new int[size];
+    }
+
+    @Override
+    public long[] allocateLongLocalArray(int size) {
+        return new long[size];
+    }
+
+    @Override
+    public float[] allocateFloatLocalArray(int size) {
         return new float[size];
+    }
+
+    @Override
+    public double[] allocateDoubleLocalArray(int size) {
+        return new double[size];
     }
 
     @Override
