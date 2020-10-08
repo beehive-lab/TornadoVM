@@ -213,3 +213,7 @@ The following example redirects the profiler output to the localhost (127.0.0.1)
 ```bash
 $ tornado -Dtornado.profiler=True  -Dtornado.dump.to.ip=127.0.0.1:2000 uk.ac.manchester.tornado.examples.VectorAddInt 100000
 ```
+To test that the socket streams the logs correctly, open a local server in a different terminal with the following command:
+```bash
+$ ncat -k -l 2000
+```
