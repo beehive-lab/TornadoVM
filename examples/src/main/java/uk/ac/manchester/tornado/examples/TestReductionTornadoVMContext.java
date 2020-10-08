@@ -33,24 +33,22 @@ public class TestReductionTornadoVMContext {
     }
 
     // Reduction in Local memory using the API 2.0
-    public static void reductionLocal(float[] a, float[] b, TornadoVMContext context) {
+    public static void reductionLocal(float[] a, float[] b, int localSize, TornadoVMContext context) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
 
-        float[] localA = context.allocateFloatLocalArray(1024);
+        float[] localA = context.allocateFloatLocalArray(256);
         localA[localIdx] = a[globalIdx];
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                localA[id] += localA[id + stride];
+                localA[localIdx] += localA[localIdx + stride];
             }
         }
-        context.localBarrier();
         if (localIdx == 0) {
-            b[groupID] = localA[localIdx];
+            b[groupID] = localA[0];
         }
     }
 
@@ -93,8 +91,9 @@ public class TestReductionTornadoVMContext {
 
     public static void main(String[] args) {
         final int size = 1024;
+        final int localSize = 256;
         float[] input = new float[size];
-        float[] reduce = new float[2];
+        float[] reduce = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         float sequential = computeSequential(input);
 
@@ -103,10 +102,10 @@ public class TestReductionTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input).task("t0", TestReductionTornadoVMContext::reductionLocal, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionTornadoVMContext::reductionLocal, input, reduce, localSize, context).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
-        worker.setLocalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridTask);
 
         // Final SUM
