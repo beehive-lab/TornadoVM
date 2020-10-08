@@ -209,8 +209,6 @@ public class TornadoVM extends TornadoLogger {
         return execute(false);
     }
 
-    private final String MESSAGE_ERROR = "object is not valid: %s %s";
-
     private void initWaitEventList() {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
@@ -227,7 +225,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: ALLOCATE [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
-            tornadoVMBytecodeList.append(verbose + "\n");
+            tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -242,7 +240,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: COPY_IN [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose + "\n");
+            tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
         List<Integer> allEvents;
@@ -280,7 +278,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: STREAM_IN [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose + "\n");
+            tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -313,7 +311,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: STREAM_OUT [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose + "\n");
+            tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -341,7 +339,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose + "\n");
+            tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -391,7 +389,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
-            tornadoVMBytecodeList.append(verbose + "\n");
+            tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
         if (gridTask != null && gridTask.get(task.getId()) != null) {
@@ -414,13 +412,13 @@ public class TornadoVM extends TornadoLogger {
                 installedCodes[taskIndex] = device.installCode(task);
                 doUpdate = false;
             } catch (Exception e) {
-                throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + e.getStackTrace(), e);
+                throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);
             }
         }
         return new ExecutionInfo(stack, waitList);
     }
 
-    private int executeLaunch(final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset, ExecutionInfo info) {
+    private int executeLaunch(final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, ExecutionInfo info) {
 
         final SchedulableTask task = tasks.get(taskIndex);
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
@@ -483,6 +481,7 @@ public class TornadoVM extends TornadoLogger {
                 final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
+                String MESSAGE_ERROR = "object is not valid: %s %s";
                 TornadoInternalError.guarantee(objectState.isValid(), MESSAGE_ERROR, objects.get(argIndex), objectState);
 
                 stack.push(objects.get(argIndex), objectState);
@@ -507,7 +506,7 @@ public class TornadoVM extends TornadoLogger {
         metadata.attachProfiler(timeProfiler);
         metadata.setGridTask(gridTask);
 
-        int lastEvent = 0;
+        int lastEvent;
         try {
             if (useDependencies) {
                 lastEvent = installedCode.launchWithDependencies(stack, bufferAtomics, metadata, batchThreads, waitList);
@@ -531,7 +530,7 @@ public class TornadoVM extends TornadoLogger {
         if (useDependencies && lastEvent != -1) {
             if (TornadoOptions.printBytecodes) {
                 String verbose = String.format("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
-                tornadoVMBytecodeList.append(verbose + "\n");
+                tornadoVMBytecodeList.append(verbose).append("\n");
             }
             TornadoInternalError.guarantee(eventsIndexes[eventList] < events[eventList].length, "event list is too small");
             events[eventList][eventsIndexes[eventList]] = lastEvent;
@@ -636,7 +635,7 @@ public class TornadoVM extends TornadoLogger {
                     popArgumentsFromStack(numArgs);
                     continue;
                 }
-                lastEvent = executeLaunch(contextIndex, numArgs, eventList, taskIndex, batchThreads, offset, info);
+                lastEvent = executeLaunch(contextIndex, numArgs, eventList, taskIndex, batchThreads, info);
             } else if (op == TornadoVMBytecodes.ADD_DEP.value()) {
                 final int eventList = buffer.getInt();
                 if (isWarmup) {
