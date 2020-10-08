@@ -427,7 +427,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device, long batchSize) {
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, OCLDeviceContext device, long batchSize) {
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -443,7 +443,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
 
         } else if (!type.isPrimitive() && !type.isArray()) {
-            result = new OCLObjectWrapper(device, arg, batchSize);
+            System.out.println("CREATING OBJECT: ");
+            result = new OCLObjectWrapper(device, object, batchSize);
         }
 
         TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
@@ -464,7 +465,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final Class<?> type = object.getClass();
         if (!type.isArray()) {
             checkBatchSize(batchSize);
-            buffer.write(object);
+            // buffer.write(object);
         }
 
         state.setValid(true);

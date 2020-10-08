@@ -43,6 +43,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
@@ -93,6 +94,10 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(object.getClass());
 
+        if (object instanceof AtomicInteger) {
+
+        }
+
         vectorObject = resolvedType.getAnnotation(Vector.class) != null;
 
         vectorStorageIndex = -1;
@@ -107,6 +112,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         // calculate object size
         bytesToAllocate = (fields.length > 0) ? fields[0].getOffset() : fieldsOffset;
         for (HotSpotResolvedJavaField field : fields) {
+            System.out.println("FIELD: " + field);
             final Field reflectedField = getField(type, field.getName());
             final Class<?> type = reflectedField.getType();
             final boolean isFinal = Modifier.isFinal(reflectedField.getModifiers());

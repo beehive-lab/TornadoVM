@@ -260,7 +260,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         final Class<?> type = object.getClass();
         if (!type.isArray()) {
             checkBatchSize(batchSize);
-            buffer.write(object);
+            // buffer.write(object);
         }
 
         state.setValid(true);

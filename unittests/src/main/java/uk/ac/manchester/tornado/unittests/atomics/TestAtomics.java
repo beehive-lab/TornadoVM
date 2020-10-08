@@ -349,7 +349,7 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .streamOut(a); //
+                .streamOut(a, ai); //
 
         ts.execute();
 
