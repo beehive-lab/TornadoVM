@@ -540,7 +540,7 @@ public class TornadoVM extends TornadoLogger {
 
     private int executeBarrier(StringBuilder tornadoVMBytecodeList, int eventList, int[] waitList, int lastEvent) {
         if (TornadoOptions.printBytecodes) {
-            tornadoVMBytecodeList.append(String.format("BARRIER event list %d\n", eventList));
+            tornadoVMBytecodeList.append(String.format("vm: BARRIER event-list %d\n", eventList));
         }
 
         if (contexts.size() == 1) {

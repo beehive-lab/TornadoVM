@@ -333,7 +333,7 @@ public class TestAtomics extends TornadoTestBase {
 
     public static void atomic09(int[] input, AtomicInteger ai) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = ai.incrementAndGet();
+            input[i] = input[i] + ai.incrementAndGet();
         }
     }
 
@@ -347,15 +347,11 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(200);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        new TaskSchedule("s0") //
+                .streamIn(a, ai) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .streamOut(a, ai); //
-
-        ts.execute();
-
-        if (!ts.isFinished()) {
-            assertTrue(false);
-        }
+                .streamOut(a, ai) //
+                .execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -363,5 +359,4 @@ public class TestAtomics extends TornadoTestBase {
         System.out.println(lastValue);
         assertTrue(!repeated);
     }
-
 }
