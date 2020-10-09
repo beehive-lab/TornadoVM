@@ -554,6 +554,13 @@ public class TornadoVM extends TornadoLogger {
         return lastEvent;
     }
 
+    private void throwError(byte op) {
+        if (graphContext.meta().isDebug()) {
+            debug("vm: invalid op 0x%x(%d)", op, op);
+        }
+        throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
+    }
+
     private Event execute(boolean isWarmup) {
         contexts.forEach(TornadoAcceleratorDevice::enableThreadSharing);
 
@@ -655,10 +662,7 @@ public class TornadoVM extends TornadoLogger {
                 }
                 break;
             } else {
-                if (graphContext.meta().isDebug()) {
-                    debug("vm: invalid op 0x%x(%d)", op, op);
-                }
-                throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
+                throwError(op);
             }
         }
 
