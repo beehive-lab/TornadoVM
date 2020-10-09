@@ -443,7 +443,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
 
         } else if (!type.isPrimitive() && !type.isArray()) {
-            System.out.println("CREATING OBJECT: ");
             result = new OCLObjectWrapper(device, object, batchSize);
         }
 

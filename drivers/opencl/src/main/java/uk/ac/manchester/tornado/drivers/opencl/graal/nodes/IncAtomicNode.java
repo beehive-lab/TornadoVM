@@ -77,12 +77,6 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
 
             int indexFromGlobal = atomicIntegerNode.getIndexFromGlobalMemory();
 
-            if (atomicNode == null) {
-                System.out.println("ATOMIC NODE iS NULL");
-            } else {
-                System.out.println("ATOMIC NODE iS NOT NULL!!!!!!!! " + atomicNode);
-            }
-
             OCLUnary.IntrinsicAtomicInc intrinsicAtomicAdd = new OCLUnary.IntrinsicAtomicInc( //
                     OCLAssembler.OCLUnaryIntrinsic.ATOMIC_INC, //
                     tool.getLIRKind(stamp), //

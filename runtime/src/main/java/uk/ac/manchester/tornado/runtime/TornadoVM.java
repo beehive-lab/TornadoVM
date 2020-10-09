@@ -447,7 +447,6 @@ public class TornadoVM extends TornadoLogger {
 
         DeviceBuffer bufferAtomics = null;
         if (atomicsArray != null) {
-            System.out.println("CREATE ARRAY ATOMICS with: " + Arrays.toString(atomicsArray));
             bufferAtomics = device.createBuffer(atomicsArray);
         }
 
