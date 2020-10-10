@@ -24,7 +24,8 @@ public class VirtualJSONParser {
         maxWorkItemSizes,
         deviceAddressBits,
         deviceType,
-        deviceExtensions
+        deviceExtensions,
+        availableProcessors
         ;
 
         JsonKey() {
@@ -51,8 +52,9 @@ public class VirtualJSONParser {
         int deviceAddressBits = (int) getEntryForKey(JsonKey.deviceAddressBits, jsonEntries);
         OCLDeviceType deviceType = (OCLDeviceType) getEntryForKey(JsonKey.deviceType, jsonEntries);
         String deviceExtensions = (String) getEntryForKey(JsonKey.deviceExtensions, jsonEntries);
+        int availableProcessors = (int) getEntryForKey(JsonKey.availableProcessors, jsonEntries);
 
-        return new VirtualDeviceDescriptor(deviceName, doubleFPSupport, maxWorkItemSizes, deviceAddressBits, deviceType, deviceExtensions);
+        return new VirtualDeviceDescriptor(deviceName, doubleFPSupport, maxWorkItemSizes, deviceAddressBits, deviceType, deviceExtensions, availableProcessors);
     }
 
     private static Object getEntryForKey(JsonKey jsonKey, Map<JsonKey, String> jsonEntries) {
@@ -70,6 +72,7 @@ public class VirtualJSONParser {
                 values[2] = Long.parseLong(numbers[2]);
                 return values;
             case deviceAddressBits:
+            case availableProcessors:
                 return Integer.parseInt(jsonEntries.get(jsonKey));
             case deviceType:
                 return OCLDeviceType.valueOf(jsonEntries.get(jsonKey));

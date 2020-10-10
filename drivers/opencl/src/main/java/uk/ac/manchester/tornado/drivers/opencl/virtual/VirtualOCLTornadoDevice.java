@@ -403,4 +403,8 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         // OpenCL device context is shared by different threads, by default
     }
 
+    @Override
+    public int getAvailableProcessors() {
+        return ((VirtualOCLDevice) device).getAvailableProcessors();
+    }
 }

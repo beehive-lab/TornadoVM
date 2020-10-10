@@ -204,4 +204,12 @@ public interface TornadoDevice {
     Object getDeviceInfo();
 
     int getDriverIndex();
+
+    /**
+     * Returns the number of processors available to the JVM.
+     * We need to overwrite this function only for Virtual Devices, where we read the value from the descriptor file.
+     */
+    default int getAvailableProcessors() {
+        return Runtime.getRuntime().availableProcessors();
+    }
 }
