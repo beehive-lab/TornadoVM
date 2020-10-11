@@ -93,9 +93,9 @@ public class OCLHotSpotBackendFactory {
         }
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
-        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDeviceDoubleFPConfig(), device.getDeviceExtensions());
+        OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
-        OCLDeviceContextInterface deviceContext = tornadoContext.createDeviceContext(device.getIndex());
+        OCLDeviceContextInterface oclDeviceContextImpl = tornadoContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
         OCLLoweringProvider lowerer;
@@ -112,7 +112,7 @@ public class OCLHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new OCLSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new OCLSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites,
                     hotSpotGCProvider);
@@ -120,7 +120,7 @@ public class OCLHotSpotBackendFactory {
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            return new OCLBackend(options, providers, target, codeCache, tornadoContext, deviceContext);
+            return new OCLBackend(options, providers, target, codeCache, tornadoContext, oclDeviceContextImpl);
         }
     }
 

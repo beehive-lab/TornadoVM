@@ -160,7 +160,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
         return maxConstantBufferSize;
     }
 
-    public boolean getDeviceDoubleFPConfig() {
+    public boolean isDeviceDoubleFPSupported() {
         return doubleFPConfig;
     }
 

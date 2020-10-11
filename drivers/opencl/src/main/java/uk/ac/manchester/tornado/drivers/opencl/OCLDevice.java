@@ -352,7 +352,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         return maxConstantBufferSize;
     }
 
-    public boolean getDeviceDoubleFPConfig() {
+    public boolean isDeviceDoubleFPSupported() {
         if (doubleFPConfig != -1) {
             return doubleFPConfig != 0;
         }
@@ -447,7 +447,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         sb.append(String.format("Endianess        : %s\n", isLittleEndian() ? "little" : "big"));
         sb.append(String.format("address size     : %d\n", getDeviceAddressBits()));
         sb.append(String.format("single fp config : 0x%x\n", getDeviceSingleFPConfig()));
-        sb.append(String.format("double fp config : 0x%x\n", getDeviceDoubleFPConfig()));
+        sb.append(String.format("double fp config : 0x%x\n", isDeviceDoubleFPSupported()));
         return sb.toString();
     }
 
