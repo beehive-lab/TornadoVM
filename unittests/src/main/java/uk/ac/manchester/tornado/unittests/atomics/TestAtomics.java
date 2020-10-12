@@ -337,7 +337,7 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    @Test
+    @TornadoNotSupported
     public void testAtomic09() {
         checkForPTX();
 
