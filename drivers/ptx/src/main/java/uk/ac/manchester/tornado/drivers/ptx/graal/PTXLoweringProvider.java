@@ -100,6 +100,8 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
+    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
+
     private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
     private TornadoVMConfig vmConfig;
@@ -290,10 +292,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             lowerAtomicStoreIndexedNode(storeAtomicNode);
         } else {
             lowerReduceSnippets(storeAtomicNode, tool);
-
-            // We append this phase to move floating reads close to their actual usage and
-            // set the FixedAccessNode::lastLocationAccess
-            new TornadoFloatingReadReplacement(true, true).apply(storeAtomicNode.graph());
         }
     }
 
@@ -311,6 +309,10 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             }
         }
         GPUReduceSnippets.lower(storeIndexed, threadID, tool);
+
+        // We append this phase to move floating reads close to their actual usage and
+        // set the FixedAccessNode::lastLocationAccess
+        snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {

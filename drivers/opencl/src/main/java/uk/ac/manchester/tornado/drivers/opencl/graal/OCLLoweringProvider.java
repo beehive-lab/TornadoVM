@@ -121,6 +121,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
+    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
+
     private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
@@ -247,6 +249,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             GPUReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
+
+        // We append this phase to move floating reads close to their actual usage and
+        // set FixedAccessNode::lastLocationAccess
+        snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
@@ -255,10 +261,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerAtomicStoreIndexedNode(storeAtomicNode);
         } else {
             lowerReduceSnippets(storeAtomicNode, tool);
-
-            // We append this phase to move floating reads close to their actual usage and
-            // set FixedAccessNode::lastLocationAccess
-            new TornadoFloatingReadReplacement(true, true).apply(storeAtomicNode.graph());
         }
     }
 

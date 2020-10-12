@@ -9,27 +9,28 @@
     * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
-  * JDK 8 >= 1.8.0_141
 
 
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
-### 1. Compile JDK 8 with JVMCI-8 support
-TornadoVM is built by using a JDK 1.8 version with JVMCI-8 support. The directory which contains the Java binary is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
+### 1. Download JDK 8 with JVMCI support
+TornadoVM is built by using a JDK 1.8 version with JVMCI support. The directory which contains the JDK installation is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
-Before building the new JDK, the JAVA_HOME environment variable should point to an already existing installation of a JDK 8 >= 1.8.0_141.
+Prebuilt versions of the required JDK are available to download at https://github.com/graalvm/graal-jvmci-8/releases/tag/jvmci-20.2-b03.
+
+Example download for Linux:
 
 ```bash
- $ git clone --depth 1 https://github.com/beehive-lab/mx
- $ export PATH=`pwd`/mx:$PATH
- $ git clone --depth 1 https://github.com/beehive-lab/graal-jvmci-8
- $ cd graal-jvmci-8
- $ mx build
+ $ wget https://github.com/graalvm/graal-jvmci-8/releases/download/jvmci-20.2-b03/openjdk-8u262+10-jvmci-20.2-b03-linux-amd64.tar.gz
+ $ tar -xf openjdk-8u262+10-jvmci-20.2-b03-linux-amd64.tar.gz
 ```
+The JDK installation will be found in the `openjdk1.8.0_262-jvmci-20.2-b03` directory. This directory is used as the JAVA_HOME.
 
-These steps will generate on Linux a new Java binary into `jdk1.8.0_<your_version>/<os-architecture>/product` and `jdk1.8.0_<your_version>/<os-architecture>/product/Contents/Home` for MacOS.
-
-E.g: `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2).
+For OSX:
+```bash
+ $ wget https://github.com/graalvm/graal-jvmci-8/releases/download/jvmci-20.2-b03/openjdk-8u262+10-jvmci-20.2-b03-darwin-amd64.tar.gz
+```
+then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice.
 
 ### 2. Download TornadoVM
 
