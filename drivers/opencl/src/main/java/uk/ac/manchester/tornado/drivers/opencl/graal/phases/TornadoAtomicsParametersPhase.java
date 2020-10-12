@@ -33,6 +33,15 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 
+/**
+ * This phase scans the IR and checks whether there is a
+ * {@link TornadoAtomicIntegerNode} associated for each {@link IncAtomicNode}.
+ * 
+ * If it is not the case, this would mean that the atomic is passed as a
+ * parameter to the lambda expression. Therefore, this phase introduces the
+ * {@link TornadoAtomicIntegerNode} at the beginning of the Control-Flow-Graph.
+ * 
+ */
 public class TornadoAtomicsParametersPhase extends Phase {
 
     @Override
