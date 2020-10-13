@@ -29,6 +29,8 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -107,7 +109,7 @@ public class RuntimeUtilities {
         return String.format("%.1f %sHz", freq / Math.pow(unit, exp), pre);
     }
 
-    public static final String formatBytes(final long bytes) {
+    public static String formatBytes(final long bytes) {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
@@ -122,7 +124,7 @@ public class RuntimeUtilities {
         return out;
     }
 
-    public static final String formatBytesPerSecond(final double bytes) {
+    public static String formatBytesPerSecond(final double bytes) {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
@@ -144,7 +146,7 @@ public class RuntimeUtilities {
      *
      * @return
      */
-    public static final boolean isBoxedPrimitive(final Object obj) {
+    public static boolean isBoxedPrimitive(final Object obj) {
         boolean isBox = false;
 
         if (obj instanceof Boolean) {
@@ -175,7 +177,7 @@ public class RuntimeUtilities {
      *
      * @return
      */
-    public static final boolean isBoxedPrimitiveClass(final Class<?> clazz) {
+    public static boolean isBoxedPrimitiveClass(final Class<?> clazz) {
         boolean isBox = false;
 
         if (clazz == Boolean.class) {
@@ -206,7 +208,7 @@ public class RuntimeUtilities {
      *
      * @return
      */
-    public static final Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
+    public static Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
         Class<?> result = null;
 
         if (clazz == Boolean.class) {
@@ -238,7 +240,7 @@ public class RuntimeUtilities {
      *
      * @return true if the array is composed of a primitive type
      */
-    public static final boolean isPrimitiveArray(final Class<?> type) {
+    public static boolean isPrimitiveArray(final Class<?> type) {
         Class<?> componentType = type.getComponentType();
         while (componentType.isArray()) {
             componentType = componentType.getComponentType();
@@ -348,6 +350,24 @@ public class RuntimeUtilities {
 
     public static boolean ifFileExists(File fileName) {
         return fileName.exists();
+    }
+
+    public static void maybePrintSource(byte[] source) {
+        if (PRINT_SOURCE) {
+            String sourceCode = new String(source);
+            if (PRINT_SOURCE_DIRECTORY.isEmpty()) {
+                System.out.println(sourceCode);
+            } else {
+                File fileLog = new File(PRINT_SOURCE_DIRECTORY);
+                try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
+                    file.write(sourceCode);
+                    file.write("\n");
+                    file.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public static void systemCall(String[] command, boolean printStandardOutput) throws IOException {

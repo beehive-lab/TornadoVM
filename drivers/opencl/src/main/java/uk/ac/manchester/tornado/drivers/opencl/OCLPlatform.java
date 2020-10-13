@@ -36,11 +36,11 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLPlatform extends TornadoLogger {
+public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
 
     private final int index;
     private final long id;
-    private final List<OCLDevice> devices;
+    private final List<OCLTargetDevice> devices;
     private final Set<OCLContext> contexts;
 
     public OCLPlatform(int index, long id) {
@@ -79,7 +79,7 @@ public class OCLPlatform extends TornadoLogger {
     public OCLContext createContext() {
         OCLContext contextObject = null;
         final LongBuffer deviceIds = LongBuffer.allocate(devices.size());
-        for (OCLDevice device : devices) {
+        for (OCLTargetDevice device : devices) {
             deviceIds.put(device.getId());
         }
 

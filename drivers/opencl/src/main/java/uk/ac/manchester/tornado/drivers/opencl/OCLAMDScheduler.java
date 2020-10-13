@@ -34,7 +34,7 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
 
     public OCLAMDScheduler(final OCLDeviceContext context) {
         super(context);
-        OCLDevice device = context.getDevice();
+        OCLTargetDevice device = context.getDevice();
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
     }
 

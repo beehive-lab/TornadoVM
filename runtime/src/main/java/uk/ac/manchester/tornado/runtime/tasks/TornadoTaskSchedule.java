@@ -329,10 +329,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             this.graph = lookup.getGraph();
         }
 
+        // Prepare Initial Graph before the TornadoVM bytecode generation
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
-        int globalTaskId = executionContext.getTaskCount();
+        int globalTaskId = executionContext.getTaskCountAndIncrement();
         hlBuffer.putInt(globalTaskId);
-        executionContext.incrGlobalTaskCount();
         hlBuffer.putInt(index);
 
         // create parameter list

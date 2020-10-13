@@ -65,6 +65,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
@@ -80,7 +81,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isKernel;
     private int loops = 0;
     private boolean isParallel;
-    private OCLDeviceContext deviceContext;
+    private OCLDeviceContextInterface deviceContext;
     HashSet<Block> rescheduledBasicBlocks;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
@@ -473,11 +474,11 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         this.isParallel = parallel;
     }
 
-    public void setDeviceContext(OCLDeviceContext deviceContext) {
+    public void setDeviceContext(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
     }
 
-    public OCLDeviceContext getDeviceContext() {
+    public OCLDeviceContextInterface getDeviceContext() {
         return this.deviceContext;
     }
 }
