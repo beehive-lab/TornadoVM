@@ -209,8 +209,6 @@ public class TornadoVM extends TornadoLogger {
         return execute(false);
     }
 
-    private final String MESSAGE_ERROR = "object is not valid: %s %s";
-
     private void initWaitEventList() {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
@@ -219,6 +217,347 @@ public class TornadoVM extends TornadoLogger {
 
     public void clearInstalledCode() {
         Arrays.fill(installedCodes, null);
+    }
+
+    private int executeAllocate(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long sizeBatch) {
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        final Object object = objects.get(objectIndex);
+
+        if (TornadoOptions.printBytecodes) {
+            String verbose = String.format("vm: ALLOCATE [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+        return device.ensureAllocated(object, sizeBatch, objectState);
+    }
+
+    private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        final Object object = objects.get(objectIndex);
+
+        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
+        if (TornadoOptions.printBytecodes) {
+            String verbose = String.format("vm: COPY_IN [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        List<Integer> allEvents;
+        if (sizeBatch > 0) {
+            // We need to stream-in when using batches, because the
+            // whole data is not copied yet.
+            allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+        } else {
+            allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
+        }
+
+        resetEventIndexes(eventList);
+
+        if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
+            for (Integer e : allEvents) {
+                Event event = device.resolveEvent(e);
+                event.waitForEvents();
+                long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                copyInTimer += event.getExecutionTime();
+                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+                timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+
+                long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
+                dispatchValue += event.getDriverDispatchTime();
+                timeProfiler.setTimer(ProfilerType.DISPATCH_TIME, dispatchValue);
+            }
+        }
+        return 0;
+    }
+
+    private int executeStreamIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+            final int[] waitList) {
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        final Object object = objects.get(objectIndex);
+
+        if (TornadoOptions.printBytecodes) {
+            String verbose = String.format("vm: STREAM_IN [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
+        List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+
+        resetEventIndexes(eventList);
+
+        if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
+            for (Integer e : allEvents) {
+                Event event = device.resolveEvent(e);
+                event.waitForEvents();
+                long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                copyInTimer += event.getExecutionTime();
+                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+                timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+
+                long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
+                dispatchValue += event.getDriverDispatchTime();
+                timeProfiler.setTimer(ProfilerType.DISPATCH_TIME, dispatchValue);
+            }
+        }
+        return 0;
+    }
+
+    private int executeStreamOut(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+            final int[] waitList) {
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        final Object object = objects.get(objectIndex);
+
+        if (TornadoOptions.printBytecodes) {
+            String verbose = String.format("vm: STREAM_OUT [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
+        int lastEvent = device.streamOutBlocking(object, offset, objectState, waitList);
+
+        resetEventIndexes(eventList);
+
+        if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
+            Event event = device.resolveEvent(lastEvent);
+            event.waitForEvents();
+            long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+            value += event.getExecutionTime();
+            timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+            timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+        }
+        return lastEvent;
+    }
+
+    private void executeStreamOutBlocking(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+            final int[] waitList) {
+
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        final Object object = objects.get(objectIndex);
+
+        if (TornadoOptions.printBytecodes) {
+            String verbose = String.format("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
+        final int tornadoEventID = device.streamOutBlocking(object, offset, objectState, waitList);
+
+        if (TornadoOptions.isProfilerEnabled() && tornadoEventID != -1) {
+            Event event = device.resolveEvent(tornadoEventID);
+            event.waitForEvents();
+            long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+            value += event.getExecutionTime();
+            timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+            timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+        }
+
+        resetEventIndexes(eventList);
+    }
+
+    private static class ExecutionInfo {
+        CallStack stack;
+        int[] waitList;
+
+        public ExecutionInfo(CallStack stack, int[] waitList) {
+            this.stack = stack;
+            this.waitList = waitList;
+        }
+    }
+
+    private ExecutionInfo compileTaskFromBytecodeToBinary(StringBuilder tornadoVMBytecodeList, final int contextIndex, final int stackIndex, final int numArgs, final int eventList,
+            final int taskIndex, final long batchThreads, final long offset) {
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+
+        if (device.getDeviceContext().wasReset() && finishedWarmup) {
+            throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
+        }
+
+        boolean redeployOnDevice = graphContext.redeployOnDevice();
+
+        final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
+
+        final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
+        final SchedulableTask task = tasks.get(taskIndex);
+
+        // Set the batch size in the task information
+        task.setBatchThreads(batchThreads);
+        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
+
+        if (TornadoOptions.printBytecodes) {
+            String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        if (gridTask != null && gridTask.get(task.getId()) != null) {
+            TornadoOptions.USER_SCHEDULING = true;
+        }
+
+        if (installedCodes[taskIndex] == null) {
+            task.mapTo(device);
+            try {
+                task.attachProfiler(timeProfiler);
+                if (taskIndex == (tasks.size() - 1)) {
+                    // If last task within the task-schedule -> we force compilation
+                    // This is useful when compiling code for Xilinx/Altera FPGAs, that has to
+                    // be a single source
+                    task.forceCompilation();
+                }
+                if (doUpdate) {
+                    task.forceCompilation();
+                }
+                installedCodes[taskIndex] = device.installCode(task);
+                doUpdate = false;
+            } catch (Exception e) {
+                throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);
+            }
+        }
+        return new ExecutionInfo(stack, waitList);
+    }
+
+    private int executeLaunch(final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, ExecutionInfo info) {
+
+        final SchedulableTask task = tasks.get(taskIndex);
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        boolean redeployOnDevice = graphContext.redeployOnDevice();
+        CallStack stack = info.stack;
+        int[] waitList = info.waitList;
+
+        if (installedCodes[taskIndex] == null) {
+            // After warming-up, it is possible to get a null pointer in the task-cache due
+            // to lazy compilation for FPGAs. In tha case, we check again the code cache.
+            installedCodes[taskIndex] = device.getCodeFromCache(task);
+        }
+
+        final TornadoInstalledCode installedCode = installedCodes[taskIndex];
+        if (installedCode == null) {
+            // There was an error during compilation -> bailout
+            throw new TornadoBailoutRuntimeException("Code generator Failed");
+        }
+
+        int[] atomicsArray;
+        if (task instanceof PrebuiltTask) {
+            atomicsArray = ((PrebuiltTask) task).getAtomics();
+        } else {
+            atomicsArray = device.checkAtomicsForTask(task);
+        }
+
+        DeviceBuffer bufferAtomics = null;
+        if (atomicsArray != null) {
+            bufferAtomics = device.createBuffer(atomicsArray);
+        }
+
+        final Access[] accesses = task.getArgumentsAccess();
+        if (redeployOnDevice || !stack.isOnDevice()) {
+            stack.reset();
+        }
+
+        HashMap<Integer, Integer> map = new HashMap<>();
+        if (gridTask != null && gridTask.get(task.getId()) != null) {
+            WorkerGrid workerGrid = gridTask.get(task.getId());
+            long[] global = workerGrid.getGlobalWork();
+            int i = 0;
+            for (long l : global) {
+                map.put(i++, (int) l);
+            }
+        }
+        stack.setHeader(map);
+
+        for (int i = 0; i < numArgs; i++) {
+            final byte argType = buffer.get();
+            final int argIndex = buffer.getInt();
+
+            if (stack.isOnDevice()) {
+                continue;
+            }
+
+            if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
+                stack.push(constants.get(argIndex));
+            } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
+                final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
+                final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
+
+                String MESSAGE_ERROR = "object is not valid: %s %s";
+                TornadoInternalError.guarantee(objectState.isValid(), MESSAGE_ERROR, objects.get(argIndex), objectState);
+
+                stack.push(objects.get(argIndex), objectState);
+                if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {
+                    globalState.setOwner(device);
+                    objectState.setContents(true);
+                    objectState.setModified(true);
+                }
+            } else {
+                TornadoInternalError.shouldNotReachHere();
+            }
+        }
+
+        TaskMetaData metadata;
+        if (task.meta() instanceof TaskMetaData) {
+            metadata = (TaskMetaData) task.meta();
+        } else {
+            throw new RuntimeException("task.meta is not instanceof TaskMetadata");
+        }
+
+        // We attach the profiler
+        metadata.attachProfiler(timeProfiler);
+        metadata.setGridTask(gridTask);
+
+        int lastEvent;
+        try {
+            if (useDependencies) {
+                lastEvent = installedCode.launchWithDependencies(stack, bufferAtomics, metadata, batchThreads, waitList);
+            } else {
+                lastEvent = installedCode.launchWithoutDependencies(stack, bufferAtomics, metadata, batchThreads);
+            }
+
+            resetEventIndexes(eventList);
+
+        } catch (Exception e) {
+            String re = e.toString();
+            if (Tornado.DEBUG) {
+                e.printStackTrace();
+            }
+            throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + re, e);
+        }
+        return lastEvent;
+    }
+
+    private void executeDependency(StringBuilder tornadoVMBytecodeList, int lastEvent, int eventList) {
+        if (useDependencies && lastEvent != -1) {
+            if (TornadoOptions.printBytecodes) {
+                String verbose = String.format("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
+                tornadoVMBytecodeList.append(verbose).append("\n");
+            }
+            TornadoInternalError.guarantee(eventsIndexes[eventList] < events[eventList].length, "event list is too small");
+            events[eventList][eventsIndexes[eventList]] = lastEvent;
+            eventsIndexes[eventList]++;
+        }
+    }
+
+    private int executeBarrier(StringBuilder tornadoVMBytecodeList, int eventList, int[] waitList, int lastEvent) {
+        if (TornadoOptions.printBytecodes) {
+            tornadoVMBytecodeList.append(String.format("vm: BARRIER event-list %d\n", eventList));
+        }
+
+        if (contexts.size() == 1) {
+            final TornadoAcceleratorDevice device = contexts.get(0);
+            lastEvent = device.enqueueMarker(waitList);
+        } else if (contexts.size() > 1) {
+            TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
+        }
+
+        resetEventIndexes(eventList);
+        return lastEvent;
+    }
+
+    private void throwError(byte op) {
+        if (graphContext.meta().isDebug()) {
+            debug("vm: invalid op 0x%x(%d)", op, op);
+        }
+        throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
     }
 
     private Event execute(boolean isWarmup) {
@@ -239,185 +578,55 @@ public class TornadoVM extends TornadoLogger {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final long sizeBatch = buffer.getLong();
-
                 if (isWarmup) {
                     continue;
                 }
-
-                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-                final Object object = objects.get(objectIndex);
-
-                if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: ALLOCATE [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
-                    tornadoVMBytecodeList.append(verbose + "\n");
-                }
-
-                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-                lastEvent = device.ensureAllocated(object, sizeBatch, objectState);
-
+                lastEvent = executeAllocate(tornadoVMBytecodeList, objectIndex, contextIndex, sizeBatch);
             } else if (op == TornadoVMBytecodes.COPY_IN.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
                 final long offset = buffer.getLong();
                 final long sizeBatch = buffer.getLong();
-
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
-
                 if (isWarmup) {
                     continue;
                 }
-
-                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-                final Object object = objects.get(objectIndex);
-
-                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-
-                if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: COPY_IN [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    tornadoVMBytecodeList.append(verbose + "\n");
-                }
-
-                List<Integer> allEvents;
-                if (sizeBatch > 0) {
-                    // We need to stream-in when using batches, because the
-                    // whole data is not copied yet.
-                    allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
-                } else {
-                    allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
-                }
-
-                resetEventIndexes(eventList);
-
-                if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
-                    for (Integer e : allEvents) {
-                        Event event = device.resolveEvent(e);
-                        event.waitForEvents();
-                        long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        copyInTimer += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-                        timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
-
-                        long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
-                        dispatchValue += event.getDriverDispatchTime();
-                        timeProfiler.setTimer(ProfilerType.DISPATCH_TIME, dispatchValue);
-                    }
-                }
-
+                executeCopyIn(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.STREAM_IN.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
                 final long offset = buffer.getLong();
                 final long sizeBatch = buffer.getLong();
-
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
-
                 if (isWarmup) {
                     continue;
                 }
-
-                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-                final Object object = objects.get(objectIndex);
-
-                if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: STREAM_IN [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    tornadoVMBytecodeList.append(verbose + "\n");
-                }
-
-                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-
-                List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
-
-                resetEventIndexes(eventList);
-
-                if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
-                    for (Integer e : allEvents) {
-                        Event event = device.resolveEvent(e);
-                        event.waitForEvents();
-                        long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        copyInTimer += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-                        timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
-
-                        long dispatchValue = timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
-                        dispatchValue += event.getDriverDispatchTime();
-                        timeProfiler.setTimer(ProfilerType.DISPATCH_TIME, dispatchValue);
-                    }
-                }
+                executeStreamIn(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.STREAM_OUT.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
-
                 final long offset = buffer.getLong();
                 final long sizeBatch = buffer.getLong();
-
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
-
                 if (isWarmup) {
                     continue;
                 }
-
-                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-                final Object object = objects.get(objectIndex);
-
-                if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: STREAM_OUT [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    tornadoVMBytecodeList.append(verbose + "\n");
-                }
-
-                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-
-                lastEvent = device.streamOutBlocking(object, offset, objectState, waitList);
-
-                resetEventIndexes(eventList);
-
-                if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
-                    Event event = device.resolveEvent(lastEvent);
-                    event.waitForEvents();
-                    long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-                    value += event.getExecutionTime();
-                    timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
-                    timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
-                }
-
+                lastEvent = executeStreamOut(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.STREAM_OUT_BLOCKING.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
-
                 final long offset = buffer.getLong();
                 final long sizeBatch = buffer.getLong();
 
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
-
                 if (isWarmup) {
                     continue;
                 }
-
-                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-                final Object object = objects.get(objectIndex);
-
-                if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
-                    tornadoVMBytecodeList.append(verbose + "\n");
-                }
-
-                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-
-                final int tornadoEventID = device.streamOutBlocking(object, offset, objectState, waitList);
-
-                if (TornadoOptions.isProfilerEnabled() && tornadoEventID != -1) {
-                    Event event = device.resolveEvent(tornadoEventID);
-                    event.waitForEvents();
-                    long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-                    value += event.getExecutionTime();
-                    timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
-                    timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
-                }
-
-                resetEventIndexes(eventList);
+                executeStreamOutBlocking(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
 
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
                 final int stackIndex = buffer.getInt();
@@ -425,203 +634,34 @@ public class TornadoVM extends TornadoLogger {
                 final int taskIndex = buffer.getInt();
                 final int numArgs = buffer.getInt();
                 final int eventList = buffer.getInt();
-
                 final long offset = buffer.getLong();
                 final long batchThreads = buffer.getLong();
-
-                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-
-                if (device.getDeviceContext().wasReset() && finishedWarmup) {
-                    throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
-                }
-
-                boolean redeployOnDevice = graphContext.redeployOnDevice();
-
-                final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
-
-                final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
-                final SchedulableTask task = tasks.get(taskIndex);
-
-                // Set the batch size in the task information
-                task.setBatchThreads(batchThreads);
-                task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
-
-                if (TornadoOptions.printBytecodes) {
-                    String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
-                    tornadoVMBytecodeList.append(verbose + "\n");
-                }
-
-                if (gridTask != null && gridTask.get(task.getId()) != null) {
-                    TornadoOptions.USER_SCHEDULING = true;
-                }
-
-                if (installedCodes[taskIndex] == null) {
-                    task.mapTo(device);
-                    try {
-                        task.attachProfiler(timeProfiler);
-                        if (taskIndex == (tasks.size() - 1)) {
-                            // If last task within the task-schedule -> we force compilation
-                            // This is useful when compiling code for Xilinx/Altera FPGAs, that has to
-                            // be a single source
-                            task.forceCompilation();
-                        }
-                        if (doUpdate) {
-                            task.forceCompilation();
-                        }
-                        installedCodes[taskIndex] = device.installCode(task);
-                        doUpdate = false;
-                    } catch (Exception e) {
-                        throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + e.getStackTrace(), e);
-                    }
-                }
-
+                ExecutionInfo info = compileTaskFromBytecodeToBinary(tornadoVMBytecodeList, contextIndex, stackIndex, numArgs, eventList, taskIndex, batchThreads, offset);
                 if (isWarmup) {
                     popArgumentsFromStack(numArgs);
                     continue;
                 }
-
-                if (installedCodes[taskIndex] == null) {
-                    // After warming-up, it is possible to get a null pointer in the task-cache due
-                    // to lazy compilation for FPGAs. In tha case, we check again the code cache.
-                    installedCodes[taskIndex] = device.getCodeFromCache(task);
-                }
-
-                final TornadoInstalledCode installedCode = installedCodes[taskIndex];
-                if (installedCode == null) {
-                    // There was an error during compilation -> bailout
-                    throw new TornadoBailoutRuntimeException("Code generator Failed");
-                }
-
-                int[] atomicsArray;
-                if (task instanceof PrebuiltTask) {
-                    atomicsArray = ((PrebuiltTask) task).getAtomics();
-                } else {
-                    atomicsArray = device.checkAtomicsForTask(task);
-                }
-
-                DeviceBuffer bufferAtomics = null;
-                if (atomicsArray != null) {
-                    bufferAtomics = device.createBuffer(atomicsArray);
-                }
-
-                final Access[] accesses = task.getArgumentsAccess();
-                if (redeployOnDevice || !stack.isOnDevice()) {
-                    stack.reset();
-                }
-
-                HashMap<Integer, Integer> map = new HashMap<>();
-                if (gridTask != null && gridTask.get(task.getId()) != null) {
-                    WorkerGrid workerGrid = gridTask.get(task.getId());
-                    long[] global = workerGrid.getGlobalWork();
-                    int i = 0;
-                    for (long l : global) {
-                        map.put(i++, (int) l);
-                    }
-                }
-                stack.setHeader(map);
-
-                for (int i = 0; i < numArgs; i++) {
-                    final byte argType = buffer.get();
-                    final int argIndex = buffer.getInt();
-
-                    if (stack.isOnDevice()) {
-                        continue;
-                    }
-
-                    if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
-                        stack.push(constants.get(argIndex));
-                    } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
-                        final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
-                        final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
-
-                        TornadoInternalError.guarantee(objectState.isValid(), MESSAGE_ERROR, objects.get(argIndex), objectState);
-
-                        stack.push(objects.get(argIndex), objectState);
-                        if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {
-                            globalState.setOwner(device);
-                            objectState.setContents(true);
-                            objectState.setModified(true);
-                        }
-                    } else {
-                        TornadoInternalError.shouldNotReachHere();
-                    }
-                }
-
-                TaskMetaData metadata;
-                if (task.meta() instanceof TaskMetaData) {
-                    metadata = (TaskMetaData) task.meta();
-                } else {
-                    throw new RuntimeException("task.meta is not instanceof TaskMetadata");
-                }
-
-                // We attach the profiler
-                metadata.attachProfiler(timeProfiler);
-                metadata.setGridTask(gridTask);
-
-                try {
-                    if (useDependencies) {
-                        lastEvent = installedCode.launchWithDependencies(stack, bufferAtomics, metadata, batchThreads, waitList);
-                    } else {
-                        lastEvent = installedCode.launchWithoutDependencies(stack, bufferAtomics, metadata, batchThreads);
-                    }
-
-                    resetEventIndexes(eventList);
-
-                } catch (Exception e) {
-                    String re = e.toString();
-                    if (Tornado.DEBUG) {
-                        e.printStackTrace();
-                    }
-                    throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + re, e);
-                }
+                lastEvent = executeLaunch(contextIndex, numArgs, eventList, taskIndex, batchThreads, info);
             } else if (op == TornadoVMBytecodes.ADD_DEP.value()) {
                 final int eventList = buffer.getInt();
                 if (isWarmup) {
                     continue;
                 }
-                if (useDependencies && lastEvent != -1) {
-
-                    if (TornadoOptions.printBytecodes) {
-                        String verbose = String.format("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
-                        tornadoVMBytecodeList.append(verbose + "\n");
-                    }
-
-                    TornadoInternalError.guarantee(eventsIndexes[eventList] < events[eventList].length, "event list is too small");
-                    events[eventList][eventsIndexes[eventList]] = lastEvent;
-                    eventsIndexes[eventList]++;
-                }
-
+                executeDependency(tornadoVMBytecodeList, lastEvent, eventList);
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
                 final int eventList = buffer.getInt();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
-
                 if (isWarmup) {
                     continue;
                 }
-
-                if (TornadoOptions.printBytecodes) {
-                    tornadoVMBytecodeList.append(String.format("BARRIER event list %d\n", eventList));
-                }
-
-                if (contexts.size() == 1) {
-                    final TornadoAcceleratorDevice device = contexts.get(0);
-                    lastEvent = device.enqueueMarker(waitList);
-                } else if (contexts.size() > 1) {
-                    TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
-                }
-
-                resetEventIndexes(eventList);
-
+                executeBarrier(tornadoVMBytecodeList, eventList, waitList, lastEvent);
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (TornadoOptions.printBytecodes) {
                     tornadoVMBytecodeList.append("END\n");
                 }
                 break;
             } else {
-                if (graphContext.meta().isDebug()) {
-                    debug("vm: invalid op 0x%x(%d)", op, op);
-                }
-                throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
+                throwError(op);
             }
         }
 

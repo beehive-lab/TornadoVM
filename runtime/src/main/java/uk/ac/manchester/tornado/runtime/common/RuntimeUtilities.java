@@ -107,7 +107,7 @@ public class RuntimeUtilities {
         return String.format("%.1f %sHz", freq / Math.pow(unit, exp), pre);
     }
 
-    public static final String formatBytes(final long bytes) {
+    public static String formatBytes(final long bytes) {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
@@ -122,7 +122,7 @@ public class RuntimeUtilities {
         return out;
     }
 
-    public static final String formatBytesPerSecond(final double bytes) {
+    public static String formatBytesPerSecond(final double bytes) {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
@@ -144,7 +144,7 @@ public class RuntimeUtilities {
      *
      * @return
      */
-    public static final boolean isBoxedPrimitive(final Object obj) {
+    public static boolean isBoxedPrimitive(final Object obj) {
         boolean isBox = false;
 
         if (obj instanceof Boolean) {
@@ -175,7 +175,7 @@ public class RuntimeUtilities {
      *
      * @return
      */
-    public static final boolean isBoxedPrimitiveClass(final Class<?> clazz) {
+    public static boolean isBoxedPrimitiveClass(final Class<?> clazz) {
         boolean isBox = false;
 
         if (clazz == Boolean.class) {
@@ -206,7 +206,7 @@ public class RuntimeUtilities {
      *
      * @return
      */
-    public static final Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
+    public static Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
         Class<?> result = null;
 
         if (clazz == Boolean.class) {
@@ -238,7 +238,7 @@ public class RuntimeUtilities {
      *
      * @return true if the array is composed of a primitive type
      */
-    public static final boolean isPrimitiveArray(final Class<?> type) {
+    public static boolean isPrimitiveArray(final Class<?> type) {
         Class<?> componentType = type.getComponentType();
         while (componentType.isArray()) {
             componentType = componentType.getComponentType();

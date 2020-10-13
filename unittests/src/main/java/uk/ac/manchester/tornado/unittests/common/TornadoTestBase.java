@@ -21,26 +21,25 @@ package uk.ac.manchester.tornado.unittests.common;
 import org.junit.Before;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class TornadoTestBase {
 
-    private static class Pair<T1, T2> {
-        T1 first;
-        T2 second;
+    private static class Tuple2<T0, T1> {
+        T0 t0;
+        T1 t1;
 
-        public Pair(T1 first, T2 second) {
-            this.first = first;
-            this.second = second;
+        public Tuple2(T0 first, T1 second) {
+            this.t0 = first;
+            this.t1 = second;
         }
 
-        public T1 getFirst() {
-            return first;
+        public T0 f0() {
+            return t0;
         }
 
-        public T2 getSecond() {
-            return second;
+        public T1 f1() {
+            return t1;
         }
     }
 
@@ -56,13 +55,13 @@ public abstract class TornadoTestBase {
         }
 
         if (!wasDeviceInspected) {
-            Pair<Integer, Integer> driverAndDevice = getDriverAndDeviceIndex();
-            int driverIndex = driverAndDevice.getFirst();
+            Tuple2<Integer, Integer> pairDriverDevice = getDriverAndDeviceIndex();
+            int driverIndex = pairDriverDevice.f0();
             if (driverIndex != 0) {
                 // We swap the default driver for the selected one
                 TornadoRuntime.getTornadoRuntime().setDefaultDriver(driverIndex);
             }
-            int deviceIndex = driverAndDevice.getSecond();
+            int deviceIndex = pairDriverDevice.f1();
             if (deviceIndex != 0) {
                 // We swap the default device for the selected one
                 TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -72,9 +71,9 @@ public abstract class TornadoTestBase {
         }
     }
 
-    private Pair<Integer, Integer> getDriverAndDeviceIndex() {
+    private Tuple2<Integer, Integer> getDriverAndDeviceIndex() {
         String driverAndDevice = System.getProperty("tornado.unittests.device", "0:0");
         String[] propertyValues = driverAndDevice.split(":");
-        return new Pair<>(Integer.parseInt(propertyValues[0]), Integer.parseInt(propertyValues[1]));
+        return new Tuple2<>(Integer.parseInt(propertyValues[0]), Integer.parseInt(propertyValues[1]));
     }
 }
