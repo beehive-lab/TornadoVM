@@ -24,10 +24,4 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 public class ConfigurationReduce {
 
     public static final int MAX_ITERATIONS = 101;
-
-    public static TornadoDeviceType getDefaultDeviceType() {
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        return driver.getTypeDefaultDevice();
-    }
-
 }

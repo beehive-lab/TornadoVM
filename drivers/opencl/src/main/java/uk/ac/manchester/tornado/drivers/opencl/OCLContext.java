@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLContext extends TornadoLogger {
+public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment {
 
     public static class OCLBufferResult {
 
@@ -71,14 +71,14 @@ public class OCLContext extends TornadoLogger {
     }
 
     private final long contextID;
-    private final List<OCLDevice> devices;
+    private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
     private final OCLCommandQueue[] queues;
     private final List<OCLProgram> programs;
     private final ArrayList<Long> allocatedRegions;
     private final OCLPlatform platform;
 
-    public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
+    public OCLContext(OCLPlatform platform, long id, List<OCLTargetDevice> devices) {
         this.platform = platform;
         this.contextID = id;
         this.devices = devices;
@@ -127,7 +127,7 @@ public class OCLContext extends TornadoLogger {
         return devices.size();
     }
 
-    public List<OCLDevice> devices() {
+    public List<OCLTargetDevice> devices() {
         return devices;
     }
 
@@ -136,7 +136,7 @@ public class OCLContext extends TornadoLogger {
     }
 
     public void createCommandQueue(int index, long properties) {
-        OCLDevice device = devices.get(index);
+        OCLTargetDevice device = devices.get(index);
         long queueId;
         try {
             queueId = clCreateCommandQueue(contextID, device.getId(), properties);
@@ -301,7 +301,7 @@ public class OCLContext extends TornadoLogger {
         return devicePtr;
     }
 
-    int getPlatformIndex() {
+    public int getPlatformIndex() {
         return platform.getIndex();
     }
 

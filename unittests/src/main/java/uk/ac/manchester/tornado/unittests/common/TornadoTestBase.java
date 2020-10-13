@@ -76,4 +76,11 @@ public abstract class TornadoTestBase {
         String[] propertyValues = driverAndDevice.split(":");
         return new Tuple2<>(Integer.parseInt(propertyValues[0]), Integer.parseInt(propertyValues[1]));
     }
+
+    public void checkForPTX() {
+        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        if ("PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
+            throw new PTXNotSupported("Test not supported for the PTX backend");
+        }
+    }
 }

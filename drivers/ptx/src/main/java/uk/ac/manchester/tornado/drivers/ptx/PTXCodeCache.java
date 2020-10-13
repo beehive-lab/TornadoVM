@@ -23,12 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXCodeCache {
@@ -45,10 +44,7 @@ public class PTXCodeCache {
         String cacheKey = name;
 
         if (!cache.containsKey(cacheKey)) {
-            if (PRINT_SOURCE) {
-                String source = new String(targetCode);
-                System.out.println(source);
-            }
+            RuntimeUtilities.maybePrintSource(targetCode);
 
             PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, taskMeta);
 

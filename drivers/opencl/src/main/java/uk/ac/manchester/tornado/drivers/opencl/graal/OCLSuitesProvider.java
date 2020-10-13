@@ -36,10 +36,9 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
@@ -53,8 +52,8 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     private final TornadoLIRSuites lirSuites;
     private final OCLCanonicalizer canonicalizer;
 
-    public OCLSuitesProvider(OptionValues options, OCLDeviceContext deviceContext, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig,
-            AddressLowering addressLowering) {
+    public OCLSuitesProvider(OptionValues options, TornadoDeviceContext deviceContext, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig,
+                             AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new OCLCanonicalizer();
         suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);

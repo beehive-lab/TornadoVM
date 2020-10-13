@@ -1,0 +1,9 @@
+{
+  "deviceName" : "testDevice",
+  "doubleFPSupport" : true,
+  "maxWorkItemSizes" : [8192, 8192, 8192],
+  "deviceAddressBits" : 64,
+  "deviceType" : "CL_DEVICE_TYPE_CPU",
+  "deviceExtensions" : "cl_khr_int64_base_atomics",
+  "availableProcessors" : 12
+}
