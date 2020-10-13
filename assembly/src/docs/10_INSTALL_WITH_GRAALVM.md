@@ -17,20 +17,34 @@
 
 GraalVM 20.2.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0).
 
-You can then extract the zip file:
+The examples below show how to download and extract GraalVM based on JDK 8 an 11 for Linux.
 
-Example, download for Linux:
+* Example for GraalVM based on JDK 8:
 ```bash
 $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java8-linux-amd64-20.2.0.tar.gz
 $ tar -xf graalvm-ce-java8-linux-amd64-20.2.0.tar.gz
 ```
+* Example for GraalVM based on JDK 11:
+```bash
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java11-linux-amd64-20.2.0.tar.gz
+$ tar -xf graalvm-ce-java11-linux-amd64-20.2.0.tar.gz
+```
+
 The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-20.2.0` directory. This directory is used as the JAVA_HOME (See step 2).
 
 
 For OSX:
+
+* Example for GraalVM based on JDK 8:
+```bash
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java8-darwin-amd64-20.2.0.tar.gz
+```
+
+* Example for GraalVM based on JDK 11:
 ```bash
 $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java11-darwin-amd64-20.2.0.tar.gz
 ```
+
 then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice.
 
 
