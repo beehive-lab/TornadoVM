@@ -128,7 +128,7 @@ public class TornadoOptions {
     /**
      * Specifies the virtual device properties file. Default value is virtual-device.json.
      */
-    public static final String VIRTUAL_DEVICE_FILE = Tornado.getProperty("tornado.device.desc", "virtual-device.json");
+    public static final String VIRTUAL_DEVICE_FILE = Tornado.getProperty("tornado.device.desc", "etc/virtual-device-template.json");
 
     /**
      * Option to enable profiler. It can be disabled at any point during runtime.
