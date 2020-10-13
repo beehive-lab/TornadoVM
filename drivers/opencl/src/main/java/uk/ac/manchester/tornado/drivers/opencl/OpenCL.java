@@ -25,22 +25,27 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
+import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
+import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 public class OpenCL {
 
@@ -48,7 +53,7 @@ public class OpenCL {
 
     private static boolean initialised = false;
 
-    private static final List<OCLPlatform> platforms = new ArrayList<>();
+    private static final List<TornadoPlatform> platforms = new ArrayList<>();
 
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
@@ -56,27 +61,31 @@ public class OpenCL {
     public static final int CL_FALSE = 0;
 
     static {
-        try {
-            // Loading JNI OpenCL library
-            System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
-        } catch (final UnsatisfiedLinkError e) {
-            throw e;
-        }
-
-        try {
-            initialise();
-        } catch (final TornadoRuntimeException e) {
-            e.printStackTrace();
-        }
-
-        // add a shutdown hook to free-up all OpenCL resources on VM exit
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                setName("OpenCL-Cleanup-Thread");
-                OpenCL.cleanup();
+        if (VIRTUAL_DEVICE_ENABLED) {
+            initializeVirtual();
+        } else {
+            try {
+                // Loading JNI OpenCL library
+                System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
+            } catch (final UnsatisfiedLinkError e) {
+                throw e;
             }
-        });
+
+            try {
+                initialise();
+            } catch (final TornadoRuntimeException e) {
+                e.printStackTrace();
+            }
+
+            // add a shutdown hook to free-up all OpenCL resources on VM exit
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    setName("OpenCL-Cleanup-Thread");
+                    OpenCL.cleanup();
+                }
+            });
+        }
     }
 
     native static boolean registerCallback();
@@ -87,18 +96,29 @@ public class OpenCL {
 
     public static void cleanup() {
         if (initialised) {
-            for (final OCLPlatform platform : platforms) {
+            for (final TornadoPlatform platform : platforms) {
                 platform.cleanup();
             }
         }
     }
 
-    public static OCLPlatform getPlatform(int index) {
+    public static TornadoPlatform getPlatform(int index) {
         return platforms.get(index);
     }
 
     public static int getNumPlatforms() {
         return platforms.size();
+    }
+
+    private static void initializeVirtual() {
+        if (!initialised) {
+            VirtualDeviceDescriptor info = VirtualJSONParser.getDeviceDescriptor();
+
+            VirtualOCLPlatform platform = new VirtualOCLPlatform(info);
+            platforms.add(platform);
+
+            initialised = true;
+        }
     }
 
     public static void initialise() {
@@ -120,7 +140,6 @@ public class OpenCL {
                 err.printStackTrace();
                 throw new TornadoRuntimeException("Error with OpenCL bindings");
             }
-
             initialised = true;
         }
     }
@@ -203,23 +222,23 @@ public class OpenCL {
         }
     }
 
-    public static List<OCLPlatform> platforms() {
+    public static List<TornadoPlatform> platforms() {
         return platforms;
     }
 
     public static void exploreAllPlatforms() {
         for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
-            final OCLPlatform platform = platforms.get(platformIndex);
+            final TornadoPlatform platform = platforms.get(platformIndex);
             System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
-            final OCLContext context = platform.createContext();
+            final OCLExecutionEnvironment context = platform.createContext();
             for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
                 System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
             }
         }
     }
 
-    public static OCLDevice getDevice(int platformIndex, int deviceIndex) {
-        final OCLPlatform platform = platforms.get(platformIndex);
+    public static TornadoTargetDevice getDevice(int platformIndex, int deviceIndex) {
+        final TornadoPlatform platform = platforms.get(platformIndex);
         return platform.createContext().createDeviceContext(deviceIndex).getDevice();
     }
 
@@ -229,7 +248,7 @@ public class OpenCL {
         } else if (args.length == 2) {
             final int platformIndex = Integer.parseInt(args[0]);
             final int deviceIndex = Integer.parseInt(args[1]);
-            OCLDevice device = getDevice(platformIndex, deviceIndex);
+            TornadoTargetDevice device = getDevice(platformIndex, deviceIndex);
             System.out.println(device.getDeviceInfo());
         } else {
             System.out.println("usage: OpenCL <platform> <device>");

@@ -67,13 +67,13 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
+public class OCLDeviceContext extends TornadoLogger implements Initialisable, OCLDeviceContextInterface {
 
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
     private static final boolean PRINT_OCL_KERNEL_TIME = Boolean.parseBoolean(getProperty("tornado.opencl.timer.kernel", "False").toLowerCase());
 
-    private final OCLDevice device;
+    private final OCLTargetDevice device;
     private final OCLCommandQueue queue;
     private final OCLContext context;
     private final OCLMemoryManager memoryManager;
@@ -87,7 +87,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     private final OCLEventsWrapper eventsWrapper;
 
-    protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
+    protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
         this.queue = queue;
         this.context = context;
@@ -126,7 +126,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return str.split(";");
     }
 
-    public OCLDevice getDevice() {
+    public OCLTargetDevice getDevice() {
         return device;
     }
 

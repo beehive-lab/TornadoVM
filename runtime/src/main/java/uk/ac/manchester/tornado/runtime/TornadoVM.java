@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -561,6 +562,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event execute(boolean isWarmup) {
+        isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
         contexts.forEach(TornadoAcceleratorDevice::enableThreadSharing);
 
         final long t0 = System.nanoTime();
