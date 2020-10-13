@@ -16,7 +16,7 @@
 ### 1. Download or build JDK 8 with JVMCI support
 TornadoVM is built by using a JDK 1.8 version with JVMCI support. The directory which contains the JDK installation is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
-You can either download a prebuilt version of the required JDK ([section 1.1](1.1-Download-JDK-8-with-JVMCI-support)) or manually build it ([section 1.2](1.2-Build-JDK-8-with-JVMCI-support)). Note that [section 1.1](1.1-Download-JDK-8-with-JVMCI-support) and [section 1.2](1.2-Build-JDK-8-with-JVMCI-support) are mutually exclusive.
+You can either download a prebuilt version of the required JDK ([section 1.1](11_INSTALL_WITH_JDK8.md#11-download-jdk-8-with-jvmci-support)) or manually build it ([section 1.2](11_INSTALL_WITH_JDK8.md#12-build-jdk-8-with-jvmci-support)). Note that [section 1.1](11_INSTALL_WITH_JDK8.md#11-download-jdk-8-with-jvmci-support) and [section 1.2](11_INSTALL_WITH_JDK8.md#12-build-jdk-8-with-jvmci-support) are mutually exclusive.
 
 #### 1.1 Download JDK 8 with JVMCI support
 

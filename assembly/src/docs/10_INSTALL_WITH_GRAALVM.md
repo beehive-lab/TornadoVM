@@ -17,7 +17,7 @@
 
 GraalVM 20.2.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0).
 
-The examples below show how to download and extract GraalVM based on JDK 8 an 11 for Linux.
+The examples below show how to download and extract GraalVM based on JDK 8 and 11 for Linux.
 
 * Example for GraalVM based on JDK 8:
 ```bash
