@@ -71,7 +71,6 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -116,12 +115,12 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public DeviceBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createBuffer(int[] arr) {
         throw new TornadoRuntimeException("[PTX] Atomics not implemented !");
     }
 
     @Override
-    public DeviceBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBuffer(int[] arr) {
         return null;
     }
 

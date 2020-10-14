@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 
 public interface TornadoAcceleratorDevice extends TornadoDevice {
 
@@ -34,9 +35,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     CallStack createStack(int numArgs);
 
-    DeviceBuffer createBuffer(int[] buffer);
+    ObjectBuffer createBuffer(int[] buffer);
 
-    DeviceBuffer createOrReuseBuffer(int[] arr);
+    ObjectBuffer createOrReuseBuffer(int[] arr);
 
     TornadoInstalledCode installCode(SchedulableTask task);
 

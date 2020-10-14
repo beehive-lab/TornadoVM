@@ -78,7 +78,6 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -100,7 +99,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private String platformName;
 
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
-    private DeviceBuffer reuseBuffer;
+    private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
     private static OCLDriver findDriver() {
@@ -208,16 +207,16 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public DeviceBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createBuffer(int[] arr) {
         return getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
     }
 
     @Override
-    public DeviceBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBuffer(int[] arr) {
         if (reuseBuffer == null) {
             reuseBuffer = getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
         }
-        reuseBuffer.set(arr);
+        reuseBuffer.setIntBuffer(arr);
         return reuseBuffer;
     }
 
@@ -548,6 +547,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
+
+        if (!(object instanceof AtomicInteger)) {
+            return null;
+        }
+
         if (!state.isValid()) {
             ensureAllocated(object, batchSize, state);
         }
@@ -561,11 +565,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
-        if (batchSize > 0 || !state.isValid()) {
-            ensureAllocated(object, batchSize, state);
+        if (!(object instanceof AtomicInteger)) {
+            if (batchSize > 0 || !state.isValid()) {
+                ensureAllocated(object, batchSize, state);
+            }
+            state.setContents(true);
+            return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+        } else {
+            return null;
         }
-        state.setContents(true);
-        return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
     }
 
     @Override
@@ -581,11 +589,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
         if (state.isAtomicRegionPresent()) {
-            int eventID = ((DeviceBuffer) state.getAtomicRegion()).enqueueRead();
+            int eventID = ((ObjectBuffer) state.getAtomicRegion()).enqueueRead(null, 0, null, false);
 
             if (object instanceof AtomicInteger) {
-                DeviceBuffer deviceBuffer = getAtomic();
-                int[] arr = deviceBuffer.getBuffer();
+                ObjectBuffer deviceBuffer = getAtomic();
+                int[] arr = deviceBuffer.getIntBuffer();
                 AtomicInteger ai = (AtomicInteger) object;
                 int indexFromGlobalRegion = mappingAtomics.get(object);
                 ai.set(arr[indexFromGlobalRegion]);
@@ -742,7 +750,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public DeviceBuffer getAtomic() {
+    public ObjectBuffer getAtomic() {
         return reuseBuffer;
     }
 

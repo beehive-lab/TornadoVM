@@ -78,4 +78,7 @@ public interface ObjectBuffer {
 
     long size();
 
+    int[] getIntBuffer();
+
+    void setIntBuffer(int[] arr);
 }

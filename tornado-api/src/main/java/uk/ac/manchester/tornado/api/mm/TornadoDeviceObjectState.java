@@ -51,7 +51,7 @@ public interface TornadoDeviceObjectState {
 
     boolean isAtomicRegionPresent();
 
-    Object getAtomicRegion();
+    ObjectBuffer getAtomicRegion();
 
     boolean isValid();
 

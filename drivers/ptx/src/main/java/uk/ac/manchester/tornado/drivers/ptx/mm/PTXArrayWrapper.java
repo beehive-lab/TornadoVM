@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
@@ -315,4 +316,15 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     protected abstract int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
     protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
+
+    @Override
+    public int[] getIntBuffer() {
+        TornadoInternalError.unimplemented();
+        return null;
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        TornadoInternalError.unimplemented();
+    }
 }

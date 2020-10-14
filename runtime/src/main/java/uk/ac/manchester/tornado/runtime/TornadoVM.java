@@ -50,10 +50,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -290,13 +290,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-        List<Integer> allEvents = null;
-
-        if (object instanceof AtomicInteger) {
-            System.out.println("[DEBUG] ATOMIC INTEGERS STREAM_IN");
-        } else {
-            allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
-        }
+        List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
 
         resetEventIndexes(eventList);
 
@@ -365,10 +359,7 @@ public class TornadoVM extends TornadoLogger {
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getExecutionTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
-
-            // XXX: Solve the buffer size.
-            // timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES,
-            // tasks.get(contextIndex).getId(), objectState.getBuffer().size());
+            timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
         }
 
         resetEventIndexes(eventList);
@@ -473,7 +464,7 @@ public class TornadoVM extends TornadoLogger {
         }
         stack.setHeader(map);
 
-        DeviceBuffer bufferAtomics = null;
+        ObjectBuffer bufferAtomics = null;
 
         for (int i = 0; i < numArgs; i++) {
             final byte argType = buffer.get();
@@ -528,14 +519,15 @@ public class TornadoVM extends TornadoLogger {
 
         if (atomicsArray != null) {
             bufferAtomics = device.createOrReuseBuffer(atomicsArray);
-            int lastEvent = bufferAtomics.enqueueWrite();
-
-            if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
-                Event event = device.resolveEvent(lastEvent);
-                event.waitForEvents();
-                long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                value += event.getExecutionTime();
-                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+            List<Integer> allEvents = bufferAtomics.enqueueWrite(null, 0, 0, null, false);
+            if (TornadoOptions.isProfilerEnabled()) {
+                for (Integer e : allEvents) {
+                    Event event = device.resolveEvent(e);
+                    event.waitForEvents();
+                    long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                    value += event.getExecutionTime();
+                    timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                }
             }
             if (TornadoOptions.printBytecodes) {
                 String verbose = String.format("vm: STREAM_IN  ATOMIC [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", bufferAtomics.hashCode(), bufferAtomics, device, 0, 0, eventList);

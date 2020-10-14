@@ -30,7 +30,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_ARRAY_ALIGNMENT;
 
@@ -39,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
@@ -378,5 +378,16 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+
+    @Override
+    public int[] getIntBuffer() {
+        TornadoInternalError.unimplemented();
+        return null;
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        TornadoInternalError.unimplemented();
+    }
 
 }

@@ -46,6 +46,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
@@ -531,6 +532,17 @@ public class OCLObjectWrapper implements ObjectBuffer {
     @Override
     public long size() {
         return bytesToAllocate;
+    }
+
+    @Override
+    public int[] getIntBuffer() {
+        TornadoInternalError.unimplemented();
+        return null;
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        TornadoInternalError.unimplemented();
     }
 
 }

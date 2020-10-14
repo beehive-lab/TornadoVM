@@ -23,7 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
@@ -32,9 +36,6 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -133,7 +134,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return callStack;
     }
 
-    public AtomicsBuffer createDeviceBuffer(final int[] arr) {
+    public ObjectBuffer createDeviceBuffer(final int[] arr) {
         AtomicsBuffer atomicInteger = new AtomicsBuffer(deviceBufferPosition, arr, deviceContext);
         return atomicInteger;
     }

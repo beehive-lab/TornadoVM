@@ -25,34 +25,93 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 
-public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
+public class AtomicsBuffer extends OCLByteBuffer implements ObjectBuffer {
 
-    private int numAtomics;
-    private boolean onDevice;
     private int[] atomicsList;
     private final static int OFFSET = 0;
 
     AtomicsBuffer(long offset, int[] arr, OCLDeviceContext device) {
         super(device, offset, arr.length * 4);
         buffer.clear();
-        numAtomics = 0;
-        onDevice = false;
         this.atomicsList = arr;
         allocateAtomicRegion();
     }
 
     @Override
-    public boolean isOnDevice() {
-        return onDevice;
+    public long getBufferOffset() {
+        return 0;
     }
 
     @Override
-    public long getBufferOffset() {
-        return 0;
+    public void read(Object reference) {
+        TornadoInternalError.unimplemented();
+    }
+
+    @Override
+    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+        TornadoInternalError.unimplemented();
+        return -1;
+    }
+
+    @Override
+    public void write(Object reference) {
+        TornadoInternalError.unimplemented();
+    }
+
+    @Override
+    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
+        return read(toAtomicAddress(), atomicsList);
+    }
+
+    @Override
+    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+        // Non-blocking write
+        return new ArrayList<>(enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null));
+    }
+
+    @Override
+    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+
+    }
+
+    @Override
+    public boolean isValid() {
+        return true;
+    }
+
+    @Override
+    public void invalidate() {
+
+    }
+
+    @Override
+    public void printHeapTrace() {
+
+    }
+
+    @Override
+    public long size() {
+        return atomicsList.length * 4;
+    }
+
+    @Override
+    public int[] getIntBuffer() {
+        return atomicsList;
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        this.atomicsList = arr;
     }
 
     @Override
@@ -62,55 +121,19 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
 
     @Override
     public int enqueueWrite() {
-        onDevice = true;
         // Non-blocking write
         return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null);
     }
 
     @Override
     public int enqueueRead() {
-        onDevice = true;
         // Blocking read
         return read(toAtomicAddress(), atomicsList);
     }
 
     @Override
-    public void set(int[] arr) {
-        this.atomicsList = arr;
-    }
-
-    @Override
-    public int[] getBuffer() {
-        return this.atomicsList;
-    }
-
-    @Override
-    public int enqueueWrite(int[] events) {
-        onDevice = true;
-        return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, events);
-    }
-
-    @Override
-    public void reset() {
-        buffer.mark();
-        buffer.reset();
-        onDevice = false;
-    }
-
-    @Override
-    public int getNumberOfAtomics() {
-        return numAtomics;
-    }
-
-    @Override
     public void dump() {
         throw new TornadoRuntimeException("Not implemented");
-    }
-
-    @Override
-    public void push(int value) {
-        atomicsList[numAtomics] = value;
-        numAtomics++;
     }
 
 }
