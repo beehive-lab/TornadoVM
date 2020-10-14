@@ -547,8 +547,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
-
-        if (!(object instanceof AtomicInteger)) {
+        if (object instanceof AtomicInteger) {
             return null;
         }
 
@@ -565,15 +564,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
-        if (!(object instanceof AtomicInteger)) {
-            if (batchSize > 0 || !state.isValid()) {
-                ensureAllocated(object, batchSize, state);
-            }
-            state.setContents(true);
-            return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
-        } else {
+        if (object instanceof AtomicInteger) {
             return null;
         }
+
+        if (batchSize > 0 || !state.isValid()) {
+            ensureAllocated(object, batchSize, state);
+        }
+        state.setContents(true);
+        return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
     }
 
     @Override
