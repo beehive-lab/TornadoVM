@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -220,6 +221,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
+        return -1;
+    }
+
+    @Override
     public boolean checkAtomicsParametersForTask(SchedulableTask task) {
         return false;
     }
@@ -267,6 +273,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public Object getAtomic() {
         return null;
+    }
+
+    @Override
+    public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
+
     }
 
 }

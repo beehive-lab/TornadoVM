@@ -48,6 +48,8 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value);
 
+    int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex);
+
     boolean checkAtomicsParametersForTask(SchedulableTask task);
 
     /**

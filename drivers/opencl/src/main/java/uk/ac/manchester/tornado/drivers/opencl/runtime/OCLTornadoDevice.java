@@ -34,6 +34,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -99,6 +101,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private DeviceBuffer reuseBuffer;
+    private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -374,6 +377,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
+        if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph())) {
+            HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledGraph());
+            return values.get(paramIndex);
+        }
+        return -1;
+    }
+
+    @Override
     public boolean checkAtomicsParametersForTask(SchedulableTask task) {
         return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph());
     }
@@ -569,7 +581,17 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
         if (state.isAtomicRegionPresent()) {
-            return ((DeviceBuffer) state.getAtomicRegion()).enqueueRead();
+            int eventID = ((DeviceBuffer) state.getAtomicRegion()).enqueueRead();
+
+            if (object instanceof AtomicInteger) {
+                DeviceBuffer deviceBuffer = getAtomic();
+                int[] arr = deviceBuffer.getBuffer();
+                AtomicInteger ai = (AtomicInteger) object;
+                int indexFromGlobalRegion = mappingAtomics.get(object);
+                ai.set(arr[indexFromGlobalRegion]);
+            }
+
+            return eventID;
         } else {
             TornadoInternalError.guarantee(state.isValid(), "invalid variable");
             return state.getBuffer().read(object, hostOffset, events, events == null);
@@ -722,6 +744,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public DeviceBuffer getAtomic() {
         return reuseBuffer;
+    }
+
+    @Override
+    public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
+        this.mappingAtomics = mappingAtomics;
     }
 
     @Override

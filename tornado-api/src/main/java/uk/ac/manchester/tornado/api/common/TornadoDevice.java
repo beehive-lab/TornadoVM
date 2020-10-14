@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.common;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -215,4 +216,6 @@ public interface TornadoDevice {
     }
 
     Object getAtomic();
+
+    void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics);
 }

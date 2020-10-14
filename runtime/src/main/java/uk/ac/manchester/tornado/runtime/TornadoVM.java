@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridTask;
@@ -86,6 +87,9 @@ public class TornadoVM extends TornadoLogger {
 
     private final TornadoExecutionContext graphContext;
     private final List<Object> objects;
+
+    private ConcurrentHashMap<Object, Integer> mappingAtomics;
+
     private final GlobalObjectState[] globalStates;
     private final CallStack[] stacks;
     private final int[][] events;
@@ -168,6 +172,8 @@ public class TornadoVM extends TornadoLogger {
 
         debug("%s - vm ready to go", graphContext.getId());
         buffer.mark();
+
+        mappingAtomics = new ConcurrentHashMap<>();
     }
 
     public void setCompileUpdate() {
@@ -353,19 +359,14 @@ public class TornadoVM extends TornadoLogger {
 
         final int tornadoEventID = device.streamOutBlocking(object, offset, objectState, waitList);
 
-        if (object instanceof AtomicInteger) {
-            DeviceBuffer deviceBuffer = (DeviceBuffer) device.getAtomic();
-            int[] arr = deviceBuffer.getBuffer();
-            AtomicInteger ai = (AtomicInteger) object;
-            ai.set(arr[0]);
-        }
-
         if (TornadoOptions.isProfilerEnabled() && tornadoEventID != -1) {
             Event event = device.resolveEvent(tornadoEventID);
             event.waitForEvents();
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
             value += event.getExecutionTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+
+            // XXX: Solve the buffer size.
             // timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES,
             // tasks.get(contextIndex).getId(), objectState.getBuffer().size());
         }
@@ -466,8 +467,8 @@ public class TornadoVM extends TornadoLogger {
             WorkerGrid workerGrid = gridTask.get(task.getId());
             long[] global = workerGrid.getGlobalWork();
             int i = 0;
-            for (long l : global) {
-                map.put(i++, (int) l);
+            for (long maxThread : global) {
+                map.put(i++, (int) maxThread);
             }
         }
         stack.setHeader(map);
@@ -492,24 +493,11 @@ public class TornadoVM extends TornadoLogger {
                     AtomicInteger ai = (AtomicInteger) objects.get(argIndex);
                     if (device.checkAtomicsParametersForTask(task)) {
                         atomicsArray = device.checkAtomicsForTask(task, atomicsArray, argIndex, ai.intValue());
+                        mappingAtomics.put(objects.get(argIndex), device.getAtomicsGlobalIndexForTask(task, argIndex));
+                        device.setAtomicsMapping(mappingAtomics);
                     }
 
                     bufferAtomics = device.createOrReuseBuffer(atomicsArray);
-                    int lastEvent = bufferAtomics.enqueueWrite();
-
-                    if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
-                        Event event = device.resolveEvent(lastEvent);
-                        event.waitForEvents();
-                        long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                        value += event.getExecutionTime();
-                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
-                    }
-
-                    if (TornadoOptions.printBytecodes) {
-                        String verbose = String.format("vm: STREAM_IN  ATOMIC [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", bufferAtomics.hashCode(), bufferAtomics, device, 0, 0, eventList);
-                        tornadoVMBytecodeList.append(verbose).append("\n");
-                    }
-
                     objectState.setAtomicRegion(bufferAtomics);
                     globalState.setOwner(device);
                     objectState.setContents(true);
@@ -536,6 +524,23 @@ public class TornadoVM extends TornadoLogger {
             metadata = (TaskMetaData) task.meta();
         } else {
             throw new RuntimeException("task.meta is not instanceof TaskMetadata");
+        }
+
+        if (atomicsArray != null) {
+            bufferAtomics = device.createOrReuseBuffer(atomicsArray);
+            int lastEvent = bufferAtomics.enqueueWrite();
+
+            if (TornadoOptions.isProfilerEnabled() && lastEvent != -1) {
+                Event event = device.resolveEvent(lastEvent);
+                event.waitForEvents();
+                long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                value += event.getExecutionTime();
+                timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+            }
+            if (TornadoOptions.printBytecodes) {
+                String verbose = String.format("vm: STREAM_IN  ATOMIC [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", bufferAtomics.hashCode(), bufferAtomics, device, 0, 0, eventList);
+                tornadoVMBytecodeList.append(verbose).append("\n");
+            }
         }
 
         if (TornadoOptions.printBytecodes) {
