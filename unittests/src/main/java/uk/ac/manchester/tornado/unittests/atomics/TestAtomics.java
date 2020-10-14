@@ -36,7 +36,6 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
-import uk.ac.manchester.tornado.unittests.common.PTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -331,7 +330,7 @@ public class TestAtomics extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testAtomic09() {
         checkForPTX();
 
@@ -339,7 +338,9 @@ public class TestAtomics extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 1);
 
-        AtomicInteger ai = new AtomicInteger(200);
+        final int initialValue = 311;
+
+        AtomicInteger ai = new AtomicInteger(initialValue);
 
         new TaskSchedule("s0") //
                 .streamIn(a, ai) //
@@ -352,5 +353,6 @@ public class TestAtomics extends TornadoTestBase {
         int lastValue = ai.get();
         System.out.println(lastValue);
         assertTrue(!repeated);
+        assertEquals(initialValue + size, lastValue);
     }
 }

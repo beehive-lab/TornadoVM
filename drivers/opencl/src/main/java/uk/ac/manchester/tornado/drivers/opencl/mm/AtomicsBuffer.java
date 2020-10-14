@@ -63,7 +63,25 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
     @Override
     public int enqueueWrite() {
         onDevice = true;
+        // Non-blocking write
         return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null);
+    }
+
+    @Override
+    public int enqueueRead() {
+        onDevice = true;
+        // Blocking read
+        return read(toAtomicAddress(), atomicsList);
+    }
+
+    @Override
+    public void set(int[] arr) {
+        this.atomicsList = arr;
+    }
+
+    @Override
+    public int[] getBuffer() {
+        return this.atomicsList;
     }
 
     @Override
@@ -94,4 +112,5 @@ public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
         atomicsList[numAtomics] = value;
         numAtomics++;
     }
+
 }

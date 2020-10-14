@@ -23,19 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
-
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -47,7 +46,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private final OCLDeviceContext deviceContext;
     private long deviceHeapPointer;
     private long constantPointer;
-    private long atomicsRegion;
+    private long atomicsRegion = -1;
     private long heapLimit;
     private long heapPosition;
     private boolean initialised;
@@ -164,10 +163,11 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      * @param numBytes
      *            Number of bytes to allocate in the global region.
      */
-    public void allocateRegion(long numBytes) {
+    public void allocateDeviceMemoryRegions(long numBytes) {
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
         this.constantPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
+        this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL);
     }
 
     public void init(OCLBackend backend, long address) {
@@ -203,7 +203,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     void allocateAtomicRegion() {
-        this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL);
+        if (this.atomicsRegion == -1) {
+            this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
+                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL);
+        }
     }
 
     public long toRelativeAddress() {

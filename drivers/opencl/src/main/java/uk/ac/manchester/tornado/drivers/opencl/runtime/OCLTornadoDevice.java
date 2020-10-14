@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -97,6 +98,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private String platformName;
 
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
+    private DeviceBuffer reuseBuffer;
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -205,6 +207,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public DeviceBuffer createBuffer(int[] arr) {
         return getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
+    }
+
+    @Override
+    public DeviceBuffer createOrReuseBuffer(int[] arr) {
+        if (reuseBuffer == null) {
+            reuseBuffer = getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
+        }
+        reuseBuffer.set(arr);
+        return reuseBuffer;
     }
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContextInterface deviceContext, String deviceInfo) {
@@ -350,6 +361,21 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value) {
+        if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph())) {
+            HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledGraph());
+            int index = values.get(paramIndex);
+            array[index] = value;
+        }
+        return array;
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph());
     }
 
     private boolean isJITTaskForFGPA(SchedulableTask task) {
@@ -542,8 +568,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
-        TornadoInternalError.guarantee(state.isValid(), "invalid variable");
-        return state.getBuffer().read(object, hostOffset, events, events == null);
+        if (state.isAtomicRegionPresent()) {
+            return ((DeviceBuffer) state.getAtomicRegion()).enqueueRead();
+        } else {
+            TornadoInternalError.guarantee(state.isValid(), "invalid variable");
+            return state.getBuffer().read(object, hostOffset, events, events == null);
+        }
     }
 
     public void sync(Object... objects) {
@@ -687,6 +717,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int getDriverIndex() {
         return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+    }
+
+    @Override
+    public DeviceBuffer getAtomic() {
+        return reuseBuffer;
     }
 
     @Override

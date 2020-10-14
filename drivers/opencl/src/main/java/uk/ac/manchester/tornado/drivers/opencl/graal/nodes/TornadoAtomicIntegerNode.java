@@ -54,11 +54,14 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     // How many atomics integers per graph
     public static HashMap<StructuredGraph, ArrayList<Integer>> globalAtomics = new HashMap<>();
+    public static HashMap<StructuredGraph, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
 
     @Input
     ValueNode initialValue;
 
     private int indexFromGlobalMemory;
+
+    private boolean atomicsByParameter = false;
 
     public TornadoAtomicIntegerNode(OCLKind kind) {
         super(TYPE, OCLStampFactory.getStampFor(kind));
@@ -104,6 +107,36 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         }
     }
 
+    public synchronized void assignIndexFromParameter(int paramIndex, int position) {
+        if (!globalAtomics.containsKey(this.graph())) {
+            ArrayList<Integer> al = new ArrayList<>();
+            al.add(-1);
+            // We reserve the position to be filled by the TornadoVM
+            globalAtomics.put(this.graph(), al);
+            HashMap positions = new HashMap<>();
+            positions.put(paramIndex, position);
+            globalAtomicsParameters.put(this.graph(), positions);
+            this.indexFromGlobalMemory = 0;
+
+        } else {
+            ArrayList<Integer> al = globalAtomics.get(this.graph());
+            this.indexFromGlobalMemory = al.size();
+            al.add(-1);
+            // We reserve the position to be filled by the TornadoVM
+            globalAtomics.put(this.graph(), al);
+
+            // Update the pending positions
+            HashMap positions = globalAtomicsParameters.get(this.graph());
+            positions.put(paramIndex, position);
+            globalAtomicsParameters.put(this.graph(), positions);
+        }
+        atomicsByParameter = true;
+    }
+
+    public boolean isAtomicsByParameter() {
+        return atomicsByParameter;
+    }
+
     private synchronized void assignIndex() {
         if (!globalAtomics.containsKey(this.graph())) {
             ArrayList<Integer> al = new ArrayList<>();
@@ -111,7 +144,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
             globalAtomics.put(this.graph(), al);
             this.indexFromGlobalMemory = 0;
         } else {
-            ArrayList<Integer> al = new ArrayList<>(globalAtomics.get(this.graph()));
+            ArrayList<Integer> al = globalAtomics.get(this.graph());
             this.indexFromGlobalMemory = al.size();
             al.add(getIntFromValueNode());
             globalAtomics.put(this.graph(), al);
@@ -123,7 +156,9 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         if (ATOMIC_2_0) {
             generateExpressionForOpenCL2_0(gen);
         } else {
-            assignIndex();
+            if (!atomicsByParameter) {
+                assignIndex();
+            }
             generateExpressionForOpenCL1_0(gen);
         }
     }

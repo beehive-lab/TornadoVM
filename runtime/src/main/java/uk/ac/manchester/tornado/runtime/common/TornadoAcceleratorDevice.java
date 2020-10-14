@@ -36,6 +36,8 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     DeviceBuffer createBuffer(int[] buffer);
 
+    DeviceBuffer createOrReuseBuffer(int[] arr);
+
     TornadoInstalledCode installCode(SchedulableTask task);
 
     boolean isFullJITMode(SchedulableTask task);
@@ -44,9 +46,14 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     int[] checkAtomicsForTask(SchedulableTask task);
 
+    int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value);
+
+    boolean checkAtomicsParametersForTask(SchedulableTask task);
+
     /**
-     * In CUDA the context is not attached to the whole process, but to individual threads
-     * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
+     * In CUDA the context is not attached to the whole process, but to individual
+     * threads Therefore, in the case of new threads executing a task schedule, we
+     * must make sure that the context is set for that thread.
      */
     void enableThreadSharing();
 

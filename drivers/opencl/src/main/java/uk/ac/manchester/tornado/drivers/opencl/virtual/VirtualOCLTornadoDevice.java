@@ -23,6 +23,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -56,14 +64,6 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private final OCLTargetDevice device;
@@ -90,7 +90,8 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void dumpEvents() {}
+    public void dumpEvents() {
+    }
 
     @Override
     public String getDescription() {
@@ -168,6 +169,11 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
+    @Override
+    public DeviceBuffer createOrReuseBuffer(int[] arr) {
+        return null;
+    }
+
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
@@ -239,6 +245,15 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value) {
+        return new int[0];
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return false;
+    }
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
@@ -272,7 +287,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
         unimplemented();
-        return  -1;
+        return -1;
     }
 
     @Override
@@ -406,5 +421,10 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int getAvailableProcessors() {
         return ((VirtualOCLDevice) device).getAvailableProcessors();
+    }
+
+    @Override
+    public Object getAtomic() {
+        return null;
     }
 }

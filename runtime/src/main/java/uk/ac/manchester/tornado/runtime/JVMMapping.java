@@ -135,6 +135,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public DeviceBuffer createOrReuseBuffer(int[] arr) {
+        return null;
+    }
+
+    @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
         return null;
     }
@@ -210,6 +215,16 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value) {
+        return new int[0];
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return false;
+    }
+
+    @Override
     public void enableThreadSharing() {
         TornadoInternalError.unimplemented();
     }
@@ -247,6 +262,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public int getDriverIndex() {
         return 0;
+    }
+
+    @Override
+    public Object getAtomic() {
+        return null;
     }
 
 }

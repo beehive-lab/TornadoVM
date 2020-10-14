@@ -21,9 +21,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import java.util.Iterator;
+
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -36,23 +39,44 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerN
 /**
  * This phase scans the IR and checks whether there is a
  * {@link TornadoAtomicIntegerNode} associated for each {@link IncAtomicNode}.
- * 
+ * <p>
  * If it is not the case, this would mean that the atomic is passed as a
  * parameter to the lambda expression. Therefore, this phase introduces the
  * {@link TornadoAtomicIntegerNode} at the beginning of the Control-Flow-Graph.
- * 
  */
 public class TornadoAtomicsParametersPhase extends Phase {
+
+    private int numAtomicsBefore(NodeIterable<ParameterNode> parameterNodes, int index) {
+
+        int i = 0;
+        Iterator<ParameterNode> iterator = parameterNodes.iterator();
+        int atomicsBefore = 0;
+        while (i < index) {
+            ParameterNode next = iterator.next();
+            if (next.stamp(NodeView.DEFAULT).javaType(null).toClassName().equals("java.util.concurrent.atomic.AtomicInteger")) {
+                atomicsBefore++;
+            }
+            i++;
+        }
+        return atomicsBefore;
+    }
 
     @Override
     protected void run(StructuredGraph graph) {
 
         NodeIterable<IncAtomicNode> filter = graph.getNodes().filter(IncAtomicNode.class);
         if (!filter.isEmpty()) {
+            NodeIterable<ParameterNode> parameterNodes = graph.getNodes(ParameterNode.TYPE);
             for (IncAtomicNode atomic : filter) {
                 if (atomic.getAtomicNode() instanceof ParameterNode) {
+
+                    ParameterNode atomicArgument = (ParameterNode) atomic.getAtomicNode();
+                    int indexNode = atomicArgument.index();
+                    int before = numAtomicsBefore(parameterNodes, indexNode);
+
                     TornadoAtomicIntegerNode newNode = new TornadoAtomicIntegerNode(OCLKind.INTEGER_ATOMIC_JAVA);
                     graph.addOrUnique(newNode);
+                    newNode.assignIndexFromParameter(indexNode, before);
 
                     final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(0));
                     newNode.setInitialValue(index);

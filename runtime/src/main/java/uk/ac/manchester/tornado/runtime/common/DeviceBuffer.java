@@ -33,4 +33,12 @@ public interface DeviceBuffer {
 
     boolean isOnDevice();
 
+    int enqueueWrite();
+
+    int enqueueRead();
+
+    void set(int[] arr);
+
+    int[] getBuffer();
+
 }

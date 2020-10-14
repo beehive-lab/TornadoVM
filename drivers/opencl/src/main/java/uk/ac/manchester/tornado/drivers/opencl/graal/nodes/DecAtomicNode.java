@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
-@NodeInfo(shortName = "INCREMENT_ATOMIC")
+@NodeInfo(shortName = "DECREMENT_ATOMIC")
 public class DecAtomicNode extends ValueNode implements LIRLowerable {
 
     public static final NodeClass<DecAtomicNode> TYPE = NodeClass.create(DecAtomicNode.class);

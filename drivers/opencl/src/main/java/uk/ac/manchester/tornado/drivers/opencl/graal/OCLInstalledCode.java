@@ -41,7 +41,6 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
-import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -224,8 +223,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // Atomics in Global Memory
         if (atomicSpace != null) {
-            AtomicsBuffer atomicsBuffer = (AtomicsBuffer) atomicSpace;
-            atomicsBuffer.enqueueWrite();
+            // AtomicsBuffer atomicsBuffer = (AtomicsBuffer) atomicSpace;
+            // atomicsBuffer.enqueueWrite();
             buffer.clear();
             buffer.putLong(stack.toAtomicAddress());
             kernel.setArg(index, buffer);

@@ -37,6 +37,7 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
     private boolean contents;
 
     private ObjectBuffer buffer;
+    private DeviceBuffer atomicRegion;
 
     public DeviceObjectState() {
         valid = false;
@@ -49,12 +50,26 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
         buffer = value;
     }
 
+    public void setAtomicRegion(DeviceBuffer buffer) {
+        atomicRegion = buffer;
+    }
+
     public boolean hasBuffer() {
         return buffer != null;
     }
 
     public ObjectBuffer getBuffer() {
         return buffer;
+    }
+
+    @Override
+    public boolean isAtomicRegionPresent() {
+        return atomicRegion != null;
+    }
+
+    @Override
+    public Object getAtomicRegion() {
+        return atomicRegion;
     }
 
     public boolean isValid() {

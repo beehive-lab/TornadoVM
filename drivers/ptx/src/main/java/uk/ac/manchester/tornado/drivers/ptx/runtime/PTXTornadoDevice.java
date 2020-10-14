@@ -120,9 +120,24 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public DeviceBuffer createOrReuseBuffer(int[] arr) {
+        return null;
+    }
+
+    @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
         Tornado.debug("[PTX] Atomics not implemented ! Returning null");
         return null;
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value) {
+        return new int[0];
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return false;
     }
 
     @Override
@@ -608,6 +623,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int getDriverIndex() {
         return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
+    }
+
+    @Override
+    public Object getAtomic() {
+        return null;
     }
 
     /**

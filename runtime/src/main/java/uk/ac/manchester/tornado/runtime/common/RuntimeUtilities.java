@@ -174,8 +174,9 @@ public class RuntimeUtilities {
      * Returns true if object is a boxed type
      *
      * @param clazz
+     *            Input variable to check its class.
      *
-     * @return
+     * @return boolean
      */
     public static boolean isBoxedPrimitiveClass(final Class<?> clazz) {
         boolean isBox = false;
