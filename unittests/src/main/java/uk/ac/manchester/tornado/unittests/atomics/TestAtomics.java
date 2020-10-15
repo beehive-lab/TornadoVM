@@ -355,4 +355,57 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
         assertEquals(initialValue + size, lastValue);
     }
+
+    @Test
+    public void testAtomic10() {
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValue = 311;
+
+        AtomicInteger ai = new AtomicInteger(initialValue);
+
+        // We force a COPY_IN instead of STREAM_IN
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic09, a, ai) //
+                .streamOut(a, ai) //
+                .execute();
+
+        boolean repeated = isValueRepeated(a);
+
+        int lastValue = ai.get();
+        System.out.println(lastValue);
+        assertTrue(!repeated);
+        assertEquals(initialValue + size, lastValue);
+    }
+
+    @Test
+    public void testAtomic11() {
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValue = 311;
+
+        AtomicInteger ai = new AtomicInteger(initialValue);
+
+        // We force a COPY_IN instead of STREAM_IN
+        // Also, the atomic uses COPY_OUT non blocking call
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic09, a, ai) //
+                .streamOut(ai, a) //
+                .execute();
+
+        boolean repeated = isValueRepeated(a);
+
+        int lastValue = ai.get();
+        System.out.println(lastValue);
+        assertTrue(!repeated);
+        assertEquals(initialValue + size, lastValue);
+    }
 }
