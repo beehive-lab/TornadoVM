@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -420,6 +421,12 @@ public class TornadoVM extends TornadoLogger {
         return new ExecutionInfo(stack, waitList);
     }
 
+    private void setObjectOwnerShip(GlobalObjectState globalState, DeviceObjectState objectState, TornadoDevice device) {
+        globalState.setOwner(device);
+        objectState.setContents(true);
+        objectState.setModified(true);
+    }
+
     private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,
             ExecutionInfo info) {
 
@@ -480,29 +487,15 @@ public class TornadoVM extends TornadoLogger {
                 final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
-                if (objects.get(argIndex) instanceof AtomicInteger) {
-                    AtomicInteger ai = (AtomicInteger) objects.get(argIndex);
-                    if (device.checkAtomicsParametersForTask(task)) {
-                        atomicsArray = device.checkAtomicsForTask(task, atomicsArray, argIndex, ai.intValue());
-                        mappingAtomics.put(objects.get(argIndex), device.getAtomicsGlobalIndexForTask(task, argIndex));
-                        device.setAtomicsMapping(mappingAtomics);
-                    }
-
-                    bufferAtomics = device.createOrReuseBuffer(atomicsArray);
-                    objectState.setAtomicRegion(bufferAtomics);
-                    globalState.setOwner(device);
-                    objectState.setContents(true);
-                    objectState.setModified(true);
-
+                if (objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task)) {
+                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, argIndex, objects.get(argIndex), objectState);
+                    setObjectOwnerShip(globalState, objectState, device);
                 } else {
                     final String ERROR_MESSAGE = "object is not valid: %s %s";
                     TornadoInternalError.guarantee(objectState.isValid(), ERROR_MESSAGE, objects.get(argIndex), objectState);
-
                     stack.push(objects.get(argIndex), objectState);
                     if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {
-                        globalState.setOwner(device);
-                        objectState.setContents(true);
-                        objectState.setModified(true);
+                        setObjectOwnerShip(globalState, objectState, device);
                     }
                 }
             } else {

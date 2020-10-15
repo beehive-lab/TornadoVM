@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
@@ -216,8 +217,13 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value) {
-        return new int[0];
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
+        return null;
+    }
+
+    @Override
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+        return null;
     }
 
     @Override
@@ -233,6 +239,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public void enableThreadSharing() {
         TornadoInternalError.unimplemented();
+    }
+
+    @Override
+    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+
     }
 
     @Override

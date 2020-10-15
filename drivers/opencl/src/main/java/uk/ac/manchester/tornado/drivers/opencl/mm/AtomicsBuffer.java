@@ -35,20 +35,35 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
-public class AtomicsBuffer extends OCLByteBuffer implements ObjectBuffer {
+public class AtomicsBuffer implements ObjectBuffer {
 
     private int[] atomicsList;
     private final static int OFFSET = 0;
+    private OCLDeviceContext deviceContext;
 
-    AtomicsBuffer(long offset, int[] arr, OCLDeviceContext device) {
-        super(device, offset, arr.length * 4);
-        buffer.clear();
+    public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
         this.atomicsList = arr;
-        allocateAtomicRegion();
+        deviceContext.getMemoryManager().allocateAtomicRegion();
+    }
+
+    @Override
+    public long toBuffer() {
+        return 0;
     }
 
     @Override
     public long getBufferOffset() {
+        return 0;
+    }
+
+    @Override
+    public long toAbsoluteAddress() {
+        return 0;
+    }
+
+    @Override
+    public long toRelativeAddress() {
         return 0;
     }
 
@@ -59,29 +74,36 @@ public class AtomicsBuffer extends OCLByteBuffer implements ObjectBuffer {
 
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        TornadoInternalError.unimplemented();
-        return -1;
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public void write(Object reference) {
-        TornadoInternalError.unimplemented();
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        return read(toAtomicAddress(), atomicsList);
+        return deviceContext.readBuffer(deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events);
     }
 
     @Override
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         // Non-blocking write
-        return new ArrayList<>(enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null));
+        if (atomicsList.length == 0) {
+            return null;
+        }
+        return new ArrayList<>(deviceContext.enqueueWriteBuffer(deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events));
     }
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        deviceContext.getMemoryManager().allocateAtomicRegion();
+    }
 
+    @Override
+    public int getAlignment() {
+        return 0;
     }
 
     @Override
@@ -112,28 +134,6 @@ public class AtomicsBuffer extends OCLByteBuffer implements ObjectBuffer {
     @Override
     public void setIntBuffer(int[] arr) {
         this.atomicsList = arr;
-    }
-
-    @Override
-    public void write() {
-        throw new TornadoRuntimeException("Not implemented");
-    }
-
-    @Override
-    public int enqueueWrite() {
-        // Non-blocking write
-        return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null);
-    }
-
-    @Override
-    public int enqueueRead() {
-        // Blocking read
-        return read(toAtomicAddress(), atomicsList);
-    }
-
-    @Override
-    public void dump() {
-        throw new TornadoRuntimeException("Not implemented");
     }
 
 }

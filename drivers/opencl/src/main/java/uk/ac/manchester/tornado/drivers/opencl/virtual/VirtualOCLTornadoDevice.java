@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -247,8 +248,13 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value) {
-        return new int[0];
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
+        return null;
+    }
+
+    @Override
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+        return null;
     }
 
     @Override
@@ -422,6 +428,11 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public void enableThreadSharing() {
         // OpenCL device context is shared by different threads, by default
+    }
+
+    @Override
+    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+
     }
 
     @Override

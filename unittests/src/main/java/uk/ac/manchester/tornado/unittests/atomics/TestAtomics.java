@@ -408,4 +408,39 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
         assertEquals(initialValue + size, lastValue);
     }
+
+    public static void atomic10(int[] input, AtomicInteger ai, AtomicInteger bi) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet() + bi.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic12() {
+        // Calling multiple atomics
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValue = 311;
+
+        AtomicInteger ai = new AtomicInteger(initialValue);
+        AtomicInteger bi = new AtomicInteger(initialValue);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic10, a, ai, bi) //
+                .streamOut(ai, a, bi) //
+                .execute();
+
+        boolean repeated = isValueRepeated(a);
+
+        int lastValue = ai.get();
+        assertTrue(!repeated);
+        assertEquals(initialValue + size, lastValue);
+
+        lastValue = bi.get();
+        assertEquals(initialValue + size, lastValue);
+    }
 }

@@ -47,7 +47,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     int[] checkAtomicsForTask(SchedulableTask task);
 
-    int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, int value);
+    int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value);
+
+    int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState);
 
     int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex);
 
@@ -60,4 +62,5 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      */
     void enableThreadSharing();
 
+    void setAtomicRegion(ObjectBuffer bufferAtomics);
 }

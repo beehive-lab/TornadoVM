@@ -135,7 +135,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     public ObjectBuffer createDeviceBuffer(final int[] arr) {
-        AtomicsBuffer atomicInteger = new AtomicsBuffer(deviceBufferPosition, arr, deviceContext);
+        AtomicsBuffer atomicInteger = new AtomicsBuffer(arr, deviceContext);
         return atomicInteger;
     }
 
