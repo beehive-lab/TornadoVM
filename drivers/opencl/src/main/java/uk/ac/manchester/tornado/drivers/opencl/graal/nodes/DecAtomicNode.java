@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo(shortName = "DECREMENT_ATOMIC")
-public class DecAtomicNode extends ValueNode implements LIRLowerable {
+public class DecAtomicNode extends NodeAtomic implements LIRLowerable {
 
     public static final NodeClass<DecAtomicNode> TYPE = NodeClass.create(DecAtomicNode.class);
 
@@ -92,5 +92,10 @@ public class DecAtomicNode extends ValueNode implements LIRLowerable {
         } else {
             generateExpressionForOpenCL1_0(generator);
         }
+    }
+
+    @Override
+    public ValueNode getAtomicNode() {
+        return atomicNode;
     }
 }

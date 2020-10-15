@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo(shortName = "INCREMENT_ATOMIC")
-public class IncAtomicNode extends ValueNode implements LIRLowerable {
+public class IncAtomicNode extends NodeAtomic implements LIRLowerable {
 
     public static final NodeClass<IncAtomicNode> TYPE = NodeClass.create(IncAtomicNode.class);
 
@@ -50,6 +50,7 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
         this.atomicNode = atomicValue;
     }
 
+    @Override
     public ValueNode getAtomicNode() {
         return this.atomicNode;
     }

@@ -34,6 +34,7 @@ import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NodeAtomic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 
 /**
@@ -63,11 +64,11 @@ public class TornadoAtomicsParametersPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
+        NodeIterable<NodeAtomic> filter = graph.getNodes().filter(NodeAtomic.class);
 
-        NodeIterable<IncAtomicNode> filter = graph.getNodes().filter(IncAtomicNode.class);
         if (!filter.isEmpty()) {
             NodeIterable<ParameterNode> parameterNodes = graph.getNodes(ParameterNode.TYPE);
-            for (IncAtomicNode atomic : filter) {
+            for (NodeAtomic atomic : filter) {
                 if (atomic.getAtomicNode() instanceof ParameterNode) {
 
                     ParameterNode atomicArgument = (ParameterNode) atomic.getAtomicNode();
