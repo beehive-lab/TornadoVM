@@ -44,21 +44,21 @@ def updateMavenSettingsFile():
     try:
         javaHome = os.environ["JAVA_HOME"]
     except:
-        print Colors.RED + "[ERROR] JAVA_HOME is not defined. Plese export JAVA_HOME" + Colors.RESET
+        print(Colors.RED + "[ERROR] JAVA_HOME is not defined. Plese export JAVA_HOME" + Colors.RESET)
         import sys
         sys.exit(1)
 
     settingsXML = settingsXML.replace("$$JDKPATH$$", javaHome)
-    print Colors.BLUE + "JAVA_HOME    : " + Colors.GREEN +  javaHome  + Colors.RESET
+    print(Colors.BLUE + "JAVA_HOME    : " + Colors.GREEN +  javaHome  + Colors.RESET)
 
     command = javaHome + "/bin/java"
     p = subprocess.Popen([command, "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (output, err) = p.communicate()
     p.wait()
-    javaVersion = re.search(r"1\.?(?:([\d._])+)", err).group(0)
+    javaVersion = re.search(r"1\.?(?:([\d._])+)", err.decode('utf-8')).group(0)
 
     if javaVersion:
-        print Colors.BLUE + "JVM_VERSION  : " + Colors.GREEN +  javaVersion  + Colors.RESET
+        print(Colors.BLUE + "JVM_VERSION  : " + Colors.GREEN +  javaVersion  + Colors.RESET)
     settingsXML = settingsXML.replace("$$JDKVERSION$$", javaVersion)    
     
     ## Store the file in ~/.m2/settings.xml
