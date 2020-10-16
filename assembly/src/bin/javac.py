@@ -51,19 +51,19 @@ except:
 	pass
 
 __DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
-PTX_MODULE = "tornado.drivers.ptx"
-OPENCL_MODULE = "tornado.drivers.opencl"
+__PTX_MODULE__ = "tornado.drivers.ptx"
+__OPENCL_MODULE__ = "tornado.drivers.opencl"
 
 def appendBackendModules():
-    global __DEFAULT_MODULES__, PTX_MODULE, OPENCL_MODULE
+    global __DEFAULT_MODULES__, __PTX_MODULE__, __OPENCL_MODULE__
     availableBackendsFile = TORNADO_SDK + "/etc/tornado.backend"
     with open(availableBackendsFile, "r") as backendsFile:
         backends = backendsFile.read()
         if "ptx-backend" in backends:
-            __DEFAULT_MODULES__ += "," + PTX_MODULE
+            __DEFAULT_MODULES__ += "," + __PTX_MODULE__
 
         if "opencl-backend" in backends:
-            __DEFAULT_MODULES__ += "," + OPENCL_MODULE
+            __DEFAULT_MODULES__ += "," + __OPENCL_MODULE__
 
 def getJavaVersion():
     return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
