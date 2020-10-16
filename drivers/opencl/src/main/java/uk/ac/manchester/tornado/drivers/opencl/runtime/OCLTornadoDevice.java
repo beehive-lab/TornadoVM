@@ -568,10 +568,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
-        // if (object instanceof AtomicInteger) {
-        // return null;
-        // }
-
         if (!state.isValid()) {
             ensureAllocated(object, batchSize, state);
         }
