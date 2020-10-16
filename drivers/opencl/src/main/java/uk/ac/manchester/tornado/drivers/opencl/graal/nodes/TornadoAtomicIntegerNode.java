@@ -56,6 +56,8 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     public static HashMap<StructuredGraph, ArrayList<Integer>> globalAtomics = new HashMap<>();
     public static HashMap<StructuredGraph, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
 
+    private final static int DEFAULT_VALUE = -1;
+
     @Input
     ValueNode initialValue;
 
@@ -107,10 +109,22 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         }
     }
 
+    /**
+     * Method to reserve a position in the atomic-int global buffer and map the
+     * parameter index with the assigned position. The mapping-table is obtained
+     * during the runtime for streaming in and out data in the right positions of
+     * the atomic buffer.
+     * 
+     * @param paramIndex
+     *            Object parameter index taken from
+     *            {@link org.graalvm.compiler.nodes.ParameterNode}.
+     * @param position
+     *            Position assigned in the global atomic buffer.
+     */
     public synchronized void assignIndexFromParameter(int paramIndex, int position) {
         if (!globalAtomics.containsKey(this.graph())) {
             ArrayList<Integer> al = new ArrayList<>();
-            al.add(-1);
+            al.add(DEFAULT_VALUE);
             // We reserve the position to be filled by the TornadoVM
             globalAtomics.put(this.graph(), al);
             HashMap positions = new HashMap<>();
@@ -121,7 +135,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         } else {
             ArrayList<Integer> al = globalAtomics.get(this.graph());
             this.indexFromGlobalMemory = al.size();
-            al.add(-1);
+            al.add(DEFAULT_VALUE);
             // We reserve the position to be filled by the TornadoVM
             globalAtomics.put(this.graph(), al);
 
@@ -157,6 +171,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
             generateExpressionForOpenCL2_0(gen);
         } else {
             if (!atomicsByParameter) {
+                // Only assign an index if the atomics is not a parameter to the function.
                 assignIndex();
             }
             generateExpressionForOpenCL1_0(gen);
