@@ -118,17 +118,15 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
      * @param paramIndex
      *            Object parameter index taken from
      *            {@link org.graalvm.compiler.nodes.ParameterNode}.
-     * @param position
-     *            Position assigned in the global atomic buffer.
      */
-    public synchronized void assignIndexFromParameter(int paramIndex, int position) {
+    public synchronized void assignIndexFromParameter(int paramIndex) {
         if (!globalAtomics.containsKey(this.graph())) {
             ArrayList<Integer> al = new ArrayList<>();
             al.add(DEFAULT_VALUE);
             // We reserve the position to be filled by the TornadoVM
             globalAtomics.put(this.graph(), al);
             HashMap positions = new HashMap<>();
-            positions.put(paramIndex, position);
+            positions.put(paramIndex, al.size() - 1);
             globalAtomicsParameters.put(this.graph(), positions);
             this.indexFromGlobalMemory = 0;
 
@@ -141,7 +139,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
             // Update the pending positions
             HashMap positions = globalAtomicsParameters.get(this.graph());
-            positions.put(paramIndex, position);
+            positions.put(paramIndex, al.size() - 1);
             globalAtomicsParameters.put(this.graph(), positions);
         }
         atomicsByParameter = true;
