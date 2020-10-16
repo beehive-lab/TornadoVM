@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -39,7 +38,7 @@ public class AtomicsBuffer implements ObjectBuffer {
 
     private int[] atomicsList;
     private final static int OFFSET = 0;
-    private OCLDeviceContext deviceContext;
+    private final OCLDeviceContext deviceContext;
 
     public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -49,27 +48,27 @@ public class AtomicsBuffer implements ObjectBuffer {
 
     @Override
     public long toBuffer() {
-        return 0;
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public long getBufferOffset() {
-        return 0;
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public long toAbsoluteAddress() {
-        return 0;
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public long toRelativeAddress() {
-        return 0;
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public void read(Object reference) {
-        TornadoInternalError.unimplemented();
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
@@ -103,7 +102,7 @@ public class AtomicsBuffer implements ObjectBuffer {
 
     @Override
     public int getAlignment() {
-        return 0;
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
@@ -118,7 +117,7 @@ public class AtomicsBuffer implements ObjectBuffer {
 
     @Override
     public void printHeapTrace() {
-
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
