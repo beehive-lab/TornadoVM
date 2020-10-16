@@ -378,14 +378,4 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    @Override
-    public int[] getIntBuffer() {
-        return null;
-    }
-
-    @Override
-    public void setIntBuffer(int[] arr) {
-
-    }
-
 }

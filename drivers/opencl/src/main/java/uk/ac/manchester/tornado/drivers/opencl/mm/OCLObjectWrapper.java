@@ -534,14 +534,4 @@ public class OCLObjectWrapper implements ObjectBuffer {
         return bytesToAllocate;
     }
 
-    @Override
-    public int[] getIntBuffer() {
-        return null;
-    }
-
-    @Override
-    public void setIntBuffer(int[] arr) {
-
-    }
-
 }
