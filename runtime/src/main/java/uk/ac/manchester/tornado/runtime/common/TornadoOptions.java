@@ -100,6 +100,11 @@ public class TornadoOptions {
     public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
 
     /**
+     * Prints the generated code by the TornadoVM compiler. Default is False.
+     */
+    public static final String PRINT_SOURCE_DIRECTORY = getProperty("tornado.print.kernel.dir", "");
+
+    /**
      * Once the internal buffers storing events are full, it will start to circulate
      * old events and overwrite them with new ones. Default is True.
      */
@@ -114,6 +119,16 @@ public class TornadoOptions {
      * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
      */
     public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
+
+    /**
+     * Enables OpenCL code generation based on a virtual device. Default is False.
+     */
+    public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", "False");
+
+    /**
+     * Specifies the virtual device properties file. Default value is virtual-device.json.
+     */
+    public static final String VIRTUAL_DEVICE_FILE = Tornado.getProperty("tornado.device.desc", "etc/virtual-device-template.json");
 
     /**
      * Option to enable profiler. It can be disabled at any point during runtime.

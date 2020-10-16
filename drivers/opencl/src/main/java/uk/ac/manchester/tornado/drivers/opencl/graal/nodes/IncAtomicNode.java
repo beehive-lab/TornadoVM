@@ -50,6 +50,10 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
         this.atomicNode = atomicValue;
     }
 
+    public ValueNode getAtomicNode() {
+        return this.atomicNode;
+    }
+
     private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));

@@ -39,7 +39,7 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
 
     public OCLGPUScheduler(final OCLDeviceContext context) {
         super(context);
-        OCLDevice device = context.getDevice();
+        OCLTargetDevice device = context.getDevice();
 
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
         maxComputeUnits = device.getDeviceMaxComputeUnits();

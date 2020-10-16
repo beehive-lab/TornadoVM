@@ -34,7 +34,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,7 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -107,7 +105,7 @@ public class OCLCodeCache {
     private final boolean PRINT_WARNINGS = false;
 
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
-    private final OCLDeviceContext deviceContext;
+    private final OCLDeviceContextInterface deviceContext;
 
     private boolean kernelAvailable;
 
@@ -123,7 +121,7 @@ public class OCLCodeCache {
         }
     }
 
-    public OCLCodeCache(OCLDeviceContext deviceContext) {
+    public OCLCodeCache(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
         pendingTasks = new ConcurrentHashMap<>();
@@ -338,7 +336,7 @@ public class OCLCodeCache {
         }
     }
 
-    private boolean shouldGenerateXilinxBitstream(File fpgaBitStreamFile, OCLDeviceContext deviceContext) {
+    private boolean shouldGenerateXilinxBitstream(File fpgaBitStreamFile, OCLDeviceContextInterface deviceContext) {
         if (!RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
             return (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx"));
         } else {
@@ -382,10 +380,7 @@ public class OCLCodeCache {
 
         appendSourceToFile(id, entryPoint, source);
 
-        if (PRINT_SOURCE) {
-            String sourceCode = new String(source);
-            System.out.println(sourceCode);
-        }
+        RuntimeUtilities.maybePrintSource(source);
 
         String[] commandRename;
         String[] linkCommand = null;
@@ -458,10 +453,7 @@ public class OCLCodeCache {
             appendSourceToFile(id, entryPoint, source);
         }
 
-        if (PRINT_SOURCE) {
-            String sourceCode = new String(source);
-            System.out.println(sourceCode);
-        }
+        RuntimeUtilities.maybePrintSource(source);
 
         final long t0 = System.nanoTime();
         program.build(meta.getCompilerFlags());
@@ -504,7 +496,7 @@ public class OCLCodeCache {
             kernelAvailable = true;
         }
 
-        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program, kernel);
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
@@ -563,7 +555,7 @@ public class OCLCodeCache {
         }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
-        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
@@ -579,7 +571,7 @@ public class OCLCodeCache {
                     String childKernelName = pair.entryPoint;
                     if (!childKernelName.equals(entryPoint)) {
                         final OCLKernel kernel2 = program.getKernel(childKernelName);
-                        final OCLInstalledCode code2 = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel2);
+                        final OCLInstalledCode code2 = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel2);
                         cache.put(taskScheduleName + "." + pair.taskName + "-" + childKernelName, code2);
                     }
                 }

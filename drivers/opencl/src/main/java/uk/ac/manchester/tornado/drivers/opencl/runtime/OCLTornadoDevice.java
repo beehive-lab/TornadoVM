@@ -51,9 +51,10 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
@@ -89,7 +90,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
-    private final OCLDevice device;
+    private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
     private static OCLDriver driver = null;
@@ -131,7 +132,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public OCLDevice getDevice() {
+    public OCLTargetDevice getDevice() {
         return device;
     }
 
@@ -149,7 +150,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public OCLDeviceContext getDeviceContext() {
+    public OCLDeviceContextInterface getDeviceContext() {
         return getBackend().getDeviceContext();
     }
 
@@ -206,17 +207,17 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
     }
 
-    private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
+    private boolean isOpenCLPreLoadBinary(OCLDeviceContextInterface deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = deviceContext.getCodeCache();
         return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
     }
 
-    private boolean isDeviceAnAccelerator(OCLDeviceContext deviceContext) {
+    private boolean isDeviceAnAccelerator(OCLDeviceContextInterface deviceContext) {
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
-        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
@@ -267,7 +268,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
-        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
         if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
             return deviceContext.getInstalledCode(task.getId(), executable.getEntryPoint());
@@ -299,7 +300,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private TornadoInstalledCode loadPreCompiledBinaryForTask(SchedulableTask task) {
-        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final OCLCodeCache codeCache = deviceContext.getCodeCache();
         final String deviceFullName = getFullTaskIdDevice(task);
         final Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
@@ -325,7 +326,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public boolean isFullJITMode(SchedulableTask task) {
-        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && deviceContext.isPlatformFPGA());
     }
@@ -352,13 +353,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private boolean isJITTaskForFGPA(SchedulableTask task) {
-        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && deviceContext.isPlatformFPGA();
     }
 
     private boolean isJITTaskForGPUsAndCPUs(SchedulableTask task) {
-        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !deviceContext.isPlatformFPGA();
     }
@@ -427,7 +428,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device, long batchSize) {
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, OCLDeviceContext device, long batchSize) {
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -443,7 +444,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
 
         } else if (!type.isPrimitive() && !type.isArray()) {
-            result = new OCLObjectWrapper(device, arg, batchSize);
+            result = new OCLObjectWrapper(device, object, batchSize);
         }
 
         TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
@@ -457,14 +458,14 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
+        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
         buffer.allocate(object, batchSize);
         state.setBuffer(buffer);
 
         final Class<?> type = object.getClass();
         if (!type.isArray()) {
             checkBatchSize(batchSize);
-            buffer.write(object);
+            // buffer.write(object);
         }
 
         state.setValid(true);

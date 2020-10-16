@@ -174,24 +174,8 @@ public class TestAtomics extends TornadoTestBase {
         // Increments will be performed atomically when using TornadoAtomicInteger.
         // However the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.
-        HashSet<Integer> set = new HashSet<>();
-
-        boolean repeated = false;
-        for (int j : a) {
-            if (!set.contains(j)) {
-                set.add(j);
-            } else {
-                repeated = true;
-                break;
-            }
-        }
+        boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
-    }
-
-    private void checkForPTX() {
-        if ("PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex()).getName())) {
-            throw new PTXNotSupported("Atomic tests are not supported for the PTX backend");
-        }
     }
 
     /**
@@ -231,17 +215,7 @@ public class TestAtomics extends TornadoTestBase {
                 .execute();
         // @formatter:on
 
-        HashSet<Integer> set = new HashSet<>();
-
-        boolean repeated = false;
-        for (int j : a) {
-            if (!set.contains(j)) {
-                set.add(j);
-            } else {
-                repeated = true;
-                break;
-            }
-        }
+        boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
     }
 
@@ -275,32 +249,9 @@ public class TestAtomics extends TornadoTestBase {
             assertTrue(false);
         }
 
-        // On GPUs and FPGAs, threads within the same work-group run in parallel.
-        // Increments will be performed atomically when using TornadoAtomicInteger.
-        // However the order is not guaranteed. For this test, we need to check that
-        // there are not repeated values in the output array.
-        HashSet<Integer> set = new HashSet<>();
+        boolean repeated = isValueRepeated(a);
+        repeated &= isValueRepeated(a);
 
-        boolean repeated = false;
-        for (int j : a) {
-            if (!set.contains(j)) {
-                set.add(j);
-            } else {
-                repeated = true;
-                break;
-            }
-        }
-
-        set.clear();
-
-        for (int j : b) {
-            if (!set.contains(j)) {
-                set.add(j);
-            } else {
-                repeated = true;
-                break;
-            }
-        }
         assertTrue(!repeated);
     }
 
@@ -328,22 +279,7 @@ public class TestAtomics extends TornadoTestBase {
         if (!ts.isFinished()) {
             assertTrue(false);
         }
-
-        // On GPUs and FPGAs, threads within the same work-group run in parallel.
-        // Increments will be performed atomically when using TornadoAtomicInteger.
-        // However the order is not guaranteed. For this test, we need to check that
-        // there are not repeated values in the output array.
-        HashSet<Integer> set = new HashSet<>();
-
-        boolean repeated = false;
-        for (int j : a) {
-            if (!set.contains(j)) {
-                set.add(j);
-            } else {
-                repeated = true;
-                break;
-            }
-        }
+        boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
     }
 
@@ -371,15 +307,14 @@ public class TestAtomics extends TornadoTestBase {
         if (!ts.isFinished()) {
             assertTrue(false);
         }
+        boolean repeated = isValueRepeated(a);
+        assertTrue(!repeated);
+    }
 
-        // On GPUs and FPGAs, threads within the same work-group run in parallel.
-        // Increments will be performed atomically when using TornadoAtomicInteger.
-        // However the order is not guaranteed. For this test, we need to check that
-        // there are not repeated values in the output array.
+    private boolean isValueRepeated(int[] array) {
         HashSet<Integer> set = new HashSet<>();
-
         boolean repeated = false;
-        for (int j : a) {
+        for (int j : array) {
             if (!set.contains(j)) {
                 set.add(j);
             } else {
@@ -387,7 +322,35 @@ public class TestAtomics extends TornadoTestBase {
                 break;
             }
         }
-        assertTrue(!repeated);
+        return repeated;
     }
 
+    public static void atomic09(int[] input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+        }
+    }
+
+    @TornadoNotSupported
+    public void testAtomic09() {
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        AtomicInteger ai = new AtomicInteger(200);
+
+        new TaskSchedule("s0") //
+                .streamIn(a, ai) //
+                .task("t0", TestAtomics::atomic09, a, ai) //
+                .streamOut(a, ai) //
+                .execute();
+
+        boolean repeated = isValueRepeated(a);
+
+        int lastValue = ai.get();
+        System.out.println(lastValue);
+        assertTrue(!repeated);
+    }
 }

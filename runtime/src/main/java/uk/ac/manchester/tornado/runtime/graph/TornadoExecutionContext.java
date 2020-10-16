@@ -38,7 +38,6 @@ import java.util.function.Consumer;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -107,6 +106,12 @@ public class TornadoExecutionContext {
 
     public int getTaskCount() {
         return nextTask;
+    }
+
+    public int getTaskCountAndIncrement() {
+        int taskID = nextTask;
+        nextTask++;
+        return taskID;
     }
 
     public void incrGlobalTaskCount() {

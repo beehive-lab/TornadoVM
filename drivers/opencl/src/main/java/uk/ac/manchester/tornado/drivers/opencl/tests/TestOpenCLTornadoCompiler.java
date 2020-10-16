@@ -51,7 +51,7 @@ public class TestOpenCLTornadoCompiler {
 
     public static void main(String[] args) {
 
-        OCLPlatform platform = OpenCL.getPlatform(0);
+        OCLPlatform platform = (OCLPlatform) OpenCL.getPlatform(0);
         // Create context for the platform
         OCLContext oclContext = platform.createContext();
 
