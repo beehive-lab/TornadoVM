@@ -24,8 +24,6 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Authors: James Clarkson
-#
 
 #Include tornado modules and module exports
 source tornadoExportList.sh
@@ -97,7 +95,7 @@ function print_all_options() {
   echo -e "$COLOR_CYAN Profiler: $COLOR_NC"
   echo ""
   echo -e "\tEnable online profiler        : -Dtornado.profiler=True "
-  echo -e "\tSave profiler information   : -Dtornado.profiler=True -Dtornado.profiler.save=True "
+  echo -e "\tSave profiler information   : -Dtornado.profiler=True -Dtornado.profiler.dump.dir=FILENAME.json"
   echo -e "\tEnable profiler and print at the end of the execution: -Dtornado.profiler=True -Dtornado.log.profiler=True "
   echo ""
   echo -e "$COLOR_CYAN Device Heap: $COLOR_NC"

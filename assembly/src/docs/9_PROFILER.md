@@ -62,11 +62,11 @@ When the task-schedule is executed multiple times, timers related to compilation
 
 ### Print timers at the end of the execution
 
-The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full report only when the method `ts.getProfileLog` is called.
+The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full report only when the method `ts.getProfileLog()` is called.
 
 ### Save profiler into a file
 
-Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dumps.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. profiler-log.json).
+Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dump.dir=FILENAME`.  `FILENAME` can contain the filename and the full path (e.g. profiler-log.json).
 
 ### Parsing Json files
 
