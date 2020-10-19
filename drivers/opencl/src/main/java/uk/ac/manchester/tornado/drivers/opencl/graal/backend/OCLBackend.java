@@ -170,10 +170,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
-    public SnippetReflectionProvider getSnippetReflection() {
-        return ((OCLProviders) this.getProviders()).getSnippetReflection();
-    }
-
     @Override
     public String decodeDeopt(long value) {
         DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));

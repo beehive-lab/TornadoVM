@@ -91,6 +91,11 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         this.address = address;
     }
 
+    @Override
+    public Stamp getAccessStamp(NodeView view) {
+        return value().stamp(view);
+    }
+
     public OCLStamp getStampInt() {
         OCLStamp oclStamp = null;
         switch (operation) {
@@ -155,11 +160,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     @Override
     public boolean canNullCheck() {
         return true;
-    }
-
-    @Override
-    public Stamp getAccessStamp() {
-        return value().stamp(NodeView.DEFAULT);
     }
 
     @Override

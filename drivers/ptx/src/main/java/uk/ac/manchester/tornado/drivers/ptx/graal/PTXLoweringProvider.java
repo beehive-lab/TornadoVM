@@ -33,6 +33,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -64,12 +65,13 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
-import org.graalvm.compiler.nodes.memory.HeapAccess;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
@@ -84,6 +86,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
@@ -97,6 +100,8 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
+    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
+
     private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
     private TornadoVMConfig vmConfig;
@@ -104,9 +109,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private PTXGPUReduceSnippets.Templates GPUReduceSnippets;
 
-    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TargetDescription target, boolean useCompressedOops,
-            TornadoVMConfig vmConfig) {
-        super(metaAccess, foreignCalls, target, useCompressedOops);
+    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
+        super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
     }
@@ -121,11 +125,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
         this.GPUReduceSnippets = new PTXGPUReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
-    }
-
-    @Override
-    protected JavaKind getStorageKind(ResolvedJavaField field) {
-        return field.getJavaKind();
     }
 
     @Override
@@ -288,10 +287,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
+        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
         if (USE_ATOMICS) {
-            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node);
+            lowerAtomicStoreIndexedNode(storeAtomicNode);
         } else {
-            lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
+            lowerReduceSnippets(storeAtomicNode, tool);
         }
     }
 
@@ -309,6 +309,10 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             }
         }
         GPUReduceSnippets.lower(storeIndexed, threadID, tool);
+
+        // We append this phase to move floating reads close to their actual usage and
+        // set the FixedAccessNode::lastLocationAccess
+        snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
@@ -335,7 +339,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode array = arrayLengthNode.array();
 
         AddressNode address = createOffsetAddress(graph, array, arrayLengthOffset());
-        ReadNode arrayLengthRead = graph.add(new ReadNode(address, ARRAY_LENGTH_LOCATION, StampFactory.positiveInt(), HeapAccess.BarrierType.NONE));
+        ReadNode arrayLengthRead = graph.add(new ReadNode(address, ARRAY_LENGTH_LOCATION, StampFactory.positiveInt(), OnHeapMemoryAccess.BarrierType.NONE));
         graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
@@ -350,7 +354,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, HeapAccess.BarrierType.NONE));
+        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, OnHeapMemoryAccess.BarrierType.NONE));
         ValueNode readValue = memoryRead;
         if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
             readValue = implicitLoadConvert(graph, elementKind, memoryRead);
@@ -385,7 +389,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, fieldLoadBarrierType(field)));
+        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, OnHeapMemoryAccess.BarrierType.NONE));
         loadField.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadField, memoryRead);
     }
@@ -397,7 +401,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null;
-        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), fieldStoreBarrierType(storeField.field()), storeField.isVolatile()));
+        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), OnHeapMemoryAccess.BarrierType.NONE));
         memoryWrite.setStateAfter(storeField.stateAfter());
         graph.replaceFixedWithFixed(storeField, memoryWrite);
     }
@@ -464,12 +468,12 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             // XXX: This call is due to an error in Graal when storing a variable of type
             // char or short. In future integrations with JVMCI and Graal, this issue is
             // completely solved.
-            memoryWrite = graph.add(new PTXWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
+            memoryWrite = graph.add(new PTXWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE, elementKind));
         } else if (isLocalIDNode(storeIndexed) || isPrivateIDNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
         } else {
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
         }
         return memoryWrite;
     }
