@@ -501,8 +501,6 @@ public class TestAtomics extends TornadoTestBase {
                 .streamOut(ai, a, bi) //
                 .execute();
 
-        boolean repeated = isValueRepeated(a);
-
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
 
