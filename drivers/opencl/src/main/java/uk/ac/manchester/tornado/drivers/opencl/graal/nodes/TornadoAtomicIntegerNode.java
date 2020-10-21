@@ -109,11 +109,16 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         }
     }
 
+    private void updateGlobalAtomicTable(HashMap positions, int paramIndex, int size) {
+        positions.put(paramIndex, size);
+        globalAtomicsParameters.put(this.graph(), positions);
+    }
+
     /**
      * Method to reserve a position in the atomic-int global buffer and map the
-     * parameter index with the assigned position. The mapping-table is obtained
-     * during the runtime for streaming in and out data in the right positions of
-     * the atomic buffer.
+     * parameter index with the assigned position. The mapping-table is obtained at
+     * runtime for streaming in and out data in the right positions of the atomic
+     * buffer.
      * 
      * @param paramIndex
      *            Object parameter index taken from
@@ -123,24 +128,23 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         if (!globalAtomics.containsKey(this.graph())) {
             ArrayList<Integer> al = new ArrayList<>();
             al.add(DEFAULT_VALUE);
-            // We reserve the position to be filled by the TornadoVM
+            // The position is reserved to be filled by TornadoVM. This position is then
+            // used by the TornadoVM runtime to copy the initial value for the Atomic before
+            // the kernel execution.
             globalAtomics.put(this.graph(), al);
-            HashMap positions = new HashMap<>();
-            positions.put(paramIndex, al.size() - 1);
-            globalAtomicsParameters.put(this.graph(), positions);
+            updateGlobalAtomicTable(new HashMap<>(), paramIndex, al.size() - 1);
             this.indexFromGlobalMemory = 0;
-
         } else {
             ArrayList<Integer> al = globalAtomics.get(this.graph());
             this.indexFromGlobalMemory = al.size();
             al.add(DEFAULT_VALUE);
-            // We reserve the position to be filled by the TornadoVM
+            // A position for the atomic is reserved. This position is then used by the
+            // TornadoVM runtime to copy the initial value for the Atomic before the kernel
+            // execution.
             globalAtomics.put(this.graph(), al);
 
-            // Update the pending positions
             HashMap positions = globalAtomicsParameters.get(this.graph());
-            positions.put(paramIndex, al.size() - 1);
-            globalAtomicsParameters.put(this.graph(), positions);
+            updateGlobalAtomicTable(positions, paramIndex, al.size() - 1);
         }
         atomicsByParameter = true;
     }

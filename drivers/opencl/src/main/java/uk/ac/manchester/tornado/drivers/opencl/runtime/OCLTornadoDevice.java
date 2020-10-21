@@ -208,16 +208,16 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] arr) {
-        return getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
+    public ObjectBuffer createBuffer(int[] array) {
+        return getDeviceContext().getMemoryManager().createDeviceBuffer(array);
     }
 
     @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBuffer(int[] array) {
         if (reuseBuffer == null) {
-            reuseBuffer = getDeviceContext().getMemoryManager().createDeviceBuffer(arr);
+            reuseBuffer = getDeviceContext().getMemoryManager().createDeviceBuffer(array);
         }
-        reuseBuffer.setIntBuffer(arr);
+        reuseBuffer.setIntBuffer(array);
         return reuseBuffer;
     }
 

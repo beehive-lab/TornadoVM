@@ -351,7 +351,6 @@ public class TestAtomics extends TornadoTestBase {
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        System.out.println(lastValue);
         assertTrue(!repeated);
         assertEquals(initialValue + size, lastValue);
     }
@@ -377,7 +376,6 @@ public class TestAtomics extends TornadoTestBase {
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        System.out.println(lastValue);
         assertTrue(!repeated);
         assertEquals(initialValue + size, lastValue);
     }
@@ -404,7 +402,6 @@ public class TestAtomics extends TornadoTestBase {
         boolean repeated = isValueRepeated(a);
 
         int lastValue = ai.get();
-        System.out.println(lastValue);
         assertTrue(!repeated);
         assertEquals(initialValue + size, lastValue);
     }

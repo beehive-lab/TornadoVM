@@ -173,29 +173,29 @@ public class RuntimeUtilities {
     /**
      * Returns true if object is a boxed type
      *
-     * @param clazz
-     *            Input variable to check its class.
+     * @param klass
+     *            Class to check is boxed type.
      *
      * @return boolean
      */
-    public static boolean isBoxedPrimitiveClass(final Class<?> clazz) {
+    public static boolean isBoxedPrimitiveClass(final Class<?> klass) {
         boolean isBox = false;
 
-        if (clazz == Boolean.class) {
+        if (klass == Boolean.class) {
             isBox = true;
-        } else if (clazz == Byte.class) {
+        } else if (klass == Byte.class) {
             isBox = true;
-        } else if (clazz == Character.class) {
+        } else if (klass == Character.class) {
             isBox = true;
-        } else if (clazz == Short.class) {
+        } else if (klass == Short.class) {
             isBox = true;
-        } else if (clazz == Integer.class) {
+        } else if (klass == Integer.class) {
             isBox = true;
-        } else if (clazz == Long.class) {
+        } else if (klass == Long.class) {
             isBox = true;
-        } else if (clazz == Float.class) {
+        } else if (klass == Float.class) {
             isBox = true;
-        } else if (clazz == Double.class) {
+        } else if (klass == Double.class) {
             isBox = true;
         }
 
