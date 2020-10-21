@@ -25,73 +25,114 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 
-public class AtomicsBuffer extends OCLByteBuffer implements DeviceBuffer {
+public class AtomicsBuffer implements ObjectBuffer {
 
-    private int numAtomics;
-    private boolean onDevice;
     private int[] atomicsList;
     private final static int OFFSET = 0;
+    private final OCLDeviceContext deviceContext;
 
-    AtomicsBuffer(long offset, int[] arr, OCLDeviceContext device) {
-        super(device, offset, arr.length * 4);
-        buffer.clear();
-        numAtomics = 0;
-        onDevice = false;
+    public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
         this.atomicsList = arr;
-        allocateAtomicRegion();
+        deviceContext.getMemoryManager().allocateAtomicRegion();
     }
 
     @Override
-    public boolean isOnDevice() {
-        return onDevice;
+    public long toBuffer() {
+        throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
     public long getBufferOffset() {
-        return 0;
-    }
-
-    @Override
-    public void write() {
         throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
-    public int enqueueWrite() {
-        onDevice = true;
-        return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, null);
-    }
-
-    @Override
-    public int enqueueWrite(int[] events) {
-        onDevice = true;
-        return enqueueWrite(toAtomicAddress(), atomicsList, OFFSET, events);
-    }
-
-    @Override
-    public void reset() {
-        buffer.mark();
-        buffer.reset();
-        onDevice = false;
-    }
-
-    @Override
-    public int getNumberOfAtomics() {
-        return numAtomics;
-    }
-
-    @Override
-    public void dump() {
+    public long toAbsoluteAddress() {
         throw new TornadoRuntimeException("Not implemented");
     }
 
     @Override
-    public void push(int value) {
-        atomicsList[numAtomics] = value;
-        numAtomics++;
+    public long toRelativeAddress() {
+        throw new TornadoRuntimeException("Not implemented");
     }
+
+    @Override
+    public void read(Object reference) {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public void write(Object reference) {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
+        return deviceContext.readBuffer(deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events);
+    }
+
+    @Override
+    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+        // Non-blocking write
+        if (atomicsList.length == 0) {
+            return null;
+        }
+        return new ArrayList<>(deviceContext.enqueueWriteBuffer(deviceContext.getMemoryManager().toAtomicAddress(), OFFSET, 4 * atomicsList.length, atomicsList, 0, events));
+    }
+
+    @Override
+    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        deviceContext.getMemoryManager().allocateAtomicRegion();
+    }
+
+    @Override
+    public int getAlignment() {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public boolean isValid() {
+        return true;
+    }
+
+    @Override
+    public void invalidate() {
+
+    }
+
+    @Override
+    public void printHeapTrace() {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public long size() {
+        return atomicsList.length * 4;
+    }
+
+    @Override
+    public int[] getIntBuffer() {
+        return atomicsList;
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        this.atomicsList = arr;
+    }
+
 }

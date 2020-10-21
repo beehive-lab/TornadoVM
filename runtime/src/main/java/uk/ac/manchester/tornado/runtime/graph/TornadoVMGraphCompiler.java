@@ -72,7 +72,11 @@ public class TornadoVMGraphCompiler {
      * Generate TornadoVM byte-code from a Tornado Task Graph.
      * 
      * @param graph
+     *            TornadoVM execution Graph.
      * @param context
+     *            TornadoVM execution context.
+     * @param batchSize
+     *            Batch size
      * @return {@link TornadoVMGraphCompilationResult}
      */
     public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {

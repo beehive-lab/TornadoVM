@@ -1,9 +1,7 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornadovm
- *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,17 +18,23 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ValueNode;
 
-public interface TornadoInstalledCode {
+@NodeInfo(shortName = "ATOMIC")
+public abstract class NodeAtomic extends ValueNode {
 
-    int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
+    public static final NodeClass<NodeAtomic> TYPE = NodeClass.create(NodeAtomic.class);
 
-    int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
+    public NodeAtomic(NodeClass<? extends ValueNode> c, Stamp stamp) {
+        super(c, stamp);
+    }
+
+    public abstract ValueNode getAtomicNode();
+
 }
