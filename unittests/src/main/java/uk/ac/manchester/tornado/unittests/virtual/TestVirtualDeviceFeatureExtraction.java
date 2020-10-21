@@ -17,19 +17,21 @@
  */
 package uk.ac.manchester.tornado.unittests.virtual;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.IntStream;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
 
@@ -47,8 +49,8 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
             fileLog.delete();
         }
     }
-    private static final int SIZE = 8192;
 
+    private static final int SIZE = 8192;
 
     private static void maxReduction(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
@@ -64,6 +66,9 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         });
 
         Arrays.fill(result, Float.MIN_VALUE);
+
+        System.setProperty("tornado.unittests.device", "0:0");
+        TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -122,6 +127,5 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         long expectedSum = getByteSum(expected);
         return sourceSum == expectedSum;
     }
-
 
 }
