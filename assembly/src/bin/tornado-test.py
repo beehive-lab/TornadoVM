@@ -123,7 +123,6 @@ ENABLE_ASSERTIONS = "-ea "
 
 __VERSION__ = "0.9_05082020"
 
-JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 try:
 	javaHome = os.environ["JAVA_HOME"]
@@ -261,7 +260,7 @@ def appendTestRunnerClassToCmd(cmd, args):
 		testRunner = __MAIN_TORNADO_JUNIT__
 		module = __MAIN_TORNADO_JUNIT_MODULE__
 
-	if (javaVersion == JDK_11_VERSION):
+	if (javaVersion != JDK_8_VERSION):
 		cmd += " -m " + module + testRunner
 	else:
 		cmd += " " + testRunner

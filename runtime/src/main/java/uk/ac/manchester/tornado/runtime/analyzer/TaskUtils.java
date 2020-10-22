@@ -54,7 +54,9 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -63,7 +65,10 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TaskUtils {
 
-    public static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
+    private static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
+    private static final String JDK_VM_CI_HOTSPOT_RESOLVED_JAVA_METHOD_IMPL = "jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl";
+
+    private static boolean useToJavaMethod = false;
 
     public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
@@ -76,6 +81,55 @@ public class TaskUtils {
         }
         unimplemented("scala task");
         return createTask(null, id, entryPoint, object, false, args);
+    }
+
+    /**
+     * JDK distributions before JDK 13 that to not backport JVMCI do not implement
+     * {@link jdk.vm.ci.hotspot.HotSpotJDKReflection#getMethod}. Instead, we have to
+     * rely on {@link jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl#toJava} that
+     * uses pure reflection.
+     */
+    private static Method callToJava(JavaMethod javaMethod) {
+        try {
+            Class hotSpotResolvedJavaMethodImpl = Class.forName(JDK_VM_CI_HOTSPOT_RESOLVED_JAVA_METHOD_IMPL);
+            Method toJava = hotSpotResolvedJavaMethodImpl.getDeclaredMethod("toJava");
+
+            toJava.setAccessible(true);
+            Method m = (Method) toJava.invoke(javaMethod);
+            m.setAccessible(true);
+            return m;
+        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
+            TornadoInternalError.shouldNotReachHere("Both HotSpotResolvedJavaMethodImpl::toJava and HotSpotJDKReflection::getMethod are missing from the JDK !");
+        }
+        return null;
+    }
+
+    /**
+     * JDK distributions that backport JVMCI or after JDK 13 implement
+     * {@link jdk.vm.ci.hotspot.HotSpotJDKReflection#getMethod} which relies on a
+     * native call to the JVM. If this method is not available, then we call
+     * {@link jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl#toJava} that uses pure
+     * reflection.
+     */
+    private static Method callGetMethod(JavaMethod javaMethod) {
+        try {
+            Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
+            Method getMethod = null;
+            for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
+                if ("getMethod".equals(method.getName())) {
+                    getMethod = method;
+                    break;
+                }
+            }
+            getMethod.setAccessible(true);
+            Method m = (Method) getMethod.invoke(hotSpotJDKReflection, javaMethod);
+            m.setAccessible(true);
+            return m;
+        } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
+            Tornado.debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
+            useToJavaMethod = true;
+            return callToJava(javaMethod);
+        }
     }
 
     /**
@@ -115,23 +169,12 @@ public class TaskUtils {
             if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
-                try {
-                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
-                    Method getMethod = null;
-                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
-                        if ("getMethod".equals(method.getName())) {
-                            getMethod = method;
-                            break;
-                        }
-                    }
-                    getMethod.setAccessible(true);
-                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
-                    m.setAccessible(true);
-                    return m;
-                } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
+
+                if (useToJavaMethod) {
+                    return callToJava(jm);
+                } else {
+                    return callGetMethod(jm);
                 }
-                break;
             } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
@@ -141,23 +184,12 @@ public class TaskUtils {
                     case "intValue":
                         continue;
                 }
-                try {
-                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
-                    Method getMethod = null;
-                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
-                        if ("getMethod".equals(method.getName())) {
-                            getMethod = method;
-                            break;
-                        }
-                    }
-                    getMethod.setAccessible(true);
-                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
-                    m.setAccessible(true);
-                    return m;
-                } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassNotFoundException e) {
-                    e.printStackTrace();
+
+                if (useToJavaMethod) {
+                    return callToJava(jm);
+                } else {
+                    return callGetMethod(jm);
                 }
-                break;
             }
         }
         shouldNotReachHere();

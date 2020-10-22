@@ -48,7 +48,6 @@ class Colors:
 	BOLD    = "\033[;1m"
 	REVERSE = "\033[;7m"
 
-JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 # Get java version
 __JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
@@ -57,7 +56,7 @@ __JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | a
 ## Script Options
 ## ========================================================================================
 __RUNNER__ = ""
-if (__JAVA_VERSION__ == JDK_11_VERSION):
+if (__JAVA_VERSION__ != JDK_8_VERSION):
     __RUNNER__ = " -m tornado.benchmarks/"
 __RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"

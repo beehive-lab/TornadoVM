@@ -33,22 +33,22 @@ import subprocess
 import sys
 
 try:
-	TORNADO_SDK = os.environ["TORNADO_SDK"]
+    TORNADO_SDK = os.environ["TORNADO_SDK"]
 except:
-	print("[ERROR] TORNADO_SDK is not defined")
-	sys.exit(-1)
+    print("[ERROR] TORNADO_SDK is not defined")
+    sys.exit(-1)
 
 try:
-	javaHome = os.environ["JAVA_HOME"]
+    javaHome = os.environ["JAVA_HOME"]
 except:
-	print("[ERROR] JAVA_HOME is not defined.")
-	sys.exit(-1)
+    print("[ERROR] JAVA_HOME is not defined.")
+    sys.exit(-1)
 
 try:
-	classpathEnviron = os.environ["CLASSPATH"]
+    classpathEnviron = os.environ["CLASSPATH"]
 except:
-	classpathEnviron = ""
-	pass
+    classpathEnviron = ""
+    pass
 
 __DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
@@ -65,15 +65,18 @@ def appendBackendModules():
         if "opencl-backend" in backends:
             __DEFAULT_MODULES__ += "," + __OPENCL_MODULE__
 
+__JAVA_VERSION_OUTPUT__ = subprocess.Popen(javaHome + '/bin/java -version 2>&1 ', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')
+__IS_GRAALVM_BUILD__ = "GraalVM" in __JAVA_VERSION_OUTPUT__
 def getJavaVersion():
-    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+    process = subprocess.Popen('echo \'' + __JAVA_VERSION_OUTPUT__ + '\' | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True)
+    return process.communicate()[0].decode('utf-8')[:-1]
 
-JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 # Get java version
 javaVersion = getJavaVersion()
 
 __JAR_FILES_PATH__ = TORNADO_SDK + "/share/java/tornado/"
+__GRAAL_JAR_FILES_PATH = TORNADO_SDK + "/share/java/graalJars/"
 
 def trimModulesParamString(indexToSearch):
     moduleParamIndex = sys.argv.index(indexToSearch)
@@ -87,6 +90,9 @@ def runWithModulepath():
     defaultModulePath = __JAR_FILES_PATH__
 
     command = javaHome + "/bin/javac "
+
+    if (not __IS_GRAALVM_BUILD__):
+        command += "--upgrade-module-path " + __GRAAL_JAR_FILES_PATH + " "
 
     if ("--add-modules" in sys.argv):
         addModulesParam = trimModulesParamString("--add-modules")
@@ -107,24 +113,27 @@ def runWithModulepath():
 
 def runWithClasspath():
 
-    classPathPrefix= TORNADO_SDK + "/"
     classPathVar = "."
 
     process = subprocess.Popen(['ls', __JAR_FILES_PATH__], stdout=subprocess.PIPE)
     out, err = process.communicate()
     jarFiles = out.decode('utf-8').split("\n")
+    command = javaHome + "/bin/javac "
+
+    if (javaVersion != JDK_8_VERSION and not __IS_GRAALVM_BUILD__):
+        command += "--upgrade-module-path " + __GRAAL_JAR_FILES_PATH
 
     if (classpathEnviron != ""):
-    	classPathVar = classPathVar + ":" + classpathEnviron
+        classPathVar = classPathVar + ":" + classpathEnviron
 
     for f in jarFiles:
-    	classPathVar = classPathVar +  ":" + __JAR_FILES_PATH__ + f
+        classPathVar = classPathVar +  ":" + __JAR_FILES_PATH__ + f
 
-    command = javaHome + "/bin/javac -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
+    command += " -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
     print(command)
     os.system(command)
 
-useModuleSystem = any("module-info.java" in argument for argument in sys.argv) and javaVersion == JDK_11_VERSION
+useModuleSystem = any(argument in ['-m', '--module', 'module-info.java'] for argument in sys.argv) and javaVersion != JDK_8_VERSION
 if (useModuleSystem):
     appendBackendModules()
     runWithModulepath()

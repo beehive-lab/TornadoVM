@@ -6,6 +6,9 @@ BACKEND?=opencl
 build:
 	./bin/compile.sh jdk-8 $(BACKEND)
 
+jdk-11-plus:
+	./bin/compile.sh jdk-11-plus $(BACKEND)
+
 graal-jdk-8:
 	./bin/compile.sh graal-jdk-8 $(BACKEND)
 

@@ -25,9 +25,6 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-#Include tornado modules and module exports
-source tornadoExportList.sh
-
 if [ -z "${TORNADO_SDK}" ]; then
   echo "Please ensure the TORNADO_SDK environment variable is set correctly"
   exit 0
@@ -110,13 +107,30 @@ function print_all_options() {
 }
 
 JAVA_CMD=${JAVA_HOME}/bin/java
-JAVA_VERSION=$("$JAVA_CMD" -version 2>&1 | awk -F[\"\.] -v OFS=. 'NR==1{print $2,$3}')
+JAVA_VERSION_OUTPUT=$("$JAVA_CMD" -version 2>&1)
+JAVA_VERSION=$(echo "$JAVA_VERSION_OUTPUT" | awk -F[\"\.] -v OFS=. 'NR==1{print $2,$3}')
 
 TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib "
 if [ "$JAVA_VERSION" = "1.8" ]; then
   TORNADO_FLAGS="${TORNADO_FLAGS} -Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado"
-elif [ "$JAVA_VERSION" = "11.0" ]; then
-  TORNADO_FLAGS="${TORNADO_FLAGS} --module-path .:${TORNADO_SDK}/share/java/tornado:."
+else
+  TORNADO_FLAGS="${TORNADO_FLAGS} --module-path .:${TORNADO_SDK}/share/java/tornado"
+
+  # If extra values for module path have been specified by the user, we must append them
+  if [[ $@ == *"--module-path"* ]]; then
+    USER_MODULE_PATH=$(echo $@ | sed 's/.*--module-path //' | sed 's/ .*//')
+
+    # Remove the user module path entry from the positional parameters
+    for arg in "$@"; do
+      shift
+      case $arg in
+        (--module-path) shift ;;
+        (*) set -- "$@" "$arg" ;;
+      esac
+    done
+
+    TORNADO_FLAGS="${TORNADO_FLAGS}:${USER_MODULE_PATH}"
+  fi
 fi
 
 printflags=0
@@ -200,22 +214,35 @@ if [ $enableAssertions -eq 1 ]; then
   JAVA_FLAGS="-ea -da:org.graalvm.compiler... "
 fi
 
-JAVA_FLAGS="${JAVA_FLAGS}-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
+JAVA_FLAGS="${JAVA_FLAGS}-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
 if [ "$JAVA_VERSION" = "1.8" ]; then
   JAVA_FLAGS="${JAVA_FLAGS} -XX:-UseJVMCIClassLoader "
-elif [ "$JAVA_VERSION" = "11.0" ]; then
-  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${MODULE_LIST[*]}"
-  read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
-  if [[ ${selected_backends} == *"ptx-backend"* && ${selected_backends} == *"opencl-backend"* ]]; then
-    JAVA_FLAGS="${JAVA_FLAGS},${PTX_DRIVER_MODULE},${OPENCL_DRIVER_MODULE} ${OPENCL_AND_PTX_BACKENDS_EXPORTS_LIST[*]}"
-  else
-    if [[ ${selected_backends} == *"ptx-backend"* ]]; then
-      JAVA_FLAGS="${JAVA_FLAGS},${PTX_DRIVER_MODULE} ${PTX_BACKEND_EXPORTS_LIST[*]}"
-    fi
-    if [[ ${selected_backends} == *"opencl-backend"* ]]; then
-      JAVA_FLAGS="${JAVA_FLAGS},${OPENCL_DRIVER_MODULE} ${OPENCL_BACKEND_EXPORTS_LIST[*]}"
-    fi
+else
+  # We have a Java 11+ version
+  COMMON_EXPORTS="${TORNADO_SDK}/etc/exportLists/common-exports"
+  OPENCL_EXPORTS="${TORNADO_SDK}/etc/exportLists/opencl-exports"
+  PTX_EXPORTS="${TORNADO_SDK}/etc/exportLists/ptx-exports"
+  UPGRADE_MODULE_PATH="--upgrade-module-path ${TORNADO_SDK}/share/java/graalJars"
+
+  TORNADO_ADD_MODULES="--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
+  PTX_MODULE="tornado.drivers.ptx"
+  OPENCL_MODULE="tornado.drivers.opencl"
+
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking @${COMMON_EXPORTS} "
+  # If the current Java build is not a GraalVM build, then we need to patch the module path for the compiler
+  if [[ ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
+    JAVA_FLAGS="${JAVA_FLAGS} ${UPGRADE_MODULE_PATH} "
   fi
+  read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
+  if [[ ${selected_backends} == *"ptx-backend"* ]]; then
+    JAVA_FLAGS="${JAVA_FLAGS} @${PTX_EXPORTS}"
+    TORNADO_ADD_MODULES="${TORNADO_ADD_MODULES},${PTX_MODULE}"
+  fi
+  if [[ ${selected_backends} == *"opencl-backend"* ]]; then
+    JAVA_FLAGS="${JAVA_FLAGS} @${OPENCL_EXPORTS}"
+    TORNADO_ADD_MODULES="${TORNADO_ADD_MODULES},${OPENCL_MODULE}"
+  fi
+  JAVA_FLAGS="${JAVA_FLAGS} ${TORNADO_ADD_MODULES}"
 fi
 
 if [ $printflags -eq 1 ]; then

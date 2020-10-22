@@ -30,7 +30,6 @@ import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
-import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -81,7 +80,6 @@ public class PTXHotSpotBackendFactory {
         PTXTargetDescription target = new PTXTargetDescription(arch);
         PTXDeviceContext deviceContext = device.getPTXContext().getDeviceContext();
         PTXCodeProvider codeCache = new PTXCodeProvider(target);
-        HotSpotGraalCompiler hotSpotGraalCompiler = ((HotSpotGraalCompiler) jvmciRuntime.getCompiler());
 
         PTXProviders providers;
         PTXSuitesProvider suites;

@@ -47,7 +47,7 @@
       <!-- tornado etc configuration -->
       <outputDirectory>etc</outputDirectory>
       <includes>
-        <include>*</include>
+        <include>**/*</include>
       </includes>
       <filtered>true</filtered>
       <lineEnding>unix</lineEnding>

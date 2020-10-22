@@ -41,9 +41,9 @@ then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachine
 Before building the new JDK, the JAVA_HOME environment variable should point to an already existing installation of a JDK 8 >= 1.8.0_141.
 
 ```bash
- $ git clone --depth 1 https://github.com/beehive-lab/mx
+ $ git clone --depth 1 --single-branch --branch tornado-jvmci-20.2-b03 https://github.com/beehive-lab/mx
  $ export PATH=`pwd`/mx:$PATH
- $ git clone --depth 1 https://github.com/beehive-lab/graal-jvmci-8
+ $ git clone --depth 1 --single-branch --branch tornado-jvmci-20.2-b03 https://github.com/beehive-lab/graal-jvmci-8
  $ cd graal-jvmci-8
  $ mx build
 ```
