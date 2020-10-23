@@ -29,16 +29,16 @@ __PATH_TO_ECLIPSE_SETTINGS__ = "scripts/templates/eclipse-settings/files/"
 def setEclipseSettings():
 	for project in __TORNADO_PROJECTS__:
 
-		print Colors.GREEN + "Generating eclipse files for the module: " + Colors.BOLD + project + Colors.RESET
+		print(Colors.GREEN + "Generating eclipse files for the module: " + Colors.BOLD + project + Colors.RESET)
 
 		settingsDirectory = project + "/.settings"
 
 		if (not os.path.exists(settingsDirectory)):
-			print  "\tCreating Directory"
+			print("\tCreating Directory")
 			os.mkdir(settingsDirectory)
 
 		command = "cp " + __PATH_TO_ECLIPSE_SETTINGS__ + "* " + project +  "/.settings/" 
-		print "\t" + command 
+		print("\t" + command)
 		os.system(command)
 
 if __name__ == "__main__":

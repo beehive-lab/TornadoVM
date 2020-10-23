@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 #
 # This file is part of Tornado: A heterogeneous programming framework:
@@ -36,7 +36,7 @@ import sys
 try:
 	__JAVA_HOME__ = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined"
+	print("[ERROR] JAVA_HOME is not defined")
 	sys.exit(0)
 
 class Colors:
@@ -51,7 +51,7 @@ class Colors:
 JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 # Get java version
-__JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+__JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
 
 ## ========================================================================================
 ## Script Options
@@ -129,41 +129,41 @@ def composeAllOptions(args):
 	return options
 
 def printBenchmarks(indent=""):
-	print Colors.GREEN + indent + "List of benchmarks: " + Colors.RESET
+	print(Colors.GREEN + indent + "List of benchmarks: " + Colors.RESET)
 	for b in __BENCHMARKS__:
-		print Colors.BOLD + indent + "\t*" + b + Colors.RESET
+		print(Colors.BOLD + indent + "\t*" + b + Colors.RESET)
 
 def runBenchmarksFullCoverage(args):
 	options = composeAllOptions(args)
 	for key in allSizes.keys():
 		for size in allSizes[key][0]:
 			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(allSizes[key][1][0]) + " " + str(size)
-			if key is 'sgemm':
+			if key == "sgemm":
 				command = command + " " + str(size)
 			os.system(command)
 
 def runMediumConfiguration(args):
 	options = composeAllOptions(args)
-	print options
+	print(options)
 	for key in mediumSizes.keys():
 		for size in mediumSizes[key][0]:
 			numIterations = eval(mediumSizes[key][1][0])
 			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(numIterations) + " " + str(size)
-			if key is 'sgemm':
+			if key == "sgemm":
 				command = command + " " + str(size)
 			os.system(command)
 
 def runWithJMH(args):
 	printBenchmarks()
 	options = composeAllOptions(args)
-	print Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET
+	print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
 	command = __TORNADO_COMMAND__ + " -jar benchmarks/target/jmhbenchmarks.jar "
 	os.system(command)
 
 def runDefaultSizePerBenchmark(args):
 	printBenchmarks()
 	options = composeAllOptions(args)
-	print Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET
+	print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
 	for b in __BENCHMARKS__:
 		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b
 		os.system(command)
@@ -193,14 +193,14 @@ def main():
 	elif args.full:
 		runBenchmarksFullCoverage(args)
 	elif args.medium:
-		print "[INFO] Running small and medium sizes"
+		print("[INFO] Running small and medium sizes")
 		runMediumConfiguration(args)
 	elif args.jmh:
-		print "[INFO] Running default size with JMH"
+		print("[INFO] Running default size with JMH")
 		runWithJMH(args)
 	else:
-		print Colors.BLUE + "Running TornadoVM Benchmarks" + Colors.RESET
-		print Colors.CYAN + "[INFO] This process takes between 30-60 minutes" + Colors.RESET
+		print(Colors.BLUE + "Running TornadoVM Benchmarks" + Colors.RESET)
+		print(Colors.CYAN + "[INFO] This process takes between 30-60 minutes" + Colors.RESET)
 		runDefaultSizePerBenchmark(args)
 
 if __name__ == '__main__':

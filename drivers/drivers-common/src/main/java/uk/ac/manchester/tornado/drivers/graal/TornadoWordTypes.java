@@ -17,35 +17,16 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
  */
-package uk.ac.manchester.tornado.drivers.ptx.graal;
+package uk.ac.manchester.tornado.drivers.graal;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import org.graalvm.compiler.word.WordTypes;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+public class TornadoWordTypes extends WordTypes {
 
-public class PTXFrameContext extends TornadoLogger implements FrameContext {
-    @Override
-    public void enter(CompilationResultBuilder crb) {
-        trace("FrameContext.enter()");
-
-    }
-
-    @Override
-    public boolean hasFrame() {
-        return false;
-    }
-
-    @Override
-    public void leave(CompilationResultBuilder crb) {
-        trace("FrameContext.leave()");
-    }
-
-    @Override
-    public void returned(CompilationResultBuilder crb) {
-        unimplemented();
+    public TornadoWordTypes(MetaAccessProvider metaAccess, JavaKind wordKind) {
+        super(metaAccess, wordKind);
     }
 }

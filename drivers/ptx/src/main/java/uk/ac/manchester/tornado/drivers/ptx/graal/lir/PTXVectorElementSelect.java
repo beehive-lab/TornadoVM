@@ -23,14 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
 @Opcode("VSEL")
-public class PTXVectorElementSelect extends PTXLIROp {
+public class PTXVectorElementSelect extends Value {
 
     private final Variable vector;
     private final int laneId;
@@ -44,12 +43,7 @@ public class PTXVectorElementSelect extends PTXLIROp {
     }
 
     @Override
-    public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-        asm.emitSymbol(vectorSplitData.getVectorElement(laneId));
-    }
-
-    @Override
     public String toString() {
-        return String.format("vselect(%s, %d)", vector, laneId);
+        return vectorSplitData.getVectorElement(laneId);
     }
 }

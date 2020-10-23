@@ -31,28 +31,35 @@ import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NodeAtomic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 
 /**
  * This phase scans the IR and checks whether there is a
  * {@link TornadoAtomicIntegerNode} associated for each {@link IncAtomicNode}.
  * 
+ * <p>
  * If it is not the case, this would mean that the atomic is passed as a
  * parameter to the lambda expression. Therefore, this phase introduces the
  * {@link TornadoAtomicIntegerNode} at the beginning of the Control-Flow-Graph.
- * 
+ * </p>
  */
 public class TornadoAtomicsParametersPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
+        NodeIterable<NodeAtomic> filter = graph.getNodes().filter(NodeAtomic.class);
 
-        NodeIterable<IncAtomicNode> filter = graph.getNodes().filter(IncAtomicNode.class);
         if (!filter.isEmpty()) {
-            for (IncAtomicNode atomic : filter) {
+            for (NodeAtomic atomic : filter) {
                 if (atomic.getAtomicNode() instanceof ParameterNode) {
+
+                    ParameterNode atomicArgument = (ParameterNode) atomic.getAtomicNode();
+                    int indexNode = atomicArgument.index();
+
                     TornadoAtomicIntegerNode newNode = new TornadoAtomicIntegerNode(OCLKind.INTEGER_ATOMIC_JAVA);
                     graph.addOrUnique(newNode);
+                    newNode.assignIndexFromParameter(indexNode);
 
                     final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(0));
                     newNode.setInitialValue(index);

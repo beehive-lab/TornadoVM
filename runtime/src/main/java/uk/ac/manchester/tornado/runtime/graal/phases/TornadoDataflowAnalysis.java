@@ -115,10 +115,8 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
     }
 
     private boolean shouldIgnoreNode(IfNode ifNode, IfNode fatherNodeStore) {
-
         // Check first if the IF node controls stride, in which case we should
-        // only ignore
-        // if the stride is 1.
+        // only ignore if the stride is 1.
         boolean ignore = false;
         if (ifNode.condition() instanceof BinaryOpLogicNode) {
             BinaryOpLogicNode condition = (BinaryOpLogicNode) ifNode.condition();
@@ -145,8 +143,8 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     /*
      * For a given node store in the IR, it checks whether the store is also
-     * performed in another branch of the code. If it that the case, the
-     * variable should be just WRITE, otherwise, it should be READ_WRITE.
+     * performed in another branch of the code. If it that the case, the variable
+     * should be just WRITE, otherwise, it should be READ_WRITE.
      */
     private MetaControlFlow analyseControlFlowForWriting(final Node currentNode, IfNode fatherNodeStore, final boolean isWrittenTrueCondition, final boolean isWrittenFalseCondition) {
         boolean trueCondition = isWrittenTrueCondition;
@@ -179,9 +177,13 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         return new MetaControlFlow(trueCondition, falseCondition, fatherNodeStore);
     }
 
+    private boolean isNodeFromKnownObject(Node currentNode) {
+        // Comparison based on names due to circular dependencies
+        return currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode")
+                || currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode");
+    }
+
     private Access processUsages(Node parameter, MetaAccessProvider metaAccess) {
-        // NodeBitMap nodes = graph.createNodeBitMap();
-        // nodes.clearAll();
 
         boolean isRead = false;
         boolean isWritten = false;
@@ -219,6 +221,10 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
                 isStored = true;
+            } else if (isNodeFromKnownObject(currentNode)) {
+                // All objects are passed by reference -> R/W
+                isRead = true;
+                isStored = true;
             } else if (currentNode instanceof PiNode) {
                 currentNode.usages().forEach(nf::add);
             }
@@ -227,6 +233,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         if (isStored) {
             isWritten = true;
         }
+
         if (isWrittenTrueCondition ^ isWrittenFalseCondition) {
             isRead = true;
         }

@@ -17,35 +17,21 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
  */
-package uk.ac.manchester.tornado.drivers.ptx.graal;
+package uk.ac.manchester.tornado.drivers.graal;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import org.graalvm.compiler.nodes.gc.BarrierSet;
+import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+public class TornadoPlatformConfigurationProvider implements PlatformConfigurationProvider {
 
-public class PTXFrameContext extends TornadoLogger implements FrameContext {
     @Override
-    public void enter(CompilationResultBuilder crb) {
-        trace("FrameContext.enter()");
-
+    public BarrierSet getBarrierSet() {
+        return null;
     }
 
     @Override
-    public boolean hasFrame() {
+    public boolean canVirtualizeLargeByteArrayAccess() {
         return false;
-    }
-
-    @Override
-    public void leave(CompilationResultBuilder crb) {
-        trace("FrameContext.leave()");
-    }
-
-    @Override
-    public void returned(CompilationResultBuilder crb) {
-        unimplemented();
     }
 }

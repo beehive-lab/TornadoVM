@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
+ * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,33 +19,22 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.ptx.graal;
+package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ValueNode;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+@NodeInfo(shortName = "ATOMIC")
+public abstract class NodeAtomic extends ValueNode {
 
-public class PTXFrameContext extends TornadoLogger implements FrameContext {
-    @Override
-    public void enter(CompilationResultBuilder crb) {
-        trace("FrameContext.enter()");
+    public static final NodeClass<NodeAtomic> TYPE = NodeClass.create(NodeAtomic.class);
 
+    public NodeAtomic(NodeClass<? extends ValueNode> c, Stamp stamp) {
+        super(c, stamp);
     }
 
-    @Override
-    public boolean hasFrame() {
-        return false;
-    }
+    public abstract ValueNode getAtomicNode();
 
-    @Override
-    public void leave(CompilationResultBuilder crb) {
-        trace("FrameContext.leave()");
-    }
-
-    @Override
-    public void returned(CompilationResultBuilder crb) {
-        unimplemented();
-    }
 }

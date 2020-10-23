@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 #
 # This file is part of Tornado: A heterogeneous programming framework: 
@@ -35,13 +35,13 @@ import sys
 try:
 	TORNADO_SDK = os.environ["TORNADO_SDK"]
 except:
-	print "[ERROR] TORNADO_SDK is not defined"
+	print("[ERROR] TORNADO_SDK is not defined")
 	sys.exit(-1)
 
 try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined."
+	print("[ERROR] JAVA_HOME is not defined.")
 	sys.exit(-1)
 
 try:
@@ -50,7 +50,20 @@ except:
 	classpathEnviron = ""
 	pass
 
-__DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.opencl,tornado.drivers.opencl"
+__DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
+__PTX_MODULE__ = "tornado.drivers.ptx"
+__OPENCL_MODULE__ = "tornado.drivers.opencl"
+
+def appendBackendModules():
+    global __DEFAULT_MODULES__, __PTX_MODULE__, __OPENCL_MODULE__
+    availableBackendsFile = TORNADO_SDK + "/etc/tornado.backend"
+    with open(availableBackendsFile, "r") as backendsFile:
+        backends = backendsFile.read()
+        if "ptx-backend" in backends:
+            __DEFAULT_MODULES__ += "," + __PTX_MODULE__
+
+        if "opencl-backend" in backends:
+            __DEFAULT_MODULES__ += "," + __OPENCL_MODULE__
 
 def getJavaVersion():
     return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
@@ -99,7 +112,7 @@ def runWithClasspath():
 
     process = subprocess.Popen(['ls', __JAR_FILES_PATH__], stdout=subprocess.PIPE)
     out, err = process.communicate()
-    jarFiles = out.split("\n")
+    jarFiles = out.decode('utf-8').split("\n")
 
     if (classpathEnviron != ""):
     	classPathVar = classPathVar + ":" + classpathEnviron
@@ -108,11 +121,12 @@ def runWithClasspath():
     	classPathVar = classPathVar +  ":" + __JAR_FILES_PATH__ + f
 
     command = javaHome + "/bin/javac -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
-    print command
+    print(command)
     os.system(command)
 
 useModuleSystem = any("module-info.java" in argument for argument in sys.argv) and javaVersion == JDK_11_VERSION
 if (useModuleSystem):
+    appendBackendModules()
     runWithModulepath()
 else:
     runWithClasspath()

@@ -93,7 +93,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private static DebugContext debugContext = null;
     public static DebugContext getDebugContext() {
         if (debugContext == null) {
-            debugContext = DebugContext.create(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider()));
+            debugContext = new DebugContext.Builder(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider())).build();
         }
         return debugContext;
     }

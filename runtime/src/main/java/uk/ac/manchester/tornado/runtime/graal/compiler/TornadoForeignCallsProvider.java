@@ -30,47 +30,30 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
+import org.graalvm.compiler.core.common.spi.ForeignCallSignature;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
-import org.graalvm.word.LocationIdentity;
+
 
 import jdk.vm.ci.meta.JavaKind;
 
 public class TornadoForeignCallsProvider implements ForeignCallsProvider {
 
     @Override
-    public boolean isReexecutable(ForeignCallDescriptor fcd) {
-        unimplemented();
-        return false;
-    }
-
-    @Override
-    public LocationIdentity[] getKilledLocations(ForeignCallDescriptor fcd) {
+    public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor) {
         unimplemented();
         return null;
     }
 
     @Override
-    public boolean canDeoptimize(ForeignCallDescriptor fcd) {
-        unimplemented();
-        return false;
-    }
-
-    @Override
-    public boolean isGuaranteedSafepoint(ForeignCallDescriptor fcd) {
-        unimplemented();
-        return false;
-    }
-
-    @Override
-    public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor fcd) {
+    public ForeignCallLinkage lookupForeignCall(ForeignCallSignature signature) {
         unimplemented();
         return null;
     }
 
     @Override
-    public boolean isAvailable(ForeignCallDescriptor descriptor) {
+    public ForeignCallDescriptor getDescriptor(ForeignCallSignature signature) {
         unimplemented();
-        return false;
+        return null;
     }
 
     @Override

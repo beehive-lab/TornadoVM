@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 #
 # This file is part of Tornado: A heterogeneous programming framework:
@@ -100,7 +100,10 @@ __TEST_THE_WORLD__ = [
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"",
+	"uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
+	"uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelCPU",
+        "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
+        "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
 ]
 
 # ################################################################################################################
@@ -128,7 +131,7 @@ JDK_8_VERSION = "1.8"
 try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined."
+	print("[ERROR] JAVA_HOME is not defined.")
 	sys.exit(-1)
 
 __TEST_NOT_PASSED__= False
@@ -193,10 +196,12 @@ def runSingleCommand(cmd, args):
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
 	end = time.time()
+	out = out.decode('utf-8')
+	err = err.decode('utf-8')
 
-	print err
-	print out
-	print "Total Time (s): " + str(end-start)
+	print(err)
+	print(out)
+	print("Total Time (s): " + str(end-start))
 
 
 def processStats(out, stats):
@@ -231,7 +236,7 @@ def processStats(out, stats):
 				name = name[:-16]
 
 			if (className + "#" + name in __TORNADO_TESTS_WHITE_LIST__):
-				print Colors.RED + "Test: " + className + "#" + name + " in whiteList." + Colors.RESET
+				print(Colors.RED + "Test: " + className + "#" + name + " in whiteList." + Colors.RESET)
 			else:
 				## set a flag
 				__TEST_NOT_PASSED__ = True
@@ -244,9 +249,11 @@ def runCommandWithStats(command, stats):
 	command = command.split(" ")
 	p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
+	out = out.decode('utf-8')
+	err = err.decode('utf-8')
 
-	print err
-	print out
+	print(err)
+	print(out)
 	
 	return processStats(out, stats)
 
@@ -281,23 +288,23 @@ def runTests(args):
 		start = time.time()
 		stats = runTestTheWorld(cmd, args)
 		end = time.time()
-		print Colors.CYAN
+		print(Colors.CYAN)
 
 		if args.fast == False and args.verbose == True:
-			print Colors.GREEN
-			print "=================================================="
-			print Colors.BLUE + "              Unit tests report " + Colors.GREEN
-			print "=================================================="
-			print Colors.CYAN
-			print stats
+			print(Colors.GREEN)
+			print("==================================================")
+			print(Colors.BLUE + "              Unit tests report " + Colors.GREEN)
+			print("==================================================")
+			print(Colors.CYAN)
+			print(stats)
 			coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
-			print "Coverage: " + str(round(coverage, 2))  + "%" 
-			print Colors.GREEN
-			print "=================================================="
-			print Colors.CYAN
+			print("Coverage: " + str(round(coverage, 2))  + "%")
+			print(Colors.GREEN)
+			print("==================================================")
+			print(Colors.CYAN)
 
-		print "Total Time(s): " + str(end-start)
-		print Colors. RESET
+		print("Total Time(s): " + str(end-start))
+		print(Colors. RESET)
 
 
 def runTestTheWorld(cmd, args):
@@ -317,12 +324,12 @@ def runTestTheWorld(cmd, args):
 				if (args.fast):
 					os.system(testMethodCmd)
 				else:
-					print testMethodCmd
+					print(testMethodCmd)
 					stats = runCommandWithStats(testMethodCmd, stats)
 		elif (args.fast):
 			os.system(command)
 		else:
-			print command
+			print(command)
 			stats = runCommandWithStats(command, stats)
 
 	return stats
@@ -349,7 +356,7 @@ def runTestTheWorldWithJunit(args):
 		command += " " + t.testName
 		if t.testMethods:
 			for testMethod in t.testMethods:
-				print "Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod
+				print("Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
 		else:
 			os.system(command)
 
@@ -384,13 +391,13 @@ def writeStatusInFile():
 
 def getJavaVersion():
 	# Get the java version
-	return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+	return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
 
 def main():
 	args = parseArguments()
 
 	if (args.version):
-		print __VERSION__
+		print(__VERSION__)
 		sys.exit(0)
 	global javaVersion
 	javaVersion = getJavaVersion()

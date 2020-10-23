@@ -54,11 +54,16 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     // How many atomics integers per graph
     public static HashMap<StructuredGraph, ArrayList<Integer>> globalAtomics = new HashMap<>();
+    public static HashMap<StructuredGraph, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
+
+    private final static int DEFAULT_VALUE = -1;
 
     @Input
     ValueNode initialValue;
 
     private int indexFromGlobalMemory;
+
+    private boolean atomicsByParameter = false;
 
     public TornadoAtomicIntegerNode(OCLKind kind) {
         super(TYPE, OCLStampFactory.getStampFor(kind));
@@ -104,6 +109,50 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         }
     }
 
+    private void updateGlobalAtomicTable(HashMap positions, int paramIndex, int size) {
+        positions.put(paramIndex, size);
+        globalAtomicsParameters.put(this.graph(), positions);
+    }
+
+    /**
+     * Method to reserve a position in the atomic-int global buffer and map the
+     * parameter index with the assigned position. The mapping-table is obtained at
+     * runtime for streaming in and out data in the right positions of the atomic
+     * buffer.
+     * 
+     * @param paramIndex
+     *            Object parameter index taken from
+     *            {@link org.graalvm.compiler.nodes.ParameterNode}.
+     */
+    public synchronized void assignIndexFromParameter(int paramIndex) {
+        if (!globalAtomics.containsKey(this.graph())) {
+            ArrayList<Integer> al = new ArrayList<>();
+            al.add(DEFAULT_VALUE);
+            // The position is reserved to be filled by TornadoVM. This position is then
+            // used by the TornadoVM runtime to copy the initial value for the Atomic before
+            // the kernel execution.
+            globalAtomics.put(this.graph(), al);
+            updateGlobalAtomicTable(new HashMap<>(), paramIndex, al.size() - 1);
+            this.indexFromGlobalMemory = 0;
+        } else {
+            ArrayList<Integer> al = globalAtomics.get(this.graph());
+            this.indexFromGlobalMemory = al.size();
+            al.add(DEFAULT_VALUE);
+            // A position for the atomic is reserved. This position is then used by the
+            // TornadoVM runtime to copy the initial value for the Atomic before the kernel
+            // execution.
+            globalAtomics.put(this.graph(), al);
+
+            HashMap positions = globalAtomicsParameters.get(this.graph());
+            updateGlobalAtomicTable(positions, paramIndex, al.size() - 1);
+        }
+        atomicsByParameter = true;
+    }
+
+    public boolean isAtomicsByParameter() {
+        return atomicsByParameter;
+    }
+
     private synchronized void assignIndex() {
         if (!globalAtomics.containsKey(this.graph())) {
             ArrayList<Integer> al = new ArrayList<>();
@@ -111,7 +160,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
             globalAtomics.put(this.graph(), al);
             this.indexFromGlobalMemory = 0;
         } else {
-            ArrayList<Integer> al = new ArrayList<>(globalAtomics.get(this.graph()));
+            ArrayList<Integer> al = globalAtomics.get(this.graph());
             this.indexFromGlobalMemory = al.size();
             al.add(getIntFromValueNode());
             globalAtomics.put(this.graph(), al);
@@ -123,7 +172,10 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
         if (ATOMIC_2_0) {
             generateExpressionForOpenCL2_0(gen);
         } else {
-            assignIndex();
+            if (!atomicsByParameter) {
+                // Only assign an index if the atomics is not a parameter to the function.
+                assignIndex();
+            }
             generateExpressionForOpenCL1_0(gen);
         }
     }

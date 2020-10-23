@@ -58,12 +58,13 @@ import org.graalvm.compiler.nodes.memory.FloatingAccessNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryAnchorNode;
-import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.memory.MemoryMap;
 import org.graalvm.compiler.nodes.memory.MemoryMapNode;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
+import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
@@ -96,7 +97,7 @@ public class TornadoFloatingReadReplacement extends Phase {
 
     public static class MemoryMapImpl implements MemoryMap {
 
-        private final EconomicMap<LocationIdentity, MemoryNode> lastMemorySnapshot;
+        private final EconomicMap<LocationIdentity, MemoryKill> lastMemorySnapshot;
 
         public MemoryMapImpl(MemoryMapImpl memoryMap) {
             lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT, memoryMap.lastMemorySnapshot);
@@ -112,8 +113,8 @@ public class TornadoFloatingReadReplacement extends Phase {
         }
 
         @Override
-        public MemoryNode getLastLocationAccess(LocationIdentity locationIdentity) {
-            MemoryNode lastLocationAccess;
+        public MemoryKill getLastLocationAccess(LocationIdentity locationIdentity) {
+            MemoryKill lastLocationAccess;
             if (locationIdentity.isImmutable()) {
                 return null;
             } else {
@@ -131,7 +132,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             return lastMemorySnapshot.getKeys();
         }
 
-        public EconomicMap<LocationIdentity, MemoryNode> getMap() {
+        public EconomicMap<LocationIdentity, MemoryKill> getMap() {
             return lastMemorySnapshot;
         }
     }
@@ -182,10 +183,10 @@ public class TornadoFloatingReadReplacement extends Phase {
     }
 
     protected void processNode(FixedNode node, EconomicSet<LocationIdentity> currentState) {
-        if (node instanceof MemoryCheckpoint.Single) {
-            processIdentity(currentState, ((MemoryCheckpoint.Single) node).getKilledLocationIdentity());
-        } else if (node instanceof MemoryCheckpoint.Multi) {
-            for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getKilledLocationIdentities()) {
+        if (node instanceof SingleMemoryKill) {
+            processIdentity(currentState, ((SingleMemoryKill) node).getKilledLocationIdentity());
+        } else if (node instanceof MultiMemoryKill) {
+            for (LocationIdentity identity : ((MultiMemoryKill) node).getKilledLocationIdentities()) {
                 processIdentity(currentState, identity);
             }
         }
@@ -250,7 +251,6 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
         if (createFloatingReads) {
-            assert !graph.isAfterFloatingReadPhase();
             graph.setAfterFloatingReadPhase(true);
         }
     }
@@ -267,9 +267,9 @@ public class TornadoFloatingReadReplacement extends Phase {
         for (LocationIdentity key : keys) {
             int mergedStatesCount = 0;
             boolean isPhi = false;
-            MemoryNode merged = null;
+            MemoryKill merged = null;
             for (MemoryMap state : states) {
-                MemoryNode last = state.getLastLocationAccess(key);
+                MemoryKill last = state.getLastLocationAccess(key);
                 if (isPhi) {
                     // Fortify: Suppress Null Deference false positive (`isPhi == true` implies
                     // `merged != null`)
@@ -330,12 +330,11 @@ public class TornadoFloatingReadReplacement extends Phase {
             if (createFloatingReads && node instanceof FloatableAccessNode) {
                 processFloatable((FloatableAccessNode) node, state);
             }
-            if (node instanceof MemoryCheckpoint.Single) {
-                processCheckpoint((MemoryCheckpoint.Single) node, state);
-            } else if (node instanceof MemoryCheckpoint.Multi) {
-                processCheckpoint((MemoryCheckpoint.Multi) node, state);
+            if (node instanceof SingleMemoryKill) {
+                processCheckpoint((SingleMemoryKill) node, state);
+            } else if (node instanceof MultiMemoryKill) {
+                processCheckpoint((MultiMemoryKill) node, state);
             }
-            assert MemoryCheckpoint.TypeAssertion.correctType(node) : node;
 
             if (createMemoryMapNodes && node instanceof ReturnNode) {
                 ((ReturnNode) node).setMemoryMap(node.graph().unique(new MemoryMapNode(state.lastMemorySnapshot)));
@@ -352,7 +351,7 @@ public class TornadoFloatingReadReplacement extends Phase {
                 if (node instanceof MemoryAccess) {
                     MemoryAccess access = (MemoryAccess) node;
                     if (access.getLastLocationAccess() == anchor) {
-                        MemoryNode lastLocationAccess = state.getLastLocationAccess(access.getLocationIdentity());
+                        MemoryKill lastLocationAccess = state.getLastLocationAccess(access.getLocationIdentity());
                         assert lastLocationAccess != null;
                         access.setLastLocationAccess(lastLocationAccess);
                     }
@@ -367,22 +366,22 @@ public class TornadoFloatingReadReplacement extends Phase {
         private static void processAccess(MemoryAccess access, MemoryMapImpl state) {
             LocationIdentity locationIdentity = access.getLocationIdentity();
             if (!locationIdentity.equals(LocationIdentity.any())) {
-                MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
+                MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 access.setLastLocationAccess(lastLocationAccess);
             }
         }
 
-        private static void processCheckpoint(MemoryCheckpoint.Single checkpoint, MemoryMapImpl state) {
+        private static void processCheckpoint(SingleMemoryKill checkpoint, MemoryMapImpl state) {
             processIdentity(checkpoint.getKilledLocationIdentity(), checkpoint, state);
         }
 
-        private static void processCheckpoint(MemoryCheckpoint.Multi checkpoint, MemoryMapImpl state) {
+        private static void processCheckpoint(MultiMemoryKill checkpoint, MemoryMapImpl state) {
             for (LocationIdentity identity : checkpoint.getKilledLocationIdentities()) {
                 processIdentity(identity, checkpoint, state);
             }
         }
 
-        private static void processIdentity(LocationIdentity identity, MemoryCheckpoint checkpoint, MemoryMapImpl state) {
+        private static void processIdentity(LocationIdentity identity, MemoryKill checkpoint, MemoryMapImpl state) {
             if (identity.isAny()) {
                 state.lastMemorySnapshot.clear();
             }
@@ -397,7 +396,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
             if (accessNode.canFloat() && shouldBeFloatingRead(accessNode)) {
                 assert accessNode.getNullCheck() == false;
-                MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
+                MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();
                     assert floatingNode.getLastLocationAccess() == lastLocationAccess;
@@ -439,7 +438,7 @@ public class TornadoFloatingReadReplacement extends Phase {
                  * successors.
                  */
                 InvokeWithExceptionNode invoke = (InvokeWithExceptionNode) node.predecessor();
-                result.lastMemorySnapshot.put(invoke.getKilledLocationIdentity(), (MemoryCheckpoint) node);
+                result.lastMemorySnapshot.put(invoke.getKilledLocationIdentity(), (MemoryKill) node);
             }
             return result;
         }
