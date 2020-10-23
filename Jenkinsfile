@@ -5,7 +5,7 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')
     }
     environment {
-        JAVA_HOME="/opt/jenkins/graal-jvmci-8/openjdk1.8.0_242/linux-amd64/product"
+        JAVA_HOME="/opt/jenkins/openjdk1.8.0_262-jvmci-20.2-b03"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
