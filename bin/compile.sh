@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Parameters passed to this script:
-# $1 - which JDK is used to build Tornado { jdk-8, graal-jdk-8, graal-jdk-11 }
+# $1 - which JDK is used to build Tornado { jdk-8, graal-jdk-8, graal-jdk-11, jdk-11-plus }
 # $2 - backends selected for the build. Can be any combination of { opencl, ptx }
 # $3 - build Tornado OFFLINE
 

@@ -20,6 +20,7 @@
   ```
   Red Hat Mandrel 11.0.9
   Amazon Coretto 11.0.9
+  GraalVM LabsJDK 11.0.8
   OpenJDK 11.0.8
   OpenJDK 12.0.2
   OpenJDK 13.0.2

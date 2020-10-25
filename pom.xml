@@ -286,7 +286,6 @@
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
                             <source>11</source>
                             <target>11</target>
-                            <!-- <compilerArgument>-proc:none</compilerArgument> -->
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -325,7 +324,6 @@
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
                             <source>11</source>
                             <target>11</target>
-                            <!-- <compilerArgument>-proc:none</compilerArgument> -->
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>

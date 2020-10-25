@@ -23,6 +23,11 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+COMPILER_JAR_URL=https://repo.maven.apache.org/maven2/org/graalvm/compiler/compiler/20.2.0/compiler-20.2.0.jar
+COMPILER_MANAGEMENT_JAR_URL=https://repo.maven.apache.org/maven2/org/graalvm/compiler/compiler-management/20.2.0/compiler-management-20.2.0.jar
+GRAAL_SDK_JAR_URL=https://repo.maven.apache.org/maven2/org/graalvm/sdk/graal-sdk/20.2.0/graal-sdk-20.2.0.jar
+TRUFFLE_API_JAR_URL=https://repo.maven.apache.org/maven2/org/graalvm/truffle/truffle-api/20.2.0/truffle-api-20.2.0.jar
+
 if [ ! -d $PWD/graalJars ]; then
   echo "Creating directory graalJars under $PWD"
   mkdir $PWD/graalJars
@@ -30,20 +35,20 @@ fi
 
 if [ ! -f $PWD/graalJars/compiler-20.2.0.jar ]; then
   echo "Downloading jar file for the graal compiler to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/20.2.0/compiler-20.2.0.jar
+  wget -q --show-progress -P $PWD/graalJars/ $COMPILER_JAR_URL
 fi
 
 if [ ! -f $PWD/graalJars/compiler-management-20.2.0.jar ]; then
   echo "Downloading jar file for the graal compiler management bean to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/20.2.0/compiler-management-20.2.0.jar
+  wget -q --show-progress -P $PWD/graalJars/ $COMPILER_MANAGEMENT_JAR_URL
 fi
 
 if [ ! -f $PWD/graalJars/graal-sdk-20.2.0.jar ]; then
   echo "Downloading jar file for graal sdk to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/20.2.0/graal-sdk-20.2.0.jar
+  wget -q --show-progress -P $PWD/graalJars/ $GRAAL_SDK_JAR_URL
 fi
 
 if [ ! -f $PWD/graalJars/truffle-api-20.2.0.jar ]; then
   echo "Downloading jar file for graal truffle to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/20.2.0/truffle-api-20.2.0.jar
+  wget -q --show-progress -P $PWD/graalJars/ $TRUFFLE_API_JAR_URL
 fi

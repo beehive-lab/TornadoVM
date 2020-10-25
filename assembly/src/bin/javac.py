@@ -86,13 +86,17 @@ def trimModulesParamString(indexToSearch):
     del sys.argv[moduleParamIndex:moduleParamIndex + 2]
     return parameter
 
+def maybeAppendUpgradeModulePathParam(command):
+    if (javaVersion != JDK_8_VERSION and not __IS_GRAALVM_BUILD__):
+        command += "--upgrade-module-path " + __GRAAL_JAR_FILES_PATH + " "
+
+    return command
+
 def runWithModulepath():
     defaultModulePath = __JAR_FILES_PATH__
 
     command = javaHome + "/bin/javac "
-
-    if (not __IS_GRAALVM_BUILD__):
-        command += "--upgrade-module-path " + __GRAAL_JAR_FILES_PATH + " "
+    command = maybeAppendUpgradeModulePathParam(command=command)
 
     if ("--add-modules" in sys.argv):
         addModulesParam = trimModulesParamString("--add-modules")
@@ -118,10 +122,9 @@ def runWithClasspath():
     process = subprocess.Popen(['ls', __JAR_FILES_PATH__], stdout=subprocess.PIPE)
     out, err = process.communicate()
     jarFiles = out.decode('utf-8').split("\n")
-    command = javaHome + "/bin/javac "
 
-    if (javaVersion != JDK_8_VERSION and not __IS_GRAALVM_BUILD__):
-        command += "--upgrade-module-path " + __GRAAL_JAR_FILES_PATH
+    command = javaHome + "/bin/javac "
+    command = maybeAppendUpgradeModulePathParam(command=command)
 
     if (classpathEnviron != ""):
         classPathVar = classPathVar + ":" + classpathEnviron
