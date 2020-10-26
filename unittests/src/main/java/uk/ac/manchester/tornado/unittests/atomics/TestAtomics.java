@@ -509,4 +509,46 @@ public class TestAtomics extends TornadoTestBase {
         lastValue = bi.get();
         assertEquals(initialValueB - size, lastValue);
     }
+
+    /**
+     * This example combines an atomic created inside the compute kernel with an
+     * atomic passed as an argument.
+     * 
+     * @param input
+     *            Input array
+     * @param ai
+     *            Atomic Integer stored in Global Memory (atomic-region)
+     */
+    public static void atomic15(int[] input, AtomicInteger ai) {
+        AtomicInteger bi = new AtomicInteger(500);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+            input[i] = input[i] + bi.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic15() {
+        // Calling multiple atomics
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValueA = 311;
+        AtomicInteger ai = new AtomicInteger(initialValueA);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic15, a, ai) //
+                .streamOut(ai, a) //
+                .execute();
+
+        int lastValue = ai.get();
+        assertEquals(initialValueA + size, lastValue);
+
+        boolean repeated = isValueRepeated(a);
+        assertTrue(!repeated);
+    }
+
 }
