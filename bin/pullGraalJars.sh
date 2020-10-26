@@ -35,20 +35,20 @@ fi
 
 if [ ! -f $PWD/graalJars/compiler-20.2.0.jar ]; then
   echo "Downloading jar file for the graal compiler to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ $COMPILER_JAR_URL
+  wget -P $PWD/graalJars/ $COMPILER_JAR_URL
 fi
 
 if [ ! -f $PWD/graalJars/compiler-management-20.2.0.jar ]; then
   echo "Downloading jar file for the graal compiler management bean to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ $COMPILER_MANAGEMENT_JAR_URL
+  wget -P $PWD/graalJars/ $COMPILER_MANAGEMENT_JAR_URL
 fi
 
 if [ ! -f $PWD/graalJars/graal-sdk-20.2.0.jar ]; then
   echo "Downloading jar file for graal sdk to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ $GRAAL_SDK_JAR_URL
+  wget -P $PWD/graalJars/ $GRAAL_SDK_JAR_URL
 fi
 
 if [ ! -f $PWD/graalJars/truffle-api-20.2.0.jar ]; then
   echo "Downloading jar file for graal truffle to $PWD/graalJars/"
-  wget -q --show-progress -P $PWD/graalJars/ $TRUFFLE_API_JAR_URL
+  wget -P $PWD/graalJars/ $TRUFFLE_API_JAR_URL
 fi

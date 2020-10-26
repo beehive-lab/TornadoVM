@@ -8,7 +8,7 @@
     * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
     * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
-  * Python (>= 3.4.5)
+  * Python (>= 2.7)
 
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
