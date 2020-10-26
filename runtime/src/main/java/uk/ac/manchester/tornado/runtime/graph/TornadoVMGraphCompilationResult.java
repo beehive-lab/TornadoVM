@@ -96,7 +96,7 @@ public class TornadoVMGraphCompilationResult {
         for (int i = 0; i < numArgs; i++) {
             final AbstractNode argNode = taskNode.getArg(i);
             if (argNode instanceof ConstantNode) {
-                bitcodeASM.constantArg(((ConstantNode) argNode).getIndex());
+                bitcodeASM.constantArg(argNode.getIndex());
             } else if (argNode instanceof CopyInNode) {
                 bitcodeASM.referenceArg(((CopyInNode) argNode).getValue().getIndex());
             } else if (argNode instanceof StreamInNode) {

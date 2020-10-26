@@ -447,7 +447,6 @@ public class OCLCompiler {
         }
 
         final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
-
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());

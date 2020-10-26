@@ -259,12 +259,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
             // Update atomics buffer for inner methods that are not inlined
             ResolvedJavaMethod[] methods = result.getMethods();
-            HashMap<Integer, Integer> mapping;
-            for (ResolvedJavaMethod m : methods) {
-                if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(m)) {
-                    mapping = TornadoAtomicIntegerNode.globalAtomicsParameters.get(m);
-                    for (ResolvedJavaMethod mInternal : methods) {
-                        TornadoAtomicIntegerNode.globalAtomicsParameters.put(mInternal, mapping);
+            if (methods.length > 1) {
+                HashMap<Integer, Integer> mapping;
+                for (ResolvedJavaMethod m : methods) {
+                    if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(m)) {
+                        mapping = TornadoAtomicIntegerNode.globalAtomicsParameters.get(m);
+                        for (ResolvedJavaMethod mInternal : methods) {
+                            // RE-MAP position
+                            TornadoAtomicIntegerNode.globalAtomicsParameters.put(mInternal, mapping);
+                        }
                     }
                 }
             }

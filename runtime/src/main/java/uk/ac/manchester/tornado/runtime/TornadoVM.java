@@ -492,7 +492,7 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
                 if (objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task)) {
-                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, argIndex, objects.get(argIndex), objectState);
+                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                     setObjectOwnerShip(globalState, objectState, device);
                 } else {
                     final String ERROR_MESSAGE = "object is not valid: %s %s";

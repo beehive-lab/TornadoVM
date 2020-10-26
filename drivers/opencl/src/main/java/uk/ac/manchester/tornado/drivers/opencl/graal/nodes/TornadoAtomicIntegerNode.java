@@ -55,6 +55,8 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     // How many atomics integers per graph
     public static HashMap<ResolvedJavaMethod, ArrayList<Integer>> globalAtomics = new HashMap<>();
 
+    // Mapping between:
+    // Java Method: -> { ParamIndex -> Position in the Atomic Buffer }
     public static HashMap<ResolvedJavaMethod, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
 
     private final static int DEFAULT_VALUE = -1;
