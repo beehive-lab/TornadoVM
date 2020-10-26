@@ -126,7 +126,8 @@ public class TornadoOptions {
     public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", "False");
 
     /**
-     * Specifies the virtual device properties file. Default value is virtual-device.json.
+     * Specifies the virtual device properties file. Default value is
+     * virtual-device.json.
      */
     public static final String VIRTUAL_DEVICE_FILE = Tornado.getProperty("tornado.device.desc", "etc/virtual-device-template.json");
 
@@ -172,5 +173,10 @@ public class TornadoOptions {
     private static boolean getBooleanValue(String property, String defaultValue) {
         return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
     }
+
+    /**
+     * Full Inlining Policy with the TornadoVM JIT compiler
+     */
+    public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", "False");;
 
 }
