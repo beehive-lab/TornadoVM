@@ -66,11 +66,11 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
     }
 
-    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind kind, ConstantNode length) {
-        super(TYPE, StampFactory.forKind(kind));
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementType, ConstantNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.arrayTemplate = OCLKind.resolveTemplateType(kind);
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
     }
 
     public OCLArchitecture.OCLMemoryBase getMemoryRegister() {

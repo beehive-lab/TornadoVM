@@ -207,49 +207,49 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    private static void registerIntLocalArray(Registration r, JavaKind kind) {
+    private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateIntLocalArray", Receiver.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, kind, constantNode);
-                b.push(kind, localArrayNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
     }
 
-    private static void registerLongLocalArray(Registration r, JavaKind kind) {
+    private static void registerLongLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateLongLocalArray", Receiver.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, kind, constantNode);
-                b.push(kind, localArrayNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
     }
 
-    private static void registerFloatLocalArray(Registration r, JavaKind kind) {
+    private static void registerFloatLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateFloatLocalArray", Receiver.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, kind, constantNode);
-                b.push(kind, localArrayNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
     }
 
-    private static void registerDoubleLocalArray(Registration r, JavaKind kind) {
+    private static void registerDoubleLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateDoubleLocalArray", Receiver.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
-                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, kind, constantNode);
-                b.push(kind, localArrayNode);
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
                 return true;
             }
         });
@@ -260,17 +260,18 @@ public class OCLGraphBuilderPlugins {
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
 
-        JavaKind returnedIntJavaKind = OCLKind.INT.asJavaKind();
-        registerIntLocalArray(r, returnedIntJavaKind);
+        JavaKind returnedJavaKind = JavaKind.Object;
+        JavaKind elementType = OCLKind.INT.asJavaKind();
+        registerIntLocalArray(r, returnedJavaKind, elementType);
 
-        JavaKind returnedLongJavaKind = OCLKind.LONG.asJavaKind();
-        registerLongLocalArray(r, returnedLongJavaKind);
+        elementType = OCLKind.LONG.asJavaKind();
+        registerLongLocalArray(r, returnedJavaKind, elementType);
 
-        JavaKind returnedFloatJavaKind = OCLKind.FLOAT.asJavaKind();
-        registerFloatLocalArray(r, returnedFloatJavaKind);
+        elementType = OCLKind.FLOAT.asJavaKind();
+        registerFloatLocalArray(r, returnedJavaKind, elementType);
 
-        JavaKind returnedDoubleJavaKind = OCLKind.DOUBLE.asJavaKind();
-        registerDoubleLocalArray(r, returnedDoubleJavaKind);
+        elementType = OCLKind.DOUBLE.asJavaKind();
+        registerDoubleLocalArray(r, returnedJavaKind, elementType);
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
