@@ -232,7 +232,7 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
-        if (TornadoOptions.printBytecodes) {
+        if (TornadoOptions.printBytecodes && !isObjectAtomic(object)) {
             String verbose = String.format("vm: ALLOCATE [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
@@ -241,13 +241,17 @@ public class TornadoVM extends TornadoLogger {
         return device.ensureAllocated(object, sizeBatch, objectState);
     }
 
+    private boolean isObjectAtomic(Object object) {
+        return object instanceof AtomicInteger;
+    }
+
     private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-        if (TornadoOptions.printBytecodes) {
+        if (TornadoOptions.printBytecodes & !isObjectAtomic(object)) {
             String verbose = String.format("vm: COPY_IN [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
@@ -285,7 +289,7 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
-        if (TornadoOptions.printBytecodes && !(object instanceof AtomicInteger)) {
+        if (TornadoOptions.printBytecodes && !isObjectAtomic(object)) {
             String verbose = String.format("vm: STREAM_IN [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
