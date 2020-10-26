@@ -256,6 +256,19 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+
+            // Update atomics buffer for inner methods that are not inlined
+            ResolvedJavaMethod[] methods = result.getMethods();
+            HashMap<Integer, Integer> mapping;
+            for (ResolvedJavaMethod m : methods) {
+                if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(m)) {
+                    mapping = TornadoAtomicIntegerNode.globalAtomicsParameters.get(m);
+                    for (ResolvedJavaMethod mInternal : methods) {
+                        TornadoAtomicIntegerNode.globalAtomicsParameters.put(mInternal, mapping);
+                    }
+                }
+            }
+
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
@@ -275,7 +288,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return installedCode;
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
+            driver.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
             driver.fatal("exception: %s", e.toString());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
@@ -353,8 +366,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
-        if (TornadoAtomicIntegerNode.globalAtomics.containsKey(task.meta().getCompiledGraph())) {
-            ArrayList<Integer> values = TornadoAtomicIntegerNode.globalAtomics.get(task.meta().getCompiledGraph());
+        if (TornadoAtomicIntegerNode.globalAtomics.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+            ArrayList<Integer> values = TornadoAtomicIntegerNode.globalAtomics.get(task.meta().getCompiledResolvedJavaMethod());
             int[] atomicsArray = new int[values.size()];
             int j = 0;
             for (Integer i : values) {
@@ -370,8 +383,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
         if (value instanceof AtomicInteger) {
             AtomicInteger ai = (AtomicInteger) value;
-            if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph())) {
-                HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledGraph());
+            if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+                HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledResolvedJavaMethod());
                 int index = values.get(paramIndex);
                 array[index] = ai.get();
             }
@@ -392,8 +405,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
-        if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph())) {
-            HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledGraph());
+        if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+            HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledResolvedJavaMethod());
             return values.get(paramIndex);
         }
         return -1;
@@ -401,7 +414,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public boolean checkAtomicsParametersForTask(SchedulableTask task) {
-        return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledGraph());
+        return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
     private boolean isJITTaskForFGPA(SchedulableTask task) {

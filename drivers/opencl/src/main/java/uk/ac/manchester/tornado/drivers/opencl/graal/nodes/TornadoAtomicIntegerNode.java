@@ -31,11 +31,11 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -53,8 +53,9 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     private boolean ATOMIC_2_0 = false;
 
     // How many atomics integers per graph
-    public static HashMap<StructuredGraph, ArrayList<Integer>> globalAtomics = new HashMap<>();
-    public static HashMap<StructuredGraph, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
+    public static HashMap<ResolvedJavaMethod, ArrayList<Integer>> globalAtomics = new HashMap<>();
+
+    public static HashMap<ResolvedJavaMethod, HashMap<Integer, Integer>> globalAtomicsParameters = new HashMap<>();
 
     private final static int DEFAULT_VALUE = -1;
 
@@ -111,7 +112,7 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
 
     private void updateGlobalAtomicTable(HashMap positions, int paramIndex, int size) {
         positions.put(paramIndex, size);
-        globalAtomicsParameters.put(this.graph(), positions);
+        globalAtomicsParameters.put(this.graph().method(), positions);
     }
 
     /**
@@ -119,31 +120,31 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
      * parameter index with the assigned position. The mapping-table is obtained at
      * runtime for streaming in and out data in the right positions of the atomic
      * buffer.
-     * 
+     *
      * @param paramIndex
      *            Object parameter index taken from
      *            {@link org.graalvm.compiler.nodes.ParameterNode}.
      */
     public synchronized void assignIndexFromParameter(int paramIndex) {
-        if (!globalAtomics.containsKey(this.graph())) {
+        if (!globalAtomics.containsKey(this.graph().method())) {
             ArrayList<Integer> al = new ArrayList<>();
             al.add(DEFAULT_VALUE);
             // The position is reserved to be filled by TornadoVM. This position is then
             // used by the TornadoVM runtime to copy the initial value for the Atomic before
             // the kernel execution.
-            globalAtomics.put(this.graph(), al);
+            globalAtomics.put(this.graph().method(), al);
             updateGlobalAtomicTable(new HashMap<>(), paramIndex, al.size() - 1);
             this.indexFromGlobalMemory = 0;
         } else {
-            ArrayList<Integer> al = globalAtomics.get(this.graph());
+            ArrayList<Integer> al = globalAtomics.get(this.graph().method());
             this.indexFromGlobalMemory = al.size();
             al.add(DEFAULT_VALUE);
             // A position for the atomic is reserved. This position is then used by the
             // TornadoVM runtime to copy the initial value for the Atomic before the kernel
             // execution.
-            globalAtomics.put(this.graph(), al);
+            globalAtomics.put(this.graph().method(), al);
 
-            HashMap positions = globalAtomicsParameters.get(this.graph());
+            HashMap positions = globalAtomicsParameters.get(this.graph().method());
             updateGlobalAtomicTable(positions, paramIndex, al.size() - 1);
         }
         atomicsByParameter = true;
@@ -154,16 +155,16 @@ public class TornadoAtomicIntegerNode extends FixedWithNextNode implements LIRLo
     }
 
     private synchronized void assignIndex() {
-        if (!globalAtomics.containsKey(this.graph())) {
+        if (!globalAtomics.containsKey(this.graph().method())) {
             ArrayList<Integer> al = new ArrayList<>();
             al.add(getIntFromValueNode());
-            globalAtomics.put(this.graph(), al);
+            globalAtomics.put(this.graph().method(), al);
             this.indexFromGlobalMemory = 0;
         } else {
-            ArrayList<Integer> al = globalAtomics.get(this.graph());
+            ArrayList<Integer> al = globalAtomics.get(this.graph().method());
             this.indexFromGlobalMemory = al.size();
             al.add(getIntFromValueNode());
-            globalAtomics.put(this.graph(), al);
+            globalAtomics.put(this.graph().method(), al);
         }
     }
 
