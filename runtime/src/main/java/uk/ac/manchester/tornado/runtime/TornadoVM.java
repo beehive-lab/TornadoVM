@@ -431,6 +431,10 @@ public class TornadoVM extends TornadoLogger {
         objectState.setModified(true);
     }
 
+    private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoAcceleratorDevice device, SchedulableTask task) {
+        return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
+    }
+
     private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,
             ExecutionInfo info) {
 
@@ -481,6 +485,16 @@ public class TornadoVM extends TornadoLogger {
             final byte argType = buffer.get();
             final int argIndex = buffer.getInt();
 
+            if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
+                final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
+                final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
+
+                if (isObjectInAtomicRegion(objectState, device, task)) {
+                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
+                    setObjectOwnerShip(globalState, objectState, device);
+                }
+            }
+
             if (stack.isOnDevice()) {
                 continue;
             }
@@ -491,10 +505,7 @@ public class TornadoVM extends TornadoLogger {
                 final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
-                if (objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task)) {
-                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
-                    setObjectOwnerShip(globalState, objectState, device);
-                } else {
+                if (!isObjectInAtomicRegion(objectState, device, task)) {
                     final String ERROR_MESSAGE = "object is not valid: %s %s";
                     TornadoInternalError.guarantee(objectState.isValid(), ERROR_MESSAGE, objects.get(argIndex), objectState);
                     stack.push(objects.get(argIndex), objectState);

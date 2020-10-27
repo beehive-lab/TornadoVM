@@ -551,4 +551,34 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
     }
 
+    public static void atomic16(int[] input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic16() {
+        // Calling multiple atomics
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValueA = 311;
+        AtomicInteger ai = new AtomicInteger(initialValueA);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(ai) //
+                .task("t0", TestAtomics::atomic16, a, ai) //
+                .streamOut(ai, a);
+
+        ts.execute();
+        ts.execute();
+
+        int lastValue = ai.get();
+        assertEquals(initialValueA + size + size, lastValue);
+    }
+
 }
