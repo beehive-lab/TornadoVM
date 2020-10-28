@@ -12,16 +12,16 @@ The `tornado-gpu` docker image needs the docker `nvidia` daemon.  More info here
 
 ### How to run?
 
-1) Pull the image
+#### 1) Pull the image
 
-#### Using TornadoVM with OpenJDK 8 for NVIDIA GPUs:
+#### 1-A) Using TornadoVM with OpenJDK 8 for NVIDIA GPUs:
 
 ```bash
 # Docker Image for TornadoVM image and OpenJDK 8
 $ docker pull beehivelab/tornado-gpu:latest
 ```
 
-#### Using TornadoVM with GraalVM for NVIDIA GPUs:
+#### 1-B) Using TornadoVM with GraalVM for NVIDIA GPUs:
 
 ```bash
 ## GraalVM with JDK 8
@@ -31,7 +31,7 @@ $ docker pull beehivelab/tornado-gpu-graalvm-jdk8:latest
 $ docker pull beehivelab/tornado-gpu-graalvm-jdk11:latest
 ```
 
-2) Run an experiment
+#### 2) Run an experiment
 
 We provide a runner script that compiles and run your Java programs with Tornado. Here's an example:
 
@@ -80,16 +80,16 @@ The `tornado-intel-gpu` docker image Intel OpenCL driver for the integrated GPU 
 
 ### How to run?
 
-1) Pull the image
+#### 1) Pull the image
 
-#### Using TornadoVM with OpenJDK 8 for Intel Integrated GPUs:
+#### 1-A) Using TornadoVM with OpenJDK 8 for Intel Integrated GPUs:
 
 ```bash
 # Docker Image for TornadoVM image and OpenJDK 8
 $ docker pull beehivelab/tornado-intel-gpu:latest
 ```
 
-#### Using TornadoVM with GraalVM for Intel Integrated GPUs:
+#### 1-B) Using TornadoVM with GraalVM for Intel Integrated GPUs:
 
 ```bash
 ## GraalVM with JDK 8
@@ -99,7 +99,7 @@ $ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk8:latest
 $ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk11:latest
 ```
 
-2) Run an experiment
+#### 2) Run an experiment
 
 We provide a runner script that compiles and runs your Java programs with Tornado. Here's an example:
 
