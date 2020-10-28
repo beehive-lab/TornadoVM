@@ -2,7 +2,7 @@ pipeline {
     agent any
     options {
         timestamps()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 80, unit: 'MINUTES')
     }
     environment {
         JDK_8_JAVA_HOME="/opt/jenkins/openjdk1.8.0_262-jvmci-20.2-b03"
@@ -69,13 +69,13 @@ pipeline {
 }
 
 
-void buildAndTest(String JDK, String profile) {
+void buildAndTest(String JDK, String tornadoProfile) {
     echo "-------------------------"
-    echo JDK
-    echo profile
+    echo "JDK used " + JDK
+    echo "Tornado profile " + tornadoProfile
     echo "-------------------------"
     stage('Build with ' + JDK) {
-        sh "make ${profile} BACKEND=ptx,opencl"
+        sh "make ${tornadoProfile} BACKEND=ptx,opencl"
     }
     stage('PTX: Unit Tests') {
         timeout(time: 5, unit: 'MINUTES') {
