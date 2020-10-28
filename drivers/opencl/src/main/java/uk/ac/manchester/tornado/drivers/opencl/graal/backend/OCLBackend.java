@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.collections.EconomicSet;
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -262,10 +261,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         TornadoDevice device = getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-        if (!isDeviceAnFPGAAccelerator() || !isFPGA(platformName)) {
+        if (!isDeviceAnFPGAAccelerator(deviceContext) || !isFPGA(platformName)) {
             return false;
         } else {
-            return isDeviceAnFPGAAccelerator() && (isFPGA(platformName));
+            return isDeviceAnFPGAAccelerator(deviceContext) && (isFPGA(platformName));
         }
     }
 
@@ -312,7 +311,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
-            if (isDeviceAnFPGAAccelerator()) {
+            if (isDeviceAnFPGAAccelerator(deviceContext)) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
             } else {
                 lookupCode = deviceContext.installCode(result);
@@ -372,7 +371,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
-    private boolean isDeviceAnFPGAAccelerator() {
+    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
