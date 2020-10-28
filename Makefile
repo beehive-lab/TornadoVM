@@ -4,6 +4,7 @@ all: build
 # BACKEND - which backend to include in the build. Can be any combination of { opencl, ptx }. Default: opencl
 BACKEND?=opencl
 build:
+jdk-8:
 	./bin/compile.sh jdk-8 $(BACKEND)
 
 jdk-11-plus:
