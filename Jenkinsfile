@@ -152,16 +152,17 @@ void buildAndTest(String JDK, String tornadoProfile) {
     }
      stage('Clone & Build KFusion') {
         timeout(time: 5, unit: 'MINUTES') {
-            sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && git fetch && git pull origin master && mvn clean install -DskipTests'
+            sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && git reset HEAD --hard && git fetch && git pull origin master && mvn clean install -DskipTests'
         }
     }
     stage('OpenCL: Run KFusion') {
+        sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
         }
     }
     stage('PTX: Run KFusion') {
-        sleep 10
+        sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
