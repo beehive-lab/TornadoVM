@@ -81,10 +81,7 @@ pipeline {
 
 void runJDK8() {
     stage('JDK 8') {
-        environment {
-            JAVA_HOME="${JDK_8_JAVA_HOME}"
-        }
-        steps {
+        withEnv(["JAVA_HOME=${JDK_8_JAVA_HOME}"]) {
             buildAndTest("JDK 8", "jdk-8")
         }
     }
@@ -92,10 +89,7 @@ void runJDK8() {
 
 void runCorrettoJDK11() {
     stage('Corretto JDK 11') {
-        environment {
-            JAVA_HOME="${CORRETTO_11_JAVA_HOME}"
-        }
-        steps {
+        withEnv(["JAVA_HOME=${CORRETTO_11_JAVA_HOME}"])
             buildAndTest("Corretto JDK 11", "jdk-11-plus")
         }
     }
@@ -103,10 +97,7 @@ void runCorrettoJDK11() {
 
 void runGraalVM8() {
     stage('GraalVM 8') {
-        environment {
-            JAVA_HOME="${GRAALVM_8_JAVA_HOME}"
-        }
-        steps {
+        withEnv("JAVA_HOME=${GRAALVM_8_JAVA_HOME}") {
             buildAndTest("GraalVM JDK 8", "graal-jdk-8")
         }
     }
@@ -114,10 +105,7 @@ void runGraalVM8() {
 
 void runGraalVM11() {
     stage('GraalVM 11') {
-        environment {
-            JAVA_HOME="${GRAALVM_11_JAVA_HOME}"
-        }
-        steps {
+        withEnv("JAVA_HOME=${GRAALVM_11_JAVA_HOME}") {
             buildAndTest("GraalVM JDK 11", "graal-jdk-11")
         }
     }
