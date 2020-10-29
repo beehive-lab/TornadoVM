@@ -562,8 +562,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
-        } else if (node instanceof PragmaUnrollNode) {
-        } else if (node instanceof ThreadConfigurationNode) {
+        } else if (node instanceof PragmaUnrollNode || node instanceof ThreadConfigurationNode) {
+            // ignore emit-action
         } else {
             super.emitNode(node);
         }

@@ -226,10 +226,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
     }
 
-    private boolean isDeviceAnAccelerator(OCLDeviceContextInterface deviceContext) {
-        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
-    }
-
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
@@ -262,7 +258,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
             OCLInstalledCode installedCode;
-            if (isDeviceAnAccelerator(deviceContext)) {
+            if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA
                 installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), task.shouldCompile());
             } else {
