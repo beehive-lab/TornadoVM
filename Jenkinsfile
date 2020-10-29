@@ -4,6 +4,12 @@ pipeline {
         timestamps()
         timeout(time: 80, unit: 'MINUTES')
     }
+
+    parameters {
+       booleanParam(name: 'fullBuild', defaultValue: false, description: 'Perform a full test across multiple JDKS')
+       string(name: 'fullBuild_branchToBuild', defaultValue: 'develop', description: 'Branch on which to perform the full build')
+    }
+
     environment {
         JDK_8_JAVA_HOME="/opt/jenkins/openjdk1.8.0_262-jvmci-20.2-b03"
         CORRETTO_11_JAVA_HOME="/opt/jenkins/amazon-corretto-11.0.9.11.1-linux-x64"
@@ -21,41 +27,46 @@ pipeline {
                 step([$class: 'WsCleanup'])
                 checkout scm
                 sh 'git checkout master'
-                checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/TornadoVM-Internal.git']]])
+                script {
+                    def branch = '**'
+                    if (params.fullBuild == true) {
+                        branch = params.fullBuild_branchToBuild
+                    }
+                    checkout([$class: 'GitSCM', branches: [[name: "${branch}"]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/TornadoVM-Internal.git']]])
+                }
             }
         }
-        stage('JDK 8') {
-            environment {
-                JAVA_HOME="${JDK_8_JAVA_HOME}"
-            }
+
+        stage('Prepare build') {
             steps {
-                buildAndTest("JDK 8", "jdk-8")
+                script {
+                    if (params.fullBuild == true) {
+                        runJDK8()
+                        runCorrettoJDK11()
+                        runGraalVM8()
+                        runGraalVM11()
+                    } else {
+                        Random rnd = new Random()
+                        int NO_OF_JDKS = 4
+                        switch (rnd.nextInt(NO_OF_JDKS)) {
+                            case 0:
+                                runJDK8()
+                                break
+                            case 1:
+                                runCorrettoJDK11()
+                                break
+                            case 2:
+                                runGraalVM8()
+                                break
+                            case 3:
+                                runGraalVM11()
+                                break
+                        }
+                    }
+                }
             }
         }
-        stage('Corretto JDK 11') {
-            environment {
-                JAVA_HOME="${CORRETTO_11_JAVA_HOME}"
-            }
-            steps {
-                buildAndTest("Corretto JDK 11", "jdk-11-plus")
-            }
-        }
-        stage('GraalVM 8') {
-            environment {
-                JAVA_HOME="${GRAALVM_8_JAVA_HOME}"
-            }
-            steps {
-                buildAndTest("GraalVM JDK 8", "graal-jdk-8")
-            }
-        }
-        stage('GraalVM 11') {
-            environment {
-                JAVA_HOME="${GRAALVM_11_JAVA_HOME}"
-            }
-            steps {
-                buildAndTest("GraalVM JDK 11", "graal-jdk-11")
-            }
-        }
+
     }
     post {
         success {
@@ -68,6 +79,49 @@ pipeline {
     }
 }
 
+void runJDK8() {
+    stage('JDK 8') {
+        environment {
+            JAVA_HOME="${JDK_8_JAVA_HOME}"
+        }
+        steps {
+            buildAndTest("JDK 8", "jdk-8")
+        }
+    }
+}
+
+void runCorrettoJDK11() {
+    stage('Corretto JDK 11') {
+        environment {
+            JAVA_HOME="${CORRETTO_11_JAVA_HOME}"
+        }
+        steps {
+            buildAndTest("Corretto JDK 11", "jdk-11-plus")
+        }
+    }
+}
+
+void runGraalVM8() {
+    stage('GraalVM 8') {
+        environment {
+            JAVA_HOME="${GRAALVM_8_JAVA_HOME}"
+        }
+        steps {
+            buildAndTest("GraalVM JDK 8", "graal-jdk-8")
+        }
+    }
+}
+
+void runGraalVM11() {
+    stage('GraalVM 11') {
+        environment {
+            JAVA_HOME="${GRAALVM_11_JAVA_HOME}"
+        }
+        steps {
+            buildAndTest("GraalVM JDK 11", "graal-jdk-11")
+        }
+    }
+}
 
 void buildAndTest(String JDK, String tornadoProfile) {
     echo "-------------------------"
@@ -101,14 +155,6 @@ void buildAndTest(String JDK, String tornadoProfile) {
                 }
             }
         )
-    }
-    stage('OpenCL: Test GPU Reductions') {
-        timeout(time: 5, unit: 'MINUTES') {
-            sh 'tornado-test.py -V -J"-Ds0.t0.device=1:1 -Ds0.t1.device=1:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats'
-            sh 'tornado-test.py -V -J"-Ds0.t0.device=1:1 -Ds0.t1.device=1:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles'
-            sh 'tornado-test.py -V -J"-Ds0.t0.device=1:1 -Ds0.t1.device=1:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers'
-            sh 'tornado-test.py -V -J"-Ds0.t0.device=1:1 -Ds0.t1.device=1:1" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats'
-        }
     }
     stage('Benchmarks') {
         timeout(time: 10, unit: 'MINUTES') {
