@@ -97,7 +97,7 @@ void runCorrettoJDK11() {
 
 void runGraalVM8() {
     stage('GraalVM 8') {
-        withEnv("JAVA_HOME=${GRAALVM_8_JAVA_HOME}") {
+        withEnv(["JAVA_HOME=${GRAALVM_8_JAVA_HOME}"]) {
             buildAndTest("GraalVM JDK 8", "graal-jdk-8")
         }
     }
@@ -105,7 +105,7 @@ void runGraalVM8() {
 
 void runGraalVM11() {
     stage('GraalVM 11') {
-        withEnv("JAVA_HOME=${GRAALVM_11_JAVA_HOME}") {
+        withEnv(["JAVA_HOME=${GRAALVM_11_JAVA_HOME}"]) {
             buildAndTest("GraalVM JDK 11", "graal-jdk-11")
         }
     }
