@@ -330,7 +330,6 @@ public class TestAtomics extends TornadoTestBase {
 
     public static void atomic09(int[] input, AtomicInteger ai) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            // input[i] = input[i] + ai.incrementAndGet();
             input[i] = callAtomic(input, i, ai);
         }
     }
