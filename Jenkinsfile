@@ -6,7 +6,7 @@ pipeline {
     }
 
     parameters {
-       booleanParam(name: 'fullBuild', defaultValue: false, description: 'Perform a full test across multiple JDKS')
+       booleanParam(name: 'fullBuild', defaultValue: false, description: 'Perform a full test across multiple JDKs')
        string(name: 'fullBuild_branchToBuild', defaultValue: 'develop', description: 'Branch on which to perform the full build')
     }
 
@@ -161,6 +161,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         }
     }
     stage('PTX: Run KFusion') {
+        sleep 10
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
