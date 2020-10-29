@@ -89,7 +89,7 @@ void runJDK8() {
 
 void runCorrettoJDK11() {
     stage('Corretto JDK 11') {
-        withEnv(["JAVA_HOME=${CORRETTO_11_JAVA_HOME}"])
+        withEnv(["JAVA_HOME=${CORRETTO_11_JAVA_HOME}"]) {
             buildAndTest("Corretto JDK 11", "jdk-11-plus")
         }
     }
