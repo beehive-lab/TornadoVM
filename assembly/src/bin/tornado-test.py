@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# set tasbstop=4
 
 #
 # This file is part of Tornado: A heterogeneous programming framework:
@@ -102,8 +103,8 @@ __TEST_THE_WORLD__ = [
 __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
 	"uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelCPU",
-        "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
-        "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
+    "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
+    "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
 ]
 
 # ################################################################################################################

@@ -35,6 +35,7 @@ fi
 
 if [ -z "${JAVA_HOME}" ]; then
   echo "Please ensure the JAVA_HOME environment variable is set correctly"
+  exit 0
 fi
 
 function print_usage() {
@@ -95,7 +96,7 @@ function print_all_options() {
   echo -e "$COLOR_CYAN Profiler: $COLOR_NC"
   echo ""
   echo -e "\tEnable online profiler        : -Dtornado.profiler=True "
-  echo -e "\tSave profiler information   : -Dtornado.profiler=True -Dtornado.profiler.dump.dir=FILENAME.json"
+  echo -e "\tSave profiler information     : -Dtornado.profiler=True -Dtornado.profiler.dump.dir=FILENAME.json"
   echo -e "\tEnable profiler and print at the end of the execution: -Dtornado.profiler=True -Dtornado.log.profiler=True "
   echo ""
   echo -e "$COLOR_CYAN Device Heap: $COLOR_NC"
@@ -106,6 +107,10 @@ function print_all_options() {
   echo ""
   echo -e "\tLoad the FPGA configuration file: -Dtornado.fpga.conf.file=<file>"
   echo -e "\tGet a precompiled binary        : -Dtornado.precompiled.binary=<path> "
+  echo ""
+  echo -e "$COLOR_CYAN Optimizations: $COLOR_NC"
+  echo ""
+  echo -e "\tApply full inlining             : -Dtornado.compiler.fullInlining=True  (False by default)"
   echo ""
 }
 

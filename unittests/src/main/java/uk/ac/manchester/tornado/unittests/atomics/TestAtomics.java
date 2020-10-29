@@ -324,9 +324,13 @@ public class TestAtomics extends TornadoTestBase {
         return repeated;
     }
 
+    public static int callAtomic(int[] input, int i, AtomicInteger ai) {
+        return input[i] + ai.incrementAndGet();
+    }
+
     public static void atomic09(int[] input, AtomicInteger ai) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
+            input[i] = callAtomic(input, i, ai);
         }
     }
 
@@ -440,6 +444,7 @@ public class TestAtomics extends TornadoTestBase {
 
         lastValue = bi.get();
         assertEquals(initialValueB + size, lastValue);
+
     }
 
     public static void atomic13(int[] input, AtomicInteger ai) {
@@ -504,4 +509,76 @@ public class TestAtomics extends TornadoTestBase {
         lastValue = bi.get();
         assertEquals(initialValueB - size, lastValue);
     }
+
+    /**
+     * This example combines an atomic created inside the compute kernel with an
+     * atomic passed as an argument.
+     * 
+     * @param input
+     *            Input array
+     * @param ai
+     *            Atomic Integer stored in Global Memory (atomic-region)
+     */
+    public static void atomic15(int[] input, AtomicInteger ai) {
+        AtomicInteger bi = new AtomicInteger(500);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+            input[i] = input[i] + bi.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic15() {
+        // Calling multiple atomics
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValueA = 311;
+        AtomicInteger ai = new AtomicInteger(initialValueA);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic15, a, ai) //
+                .streamOut(ai, a) //
+                .execute();
+
+        int lastValue = ai.get();
+        assertEquals(initialValueA + size, lastValue);
+
+        boolean repeated = isValueRepeated(a);
+        assertTrue(!repeated);
+    }
+
+    public static void atomic16(int[] input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAtomic16() {
+        // Calling multiple atomics
+        checkForPTX();
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        final int initialValueA = 311;
+        AtomicInteger ai = new AtomicInteger(initialValueA);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(ai) //
+                .task("t0", TestAtomics::atomic16, a, ai) //
+                .streamOut(ai, a);
+
+        ts.execute();
+        ts.execute();
+
+        int lastValue = ai.get();
+        assertEquals(initialValueA + size + size, lastValue);
+    }
+
 }

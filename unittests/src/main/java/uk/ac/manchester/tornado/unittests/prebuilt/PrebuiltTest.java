@@ -67,4 +67,39 @@ public class PrebuiltTest extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void testPrebuild02() {
+
+        final int numElements = 8;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String filePath = tornadoSDK + "/examples/generated/";
+        filePath += defaultDevice.getDeviceName().contains("cuda") ? "add.ptx" : "add2.cl";
+
+        // @formatter:off
+        new TaskSchedule("s0")
+                .prebuiltTask("t0",
+                        "add",
+                        filePath,
+                        new Object[] { a, b, c },
+                        new Access[] { Access.READ, Access.READ, Access.WRITE },
+                        defaultDevice,
+                        new int[] { numElements })
+                .streamOut(c)
+                .execute();
+        // @formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i], 0.001);
+        }
+    }
+
 }

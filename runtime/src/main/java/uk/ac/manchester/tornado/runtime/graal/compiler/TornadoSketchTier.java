@@ -36,10 +36,13 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
+import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNumericPromotionPhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
@@ -65,11 +68,13 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
         appendPhase(new TornadoNumericPromotionPhase());
 
+        InliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoInliningPolicy();
+
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
-            appendPhase(new InliningPhase(new TornadoInliningPolicy(), canonicalizer));
+            appendPhase(new InliningPhase(inliningPolicy, canonicalizer));
             appendPhase(new DeadCodeEliminationPhase(Optional));
 
             if (ConditionalElimination.getValue(options)) {
