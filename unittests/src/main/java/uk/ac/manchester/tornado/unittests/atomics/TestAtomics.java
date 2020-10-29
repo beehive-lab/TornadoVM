@@ -444,6 +444,7 @@ public class TestAtomics extends TornadoTestBase {
 
         lastValue = bi.get();
         assertEquals(initialValueB + size, lastValue);
+
     }
 
     public static void atomic13(int[] input, AtomicInteger ai) {
