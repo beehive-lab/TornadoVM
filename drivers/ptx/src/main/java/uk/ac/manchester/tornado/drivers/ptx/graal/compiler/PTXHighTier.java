@@ -43,7 +43,6 @@ import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
-import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
@@ -58,6 +57,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
@@ -80,7 +80,7 @@ public class PTXHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
-            InliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoInliningPolicy();
+            TornadoInliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoPartialInliningPolicy();
             appendPhase(new InliningPhase(inliningPolicy, canonicalizer));
             appendPhase(new DeadCodeEliminationPhase(Optional));
             if (ConditionalElimination.getValue(options)) {
