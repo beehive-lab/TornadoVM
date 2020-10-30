@@ -25,88 +25,24 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAtomics extends TornadoTestBase {
 
     /**
-     * This test is just an example. This approach is not supported in TornadoVM.
-     * 
-     * @param a
-     *            input array
-     * @param sum
-     *            initial value to sum
-     */
-    private static void atomic01(@Atomic int[] a, int sum) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            sum += a[i];
-        }
-        a[0] = sum;
-    }
-
-    @Ignore
-    public void testAtomic() {
-        final int size = 10;
-
-        int[] a = new int[size];
-        int sum = 0;
-
-        Arrays.fill(a, 1);
-
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestAtomics::atomic01, a, sum)
-                .streamOut(a)
-                .execute();
-        //@formatter:on
-    }
-
-    // Failed code that should end-up in a race condition
-    public static void atomic02(int[] a) {
-        final int SIZE = 100;
-        for (@Parallel int i = 0; i < a.length; i++) {
-            int j = i % SIZE;
-            a[j] = a[j] + 1;
-        }
-    }
-
-    @Ignore
-    public void testAtomic02() {
-        final int size = 1024;
-        int[] a = new int[size];
-        int[] b = new int[size];
-
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 1);
-
-        new TaskSchedule("s0") //
-                .task("t0", TestAtomics::atomic02, a) //
-                .streamOut(a) //
-                .execute();
-
-        atomic02(b);
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(b[i], a[i]);
-        }
-    }
-
-    /**
      * Approach using a compiler-instrinsic in TornadoVM.
      * 
      * @param a
-     *            input array
+     *            Input array. It stores the addition with an atomic variable.
      */
     public static void atomic03(int[] a) {
         final int SIZE = 100;
@@ -145,7 +81,7 @@ public class TestAtomics extends TornadoTestBase {
      *            input array
      */
     public static void atomic04(int[] input) {
-        TornadoAtomicInteger tai = new TornadoAtomicInteger(200);
+        AtomicInteger tai = new AtomicInteger(200);
         for (@Parallel int i = 0; i < input.length; i++) {
             input[i] = tai.incrementAndGet();
         }
@@ -219,8 +155,8 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     public static void atomic06(int[] a, int[] b) {
-        TornadoAtomicInteger taiA = new TornadoAtomicInteger(200);
-        TornadoAtomicInteger taiB = new TornadoAtomicInteger(100);
+        AtomicInteger taiA = new AtomicInteger(200);
+        AtomicInteger taiB = new AtomicInteger(100);
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = taiA.incrementAndGet();
             b[i] = taiB.incrementAndGet();

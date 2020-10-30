@@ -33,7 +33,6 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
@@ -109,7 +108,6 @@ public enum OCLKind implements PlatformKind {
     DOUBLE16(16, null, DOUBLE),
     ILLEGAL(0, null),
     
-    INTEGER_ATOMIC(4, uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger.TYPE),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
 
@@ -453,8 +451,6 @@ public enum OCLKind implements PlatformKind {
                     return JavaKind.Float;
                 case DOUBLE:
                     return JavaKind.Double;
-                case INTEGER_ATOMIC:
-                    return JavaKind.fromJavaClass(TornadoAtomicInteger.TYPE);
                 default:
                     shouldNotReachHere();
             }
