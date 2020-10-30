@@ -43,8 +43,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNumericPromotionPhase;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
@@ -68,7 +68,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
         appendPhase(new TornadoNumericPromotionPhase());
 
-        InliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoInliningPolicy();
+        InliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoPartialInliningPolicy();
 
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
         appendPhase(canonicalizer);

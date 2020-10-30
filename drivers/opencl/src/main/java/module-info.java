@@ -27,5 +27,4 @@ module tornado.drivers.opencl {
 
     provides uk.ac.manchester.tornado.runtime.TornadoDriverProvider with
             uk.ac.manchester.tornado.drivers.opencl.OCLTornadoDriverProvider;
-
 }
