@@ -90,6 +90,7 @@ public class TornadoSketcher {
             return sketchFuture;
         }
     }
+
     private static final AtomicInteger sketchId = new AtomicInteger(0);
 
     private static final Map<ResolvedJavaMethod, List<TornadoSketcherCacheEntry>> cache = new ConcurrentHashMap<>();

@@ -31,6 +31,8 @@ import java.util.List;
 
 public abstract class AbstractNode implements Comparable<AbstractNode> {
 
+    protected int index;
+
     protected int id;
 
     protected final List<AbstractNode> uses;
@@ -52,6 +54,10 @@ public abstract class AbstractNode implements Comparable<AbstractNode> {
         if (!uses.contains(use)) {
             uses.add(use);
         }
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     @Override

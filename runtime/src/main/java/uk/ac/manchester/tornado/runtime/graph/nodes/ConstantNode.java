@@ -26,14 +26,9 @@
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
 public class ConstantNode extends AbstractNode {
-    private int index;
 
     public ConstantNode(int index) {
         this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     @Override

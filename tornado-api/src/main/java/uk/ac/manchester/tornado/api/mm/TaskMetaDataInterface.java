@@ -68,7 +68,7 @@ public interface TaskMetaDataInterface {
 
     void setCompiledGraph(Object graph);
 
-    Object getCompiledGraph();
+    Object getCompiledResolvedJavaMethod();
 
     int getDriverIndex();
 
