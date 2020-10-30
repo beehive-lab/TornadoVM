@@ -158,14 +158,14 @@ void buildAndTest(String JDK, String tornadoProfile) {
     stage('OpenCL: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
-            sh 'ps -ef | grep $JAVA_HOME | grep -v grep | awk '{print $2}' | xargs -r kill -9'
+            sh 'ps -ef | grep $JAVA_HOME | grep -v grep | awk \'{print $2}\' | xargs -r kill -9'
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
         }
     }
     stage('PTX: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
-            sh 'ps -ef | grep $JAVA_HOME | grep -v grep | awk '{print $2}' | xargs -r kill -9'
+            sh 'ps -ef | grep $JAVA_HOME | grep -v grep | awk \'{print $2}\' | xargs -r kill -9'
             sh "cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
         }
