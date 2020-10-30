@@ -106,6 +106,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
 	"uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12"
+	"uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15"
 ]
 
 # ################################################################################################################
