@@ -159,6 +159,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh 'ps -ef | grep $JAVA_HOME | grep -v grep | awk \'{print $2}\' | xargs -r kill -9'
+            sh "cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && sed -i 's/kfusion.tornado.platform=0/kfusion.tornado.platform=1/' conf/traj2.settings"
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
         }
     }
@@ -167,6 +168,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         timeout(time: 5, unit: 'MINUTES') {
             sh 'ps -ef | grep $JAVA_HOME | grep -v grep | awk \'{print $2}\' | xargs -r kill -9'
             sh "cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
+            sh "cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && sed -i 's/kfusion.tornado.platform=1/kfusion.tornado.platform=0/' conf/traj2.settings"
             sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/traj2.settings'
         }
     }
