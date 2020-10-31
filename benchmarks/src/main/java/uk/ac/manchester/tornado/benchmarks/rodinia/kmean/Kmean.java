@@ -21,7 +21,6 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.benchmarks.rodinia.kmean.DataLoader.KmeansData;
 
 public class Kmean {
@@ -54,7 +53,6 @@ public class Kmean {
 
     public final class IntResult {
 
-        @Atomic
         public int value;
 
         public IntResult() {

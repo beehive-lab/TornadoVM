@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -34,27 +33,22 @@ import java.util.List;
 import java.util.Map;
 
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.loop.InductionVariable;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
-import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
 import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
-import uk.ac.manchester.tornado.runtime.graal.nodes.AtomicAccessNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
@@ -63,37 +57,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        replaceParameterAnnotations(graph);
         replaceLocalAnnotations(graph, context);
-    }
-
-    private void replaceParameterAnnotations(StructuredGraph graph) {
-        final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
-
-        for (int i = 0; i < parameterAnnotations.length; i++) {
-            for (Annotation an : parameterAnnotations[i]) {
-                if (an instanceof Atomic) {
-                    final ParameterNode param = graph.getParameter(i);
-                    final AtomicAccessNode atomicAccess = graph.addOrUnique(new AtomicAccessNode(param));
-                    // param.replaceAtMatchingUsages(atomicAccess, usage ->
-                    // usage instanceof StoreIndexedNode);
-
-                    // Partial solution to create an atomic node.
-                    // TODO: replace for an ATOMIC_ADD node etc, depending on
-                    // the operation.
-                    NodeIterable<Node> usages = param.usages();
-                    for (Node n : usages) {
-                        if (n instanceof ValuePhiNode) {
-                            param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof ValuePhiNode);
-                            break;
-                        } else if (n instanceof StoreIndexedNode) {
-                            param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof StoreIndexedNode);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /*
