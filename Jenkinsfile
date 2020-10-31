@@ -167,7 +167,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             // TODO Remove the single backend build once the slambench compilation failure is fixed.
-            sh "cd ${TORNADO_ROOT} make ${tornadoProfile} BACKEND=ptx"
+            sh "cd ${TORNADO_ROOT} && make ${tornadoProfile} BACKEND=ptx"
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
             sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
         }
