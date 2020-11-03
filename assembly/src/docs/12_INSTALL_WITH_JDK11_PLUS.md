@@ -1,57 +1,50 @@
-# Installing TornadoVM with GraalVM 20.2.0
+# Installing TornadoVM with JDK 11+
 
 **Pre-requisites**
 
   * Maven Version 3.6.3
   * CMake 3.6 (or newer)
-  * At least one of:
+  * At least one of:   
     * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
     * CUDA 9.0 +
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python (>= 2.7)
 
+
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
+  ###### DISCLAIMER:
+  TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs.
+  Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
-#### 1 Download GraalVM Community Edition 20.2.0
+  ```
+  Red Hat Mandrel 11.0.9
+  Amazon Coretto 11.0.9
+  GraalVM LabsJDK 11.0.8
+  OpenJDK 11.0.8
+  OpenJDK 12.0.2
+  OpenJDK 13.0.2
+  OpenJDK 14.0.2
+  ```
 
-GraalVM 20.2.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0).
 
-The examples below show how to download and extract GraalVM based on JDK 8 and 11 for Linux.
+### 1. Download a JDK 11+ distribution
+OpenJDK distributions are available to download at [https://adoptopenjdk.net/releases.html](https://adoptopenjdk.net/releases.html).<br/>
+Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
+Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).
 
-* Example for GraalVM based on JDK 8:
+After downloading and extracting the JDK distribution, point your JAVA_HOME variable to the JDK root.
+
+Example:
 ```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java8-linux-amd64-20.2.0.tar.gz
-$ tar -xf graalvm-ce-java8-linux-amd64-20.2.0.tar.gz
+ $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
+ $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.9.11.1-linux-x64
 ```
-* Example for GraalVM based on JDK 11:
-```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java11-linux-amd64-20.2.0.tar.gz
-$ tar -xf graalvm-ce-java11-linux-amd64-20.2.0.tar.gz
-```
-
-The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-20.2.0` directory. This directory is used as the JAVA_HOME (See step 2).
-
-
-For OSX:
-
-* Example for GraalVM based on JDK 8:
-```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java8-darwin-amd64-20.2.0.tar.gz
-```
-
-* Example for GraalVM based on JDK 11:
-```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java11-darwin-amd64-20.2.0.tar.gz
-```
-
-then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice.
-
 
 ### 2. Download TornadoVM
 
 ```bash
- $ cd ..
  $ git clone https://github.com/beehive-lab/TornadoVM tornadovm
  $ cd tornadovm
 ```
@@ -65,7 +58,7 @@ The first time you need to create the `etc/sources.env` file and add the followi
 
 ```bash
 #!/bin/bash
-export JAVA_HOME=<path to GraalVM 20.2.0 jdk> ## This path is produced in Step 1
+export JAVA_HOME=<path to JDK11+> ## This path is produced in Step 1
 export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
 export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -129,22 +122,16 @@ $ cd ~/tornadovm
 $ . etc/sources.env
 ```
 
-To build with GraalVM and JDK 8
+To build with a distribution of JDK 11+
 
 ```bash
-$ make graal-jdk-8 BACKEND={ptx,opencl}
-```
-
-To build with GraalVM and JDK 11:
-
-```bash
-$ make graal-jdk-11 BACKEND={ptx,opencl}
+$ make jdk-11-plus BACKEND={ptx,opencl}
 ```
 
 and done!!
 
 
-## Running with Graal JDK 11
+## Running with JDK 11+
 
 
 TornadoVM uses modules:
