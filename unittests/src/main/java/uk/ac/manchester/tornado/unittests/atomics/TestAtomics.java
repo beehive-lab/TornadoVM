@@ -18,7 +18,16 @@
 
 package uk.ac.manchester.tornado.unittests.atomics;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -27,14 +36,6 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class TestAtomics extends TornadoTestBase {
 
@@ -511,7 +512,9 @@ public class TestAtomics extends TornadoTestBase {
                 .streamOut(ai, a);
 
         final int iterations = 50;
-        IntStream.range(0, iterations).forEach(i -> ts.execute());
+        IntStream.range(0, iterations).forEach(i -> {
+            ts.execute();
+        });
 
         int lastValue = ai.get();
         assertEquals(initialValueA + (iterations * size), lastValue);
