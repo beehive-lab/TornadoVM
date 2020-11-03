@@ -15,7 +15,7 @@
 
   ###### DISCLAIMER:
   TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs.
-  Below are listed Java 11+ JDK distributions against which TornadoVM has been tested, but do not guarantee compatibility.
+  Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```
   Red Hat Mandrel 11.0.9

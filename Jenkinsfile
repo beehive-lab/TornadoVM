@@ -7,7 +7,7 @@ pipeline {
 
     parameters {
        booleanParam(name: 'fullBuild', defaultValue: false, description: 'Perform a full test across multiple JDKs')
-       string(name: 'fullBuild_branchToBuild', defaultValue: 'develop', description: 'Branch on which to perform the full build')
+       string(name: 'fullBuild_branchToBuild', defaultValue: '**', description: 'Branch on which to perform the full build')
     }
 
     environment {
@@ -27,13 +27,7 @@ pipeline {
                 step([$class: 'WsCleanup'])
                 checkout scm
                 sh 'git checkout master'
-                script {
-                    def branch = '**'
-                    if (params.fullBuild == true) {
-                        branch = params.fullBuild_branchToBuild
-                    }
-                    checkout([$class: 'GitSCM', branches: [[name: "${branch}"]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/TornadoVM-Internal.git']]])
-                }
+                checkout([$class: 'GitSCM', branches: [[name: "${params.fullBuild_branchToBuild}"]], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/TornadoVM-Internal.git']]])
             }
         }
 
