@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -510,11 +511,13 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic16, a, ai) //
                 .streamOut(ai, a);
 
-        ts.execute();
-        ts.execute();
+        final int iterations = 50;
+        IntStream.range(0, iterations).forEach(i -> {
+            ts.execute();
+        });
 
         int lastValue = ai.get();
-        assertEquals(initialValueA + size + size, lastValue);
+        assertEquals(initialValueA + (iterations * size), lastValue);
     }
 
 }
