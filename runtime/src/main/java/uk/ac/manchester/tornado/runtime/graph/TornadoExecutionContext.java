@@ -114,14 +114,6 @@ public class TornadoExecutionContext {
         return taskID;
     }
 
-    public void incrGlobalTaskCount() {
-        nextTask++;
-    }
-
-    public int hasTask(SchedulableTask task) {
-        return tasks.indexOf(task);
-    }
-
     public int addTask(SchedulableTask task) {
         int index = tasks.indexOf(task);
         if (index == -1) {
