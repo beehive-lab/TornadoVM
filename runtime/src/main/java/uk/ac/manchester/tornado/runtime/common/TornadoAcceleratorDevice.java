@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 
 public interface TornadoAcceleratorDevice extends TornadoDevice {
 
@@ -34,7 +35,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     CallStack createStack(int numArgs);
 
-    DeviceBuffer createBuffer(int[] buffer);
+    ObjectBuffer createBuffer(int[] buffer);
+
+    ObjectBuffer createOrReuseBuffer(int[] arr);
 
     TornadoInstalledCode installCode(SchedulableTask task);
 
@@ -44,10 +47,20 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     int[] checkAtomicsForTask(SchedulableTask task);
 
+    int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value);
+
+    int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState);
+
+    int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex);
+
+    boolean checkAtomicsParametersForTask(SchedulableTask task);
+
     /**
-     * In CUDA the context is not attached to the whole process, but to individual threads
-     * Therefore, in the case of new threads executing a task schedule, we must make sure that the context is set for that thread.
+     * In CUDA the context is not attached to the whole process, but to individual
+     * threads Therefore, in the case of new threads executing a task schedule, we
+     * must make sure that the context is set for that thread.
      */
     void enableThreadSharing();
 
+    void setAtomicRegion(ObjectBuffer bufferAtomics);
 }

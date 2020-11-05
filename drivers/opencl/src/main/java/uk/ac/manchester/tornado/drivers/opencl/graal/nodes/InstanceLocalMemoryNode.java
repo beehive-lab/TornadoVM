@@ -32,7 +32,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class InstanceLocalMemoryNode extends FixedWithNextNode implements LIRLowerable, MemoryNode {
+public class InstanceLocalMemoryNode extends FixedWithNextNode implements LIRLowerable, MemoryKill {
 
     public static final NodeClass<InstanceLocalMemoryNode> TYPE = NodeClass.create(InstanceLocalMemoryNode.class);
 

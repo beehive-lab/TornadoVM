@@ -25,7 +25,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
-public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, MemoryNode {
+public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, MemoryKill {
 
     public static final NodeClass<PTXBarrierNode> TYPE = NodeClass.create(PTXBarrierNode.class);
 

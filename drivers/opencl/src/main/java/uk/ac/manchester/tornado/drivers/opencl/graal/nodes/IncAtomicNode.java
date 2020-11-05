@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo(shortName = "INCREMENT_ATOMIC")
-public class IncAtomicNode extends ValueNode implements LIRLowerable {
+public class IncAtomicNode extends NodeAtomic implements LIRLowerable {
 
     public static final NodeClass<IncAtomicNode> TYPE = NodeClass.create(IncAtomicNode.class);
 
@@ -48,6 +48,11 @@ public class IncAtomicNode extends ValueNode implements LIRLowerable {
     public IncAtomicNode(ValueNode atomicValue) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.atomicNode = atomicValue;
+    }
+
+    @Override
+    public ValueNode getAtomicNode() {
+        return this.atomicNode;
     }
 
     private void generateExpressionForOpenCL2_0(NodeLIRBuilderTool generator) {

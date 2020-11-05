@@ -981,7 +981,12 @@ public class ReduceGPUSnippets implements Snippets {
 
             SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
 
-            Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
+            // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
+            // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
+            // This is needed because we have nodes in the snippet which have multiple side
+            // effects and this is not allowed (see
+            // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
+            Arguments args = new Arguments(snippet, StructuredGraph.GuardsStage.AFTER_FSA, tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
@@ -989,7 +994,8 @@ public class ReduceGPUSnippets implements Snippets {
                 args.add("value", extra);
             }
 
-            template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+            SnippetTemplate template = template(storeAtomicIndexed, args);
+            template.instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

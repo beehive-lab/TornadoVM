@@ -72,14 +72,16 @@ public class TornadoVMGraphCompiler {
      * Generate TornadoVM byte-code from a Tornado Task Graph.
      * 
      * @param graph
+     *            TornadoVM execution Graph.
      * @param context
+     *            TornadoVM execution context.
+     * @param batchSize
+     *            Batch size
      * @return {@link TornadoVMGraphCompilationResult}
      */
     public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
-            final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
-            int deviceIndex = contextNode.getDeviceIndex();
             return compileSingleContext(graph, context, batchSize);
         } else {
             throw new TornadoRuntimeException("Multiple-Contexts are not currently supported");

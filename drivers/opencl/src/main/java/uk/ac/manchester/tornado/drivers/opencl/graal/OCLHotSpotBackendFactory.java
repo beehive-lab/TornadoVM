@@ -30,8 +30,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 
 import java.util.Collections;
 
-import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
-import org.graalvm.compiler.hotspot.meta.HotSpotGCProvider;
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -47,9 +46,11 @@ import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
+import org.graalvm.compiler.word.WordTypes;
+import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
+import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
+import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
@@ -57,6 +58,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBu
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLAddressLowering;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
@@ -72,12 +75,10 @@ public class OCLHotSpotBackendFactory {
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
-    public static OCLBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
+    public static OCLBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, OCLExecutionEnvironment tornadoContext, OCLTargetDevice device) {
         JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmciBackend.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmciBackend.getConstantReflection();
-        HotSpotGraalCompiler hotSpotGraalCompiler = ((HotSpotGraalCompiler) jvmciRuntime.getCompiler());
-        HotSpotGCProvider hotSpotGCProvider = new HotSpotGCProvider(hotSpotGraalCompiler.getGraalRuntime().getVMConfig());
 
         OCLKind wordKind = OCLKind.ILLEGAL;
         switch (device.getWordSize()) {
@@ -93,9 +94,9 @@ public class OCLHotSpotBackendFactory {
         }
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
-        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDeviceDoubleFPConfig() != 0, device.getDeviceExtensions());
+        OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
-        OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
+        OCLDeviceContextInterface oclDeviceContextImpl = tornadoContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
         OCLLoweringProvider lowerer;
@@ -103,8 +104,11 @@ public class OCLHotSpotBackendFactory {
         Plugins plugins;
 
         try (InitTimer t = timer("create providers")) {
-            lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, hotSpotGCProvider);
+            TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
+            MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
+            lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
+            WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
+            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
@@ -112,15 +116,14 @@ public class OCLHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new OCLSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new OCLSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites,
-                    hotSpotGCProvider);
+            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites, platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            return new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
+            return new OCLBackend(options, providers, target, codeCache, tornadoContext, oclDeviceContextImpl);
         }
     }
 
@@ -131,7 +134,7 @@ public class OCLHotSpotBackendFactory {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, true, false);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, false, false, false);
         OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

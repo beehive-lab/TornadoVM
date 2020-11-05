@@ -55,10 +55,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelSched
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoThreadScheduler;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
@@ -81,7 +84,8 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
-            appendPhase(new InliningPhase(new TornadoInliningPolicy(), canonicalizer));
+            TornadoInliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoPartialInliningPolicy();
+            appendPhase(new InliningPhase(inliningPolicy, canonicalizer));
             appendPhase(new DeadCodeEliminationPhase(Optional));
             if (ConditionalElimination.getValue(options)) {
                 appendPhase(canonicalizer);

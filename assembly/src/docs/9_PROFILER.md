@@ -62,12 +62,11 @@ When the task-schedule is executed multiple times, timers related to compilation
 
 ### Print timers at the end of the execution
 
-The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full report only when the method `ts.getProfileLog` is called.
-
+The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full report only when the method `ts.getProfileLog()` is called.
 
 ### Save profiler into a file
 
-Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dumps.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. profiler-log.json).
+Use the option `-Dtornado.profiler=True` `-Dtornado.profiler.dump.dir=FILENAME`.  `FILENAME` can contain the filename and the full path (e.g. profiler-log.json).
 
 ### Parsing Json files
 
@@ -205,8 +204,16 @@ $ cat tornado-features.json
 ```
 ### Save features into a file
 
-Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=FILENAME`.  `FILENAME` can contain the finename and the full path (e.g. features.json).
+Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=FILENAME`.  `FILENAME` can contain the filename and the full path (e.g. features.json).
 
 ### Send log over a socket.
 
-Use the option `-Dtornado.dump.to.ip=IP:PORT`.  
+TornadoVM allows redirecting profiling and feature extraction logs to a specific port. This feature can be enabled with the option `-Dtornado.dump.to.ip=IP:PORT`.  
+The following example redirects the profiler output to the localhost (127.0.0.1) and to a specified open port (2000):
+```bash
+$ tornado -Dtornado.profiler=True  -Dtornado.dump.to.ip=127.0.0.1:2000 uk.ac.manchester.tornado.examples.VectorAddInt 100000
+```
+To test that the socket streams the logs correctly, open a local server in a different terminal with the following command:
+```bash
+$ ncat -k -l 2000
+```

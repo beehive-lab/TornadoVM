@@ -73,8 +73,8 @@ public class PTXWriteNode extends AbstractWriteNode implements LIRLowerableAcces
     }
 
     @Override
-    public Stamp getAccessStamp() {
-        return value().stamp(NodeView.DEFAULT);
+    public Stamp getAccessStamp(NodeView view) {
+        return value().stamp(view);
     }
 
     @Override

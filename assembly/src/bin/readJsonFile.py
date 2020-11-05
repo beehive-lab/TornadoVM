@@ -72,22 +72,22 @@ class TornadoVMJsonReader:
 
     def processBlock0(self, data, taskScheduleName, index):
         ## For the Block 0 we can get compilation times
-        print Colors.BLUE + "Entry,0 " + Colors.RESET
+        print(Colors.BLUE + "Entry,0 " + Colors.RESET)
         entryNumber = str(index)
         entriesBlock0 = data[entryNumber][taskScheduleName].keys()
         for e in entriesBlock0:
             value = data[entryNumber][taskScheduleName][e]
             if type(value) is not dict:
-                print e + "," + str(value)
+                print(e + "," + str(value))
                 self.addToList(e, value)
             else:
                 keys = data[entryNumber][taskScheduleName][e].keys()
-                print "TaskName, " + e
+                print("TaskName, " + e)
                 for e2 in keys:
                     v = data[entryNumber][taskScheduleName][e][e2]
-                    print e2 + "," + str(v)
+                    print(e2 + "," + str(v))
                     self.addToList(e + "-" + e2, v)
-        print Colors.BLUE + "EndEntry,0" + Colors.RESET
+        print(Colors.BLUE + "EndEntry,0" + Colors.RESET)
 
 
     def traverseBlocks(self, data, taskScheduleName, index):
@@ -111,8 +111,8 @@ class TornadoVMJsonReader:
 
         keys = data.keys()
         numEntries = len(keys)
-        print "Num entries = " + str(numEntries)
-        taskScheduleName = data["0"].keys()[0]
+        print("Num entries = " + str(numEntries))
+        taskScheduleName = list(data["0"].keys())[0]
 
         #Print block 0 and prepare the lists
         self.processBlock0(data, taskScheduleName, 0) 
@@ -129,17 +129,17 @@ class TornadoVMJsonReader:
             mean[k]    = np.mean(self.timers[k])
 
         ## Print csv table with the median for the rest
-        print Colors.GREEN + "MEDIANS" + Colors.RESET
+        print(Colors.GREEN + "MEDIANS" + Colors.RESET)
         for k in medians.keys():
-            print k + "," + str(medians[k])
+            print(k + "," + str(medians[k]))
 
-        print Colors.GREEN + "------" + Colors.RESET
+        print(Colors.GREEN + "------" + Colors.RESET)
 
 if __name__ == "__main__":
-    print sys.argv
+    print(sys.argv)
     if (len(sys.argv) == 2):
-        print "Processing file: " + sys.argv[1]
+        print("Processing file: " + sys.argv[1])
         jsonReader = TornadoVMJsonReader()
         jsonReader.readJsonFile(sys.argv[1])
     else:
-        print "Usage: ./readJsonFile.py <inputFile.json>"
+        print("Usage: ./readJsonFile.py <inputFile.json>")

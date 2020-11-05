@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -66,7 +67,7 @@ public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {
     }
 
     @Override
-    public Stamp getAccessStamp() {
+    public Stamp getAccessStamp(NodeView view) {
         unimplemented("AtomicWriteNode::getAccessStamp not implemented");
         return null;
     }

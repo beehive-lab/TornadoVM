@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.lang.reflect.Method;
@@ -44,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.collections.EconomicSet;
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -85,7 +85,12 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.drivers.opencl.*;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
@@ -111,9 +116,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBui
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -132,8 +138,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
-    final OCLContext openCLContext;
-    final OCLDeviceContext deviceContext;
+    final OCLExecutionEnvironment tornadoContext;
+    final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
 
@@ -145,12 +151,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
-    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
+    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLExecutionEnvironment openclContext,
+            OCLDeviceContextInterface deviceContext) {
         super(providers);
         this.options = options;
         this.target = target;
         this.codeCache = codeCache;
-        this.openCLContext = openclContext;
+        this.tornadoContext = openclContext;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
@@ -161,10 +168,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 isFPGAInit = true;
             }
         }
-    }
-
-    public SnippetReflectionProvider getSnippetReflection() {
-        return ((OCLProviders) this.getProviders()).getSnippetReflection();
     }
 
     @Override
@@ -226,7 +229,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
         Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
-        deviceContext.getMemoryManager().allocateRegion(memorySize);
+        deviceContext.getMemoryManager().allocateDeviceMemoryRegions(memorySize);
     }
 
     private String getDriverAndDevice(TaskMetaData task, int[] deviceInfo) {
@@ -242,8 +245,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDeviceCount();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
-            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
-            OCLDevice dev = device.getDevice();
+            TornadoAcceleratorDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
+            OCLTargetDevice dev = (OCLTargetDevice) device.getDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }
@@ -258,10 +261,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         TornadoDevice device = getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-        if (!isDeviceAnFPGAAccelerator() || !isFPGA(platformName)) {
+        if (!isDeviceAnFPGAAccelerator(deviceContext) || !isFPGA(platformName)) {
             return false;
         } else {
-            return isDeviceAnFPGAAccelerator() && (isFPGA(platformName));
+            return isDeviceAnFPGAAccelerator(deviceContext) && (isFPGA(platformName));
         }
     }
 
@@ -302,9 +305,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
 
+            if (VIRTUAL_DEVICE_ENABLED) {
+                RuntimeUtilities.maybePrintSource(result.getTargetCode());
+            }
+
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
-            if (isDeviceAnFPGAAccelerator()) {
+            if (isDeviceAnFPGAAccelerator(deviceContext)) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
             } else {
                 lookupCode = deviceContext.installCode(result);
@@ -364,11 +371,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
-    private boolean isDeviceAnFPGAAccelerator() {
+    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
     public void init() {
+        if (VIRTUAL_DEVICE_ENABLED) {
+            compileLookupBufferKernel();
+            backEndInitialized = true;
+            return;
+        }
+
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = compileLookupBufferKernel();
         if (isLookupCodeAvailable()) {
@@ -378,7 +391,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         backEndInitialized = true;
     }
 
-    public OCLDeviceContext getDeviceContext() {
+    public OCLDeviceContextInterface getDeviceContext() {
         return deviceContext;
     }
 

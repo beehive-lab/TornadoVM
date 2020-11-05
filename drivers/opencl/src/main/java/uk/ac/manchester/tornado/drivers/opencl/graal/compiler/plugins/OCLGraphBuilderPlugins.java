@@ -163,15 +163,10 @@ public class OCLGraphBuilderPlugins {
             }
         });
 
-        Class<?> declaringClass = OCLKind.INTEGER_ATOMIC.getJavaClass();
-        Registration r1 = new Registration(plugins, declaringClass);
+        Class<?> declaringClass = java.util.concurrent.atomic.AtomicInteger.class;
         JavaKind returnedJavaKind = OCLKind.INT.asJavaKind();
-
+        Registration r1 = new Registration(plugins, declaringClass);
         registerAtomicCall(r1, returnedJavaKind);
-
-        declaringClass = java.util.concurrent.atomic.AtomicInteger.class;
-        Registration r2 = new Registration(plugins, declaringClass);
-        registerAtomicCall(r2, returnedJavaKind);
     }
 
     private static TornadoAtomicIntegerNode resolveReceiverAtomic(ValueNode thisObject) {

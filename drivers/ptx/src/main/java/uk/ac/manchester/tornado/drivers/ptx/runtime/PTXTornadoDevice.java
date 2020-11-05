@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -70,7 +71,7 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -115,14 +116,39 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public DeviceBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createBuffer(int[] arr) {
         throw new TornadoRuntimeException("[PTX] Atomics not implemented !");
+    }
+
+    @Override
+    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+        return null;
     }
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
         Tornado.debug("[PTX] Atomics not implemented ! Returning null");
         return null;
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
+        return null;
+    }
+
+    @Override
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+        return null;
+    }
+
+    @Override
+    public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
+        return -1;
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return false;
     }
 
     @Override
@@ -260,7 +286,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         final Class<?> type = object.getClass();
         if (!type.isArray()) {
             checkBatchSize(batchSize);
-            buffer.write(object);
         }
 
         state.setValid(true);
@@ -611,6 +636,16 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
     }
 
+    @Override
+    public Object getAtomic() {
+        return null;
+    }
+
+    @Override
+    public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
+
+    }
+
     /**
      * In CUDA the context is not attached to the whole process, but to individual
      * threads Therefore, in the case of new threads executing a task schedule, we
@@ -619,6 +654,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public void enableThreadSharing() {
         device.getPTXContext().enablePTXContext();
+    }
+
+    @Override
+    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+
     }
 
     @Override

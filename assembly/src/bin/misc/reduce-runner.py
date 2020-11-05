@@ -30,7 +30,7 @@ import os
 __OPTIONS__ = " -Dtornado.opencl.timer.kernel=True " 
 
 command_base_mult = "tornado " + __OPTIONS__ + " uk.ac.manchester.tornado.examples.reductions.ReductionMultiplyFloats "
-command_base_sum =  "tornado " + __OPTIONS__ + " uk.ac.manchester.tornado.examples.reductions.ReductionSumFloats "
+command_base_sum =  "tornado " + __OPTIONS__ + " uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats "
 
 size = 4096
 
@@ -40,19 +40,19 @@ for i in range(0,15):
 	sizes.append(size)
 	size = size * 2
 
-print sizes
+print(sizes)
 
 ## Run MULT Version
-print "MULT\n"
+print("MULT\n")
 for i in sizes:
 	command = command_base_mult + str(i)
-	print command
+	print(command)
 	os.system(command)
 
 ## Run SUM version
-print "SUM\n"
+print("SUM\n")
 for i in sizes:
 	command = command_base_sum + str(i)
-	print command
+	print(command)
 	os.system(command)
 

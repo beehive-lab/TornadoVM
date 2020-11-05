@@ -153,6 +153,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             if (wrappedField != null) {
                 wrappedFields[index] = new FieldBuffer(reflectedField, wrappedField);
             }
+
             index++;
         }
 

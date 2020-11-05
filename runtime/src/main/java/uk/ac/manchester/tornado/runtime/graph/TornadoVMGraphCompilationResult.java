@@ -27,7 +27,15 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
-import uk.ac.manchester.tornado.runtime.graph.nodes.*;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
 public class TornadoVMGraphCompilationResult {
 
@@ -88,7 +96,7 @@ public class TornadoVMGraphCompilationResult {
         for (int i = 0; i < numArgs; i++) {
             final AbstractNode argNode = taskNode.getArg(i);
             if (argNode instanceof ConstantNode) {
-                bitcodeASM.constantArg(((ConstantNode) argNode).getIndex());
+                bitcodeASM.constantArg(argNode.getIndex());
             } else if (argNode instanceof CopyInNode) {
                 bitcodeASM.referenceArg(((CopyInNode) argNode).getValue().getIndex());
             } else if (argNode instanceof StreamInNode) {

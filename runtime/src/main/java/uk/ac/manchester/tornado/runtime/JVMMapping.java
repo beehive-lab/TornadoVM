@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -33,10 +34,11 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
@@ -130,7 +132,12 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public DeviceBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createBuffer(int[] arr) {
+        return null;
+    }
+
+    @Override
+    public ObjectBuffer createOrReuseBuffer(int[] arr) {
         return null;
     }
 
@@ -210,8 +217,33 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
+        return null;
+    }
+
+    @Override
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
+        return null;
+    }
+
+    @Override
+    public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
+        return -1;
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return false;
+    }
+
+    @Override
     public void enableThreadSharing() {
         TornadoInternalError.unimplemented();
+    }
+
+    @Override
+    public void setAtomicRegion(ObjectBuffer bufferAtomics) {
+
     }
 
     @Override
@@ -247,6 +279,16 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public int getDriverIndex() {
         return 0;
+    }
+
+    @Override
+    public Object getAtomic() {
+        return null;
+    }
+
+    @Override
+    public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
+
     }
 
 }

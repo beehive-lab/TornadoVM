@@ -62,13 +62,13 @@ def createOneJsonFile(inputFileName, outputFileName="output.json"):
         json.dump(jsonContent, outfile)
     
 if __name__ == "__main__":
-    print sys.argv
+    print(sys.argv)
     if (len(sys.argv) == 2):
-        print "Processing file: " + sys.argv[1]
+        print("Processing file: " + sys.argv[1])
         createOneJsonFile(sys.argv[1])
     elif (len(sys.argv) == 3):
-        print "Processing file: " + sys.argv[1] + ", outputFile: " + sys.argv[2]
+        print("Processing file: " + sys.argv[1] + ", outputFile: " + sys.argv[2])
         createOneJsonFile(sys.argv[1], sys.argv[2])
     else:
-        print "Usage: ./createJsonFile.py <inputFile.json> <outpuFile.json>"
+        print("Usage: ./createJsonFile.py <inputFile.json> <outpuFile.json>")
     

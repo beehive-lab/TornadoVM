@@ -315,4 +315,5 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     protected abstract int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
 
     protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
+
 }

@@ -273,6 +273,12 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
         assert address instanceof PTXUnary.MemoryAccess;
         assert kind.getPlatformKind() instanceof PTXKind;
@@ -291,6 +297,11 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         if (valueHolder != null) {
             getGen().append(new PTXLIRStmt.AssignStmt(valueHolder, input));
         }
+    }
+
+    @Override
+    public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+        unimplemented();
     }
 
     public Variable emitUnaryAssign(PTXAssembler.PTXUnaryOp op, LIRKind lirKind, Value x) {

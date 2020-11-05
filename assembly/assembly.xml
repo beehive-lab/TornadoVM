@@ -47,7 +47,7 @@
       <!-- tornado etc configuration -->
       <outputDirectory>etc</outputDirectory>
       <includes>
-        <include>*</include>
+        <include>**/*</include>
       </includes>
       <filtered>true</filtered>
       <lineEnding>unix</lineEnding>
@@ -79,18 +79,7 @@
       <!-- Tornado full examples copied into examples directory -->
       <outputDirectory>examples</outputDirectory>
       <includes>
-        <include>TestTornado.java</include>
-      </includes>
-      <fileMode>0666</fileMode>
-    </fileSet>
-    <fileSet>
-      <directory>src/examples/generated</directory>
-      <!-- Tornado full examples copied into examples directory -->
-      <outputDirectory>examples/generated</outputDirectory>
-      <includes>
-        <include>add.cl</include>
-        <include>atomics.cl</include>
-        <include>add.ptx</include>
+        <include>**/*</include>
       </includes>
       <fileMode>0666</fileMode>
     </fileSet>

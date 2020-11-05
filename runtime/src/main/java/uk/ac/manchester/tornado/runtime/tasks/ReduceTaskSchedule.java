@@ -757,7 +757,7 @@ class ReduceTaskSchedule {
         TornadoDevice deviceToRun = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(device);
         switch (deviceType) {
             case CPU:
-                return Runtime.getRuntime().availableProcessors() + 1;
+                return deviceToRun.getAvailableProcessors() + 1;
             case GPU:
             case ACCELERATOR:
                 return inputSize > calculateAcceleratorGroupSize(deviceToRun, inputSize) ? (inputSize / calculateAcceleratorGroupSize(deviceToRun, inputSize)) + 1 : 2;

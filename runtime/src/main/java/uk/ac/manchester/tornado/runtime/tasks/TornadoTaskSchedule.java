@@ -68,6 +68,10 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task11;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task12;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task13;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task14;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task2;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
@@ -329,10 +333,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             this.graph = lookup.getGraph();
         }
 
+        // Prepare Initial Graph before the TornadoVM bytecode generation
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
-        int globalTaskId = executionContext.getTaskCount();
+        int globalTaskId = executionContext.getTaskCountAndIncrement();
         hlBuffer.putInt(globalTaskId);
-        executionContext.incrGlobalTaskCount();
         hlBuffer.putInt(index);
 
         // create parameter list
@@ -853,6 +857,39 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
                         taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10]);
                 break;
+            case 11:
+                @SuppressWarnings("rawtypes") Task11 task11 = (Task11) taskPackage.getTaskParameters()[0];
+                task11.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
+                        taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11]);
+                break;
+            case 12:
+                @SuppressWarnings("rawtypes") Task12 task12 = (Task12) taskPackage.getTaskParameters()[0];
+                task12.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
+                        taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12]);
+                break;
+            case 13:
+                @SuppressWarnings("rawtypes") Task13 task13 = (Task13) taskPackage.getTaskParameters()[0];
+                task13.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
+                        taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12],
+                        taskPackage.getTaskParameters()[13]);
+                break;
+            case 14:
+                @SuppressWarnings("rawtypes") Task14 task14 = (Task14) taskPackage.getTaskParameters()[0];
+                task14.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
+                        taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12],
+                        taskPackage.getTaskParameters()[13], taskPackage.getTaskParameters()[14]);
+                break;
+            case 15:
+                @SuppressWarnings("rawtypes") Task15 task15 = (Task15) taskPackage.getTaskParameters()[0];
+                task15.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
+                        taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10], taskPackage.getTaskParameters()[11], taskPackage.getTaskParameters()[12],
+                        taskPackage.getTaskParameters()[13], taskPackage.getTaskParameters()[14], taskPackage.getTaskParameters()[15]);
+                break;
             default:
                 System.out.println("Sequential Runner not supported yet. Number of parameters: " + type);
                 break;
@@ -947,6 +984,26 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
                         inputObjects.get(8), inputObjects.get(9));
                 break;
+            case 11:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10));
+                break;
+            case 12:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11));
+                break;
+            case 13:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12));
+                break;
+            case 14:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13));
+                break;
+            case 15:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13), inputObjects.get(14));
+                break;
             default:
                 System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
                 break;
@@ -989,6 +1046,26 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 10:
                 task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
                         outputArrays.get(8), outputArrays.get(9));
+                break;
+            case 11:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10));
+                break;
+            case 12:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11));
+                break;
+            case 13:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12));
+                break;
+            case 14:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13));
+                break;
+            case 15:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13), outputArrays.get(14));
                 break;
             default:
                 System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
@@ -1585,6 +1662,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 updateInner(index, TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10]));
                 break;
+            case 11:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task11) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9], parameters[10], parameters[11]));
+                break;
+            case 12:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task12) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12]));
+                break;
+            case 13:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task13) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13]));
+                break;
+            case 14:
+                updateInner(index, TaskUtils.createTask(method, meta, id, (Task14) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                        parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14]));
+                break;
             case 15:
                 updateInner(index, TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
@@ -1632,6 +1725,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 10:
                 addInner(TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10]));
+                break;
+            case 11:
+                addInner(TaskUtils.createTask(method, meta, id, (Task11) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10], parameters[11]));
+                break;
+            case 12:
+                addInner(TaskUtils.createTask(method, meta, id, (Task12) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10], parameters[11], parameters[12]));
+                break;
+            case 13:
+                addInner(TaskUtils.createTask(method, meta, id, (Task13) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13]));
+                break;
+            case 14:
+                addInner(TaskUtils.createTask(method, meta, id, (Task14) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                        parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14]));
                 break;
             case 15:
                 addInner(TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],

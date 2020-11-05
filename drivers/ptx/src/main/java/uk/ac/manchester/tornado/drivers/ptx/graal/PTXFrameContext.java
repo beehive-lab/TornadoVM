@@ -25,6 +25,8 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 public class PTXFrameContext extends TornadoLogger implements FrameContext {
     @Override
     public void enter(CompilationResultBuilder crb) {
@@ -40,6 +42,10 @@ public class PTXFrameContext extends TornadoLogger implements FrameContext {
     @Override
     public void leave(CompilationResultBuilder crb) {
         trace("FrameContext.leave()");
+    }
 
+    @Override
+    public void returned(CompilationResultBuilder crb) {
+        unimplemented();
     }
 }

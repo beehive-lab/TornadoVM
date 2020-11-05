@@ -27,9 +27,9 @@ import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
-import org.graalvm.compiler.hotspot.meta.HotSpotGCProvider;
+import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -39,6 +39,10 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
+import org.graalvm.compiler.word.WordTypes;
+import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
+import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
+import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
@@ -76,8 +80,6 @@ public class PTXHotSpotBackendFactory {
         PTXTargetDescription target = new PTXTargetDescription(arch);
         PTXDeviceContext deviceContext = device.getPTXContext().getDeviceContext();
         PTXCodeProvider codeCache = new PTXCodeProvider(target);
-        HotSpotGraalCompiler hotSpotGraalCompiler = ((HotSpotGraalCompiler) jvmciRuntime.getCompiler());
-        HotSpotGCProvider hotSpotGCProvider = new HotSpotGCProvider(hotSpotGraalCompiler.getGraalRuntime().getVMConfig());
 
         PTXProviders providers;
         PTXSuitesProvider suites;
@@ -85,9 +87,11 @@ public class PTXHotSpotBackendFactory {
         PTXLoweringProvider lowerer;
 
         try (InitTimer t = timer("create providers")) {
-            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, constantReflection, target, false, vmConfig);
-
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, hotSpotGCProvider);
+            TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
+            MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
+            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, target, vmConfig);
+            WordTypes wordTypes = new TornadoWordTypes(metaAccess, JavaKind.Long);
+            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
@@ -96,7 +100,7 @@ public class PTXHotSpotBackendFactory {
             replacements.setGraphBuilderPlugins(plugins);
 
             suites = new PTXSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
-            providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, null, suites);
+            providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, suites, snippetReflection, platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
 
@@ -114,7 +118,7 @@ public class PTXHotSpotBackendFactory {
         PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
         PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, true, true);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, false, false, false);
         PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

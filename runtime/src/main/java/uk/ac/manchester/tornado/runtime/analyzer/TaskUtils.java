@@ -42,6 +42,7 @@ import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
@@ -54,7 +55,9 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -63,7 +66,10 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TaskUtils {
 
-    public static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
+    private static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
+    private static final String JDK_VM_CI_HOTSPOT_RESOLVED_JAVA_METHOD_IMPL = "jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl";
+
+    private static boolean useToJavaMethod = false;
 
     public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
@@ -76,6 +82,55 @@ public class TaskUtils {
         }
         unimplemented("scala task");
         return createTask(null, id, entryPoint, object, false, args);
+    }
+
+    /**
+     * JDK distributions before JDK 13 that to not backport JVMCI do not implement
+     * {@link jdk.vm.ci.hotspot.HotSpotJDKReflection#getMethod}. Instead, we have to
+     * rely on {@link jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl#toJava} that
+     * uses pure reflection.
+     */
+    private static Method callToJava(JavaMethod javaMethod) {
+        try {
+            Class hotSpotResolvedJavaMethodImpl = Class.forName(JDK_VM_CI_HOTSPOT_RESOLVED_JAVA_METHOD_IMPL);
+            Method toJava = hotSpotResolvedJavaMethodImpl.getDeclaredMethod("toJava");
+
+            toJava.setAccessible(true);
+            Method m = (Method) toJava.invoke(javaMethod);
+            m.setAccessible(true);
+            return m;
+        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
+            TornadoInternalError.shouldNotReachHere("Both HotSpotResolvedJavaMethodImpl::toJava and HotSpotJDKReflection::getMethod are missing from the JDK !");
+        }
+        return null;
+    }
+
+    /**
+     * JDK distributions that backport JVMCI or after JDK 13 implement
+     * {@link jdk.vm.ci.hotspot.HotSpotJDKReflection#getMethod} which relies on a
+     * native call to the JVM. If this method is not available, then we call
+     * {@link jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl#toJava} that uses pure
+     * reflection.
+     */
+    private static Method callGetMethod(JavaMethod javaMethod) {
+        try {
+            Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
+            Method getMethod = null;
+            for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
+                if ("getMethod".equals(method.getName())) {
+                    getMethod = method;
+                    break;
+                }
+            }
+            getMethod.setAccessible(true);
+            Method m = (Method) getMethod.invoke(hotSpotJDKReflection, javaMethod);
+            m.setAccessible(true);
+            return m;
+        } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
+            Tornado.debug("HotSpotJDKReflection::getMethod is missing from the JDK distribution. Falling back to HotSpotResolvedJavaMethodImpl::toJava");
+            useToJavaMethod = true;
+            return callToJava(javaMethod);
+        }
     }
 
     /**
@@ -115,23 +170,12 @@ public class TaskUtils {
             if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
-                try {
-                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
-                    Method getMethod = null;
-                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
-                        if ("getMethod".equals(method.getName())) {
-                            getMethod = method;
-                            break;
-                        }
-                    }
-                    getMethod.setAccessible(true);
-                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
-                    m.setAccessible(true);
-                    return m;
-                } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
+
+                if (useToJavaMethod) {
+                    return callToJava(jm);
+                } else {
+                    return callGetMethod(jm);
                 }
-                break;
             } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
@@ -141,23 +185,12 @@ public class TaskUtils {
                     case "intValue":
                         continue;
                 }
-                try {
-                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
-                    Method getMethod = null;
-                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
-                        if ("getMethod".equals(method.getName())) {
-                            getMethod = method;
-                            break;
-                        }
-                    }
-                    getMethod.setAccessible(true);
-                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
-                    m.setAccessible(true);
-                    return m;
-                } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassNotFoundException e) {
-                    e.printStackTrace();
+
+                if (useToJavaMethod) {
+                    return callToJava(jm);
+                } else {
+                    return callGetMethod(jm);
                 }
-                break;
             }
         }
         shouldNotReachHere();
@@ -211,6 +244,29 @@ public class TaskUtils {
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10) {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+    }
+
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+            TornadoFunctions.Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11) {
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+    }
+
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+            TornadoFunctions.Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11,
+            T12 arg12) {
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+    }
+
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+            TornadoFunctions.Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11,
+            T12 arg12, T13 arg13) {
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+    }
+
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,
+            TornadoFunctions.Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10,
+            T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
     }
 
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> CompilableTask createTask(Method method, ScheduleMetaData meta, String id,

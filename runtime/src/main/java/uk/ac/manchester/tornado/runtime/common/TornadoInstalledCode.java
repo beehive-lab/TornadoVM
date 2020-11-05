@@ -25,11 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 
-    int launchWithDependencies(CallStack stack, DeviceBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
+    int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
 
-    int launchWithoutDependencies(CallStack stack, DeviceBuffer atomicSpace, TaskMetaData meta, long batchThreads);
+    int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
 }

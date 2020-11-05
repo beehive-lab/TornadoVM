@@ -29,6 +29,7 @@ import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.phases.LIRPhase;
 import org.graalvm.compiler.lir.ssa.SSAUtil;
@@ -91,7 +92,7 @@ public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGen
         for (AbstractBlockBase<?> b : lirGenRes.getLIR().linearScanOrder()) {
             emitBlock((OCLNodeLIRBuilder) nodeLirBuilder, lirGenRes, (Block) b, graph, blockMap, context.isKernel);
         }
-        context.lirGen.beforeRegisterAllocation();
+        ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
 
         assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
