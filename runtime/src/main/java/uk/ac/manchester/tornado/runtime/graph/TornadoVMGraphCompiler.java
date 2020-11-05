@@ -78,9 +78,9 @@ public class TornadoVMGraphCompiler {
 
     private static class BatchSizeMetaData {
 
-        private int totalChunks;
-        private int remainingChunkSize;
-        private short numBytesType;
+        private final int totalChunks;
+        private final int remainingChunkSize;
+        private final short numBytesType;
 
         BatchSizeMetaData(int totalChunks, int remainingChunkSize, short numBytesType) {
             this.totalChunks = totalChunks;
@@ -148,7 +148,6 @@ public class TornadoVMGraphCompiler {
      * device.
      */
     private static TornadoVMGraphCompilationResult compileContexts(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
-
         final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
@@ -253,7 +252,6 @@ public class TornadoVMGraphCompiler {
     }
 
     private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads) {
-
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());

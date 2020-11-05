@@ -158,7 +158,6 @@ public class TornadoExecutionContext {
     }
 
     public void mapAllTo(TornadoDevice mapping) {
-
         if (mapping instanceof TornadoAcceleratorDevice) {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) mapping);
