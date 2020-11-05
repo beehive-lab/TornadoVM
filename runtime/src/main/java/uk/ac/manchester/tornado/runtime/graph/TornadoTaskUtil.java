@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.util.List;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.loop.BasicInductionVariable;
 import org.graalvm.compiler.loop.LoopEx;
@@ -33,7 +34,6 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 /**
  * @author James Clarkson
@@ -59,12 +59,6 @@ class TornadoTaskUtil {
                 }
             }
         }
-        return null;
-    }
-
-    public static StructuredGraph merge(CompilableTask t1, CompilableTask t2, StructuredGraph g1, StructuredGraph g2, int[] merges) {
-        LoopEx l1 = findParallelLoop(g1);
-        LoopEx l2 = findParallelLoop(g2);
         return null;
     }
 }
