@@ -207,7 +207,7 @@ public class TornadoExecutionContext {
         }
     }
 
-    public TornadoDevice getDeviceFirtTask() {
+    public TornadoDevice getDeviceFirstTask() {
         return tasks.get(0).getDevice();
     }
 
