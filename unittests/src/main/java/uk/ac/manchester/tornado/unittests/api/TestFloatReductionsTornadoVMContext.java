@@ -39,7 +39,7 @@ public class TestFloatReductionsTornadoVMContext {
         return acc;
     }
 
-    public static void floatReductionGlobalMemory(float[] a, float[] b, TornadoVMContext context) {
+    public static void floatReductionGlobalMemory(TornadoVMContext context, float[] a, float[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -71,7 +71,7 @@ public class TestFloatReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestFloatReductionsTornadoVMContext::floatReductionGlobalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestFloatReductionsTornadoVMContext::floatReductionGlobalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -86,7 +86,7 @@ public class TestFloatReductionsTornadoVMContext {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void floatReductionLocalMemory(float[] a, float[] b, TornadoVMContext context) {
+    public static void floatReductionLocalMemory(TornadoVMContext context, float[] a, float[] b) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
@@ -119,7 +119,7 @@ public class TestFloatReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestFloatReductionsTornadoVMContext::floatReductionLocalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestFloatReductionsTornadoVMContext::floatReductionLocalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);

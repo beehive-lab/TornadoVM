@@ -44,7 +44,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         }
     }
 
-    public static void matrixMultiplication1D(float[] a, float[] b, float[] c, int size, TornadoVMContext context) {
+    public static void matrixMultiplication1D(TornadoVMContext context, float[] a, float[] b, float[] c, int size) {
         int idx = context.threadIdx;
 
         for (int jdx = 0; jdx < size; jdx++) {
@@ -72,7 +72,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication1D, a, b, cTornado, size, context).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication1D, context, a, b, cTornado, size).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
@@ -85,7 +85,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         }
     }
 
-    public static void matrixMultiplication2D(float[] a, float[] b, float[] c, int size, TornadoVMContext context) {
+    public static void matrixMultiplication2D(TornadoVMContext context, float[] a, float[] b, float[] c, int size) {
         int idx = context.threadIdx;
         int jdx = context.threadIdy;
         float sum = 0;
@@ -112,7 +112,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication2D, a, b, cTornado, size, context).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication2D, context, a, b, cTornado, size).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, size, 1);
         worker.setLocalWork(1, 1, 1);

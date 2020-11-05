@@ -35,7 +35,7 @@ public class TestDoubleReductionsTornadoVMContext {
         return acc;
     }
 
-    public static void doubleReductionGlobalMemory(double[] a, double[] b, TornadoVMContext context) {
+    public static void doubleReductionGlobalMemory(TornadoVMContext context, double[] a, double[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -67,7 +67,7 @@ public class TestDoubleReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestDoubleReductionsTornadoVMContext::doubleReductionGlobalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestDoubleReductionsTornadoVMContext::doubleReductionGlobalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -82,7 +82,7 @@ public class TestDoubleReductionsTornadoVMContext {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void doubleReductionLocalMemory(double[] a, double[] b, TornadoVMContext context) {
+    public static void doubleReductionLocalMemory(TornadoVMContext context, double[] a, double[] b) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
@@ -115,7 +115,7 @@ public class TestDoubleReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestDoubleReductionsTornadoVMContext::doubleReductionLocalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestDoubleReductionsTornadoVMContext::doubleReductionLocalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);

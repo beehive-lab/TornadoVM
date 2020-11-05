@@ -35,7 +35,7 @@ public class TestIntReductionsTornadoVMContext {
         return acc;
     }
 
-    public static void intReductionGlobalMemory(int[] a, int[] b, TornadoVMContext context) {
+    public static void intReductionGlobalMemory(TornadoVMContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -67,7 +67,7 @@ public class TestIntReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestIntReductionsTornadoVMContext::intReductionGlobalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestIntReductionsTornadoVMContext::intReductionGlobalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -82,7 +82,7 @@ public class TestIntReductionsTornadoVMContext {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void intReductionLocalMemory(int[] a, int[] b, TornadoVMContext context) {
+    public static void intReductionLocalMemory(TornadoVMContext context, int[] a, int[] b) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
@@ -115,7 +115,7 @@ public class TestIntReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestIntReductionsTornadoVMContext::intReductionLocalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestIntReductionsTornadoVMContext::intReductionLocalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);

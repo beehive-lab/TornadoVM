@@ -25,7 +25,7 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 
 public class TestVectorAdditionTornadoVMContextApi {
-    public static void vectorAdd(int[] a, int[] b, int[] c, TornadoVMContext context) {
+    public static void vectorAdd(TornadoVMContext context, int[] a, int[] b, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
     }
 
@@ -51,7 +51,7 @@ public class TestVectorAdditionTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd, a, b, cTornado, context).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd, context, a, b, cTornado).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);

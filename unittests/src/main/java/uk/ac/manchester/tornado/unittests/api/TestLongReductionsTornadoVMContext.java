@@ -35,7 +35,7 @@ public class TestLongReductionsTornadoVMContext {
         return acc;
     }
 
-    public static void longReductionGlobalMemory(long[] a, long[] b, TornadoVMContext context) {
+    public static void longReductionGlobalMemory(TornadoVMContext context, long[] a, long[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -67,7 +67,7 @@ public class TestLongReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestLongReductionsTornadoVMContext::longReductionGlobalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestLongReductionsTornadoVMContext::longReductionGlobalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -82,7 +82,7 @@ public class TestLongReductionsTornadoVMContext {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void longReductionLocalMemory(long[] a, long[] b, TornadoVMContext context) {
+    public static void longReductionLocalMemory(TornadoVMContext context, long[] a, long[] b) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
@@ -115,7 +115,7 @@ public class TestLongReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestLongReductionsTornadoVMContext::longReductionLocalMemory, input, reduce, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestLongReductionsTornadoVMContext::longReductionLocalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
