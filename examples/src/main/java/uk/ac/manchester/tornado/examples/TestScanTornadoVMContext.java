@@ -7,6 +7,9 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 import java.util.stream.IntStream;
 
@@ -16,9 +19,7 @@ import java.util.stream.IntStream;
  */
 public class TestScanTornadoVMContext {
 
-    public static int sumScratch(int[] scratch, TornadoVMContext context) {
-        int lid = context.localIdx;
-        int lsz = context.getLocalGroupSize(0);
+    public static int sumScratch(int[] scratch, int lid, int lsz, TornadoVMContext context) {
         context.localBarrier();
         for (int step = 2; step <= lsz; step <<= 1) {
             if (((lid + 1) % step) == 0) {
@@ -129,34 +130,10 @@ public class TestScanTornadoVMContext {
         int lid = context.localIdx;
         int lsz = context.getLocalGroupSize(0);
         int gid = context.groupIdx;
-        int[] scratch = context.allocateIntLocalArray(1024); // int.class
+        int[] scratch = context.allocateIntLocalArray(1024);
         scratch[lid] = data[gid]; // copy into local scratch for the reduction
 
-        // Inline method sumScratch:
-        int sum = sumScratch(scratch, context);
-        // context.localBarrier();
-        // for (int step = 2; step <= lsz; step <<= 1) {
-        // if (((lid + 1) % step) == 0) {
-        // scratch[lid] += scratch[lid - (step >> 1)];
-        // }
-        // context.localBarrier();
-        // }
-        // int sum = 0;
-        // if ((lid + 1) == lsz) {
-        // sum = scratch[lid];
-        // scratch[lid] = 0;
-        // }
-        //
-        // context.localBarrier();
-        // for (int step = lsz; step > 1; step >>= 1) {
-        // if (((lid + 1) % step) == 0) {
-        // int prev = scratch[lid - (step >> 1)];
-        // scratch[lid - (step >> 1)] = scratch[lid];
-        // scratch[lid] += prev;
-        // }
-        // context.localBarrier();
-        // }
-        // //
+        int sum = sumScratch(scratch, lid, lsz, context);
 
         if ((lid + 1) == lsz) {
             data[gid] = sum;
@@ -176,9 +153,11 @@ public class TestScanTornadoVMContext {
 
     public static void main(String[] args) {
         final int size = 1024;
-        final int localSize = 1024;
+        final int localSize = 256;
         int[] input = new int[size];
         int[] javaOutput = new int[size];
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         javaPrefixSum(input, size, javaOutput);
 
@@ -187,6 +166,16 @@ public class TestScanTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
+        // TornadoDevice defaultDevice =
+        // TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        // String filePath = tornadoSDK + "/examples/generated/";
+        // filePath += defaultDevice.getDeviceName().contains("cuda") ?
+        // "prefixKernel.ptx" : "prefixKernel.cl";
+
+        // TaskSchedule s0 = new TaskSchedule("s0")
+        // .prebuiltTask("t0", "prefixKernel", filePath, new Object[] { input, context
+        // }, new Access[] { Access.READ_WRITE, Access.READ }, defaultDevice, new int[]
+        // { size }).streamOut(input);
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestScanTornadoVMContext::prefixKernel, input, context).streamOut(input);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
