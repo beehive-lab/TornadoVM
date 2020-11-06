@@ -8,7 +8,6 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.graal.nodes.LocalWorkGroupNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoVMContextGroupIdNode;
@@ -89,61 +88,6 @@ public class TornadoContextReplacement extends BasePhase<TornadoSketchTierContex
                     }
 
                     replaceTornadoVMContextNode(graph, nodesToBeRemoved, node, groupIdNode);
-                } else if (field.contains("WorkerGrid.localWork")) {
-                    System.out.println("In the LocalWork Node the node.getValue is: " + node.getValue());
-                    LocalWorkGroupNode localWorkGroupNode = null;
-                    for (Node usageNode : node.usages()) {
-                        if (usageNode instanceof LoadIndexedNode) {
-                            for (Node n : usageNode.inputs()) {
-                                System.out.println("2 Input of node " + usageNode.toString() + " is: " + n.toString());
-                                if (n instanceof ConstantNode) {
-                                    System.out.println("Dimension passed is: " + ((ConstantNode) n).getValue());
-                                    int dim = Integer.parseInt(((ConstantNode) n).getValue().toValueString());
-                                    System.out.println("Dimension passed is: " + dim);
-                                    localWorkGroupNode = new LocalWorkGroupNode(null, (ConstantNode) n);
-                                    graph.addWithoutUnique(localWorkGroupNode);
-
-                                    localWorkGroupNode.replaceFirstSuccessor(null, usageNode.successors().first());
-                                    usageNode.replaceAtUsages(localWorkGroupNode);
-                                    nodesToBeRemoved.add(usageNode);
-
-                                    node.replaceAtPredecessor(localWorkGroupNode);
-                                    nodesToBeRemoved.add(node);
-                                }
-                            }
-                        }
-                    }
-
-                } else if (field.contains("TornadoVMContext.grid")) {
-                    System.out.println("In the TornadoVMContext.grid Node the node.getValue is: " + node.getValue());
-
-                    // Remove 90, 92, 91, 93, 86
-                    Node nodePredecessor = node.predecessor();
-                    for (Node input : nodePredecessor.inputs()) { // This should be isNull
-                        System.out.println("The input node of predecessor " + nodePredecessor.toString() + " is: " + input.toString());
-                        input.safeDelete();
-                    }
-                    for (Node usage : nodePredecessor.usages()) { // This should be PiNode
-                        System.out.println("The usage node of predecessor " + nodePredecessor.toString() + " is: " + usage.toString());
-                        usage.safeDelete();
-                    }
-                    nodePredecessor.replaceAtPredecessor(nodePredecessor.successors().first());
-                    nodesToBeRemoved.add(nodePredecessor);
-
-                    for (Node n : node.successors()) {
-                        System.out.println("The successor node of " + node.toString() + " is: " + n.toString());
-                        for (Node input : n.inputs()) { // This should be NullNode
-                            System.out.println("The input node of " + n.toString() + " is: " + input.toString());
-                            input.safeDelete();
-                        }
-                        for (Node usage : n.usages()) { // This should be PiNode
-                            usage.safeDelete();
-                        }
-                        n.replaceAtPredecessor(n.successors().first());
-                        n.safeDelete();
-                    }
-                    node.replaceAtPredecessor(node.successors().first());
-                    nodesToBeRemoved.add(node);
                 } else {
                     return;
                 }

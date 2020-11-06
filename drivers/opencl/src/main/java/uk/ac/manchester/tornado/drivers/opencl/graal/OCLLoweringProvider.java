@@ -106,7 +106,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadR
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.graal.nodes.LocalWorkGroupNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdNode;
@@ -191,8 +190,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerLocalThreadIdNode((ThreadLocalIdNode) node);
         } else if (node instanceof TornadoVMContextGroupIdNode) {
             lowerGetGroupIdNode((TornadoVMContextGroupIdNode) node);
-        } else if (node instanceof LocalWorkGroupNode) {
-            lowerLocalWorkGroupNode((LocalWorkGroupNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -302,12 +299,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         StructuredGraph graph = getGroupIdNode.graph();
         GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
         graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
-    }
-
-    private void lowerLocalWorkGroupNode(LocalWorkGroupNode localWorkGroupNode) {
-        StructuredGraph graph = localWorkGroupNode.graph();
-        LocalThreadSizeNode threadSizeNode = graph.addOrUnique(new LocalThreadSizeNode(localWorkGroupNode.getIndex()));
-        graph.replaceFixedWithFloating(localWorkGroupNode, threadSizeNode);
     }
 
     @Override

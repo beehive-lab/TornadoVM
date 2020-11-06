@@ -30,7 +30,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -40,11 +40,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class LocalThreadSizeNode extends FloatingNode implements LIRLowerable {
+public class LocalThreadSizeNode extends FixedNode implements LIRLowerable {
 
     public static final NodeClass<LocalThreadSizeNode> TYPE = NodeClass.create(LocalThreadSizeNode.class);
 
-    @Node.Input protected ConstantNode index;
+    @Node.Input
+    protected ConstantNode index;
 
     public LocalThreadSizeNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

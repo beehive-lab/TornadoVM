@@ -56,6 +56,7 @@ import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
+import uk.ac.manchester.tornado.api.AbstractWorkerGrid;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -63,6 +64,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
+//import uk.ac.manchester.tornado.runtime.graal.nodes.LocalWorkGroupNode;
 
 public class OCLGraphBuilderPlugins {
 
@@ -202,6 +204,17 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
+    private static void registerLocalWorkGroup(Registration r, JavaKind returnedJavaKind) {
+        r.register2("getLocalGroupSize", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                LocalThreadSizeNode localThreadSizeNode = new LocalThreadSizeNode((ConstantNode) size);
+                b.push(returnedJavaKind, localThreadSizeNode);
+                return true;
+            }
+        });
+    }
+
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateIntLocalArray", Receiver.class, int.class, new InvocationPlugin() {
             @Override
@@ -254,6 +267,8 @@ public class OCLGraphBuilderPlugins {
         Registration r = new Registration(plugins, TornadoVMContext.class);
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
+
+        registerLocalWorkGroup(r, JavaKind.Int);
 
         JavaKind returnedJavaKind = JavaKind.Object;
         JavaKind elementType = OCLKind.INT.asJavaKind();
