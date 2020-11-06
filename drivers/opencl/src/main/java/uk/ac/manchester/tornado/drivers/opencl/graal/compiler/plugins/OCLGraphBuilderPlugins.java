@@ -263,14 +263,14 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
-    private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, TornadoVMContext.class);
-        registerLocalBarrier(r);
-        registerGlobalBarrier(r);
+    private static void localWorkGroupPlugin(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Int;
+        registerLocalWorkGroup(r, returnedJavaKind);
+    }
 
-        registerLocalWorkGroup(r, JavaKind.Int);
-
+    private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
+
         JavaKind elementType = OCLKind.INT.asJavaKind();
         registerIntLocalArray(r, returnedJavaKind, elementType);
 
@@ -282,6 +282,15 @@ public class OCLGraphBuilderPlugins {
 
         elementType = OCLKind.DOUBLE.asJavaKind();
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
+    }
+
+    private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, TornadoVMContext.class);
+
+        registerLocalBarrier(r);
+        registerGlobalBarrier(r);
+        localWorkGroupPlugin(r);
+        localArraysPlugins(r);
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
