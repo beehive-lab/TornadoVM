@@ -22,6 +22,7 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -68,6 +69,13 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.arrayTemplate = PTXKind.resolveTemplateType(elementType);
     }
 
+    public LocalArrayNode(PTXMemoryBase memoryRegister, JavaKind elementType, ConstantNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.arrayTemplate = PTXKind.resolveTemplateType(elementType);
+    }
+
     public PTXMemoryBase getMemoryRegister() {
         return memoryRegister;
     }
@@ -81,7 +89,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         trace("emitLocalArray length=%s kind=%s", length, kind);
         final Value lengthValue = gen.operand(length);
 
-        LIRKind lirKind = LIRKind.value(kind);
+        LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = ((PTXLIRGenerator) gen.getLIRGeneratorTool()).newVariable(lirKind, true);
         final PTXBinary.Expr declaration = new PTXBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
