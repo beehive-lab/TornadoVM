@@ -21,9 +21,11 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -33,9 +35,15 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
+
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
@@ -53,9 +61,14 @@ public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        trace("emitLocalThreadId: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Intrinsic(PTXUnaryIntrinsic.LOCAL_MEMORY, tool.getLIRKind(stamp), gen.operand(index))));
+        LIRKind kind = tool.getLIRKind(stamp);
+        Variable result = tool.newVariable(kind);
+        PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;
+        PTXArchitecture.PTXBuiltInRegisterArray builtIns = new PTXArchitecture.PTXBuiltInRegisterArray(((ConstantValue) gen.operand(index)).getJavaConstant().asInt());
+
+        tool.append(new PTXLIRStmt.AssignStmt(result, ptxNodeBuilder.getBuiltInAllocation(builtIns.threadID)));
         gen.setResult(this, result);
     }
 }
