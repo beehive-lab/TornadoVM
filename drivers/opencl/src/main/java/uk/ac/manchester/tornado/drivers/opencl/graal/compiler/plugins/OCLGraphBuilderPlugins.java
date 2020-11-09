@@ -37,7 +37,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
-import jdk.vm.ci.meta.*;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -56,15 +55,29 @@ import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
-import uk.ac.manchester.tornado.api.AbstractWorkerGrid;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
-//import uk.ac.manchester.tornado.runtime.graal.nodes.LocalWorkGroupNode;
 
 public class OCLGraphBuilderPlugins {
 
