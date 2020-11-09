@@ -146,7 +146,7 @@ public enum PTXKind implements PlatformKind {
         return resolveTemplateType(type.getJavaKind());
     }
 
-    private static PTXAssembler.PTXBinaryTemplate resolveTemplateType(JavaKind type) {
+    public static PTXAssembler.PTXBinaryTemplate resolveTemplateType(JavaKind type) {
         if (type == JavaKind.Int) {
             return PTXAssembler.PTXBinaryTemplate.NEW_SHARED_INT_ARRAY;
         } else if (type == JavaKind.Double) {
