@@ -18,7 +18,11 @@
 package uk.ac.manchester.tornado.unittests.api;
 
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoVMContext;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
 import java.util.Arrays;
 
