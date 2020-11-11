@@ -304,6 +304,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         Providers providers = getTornadoRuntime().getDriver(driverIndex).getProviders();
         TornadoSuitesProvider suites = getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
+        logTaskMethodHandle(task);
+
         executionContext.setTask(index, task);
 
         if (task instanceof CompilableTask) {
@@ -321,6 +323,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         int driverIndex = task.meta().getDriverIndex();
         Providers providers = getTornadoRuntime().getDriver(driverIndex).getProviders();
         TornadoSuitesProvider suites = getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
+
+        logTaskMethodHandle(task);
 
         int index = executionContext.addTask(task);
 
@@ -361,6 +365,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     // Timer implementation within the Task Schedule
     private static abstract class Timer {
         abstract long time();
+    }
+
+    private void logTaskMethodHandle(SchedulableTask task) {
+        if (!(task.getTaskName() == null) && !(task.getId() == null)) {
+            timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(),
+                    ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + ((CompilableTask) task).getMethod().getName());
+        }
     }
 
     private static class MillesecTimer extends Timer {
