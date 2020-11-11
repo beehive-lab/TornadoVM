@@ -53,7 +53,6 @@ public class FeatureExtractionUtilities {
 
     public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, StructuredGraph graph, TornadoDeviceContext deviceContext) {
         String name = graph.name.split("-")[1];
-        ;
 
         if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
             HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
