@@ -312,7 +312,7 @@ public class OCLCodeCache {
         }
     }
 
-    private String[] composeXilinxHLSLinkCommand(String kernelName) {
+    private String[] composeXilinxHLSLinkCommand() {
         StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -l " + "-g");
@@ -401,7 +401,7 @@ public class OCLCodeCache {
             if (isPlatform("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkObjectFiles.add(entryPoint);
-                linkCommand = composeXilinxHLSLinkCommand(entryPoint);
+                linkCommand = composeXilinxHLSLinkCommand();
             } else if (isPlatform("intel")) {
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             } else {

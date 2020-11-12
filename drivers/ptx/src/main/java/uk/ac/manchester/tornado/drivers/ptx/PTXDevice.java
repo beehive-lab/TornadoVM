@@ -32,8 +32,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
 
-    private static final int INIT_VAL = -1;
-
     private final String name;
     private final long[] maxGridSizes;
     private final PTXContext context;
@@ -66,9 +64,9 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         computeCapability = initComputeCapability();
         targetArchitecture = ptxVersion.getArchitecture(computeCapability);
 
+        // A PTXcontext for the CUDevice must be created first before cuMemGetInfo
+        // is invoked.
         context = new PTXContext(this);
-        // CUcontext for the CUDevice must be created first before cuMemGetInfo returns
-        // a valid value.
         maxAllocationSize = cuMemGetInfo();
     }
 
