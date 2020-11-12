@@ -95,39 +95,17 @@ public class FeatureExtractionUtilities {
 
     private static LinkedHashMap<String, Integer> encodeFeatureMap(LinkedHashMap<ProfilerCodeFeatures, Integer> entry) {
         LinkedHashMap<String, Integer> encodeMap = new LinkedHashMap<>();
-
         for (Map.Entry<ProfilerCodeFeatures, Integer> ent : entry.entrySet()) {
             encodeMap.put(ent.getKey().toString(), ent.getValue());
         }
-
         return encodeMap;
     }
 
     public static LinkedHashMap<ProfilerCodeFeatures, Integer> initializeFeatureMap() {
         LinkedHashMap<ProfilerCodeFeatures, Integer> myMap = new LinkedHashMap<>();
-        myMap.put(ProfilerCodeFeatures.GLOBAL_LOADS, 0);
-        myMap.put(ProfilerCodeFeatures.GLOBAL_STORES, 0);
-        myMap.put(ProfilerCodeFeatures.CONSTANT_LOADS, 0);
-        myMap.put(ProfilerCodeFeatures.CONSTANT_STORES, 0);
-        myMap.put(ProfilerCodeFeatures.LOCAL_LOADS, 0);
-        myMap.put(ProfilerCodeFeatures.LOCAL_STORES, 0);
-        myMap.put(ProfilerCodeFeatures.PRIVATE_LOADS, 0);
-        myMap.put(ProfilerCodeFeatures.PRIVATE_STORES, 0);
-        myMap.put(ProfilerCodeFeatures.LOOPS, 0);
-        myMap.put(ProfilerCodeFeatures.PARALLEL_LOOPS, 0);
-        myMap.put(ProfilerCodeFeatures.IFS, 0);
-        myMap.put(ProfilerCodeFeatures.I_CMP, 0);
-        myMap.put(ProfilerCodeFeatures.F_CMP, 0);
-        myMap.put(ProfilerCodeFeatures.SWITCH, 0);
-        myMap.put(ProfilerCodeFeatures.CASE, 0);
-        myMap.put(ProfilerCodeFeatures.VECTORS, 0);
-        myMap.put(ProfilerCodeFeatures.INTEGER_OPS, 0);
-        myMap.put(ProfilerCodeFeatures.FLOAT_OPS, 0);
-        myMap.put(ProfilerCodeFeatures.FP32, 0);
-        myMap.put(ProfilerCodeFeatures.DOUBLES, 0);
-        myMap.put(ProfilerCodeFeatures.CAST, 0);
-        myMap.put(ProfilerCodeFeatures.F_MATH, 0);
-        myMap.put(ProfilerCodeFeatures.I_MATH, 0);
+        for (ProfilerCodeFeatures feature : ProfilerCodeFeatures.values()) {
+            myMap.put(feature, 0);
+        }
         return myMap;
     }
 }
