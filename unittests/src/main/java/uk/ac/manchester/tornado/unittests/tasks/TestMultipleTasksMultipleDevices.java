@@ -28,6 +28,16 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
+/**
+ * Testing TornadoVM with multiple independent tasks on different devices. The
+ * {@link TaskSchedule} contains more than one task. If multiple devices are not
+ * specified by the user, then the default device is used.
+ *
+ * The user needs to specify the target device for each task as follows:
+ * <code>    
+ *  -Ds0.t0.device=0:0 -Ds0.t0.device=0:1 
+ *</code>
+ **/
 public class TestMultipleTasksMultipleDevices {
 
     @Test
@@ -45,7 +55,6 @@ public class TestMultipleTasksMultipleDevices {
         if (devices == 1) {
             assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
         } else {
-            System.setProperty("tornado.experimental.pvm", "true");
             System.setProperty("tornado.debug", "true");
             System.setProperty("s0.t0.device", "0:1");
             System.setProperty("s0.t1.device", "0:0");
