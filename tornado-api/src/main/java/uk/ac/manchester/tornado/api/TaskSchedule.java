@@ -255,7 +255,6 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-
     public TaskSchedule schedule() {
         taskScheduleImpl.scheduleInner();
         return this;
