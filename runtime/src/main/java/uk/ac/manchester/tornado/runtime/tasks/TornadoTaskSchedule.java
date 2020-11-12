@@ -369,7 +369,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void logTaskMethodHandle(SchedulableTask task) {
         if (!(task.getTaskName() == null) && !(task.getId() == null)) {
-            String methodName = (task instanceof PrebuiltTask) ? ((PrebuiltTask) task).getFilename() : ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName();
+            String methodName = (task instanceof PrebuiltTask) ? ((PrebuiltTask) task).getFilename()
+                    : ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + task.getTaskName();
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
         }
     }
