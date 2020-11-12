@@ -47,10 +47,10 @@ public enum OCLDeviceType {
         return value;
     }
 
-    public static final OCLDeviceType toDeviceType(final long v) {
+    public static OCLDeviceType toDeviceType(final long v) {
         OCLDeviceType result = null;
         switch ((int) v) {
-            case 1 << 0:
+            case 1:
                 result = OCLDeviceType.CL_DEVICE_TYPE_DEFAULT;
                 break;
             case 1 << 1:
