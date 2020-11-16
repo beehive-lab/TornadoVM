@@ -4,7 +4,7 @@ TornadoVM supports execution and prototyping with OpenCL compatible Intel and Xi
 
 **IMPORTANT NOTE:** The minimum input size to run on the FPGA is 64 elements (which corresponds internally with the local work size in OpenCL).
 
-This [document](16_AWS.md) shows a full guideline for running TornadoVM on Amazon AWS F1 with Xilinx FPGAs.
+This [document](17_AWS.md) shows a full guideline for running TornadoVM on Amazon AWS F1 with Xilinx FPGAs.
 
 
 ### Pre-requisites
