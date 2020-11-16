@@ -26,7 +26,7 @@ As well as being built with two compiler backends, TornadoVM can be executed wit
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
 
-Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](17_MALI.md).
+Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](18_MALI.md).
 
 ## 2. Running Examples
 
