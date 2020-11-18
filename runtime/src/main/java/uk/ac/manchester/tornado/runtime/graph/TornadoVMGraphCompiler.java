@@ -39,23 +39,16 @@ import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
-import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 public class TornadoVMGraphCompiler {
-
     private static HashMap<Class<?>, Byte> dataTypesSize = new HashMap<>();
 
     static {
@@ -80,19 +73,14 @@ public class TornadoVMGraphCompiler {
      * @return {@link TornadoVMGraphCompilationResult}
      */
     public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
-        final BitSet deviceContexts = graph.filter(ContextNode.class);
-        if (deviceContexts.cardinality() == 1) {
-            return compileSingleContext(graph, context, batchSize);
-        } else {
-            throw new TornadoRuntimeException("Multiple-Contexts are not currently supported");
-        }
+        return compileContext(graph, context, batchSize);
     }
 
     private static class BatchSizeMetaData {
 
-        private int totalChunks;
-        private int remainingChunkSize;
-        private short numBytesType;
+        private final int totalChunks;
+        private final int remainingChunkSize;
+        private final short numBytesType;
 
         BatchSizeMetaData(int totalChunks, int remainingChunkSize, short numBytesType) {
             this.totalChunks = totalChunks;
@@ -155,12 +143,7 @@ public class TornadoVMGraphCompiler {
         return new BatchSizeMetaData(totalChunks, remainingChunkSize, typeSize);
     }
 
-    /*
-     * Simplest case where all tasks within a task-schedule are executed on the same
-     * device.
-     */
-    private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
-
+    private static TornadoVMGraphCompilationResult compileContext(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
@@ -240,45 +223,6 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static void optimise(TornadoVMGraphCompilationResult result, TornadoGraph graph, TornadoExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
-        printMatrix(nodeIds, deps, tasks);
-        for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
-            BitSet dependents = new BitSet(deps[i].length());
-            for (int j = deps[i].nextSetBit(0); j >= 0; j = deps[i].nextSetBit(j + 1)) {
-                if (graph.getNode(j) instanceof TaskNode) {
-                    dependents.set(j);
-                }
-            }
-            if (!dependents.isEmpty()) {
-                TaskNode dependentTask = (TaskNode) graph.getNode(nodeIds[i]);
-                int firstDepId = dependents.nextSetBit(0);
-                TaskNode firstTask = (TaskNode) graph.getNode(firstDepId);
-                int[] argMerges = new int[dependentTask.getNumArgs()];
-                Arrays.fill(argMerges, -1);
-                for (int arg = 0; arg < dependentTask.getInputs().size(); arg++) {
-                    AbstractNode n = dependentTask.getInputs().get(arg);
-                    if (n instanceof DependentReadNode && ((DependentReadNode) n).getDependent() == firstTask) {
-                        argMerges[arg] = 1;
-                    }
-                }
-
-                CompilableTask t1 = (CompilableTask) context.getTask(firstTask.getTaskIndex());
-                CompilableTask t2 = (CompilableTask) context.getTask(dependentTask.getTaskIndex());
-                ResolvedJavaMethod rm1 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
-                ResolvedJavaMethod rm2 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
-                Sketch sketch1 = TornadoSketcher.lookup(rm1, t1.meta().getDriverIndex(), t1.meta().getDeviceIndex());
-                Sketch sketch2 = TornadoSketcher.lookup(rm2, t2.meta().getDriverIndex(), t1.meta().getDeviceIndex());
-                StructuredGraph g1 = (StructuredGraph) sketch1.getGraph().getReadonlyCopy();
-                StructuredGraph g2 = (StructuredGraph) sketch2.getGraph().getReadonlyCopy();
-                System.out.printf("dependent task: %s on %s merges = %d\n", t1.getId(), t2.getId(), Arrays.toString(argMerges));
-                printIvs(g1);
-                printIvs(g2);
-                StructuredGraph g3 = TornadoTaskUtil.merge(t1, t2, g1, g2, argMerges);
-            }
-        }
-    }
-
     private static void printIvs(StructuredGraph graph) {
         final LoopsData data = new LoopsData(graph);
         data.detectedCountedLoops();
@@ -304,7 +248,6 @@ public class TornadoVMGraphCompiler {
     }
 
     private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads) {
-
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());

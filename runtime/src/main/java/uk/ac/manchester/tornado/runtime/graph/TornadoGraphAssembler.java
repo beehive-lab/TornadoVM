@@ -163,7 +163,8 @@ public class TornadoGraphAssembler {
 
     public void dump() {
         final int width = 16;
-        System.out.printf("code  : capacity = %s, in use = %s \n", RuntimeUtilities.humanReadableByteCount(buffer.capacity(), true), RuntimeUtilities.humanReadableByteCount(buffer.position(), true));
+        System.out.printf("code  : capacity = %s, in use = %s   \n", RuntimeUtilities.humanReadableByteCount(buffer.capacity(), true),
+                RuntimeUtilities.humanReadableByteCount(buffer.position(), true));
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
