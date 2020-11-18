@@ -73,7 +73,7 @@ public class TornadoVMGraphCompiler {
      * @return {@link TornadoVMGraphCompilationResult}
      */
     public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
-        return compileContexts(graph, context, batchSize);
+        return compileContext(graph, context, batchSize);
     }
 
     private static class BatchSizeMetaData {
@@ -143,11 +143,7 @@ public class TornadoVMGraphCompiler {
         return new BatchSizeMetaData(totalChunks, remainingChunkSize, typeSize);
     }
 
-    /*
-     * Simplest case where all tasks within a task-schedule are executed on the same
-     * device.
-     */
-    private static TornadoVMGraphCompilationResult compileContexts(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
+    private static TornadoVMGraphCompilationResult compileContext(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);

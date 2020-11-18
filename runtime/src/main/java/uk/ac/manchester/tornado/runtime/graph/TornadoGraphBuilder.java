@@ -76,7 +76,7 @@ public class TornadoGraphBuilder {
         args[argIndex] = copyInNode;
     }
 
-    private static boolean performSharedObjectCopyForMultiContext(AbstractNode arg, ContextNode contextNode) {
+    private static boolean shouldPerformSharedObjectCopy(AbstractNode arg, ContextNode contextNode) {
         return ((ContextOpNode) arg).getContext().getUses().size() != 1 && contextNode.getDeviceIndex() != ((ContextOpNode) arg).getContext().getDeviceIndex();
     }
 
@@ -133,7 +133,7 @@ public class TornadoGraphBuilder {
                         }
                     }
                 } else {
-                    if (performSharedObjectCopyForMultiContext(arg, context)) {
+                    if (shouldPerformSharedObjectCopy(arg, context)) {
                         createCopyInNode(context, graph, arg.getInputs().get(0), args, argIndex);
                     }
                     args[argIndex] = arg;
