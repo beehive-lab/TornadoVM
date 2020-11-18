@@ -76,7 +76,7 @@ public class TornadoFeatureExtraction extends Phase {
 
         IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.initializeFeatureMap());
 
-        FeatureExtractionUtilities.emitFeatureProfileJsonFile(IRFeatures, graph.name, tornadoDeviceContext);
+        FeatureExtractionUtilities.emitFeatureProfileJsonFile(IRFeatures, graph, tornadoDeviceContext);
     }
 
     private LinkedHashMap<ProfilerCodeFeatures, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<ProfilerCodeFeatures, Integer> initMap) {

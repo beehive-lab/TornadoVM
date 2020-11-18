@@ -35,6 +35,8 @@ public interface TornadoProfiler {
 
     void registerDeviceID(ProfilerType type, String taskName, String deviceID);
 
+    void registerMethodHandle(ProfilerType type, String taskName, String methodName);
+
     void stop(ProfilerType type);
 
     void stop(ProfilerType type, String taskName);
