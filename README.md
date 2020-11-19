@@ -4,7 +4,7 @@
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
 
-**Current Release:** TornadoVM 0.7  - 22/06/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-07)
+**Current Release:** TornadoVM 0.8  - 19/11/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-08)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
@@ -98,12 +98,12 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.7</version>
+         <version>0.8</version>
       </dependency>
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.7</version>
+         <version>0.8</version>
       </dependency>
    </dependencies>
 ```
