@@ -9,11 +9,11 @@ then
 	exit 0
 fi
 
-VERSION=0.7
+VERSION=0.8
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 
-declare -a artifacts=("tornado-api" "tornado-annotation" "tornado-benchmarks" "tornado-examples" "tornado-drivers-opencl" "tornado-matrices" "tornado-runtime")
+declare -a artifacts=("tornado-api" "tornado-annotation" "tornado-benchmarks" "tornado-examples" "tornado-drivers-opencl" "tornado-matrices" "tornado-runtime" "tornado-drivers-common" "tornado-drivers-ptx")
 
 for artifact in "${artifacts[@]}"
 do
@@ -39,3 +39,16 @@ mvn install:install-file \
 	-DgeneratePom=true \
 	-DlocalRepositoryPath=. \
 	 -DcreateChecksum=true 
+
+
+echo "Installing artifact: tornado-drivers-ptx-jni"
+mvn install:install-file \
+	-DgroupId=${GROUPID} \
+	-DartifactId=tornado-drivers-ptx-jni \
+	-Dversion=$VERSION \
+	-Dfile=${API_PATH}/tornado-drivers-ptx-jni-${VERSION}-libs.jar \
+	-Dpackaging=jar \
+	-DgeneratePom=true \
+	-DlocalRepositoryPath=. \
+	 -DcreateChecksum=true 
+
