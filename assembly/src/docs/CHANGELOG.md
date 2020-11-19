@@ -1,6 +1,45 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+## TornadoVM 0.8
+19/11/2020
+
+- Added PTX backend for NVIDIA GPUs
+	- Build TornadoVM using `make BACKEND=ptx,opencl` to obtain the two supported backends.
+- TornadoVM JIT Compiler aligned with Graal 20.2.0 
+- Support for other JDKs:
+	- Red Hat Mandrel 11.0.9
+	- Amazon Coretto 11.0.9
+	- GraalVM LabsJDK 11.0.8
+	- OpenJDK 11.0.8
+	- OpenJDK 12.0.2
+	- OpenJDK 13.0.2
+	- OpenJDK 14.0.2
+- Support for hybrid (CPU-GPU) parallel reductions
+- New API for generic kernel dispatch. It introduces the concept of `WorkerGrid` and `GridTask`
+	- A `WorkerGrid` is an object that stores how threads are organized on an  OpenCL device: 
+        ```java
+        WorkerGrid1D worker1D = new WorkerGrid1D(4096);
+        ```
+	- A `GridTask` is a map that relates a task-name with a worker-grid.  
+       ```java
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", worker1D);
+       ```
+	- A TornadoVM Task-Schedule can be executed using a `GridTask`:
+      ```java
+      ts.execute(gridTask);
+      ```
+	- More info: [link](https://github.com/beehive-lab/TornadoVM/commit/6191720fd947d3102e784dade9e576ed8af11068)
+- TornadoVM profiler improved 
+	- Profiler metrics added
+	- Code features per task-graph
+- Lazy device initialisation moved to early initialisation of PTX and OpenCL devices
+- Initial support for Atomics (OpenCL backend) - [Link to examples](https://github.com/beehive-lab/TornadoVM/blob/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/atomics/TestAtomics.java)
+- Task Schedules with 11-14 parameters supported
+- Documentation improved
+- Bug fixes for code generation,  numeric promotion, basic block traversal, Xilinx FPGA compilation. 
+
 ## TornadoVM 0.7
 22/06/2020
 

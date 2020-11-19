@@ -1,7 +1,12 @@
 
 ## Selected Publications
 
-* Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis. [**Dynamic Application Reconfiguration on Heterogeneous Hardware.**](https://dl.acm.org/citation.cfm?id=3313819) _In Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments (VEE'19)._
+* Michail Papadimitriou, Juan Fumero, Athanasios Stratikopoulos, Foivos S. Zakkak, Christos Kotselidis [**Transparent Compiler and Runtime Specializations for Accelerating Managed Languages on FPGAs**](https://arxiv.org/abs/2010.16304) in Programming 2021, _The Art, Science, and Engineering of Programming_. [Preprint](https://arxiv.org/pdf/2010.16304v1.pdf)
+
+* Athanasios Stratikopoulos, Mihai-Cristian Olteanu, Ian Vaughan, Zoran Sevarac, Nikos Foutris, Juan Fumero, Christos Kotselidis. [**Transparent Acceleration of Java-based Deep Learning Engines.**](https://dl.acm.org/doi/abs/10.1145/3426182.3426188) _In International Conference on Managed Programming Languages & Runtimes (MPLR ’20)_. [Preprint](https://www.researchgate.net/publication/344401294_Transparent_Acceleration_of_Java-based_Deep_Learning_Engines)
+
+
+* Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis. [**Dynamic Application Reconfiguration on Heterogeneous Hardware.**](https://dl.acm.org/citation.cfm?id=3313819) _In Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments (VEE'19)._ [Preprint](https://jjfumero.github.io/files/VEE2019_Fumero_Preprint.pdf)
 
 * M. Papadimitriou, J. Fumero, A. Stratikopoulos and C. Kotselidis, [**Towards Prototyping and Acceleration of Java Programs onto Intel FPGAs**](https://ieeexplore.ieee.org/abstract/document/8735538). _IEEE 27th Annual International Symposium on Field-Programmable Custom Computing Machines (FCCM'19)_. [Preprint](https://www.researchgate.net/profile/Michalis_Papadimitriou/publication/332223416_Towards_Prototyping_and_Acceleration_of_Java_Programs_onto_Intel_FPGAs/links/5ca71d2f92851c64bd50d9e9/Towards-Prototyping-and-Acceleration-of-Java-Programs-onto-Intel-FPGAs.pdf).
 
