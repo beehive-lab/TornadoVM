@@ -372,3 +372,54 @@ ts.updateReference(a, b);
 ts.updateReference(c, d);
 ts.updateReference(e, f);
 ```
+## 7. Execute a TaskSchedule with multiple tasks on multiple devices
+
+TornadoVM allows users to specify different targeted devices on TaskSchedules with multiple tasks.
+If the tasks are not independent, then TornadoVM overrides user preferences, and schedules all tasks on the default device.
+
+The following example showcases an example of a TaskSchedule with three independent tasks.
+```java
+TaskSchedule parallelFilter = new TaskSchedule("blur") //
+            .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
+            .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
+            .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
+            .streamOut(redFilter, greenFilter, blueFilter) //
+
+parallelFilter.execute();
+```
+
+For each task (red, blue and green) of the TaskSchedule (blur) the device can be specified as in:
+```bash
+tornado -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:2 uk.ac.manchester.tornado.examples.compute.BlurFilter
+```
+
+Where device ids (0:0, 0:1 and 0:2) correspond to device ids obtained from:
+```bash
+$ tornado --devices
+
+Number of Tornado drivers: 1
+Total number of OpenCL devices  : 3
+Tornado device=0:0
+	Intel(R) OpenCL -- Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+		Global Memory Size: 31.0 GB
+		Local Memory Size: 32.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [8192, 8192, 8192]
+		Device OpenCL C version: OpenCL C 2.0
+
+Tornado device=0:1
+	Intel(R) OpenCL HD Graphics -- Intel(R) Gen9 HD Graphics NEO
+		Global Memory Size: 24.8 GB
+		Local Memory Size: 64.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [256, 256, 256]
+		Device OpenCL C version: OpenCL C 2.0
+
+Tornado device=0:2
+	NVIDIA CUDA -- GeForce GTX 1650
+		Global Memory Size: 3.8 GB
+		Local Memory Size: 48.0 KB
+		Workgroup Dimensions: 3
+		Max WorkGroup Configuration: [1024, 1024, 64]
+		Device OpenCL C version: OpenCL C 1.2
+```

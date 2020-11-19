@@ -20,7 +20,7 @@ TornadoVM can be currently executed with the following two configurations:
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
 
-Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/17_MALI.md).
+Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/18_MALI.md).
 
 ## 2. Running Examples
 
@@ -218,13 +218,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.7</version>
+         <version>0.8</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.7</version>
+         <version>0.8</version>
       </dependency>
    </dependencies>
 ```
@@ -233,6 +233,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.8
 * 0.7
 * 0.6
 * 0.5

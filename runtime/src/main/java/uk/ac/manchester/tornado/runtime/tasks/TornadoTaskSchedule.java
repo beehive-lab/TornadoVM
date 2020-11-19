@@ -498,8 +498,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         boolean compile = false;
         if (Tornado.FPGA_EMULATION) {
             compile = true;
-        } else if (executionContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice) {
-            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceFirtTask();
+        } else if (executionContext.getDeviceFirstTask() instanceof TornadoAcceleratorDevice) {
+            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceFirstTask();
             if (device.isFullJITMode(executionContext.getTask(0))) {
                 compile = true;
             }

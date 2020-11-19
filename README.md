@@ -2,17 +2,17 @@
 
 🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
-For a quick introduction please read the following [FAQ](assembly/src/docs/14_FAQ.md).
+For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
 
-**Current Release:** TornadoVM 0.7  - 22/06/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-07)
+**Current Release:** TornadoVM 0.8  - 19/11/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-08)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 # 2. Installation
 
-TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
+TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
-You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/16_AWS.md).
+You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/17_AWS.md).
 
 # 3. Usage Instructions
 
@@ -98,12 +98,12 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.7</version>
+         <version>0.8</version>
       </dependency>
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.7</version>
+         <version>0.8</version>
       </dependency>
    </dependencies>
 ```
@@ -112,19 +112,19 @@ To run TornadoVM, you need to either install the TornadoVM extension for GraalVM
 
 # 7. Additional Resources
 
-[Here](assembly/src/docs/15_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing TornadoVM and how to use it.
+[Here](assembly/src/docs/16_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing TornadoVM and how to use it.
 
 # 8. Academic Publications
 
-Selected publications and citations can be found [here](assembly/src/docs/13_PUBLICATIONS.md).
+Selected publications and citations can be found [here](assembly/src/docs/14_PUBLICATIONS.md).
 
 # 9. Acknowledgments
 
-This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and [AnyScale Apps EP/L000725/1](http://anyscale.org), and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
+This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and AnyScale Apps EP/L000725/1, and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
 
 # 10. Contributions and Collaborations
 
-We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](CONTRIBUTIONS.md).
+We welcome collaborations! Please see how to contribute in the [CONTRIBUTING](CONTRIBUTING.md).
 
 A mailing list is also available to discuss TornadoVM related issues:
 

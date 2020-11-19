@@ -114,14 +114,6 @@ public class TornadoExecutionContext {
         return taskID;
     }
 
-    public void incrGlobalTaskCount() {
-        nextTask++;
-    }
-
-    public int hasTask(SchedulableTask task) {
-        return tasks.indexOf(task);
-    }
-
     public int addTask(SchedulableTask task) {
         int index = tasks.indexOf(task);
         if (index == -1) {
@@ -166,7 +158,6 @@ public class TornadoExecutionContext {
     }
 
     public void mapAllTo(TornadoDevice mapping) {
-
         if (mapping instanceof TornadoAcceleratorDevice) {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) mapping);
@@ -216,7 +207,7 @@ public class TornadoExecutionContext {
         }
     }
 
-    public TornadoDevice getDeviceFirtTask() {
+    public TornadoDevice getDeviceFirstTask() {
         return tasks.get(0).getDevice();
     }
 
