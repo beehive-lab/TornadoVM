@@ -1,33 +1,22 @@
 /*******************************************************************************
- * Copyright (c) 2008-2017 The Khronos Group Inc.
+ * Copyright (c) 2008-2020 The Khronos Group Inc.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and/or associated documentation files (the
- * "Materials"), to deal in the Materials without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Materials, and to
- * permit persons to whom the Materials are furnished to do so, subject to
- * the following conditions:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Materials.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * MODIFICATIONS TO THIS FILE MAY MEAN IT NO LONGER ACCURATELY REFLECTS
- * KHRONOS STANDARDS. THE UNMODIFIED, NORMATIVE VERSIONS OF KHRONOS
- * SPECIFICATIONS AND HEADER INFORMATION ARE LOCATED AT
- *    https://www.khronos.org/registry/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- * THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
  ******************************************************************************/
 /*****************************************************************************\
 
-Copyright (c) 2013-2017 Intel Corporation All Rights Reserved.
+Copyright (c) 2013-2020 Intel Corporation All Rights Reserved.
 
 THESE MATERIALS ARE PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -52,13 +41,8 @@ Notes:
 #ifndef __CL_EXT_INTEL_H
 #define __CL_EXT_INTEL_H
 
-#ifdef __APPLE__
-    #include <OpenCL/cl.h>
-    #include <OpenCL/cl_platform.h>
-#else
-    #include <CL/cl.h>
-    #include <CL/cl_platform.h>
-#endif
+#include <CL/cl.h>
+#include <CL/cl_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,47 +168,47 @@ typedef struct _cl_motion_estimation_desc_intel {
 
 extern CL_API_ENTRY cl_accelerator_intel CL_API_CALL
 clCreateAcceleratorINTEL(
-    cl_context                  /* context */,
-    cl_accelerator_type_intel   /* accelerator_type */,
-    size_t                      /* descriptor_size */,
-    const void*                 /* descriptor */,
-    cl_int*                     /* errcode_ret */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_context                   context,
+    cl_accelerator_type_intel    accelerator_type,
+    size_t                       descriptor_size,
+    const void*                  descriptor,
+    cl_int*                      errcode_ret) CL_EXT_SUFFIX__VERSION_1_2;
 
 typedef CL_API_ENTRY cl_accelerator_intel (CL_API_CALL *clCreateAcceleratorINTEL_fn)(
-    cl_context                  /* context */,
-    cl_accelerator_type_intel   /* accelerator_type */,
-    size_t                      /* descriptor_size */,
-    const void*                 /* descriptor */,
-    cl_int*                     /* errcode_ret */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_context                   context,
+    cl_accelerator_type_intel    accelerator_type,
+    size_t                       descriptor_size,
+    const void*                  descriptor,
+    cl_int*                      errcode_ret) CL_EXT_SUFFIX__VERSION_1_2;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
 clGetAcceleratorInfoINTEL(
-    cl_accelerator_intel        /* accelerator */,
-    cl_accelerator_info_intel   /* param_name */,
-    size_t                      /* param_value_size */,
-    void*                       /* param_value */,
-    size_t*                     /* param_value_size_ret */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_accelerator_intel         accelerator,
+    cl_accelerator_info_intel    param_name,
+    size_t                       param_value_size,
+    void*                        param_value,
+    size_t*                      param_value_size_ret) CL_EXT_SUFFIX__VERSION_1_2;
 
 typedef CL_API_ENTRY cl_int (CL_API_CALL *clGetAcceleratorInfoINTEL_fn)(
-    cl_accelerator_intel        /* accelerator */,
-    cl_accelerator_info_intel   /* param_name */,
-    size_t                      /* param_value_size */,
-    void*                       /* param_value */,
-    size_t*                     /* param_value_size_ret */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_accelerator_intel         accelerator,
+    cl_accelerator_info_intel    param_name,
+    size_t                       param_value_size,
+    void*                        param_value,
+    size_t*                      param_value_size_ret) CL_EXT_SUFFIX__VERSION_1_2;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
 clRetainAcceleratorINTEL(
-    cl_accelerator_intel        /* accelerator */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_accelerator_intel         accelerator) CL_EXT_SUFFIX__VERSION_1_2;
 
 typedef CL_API_ENTRY cl_int (CL_API_CALL *clRetainAcceleratorINTEL_fn)(
-    cl_accelerator_intel        /* accelerator */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_accelerator_intel         accelerator) CL_EXT_SUFFIX__VERSION_1_2;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
 clReleaseAcceleratorINTEL(
-    cl_accelerator_intel        /* accelerator */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_accelerator_intel         accelerator) CL_EXT_SUFFIX__VERSION_1_2;
 
 typedef CL_API_ENTRY cl_int (CL_API_CALL *clReleaseAcceleratorINTEL_fn)(
-    cl_accelerator_intel        /* accelerator */) CL_EXT_SUFFIX__VERSION_1_2;
+    cl_accelerator_intel         accelerator) CL_EXT_SUFFIX__VERSION_1_2;
 
 /******************************************
 * cl_intel_simultaneous_sharing extension *
@@ -299,8 +283,8 @@ typedef cl_uint cl_diagnostics_verbose_level;
 #define CL_DEVICE_AVC_ME_SUPPORTS_TEXTURE_SAMPLER_USE_INTEL 0x410C
 #define CL_DEVICE_AVC_ME_SUPPORTS_PREEMPTION_INTEL          0x410D
 
-#define CL_AVC_ME_VERSION_0_INTEL                           0x0;  // No support.
-#define CL_AVC_ME_VERSION_1_INTEL                           0x1;  // First supported version.
+#define CL_AVC_ME_VERSION_0_INTEL                           0x0   /* No support. */
+#define CL_AVC_ME_VERSION_1_INTEL                           0x1   /* First supported version. */
 
 #define CL_AVC_ME_MAJOR_16x16_INTEL                         0x0
 #define CL_AVC_ME_MAJOR_16x8_INTEL                          0x1
@@ -388,7 +372,7 @@ typedef cl_uint cl_diagnostics_verbose_level;
 
 #define CL_AVC_ME_INTRA_LUMA_PARTITION_MASK_16x16_INTEL     0x6
 #define CL_AVC_ME_INTRA_LUMA_PARTITION_MASK_8x8_INTEL       0x5
-#define CL_AVC_ME_INTRA_LUMA_PARTITION_MASK_4x4_INTEL       0x3 
+#define CL_AVC_ME_INTRA_LUMA_PARTITION_MASK_4x4_INTEL       0x3
 
 #define CL_AVC_ME_INTRA_NEIGHBOR_LEFT_MASK_ENABLE_INTEL         0x60
 #define CL_AVC_ME_INTRA_NEIGHBOR_UPPER_MASK_ENABLE_INTEL        0x10
@@ -419,11 +403,329 @@ typedef cl_uint cl_diagnostics_verbose_level;
 #define CL_AVC_ME_SLICE_TYPE_INTRA_INTEL                    0x2
 
 #define CL_AVC_ME_INTERLACED_SCAN_TOP_FIELD_INTEL           0x0
-#define CL_AVC_ME_INTERLACED_SCAN_BOTTOM_FIELD_INTEL        0x1  
+#define CL_AVC_ME_INTERLACED_SCAN_BOTTOM_FIELD_INTEL        0x1
+
+/*******************************************
+* cl_intel_unified_shared_memory extension *
+********************************************/
+
+/* These APIs are in sync with Revision Q of the cl_intel_unified_shared_memory spec! */
+
+#define cl_intel_unified_shared_memory 1
+
+/* cl_device_info */
+#define CL_DEVICE_HOST_MEM_CAPABILITIES_INTEL                   0x4190
+#define CL_DEVICE_DEVICE_MEM_CAPABILITIES_INTEL                 0x4191
+#define CL_DEVICE_SINGLE_DEVICE_SHARED_MEM_CAPABILITIES_INTEL   0x4192
+#define CL_DEVICE_CROSS_DEVICE_SHARED_MEM_CAPABILITIES_INTEL    0x4193
+#define CL_DEVICE_SHARED_SYSTEM_MEM_CAPABILITIES_INTEL          0x4194
+
+typedef cl_bitfield cl_device_unified_shared_memory_capabilities_intel;
+
+/* cl_device_unified_shared_memory_capabilities_intel - bitfield */
+#define CL_UNIFIED_SHARED_MEMORY_ACCESS_INTEL                   (1 << 0)
+#define CL_UNIFIED_SHARED_MEMORY_ATOMIC_ACCESS_INTEL            (1 << 1)
+#define CL_UNIFIED_SHARED_MEMORY_CONCURRENT_ACCESS_INTEL        (1 << 2)
+#define CL_UNIFIED_SHARED_MEMORY_CONCURRENT_ATOMIC_ACCESS_INTEL (1 << 3)
+
+typedef cl_properties cl_mem_properties_intel;
+
+/* cl_mem_properties_intel */
+#define CL_MEM_ALLOC_FLAGS_INTEL        0x4195
+
+typedef cl_bitfield cl_mem_alloc_flags_intel;
+
+/* cl_mem_alloc_flags_intel - bitfield */
+#define CL_MEM_ALLOC_WRITE_COMBINED_INTEL               (1 << 0)
+
+typedef cl_uint cl_mem_info_intel;
+
+/* cl_mem_alloc_info_intel */
+#define CL_MEM_ALLOC_TYPE_INTEL         0x419A
+#define CL_MEM_ALLOC_BASE_PTR_INTEL     0x419B
+#define CL_MEM_ALLOC_SIZE_INTEL         0x419C
+#define CL_MEM_ALLOC_DEVICE_INTEL       0x419D
+/* Enum values 0x419E-0x419F are reserved for future queries. */
+
+typedef cl_uint cl_unified_shared_memory_type_intel;
+
+/* cl_unified_shared_memory_type_intel */
+#define CL_MEM_TYPE_UNKNOWN_INTEL       0x4196
+#define CL_MEM_TYPE_HOST_INTEL          0x4197
+#define CL_MEM_TYPE_DEVICE_INTEL        0x4198
+#define CL_MEM_TYPE_SHARED_INTEL        0x4199
+
+typedef cl_uint cl_mem_advice_intel;
+
+/* cl_mem_advice_intel */
+/* Enum values 0x4208-0x420F are reserved for future memory advices. */
+
+/* cl_kernel_exec_info */
+#define CL_KERNEL_EXEC_INFO_INDIRECT_HOST_ACCESS_INTEL      0x4200
+#define CL_KERNEL_EXEC_INFO_INDIRECT_DEVICE_ACCESS_INTEL    0x4201
+#define CL_KERNEL_EXEC_INFO_INDIRECT_SHARED_ACCESS_INTEL    0x4202
+#define CL_KERNEL_EXEC_INFO_USM_PTRS_INTEL                  0x4203
+
+/* cl_command_type */
+#define CL_COMMAND_MEMFILL_INTEL        0x4204
+#define CL_COMMAND_MEMCPY_INTEL         0x4205
+#define CL_COMMAND_MIGRATEMEM_INTEL     0x4206
+#define CL_COMMAND_MEMADVISE_INTEL      0x4207
+
+extern CL_API_ENTRY void* CL_API_CALL
+clHostMemAllocINTEL(
+            cl_context context,
+            const cl_mem_properties_intel* properties,
+            size_t size,
+            cl_uint alignment,
+            cl_int* errcode_ret);
+
+typedef CL_API_ENTRY void* (CL_API_CALL *
+clHostMemAllocINTEL_fn)(
+            cl_context context,
+            const cl_mem_properties_intel* properties,
+            size_t size,
+            cl_uint alignment,
+            cl_int* errcode_ret);
+
+extern CL_API_ENTRY void* CL_API_CALL
+clDeviceMemAllocINTEL(
+            cl_context context,
+            cl_device_id device,
+            const cl_mem_properties_intel* properties,
+            size_t size,
+            cl_uint alignment,
+            cl_int* errcode_ret);
+
+typedef CL_API_ENTRY void* (CL_API_CALL *
+clDeviceMemAllocINTEL_fn)(
+            cl_context context,
+            cl_device_id device,
+            const cl_mem_properties_intel* properties,
+            size_t size,
+            cl_uint alignment,
+            cl_int* errcode_ret);
+
+extern CL_API_ENTRY void* CL_API_CALL
+clSharedMemAllocINTEL(
+            cl_context context,
+            cl_device_id device,
+            const cl_mem_properties_intel* properties,
+            size_t size,
+            cl_uint alignment,
+            cl_int* errcode_ret);
+
+typedef CL_API_ENTRY void* (CL_API_CALL *
+clSharedMemAllocINTEL_fn)(
+            cl_context context,
+            cl_device_id device,
+            const cl_mem_properties_intel* properties,
+            size_t size,
+            cl_uint alignment,
+            cl_int* errcode_ret);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clMemFreeINTEL(
+            cl_context context,
+            void* ptr);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clMemFreeINTEL_fn)(
+            cl_context context,
+            void* ptr);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clMemBlockingFreeINTEL(
+            cl_context context,
+            void* ptr);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clMemBlockingFreeINTEL_fn)(
+            cl_context context,
+            void* ptr);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clGetMemAllocInfoINTEL(
+            cl_context context,
+            const void* ptr,
+            cl_mem_info_intel param_name,
+            size_t param_value_size,
+            void* param_value,
+            size_t* param_value_size_ret);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clGetMemAllocInfoINTEL_fn)(
+            cl_context context,
+            const void* ptr,
+            cl_mem_info_intel param_name,
+            size_t param_value_size,
+            void* param_value,
+            size_t* param_value_size_ret);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clSetKernelArgMemPointerINTEL(
+            cl_kernel kernel,
+            cl_uint arg_index,
+            const void* arg_value);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clSetKernelArgMemPointerINTEL_fn)(
+            cl_kernel kernel,
+            cl_uint arg_index,
+            const void* arg_value);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clEnqueueMemsetINTEL(       /* Deprecated */
+            cl_command_queue command_queue,
+            void* dst_ptr,
+            cl_int value,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clEnqueueMemsetINTEL_fn)(   /* Deprecated */
+            cl_command_queue command_queue,
+            void* dst_ptr,
+            cl_int value,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clEnqueueMemFillINTEL(
+            cl_command_queue command_queue,
+            void* dst_ptr,
+            const void* pattern,
+            size_t pattern_size,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clEnqueueMemFillINTEL_fn)(
+            cl_command_queue command_queue,
+            void* dst_ptr,
+            const void* pattern,
+            size_t pattern_size,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clEnqueueMemcpyINTEL(
+            cl_command_queue command_queue,
+            cl_bool blocking,
+            void* dst_ptr,
+            const void* src_ptr,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clEnqueueMemcpyINTEL_fn)(
+            cl_command_queue command_queue,
+            cl_bool blocking,
+            void* dst_ptr,
+            const void* src_ptr,
+            size_t size,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+#ifdef CL_VERSION_1_2
+
+/* Because these APIs use cl_mem_migration_flags, they require
+   OpenCL 1.2: */
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clEnqueueMigrateMemINTEL(
+            cl_command_queue command_queue,
+            const void* ptr,
+            size_t size,
+            cl_mem_migration_flags flags,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clEnqueueMigrateMemINTEL_fn)(
+            cl_command_queue command_queue,
+            const void* ptr,
+            size_t size,
+            cl_mem_migration_flags flags,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+#endif
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clEnqueueMemAdviseINTEL(
+            cl_command_queue command_queue,
+            const void* ptr,
+            size_t size,
+            cl_mem_advice_intel advice,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+typedef CL_API_ENTRY cl_int (CL_API_CALL *
+clEnqueueMemAdviseINTEL_fn)(
+            cl_command_queue command_queue,
+            const void* ptr,
+            size_t size,
+            cl_mem_advice_intel advice,
+            cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list,
+            cl_event* event);
+
+/***************************************************
+* cl_intel_create_buffer_with_properties extension *
+****************************************************/
+
+#define cl_intel_create_buffer_with_properties 1
+
+extern CL_API_ENTRY cl_mem CL_API_CALL
+clCreateBufferWithPropertiesINTEL(
+    cl_context   context,
+    const cl_mem_properties_intel* properties,
+    cl_mem_flags flags,
+    size_t       size,
+    void *       host_ptr,
+    cl_int *     errcode_ret) CL_EXT_SUFFIX__VERSION_1_0;
+
+typedef CL_API_ENTRY cl_mem (CL_API_CALL *
+clCreateBufferWithPropertiesINTEL_fn)(
+    cl_context   context,
+    const cl_mem_properties_intel* properties,
+    cl_mem_flags flags,
+    size_t       size,
+    void *       host_ptr,
+    cl_int *     errcode_ret) CL_EXT_SUFFIX__VERSION_1_0;
+
+/******************************************
+* cl_intel_mem_channel_property extension *
+*******************************************/
+
+#define CL_MEM_CHANNEL_INTEL            0x4213
+
+/*********************************
+* cl_intel_mem_force_host_memory *
+**********************************/
+
+#define cl_intel_mem_force_host_memory 1
+
+/* cl_mem_flags */
+#define CL_MEM_FORCE_HOST_MEMORY_INTEL                      (1 << 20)
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __CL_EXT_INTEL_H */
-
