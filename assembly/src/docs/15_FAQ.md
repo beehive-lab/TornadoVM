@@ -13,14 +13,15 @@ TornadoVM is currently being used to accelerate machine learning and deep learni
 
 TornadoVM can be currently executed with the following two configurations:
 
-  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md)
-  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md)
+  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
+  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with JDK11+ (e.g. OpenJDK, Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
 
-Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/17_MALI.md).
+Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](18_MALI.md).
 
 #### Usage
 
-* [Examples of how to use TornadoVM](1_INSTALL.md#2.-Running-Examples)
+* [Examples of how to use TornadoVM](1_INSTALL.md#2-running-examples)
 * [Code examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples)
 
 ## 3. Which programming languages does TornadoVM support?
@@ -94,9 +95,9 @@ TornadoVM is an open-source project, and, as such, we welcome contributions.
     - Implement a performance plot suite when running the benchmark runner. This should plot speedups against serial Java as well as stacked bars with breakdown analysis (e.g. time spent on compilation, execution, and data transfers).
     - Port TornadoVM to Windows 10 - port bash scripts and adapt Python scripts to build with Windows 10.
 
-[Here](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTIONS.md) you can find more information about how to contribute, code conventions, and tasks.
+[Here](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTING.md) you can find more information about how to contribute, code conventions, and tasks.
 
 
-## 14. Does TornadoVM supports calls to standard Java libraries?
+## 14. Does TornadoVM support calls to standard Java libraries?
 
 Partially yes. TornadoVM currently supports calls to the Math library. However, invocations that imply I/O are not supported.

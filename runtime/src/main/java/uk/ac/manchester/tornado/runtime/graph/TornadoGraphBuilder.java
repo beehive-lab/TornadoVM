@@ -32,7 +32,6 @@ import java.util.Objects;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
@@ -75,6 +74,10 @@ public class TornadoGraphBuilder {
         graph.add(copyInNode);
         context.addUse(copyInNode);
         args[argIndex] = copyInNode;
+    }
+
+    private static boolean shouldPerformSharedObjectCopy(AbstractNode arg, ContextNode contextNode) {
+        return ((ContextOpNode) arg).getContext().getUses().size() != 1 && contextNode.getDeviceIndex() != ((ContextOpNode) arg).getContext().getDeviceIndex();
     }
 
     public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {
@@ -130,6 +133,9 @@ public class TornadoGraphBuilder {
                         }
                     }
                 } else {
+                    if (shouldPerformSharedObjectCopy(arg, context)) {
+                        createCopyInNode(context, graph, arg.getInputs().get(0), args, argIndex);
+                    }
                     args[argIndex] = arg;
                 }
 
@@ -201,7 +207,6 @@ public class TornadoGraphBuilder {
                     context.addUse(copyOutNode);
                 }
             } else if (states.get(i).isStreamIn() && objectNodes[i] instanceof ObjectNode) {
-                TornadoInternalError.guarantee(graphContext.getDevices().size() == 1, "unsupported StreamIn operation in multiple device mode");
                 final StreamInNode streamInNode = new StreamInNode(context);
                 streamInNode.setValue((ObjectNode) objectNodes[i]);
                 graph.add(streamInNode);
