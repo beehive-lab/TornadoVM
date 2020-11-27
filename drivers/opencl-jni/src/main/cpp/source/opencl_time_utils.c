@@ -40,8 +40,9 @@
  */
 long getTimeEvent(cl_event event) {
     cl_int status = clWaitForEvents(1, &event);
-    if(status!=CL_SUCCESS)
-         printf("[ERROR clWaitForEvents]: %d\n", status);
+    if (status!=CL_SUCCESS) {
+        printf("[ERROR clWaitForEvents]: %d\n", status);
+    }
     cl_ulong time_start, time_end;
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);

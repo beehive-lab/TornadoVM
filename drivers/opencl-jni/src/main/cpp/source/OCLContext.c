@@ -45,7 +45,6 @@
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseContext
 (JNIEnv *env, jclass clazz, jlong context_id) {
     OPENCL_PROLOGUE;
-
     OPENCL_SOFT_ERROR("clReleaseContext", clReleaseContext((cl_context) context_id),);
 }
 
@@ -57,18 +56,13 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clGetContextInfo
 (JNIEnv *env, jclass clazz, jlong context_id, jint param_name, jbyteArray array) {
     OPENCL_PROLOGUE;
-
     jbyte *value;
     jsize len;
-
     value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
     len = (*env)->GetArrayLength(env, array);
-
     size_t return_size = 0;
     OPENCL_SOFT_ERROR("clGetContextInfo",
             clGetContextInfo((cl_context) context_id, (cl_context_info) param_name, len, (void *) value, &return_size),);
-
-
     (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
 }
 
@@ -80,12 +74,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateCommandQueue
 (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jlong properties) {
     OPENCL_PROLOGUE;
-
     cl_command_queue queue;
-
     OPENCL_CHECK_ERROR("clCreateCommandQueue",
             queue = clCreateCommandQueue((cl_context) context_id, (cl_device_id) device_id, (cl_command_queue_properties) properties, &error_id), -1);
-
     return (jlong) queue;
 }
 
@@ -96,18 +87,16 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_allocateOffHeapMemory
 (JNIEnv *env, jclass clazz, jlong size, jlong alignment) {
-
     void *ptr;
     int rc = posix_memalign(&ptr, (size_t) alignment, (size_t) size);
     if (rc != 0) {
         printf("posix_memalign: did not work!\n");
     }
-
     memset(ptr, 0, (size_t) size);
-    for (size_t i = 0; i < (size_t) size / 4; i++) {
+    size_t i = 0;
+    for (; i < (size_t) size / 4; i++) {
         ((int *) ptr)[i] = i;
     }
-
     return (jlong) ptr;
 }
 
