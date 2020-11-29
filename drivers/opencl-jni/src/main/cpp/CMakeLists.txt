@@ -28,6 +28,7 @@ add_library(tornado-opencl SHARED
 	source/data_movers.c
 	source/utils.c
 	source/opencl_time_utils.c
+   source/jvmti.c
 )
 
 set_property(TARGET tornado-opencl PROPERTY C_STANDARD 99)
