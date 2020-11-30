@@ -103,6 +103,7 @@ public class NBody {
             start = System.nanoTime();
             nBody(numBodies, posSeq, velSeq, delT, espSqr);
             end = System.nanoTime();
+            uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody sequential", start, end);
             resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
         }
@@ -125,6 +126,7 @@ public class NBody {
             start = System.nanoTime();
             t0.execute();
             end = System.nanoTime();
+            uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
 
