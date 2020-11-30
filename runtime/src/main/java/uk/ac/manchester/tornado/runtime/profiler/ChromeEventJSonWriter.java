@@ -9,8 +9,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 public class ChromeEventJSonWriter extends JSonWriter<ChromeEventJSonWriter> {
-    private int pid = 0;
+    static private int pid = 0;
     ContentWriter NO_ARGS = null;
+
     ChromeEventJSonWriter() {
         super();
         // Java 9 we could use long pid = ProcessHandle.current().pid();
@@ -24,12 +25,12 @@ public class ChromeEventJSonWriter extends JSonWriter<ChromeEventJSonWriter> {
             pid_method.setAccessible(true);
             pid = (Integer) pid_method.invoke(mgmt);
         } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException | InvocationTargetException nsf) {
-            // well we tried.  Lets just use the default 0
+            // well we tried. Lets just use the default 0
         }
         objectStart();
         arrayStart("traceEvents");
-        object(()->{
-            object("args", ()-> {
+        object(() -> {
+            object("args", () -> {
                 kv("name", "Tornado");
             });
             kv("ph", "M");
@@ -39,26 +40,25 @@ public class ChromeEventJSonWriter extends JSonWriter<ChromeEventJSonWriter> {
         });
     }
 
-
     JSonWriter pidAndTid() {
         return kv("pid", pid).kv("tid", Thread.currentThread().getId());
     }
 
-    JSonWriter common(String phase, String name, String category ) {
-        return kv("ph", phase).kv("name", name). kv("cat", category).pidAndTid();
+    JSonWriter common(String phase, String name, String category) {
+        return kv("ph", phase).kv("name", name).kv("cat", category).pidAndTid();
     }
 
     public JSonWriter x(String name, String category, long startNs, long endNs, ContentWriter cw) {
-       return  compact().object(()->{
+        return compact().object(() -> {
             common("X", name, category);
             ns("ts", startNs);
             nsd("dur", endNs - startNs);
-            if (cw!= NO_ARGS) {
-                object("args", ()->{
+            if (cw != NO_ARGS) {
+                object("args", () -> {
                     nonCompact();
                     cw.write();
                 });
-            }else {
+            } else {
                 nonCompact();
             }
         });
@@ -71,7 +71,6 @@ public class ChromeEventJSonWriter extends JSonWriter<ChromeEventJSonWriter> {
     JSonWriter e(String name, long durationNs) {
         return kv("ph", "E").kv("name", name).pidAndTid().ns("ts", durationNs);
     }
-
 
     @Override
     void write(File file) {

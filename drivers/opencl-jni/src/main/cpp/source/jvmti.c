@@ -60,12 +60,17 @@ static void JNICALL garbageCollectionFinish (jvmtiEnv *jvmti){
    }
 }
 
+volatile static jboolean collectionFinished = JNI_FALSE;
+volatile static jboolean agentThreadShouldDie = JNI_FALSE;
+
 /* Callback for JVMTI_EVENT_VM_INIT */
 static void JNICALL *agentThread (jvmtiEnv* jvmti, JNIEnv* env, void* arg){
-   while (1){
-      fprintf(stderr,"in agent\n");
+   fprintf(stderr,"agent thread started\n");
+   while (agentThreadShouldDie == JNI_FALSE){
       sleep(1);
+      fprintf(stderr,"in agent\n");
    }
+   fprintf(stderr,"agent thread stopped\n");
 }
 
 static void JNICALL vmInit(jvmtiEnv *jvmti, JNIEnv *env, jthread thread) {
@@ -117,6 +122,7 @@ static void JNICALL vmDeath(jvmtiEnv *jvmti, JNIEnv *env) {
    //dataDumpRequest(jvmti);
    //   gdata->vmDeathCalled = JNI_TRUE;
    exitAgentMonitor(jvmti);
+   agentThreadShouldDie = JNI_TRUE;
 }
 
 
