@@ -52,7 +52,7 @@ public class TornadoOptions {
      * Stream-In All variables when using automatic reductions. This option is
      * considered experimental and it might be removed in future versions.
      */
-    public static final boolean EXPERIMENTAL_REDUCE_STREAM_ALL_IN = getBooleanValue("tornado.experimental.reduce.stream.all.in", "False");
+    public static final boolean EXPERIMENTAL_REDUCE_STREAM_ALL_IN = getBooleanValue("tornado.experimental.reduce.stream.all.in", "True");
 
     /**
      * Option to load FPGA pre-compiled binaries.
