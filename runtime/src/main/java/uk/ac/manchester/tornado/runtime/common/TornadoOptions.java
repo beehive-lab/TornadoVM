@@ -141,25 +141,6 @@ public class TornadoOptions {
     }
 
     /**
-     * The filename for ChromeEventTracer to write json file.
-     */
-    public static final String CHROME_EVENT_TRACER_FILENAME_KEY = "tornado.chrome.event.tracer.filename";
-    public static final String CHROME_EVENT_TRACER_FILENAME = Tornado.getProperty(CHROME_EVENT_TRACER_FILENAME_KEY, "chrome.json");
-    public static String getChromeEventTracerFileName() {
-        return Tornado.getProperty(CHROME_EVENT_TRACER_FILENAME_KEY, "chrome.json");
-    }
-
-    public static final String CHROME_EVENT_TRACER_ENABLED_KEY = "tornado.chrome.event.tracer.enabled";
-    /**
-     * Option to enable chrome event format for profiler. It can be disabled at any point during runtime.
-     *
-     * @return boolean.
-     */
-    public static boolean isChromeEventTracerEnabled() {
-        return getBooleanValue(CHROME_EVENT_TRACER_ENABLED_KEY, "False");
-    }
-
-    /**
      * Option to redirect profiler output.
      */
     public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");

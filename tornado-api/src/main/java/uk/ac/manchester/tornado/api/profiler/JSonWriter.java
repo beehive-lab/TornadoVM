@@ -1,4 +1,4 @@
-package uk.ac.manchester.tornado.runtime.profiler;
+package uk.ac.manchester.tornado.api.profiler;
 
 import java.io.*;
 import java.util.EnumSet;
