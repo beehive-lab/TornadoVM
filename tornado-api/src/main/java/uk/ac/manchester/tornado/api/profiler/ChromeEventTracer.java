@@ -59,10 +59,6 @@ public class ChromeEventTracer {
 
     public static final String CHROME_EVENT_TRACER_ENABLED_KEY = "tornado.chrome.event.tracer.enabled";
 
-    private static boolean getBooleanValue(String property, String defaultValue) {
-        return Boolean.parseBoolean(System.getProperties().getProperty(property, defaultValue));
-    }
-
     /**
      * Option to enable chrome event format for profiler. It can be disabled at any
      * point during runtime.
@@ -70,7 +66,7 @@ public class ChromeEventTracer {
      * @return boolean.
      */
     public static boolean isChromeEventTracerEnabled() {
-        return getBooleanValue(CHROME_EVENT_TRACER_ENABLED_KEY, "False");
+        return Boolean.getBoolean(CHROME_EVENT_TRACER_ENABLED_KEY);
     }
 
     public static ChromeEventTracer create() {
@@ -79,7 +75,9 @@ public class ChromeEventTracer {
 
     static public final ChromeEventJSonWriter json = new ChromeEventJSonWriter();
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> json.write(new File(getChromeEventTracerFileName()))));
+        if (isEnabled()) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> json.write(new File(getChromeEventTracerFileName()))));
+        }
     }
 
     static public boolean isEnabled() {
