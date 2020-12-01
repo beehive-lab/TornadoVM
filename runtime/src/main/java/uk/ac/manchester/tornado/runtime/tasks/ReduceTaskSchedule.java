@@ -349,10 +349,8 @@ class ReduceTaskSchedule {
             }
 
             // Add the rest of the variables
-            if (TornadoOptions.EXPERIMENTAL_REDUCE_STREAM_ALL_IN) {
-                for (Entry<Object, Object> reduceArray : originalReduceVariables.entrySet()) {
-                    streamInObjects.add(reduceArray.getValue());
-                }
+            for (Entry<Object, Object> reduceArray : originalReduceVariables.entrySet()) {
+                streamInObjects.add(reduceArray.getValue());
             }
 
             TornadoTaskSchedule.performStreamInThread(rewrittenTaskSchedule, streamInObjects);
