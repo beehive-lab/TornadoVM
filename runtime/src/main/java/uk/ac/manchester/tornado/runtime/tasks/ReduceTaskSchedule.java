@@ -72,6 +72,7 @@ class ReduceTaskSchedule {
     private HashMap<Object, Object> originalReduceVariables;
     private HashMap<Object, Object> hostHybridVariables;
     private ArrayList<Thread> threadSequentialExecution;
+    private ArrayList<HybridThreadMeta> hybridThreadMetas;
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
@@ -79,6 +80,7 @@ class ReduceTaskSchedule {
     private CachedGraph<?> sketchGraph;
     private boolean hybridMode;
     private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
+    private boolean hybridInitialized;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
@@ -252,6 +254,7 @@ class ReduceTaskSchedule {
             threadSequentialExecution.stream().forEach(thread -> {
                 try {
                     thread.join();
+                    hybridInitialized = false;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -263,6 +266,7 @@ class ReduceTaskSchedule {
         private Object codeTask;
         private final long sizeTargetDevice;
         private InstalledCode code;
+        private boolean finished;
 
         CompilationThread(Object codeTask, final long sizeTargetDevice) {
             this.codeTask = codeTask;
@@ -273,6 +277,10 @@ class ReduceTaskSchedule {
             return this.code;
         }
 
+        public boolean isFinished() {
+            return finished;
+        }
+
         @Override
         public void run() {
             StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
@@ -280,6 +288,7 @@ class ReduceTaskSchedule {
             StructuredGraph graph = (StructuredGraph) originalGraph.copy(getDebugContext());
             ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
             code = CodeAnalysis.compileAndInstallMethod(graph);
+            finished = true;
         }
     }
 
@@ -293,7 +302,6 @@ class ReduceTaskSchedule {
             this.compilationThread = compilationThread;
             this.taskPackage = taskPackage;
             this.hostHybridVariables = hostHybridVariables;
-            this.compilationThread.start();
         }
 
         @Override
@@ -308,14 +316,10 @@ class ReduceTaskSchedule {
         }
     }
 
-    private void createThreads(final TaskPackage taskPackage, final long sizeTargetDevice, HashMap<Object, Object> hostHybridVariables) {
-        if (threadSequentialExecution == null) {
-            threadSequentialExecution = new ArrayList<>();
-        }
-
+    private CompilationThread createCompilationThread(final TaskPackage taskPackage, final long sizeTargetDevice, HashMap<Object, Object> hostHybridVariables) {
         Object codeTask = taskPackage.getTaskParameters()[0];
         CompilationThread compilationThread = new CompilationThread(codeTask, sizeTargetDevice);
-        threadSequentialExecution.add(new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables));
+        return compilationThread;
     }
 
     private void updateStreamInOutVariables(HashMap<Integer, MetaReduceTasks> tableReduce) {
@@ -345,10 +349,8 @@ class ReduceTaskSchedule {
             }
 
             // Add the rest of the variables
-            if (TornadoOptions.EXPERIMENTAL_REDUCE_STREAM_ALL_IN) {
-                for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
-                    streamInObjects.add(pair.getValue());
-                }
+            for (Entry<Object, Object> reduceArray : originalReduceVariables.entrySet()) {
+                streamInObjects.add(reduceArray.getValue());
             }
 
             TornadoTaskSchedule.performStreamInThread(rewrittenTaskSchedule, streamInObjects);
@@ -387,11 +389,21 @@ class ReduceTaskSchedule {
         return hybridArray;
     }
 
+    private static class HybridThreadMeta {
+        private TaskPackage taskPackage;
+        private CompilationThread compilationThread;
+
+        public HybridThreadMeta(TaskPackage taskPackage, CompilationThread compilationThread) {
+            this.taskPackage = taskPackage;
+            this.compilationThread = compilationThread;
+        }
+    }
+
     /**
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
-     *
+     * <p>
      * It also creates a new thread in the case the input size for the reduction is
      * not power of two and the target device is either the FPGA or the GPU. In this
      * case, the new thread will compile the host part with the corresponding
@@ -495,8 +507,22 @@ class ReduceTaskSchedule {
                 streamReduceTable.put(taskNumber, streamReduceList);
 
                 if (hybridMode) {
-                    createThreads(taskPackage, inputSize, hostHybridVariables);
-                    threadSequentialExecution.stream().forEach(Thread::start);
+                    CompilationThread compilationThread = createCompilationThread(taskPackage, inputSize, hostHybridVariables);
+                    compilationThread.start();
+                    if (threadSequentialExecution == null) {
+                        threadSequentialExecution = new ArrayList<>();
+                    }
+
+                    HybridThreadMeta meta = new HybridThreadMeta(taskPackage, compilationThread);
+                    if (hybridThreadMetas == null) {
+                        hybridThreadMetas = new ArrayList<>();
+                    }
+                    hybridThreadMetas.add(meta);
+
+                    SequentialExecutionThread sequentialExecutionThread = new SequentialExecutionThread(compilationThread, taskPackage, hostHybridVariables);
+                    threadSequentialExecution.add(sequentialExecutionThread);
+                    sequentialExecutionThread.start();
+                    hybridInitialized = true;
                 }
             }
         }
@@ -597,6 +623,14 @@ class ReduceTaskSchedule {
 
     void executeExpression() {
         setNeutralElement();
+        if (hybridMode && !hybridInitialized) {
+            hybridInitialized = true;
+            threadSequentialExecution.clear();
+            for (HybridThreadMeta meta : hybridThreadMetas) {
+                threadSequentialExecution.add(new SequentialExecutionThread(meta.compilationThread, meta.taskPackage, hostHybridVariables));
+            }
+            threadSequentialExecution.stream().forEach(Thread::start);
+        }
         rewrittenTaskSchedule.execute();
         updateOutputArray();
     }
@@ -606,12 +640,19 @@ class ReduceTaskSchedule {
             Object newArray = pair.getKey();
             Object neutralElement = pair.getValue();
             fillOutputArrayWithNeutral(newArray, neutralElement);
+
+            // Hybrid Execution
+            if (hostHybridVariables != null && hostHybridVariables.containsKey(newArray)) {
+                Object arrayCPU = hostHybridVariables.get(newArray);
+                fillOutputArrayWithNeutral(arrayCPU, neutralElement);
+            }
+
         }
 
         for (Entry<Object, Object> pair : neutralElementsOriginal.entrySet()) {
-            Object newArray = pair.getKey();
+            Object originalArray = pair.getKey();
             Object neutralElement = pair.getValue();
-            fillOutputArrayWithNeutral(newArray, neutralElement);
+            fillOutputArrayWithNeutral(originalArray, neutralElement);
         }
     }
 
@@ -743,7 +784,6 @@ class ReduceTaskSchedule {
     }
 
     /**
-     *
      * @param driverIndex
      *            Index within the Tornado drivers' index
      * @param device
@@ -769,7 +809,7 @@ class ReduceTaskSchedule {
 
     /**
      * It computes the right local work group size for GPUs/FPGAs.
-     * 
+     *
      * @param device
      *            Input device.
      * @param globalWorkSize
@@ -799,9 +839,5 @@ class ReduceTaskSchedule {
             value--;
         }
         return value;
-    }
-
-    private ArrayList<Thread> getHostThreadReduction() {
-        return this.threadSequentialExecution;
     }
 }

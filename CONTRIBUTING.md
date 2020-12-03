@@ -32,6 +32,9 @@ For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_IN
 * Settings -> Other Settings -> Save Actions -> Formatting Actions -> Optimize Imports
 * Settings -> Other Settings -> Save Actions -> Formatting Actions -> Reformat File
 
+
+Note that the formatter config file is stored in the following path: `<tornadovm>/scripts/templates/eclipse-settings/Tornado.xml`.
+
 ## Looking for tasks to contribute? 
 
 
