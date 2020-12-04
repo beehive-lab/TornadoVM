@@ -18,9 +18,9 @@
   Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```
-  Red Hat Mandrel 11.0.9
-  Amazon Coretto 11.0.9
-  GraalVM LabsJDK 11.0.8
+  Red Hat Mandrel 11.0.9 (Mandrel 20.2.0 Final)
+  Amazon Corretto 11.0.9
+  GraalVM LabsJDK 11.0.8 (GraalVM 20.2.0)
   OpenJDK 11.0.8
   OpenJDK 12.0.2
   OpenJDK 13.0.2
