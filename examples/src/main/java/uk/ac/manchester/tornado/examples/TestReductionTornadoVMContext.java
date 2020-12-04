@@ -10,6 +10,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class TestReductionTornadoVMContext {
 
@@ -89,6 +90,14 @@ public class TestReductionTornadoVMContext {
         }
     }
 
+    public static void rAdd(final float[] array, int size) {
+        float acc = array[0];
+        for (int i = 1; i < array.length; i++) {
+            acc += array[i];
+        }
+        array[0] = acc;
+    }
+
     public static void main(String[] args) {
         final int size = 1024;
         final int localSize = 256;
@@ -109,11 +118,12 @@ public class TestReductionTornadoVMContext {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
-        for (float v : reduce) {
-            System.out.println(v);
-            finalSum += v;
-        }
+        float finalSum = 0;
+        int reduceSize = size / localSize;
+        // rAdd(reduce, reduceSize);
+        TaskSchedule s1 = new TaskSchedule("s1").streamIn(reduce, reduceSize).task("t1", TestReductionTornadoVMContext::rAdd, reduce, reduceSize).streamOut(reduce);
+        s1.execute();
+        finalSum = reduce[0];
 
         System.out.println("Final SUM = " + finalSum + " vs seq= " + sequential);
         if ((sequential - finalSum) == 0) {
