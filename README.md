@@ -1,20 +1,25 @@
-# 1. TornadoVM
+# TornadoVM
 
-🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
+<img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
+TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
+
+#####
+**Website**: [tornadovm.org](tornadovm.org)
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
 
 **Current Release:** TornadoVM 0.8  - 19/11/2020 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-08)
 
+
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
-# 2. Installation
+## 1. Installation
 
 TornadoVM can be installed either [from scratch](INSTALL.md) or by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](assembly/src/docs/17_AWS.md).
 
-# 3. Usage Instructions
+## 2. Usage Instructions
 
 TornadoVM is currently being used to accelerate machine learning and deep learning applications, computer vision, physics simulations, financial applications, computational photography, and signal processing.
 
@@ -35,7 +40,7 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
 [Profiler Usage](assembly/src/docs/9_PROFILER.md)
 
 
-# 4. Programming Model
+## 3. Programming Model
 
 TornadoVM exposes to the programmer task-level, data-level and pipeline-level parallelism via a light Application Programming Interface (API). TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program.
 
@@ -66,7 +71,7 @@ public class Compute {
 ```
 
 
-# 5. Dynamic Reconfiguration
+## 4. Dynamic Reconfiguration
 
 Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches devices if it knows the new device offers better performance. With the task-migration, the TornadoVM's approach is to only switch device if it detects an application can be executed faster than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on the CPU using the default compilers (C2 or Graal).
 
@@ -82,7 +87,7 @@ Further details and instructions on how to enable this feature can be found here
 * Dynamic reconfiguration: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
 
 
-# 6. How to Use it in your Projects?
+## 5. How to Use it in your Projects?
 
 You can import the API and start using TornadoVM. Set this in the `pom.xml` file. 
 
@@ -110,19 +115,19 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
 
 To run TornadoVM, you need to either install the TornadoVM extension for GraalVM/OpenJDK, or run with our docker [images](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
-# 7. Additional Resources
+## 6. Additional Resources
 
 [Here](assembly/src/docs/16_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing TornadoVM and how to use it.
 
-# 8. Academic Publications
+## 7. Academic Publications
 
 Selected publications and citations can be found [here](assembly/src/docs/14_PUBLICATIONS.md).
 
-# 9. Acknowledgments
+## 8. Acknowledgments
 
 This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and AnyScale Apps EP/L000725/1, and now it is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
 
-# 10. Contributions and Collaborations
+## 9. Contributions and Collaborations
 
 We welcome collaborations! Please see how to contribute in the [CONTRIBUTING](CONTRIBUTING.md).
 
@@ -132,7 +137,7 @@ tornado-support@googlegroups.com
 
 For collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
 
-# 11. TornadoVM Team
+## 10. TornadoVM Team
 
 This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
 Currently, this project is maintained and updated by the following contributors:
@@ -144,7 +149,7 @@ Currently, this project is maintained and updated by the following contributors:
 * [Florin Blanaru](https://github.com/gigiblender)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
-# 12. Licenses
+## 11. Licenses
 
 To use TornadoVM, you can link the TornadoVM API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
@@ -163,4 +168,3 @@ Each TornadoVM module is licensed as follows:
 | Tornado-Benchmarks | [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)  |
 | Tornado-Examples |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
-
