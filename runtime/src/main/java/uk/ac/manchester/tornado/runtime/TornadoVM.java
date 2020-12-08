@@ -400,7 +400,8 @@ public class TornadoVM extends TornadoLogger {
         task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
         if (gridTask != null && gridTask.get(task.getId()) != null) {
-            TornadoOptions.USER_SCHEDULING = true;
+            task.setGridScheduler(true);
+            // TornadoOptions.USER_SCHEDULING = true;
         }
 
         if (installedCodes[taskIndex] == null) {

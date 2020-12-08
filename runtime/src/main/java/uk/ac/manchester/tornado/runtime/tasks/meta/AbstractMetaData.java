@@ -65,6 +65,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private static final int DEFAULT_DEVICE_INDEX = 0;
     private DeviceBuffer deviceBuffer;
     private ResolvedJavaMethod graph;
+    private boolean useGridScheduler;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
@@ -482,5 +483,13 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     @Override
     public Object getCompiledResolvedJavaMethod() {
         return graph;
+    }
+
+    public void setGridScheduler(boolean use) {
+        this.useGridScheduler = use;
+    }
+
+    public boolean isGridSchedulerEnabled() {
+        return this.useGridScheduler;
     }
 }

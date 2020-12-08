@@ -29,7 +29,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 public class TornadoOptions {
 
-    public static boolean USER_SCHEDULING = false;
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */

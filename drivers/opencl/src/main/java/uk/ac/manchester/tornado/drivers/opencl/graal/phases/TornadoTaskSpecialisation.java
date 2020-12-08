@@ -58,7 +58,6 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
@@ -73,6 +72,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final DeadCodeEliminationPhase deadCodeElimination;
     private final TornadoLoopUnroller loopUnroll;
     private long batchThreads;
+    private boolean gridScheduling;
     private int index;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
@@ -177,7 +177,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             int length = Array.getLength(value);
             final ConstantNode constant;
 
-            if (TornadoOptions.USER_SCHEDULING) {
+            if (gridScheduling) {
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
                 node.replaceAtUsages(oclStackAccessNode);
@@ -237,7 +237,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            if (TornadoOptions.USER_SCHEDULING) {
+            if (gridScheduling) {
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
                 parameterNode.replaceAtUsages(oclStackAccessNode);
@@ -260,6 +260,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         int lastNodeCount = graph.getNodeCount();
         boolean hasWork = true;
         this.batchThreads = context.getBatchThreads();
+        this.gridScheduling = context.isGridSchedulerEnabled();
 
         while (hasWork) {
             final Mark mark = graph.getMark();
