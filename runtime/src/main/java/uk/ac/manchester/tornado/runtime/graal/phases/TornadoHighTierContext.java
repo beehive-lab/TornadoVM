@@ -27,6 +27,7 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -89,4 +90,7 @@ public class TornadoHighTierContext extends HighTierContext {
         return batchThreads;
     }
 
+    public boolean isGridSchedulerEnabled() {
+        return meta.isGridSchedulerEnabled();
+    }
 }

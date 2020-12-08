@@ -95,6 +95,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",

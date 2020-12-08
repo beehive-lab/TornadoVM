@@ -191,6 +191,16 @@ public class PrebuiltTask implements SchedulableTask {
         meta.enableDefaultThreadScheduler(useDefaultScheduler);
     }
 
+    @Override
+    public void setGridScheduler(boolean use) {
+        meta.setGridScheduler(use);
+    }
+
+    @Override
+    public boolean isGridSchedulerEnabled() {
+        return meta.isGridSchedulerEnabled();
+    }
+
     public int[] getAtomics() {
         return atomics;
     }
