@@ -3,6 +3,7 @@ all: build
 # Variable passed for build:
 # BACKEND - which backend to include in the build. Can be any combination of { opencl, ptx }. Default: opencl
 BACKEND?=opencl
+
 build jdk-8:
 	./bin/compile.sh jdk-8 $(BACKEND)
 
@@ -14,6 +15,10 @@ graal-jdk-8:
 
 graal-jdk-11:
 	./bin/compile.sh graal-jdk-11 $(BACKEND)
+
+ptx:
+	./bin/compile.sh jdk-8 BACKEND=ptx,opencl
+	
 
 offline:
 	./bin/compile.sh jdk-8 $(BACKEND) OFFLINE
