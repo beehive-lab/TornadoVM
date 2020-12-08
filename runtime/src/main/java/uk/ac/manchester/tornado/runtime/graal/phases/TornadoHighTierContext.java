@@ -91,6 +91,9 @@ public class TornadoHighTierContext extends HighTierContext {
     }
 
     public boolean isGridSchedulerEnabled() {
-        return meta.isGridSchedulerEnabled();
+        if (meta != null) {
+            return meta.isGridSchedulerEnabled();
+        }
+        return false;
     }
 }
