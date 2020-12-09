@@ -85,7 +85,9 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             OPENCL_SOFT_ERROR("clEnqueueWriteBuffer (" #TYPE  ")", status, -1); \
             if(PRINT_DATA_TIMES) { \
                 long writeTime = getTimeEvent(event); \
-                printf("H2D time: %ld (ns) \n", writeTime); \
+                printf("H2D time: %ld (ns) \n", writeTime); /* clWaitForEvents call a side effect of this call so safe to not wait */ \
+            }else{ \
+                clWaitForEvents(1, &event); /* we must wait irrespective of jboolean blocking flag or we risk Java GC/OpenCL Runtime race condition */ \
             } \
             JNI_RELEASE_ARRAY(array1,buffer); \
             OPENCL_RELEASE_WAITLIST(array2); \
@@ -122,8 +124,10 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
             }\
             OPENCL_SOFT_ERROR("clEnqueueReadBuffer (" #TYPE ")", status, -1); \
             if(PRINT_DATA_TIMES) { \
-                long readTime = getTimeEvent(event); \
+                long readTime = getTimeEvent(event); /* clWaitForEvents call a side effect of this call so safe to not wait */ \
                 printf("D2H time: %ld (ns) \n", readTime); \
+            }else{ \
+                clWaitForEvents(1, &event); /* we must wait irrespective of jboolean blocking flag or we risk Java GC/OpenCL Runtime race condition */ \
             } \
             JNI_RELEASE_ARRAY(array1, buffer); \
             OPENCL_RELEASE_WAITLIST(array2); \
