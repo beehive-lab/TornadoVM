@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 
@@ -32,8 +30,7 @@
 #include <CL/cl.h>
 #endif
 
-#include <stdio.h>
-#include "macros.h"
+#include <iostream>
 #include "OCLKernel.h"
 #include "ocl_log.h"
 

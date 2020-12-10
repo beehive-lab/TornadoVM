@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 #include <jni.h>
@@ -32,8 +31,10 @@
     #include <CL/cl.h>
 #endif
 
+#include <iostream>
 #include <stdio.h>
 #include "OCLDevice.h"
+#include "ocl_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
@@ -46,5 +47,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_cl
     jsize len = env->GetArrayLength(array);
     size_t return_size = 0;
     size_t status = clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size);
+    LOG_OCL_JNI("clGetDeviceInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }

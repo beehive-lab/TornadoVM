@@ -24,15 +24,16 @@
 #ifndef TORNADO_OCL_LOG_H
 #define TORNADO_OCL_LOG_H
 
-#include <iostream>
+#define PRINT_KERNEL_EVENTS 0
+#define PRINT_DATA_SIZES 0
 
 #define LOG_JNI 0
 
-#define LOG_OCL_JNI(name, result)                       \
-    if (LOG_JNI == 1)  {                                \
-        std::cout << "[TornadoVM-JNI] Calling : " << name \
-        << " -> Status: " << result                     \
-        << std::endl;                                   \
-    }
+#define LOG_OCL_JNI(name, result)                          \
+    if (LOG_JNI == 1)  {                                   \
+        std::cout << "[TornadoVM-JNI] Calling : " << name  \
+        << " -> Status: " << result                        \
+        << std::endl;                                     \
+    }                                                     \
 
 #endif //TORNADO_OCL_LOG_H

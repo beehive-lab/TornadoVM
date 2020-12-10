@@ -16,9 +16,9 @@ include_directories(
 	)
 
 file(GLOB_RECURSE "source/*.c source/*.cpp")
-add_library(tornado-opencl SHARED 
-	source/OCLCommandQueue.c
-	source/OCLContext.c
+add_library(tornado-opencl SHARED
+		source/OCLCommandQueue.cpp
+		source/OCLContext.cpp
 		source/OCLDevice.cpp
 		source/OCLEvent.cpp
         source/OCLKernel.cpp
