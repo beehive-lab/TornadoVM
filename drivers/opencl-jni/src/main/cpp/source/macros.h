@@ -30,39 +30,6 @@
 extern "C" {
 #endif
 
-#define VERBOSE 0
-
-#define OCLEXCEPTION "uk/ac/manchester/tornado/drivers/opencl/exceptions/OCLException"
-
-#define OPENCL_PROLOGUE cl_int error_id; \
-    jclass cls;
-
-
-#define OPENCL_SOFT_ERROR(name,func,rc) if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.opencl> Calling: %s\n",name); \
-    } \
-    error_id = func; \
-    if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.opencl> Returned: %s = %d\n",name,error_id); \
-    } \
-
-#define OPENCL_CHECK_ERROR(name,func,rc) if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.opencl> Calling: %s\n",name); \
-    } \
-    func; \
-    if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.opencl> Returned: %s = %d\n",name,error_id); \
-    } \
-    if(error_id != CL_SUCCESS){ \
-        cls = (*env)->FindClass(env,OCLEXCEPTION); \
-        if(cls == NULL){ \
-            return rc; \
-        } \
-        (*env)->ThrowNew(env,cls,getOpenCLError(name,error_id)); \
-        (*env)->DeleteLocalRef(env,cls); \
-        return rc; \
-    }
-
 #define JNI_ACQUIRE_ARRAY(TYPE,VAR,ARR) TYPE *VAR = (*env)->GetPrimitiveArrayCritical(env, ARR, NULL)
 
 #define JNI_RELEASE_ARRAY(array, variable) if (array != NULL) { (*env)->ReleasePrimitiveArrayCritical(env, array, variable, JNI_ABORT); }

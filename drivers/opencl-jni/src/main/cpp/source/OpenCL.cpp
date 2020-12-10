@@ -30,9 +30,10 @@
     #include <CL/cl.h>
 #endif
 
+#include <iostream>
 #include <stdio.h>
-#include "macros.h"
 #include "OpenCL.h"
+#include "ocl_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
@@ -43,9 +44,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGet
 (JNIEnv *env, jclass clazz) {
     cl_uint num_platforms = 0;
     cl_int status = clGetPlatformIDs(0, NULL, &num_platforms);
-    if(VERBOSE) {
-        printf("uk.ac.manchester.tornado.drivers.opencl> Returned: clGetPlatformIDs = %d\n", status);
-    }
+    LOG_OCL_JNI("clGetPlatformIDs", status);
     return (jint) num_platforms;
 }
 
@@ -64,9 +63,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGet
 
     cl_uint num_platforms = 0;
     cl_int status = clGetPlatformIDs(len, (cl_platform_id*) platforms, &num_platforms);
-    if(VERBOSE) {
-        printf("uk.ac.manchester.tornado.drivers.opencl> Returned: clGetPlatformIDs = %d\n", status);
-    }
+    LOG_OCL_JNI("clGetPlatformIDs", status);
     env->ReleasePrimitiveArrayCritical(array, platforms, 0);
     return (jint) num_platforms;
 }
