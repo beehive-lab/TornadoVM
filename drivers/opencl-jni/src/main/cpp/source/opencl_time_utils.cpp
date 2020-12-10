@@ -26,24 +26,21 @@
  *
  */
 
-#define CL_TARGET_OPENCL_VERSION 120
-#ifdef __APPLE__
-    #include <OpenCL/cl.h>
-#else 
-    #include <CL/cl.h>
-#endif
 
 #include <stdio.h>
 
+#include "opencl_time_utils.h"
+
 /*
- * It returns the time in nanoseconds
+ * It returns the elapsed time (END-START) in nanoseconds
  */
-long getTimeEvent(cl_event event) {
+long getElapsedTimeEvent(cl_event event) {
     cl_int status = clWaitForEvents(1, &event);
-    if (status!=CL_SUCCESS) {
+    if (status != CL_SUCCESS) {
         printf("[ERROR clWaitForEvents]: %d\n", status);
     }
-    cl_ulong time_start, time_end;
+    cl_ulong time_start;
+    cl_ulong time_end;
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
     return (time_end - time_start);

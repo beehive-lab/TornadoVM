@@ -135,7 +135,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
     OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel", status, 0);
 
 	if (PRINT_KERNEL_EVENTS) {
-		long kernelTime = getTimeEvent(kernelEvent);
+		long kernelTime = getElapsedTimeEvent(kernelEvent);
 		printf("Kernel time: %ld (ns) \n", kernelTime);
 	}
 
@@ -166,7 +166,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
             clEnqueueTask((cl_command_queue) queue_id, (cl_kernel) kernel_id, (size_t) len, (cl_event *) events, &event), 0);
 
     if (PRINT_KERNEL_EVENTS) {
-        long kernelTime = getTimeEvent(event);
+        long kernelTime = getElapsedTimeEvent(event);
         printf("Kernel time: %ld (ns) \n", kernelTime);
     }
 

@@ -24,13 +24,26 @@
  *
  */
 
+#ifndef opencl_time_utils_h
+#define opencl_time_utils_h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __APPLE__
     #include <OpenCL/cl.h>
-#else 
+#else
     #include <CL/cl.h>
 #endif
 
 /*
  * It returns the time in nanoseconds
  */
-long getTimeEvent(cl_event event);
+long getElapsedTimeEvent(cl_event event);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

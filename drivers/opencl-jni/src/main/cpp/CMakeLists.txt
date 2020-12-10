@@ -15,7 +15,7 @@ include_directories(
 	${OPENCL_INCLUDE_DIRS}
 	)
 
-file(GLOB_RECURSE "source/*.c")
+file(GLOB_RECURSE "source/*.c source/*.cpp")
 add_library(tornado-opencl SHARED 
 	source/OCLCommandQueue.c
 	source/OCLContext.c
@@ -24,10 +24,10 @@ add_library(tornado-opencl SHARED
 	source/OCLKernel.c
 	source/OCLPlatform.c
 	source/OCLProgram.c
-	source/OpenCL.c
+	source/OpenCL.cpp
 	source/data_movers.c
 	source/utils.c
-	source/opencl_time_utils.c
+	source/opencl_time_utils.cpp
 )
 
 set_property(TARGET tornado-opencl PROPERTY C_STANDARD 99)

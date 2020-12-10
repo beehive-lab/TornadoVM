@@ -23,6 +23,10 @@
  * Authors: James Clarkson, Juan Fumero
  *
  */
+#ifndef macros_h
+#define macros_h
+
+
 #define VERBOSE 0
 
 #define debug(fmt,args...) if(VERBOSE) printf(fmt,args);
@@ -104,3 +108,5 @@
 
 
 #define OPENCL_RELEASE_WAITLIST(ARR) JNI_RELEASE_ARRAY(ARR, __ ## ARR)
+
+#endif

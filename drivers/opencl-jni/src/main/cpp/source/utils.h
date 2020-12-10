@@ -24,15 +24,17 @@
  *
  */
 
+#ifndef utils_h
+#define utils_h
+
 #define CL_TARGET_OPENCL_VERSION 120
+
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
+    #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+    #include <CL/cl.h>
 #endif
 
 char *getOpenCLError(char *, cl_int);
 
-void resetAndStartTimer();
-
-unsigned long long getElapsedTime();
+#endif
