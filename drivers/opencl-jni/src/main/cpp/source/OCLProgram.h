@@ -31,53 +31,53 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
-     * Method:    clReleaseProgram
-     * Signature: (J)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clReleaseProgram
-    (JNIEnv *, jclass, jlong);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
+ * Method:    clReleaseProgram
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clReleaseProgram
+        (JNIEnv *, jclass, jlong);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
-     * Method:    clBuildProgram
-     * Signature: (J[JLjava/lang/String;)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clBuildProgram
-    (JNIEnv *, jclass, jlong, jlongArray, jstring);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
+ * Method:    clBuildProgram
+ * Signature: (J[JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clBuildProgram
+        (JNIEnv *, jclass, jlong, jlongArray, jstring);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
-     * Method:    clGetProgramInfo
-     * Signature: (JI[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clGetProgramInfo
-    (JNIEnv *, jclass, jlong, jint, jbyteArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
+ * Method:    clGetProgramInfo
+ * Signature: (JI[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clGetProgramInfo
+        (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
-     * Method:    clGetProgramBuildInfo
-     * Signature: (JJI[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clGetProgramBuildInfo
-    (JNIEnv *, jclass, jlong, jlong, jint, jbyteArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
+ * Method:    clGetProgramBuildInfo
+ * Signature: (JJI[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clGetProgramBuildInfo
+        (JNIEnv *, jclass, jlong, jlong, jint, jbyteArray);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
-     * Method:    clCreateKernel
-     * Signature: (JLjava/lang/String;)J
-     */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clCreateKernel
-    (JNIEnv *, jclass, jlong, jstring);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
+ * Method:    clCreateKernel
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clCreateKernel
+        (JNIEnv *, jclass, jlong, jstring);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
-     * Method:    getBinaries
-     * Signature: (JJ[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_getBinaries
-    (JNIEnv *, jclass, jlong, jlong, jobject);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
+ * Method:    getBinaries
+ * Signature: (JJ[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_getBinaries
+        (JNIEnv *, jclass, jlong, jlong, jobject);
 
 #ifdef __cplusplus
 }

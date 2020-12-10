@@ -32,8 +32,6 @@ extern "C" {
 
 #define VERBOSE 0
 
-#define debug(fmt,args...) if(VERBOSE) printf(fmt,args);
-
 #define OCLEXCEPTION "uk/ac/manchester/tornado/drivers/opencl/exceptions/OCLException"
 
 #define OPENCL_PROLOGUE cl_int error_id; \

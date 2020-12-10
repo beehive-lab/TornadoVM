@@ -34,7 +34,8 @@
 
 #include <stdio.h>
 #include "macros.h"
-#include "utils.h"
+#include "OCLKernel.h"
+#include "ocl_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
@@ -43,8 +44,8 @@
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clReleaseKernel
 (JNIEnv *env, jclass clazz, jlong kernel_id) {
-    OPENCL_PROLOGUE;
-    OPENCL_SOFT_ERROR("clReleaseKernel", clReleaseKernel((cl_kernel) kernel_id),);
+   cl_int status = clReleaseKernel((cl_kernel) kernel_id);
+   LOG_OCL_JNI("clReleaseKernel", status);
 }
 
 /*
@@ -54,14 +55,11 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clSetKernelArg
 (JNIEnv *env, jclass clazz, jlong kernel_id, jint index, jlong size, jbyteArray array) {
-    OPENCL_PROLOGUE;
-
-    jbyte *value = (array == NULL) ? NULL : (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-
-    OPENCL_SOFT_ERROR("clSetKernelArg", clSetKernelArg((cl_kernel) kernel_id, (cl_uint) index, (size_t) size, (void*) value),);
-
+    jbyte *value = static_cast<jbyte *>((array == NULL) ? NULL : env->GetPrimitiveArrayCritical(array, 0));
+    cl_uint status = clSetKernelArg((cl_kernel) kernel_id, (cl_uint) index, (size_t) size, (void*) value);
+    LOG_OCL_JNI("clSetKernelArg", status);
     if (value != NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+        env->ReleasePrimitiveArrayCritical(array, value, 0);
     }
 }
 
@@ -72,17 +70,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clGetKernelInfo
 (JNIEnv *env, jclass clazz, jlong kernel_id, jint kernel_info, jbyteArray array) {
-    OPENCL_PROLOGUE;
-
     jbyte *value;
     jsize len;
-
-    value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    len = (*env)->GetArrayLength(env, array);
-
+    value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, 0));
+    len = env->GetArrayLength(array);
     size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetKernelInfo",
-            clGetKernelInfo((cl_kernel) kernel_id, (cl_kernel_info) kernel_info, len, (void *) value, &return_size),);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    cl_uint status = clGetKernelInfo((cl_kernel) kernel_id, (cl_kernel_info) kernel_info, len, (void *) value, &return_size);
+    LOG_OCL_JNI("clGetKernelInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }

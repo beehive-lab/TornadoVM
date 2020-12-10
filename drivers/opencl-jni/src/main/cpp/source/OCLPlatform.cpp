@@ -33,9 +33,8 @@
     #include <CL/cl.h>
 #endif
 
-#include <stdio.h>
-#include "macros.h"
-#include "utils.h"
+#include "OCLPlatform.h"
+#include "ocl_log.h"
 
 #define MAX_CHAR_ARRAY 1024
 
@@ -46,14 +45,11 @@
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clGetPlatformInfo
 (JNIEnv *env, jclass clazz, jlong platform_id, jint platform_info) {
-    OPENCL_PROLOGUE;
-
     char value[MAX_CHAR_ARRAY];
-
-    OPENCL_SOFT_ERROR("clGetPlatformInfo",
-            clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char) * MAX_CHAR_ARRAY, value, NULL), 0);
-
-    return (*env)->NewStringUTF(env, value);
+    cl_uint status = clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char) * MAX_CHAR_ARRAY, value,
+                                       NULL);
+    LOG_OCL_JNI("clGetPlatformInfo", status);
+    return env->NewStringUTF(value);
 }
 
 /*
@@ -63,10 +59,9 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatfo
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clGetDeviceCount
 (JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type) {
-    OPENCL_PROLOGUE;
     cl_uint num_devices = 0;
-    OPENCL_SOFT_ERROR("clGetDeviceIDs",
-            clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, 0, NULL, &num_devices), 0);
+    cl_uint status = clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, 0, NULL, &num_devices);
+    LOG_OCL_JNI("clGetDeviceIDs", status);
     return (jint) num_devices;
 }
 
@@ -77,28 +72,24 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clGetDeviceIDs
 (JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type, jlongArray array) {
-    
-    cl_int error_id;
-
     jlong *devices;
     jsize len;
     jboolean isCopy;
-
-    devices = (*env)->GetLongArrayElements(env, array, &isCopy);
-    len = (*env)->GetArrayLength(env, array);
-
+    devices = env->GetLongArrayElements(array, &isCopy);
+    len = env->GetArrayLength(array);
     cl_uint num_devices = 0;
-    error_id = clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, len, (cl_device_id*) devices, &num_devices);
-    OPENCL_SOFT_ERROR("clGetDeviceIDs", error_id, 0);
 
-    (*env)->ReleaseLongArrayElements(env, array, devices, 0);
+    cl_uint status = clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, len, (cl_device_id*) devices, &num_devices);
+    LOG_OCL_JNI("clGetDeviceIDs", status);
+
+    env->ReleaseLongArrayElements(array, devices, 0);
     return (jint) num_devices;
 
 }
 
 void context_notify(const char *errinfo, const void *private_info, size_t cb, void * user_data) {
-    printf("uk.ac.manchester.tornado.drivers.opencl> notify error:\n");
-    printf("uk.ac.manchester.tornado.drivers.opencl> %s\n", errinfo);
+    std::cout << "[JNI] uk.ac.manchester.tornado.drivers.opencl> notify error:\n";
+    std::cout << "[JNI] uk.ac.manchester.tornado.drivers.opencl> " <<  errinfo << std::endl;
 }
 
 /*
@@ -108,21 +99,16 @@ void context_notify(const char *errinfo, const void *private_info, size_t cb, vo
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clCreateContext
 (JNIEnv *env, jclass clazz, jlong platform_id, jlongArray array) {
-    OPENCL_PROLOGUE;
-
     jlong *devices;
     jsize len;
     cl_context context;
     jboolean isCopy;
-
     cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, platform_id, 0};
-
-    devices = (*env)->GetLongArrayElements(env, array, &isCopy);
-    len = (*env)->GetArrayLength(env, array);
-
-    context = clCreateContext(properties, len, (cl_device_id*) devices, &context_notify, NULL, &error_id);
-    OPENCL_CHECK_ERROR("clCreateContext", error_id, 0);
-
-    (*env)->ReleaseLongArrayElements(env, array, devices, 0);
+    devices = env->GetLongArrayElements(array, &isCopy);
+    len = env->GetArrayLength(array);
+    cl_int status;
+    context = clCreateContext(properties, len, (cl_device_id*) devices, &context_notify, NULL, &status);
+    LOG_OCL_JNI("clCreateContext", status);
+    env->ReleaseLongArrayElements(array, devices, 0);
     return (jlong) context;
 }
