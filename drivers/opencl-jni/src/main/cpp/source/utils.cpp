@@ -23,38 +23,41 @@
  * Authors: James Clarkson
  *
  */
-#include <jni.h>
-
-#define CL_TARGET_OPENCL_VERSION 120
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
-#include <stdio.h>
-#include "macros.h"
 #include "utils.h"
+#include <string>
+#include <iostream>
+#include <sstream>
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
- * Method:    clGetDeviceInfo
- * Signature: (JI[B)V
- */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
-(JNIEnv *env, jclass clazz, jlong device_id, jint device_info, jbyteArray array) {
-
-    OPENCL_PROLOGUE;
-
-    jbyte *value;
-    jsize len;
-
-    value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    len = (*env)->GetArrayLength(env, array);
-    debug("uk.ac.manchester.tornado.drivers.opencl> clGetDeviceInfo param=0x%x\n", device_info);
-    size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetDeviceInfo",
-            clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size),);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+char *getOpenCLError(char *func, cl_int code) {
+    std::string str;
+    switch (code) {
+        case CL_SUCCESS:
+            str = "Operation completed successfully.";
+            break;
+        case CL_INVALID_VALUE:
+            str = "CL_INVALID_VALUE";
+            break;
+        case CL_INVALID_DEVICE:
+            str = "CL_INVALID_DEVICE";
+            break;
+        case CL_DEVICE_NOT_AVAILABLE:
+            str = "CL_DEVICE_NOT_AVAILABLE";
+            break;
+        case CL_OUT_OF_HOST_MEMORY:
+            str = "CL_OUT_OF_HOST_MEMORY";
+            break;
+        case CL_INVALID_CONTEXT:
+            str = "CL_INVALID_CONTEXT";
+            break;
+        case CL_INVALID_MEM_OBJECT:
+            str = "CL_INVALID_MEM_OBJECT";
+            break;
+        default:
+            str = "Unknown OpenCL Error";
+    }
+    std::stringstream outString;
+    outString << "function" << std::string(func) << " ("  << code <<  "): " << str;
+    return const_cast<char *>(outString.str().c_str());
 }
+
+

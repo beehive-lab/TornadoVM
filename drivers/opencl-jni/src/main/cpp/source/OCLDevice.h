@@ -31,13 +31,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
-     * Method:    clGetDeviceInfo
-     * Signature: (JI[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
-    (JNIEnv *, jclass, jlong, jint, jbyteArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
+ * Method:    clGetDeviceInfo
+ * Signature: (JI[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
+        (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 #ifdef __cplusplus
 }

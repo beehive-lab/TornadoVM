@@ -27,6 +27,10 @@
 #ifndef utils_h
 #define utils_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CL_TARGET_OPENCL_VERSION 120
 
 #ifdef __APPLE__
@@ -37,4 +41,7 @@
 
 char *getOpenCLError(char *, cl_int);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -23,41 +23,28 @@
  * Authors: James Clarkson
  *
  */
-#include "utils.h"
+#include <jni.h>
+
+#define CL_TARGET_OPENCL_VERSION 120
+#ifdef __APPLE__
+    #include <OpenCL/cl.h>
+#else
+    #include <CL/cl.h>
+#endif
+
 #include <stdio.h>
-#include <string.h>
+#include "OCLDevice.h"
 
-char *getOpenCLError(char *func, cl_int code) {
-    char *str;
-    char *msg = malloc(sizeof (char)*128);
-    memset(msg, '\0', 128);
-    switch (code) {
-        case CL_SUCCESS:
-            str = "Operation completed successfully.";
-            break;
-        case CL_INVALID_VALUE:
-            str = "CL_INVALID_VALUE";
-            break;
-        case CL_INVALID_DEVICE:
-            str = "CL_INVALID_DEVICE";
-            break;
-        case CL_DEVICE_NOT_AVAILABLE:
-            str = "CL_DEVICE_NOT_AVAILABLE";
-            break;
-        case CL_OUT_OF_HOST_MEMORY:
-            str = "CL_OUT_OF_HOST_MEMORY";
-            break;
-        case CL_INVALID_CONTEXT:
-            str = "CL_INVALID_CONTEXT";
-            break;
-        case CL_INVALID_MEM_OBJECT:
-            str = "CL_INVALID_MEM_OBJECT";
-            break;
-        default:
-            str = "Unknown OpenCL Error";
-    }
-    sprintf(msg, "%s(%d) %s", func, (int) code, str);
-    return msg;
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
+ * Method:    clGetDeviceInfo
+ * Signature: (JI[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
+(JNIEnv *env, jclass clazz, jlong device_id, jint device_info, jbyteArray array) {
+    jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, 0));
+    jsize len = env->GetArrayLength(array);
+    size_t return_size = 0;
+    size_t status = clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
-
-

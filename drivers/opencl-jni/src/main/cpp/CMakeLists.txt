@@ -19,14 +19,14 @@ file(GLOB_RECURSE "source/*.c source/*.cpp")
 add_library(tornado-opencl SHARED 
 	source/OCLCommandQueue.c
 	source/OCLContext.c
-	source/OCLDevice.c
+		source/OCLDevice.cpp
 	source/OCLEvent.c
 	source/OCLKernel.c
 	source/OCLPlatform.c
 	source/OCLProgram.c
 	source/OpenCL.cpp
 	source/data_movers.c
-	source/utils.c
+	source/utils.cpp
 	source/opencl_time_utils.cpp
 )
 
