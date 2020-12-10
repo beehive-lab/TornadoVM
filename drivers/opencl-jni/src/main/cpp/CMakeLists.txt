@@ -20,15 +20,14 @@ add_library(tornado-opencl SHARED
 	source/OCLCommandQueue.c
 	source/OCLContext.c
 		source/OCLDevice.cpp
-	source/OCLEvent.c
+		source/OCLEvent.cpp
         source/OCLKernel.cpp
 		source/OCLPlatform.cpp
         source/OCLProgram.cpp
-	source/OpenCL.cpp
+		source/OpenCL.cpp
 	source/data_movers.c
-	source/utils.cpp
-	source/opencl_time_utils.cpp
-		source/ocl_log.h)
+		source/utils.cpp
+		source/opencl_time_utils.cpp)
 
 set_property(TARGET tornado-opencl PROPERTY C_STANDARD 99)
 target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
