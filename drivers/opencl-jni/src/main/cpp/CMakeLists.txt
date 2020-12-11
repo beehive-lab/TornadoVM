@@ -6,8 +6,8 @@ find_package(JNI REQUIRED)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fpermissive -rdynamic -fPIC ")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -rdynamic -fPIC ")
- 
+set(CMAKE_VERBOSE_MAKEFILE on)
+
 include_directories(
 	source/
 	headers/opencl/3.0/include/
@@ -15,7 +15,7 @@ include_directories(
 	${OPENCL_INCLUDE_DIRS}
 	)
 
-file(GLOB_RECURSE "source/*.c source/*.cpp")
+file(GLOB_RECURSE "source/*.cpp")
 add_library(tornado-opencl SHARED
 		source/OCLCommandQueue.cpp
 		source/OCLContext.cpp
@@ -25,9 +25,7 @@ add_library(tornado-opencl SHARED
 		source/OCLPlatform.cpp
         source/OCLProgram.cpp
 		source/OpenCL.cpp
-	source/data_movers.c
 		source/utils.cpp
 		source/opencl_time_utils.cpp)
 
-set_property(TARGET tornado-opencl PROPERTY C_STANDARD 99)
 target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
