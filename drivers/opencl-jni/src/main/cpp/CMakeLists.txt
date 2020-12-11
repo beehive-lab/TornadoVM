@@ -21,9 +21,9 @@ add_library(tornado-opencl SHARED
 		source/OCLContext.cpp
 		source/OCLDevice.cpp
 		source/OCLEvent.cpp
-        source/OCLKernel.cpp
+		source/OCLKernel.cpp
 		source/OCLPlatform.cpp
-        source/OCLProgram.cpp
+		source/OCLProgram.cpp
 		source/OpenCL.cpp
 		source/utils.cpp
 		source/opencl_time_utils.cpp)
