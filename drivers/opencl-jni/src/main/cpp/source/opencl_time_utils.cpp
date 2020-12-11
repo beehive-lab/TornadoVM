@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 
+#define CL_TARGET_OPENCL_VERSION 120
 #include "opencl_time_utils.h"
 
 /*
