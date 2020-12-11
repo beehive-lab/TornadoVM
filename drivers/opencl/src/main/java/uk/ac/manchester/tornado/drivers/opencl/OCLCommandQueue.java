@@ -108,13 +108,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    /*
-     * for OpenCL 1.1 compatibility
-     */
-    native static long clEnqueueMarker(long queueId) throws OCLException;
-
-    native static void clEnqueueBarrier(long queueId) throws OCLException;
-
     native static void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
 
     /*
