@@ -169,31 +169,6 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clEnqueueMarker
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMarker
-(JNIEnv *env, jclass clazz, jlong queue_id) {
-    cl_event event;
-    cl_int status = clEnqueueMarker((cl_command_queue) queue_id, &event);
-    LOG_OCL_JNI("clEnqueueMarker", status);
-    return (jlong) event;
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clEnqueueBarrier
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueBarrier
-(JNIEnv *env, jclass clazz, jlong queue_id) {
-    cl_event event;
-    cl_int status = clEnqueueBarrier((cl_command_queue) queue_id);
-    LOG_OCL_JNI("clEnqueueBarrier", status);
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueWaitForEvents
  * Signature: (J[J)V
  */

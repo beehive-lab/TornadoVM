@@ -192,19 +192,6 @@ public class OCLCommandQueue extends TornadoLogger {
         return commandQueue;
     }
 
-    public long enqueueTask(OCLKernel kernel, long[] waitEvents) {
-        try {
-            return clEnqueueTask(commandQueue, kernel.getOclKernelID(), waitEvents);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-
-        if (Tornado.FORCE_BLOCKING_API_CALLS) {
-            enqueueBarrier();
-        }
-        return -1;
-    }
-
     public long enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] waitEvents) {
         try {
             return clEnqueueNDRangeKernel(commandQueue, kernel.getOclKernelID(), dim, (openclVersion > 100) ? globalWorkOffset : null, globalWorkSize, localWorkSize, waitEvents);
