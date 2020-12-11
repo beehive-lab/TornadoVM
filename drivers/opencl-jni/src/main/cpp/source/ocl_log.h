@@ -34,7 +34,7 @@
     if (LOG_JNI == 1)  {                                   \
         std::cout << "[TornadoVM-JNI] Calling : " << name  \
         << " -> Status: " << result                        \
-        << std::endl;                                     \
-    }                                                     \
+        << std::endl;                                      \
+    }                                                      \
 
-#endif //TORNADO_OCL_LOG_H
+#endif
