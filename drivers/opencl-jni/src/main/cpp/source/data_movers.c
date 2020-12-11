@@ -28,8 +28,8 @@
 #else
     #include <CL/cl.h>
 #endif
+
 #include <stdio.h>
-#include "macros.h"
 #include "utils.h"
 
 #define PRINT_DATA_TIMES 0
@@ -74,8 +74,11 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             cl_int error_id;                                                                    \
             cl_bool blocking_write = blocking ? CL_TRUE : CL_FALSE;                             \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
-            OPENCL_DECODE_WAITLIST(array2, events, num_events)                                  \
-            JNI_ACQUIRE_ARRAY(jbyte, buffer, array1);                                           \
+            jlong *__array2 = (array2 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array2, NULL) : NULL;\
+            jlong *events = (array2 != NULL) ? &__array2[1] : NULL;                             \
+            jsize num_events = (array2 != NULL) ? __array2[0] : 0;                              \
+                                                                                                \
+            jbyte *buffer = (*env)->GetPrimitiveArrayCritical(env, array1, NULL);               \
 	        if(PRINT_DATA_SIZES) {                                                              \
 	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             }                                                                                   \
@@ -88,8 +91,12 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             } else {                                                                            \
                 clWaitForEvents(1, &event); /* we must wait irrespective of jboolean blocking flag or we risk Java GC/OpenCL Runtime race condition */ \
             }                                                                                   \
-            JNI_RELEASE_ARRAY(array1,buffer);                                                   \
-            OPENCL_RELEASE_WAITLIST(array2);                                                    \
+            if (array1 != NULL) {                                                               \
+                (*env)->ReleasePrimitiveArrayCritical(env, array1, buffer, JNI_ABORT);          \
+            }                                                                                   \
+            if (array2 != NULL) {                                                               \
+                (*env)->ReleasePrimitiveArrayCritical(env, array2, __array2, JNI_ABORT);        \
+            }                                                                                   \
             return (jlong) event;                                                               \
     }
 
@@ -108,8 +115,10 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
             cl_int error_id;                                                                    \
             cl_bool blocking_read = blocking ? CL_TRUE : CL_FALSE;                              \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
-            OPENCL_DECODE_WAITLIST(array2, events, num_events)                                  \
-            JNI_ACQUIRE_ARRAY(jbyte,buffer,array1);                                             \
+            jlong *__array2 = (array2 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array2, NULL) : NULL;\
+            jlong *events = (array2 != NULL) ? &__array2[1] : NULL;                             \
+            jsize num_events = (array2 != NULL) ? __array2[0] : 0;                              \
+            jbyte *buffer = (*env)->GetPrimitiveArrayCritical(env, array1, NULL);               \
             if(PRINT_DATA_SIZES) {                                                              \
                 printf("uk.ac.manchester.tornado.drivers.opencl> read array 0x%lx (%d bytes) to %p\n",offset, num_bytes, buffer);\
             }                                                                                   \
@@ -125,10 +134,15 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
             } else {                                                                            \
                 clWaitForEvents(1, &event); /* we must wait irrespective of jboolean blocking flag or we risk Java GC/OpenCL Runtime race condition */ \
             }                                                                                   \
-            JNI_RELEASE_ARRAY(array1, buffer);                                                  \
-            OPENCL_RELEASE_WAITLIST(array2);                                                    \
+            if (array1 != NULL) {                                                               \
+                (*env)->ReleasePrimitiveArrayCritical(env, array1, buffer, JNI_ABORT);          \
+            }                                                                                   \
+            if (array2 != NULL) {                                                               \
+                (*env)->ReleasePrimitiveArrayCritical(env, array2, __array2, JNI_ABORT);        \
+            }                                                                                   \
             return (jlong) event;                                                               \
-    }
+        }
+
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, B, byte)
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, C, char)
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, S, short)

@@ -31,8 +31,6 @@
 #endif
 
 #include <iostream>
-#include "macros.h"
-#include "utils.h"
 
 #include "opencl_time_utils.h"
 #include "OCLCommandQueue.h"
