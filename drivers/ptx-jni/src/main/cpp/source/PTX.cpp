@@ -25,7 +25,9 @@
 #include <jni.h>
 #include <cuda.h>
 
-#include "macros.h"
+#include <iostream>
+#include "PTX.h"
+#include "ptx_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTX
@@ -34,9 +36,7 @@
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTX_cuInit
   (JNIEnv *env, jclass clazz) {
-
-    CUresult result;
-    CUDA_CHECK_ERROR("cuInit", cuInit(0), result);
-
+    CUresult result = cuInit(0);
+    LOG_PTX_JNI("cuInit", 0);
     return (jlong) result;
 }
