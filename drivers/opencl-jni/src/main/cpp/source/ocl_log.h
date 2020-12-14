@@ -30,11 +30,11 @@
 
 #define LOG_JNI 0
 
-#define LOG_OCL_JNI(name, result)                          \
-    if (LOG_JNI == 1)  {                                   \
-        std::cout << "[TornadoVM-JNI] Calling : " << name  \
-        << " -> Status: " << result                        \
-        << std::endl;                                      \
-    }                                                      \
+#define LOG_OCL_JNI(name, result)                               \
+    if (LOG_JNI == 1)  {                                        \
+        std::cout << "[TornadoVM-OCL-JNI] Calling : " << name   \
+        << " -> Status: " << result                             \
+        << std::endl;                                           \
+    }                                                           \
 
 #endif

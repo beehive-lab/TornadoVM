@@ -63,14 +63,6 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clEnqueueTask
- * Signature: (JJ[J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueTask
-        (JNIEnv *, jclass, jlong, jlong, jlongArray);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueReadBuffer
  * Signature: (JJZJJJ[J)J
  */

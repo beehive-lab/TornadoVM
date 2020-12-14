@@ -78,8 +78,6 @@ public class OCLCommandQueue extends TornadoLogger {
      */
     native static long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws OCLException;
 
-    native static long clEnqueueTask(long queueID, long kernelId, long[] events) throws OCLException;
-
     native static long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     native static long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;

@@ -145,30 +145,6 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clEnqueueTask
- * Signature: (JJ[J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueTask
-(JNIEnv *env, jclass clazz, jlong queue_id, jlong kernel_id, jlongArray array) {
-    jlong *waitList = static_cast<jlong *>((array != NULL) ? env->GetPrimitiveArrayCritical(array, NULL) : NULL);
-    jlong *events = (array != NULL) ? &waitList[1] : NULL;
-    jsize len = (array != NULL) ? waitList[0] : 0;
-
-    cl_event event;
-    cl_int status = clEnqueueTask((cl_command_queue) queue_id, (cl_kernel) kernel_id, (size_t) len, (cl_event *) events, &event);
-    LOG_OCL_JNI("clEnqueueTask", status);
-    if (PRINT_KERNEL_EVENTS) {
-        long kernelTime = getElapsedTimeEvent(event);
-        printf("Kernel time: %ld (ns) \n", kernelTime);
-    }
-    if (array != NULL) {
-        env->ReleasePrimitiveArrayCritical(array, waitList, JNI_ABORT);
-    }
-    return (jlong) event;
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueWaitForEvents
  * Signature: (J[J)V
  */
