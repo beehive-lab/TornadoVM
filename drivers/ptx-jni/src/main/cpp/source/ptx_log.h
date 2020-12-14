@@ -30,11 +30,11 @@
 
 #define LOG_PTX 0
 
-#define LOG_PTX_JNI(name, result)                          \
-    if (LOG_PTX == 1)  {                                   \
-        std::cout << "[TornadoVM-JNI] Calling : " << name  \
-        << " -> Status: " << result                        \
-        << std::endl;                                      \
-    }                                                      \
+#define LOG_PTX_JNI(name, result)                               \
+    if (LOG_PTX == 1)  {                                        \
+        std::cout << "[TornadoVM-PTX-JNI] Calling : " << name   \
+        << " -> Status: " << result                             \
+        << std::endl;                                           \
+    }                                                           \
 
 #endif
