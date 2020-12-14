@@ -24,14 +24,13 @@
 
 #include <jni.h>
 #include <cuda.h>
-#include <stdio.h>
 
+#include <iostream>
 #include "PTXStream.h"
 #include "PTXModule.h"
 #include "PTXEvent.h"
-#include "data_copies.cpp"
 #include "ptx_utils.h"
-
+#include "ptx_log.h"
 
 /*
     A singly linked list (with elements of type StagingAreaList) is used to keep all the allocated pinned memory through cuMemAllocHost.
@@ -207,7 +206,7 @@ static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
 }
 
 
-jobjectArray transferFromHostToDeviceSync(JNIEnv *env, jclass clazz, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper, int NATIVE_J_TYPE) {
+jobjectArray transferFromDeviceToHostBlock(JNIEnv *env, jclass clazz, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper, int NATIVE_J_TYPE) {
     CUevent beforeEvent, afterEvent;
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
@@ -228,7 +227,7 @@ jobjectArray transferFromHostToDeviceSync(JNIEnv *env, jclass clazz, jlong devic
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }
 
-jobjectArray transferFromHostToDeviceAsync(JNIEnv *env, jclass clazz, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper) {
+jobjectArray transferFromDeviceToHostAsync(JNIEnv *env, jclass clazz, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper) {
     /// FIXME : REVIEW THIS LINE
     jbyte *native_array = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, 0));
     CUstream stream;  
@@ -249,7 +248,6 @@ jobjectArray transferFromHostToDeviceAsync(JNIEnv *env, jclass clazz, jlong devi
     return wrapper_from_events(env, &beforeEvent, &afterEvent);  
 }
 
-
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
@@ -257,9 +255,9 @@ jobjectArray transferFromHostToDeviceAsync(JNIEnv *env, jclass clazz, jlong devi
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3BJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, array, host_offset, stream_wrapper, sizeof(jbyte));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, array, host_offset, stream_wrapper,
+                                         sizeof(jbyte));
 }
-
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
@@ -268,8 +266,9 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3SJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jshortArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jshort));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jshort));
 }
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
@@ -277,7 +276,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3CJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jcharArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jchar));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jchar));
 }
 
 /*
@@ -287,7 +286,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3IJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jint));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jint));
 }
 
 /*
@@ -297,7 +296,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3JJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jlongArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jlong));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jlong));
 }
 
 /*
@@ -307,7 +306,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3FJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jfloat));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jfloat));
 }
 
 /*
@@ -317,7 +316,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3DJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceSync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jdouble));
+    return transferFromDeviceToHostBlock(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jdouble));
 }
 
 /*
@@ -327,7 +326,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3BJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jbyteArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, array, hostOffset, stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, array, hostOffset, stream_wrapper);
 }
 
 /*
@@ -337,7 +336,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3SJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jshortArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
 }
 
 /*
@@ -347,8 +346,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3CJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jcharArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset,
-                                         stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
 }
 
 /*
@@ -358,8 +356,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3IJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jintArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset,
-                                         stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
 }
 
 /*
@@ -369,8 +366,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3JJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jlongArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset,
-                                         stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
 }
 
 /*
@@ -380,8 +376,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3FJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jfloatArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset,
-                                         stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
 }
 
 /*
@@ -391,60 +386,205 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3DJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jdoubleArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    return transferFromHostToDeviceAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset,
-                                         stream_wrapper);
+    return transferFromDeviceToHostAsync(env, klass, devicePtr, length, reinterpret_cast<jbyteArray>(array), hostOffset, stream_wrapper);
 }
 
-// =============================================/
+jobjectArray transferFromHostToDeviceBlocking (JNIEnv *env, jclass clazz,
+                                               jlong device_ptr,
+                                               jlong length,
+                                               jbyteArray array,
+                                               jlong host_offset,
+                                               jbyteArray stream_wrapper,
+                                               int numBytesNativeType) {
+    CUevent beforeEvent, afterEvent;  
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);  
+  
+    StagingAreaList *staging_list = get_first_free_staging_area(length);  
+    env->GetByteArrayRegion(array, host_offset / numBytesNativeType, length / numBytesNativeType,
+                            static_cast<jbyte *>(staging_list->staging_area));
+ 
+    record_events_create(&beforeEvent, &afterEvent);  
+    record_event_begin(&beforeEvent, &stream);
+
+    CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream);
+    LOG_PTX_JNI("cuMemcpyHtoDAsync", result);
+  
+    record_event_end(&afterEvent, &stream);  
+    result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0);
+    LOG_PTX_JNI("cuStreamAddCallback", result);
+
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);  
+}
+
+jobjectArray transferFromHostToDeviceAsync(JNIEnv *env,
+                                           jclass clazz,
+                                           jlong device_ptr,
+                                           jlong length,
+                                           jbyteArray array,
+                                           jlong host_offset,
+                                           jbyteArray stream_wrapper,
+                                           int numBytesNativeType) {
+    CUevent beforeEvent, afterEvent;
+    StagingAreaList *staging_list = get_first_free_staging_area(length);
+    env->GetByteArrayRegion(array, host_offset / numBytesNativeType, length / numBytesNativeType,
+                            static_cast<jbyte *>(staging_list->staging_area));
+
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event_begin(&beforeEvent, &stream);
+
+    CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream);
+    LOG_PTX_JNI("cuMemcpyHtoDAsync", result);
+
+    record_event_end(&afterEvent, &stream);
+
+    result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0);
+    LOG_PTX_JNI("cuStreamAddCallback", result);
+
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
  * Signature: (JJ[BJ[B)[[B
  */
-COPY_ARRAY_H_TO_D(B, jbyte, Byte)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3BJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, array, host_offset, stream_wrapper, sizeof(jbyte));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
  * Signature: (JJ[SJ[B)[[B
  */
-COPY_ARRAY_H_TO_D(S, jshort, Short)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3SJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jshortArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jshort));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
  * Signature: (JJ[CJ[B)[[B
  */
-COPY_ARRAY_H_TO_D(C, jchar, Char)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3CJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jcharArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jchar));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
  * Signature: (JJ[IJ[B)[[B
  */
-COPY_ARRAY_H_TO_D(I, jint, Int)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3IJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jint));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
  * Signature: (JJ[JJ[B)[[B
  */
-COPY_ARRAY_H_TO_D(J, jlong, Long)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3JJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlongArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jlong));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
  * Signature: (JJ[FJ[B)[[B
  */
-COPY_ARRAY_H_TO_D(F, jfloat, Float)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3FJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jfloat));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
- * Method:    writeArrayHtoD(Async)
+ * Method:    writeArrayHtoD
+ * Signature: (JJJ[DJ[I)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJ_3DJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceBlocking(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jdouble));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJ[BJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3BJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jbyteArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jbyte));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJ[SJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3SJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jshortArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jshort));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJ[CJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3CJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jcharArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jchar));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJ[IJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3IJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jint));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJ[JJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3JJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlongArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jlong));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJ[FJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3FJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jfloat));
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
  * Signature: (JJ[DJ[I)[[B
  */
-COPY_ARRAY_H_TO_D(D, jdouble, Double)
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3DJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jbyteArray stream_wrapper) {
+    return transferFromHostToDeviceAsync(env, klass, device_ptr, length, reinterpret_cast<jbyteArray>(array), host_offset, stream_wrapper, sizeof(jdouble));
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
