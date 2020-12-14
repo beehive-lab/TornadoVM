@@ -128,7 +128,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_g
     for (int i = 1; i < num_devices; i++) {
         binaries[i] = value + binarySizes[i - 1];
     }
-    status |= clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARIES, sizeof (unsigned char**), (void *) binaries, &return_size);
+    status = clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARIES, sizeof (unsigned char**), (void *) binaries, &return_size);
     LOG_OCL_JNI("clGetProgramInfo", status);
     free(binarySizes);
     free(binaries);

@@ -159,7 +159,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseMemObject
 (JNIEnv *env, jclass clazz, jlong memobj) {
     cl_int status = clReleaseMemObject((cl_mem) memobj);
-    LOG_OCL_JNI("clCreateSubBuffer", status);
+    LOG_OCL_JNI("clReleaseMemObject", status);
 }
 
 /*
