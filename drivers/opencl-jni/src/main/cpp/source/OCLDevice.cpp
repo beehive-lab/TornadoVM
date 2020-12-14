@@ -20,24 +20,33 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
+ *
  */
 #include <jni.h>
-/* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLDevice */
 
-#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLDevice
-#define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLDevice
-#ifdef __cplusplus
-extern "C" {
+#define CL_TARGET_OPENCL_VERSION 120
+#ifdef __APPLE__
+    #include <OpenCL/cl.h>
+#else
+    #include <CL/cl.h>
 #endif
+
+#include <iostream>
+#include <stdio.h>
+#include "OCLDevice.h"
+#include "ocl_log.h"
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
  * Method:    clGetDeviceInfo
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
-        (JNIEnv *, jclass, jlong, jint, jbyteArray);
-
-#ifdef __cplusplus
+(JNIEnv *env, jclass clazz, jlong device_id, jint device_info, jbyteArray array) {
+    jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, 0));
+    jsize len = env->GetArrayLength(array);
+    size_t return_size = 0;
+    size_t status = clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size);
+    LOG_OCL_JNI("clGetDeviceInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
-#endif
-#endif

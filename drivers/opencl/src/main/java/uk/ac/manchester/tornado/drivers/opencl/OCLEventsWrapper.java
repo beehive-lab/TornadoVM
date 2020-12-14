@@ -23,11 +23,6 @@
 
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
@@ -35,8 +30,12 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.MAX_WAIT_EVENTS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
 
 /**
  * Class which holds mapping between OpenCL events and TornadoVM local events
@@ -77,8 +76,9 @@ class OCLEventsWrapper {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         /*
-         * OpenCL can produce an out of resources error which results in an invalid event
-         * (-1). If this happens, then we log a fatal exception and gracefully exit.
+         * OpenCL can produce an out of resources error which results in an invalid
+         * event (-1). If this happens, then we log a fatal exception and gracefully
+         * exit.
          */
         if (oclEventId == -1) {
             fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, EVENT_DESCRIPTIONS[descriptorId], tag);
@@ -119,8 +119,7 @@ class OCLEventsWrapper {
         Arrays.fill(waitEventsBuffer, 0);
 
         int index = 0;
-        for (int i = 0; i < dependencies.length; i++) {
-            final int value = dependencies[i];
+        for (final int value : dependencies) {
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];

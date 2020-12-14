@@ -2,8 +2,6 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,30 +20,51 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Juan Fumero
- *
  */
+#include <jni.h>
 
 #define CL_TARGET_OPENCL_VERSION 120
+
 #ifdef __APPLE__
     #include <OpenCL/cl.h>
-#else 
+#else
     #include <CL/cl.h>
 #endif
 
+#include <iostream>
 #include <stdio.h>
+#include "OpenCL.h"
+#include "ocl_log.h"
 
 /*
- * It returns the time in nanoseconds
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
+ * Method:    clGetPlatformCount
+ * Signature: ()I
  */
-long getTimeEvent(cl_event event) {
-    cl_int status = clWaitForEvents(1, &event);
-    if (status!=CL_SUCCESS) {
-        printf("[ERROR clWaitForEvents]: %d\n", status);
-    }
-    cl_ulong time_start, time_end;
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-    return (time_end - time_start);
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformCount
+(JNIEnv *env, jclass clazz) {
+    cl_uint num_platforms = 0;
+    cl_int status = clGetPlatformIDs(0, NULL, &num_platforms);
+    LOG_OCL_JNI("clGetPlatformIDs", status);
+    return (jint) num_platforms;
 }
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
+ * Method:    clGetPlatformIDs
+ * Signature: ([J)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
+(JNIEnv *env, jclass clazz, jlongArray array) {
+    jlong *platforms;
+    jsize len;
+
+    platforms = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array, 0));
+    len = env->GetArrayLength(array);
+
+    cl_uint num_platforms = 0;
+    cl_int status = clGetPlatformIDs(len, (cl_platform_id*) platforms, &num_platforms);
+    LOG_OCL_JNI("clGetPlatformIDs", status);
+    env->ReleasePrimitiveArrayCritical(array, platforms, 0);
+    return (jint) num_platforms;
+}

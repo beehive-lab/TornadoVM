@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 
@@ -32,9 +30,9 @@
 #include <CL/cl.h>
 #endif
 
-#include <stdio.h>
-#include "macros.h"
-#include "utils.h"
+#include <iostream>
+#include "OCLProgram.h"
+#include "ocl_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
@@ -43,13 +41,8 @@
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clReleaseProgram
 (JNIEnv *env, jclass clazz, jlong program_id) {
-    OPENCL_PROLOGUE;
-
-    OPENCL_SOFT_ERROR("clReleaseProgram", clReleaseProgram((cl_program) program_id),);
-}
-
-void notify_compilation_error(cl_program program_id, void *user_data) {
-    printf("OpenCL> compilation error: program_id = %p\n", program_id);
+    cl_int status = clReleaseProgram((cl_program) program_id);
+    LOG_OCL_JNI("clReleaseProgram", status);
 }
 
 /*
@@ -59,18 +52,12 @@ void notify_compilation_error(cl_program program_id, void *user_data) {
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clBuildProgram
 (JNIEnv *env, jclass clazz, jlong program_id, jlongArray array1, jstring str) {
-    OPENCL_PROLOGUE;
-
-    jlong *devices = (*env)->GetPrimitiveArrayCritical(env, array1, NULL);
-    jsize numDevices = (*env)->GetArrayLength(env, array1);
-
-    const char *options = (*env)->GetStringUTFChars(env, str, NULL);
-
-    // if pfn_notify callback is set, clBuildProgram will return immediately and compilation will be asynchronous
-    // otherwise, it will behave synchronously
-    OPENCL_SOFT_ERROR("clBuildProgarm", clBuildProgram((cl_program) program_id, (cl_uint) numDevices, (cl_device_id*) devices, options, NULL, NULL),);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array1, devices, 0);
+    jlong *devices = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array1, NULL));
+    jsize numDevices = env->GetArrayLength(array1);
+    const char *options = env->GetStringUTFChars(str, NULL);
+    cl_int status = clBuildProgram((cl_program) program_id, (cl_uint) numDevices, (cl_device_id*) devices, options, NULL, NULL);
+    LOG_OCL_JNI("clBuildProgram", status);
+    env->ReleasePrimitiveArrayCritical(array1, devices, 0);
 }
 
 /*
@@ -80,25 +67,18 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clGetProgramInfo
 (JNIEnv *env, jclass clazz, jlong program_id, jint param_name, jbyteArray array) {
-    OPENCL_PROLOGUE;
+    jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    jsize len = env->GetArrayLength(array);
 
-    jbyte *value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    jsize len = (*env)->GetArrayLength(env, array);
-
-    debug("size of cl_program_info: %lx\n", sizeof (cl_program_info));
-    debug("param_name: %x\n", param_name);
-    debug("len: %x\n", len);
-
-
+    if (LOG_JNI) {
+        std::cout << "size of cl_program_info: " << sizeof(cl_program_info) << std::endl;
+        std::cout << "param_name: " <<  param_name << std::endl;
+        std::cout << "len: " << len << std::endl;
+    }
     size_t return_size = 0;
-
-
-    OPENCL_SOFT_ERROR("clGetProgramInfo",
-            clGetProgramInfo((cl_program) program_id, (cl_program_info) param_name, len, (void *) value, &return_size),);
-
-    debug("return size: %zx\n", return_size);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    cl_int status = clGetProgramInfo((cl_program) program_id, (cl_program_info) param_name, len, (void *) value, &return_size);
+    LOG_OCL_JNI("clGetProgramInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
 /*
@@ -108,17 +88,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clGetProgramBuildInfo
 (JNIEnv *env, jclass clazz, jlong program_id, jlong device_id, jint param_name, jbyteArray array) {
-    OPENCL_PROLOGUE;
-
-    jbyte *value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    jsize len = (*env)->GetArrayLength(env, array);
-
+    jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    jsize len = env->GetArrayLength(array);
     size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetProgramBuildInfo",
-            clGetProgramBuildInfo((cl_program) program_id, (cl_device_id) device_id, (cl_program_build_info) param_name, len, (void *) value, &return_size),);
-
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    cl_int status = clGetProgramBuildInfo((cl_program) program_id, (cl_device_id) device_id, (cl_program_build_info) param_name, len, (void *) value, &return_size);
+    LOG_OCL_JNI("clGetProgramBuildInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
 /*
@@ -128,13 +103,10 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clCreateKernel
 (JNIEnv *env, jclass clazz, jlong program_id, jstring str) {
-    OPENCL_PROLOGUE;
-
-    const char *kernel_name = (*env)->GetStringUTFChars(env, str, NULL);
-
-    cl_kernel kernel;
-    OPENCL_CHECK_ERROR("clCreateKernel", kernel = clCreateKernel((cl_program) program_id, kernel_name, &error_id), -1);
-
+    const char *kernel_name = env->GetStringUTFChars(str, NULL);
+    cl_int status;
+    cl_kernel kernel = clCreateKernel((cl_program) program_id, kernel_name, &status);
+    LOG_OCL_JNI("clCreateKernel", status);
     return (jlong) kernel;
 }
 
@@ -145,25 +117,19 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_getBinaries
 (JNIEnv *env, jclass clazz, jlong program_id, jlong num_devices, jobject array) {
-    OPENCL_PROLOGUE;
-
-    jbyte *value = (jbyte *) (*env)->GetDirectBufferAddress(env, array);
+    jbyte *value = (jbyte *) env->GetDirectBufferAddress(array);
     size_t return_size = 0;
+    size_t *binarySizes = static_cast<size_t *>(malloc(sizeof(size_t) * num_devices));
+    cl_int status = clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARY_SIZES, sizeof (size_t) * num_devices, binarySizes, &return_size);
+    LOG_OCL_JNI("clGetProgramInfo", status);
 
-    size_t *binarySizes = malloc(sizeof (size_t) * num_devices);
-
-    OPENCL_SOFT_ERROR("clGetProgramInfo",
-            clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARY_SIZES, sizeof (size_t) * num_devices, binarySizes, &return_size),);
-
-    unsigned char **binaries = malloc(sizeof (unsigned char *) * num_devices);
+    jbyte **binaries = static_cast<jbyte **>(malloc(sizeof(char *) * num_devices));
     binaries[0] = value;
     for (int i = 1; i < num_devices; i++) {
         binaries[i] = value + binarySizes[i - 1];
     }
-
-    OPENCL_SOFT_ERROR("clGetProgramInfo",
-            clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARIES, sizeof (unsigned char**), (void *) binaries, &return_size),);
-
+    status = clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARIES, sizeof (unsigned char**), (void *) binaries, &return_size);
+    LOG_OCL_JNI("clGetProgramInfo", status);
     free(binarySizes);
     free(binaries);
 }

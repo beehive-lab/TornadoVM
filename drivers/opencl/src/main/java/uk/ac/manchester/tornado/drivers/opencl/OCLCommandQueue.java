@@ -78,12 +78,6 @@ public class OCLCommandQueue extends TornadoLogger {
      */
     native static long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws OCLException;
 
-    native static long clEnqueueTask(long queueID, long kernelId, long[] events) throws OCLException;
-
-    native static long clEnqueueReadBuffer(long queueId, long buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
-
-    native static long clEnqueueWriteBuffer(long queueId, long buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
-
     native static long writeArrayToDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     native static long writeArrayToDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
@@ -111,13 +105,6 @@ public class OCLCommandQueue extends TornadoLogger {
     native static long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     native static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
-
-    /*
-     * for OpenCL 1.1 compatibility
-     */
-    native static long clEnqueueMarker(long queueId) throws OCLException;
-
-    native static void clEnqueueBarrier(long queueId) throws OCLException;
 
     native static void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
 
@@ -201,19 +188,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     public long getCommandQueue() {
         return commandQueue;
-    }
-
-    public long enqueueTask(OCLKernel kernel, long[] waitEvents) {
-        try {
-            return clEnqueueTask(commandQueue, kernel.getOclKernelID(), waitEvents);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-
-        if (Tornado.FORCE_BLOCKING_API_CALLS) {
-            enqueueBarrier();
-        }
-        return -1;
     }
 
     public long enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] waitEvents) {

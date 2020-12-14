@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 
@@ -31,11 +29,11 @@
 #else
 #include <CL/cl.h>
 #endif
-#include <stdio.h>
-#include "macros.h"
-#include "utils.h"
-#include <stdlib.h>
-#include <string.h>
+
+#include <iostream>
+#include <cstring>
+#include "OCLContext.h"
+#include "ocl_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
@@ -44,8 +42,8 @@
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseContext
 (JNIEnv *env, jclass clazz, jlong context_id) {
-    OPENCL_PROLOGUE;
-    OPENCL_SOFT_ERROR("clReleaseContext", clReleaseContext((cl_context) context_id),);
+    cl_int status = clReleaseContext((cl_context) context_id);
+    LOG_OCL_JNI("clReleaseContext", status);
 }
 
 /*
@@ -55,15 +53,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clGetContextInfo
 (JNIEnv *env, jclass clazz, jlong context_id, jint param_name, jbyteArray array) {
-    OPENCL_PROLOGUE;
-    jbyte *value;
-    jsize len;
-    value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    len = (*env)->GetArrayLength(env, array);
+    jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    int len = env->GetArrayLength(array);
     size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetContextInfo",
-            clGetContextInfo((cl_context) context_id, (cl_context_info) param_name, len, (void *) value, &return_size),);
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    cl_int status = clGetContextInfo((cl_context) context_id, (cl_context_info) param_name, len, (void *) value, &return_size);
+    LOG_OCL_JNI("clGetContextInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
 /*
@@ -73,10 +68,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateCommandQueue
 (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jlong properties) {
-    OPENCL_PROLOGUE;
-    cl_command_queue queue;
-    OPENCL_CHECK_ERROR("clCreateCommandQueue",
-            queue = clCreateCommandQueue((cl_context) context_id, (cl_device_id) device_id, (cl_command_queue_properties) properties, &error_id), -1);
+    cl_int status;
+    cl_command_queue queue = clCreateCommandQueue((cl_context) context_id, (cl_device_id) device_id, (cl_command_queue_properties) properties, &status);
+    LOG_OCL_JNI("clCreateCommandQueue", status);
     return (jlong) queue;
 }
 
@@ -117,7 +111,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_f
  */
 JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_asByteBuffer
 (JNIEnv *env, jclass clazz, jlong address, jlong capacity) {
-    return (*env)->NewDirectByteBuffer(env, (void *) address, capacity);
+    return env->NewDirectByteBuffer((void *) address, capacity);
 }
 
 /*
@@ -127,21 +121,19 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
  */
 JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createBuffer
 (JNIEnv *env, jclass clazz, jlong context_id, jlong flags, jlong size, jlong host_ptr) {
-    OPENCL_PROLOGUE;
 
-    jclass resultClass = (*env)->FindClass(env, "uk/ac/manchester/tornado/drivers/opencl/OCLContext$OCLBufferResult");
-    jmethodID constructorId = (*env)->GetMethodID(env, resultClass, "<init>", "(JJI)V");
+    jclass resultClass = env->FindClass("uk/ac/manchester/tornado/drivers/opencl/OCLContext$OCLBufferResult");
+    jmethodID constructorId = env->GetMethodID(resultClass, "<init>", "(JJI)V");
 
     cl_mem mem;
-	if (host_ptr == 0) {	
-	    OPENCL_CHECK_ERROR("clCreateBuffer",
-            mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, NULL, &error_id), NULL);
+    cl_int status;
+	if (host_ptr == 0) {
+        mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, NULL, &status);
 	} else {
-	    OPENCL_CHECK_ERROR("clCreateBuffer",
-            mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, (void *) host_ptr, &error_id), NULL);
+	    mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, (void *) host_ptr, &status);
 	}
-
-    return (*env)->NewObject(env, resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) error_id);
+	LOG_OCL_JNI("clCreateBuffer", status);
+    return env->NewObject(resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) status);
 }
 
 /*
@@ -151,15 +143,11 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createSubBuffer
 (JNIEnv *env, jclass clazz, jlong buffer, jlong flags, jint buffer_create_type, jbyteArray array) {
-    OPENCL_PROLOGUE;
-
-    jbyte *buffer_create_info = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-
-    cl_mem mem;
-    OPENCL_CHECK_ERROR("clCreateSubBuffer", mem = clCreateSubBuffer((cl_mem) buffer, (cl_mem_flags) flags, (cl_buffer_create_type) buffer_create_type, (void *) buffer_create_info, &error_id), 0);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, buffer_create_info, 0);
-
+    jbyte *buffer_create_info = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    cl_int status;
+    cl_mem mem = clCreateSubBuffer((cl_mem) buffer, (cl_mem_flags) flags, (cl_buffer_create_type) buffer_create_type, (void *) buffer_create_info, &status);
+    LOG_OCL_JNI("clCreateSubBuffer", status);
+    env->ReleasePrimitiveArrayCritical(array, buffer_create_info, 0);
     return (jlong) mem;
 }
 
@@ -170,8 +158,8 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseMemObject
 (JNIEnv *env, jclass clazz, jlong memobj) {
-    OPENCL_PROLOGUE;
-    OPENCL_SOFT_ERROR("clReleaseMemObject", clReleaseMemObject((cl_mem) memobj),);
+    cl_int status = clReleaseMemObject((cl_mem) memobj);
+    LOG_OCL_JNI("clReleaseMemObject", status);
 }
 
 /*
@@ -181,21 +169,15 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithSource
 (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2) {
-    OPENCL_PROLOGUE;
+    jbyte *source = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array1, NULL));
+    jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array2, NULL));
+    jsize numLengths = env->GetArrayLength(array2);
 
-    jbyte *source = (*env)->GetPrimitiveArrayCritical(env, array1, NULL);
-    jlong *lengths = (*env)->GetPrimitiveArrayCritical(env, array2, NULL);
-    jsize numLengths = (*env)->GetArrayLength(env, array2);
-
-    cl_program program;
-    OPENCL_CHECK_ERROR("clCreateProgramWithSource", program = clCreateProgramWithSource((cl_context) context_id, (cl_uint) numLengths, (const char **) &source, (size_t*) lengths, &error_id), -1);
-
-    if (error_id != CL_SUCCESS) {
-        printf("[ERROR clCreateProgramWithSource] - error_id: %d", error_id);
-    }
-    (*env)->ReleasePrimitiveArrayCritical(env, array1, source, 0);
-    (*env)->ReleasePrimitiveArrayCritical(env, array2, lengths, 0);
-
+    cl_int status;
+    cl_program program = clCreateProgramWithSource((cl_context) context_id, (cl_uint) numLengths, (const char **) &source, (size_t*) lengths, &status);
+    LOG_OCL_JNI("clCreateProgramWithSource", status);
+    env->ReleasePrimitiveArrayCritical(array1, source, 0);
+    env->ReleasePrimitiveArrayCritical(array2, lengths, 0);
     return (jlong) program;
 }
 
@@ -206,27 +188,20 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithBinary
 (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jbyteArray array1, jlongArray array2) {
-    OPENCL_PROLOGUE;
+    jbyte *binary = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array1, NULL));
+    jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array2, NULL));
+    jsize numLengths = env->GetArrayLength(array2);
 
-    jbyte *binary = (*env)->GetPrimitiveArrayCritical(env, array1, NULL);
-    jlong *lengths = (*env)->GetPrimitiveArrayCritical(env, array2, NULL);
-    jsize numLengths = (*env)->GetArrayLength(env, array2);
-
+    cl_int status;
     cl_program program;
     if (numLengths == 1) {
         cl_int binary_status;
-        OPENCL_CHECK_ERROR("clCreateProgramWithBinary", program = clCreateProgramWithBinary((cl_context) context_id, (cl_uint) numLengths, (const cl_device_id *) &device_id, (const size_t*) lengths, (const unsigned char **) &binary, &binary_status, &error_id), -1);
-        if (binary_status != CL_SUCCESS) {
-            printf("[ERROR clCreateProgramWithBinary] - binary_status: %d\n", binary_status);
-        }
-        if (error_id != CL_SUCCESS) {
-            printf("[ERROR clCreateProgramWithBinary] - error_id: %d", error_id);
-        }
+        program = clCreateProgramWithBinary((cl_context) context_id, (cl_uint) numLengths, (const cl_device_id *) &device_id, (const size_t*) lengths, (const unsigned char **) &binary, &binary_status, &status);
+        LOG_OCL_JNI("clCreateProgramWithBinary", status);
     } else {
-        printf("opencl> loading multiple binaries not supported\n");
+        std::cout << "[TornadoVM JNI] OCL> loading multiple binaries not supported\n";
     }
-    (*env)->ReleasePrimitiveArrayCritical(env, array1, binary, 0);
-    (*env)->ReleasePrimitiveArrayCritical(env, array2, lengths, 0);
-
+    env->ReleasePrimitiveArrayCritical(array1, binary, 0);
+    env->ReleasePrimitiveArrayCritical(array2, lengths, 0);
     return (jlong) program;
 }

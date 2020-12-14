@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 /* Header for class uk_ac_manchester_tornado_drivers_opencl_OpenCL */
@@ -35,29 +33,29 @@ extern "C" {
 #define uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_TRUE 1L
 #undef uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_FALSE
 #define uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_FALSE 0L
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
-     * Method:    registerCallback
-     * Signature: ()Z
-     */
-    JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_registerCallback
-    (JNIEnv *, jclass);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
+ * Method:    registerCallback
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_registerCallback
+        (JNIEnv *, jclass);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
-     * Method:    clGetPlatformCount
-     * Signature: ()I
-     */
-    JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformCount
-    (JNIEnv *, jclass);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
+ * Method:    clGetPlatformCount
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformCount
+        (JNIEnv *, jclass);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
-     * Method:    clGetPlatformIDs
-     * Signature: ([J)I
-     */
-    JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
-    (JNIEnv *, jclass, jlongArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
+ * Method:    clGetPlatformIDs
+ * Signature: ([J)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
+        (JNIEnv *, jclass, jlongArray);
 
 #ifdef __cplusplus
 }
