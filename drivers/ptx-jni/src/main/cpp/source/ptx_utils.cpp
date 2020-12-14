@@ -4,8 +4,6 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +21,34 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-
-#define CL_TARGET_OPENCL_VERSION 120
+#include <cuda.h>
 #include <iostream>
-#include "opencl_time_utils.h"
-#include "ocl_log.h"
+#include "ptx_utils.h"
+#include "ptx_log.h"
 
-
-/*
- * It returns the elapsed time (END-START) in nanoseconds
- */
-long getElapsedTimeEvent(cl_event event) {
-    cl_int status = clWaitForEvents(1, &event);
-    LOG_OCL_JNI("clWaitForEvents", status);
-    if (status != CL_SUCCESS) {
-        std::cout << "[ERROR clWaitForEvents]: "  <<  status << std::endl;
+CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
+    CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
+    LOG_PTX_JNI("cuEventCreate", result)
+    if (result != CUDA_SUCCESS) {
+        std::cout << "[TornadoVM-JNI] Failed to create event with result = " << result << "\n";
     }
-    cl_ulong time_start;
-    cl_ulong time_end;
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-    return (time_end - time_start);
+    result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
+    LOG_PTX_JNI("cuEventCreate", result)
+    if (result != CUDA_SUCCESS) {
+        std::cout << "[TornadoVM-JNI] Failed to create event with result = " << result << "\n";
+    }
+    return result;
 }
 
+CUresult record_event_begin(CUevent* beforeEvent, CUstream* stream) {
+    CUresult result = cuEventRecord(*beforeEvent, *stream);
+    LOG_PTX_JNI("cuEventRecord", result)
+    return result;
+}
+
+// FIXME: This function can be removed!
+CUresult record_event_end(CUevent* afterEvent, CUstream* stream) {
+    CUresult result = cuEventRecord(*afterEvent, *stream);
+    LOG_PTX_JNI("cuEventRecord", result)
+    return result;
+}

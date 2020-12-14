@@ -26,10 +26,12 @@
 #include <cuda.h>
 #include <stdio.h>
 
+#include "PTXStream.h"
 #include "PTXModule.h"
 #include "PTXEvent.h"
 #include "data_copies.h"
-#include "utils.h"
+#include "ptx_utils.h"
+
 
 /*
     A singly linked list (with elements of type StagingAreaList) is used to keep all the allocated pinned memory through cuMemAllocHost.

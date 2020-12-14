@@ -27,6 +27,10 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXStream
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
  * Method:    writeArrayDtoH
@@ -291,4 +295,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *, jclass, jboolean, jbyteArray);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

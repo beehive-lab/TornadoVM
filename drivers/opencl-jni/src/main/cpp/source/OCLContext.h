@@ -169,14 +169,3 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 }
 #endif
 #endif
-/* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLContext_OCLBufferResult */
-
-#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLContext_OCLBufferResult
-#define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLContext_OCLBufferResult
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __cplusplus
-}
-#endif
-#endif

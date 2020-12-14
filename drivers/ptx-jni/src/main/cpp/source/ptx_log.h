@@ -3,7 +3,7 @@
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
+ * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#ifndef TORNADO_PTX_LOG_H
+#define TORNADO_PTX_LOG_H
 
-#ifndef _Included_ptx_utils
-#define _Included_ptx_utils
+#define PRINT_KERNEL_EVENTS 0
+#define PRINT_DATA_TIMES 0
+#define PRINT_DATA_SIZES 0
 
-CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent);
-void record_event_begin(CUevent* beforeEvent, CUstream* stream);
-void record_event_end(CUevent* afterEvent, CUstream* stream);
+#define LOG_PTX 0
+
+#define LOG_PTX_JNI(name, result)                          \
+    if (LOG_PTX == 1)  {                                   \
+        std::cout << "[TornadoVM-JNI] Calling : " << name  \
+        << " -> Status: " << result                        \
+        << std::endl;                                      \
+    }                                                      \
 
 #endif
