@@ -18,7 +18,7 @@ file(GLOB_RECURSE SOURCE_FILES "*.c" "*.cpp")
 add_library(tornado-ptx SHARED
 		source/PTXPlatform.cpp
 	source/PTXContext.c
-	source/PTXModule.c
+		source/PTXModule.cpp
 	source/PTXStream.c
 	source/PTXDevice.c
 	source/PTXEvent.c

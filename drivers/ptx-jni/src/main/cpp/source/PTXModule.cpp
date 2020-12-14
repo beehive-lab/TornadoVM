@@ -26,18 +26,18 @@
 #include <cuda.h>
 #include <stdio.h>
 
+#include <iostream>
 #include "PTXModule.h"
-#include "macros.h"
+#include "ptx_log.h"
 
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
-    jbyteArray array = (*env)->NewByteArray(env, sizeof(CUmodule));
-
-    (*env)->SetByteArrayRegion(env, array, 0, sizeof(CUmodule), (void *) module);
+    jbyteArray array = env->NewByteArray(sizeof(CUmodule));
+    env->SetByteArrayRegion(array, 0, sizeof(CUmodule), static_cast<const jbyte *>((void *) module));
     return array;
 }
 
 void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper) {
-    (*env)->GetByteArrayRegion(env, javaWrapper, 0, sizeof(CUmodule), (void *) module_ptr);
+    env->GetByteArrayRegion(javaWrapper, 0, sizeof(CUmodule), static_cast<jbyte *>((void *) module_ptr));
 }
 
 /*
@@ -49,21 +49,22 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
   (JNIEnv *env, jclass clazz, jbyteArray source) {
     CUresult result;
 
-    size_t ptx_length = (*env)->GetArrayLength(env, source);
+    size_t ptx_length = env->GetArrayLength(source);
     char ptx[ptx_length + 1];
-    (*env)->GetByteArrayRegion(env, source, 0, ptx_length, ptx);
+    env->GetByteArrayRegion(source, 0, ptx_length, reinterpret_cast<jbyte *>(ptx));
     ptx[ptx_length] = 0; // Make sure string terminates with a 0
 
     CUmodule module;
-    CUDA_CHECK_ERROR("cuModuleLoadData", cuModuleLoadData(&module, ptx), result);
+    result = cuModuleLoadData(&module, ptx);
+    LOG_PTX_JNI("cuModuleLoadData", result);
 
+    /// FIXME
     if (result != CUDA_SUCCESS) {
         printf("PTX to cubin JIT compilation failed! (%d)\n", result);
         fflush(stdout);
-        jbyteArray error_array = (*env)->NewByteArray(env, 0);
+        jbyteArray error_array = env->NewByteArray(0);
         return error_array;
     }
-
     return from_module(env, &module);
 }
 
@@ -78,13 +79,15 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuOcc
     CUmodule module;
     array_to_module(env, &module, module_wrapper);
 
-    const char *native_function_name = (*env)->GetStringUTFChars(env, func_name, 0);
+    const char *native_function_name = env->GetStringUTFChars(func_name, 0);
     CUfunction kernel;
-    CUDA_CHECK_ERROR("cuModuleGetFunction", cuModuleGetFunction(&kernel, module, native_function_name), result);
-    (*env)->ReleaseStringUTFChars(env, func_name, native_function_name);
+    result = cuModuleGetFunction(&kernel, module, native_function_name);
+    LOG_PTX_JNI("cuModuleGetFunction", result);
+    env->ReleaseStringUTFChars(func_name, native_function_name);
 
     int min_grid_size;
     int block_size;
-    CUDA_CHECK_ERROR("cuOccupancyMaxPotentialBlockSize", cuOccupancyMaxPotentialBlockSize (&min_grid_size, &block_size, kernel, 0, 0, 0), result);
+    result = cuOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, kernel, 0, 0, 0);
+    LOG_PTX_JNI("cuOccupancyMaxPotentialBlockSize", result);
     return block_size;
 }

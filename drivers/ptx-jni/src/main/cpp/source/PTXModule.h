@@ -28,6 +28,9 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXModule
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper);
 
@@ -37,7 +40,7 @@ void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper);
  * Signature: ([B)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleLoadData
-  (JNIEnv *, jclass, jbyteArray);
+        (JNIEnv *, jclass, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
@@ -45,6 +48,9 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Signature: ([BLjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuOccupancyMaxPotentialBlockSize
-  (JNIEnv *, jclass, jbyteArray, jstring);
+        (JNIEnv *, jclass, jbyteArray, jstring);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
