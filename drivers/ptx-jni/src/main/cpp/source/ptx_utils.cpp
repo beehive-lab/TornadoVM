@@ -40,15 +40,8 @@ CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     return result;
 }
 
-CUresult record_event_begin(CUevent* beforeEvent, CUstream* stream) {
+CUresult record_event(CUevent* beforeEvent, CUstream* stream) {
     CUresult result = cuEventRecord(*beforeEvent, *stream);
-    LOG_PTX_JNI("cuEventRecord", result)
-    return result;
-}
-
-// FIXME: This function can be removed!
-CUresult record_event_end(CUevent* afterEvent, CUstream* stream) {
-    CUresult result = cuEventRecord(*afterEvent, *stream);
     LOG_PTX_JNI("cuEventRecord", result)
     return result;
 }
