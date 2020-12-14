@@ -22,15 +22,6 @@
  *
  */
 
-#define VERBOSE 0
-
-#define CUDA_CHECK_ERROR(name,func,result) if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.ptx> Calling: %s\n",name); \
-    } \
-    result = func; \
-    if (result != CUDA_SUCCESS) { \
-        printf("uk.ac.manchester.tornado.drivers.ptx> Returned: %s = %d\n", name, result); \
-        fflush(stdout); \
-    } \
+#define CUDA_CHECK_ERROR(name,func,result);
 
 
