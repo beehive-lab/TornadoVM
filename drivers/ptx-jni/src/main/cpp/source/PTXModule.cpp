@@ -24,7 +24,6 @@
 
 #include <jni.h>
 #include <cuda.h>
-#include <stdio.h>
 
 #include <iostream>
 #include "PTXModule.h"
