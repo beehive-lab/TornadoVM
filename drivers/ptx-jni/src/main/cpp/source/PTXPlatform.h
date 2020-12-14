@@ -27,12 +27,19 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
-/*
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
  * Method:    cuDeviceGetCount
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform_cuDeviceGetCount
-  (JNIEnv *, jclass);
+        (JNIEnv *, jclass);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

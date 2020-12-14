@@ -24,8 +24,10 @@
 
 #include <jni.h>
 #include <cuda.h>
+#include <iostream>
 
-#include "macros.h"
+#include "PTXPlatform.h"
+#include "ptx_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
@@ -34,8 +36,8 @@
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform_cuDeviceGetCount
   (JNIEnv *env, jclass clazz) {
-    CUresult result;
     int device_count;
-    CUDA_CHECK_ERROR("cuDeviceGetCount", cuDeviceGetCount(&device_count), result);
+    CUresult result = cuDeviceGetCount(&device_count);
+    LOG_PTX_JNI("cuDeviceGetCount", result);
     return (jint) device_count;
 }
