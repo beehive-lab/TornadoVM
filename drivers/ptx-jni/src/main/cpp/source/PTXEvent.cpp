@@ -39,9 +39,9 @@ jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2) 
     jbyteArray array1 = array_from_event(env, event1);
     jbyteArray array2 = array_from_event(env, event2);
     jclass byteClass = env->FindClass("[B");
-    jobjectArray wrapper_2d_array = env->NewObjectArray((jsize) 2, byteClass, NULL);
-    env->SetObjectArrayElement(wrapper_2d_array, (jsize) 0, array1);
-    env->SetObjectArrayElement(wrapper_2d_array, (jsize) 1, array2);
+    jobjectArray wrapper_2d_array = env->NewObjectArray(2, byteClass, nullptr);
+    env->SetObjectArrayElement(reinterpret_cast<jobjectArray>(wrapper_2d_array), (jsize) 0, array1);
+    env->SetObjectArrayElement(reinterpret_cast<jobjectArray>(wrapper_2d_array), (jsize) 1, array2);
     return wrapper_2d_array;
 }
 

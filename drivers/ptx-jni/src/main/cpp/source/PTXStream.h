@@ -292,7 +292,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
  * Method:    cuEventCreateAndRecord
  * Signature: (Z[B)[[B
  */
-JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *, jclass, jboolean, jbyteArray);
 
 #ifdef __cplusplus

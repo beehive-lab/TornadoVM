@@ -19,7 +19,7 @@ add_library(tornado-ptx SHARED
 		source/PTXPlatform.cpp
 		source/PTXContext.cpp
 		source/PTXModule.cpp
-	source/PTXStream.c
+		source/PTXStream.cpp
 		source/PTXDevice.cpp
 		source/PTXEvent.cpp
 		source/PTX.cpp
