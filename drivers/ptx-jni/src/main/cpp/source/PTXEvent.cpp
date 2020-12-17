@@ -40,8 +40,8 @@ jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2) 
     jbyteArray array2 = array_from_event(env, event2);
     jclass byteClass = env->FindClass("[B");
     jobjectArray wrapper_2d_array = env->NewObjectArray(2, byteClass, NULL);
-    env->SetObjectArrayElement(reinterpret_cast<jobjectArray>(wrapper_2d_array), (jsize) 0, array1);
-    env->SetObjectArrayElement(reinterpret_cast<jobjectArray>(wrapper_2d_array), (jsize) 1, array2);
+    env->SetObjectArrayElement(wrapper_2d_array, (jsize) 0, array1);
+    env->SetObjectArrayElement(wrapper_2d_array, (jsize) 1, array2);
     return wrapper_2d_array;
 }
 
@@ -59,7 +59,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
     CUevent event;
     event_from_array(env, &event, event_wrapper);
     CUresult result = cuEventDestroy(event);
-    LOG_PTX_JNI("cuEventDestroy", result);
+    LOG_PTX_AND_VALIDATE("cuEventDestroy", result);
     return (jlong) result;
 }
 
@@ -79,7 +79,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_tornad
         if (cuEventQuery(event) != CUDA_SUCCESS) {
             // Only wait on event if not completed yet
             CUresult result = cuEventSynchronize(event);
-            LOG_PTX_JNI("cuEventSynchronize", result);
+            LOG_PTX_AND_VALIDATE("cuEventSynchronize", result);
         }
         env->DeleteLocalRef(array);
     }
@@ -92,8 +92,8 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_tornad
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventElapsedTime
   (JNIEnv *env, jclass clazz, jobjectArray wrapper) {
-    jbyteArray array1 = (jbyteArray) env->GetObjectArrayElement(wrapper,  0);
-    jbyteArray array2 = (jbyteArray) env->GetObjectArrayElement(wrapper,  1);
+    jbyteArray array1 = (jbyteArray) env->GetObjectArrayElement(wrapper,0);
+    jbyteArray array2 = (jbyteArray) env->GetObjectArrayElement(wrapper,1);
 
     CUevent beforeEvent, afterEvent;
     event_from_array(env, &beforeEvent, array1);
@@ -101,7 +101,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
 
     float time;
     CUresult result = cuEventElapsedTime(&time, beforeEvent, afterEvent);
-    LOG_PTX_JNI("cuEventElapsedTime", result);
+    LOG_PTX_AND_VALIDATE("cuEventElapsedTime", result);
     // cuEventElapsedTime returns the time in milliseconds.  We convert because the tornado profiler uses nanoseconds.
     return (jlong) (time * 1e+6);
 }
@@ -117,7 +117,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
     event_from_array(env, &event, wrapper);
 
     CUresult result = cuEventQuery(event);
-    LOG_PTX_JNI("cuEventQuery", result);
+    LOG_PTX_AND_VALIDATE("cuEventQuery", result);
 
     if (result != CUDA_SUCCESS && result != CUDA_ERROR_NOT_READY) {
         std::cout << "\t[JNI] " << __FILE__ << ":" << __LINE__ << " cuEventQuery returned" << result << std::endl;

@@ -38,6 +38,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform_cuD
   (JNIEnv *env, jclass clazz) {
     int device_count;
     CUresult result = cuDeviceGetCount(&device_count);
-    LOG_PTX_JNI("cuDeviceGetCount", result);
+    LOG_PTX_AND_VALIDATE("cuDeviceGetCount", result);
     return (jint) device_count;
 }

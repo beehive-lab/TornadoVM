@@ -39,7 +39,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
   (JNIEnv *env, jclass clazz, jint device_id) {
     CUdevice *dev = static_cast<CUdevice *>(malloc(sizeof(CUdevice)));
     CUresult result = cuDeviceGet(dev, (int) device_id);
-    LOG_PTX_JNI("cuDeviceGet", result);
+    LOG_PTX_AND_VALIDATE("cuDeviceGet", result);
     return (jlong) dev;
 }
 
@@ -53,7 +53,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cu
     CUdevice *dev = (CUdevice *) cuDevice;
     char name[256];
     CUresult result = cuDeviceGetName(name, 256, *dev);
-    LOG_PTX_JNI("cuDeviceGetName", result);
+    LOG_PTX_AND_VALIDATE("cuDeviceGetName", result);
     return env->NewStringUTF(name);
 }
 
@@ -67,7 +67,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDev
     CUdevice *dev = (CUdevice *) cuDevice;
     int attribute_value;
     CUresult result = cuDeviceGetAttribute(&attribute_value, (CUdevice_attribute) attr_id, *dev);
-    LOG_PTX_JNI("cuDeviceGetAttribute", result);
+    LOG_PTX_AND_VALIDATE("cuDeviceGetAttribute", result);
     return (jint) attribute_value;
 }
 
@@ -81,7 +81,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
     CUdevice *dev = (CUdevice *) cuDevice;
     size_t mem_in_bytes;
     CUresult result = cuDeviceTotalMem(&mem_in_bytes, *dev);
-    LOG_PTX_JNI("cuDeviceTotalMem", result);
+    LOG_PTX_AND_VALIDATE("cuDeviceTotalMem", result);
     return (jlong) mem_in_bytes;
 }
 
@@ -95,7 +95,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMe
     size_t free;
     size_t total;
     CUresult result = cuMemGetInfo(&free, &total);
-    LOG_PTX_JNI("cuMemGetInfo", result);
+    LOG_PTX_AND_VALIDATE("cuMemGetInfo", result);
     return free;
 }
 
@@ -108,6 +108,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDri
   (JNIEnv *env, jclass clazz) {
     int driver_version;
     CUresult result = cuDriverGetVersion(&driver_version);
-    LOG_PTX_JNI("cuDriverGetVersion", result);
+    LOG_PTX_AND_VALIDATE("cuDriverGetVersion", result);
     return (jint) driver_version;
 }

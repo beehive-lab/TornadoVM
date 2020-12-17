@@ -39,7 +39,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
     CUdevice *dev = (CUdevice *) cuDevice;
     CUcontext *ctx = static_cast<CUcontext *>(malloc(sizeof(CUcontext)));
     CUresult result = cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, *dev);
-    LOG_PTX_JNI("cuCtxCreate", result);
+    LOG_PTX_AND_VALIDATE("cuCtxCreate", result);
     return (jlong) ctx;
 }
 
@@ -52,7 +52,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
   (JNIEnv *env, jclass clazz, jlong cuContext) {
     CUcontext *ctx = (CUcontext*) cuContext;
     CUresult result = cuCtxDestroy(*ctx);
-    LOG_PTX_JNI("cuCtxDestroy", result);
+    LOG_PTX_AND_VALIDATE("cuCtxDestroy", result);
     return (jlong) result;
 }
 
@@ -65,11 +65,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
   (JNIEnv *env, jclass clazz, jlong cuContext, jlong num_bytes) {
     CUcontext* ctx = (CUcontext*) cuContext;
     CUresult result = cuCtxSetCurrent(*ctx);
-    LOG_PTX_JNI("cuCtxSetCurrent", result);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
 
     CUdeviceptr dev_ptr;
     result = cuMemAlloc(&dev_ptr, (size_t) num_bytes);
-    LOG_PTX_JNI("cuMemAlloc", result);
+    LOG_PTX_AND_VALIDATE("cuMemAlloc", result);
     if (result != CUDA_SUCCESS) return (jlong) result;
     return (jlong) dev_ptr;
 }
@@ -83,10 +83,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
   (JNIEnv *env, jclass clazz, jlong cuContext, jlong dev_ptr) {
     CUcontext* ctx = (CUcontext*) cuContext;
     CUresult result = cuCtxSetCurrent(*ctx);
-    LOG_PTX_JNI("cuCtxSetCurrent", result);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
 
     result = cuMemFree((CUdeviceptr) dev_ptr);
-    LOG_PTX_JNI("cuMemFree", result);
+    LOG_PTX_AND_VALIDATE("cuMemFree", result);
     return (jlong) result;
 }
 
@@ -99,6 +99,6 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
   (JNIEnv *env, jclass clazz, jlong cuContext) {
     CUcontext* ctx = (CUcontext*) cuContext;
     CUresult result = cuCtxSetCurrent(*ctx);
-    LOG_PTX_JNI("cuCtxSetCurrent", result);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
     return (jlong) result;
 }

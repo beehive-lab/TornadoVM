@@ -213,7 +213,7 @@ static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
     record_events_create(&beforeEvent, &afterEvent);        \
     record_event(&beforeEvent, &stream);                    \
     CUresult result = cuMemcpyDtoHAsync(staging_list->staging_area, device_ptr, (size_t) length, stream); \
-    LOG_PTX_JNI("cuMemcpyDtoHAsync", result);               \
+    LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsync", result);               \
     record_event(&afterEvent, &stream);                     \
     if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {         \
         cuEventSynchronize(afterEvent);                     \
@@ -233,10 +233,10 @@ static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
     record_events_create(&beforeEvent, &afterEvent);                                        \
     record_event(&beforeEvent, &stream);                                                    \
     CUresult result = cuMemcpyDtoHAsync(native_array + hostOffset, devicePtr, (size_t) length, stream);\
-    LOG_PTX_JNI("cuMemcpyDtoHAsync", result);                                               \
+    LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsync", result);                                               \
     record_event(&afterEvent, &stream);                                                     \
     result = cuMemFreeHost(native_array);                                                   \
-    LOG_PTX_JNI("cuMemFreeHost", result);                                                   \
+    LOG_PTX_AND_VALIDATE("cuMemFreeHost", result);                                                   \
     env->ReleasePrimitiveArrayCritical(array, native_array, 0);                             \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
@@ -390,10 +390,10 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     record_events_create(&beforeEvent, &afterEvent);                    \
     record_event(&beforeEvent, &stream);                                \
     CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream);\
-    LOG_PTX_JNI("cuMemcpyHtoDAsync", result);                           \
+    LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsync", result);                           \
     record_event(&afterEvent, &stream);                                 \
     result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0);\
-    LOG_PTX_JNI("cuStreamAddCallback", result);                         \
+    LOG_PTX_AND_VALIDATE("cuStreamAddCallback", result);                         \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
 
@@ -406,10 +406,10 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     record_events_create(&beforeEvent, &afterEvent);                    \
     record_event(&beforeEvent, &stream);                                \
     CUresult result = cuMemcpyHtoDAsync(device_ptr, staging_list->staging_area, (size_t) length, stream);\
-    LOG_PTX_JNI("cuMemcpyHtoDAsync", result);                           \
+    LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsync", result);                           \
     record_event(&afterEvent, &stream);                                 \
     result = cuStreamAddCallback(stream, set_to_unused, staging_list, 0);\
-    LOG_PTX_JNI("cuStreamAddCallback", result);                         \
+    LOG_PTX_AND_VALIDATE("cuStreamAddCallback", result);                         \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
 /*
@@ -575,7 +575,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
     const char *native_function_name = env->GetStringUTFChars(function_name, 0);
     CUfunction kernel;
     CUresult result = cuModuleGetFunction(&kernel, native_module, native_function_name);
-    LOG_PTX_JNI("cuModuleGetFunction", result);
+    LOG_PTX_AND_VALIDATE("cuModuleGetFunction", result);
 
     size_t arg_buffer_size = env->GetArrayLength(args);
     char arg_buffer[arg_buffer_size];
@@ -599,7 +599,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             (unsigned int) sharedMemBytes, stream,
             NULL,
             arg_config);
-    LOG_PTX_JNI("cuLaunchKernel", result);
+    LOG_PTX_AND_VALIDATE("cuLaunchKernel", result);
     record_event(&afterEvent, &stream);
 
     env->ReleaseStringUTFChars(function_name, native_function_name);
@@ -615,11 +615,11 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream
   (JNIEnv *env, jclass clazz) {
     int lowestPriority, highestPriority;
     CUresult result = cuCtxGetStreamPriorityRange (&lowestPriority, &highestPriority);
-    LOG_PTX_JNI("cuCtxGetStreamPriorityRange", result);
+    LOG_PTX_AND_VALIDATE("cuCtxGetStreamPriorityRange", result);
 
     CUstream stream;
     result = cuStreamCreateWithPriority(&stream, CU_STREAM_NON_BLOCKING, highestPriority);
-    LOG_PTX_JNI("cuStreamCreateWithPriority", result);
+    LOG_PTX_AND_VALIDATE("cuStreamCreateWithPriority", result);
     return array_from_stream(env, &stream);
 }
 
@@ -634,7 +634,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuDe
     stream_from_array(env, &stream, stream_wrapper);
 
     CUresult result = cuStreamDestroy(stream);
-    LOG_PTX_JNI("cuStreamDestroy", result);
+    LOG_PTX_AND_VALIDATE("cuStreamDestroy", result);
 
     free_queue();
     CUresult stagingAreaResult = free_staging_area_list();
@@ -651,7 +651,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
     CUstream stream;
     stream_from_array(env, &stream, stream_wrapper);
     CUresult result = cuStreamSynchronize(stream);
-    LOG_PTX_JNI("cuStreamSynchronize", result);
+    LOG_PTX_AND_VALIDATE("cuStreamSynchronize", result);
     return (jlong) result;
 }
 

@@ -55,7 +55,7 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 
     CUmodule module;
     result = cuModuleLoadData(&module, ptx);
-    LOG_PTX_JNI("cuModuleLoadData", result);
+    LOG_PTX_AND_VALIDATE("cuModuleLoadData", result);
 
     /// FIXME
     if (result != CUDA_SUCCESS) {
@@ -81,12 +81,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuOcc
     const char *native_function_name = env->GetStringUTFChars(func_name, 0);
     CUfunction kernel;
     result = cuModuleGetFunction(&kernel, module, native_function_name);
-    LOG_PTX_JNI("cuModuleGetFunction", result);
+    LOG_PTX_AND_VALIDATE("cuModuleGetFunction", result);
     env->ReleaseStringUTFChars(func_name, native_function_name);
 
     int min_grid_size;
     int block_size;
     result = cuOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, kernel, 0, 0, 0);
-    LOG_PTX_JNI("cuOccupancyMaxPotentialBlockSize", result);
+    LOG_PTX_AND_VALIDATE("cuOccupancyMaxPotentialBlockSize", result);
     return block_size;
 }
