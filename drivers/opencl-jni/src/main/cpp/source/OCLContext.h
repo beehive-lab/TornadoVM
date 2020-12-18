@@ -103,54 +103,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
- * Method:    createArrayOnDevice
- * Signature: (JJ[B)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3B
-        (JNIEnv *, jclass, jlong, jlong, jbyteArray);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
- * Method:    createArrayOnDevice
- * Signature: (JJ[I)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3I
-        (JNIEnv *, jclass, jlong, jlong, jintArray);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
- * Method:    createArrayOnDevice
- * Signature: (JJ[F)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3F
-        (JNIEnv *, jclass, jlong, jlong, jfloatArray);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
- * Method:    createArrayOnDevice
- * Signature: (JJ[D)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3D
-        (JNIEnv *, jclass, jlong, jlong, jdoubleArray);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
- * Method:    createArrayOnDevice
- * Signature: (JJ[S)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3S
-        (JNIEnv *, jclass, jlong, jlong, jshortArray);
-
-/*
-* Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
-* Method:    createArrayOnDevice
-* Signature: (JJ[C)J
-*/
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3C
-        (JNIEnv *, jclass, jlong, jlong, jcharArray);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clCreateProgramWithSource
  * Signature: (J[B[J)J
  */
