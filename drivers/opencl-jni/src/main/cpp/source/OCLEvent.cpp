@@ -51,7 +51,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clG
     len = env->GetArrayLength(array);
     size_t return_size = 0;
     cl_int status = clGetEventInfo((cl_event) event_id, (cl_event_info) param_name, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetEventInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetEventInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clG
     size_t return_size = 0;
     cl_int status = clGetEventProfilingInfo((cl_event) event_id, (cl_profiling_info) param_name, sizeof(cl_ulong),
                                             (void *) value, NULL);
-    LOG_OCL_JNI("clGetEventProfilingInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetEventProfilingInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
@@ -82,7 +82,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
         cl_event *events = static_cast<cl_event *>(env->GetPrimitiveArrayCritical(array, NULL));
         len = env->GetArrayLength(array);
         cl_int status = clWaitForEvents((cl_uint) len, (const cl_event *) events);
-        LOG_OCL_JNI("clWaitForEvents", status);
+        LOG_OCL_AND_VALIDATE("clWaitForEvents", status);
         env->ReleasePrimitiveArrayCritical(array, events, 0);
     }
 }
@@ -95,5 +95,5 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
         (JNIEnv *env, jclass clazz, jlong event) {
     cl_int status = clReleaseEvent((const cl_event) event);
-    LOG_OCL_JNI("clReleaseEvent", status);
+    LOG_OCL_AND_VALIDATE("clReleaseEvent", status);
 }

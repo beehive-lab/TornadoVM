@@ -42,7 +42,7 @@
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clReleaseKernel
 (JNIEnv *env, jclass clazz, jlong kernel_id) {
    cl_int status = clReleaseKernel((cl_kernel) kernel_id);
-   LOG_OCL_JNI("clReleaseKernel", status);
+   LOG_OCL_AND_VALIDATE("clReleaseKernel", status);
 }
 
 /*
@@ -54,7 +54,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
 (JNIEnv *env, jclass clazz, jlong kernel_id, jint index, jlong size, jbyteArray array) {
     jbyte *value = static_cast<jbyte *>((array == NULL) ? NULL : env->GetPrimitiveArrayCritical(array, 0));
     cl_uint status = clSetKernelArg((cl_kernel) kernel_id, (cl_uint) index, (size_t) size, (void*) value);
-    LOG_OCL_JNI("clSetKernelArg", status);
+    LOG_OCL_AND_VALIDATE("clSetKernelArg", status);
     if (value != NULL) {
         env->ReleasePrimitiveArrayCritical(array, value, 0);
     }
@@ -73,6 +73,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
     len = env->GetArrayLength(array);
     size_t return_size = 0;
     cl_uint status = clGetKernelInfo((cl_kernel) kernel_id, (cl_kernel_info) kernel_info, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetKernelInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetKernelInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }

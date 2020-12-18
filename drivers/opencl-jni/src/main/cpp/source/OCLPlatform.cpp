@@ -47,7 +47,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatfo
     char value[MAX_CHAR_ARRAY];
     cl_uint status = clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char) * MAX_CHAR_ARRAY, value,
                                        NULL);
-    LOG_OCL_JNI("clGetPlatformInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetPlatformInfo", status);
     return env->NewStringUTF(value);
 }
 
@@ -60,7 +60,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_
 (JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type) {
     cl_uint num_devices = 0;
     cl_uint status = clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, 0, NULL, &num_devices);
-    LOG_OCL_JNI("clGetDeviceIDs", status);
+    LOG_OCL_AND_VALIDATE("clGetDeviceIDs", status);
     return (jint) num_devices;
 }
 
@@ -79,7 +79,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_
     cl_uint num_devices = 0;
 
     cl_uint status = clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, len, (cl_device_id*) devices, &num_devices);
-    LOG_OCL_JNI("clGetDeviceIDs", status);
+    LOG_OCL_AND_VALIDATE("clGetDeviceIDs", status);
 
     env->ReleaseLongArrayElements(array, devices, 0);
     return (jint) num_devices;
@@ -107,7 +107,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
     len = env->GetArrayLength(array);
     cl_int status;
     context = clCreateContext(properties, len, (cl_device_id*) devices, &context_notify, NULL, &status);
-    LOG_OCL_JNI("clCreateContext", status);
+    LOG_OCL_AND_VALIDATE("clCreateContext", status);
     env->ReleaseLongArrayElements(array, devices, 0);
     return (jlong) context;
 }

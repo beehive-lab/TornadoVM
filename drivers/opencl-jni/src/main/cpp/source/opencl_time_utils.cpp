@@ -35,7 +35,7 @@
  */
 long getElapsedTimeEvent(cl_event event) {
     cl_int status = clWaitForEvents(1, &event);
-    LOG_OCL_JNI("clWaitForEvents", status);
+    LOG_OCL_AND_VALIDATE("clWaitForEvents", status);
     if (status != CL_SUCCESS) {
         std::cout << "[ERROR clWaitForEvents]: "  <<  status << std::endl;
     }
