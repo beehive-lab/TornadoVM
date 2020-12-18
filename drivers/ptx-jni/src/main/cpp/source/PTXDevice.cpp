@@ -25,7 +25,9 @@
 #include <jni.h>
 #include <cuda.h>
 
-#include "macros.h"
+#include <iostream>
+#include "PTXDevice.h"
+#include "ptx_log.h"
 
 
 /*
@@ -35,11 +37,9 @@
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGet
   (JNIEnv *env, jclass clazz, jint device_id) {
-    CUresult result;
-    CUdevice *dev = malloc(sizeof(CUdevice));
-
-    CUDA_CHECK_ERROR("cuDeviceGet", cuDeviceGet(dev, (int) device_id), result);
-
+    CUdevice *dev = static_cast<CUdevice *>(malloc(sizeof(CUdevice)));
+    CUresult result = cuDeviceGet(dev, (int) device_id);
+    LOG_PTX_AND_VALIDATE("cuDeviceGet", result);
     return (jlong) dev;
 }
 
@@ -50,12 +50,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetName
   (JNIEnv *env, jclass clazz, jlong cuDevice) {
-    CUresult result;
     CUdevice *dev = (CUdevice *) cuDevice;
     char name[256];
-    CUDA_CHECK_ERROR("cuDeviceGetName", cuDeviceGetName(name, 256, *dev), result);
-
-    return (*env)->NewStringUTF(env, name);
+    CUresult result = cuDeviceGetName(name, 256, *dev);
+    LOG_PTX_AND_VALIDATE("cuDeviceGetName", result);
+    return env->NewStringUTF(name);
 }
 
 /*
@@ -65,12 +64,10 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cu
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetAttribute
   (JNIEnv *env, jclass clazz, jlong cuDevice, jint attr_id) {
-    CUresult result;
     CUdevice *dev = (CUdevice *) cuDevice;
-
     int attribute_value;
-    CUDA_CHECK_ERROR("cuDeviceGetAttribute", cuDeviceGetAttribute(&attribute_value, (CUdevice_attribute) attr_id, *dev), result);
-
+    CUresult result = cuDeviceGetAttribute(&attribute_value, (CUdevice_attribute) attr_id, *dev);
+    LOG_PTX_AND_VALIDATE("cuDeviceGetAttribute", result);
     return (jint) attribute_value;
 }
 
@@ -81,12 +78,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDev
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceTotalMem
   (JNIEnv *env, jclass clazz, jlong cuDevice) {
-    CUresult result;
     CUdevice *dev = (CUdevice *) cuDevice;
-
     size_t mem_in_bytes;
-    CUDA_CHECK_ERROR("cuDeviceTotalMem", cuDeviceTotalMem(&mem_in_bytes, *dev), result);
-
+    CUresult result = cuDeviceTotalMem(&mem_in_bytes, *dev);
+    LOG_PTX_AND_VALIDATE("cuDeviceTotalMem", result);
     return (jlong) mem_in_bytes;
 }
 
@@ -97,12 +92,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMemGetInfo
   (JNIEnv *env, jclass clazz) {
-    CUresult result;
-
     size_t free;
     size_t total;
-    CUDA_CHECK_ERROR("cuMemGetInfo", cuMemGetInfo(&free, &total), result);
-
+    CUresult result = cuMemGetInfo(&free, &total);
+    LOG_PTX_AND_VALIDATE("cuMemGetInfo", result);
     return free;
 }
 
@@ -113,10 +106,8 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMe
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDriverGetVersion
   (JNIEnv *env, jclass clazz) {
-    CUresult result;
     int driver_version;
-
-    CUDA_CHECK_ERROR("cuDriverGetVersion", cuDriverGetVersion(&driver_version), result);
-
+    CUresult result = cuDriverGetVersion(&driver_version);
+    LOG_PTX_AND_VALIDATE("cuDriverGetVersion", result);
     return (jint) driver_version;
 }

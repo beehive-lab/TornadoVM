@@ -43,7 +43,7 @@
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseContext
 (JNIEnv *env, jclass clazz, jlong context_id) {
     cl_int status = clReleaseContext((cl_context) context_id);
-    LOG_OCL_JNI("clReleaseContext", status);
+    LOG_OCL_AND_VALIDATE("clReleaseContext", status);
 }
 
 /*
@@ -57,7 +57,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
     int len = env->GetArrayLength(array);
     size_t return_size = 0;
     cl_int status = clGetContextInfo((cl_context) context_id, (cl_context_info) param_name, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetContextInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetContextInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
@@ -70,7 +70,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jlong properties) {
     cl_int status;
     cl_command_queue queue = clCreateCommandQueue((cl_context) context_id, (cl_device_id) device_id, (cl_command_queue_properties) properties, &status);
-    LOG_OCL_JNI("clCreateCommandQueue", status);
+    LOG_OCL_AND_VALIDATE("clCreateCommandQueue", status);
     return (jlong) queue;
 }
 
@@ -132,7 +132,7 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
 	} else {
 	    mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, (void *) host_ptr, &status);
 	}
-	LOG_OCL_JNI("clCreateBuffer", status);
+	LOG_OCL_AND_VALIDATE("clCreateBuffer", status);
     return env->NewObject(resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) status);
 }
 
@@ -146,7 +146,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
     jbyte *buffer_create_info = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
     cl_int status;
     cl_mem mem = clCreateSubBuffer((cl_mem) buffer, (cl_mem_flags) flags, (cl_buffer_create_type) buffer_create_type, (void *) buffer_create_info, &status);
-    LOG_OCL_JNI("clCreateSubBuffer", status);
+    LOG_OCL_AND_VALIDATE("clCreateSubBuffer", status);
     env->ReleasePrimitiveArrayCritical(array, buffer_create_info, 0);
     return (jlong) mem;
 }
@@ -159,7 +159,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseMemObject
 (JNIEnv *env, jclass clazz, jlong memobj) {
     cl_int status = clReleaseMemObject((cl_mem) memobj);
-    LOG_OCL_JNI("clReleaseMemObject", status);
+    LOG_OCL_AND_VALIDATE("clReleaseMemObject", status);
 }
 
 /*
@@ -175,7 +175,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 
     cl_int status;
     cl_program program = clCreateProgramWithSource((cl_context) context_id, (cl_uint) numLengths, (const char **) &source, (size_t*) lengths, &status);
-    LOG_OCL_JNI("clCreateProgramWithSource", status);
+    LOG_OCL_AND_VALIDATE("clCreateProgramWithSource", status);
     env->ReleasePrimitiveArrayCritical(array1, source, 0);
     env->ReleasePrimitiveArrayCritical(array2, lengths, 0);
     return (jlong) program;
@@ -197,7 +197,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
     if (numLengths == 1) {
         cl_int binary_status;
         program = clCreateProgramWithBinary((cl_context) context_id, (cl_uint) numLengths, (const cl_device_id *) &device_id, (const size_t*) lengths, (const unsigned char **) &binary, &binary_status, &status);
-        LOG_OCL_JNI("clCreateProgramWithBinary", status);
+        LOG_OCL_AND_VALIDATE("clCreateProgramWithBinary", status);
     } else {
         std::cout << "[TornadoVM JNI] OCL> loading multiple binaries not supported\n";
     }

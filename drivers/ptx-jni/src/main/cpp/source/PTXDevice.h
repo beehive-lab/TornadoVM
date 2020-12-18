@@ -27,13 +27,17 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXDevice
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXDevice
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
  * Method:    cuDeviceGet
  * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGet
-  (JNIEnv *, jclass, jint);
+        (JNIEnv *, jclass, jint);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
@@ -41,7 +45,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetName
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
@@ -49,7 +53,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cu
  * Signature: (JI)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceGetAttribute
-  (JNIEnv *, jclass, jlong, jint);
+        (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
@@ -57,7 +61,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDev
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDeviceTotalMem
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
@@ -65,7 +69,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDe
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDriverGetVersion
-  (JNIEnv *, jclass);
+        (JNIEnv *, jclass);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXDevice
@@ -73,6 +77,9 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuDri
  * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXDevice_cuMemGetInfo
-  (JNIEnv *, jclass);
+        (JNIEnv *, jclass);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

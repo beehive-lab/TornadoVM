@@ -47,6 +47,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_cl
     jsize len = env->GetArrayLength(array);
     size_t return_size = 0;
     size_t status = clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetDeviceInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetDeviceInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }

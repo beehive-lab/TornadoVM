@@ -22,11 +22,17 @@
  *
  */
 
-#ifndef _Included_ptx_utils
-#define _Included_ptx_utils
+#ifndef PTX_UTILS_H
+#define PTX_UTILS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent);
-void record_event_begin(CUevent* beforeEvent, CUstream* stream);
-void record_event_end(CUevent* afterEvent, CUstream* stream);
+CUresult record_event(CUevent* beforeEvent, CUstream* stream);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

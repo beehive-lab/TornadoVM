@@ -24,18 +24,20 @@
  *
  */
 
-#include <stdio.h>
-
 #define CL_TARGET_OPENCL_VERSION 120
+#include <iostream>
 #include "opencl_time_utils.h"
+#include "ocl_log.h"
+
 
 /*
  * It returns the elapsed time (END-START) in nanoseconds
  */
 long getElapsedTimeEvent(cl_event event) {
     cl_int status = clWaitForEvents(1, &event);
+    LOG_OCL_AND_VALIDATE("clWaitForEvents", status);
     if (status != CL_SUCCESS) {
-        printf("[ERROR clWaitForEvents]: %d\n", status);
+        std::cout << "[ERROR clWaitForEvents]: "  <<  status << std::endl;
     }
     cl_ulong time_start;
     cl_ulong time_end;

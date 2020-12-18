@@ -27,12 +27,19 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTX
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTX
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTX
  * Method:    cuInit
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTX_cuInit
-  (JNIEnv *, jclass);
+        (JNIEnv *, jclass);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

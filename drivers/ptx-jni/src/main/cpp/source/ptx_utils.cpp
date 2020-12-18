@@ -21,16 +21,27 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#include <cuda.h>
+#include <iostream>
+#include "ptx_utils.h"
+#include "ptx_log.h"
 
-#define VERBOSE 0
+CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
+    CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
+    LOG_PTX_AND_VALIDATE("cuEventCreate", result)
+    if (result != CUDA_SUCCESS) {
+        std::cout << "[TornadoVM-PTX-JNI] Failed to create event with result = " << result << "\n";
+    }
+    result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
+    LOG_PTX_AND_VALIDATE("cuEventCreate", result)
+    if (result != CUDA_SUCCESS) {
+        std::cout << "[TornadoVM-PTX-JNI] Failed to create event with result = " << result << "\n";
+    }
+    return result;
+}
 
-#define CUDA_CHECK_ERROR(name,func,result) if(VERBOSE) {\
-        printf("uk.ac.manchester.tornado.drivers.ptx> Calling: %s\n",name); \
-    } \
-    result = func; \
-    if (result != CUDA_SUCCESS) { \
-        printf("uk.ac.manchester.tornado.drivers.ptx> Returned: %s = %d\n", name, result); \
-        fflush(stdout); \
-    } \
-
-
+CUresult record_event(CUevent* beforeEvent, CUstream* stream) {
+    CUresult result = cuEventRecord(*beforeEvent, *stream);
+    LOG_PTX_AND_VALIDATE("cuEventRecord", result)
+    return result;
+}

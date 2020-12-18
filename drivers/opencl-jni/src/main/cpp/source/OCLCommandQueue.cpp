@@ -44,7 +44,7 @@
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clReleaseCommandQueue
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     cl_int status = clReleaseCommandQueue((cl_command_queue) queue_id);
-    LOG_OCL_JNI("clReleaseCommandQueue", status);
+    LOG_OCL_AND_VALIDATE("clReleaseCommandQueue", status);
 }
 
 /*
@@ -59,7 +59,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 
     size_t return_size = 0;
     cl_int status = clGetCommandQueueInfo((cl_command_queue) queue_id, (cl_command_queue_info) param_name, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetCommandQueueInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetCommandQueueInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 
 }
@@ -83,7 +83,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clFlush
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     cl_int status = clFlush((cl_command_queue) queue_id);
-    LOG_OCL_JNI("clFlush", status);
+    LOG_OCL_AND_VALIDATE("clFlush", status);
 }
 
 /*
@@ -94,7 +94,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clFinish
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     cl_int status = clFinish((cl_command_queue) queue_id);
-    LOG_OCL_JNI("clFinish", status);
+    LOG_OCL_AND_VALIDATE("clFinish", status);
 }
 
 /*
@@ -117,7 +117,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     cl_event kernelEvent = NULL;
     cl_int status = clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (numEvents == 0) ? NULL : (cl_event*) events, &kernelEvent);
-    LOG_OCL_JNI("clEnqueueNDRangeKernel", status);
+    LOG_OCL_AND_VALIDATE("clEnqueueNDRangeKernel", status);
 
 	if (PRINT_KERNEL_EVENTS) {
 		long kernelTime = getElapsedTimeEvent(kernelEvent);
@@ -155,7 +155,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
     jlong *events = (array != NULL) ? &arrayEvents[1] : NULL;
     jsize len = (array != NULL) ? arrayEvents[0] : 0;
     cl_int status = clEnqueueWaitForEvents((cl_command_queue) queue_id, len, (cl_event *) events);
-    LOG_OCL_JNI("clEnqueueWaitForEvents", status);
+    LOG_OCL_AND_VALIDATE("clEnqueueWaitForEvents", status);
 
     if (array != NULL) {
         env->ReleasePrimitiveArrayCritical(array, arrayEvents, JNI_ABORT);
@@ -175,7 +175,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     cl_event event;
     cl_int status = clEnqueueMarkerWithWaitList((cl_command_queue) queue_id, len, (cl_event *) events, &event);
-    LOG_OCL_JNI("clEnqueueMarkerWithWaitList", status);
+    LOG_OCL_AND_VALIDATE("clEnqueueMarkerWithWaitList", status);
 
     if (array != NULL) {
         env->ReleasePrimitiveArrayCritical(array, arrayEvents, JNI_ABORT);
@@ -196,7 +196,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
     jsize len = (array != NULL) ? arrayEvents[0] : 0;
     cl_event event;
     cl_int status = clEnqueueBarrierWithWaitList((cl_command_queue) queue_id, len, (cl_event *) events, &event);
-    LOG_OCL_JNI("clEnqueueBarrierWithWaitList", status);
+    LOG_OCL_AND_VALIDATE("clEnqueueBarrierWithWaitList", status);
     if (array != NULL) {
         env->ReleasePrimitiveArrayCritical(array, arrayEvents, JNI_ABORT);
     }
@@ -227,7 +227,7 @@ jlong transferFromHostToDevice(JNIEnv * env, jclass javaClass,
     cl_int status = clEnqueueWriteBuffer((cl_command_queue) commandQueue, (cl_mem) devicePtr, blocking_write,
                                          (size_t) deviceOffset, (size_t) numBytes, &buffer[hostOffset], (cl_uint) numberOfEvents,
                                          (cl_event *) events, &event);
-    LOG_OCL_JNI("clEnqueueWriteBuffer", status);
+    LOG_OCL_AND_VALIDATE("clEnqueueWriteBuffer", status);
     if (PRINT_DATA_TIMES) {
         long writeTime = getElapsedTimeEvent(event);
         std::cout << "[TornadoVM-JNI] H2D time: " << writeTime << " (ns)" << std::endl;
@@ -340,7 +340,7 @@ jlong transfersFromDeviceToHost(JNIEnv *env, jclass javaClass,
     if (status != CL_SUCCESS) {
         printf("[ERROR] clEnqueueReadBuffer, code = %d n", status);
     }
-    LOG_OCL_JNI("clEnqueueReadBuffer", status);
+    LOG_OCL_AND_VALIDATE("clEnqueueReadBuffer", status);
     if (PRINT_DATA_TIMES) {
         long readTime = getElapsedTimeEvent(readEvent); /* clWaitForEvents call a side effect of this call so safe to not wait */
         std::cout << "[TornadoVM-JNI] D2H time: " << readTime << " (ns)" << std::endl;

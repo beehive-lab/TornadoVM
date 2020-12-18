@@ -42,7 +42,7 @@
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_clReleaseProgram
 (JNIEnv *env, jclass clazz, jlong program_id) {
     cl_int status = clReleaseProgram((cl_program) program_id);
-    LOG_OCL_JNI("clReleaseProgram", status);
+    LOG_OCL_AND_VALIDATE("clReleaseProgram", status);
 }
 
 /*
@@ -56,7 +56,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
     jsize numDevices = env->GetArrayLength(array1);
     const char *options = env->GetStringUTFChars(str, NULL);
     cl_int status = clBuildProgram((cl_program) program_id, (cl_uint) numDevices, (cl_device_id*) devices, options, NULL, NULL);
-    LOG_OCL_JNI("clBuildProgram", status);
+    LOG_OCL_AND_VALIDATE("clBuildProgram", status);
     env->ReleasePrimitiveArrayCritical(array1, devices, 0);
 }
 
@@ -77,7 +77,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
     }
     size_t return_size = 0;
     cl_int status = clGetProgramInfo((cl_program) program_id, (cl_program_info) param_name, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetProgramInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetProgramInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
@@ -92,7 +92,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
     jsize len = env->GetArrayLength(array);
     size_t return_size = 0;
     cl_int status = clGetProgramBuildInfo((cl_program) program_id, (cl_device_id) device_id, (cl_program_build_info) param_name, len, (void *) value, &return_size);
-    LOG_OCL_JNI("clGetProgramBuildInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetProgramBuildInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
@@ -106,7 +106,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_
     const char *kernel_name = env->GetStringUTFChars(str, NULL);
     cl_int status;
     cl_kernel kernel = clCreateKernel((cl_program) program_id, kernel_name, &status);
-    LOG_OCL_JNI("clCreateKernel", status);
+    LOG_OCL_AND_VALIDATE("clCreateKernel", status);
     return (jlong) kernel;
 }
 
@@ -121,7 +121,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_g
     size_t return_size = 0;
     size_t *binarySizes = static_cast<size_t *>(malloc(sizeof(size_t) * num_devices));
     cl_int status = clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARY_SIZES, sizeof (size_t) * num_devices, binarySizes, &return_size);
-    LOG_OCL_JNI("clGetProgramInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetProgramInfo", status);
 
     jbyte **binaries = static_cast<jbyte **>(malloc(sizeof(char *) * num_devices));
     binaries[0] = value;
@@ -129,7 +129,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_g
         binaries[i] = value + binarySizes[i - 1];
     }
     status = clGetProgramInfo((cl_program) program_id, CL_PROGRAM_BINARIES, sizeof (unsigned char**), (void *) binaries, &return_size);
-    LOG_OCL_JNI("clGetProgramInfo", status);
+    LOG_OCL_AND_VALIDATE("clGetProgramInfo", status);
     free(binarySizes);
     free(binaries);
 }
