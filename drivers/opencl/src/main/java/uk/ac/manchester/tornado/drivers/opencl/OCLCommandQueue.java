@@ -59,8 +59,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws OCLException;
 
-    native static void clSetCommandQueueProperty(long queueId, long property, boolean value) throws OCLException;
-
     /**
      * Enqueues a kernel for execution on the specified command queue
      *
@@ -151,14 +149,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     public long getProperties() {
         return properties;
-    }
-
-    public void setProperties(long properties, boolean value) {
-        try {
-            clSetCommandQueueProperty(commandQueue, properties, value);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
     }
 
     /**
