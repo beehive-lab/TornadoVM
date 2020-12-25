@@ -122,8 +122,12 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static void clFinish(long queueId) throws OCLException;
 
-    @Deprecated
     public void flushEvents() {
+        try {
+            clFlush(commandQueue);
+        } catch (OCLException e) {
+            e.printStackTrace();
+        }
     }
 
     public long getContextId() {
