@@ -78,6 +78,7 @@ public class OCLCommandQueue extends TornadoLogger {
      *            List of events
      * @return Returns an event's ID
      * @throws OCLException
+     *             OpenCL Exception
      */
     native static long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws OCLException;
 
@@ -352,9 +353,6 @@ public class OCLCommandQueue extends TornadoLogger {
         } catch (OCLException e) {
             error(e.getMessage());
         }
-    }
-
-    public void printEvents() {
     }
 
     public long enqueueBarrier(long[] waitEvents) {
