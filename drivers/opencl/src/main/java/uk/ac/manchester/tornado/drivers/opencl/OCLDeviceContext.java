@@ -134,7 +134,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     @Override
     public String getDeviceName() {
-        return String.format(device.getDeviceName());
+        return device.getDeviceName();
     }
 
     @Override
@@ -415,10 +415,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
         long base = events.get(0).getCLSubmitTime();
         System.out.println("event: device,type,info,queued,submitted,start,end,status");
-        events.forEach((e) -> {
-            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getOclEventID(), e.getCLQueuedTime() - base, e.getCLSubmitTime() - base, e.getCLStartTime() - base,
-                    e.getCLEndTime() - base, e.getStatus());
-        });
+        events.forEach(event -> System.out.printf("event: %s,%s,%s,0x%x,%d,%d,%d,%s\n", deviceName, event.getName(), event.getOclEventID(), event.getCLQueuedTime() - base,
+                event.getCLSubmitTime() - base, event.getCLStartTime() - base, event.getCLEndTime() - base, event.getStatus()));
     }
 
     @Override
