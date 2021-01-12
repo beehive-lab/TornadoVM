@@ -44,7 +44,7 @@ def updateMavenSettingsFile():
     try:
         javaHome = os.environ["JAVA_HOME"]
     except:
-        print(Colors.RED + "[ERROR] JAVA_HOME is not defined. Plese export JAVA_HOME" + Colors.RESET)
+        print(Colors.RED + "[ERROR] JAVA_HOME is not defined. Export JAVA_HOME" + Colors.RESET)
         import sys
         sys.exit(1)
 

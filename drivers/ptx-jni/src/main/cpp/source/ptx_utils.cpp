@@ -28,20 +28,14 @@
 
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
-    LOG_PTX_AND_VALIDATE("cuEventCreate", result)
-    if (result != CUDA_SUCCESS) {
-        std::cout << "[TornadoVM-PTX-JNI] Failed to create event with result = " << result << "\n";
-    }
+    LOG_PTX_AND_VALIDATE("cuEventCreate", result);
     result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
-    LOG_PTX_AND_VALIDATE("cuEventCreate", result)
-    if (result != CUDA_SUCCESS) {
-        std::cout << "[TornadoVM-PTX-JNI] Failed to create event with result = " << result << "\n";
-    }
+    LOG_PTX_AND_VALIDATE("cuEventCreate", result);
     return result;
 }
 
 CUresult record_event(CUevent* beforeEvent, CUstream* stream) {
     CUresult result = cuEventRecord(*beforeEvent, *stream);
-    LOG_PTX_AND_VALIDATE("cuEventRecord", result)
+    LOG_PTX_AND_VALIDATE("cuEventRecord", result);
     return result;
 }

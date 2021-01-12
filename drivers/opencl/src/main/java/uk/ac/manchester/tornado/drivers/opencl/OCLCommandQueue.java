@@ -59,22 +59,26 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static void clGetCommandQueueInfo(long queueId, int info, byte[] buffer) throws OCLException;
 
-    native static void clSetCommandQueueProperty(long queueId, long property, boolean value) throws OCLException;
-
     /**
-     * Enqueues a kernel for execution on the specified command queue
-     *
+     * Dispatch an OpenCL kernel via a JNI call.
+     * 
      * @param queueId
+     *            OpenCL command queue object
      * @param kernelId
+     *            OpenCL kernel ID object
      * @param dim
+     *            Dimensions of the Kernel (1D, 2D or 3D)
      * @param global_work_offset
+     *            Offset within global access
      * @param global_work_size
+     *            Total number of threads to launch
      * @param local_work_size
+     *            Local work group size
      * @param events
-     *
-     * @return eventId of this command
-     *
+     *            List of events
+     * @return Returns an event's ID
      * @throws OCLException
+     *             OpenCL Exception
      */
     native static long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws OCLException;
 
@@ -119,8 +123,12 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static void clFinish(long queueId) throws OCLException;
 
-    @Deprecated
     public void flushEvents() {
+        try {
+            clFlush(commandQueue);
+        } catch (OCLException e) {
+            e.printStackTrace();
+        }
     }
 
     public long getContextId() {
@@ -153,14 +161,6 @@ public class OCLCommandQueue extends TornadoLogger {
         return properties;
     }
 
-    public void setProperties(long properties, boolean value) {
-        try {
-            clSetCommandQueueProperty(commandQueue, properties, value);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-    }
-
     /**
      * Enqueues a barrier into the command queue of the specified device
      *
@@ -184,10 +184,6 @@ public class OCLCommandQueue extends TornadoLogger {
     @Override
     public String toString() {
         return String.format("Queue: context=0x%x, device=0x%x", getContextId(), getDeviceId());
-    }
-
-    public long getCommandQueue() {
-        return commandQueue;
     }
 
     public long enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, long[] waitEvents) {
@@ -357,9 +353,6 @@ public class OCLCommandQueue extends TornadoLogger {
         } catch (OCLException e) {
             error(e.getMessage());
         }
-    }
-
-    public void printEvents() {
     }
 
     public long enqueueBarrier(long[] waitEvents) {

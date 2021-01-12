@@ -47,14 +47,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clSetCommandQueueProperty
- * Signature: (JJZ)V
- */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clSetCommandQueueProperty
-        (JNIEnv *, jclass, jlong, jlong, jboolean);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueNDRangeKernel
  * Signature: (JJI[J[J[J[J)J
  */

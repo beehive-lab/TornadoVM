@@ -61,18 +61,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
     cl_int status = clGetCommandQueueInfo((cl_command_queue) queue_id, (cl_command_queue_info) param_name, len, (void *) value, &return_size);
     LOG_OCL_AND_VALIDATE("clGetCommandQueueInfo", status);
     env->ReleasePrimitiveArrayCritical(array, value, 0);
-
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clSetCommandQueueProperty
- * Signature: (JJZ)V
- */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clSetCommandQueueProperty
-(JNIEnv *env, jclass clazz, jlong queue_id, jlong properties, jboolean value) {
-    // Not implemented in OpenCL 1.2
-    //OPENCL_SOFT_ERROR("clSetCommandQueueProperty",clSetCommandQueueProperty((cl_command_queue) queue_id, (cl_command_queue_properties) properties,enable,NULL),);
 }
 
 /*
