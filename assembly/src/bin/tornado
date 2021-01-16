@@ -120,7 +120,7 @@ if [[ $JAVA_VERSION == "9.0" || $JAVA_VERSION == "10.0" ]]; then
   exit 0
 fi
 
-TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib:$EXTERNAL_DIRS "
+TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib"
 if [ "$JAVA_VERSION" = "1.8" ]; then
   TORNADO_FLAGS="${TORNADO_FLAGS} -Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado"
 else
