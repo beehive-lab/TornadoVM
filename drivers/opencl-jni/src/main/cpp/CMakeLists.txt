@@ -5,7 +5,7 @@ find_package(OpenCL REQUIRED)
 find_package(JNI REQUIRED)
 
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fpermissive -rdynamic -fPIC ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fpermissive -export-dynamic -fPIC ")
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 include_directories(
@@ -29,3 +29,4 @@ add_library(tornado-opencl SHARED
 		source/opencl_time_utils.cpp)
 
 target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+set_target_properties(tornado-opencl PROPERTIES PREFIX "")
