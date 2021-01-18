@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -20,41 +22,27 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-#include <jni.h>
 
 #define CL_TARGET_OPENCL_VERSION 120
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
+#include <iostream>
+#include "opencl_time_utils.h"
+#include "ocl_log.h"
 
-#include <stdio.h>
-#include "macros.h"
-#include "utils.h"
 
 /*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
- * Method:    clGetDeviceInfo
- * Signature: (JI[B)V
+ * It returns the elapsed time (END-START) in nanoseconds
  */
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
-(JNIEnv *env, jclass clazz, jlong device_id, jint device_info, jbyteArray array) {
-
-    OPENCL_PROLOGUE;
-
-    jbyte *value;
-    jsize len;
-
-    value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    len = (*env)->GetArrayLength(env, array);
-    debug("uk.ac.manchester.tornado.drivers.opencl> clGetDeviceInfo param=0x%x\n", device_info);
-    size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetDeviceInfo",
-            clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size),);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+long getElapsedTimeEvent(cl_event event) {
+    cl_int status = clWaitForEvents(1, &event);
+    LOG_OCL_AND_VALIDATE("clWaitForEvents", status);
+    if (status != CL_SUCCESS) {
+        std::cout << "[ERROR clWaitForEvents]: "  <<  status << std::endl;
+    }
+    cl_ulong time_start;
+    cl_ulong time_end;
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    return (time_end - time_start);
 }
+

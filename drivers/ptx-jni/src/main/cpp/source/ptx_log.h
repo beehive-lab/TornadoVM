@@ -3,7 +3,7 @@
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
+ * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,22 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#ifndef TORNADO_PTX_LOG_H
+#define TORNADO_PTX_LOG_H
 
-#include <stdio.h>
 #include <cuda.h>
+#define LOG_PTX 0
 
-CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
-    CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
-    if (result != CUDA_SUCCESS) {
-        printf("Failed to create event! (%d)\n", result); fflush(stdout);
+#define LOG_PTX_AND_VALIDATE(name, result)                      \
+    if (LOG_PTX == 1)  {                                        \
+        std::cout << "[TornadoVM-PTX-JNI] Calling : " << name   \
+        << " -> Status: " << result                             \
+        << std::endl;                                           \
+    }                                                           \
+    if (result != CUDA_SUCCESS)  {                              \
+        std::cout << "[TornadoVM-PTX-JNI] ERROR : " << name     \
+        << " -> Returned: " << result                           \
+        << std::endl;                                           \
     }
-    result &= cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
-    if (result != CUDA_SUCCESS) {
-        printf("Failed to create event! (%d)\n", result); fflush(stdout);
-    }
-    return result;
-}
 
-void record_event_begin(CUevent* beforeEvent, CUstream* stream) {
-    CUresult result = cuEventRecord(*beforeEvent, *stream);
-}
-
-void record_event_end(CUevent* afterEvent, CUstream* stream) {
-    CUresult result = cuEventRecord(*afterEvent, *stream);
-}
+#endif

@@ -27,7 +27,9 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXEvent
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXEvent
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 jbyteArray array_from_event(JNIEnv *env, CUevent *event);
 
@@ -39,7 +41,7 @@ jobjectArray wrapper_from_events(JNIEnv *env, CUevent *event1, CUevent *event2);
  * Signature: ([B)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventDestroy
-  (JNIEnv *, jclass, jbyteArray);
+        (JNIEnv *, jclass, jbyteArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
@@ -47,15 +49,15 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
  * Signature: ([[B)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_tornadoCUDAEventsSynchronize
-  (JNIEnv *, jclass, jobjectArray);
+        (JNIEnv *, jclass, jobjectArray);
 
- /*
-  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
-  * Method:    cuEventElapsedTime
-  * Signature: ([[B)J
-  */
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
+ * Method:    cuEventElapsedTime
+ * Signature: ([[B)J
+ */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventElapsedTime
- (JNIEnv *env, jclass clazz, jobjectArray wrapper);
+        (JNIEnv *env, jclass clazz, jobjectArray wrapper);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXEvent
@@ -63,6 +65,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEve
  * Signature: ([B)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXEvent_cuEventQuery
-  (JNIEnv *, jclass, jbyteArray);
+        (JNIEnv *, jclass, jbyteArray);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

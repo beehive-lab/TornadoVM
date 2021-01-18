@@ -36,7 +36,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_FLOAT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_INT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_READ_SHORT;
-import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SERIAL_KERNEL;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SYNC_BARRIER;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_SYNC_MARKER;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_BYTE;
@@ -52,7 +51,6 @@ import java.nio.ByteOrder;
 import java.util.Comparator;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -71,7 +69,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
-    private static final boolean PRINT_OCL_KERNEL_TIME = Boolean.parseBoolean(getProperty("tornado.opencl.timer.kernel", "False").toLowerCase());
 
     private final OCLTargetDevice device;
     private final OCLCommandQueue queue;
@@ -137,7 +134,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     @Override
     public String getDeviceName() {
-        return String.format(device.getDeviceName());
+        return device.getDeviceName();
     }
 
     @Override
@@ -181,19 +178,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
         return context.createProgramWithBinary(device.getId(), binary, lengths, this);
-    }
-
-    public void printEvents() {
-        queue.printEvents();
-    }
-
-    public int enqueueTask(OCLKernel kernel, int[] events) {
-        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null), DESC_SERIAL_KERNEL, kernel.getOclKernelID(),
-                queue);
-    }
-
-    public int enqueueTask(OCLKernel kernel) {
-        return eventsWrapper.registerEvent(queue.enqueueTask(kernel, null), DESC_SERIAL_KERNEL, kernel.getOclKernelID(), queue);
     }
 
     public int enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
@@ -431,10 +415,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
         long base = events.get(0).getCLSubmitTime();
         System.out.println("event: device,type,info,queued,submitted,start,end,status");
-        events.forEach((e) -> {
-            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getOclEventID(), e.getCLQueuedTime() - base, e.getCLSubmitTime() - base, e.getCLStartTime() - base,
-                    e.getCLEndTime() - base, e.getStatus());
-        });
+        events.forEach(event -> System.out.printf("event: %s,%s,%s,0x%x,%d,%d,%d,%s\n", deviceName, event.getName(), event.getOclEventID(), event.getCLQueuedTime() - base,
+                event.getCLSubmitTime() - base, event.getCLStartTime() - base, event.getCLEndTime() - base, event.getStatus()));
     }
 
     @Override

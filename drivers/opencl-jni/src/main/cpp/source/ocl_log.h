@@ -3,7 +3,7 @@
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
+ * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,24 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#ifndef TORNADO_OCL_LOG_H
+#define TORNADO_OCL_LOG_H
 
-#include <jni.h>
-#include <cuda.h>
+#define PRINT_KERNEL_EVENTS 0
+#define PRINT_DATA_TIMES 0
+#define PRINT_DATA_SIZES 0
 
-#include "macros.h"
+#define LOG_JNI 0
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
- * Method:    cuDeviceGetCount
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform_cuDeviceGetCount
-  (JNIEnv *env, jclass clazz) {
-    CUresult result;
-    int device_count;
-    CUDA_CHECK_ERROR("cuDeviceGetCount", cuDeviceGetCount(&device_count), result);
-    return (jint) device_count;
-}
+#define LOG_OCL_AND_VALIDATE(name, result)                     \
+    if (LOG_JNI == 1)  {                                       \
+        std::cout << "[TornadoVM-OCL-JNI] Calling : " << name  \
+        << " -> Status: " << result                            \
+        << std::endl;                                          \
+    }                                                          \
+    if (result != CL_SUCCESS)  {                               \
+        std::cout << "[TornadoVM-OCL-JNI] ERROR : " << name    \
+        << " -> Returned: " << result                          \
+        << std::endl;                                          \
+    }
+#endif

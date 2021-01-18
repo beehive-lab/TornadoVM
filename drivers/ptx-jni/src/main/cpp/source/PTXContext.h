@@ -28,14 +28,16 @@
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXContext
 #define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXContext
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
  * Method:    cuCtxCreate
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxCreate
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *env, jclass clazz, jlong cuDevice);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
@@ -43,8 +45,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
-  (JNIEnv *, jclass, jlong);
-
+        (JNIEnv *env, jclass clazz, jlong cuContext);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
@@ -52,6 +53,25 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
  * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemAlloc
-  (JNIEnv *, jclass, jlong, jlong);
+        (JNIEnv *env, jclass clazz, jlong cuContext, jlong num_bytes);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
+ * Method:    cuMemFree
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemFree
+        (JNIEnv *env, jclass clazz, jlong cuContext, jlong dev_ptr);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
+ * Method:    cuCtxSetCurrent
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxSetCurrent
+        (JNIEnv *env, jclass clazz, jlong cuContext);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

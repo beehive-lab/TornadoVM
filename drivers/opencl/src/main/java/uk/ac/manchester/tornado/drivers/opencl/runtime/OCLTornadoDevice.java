@@ -97,7 +97,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private final int deviceIndex;
     private final int platformIndex;
     private static OCLDriver driver = null;
-    private String platformName;
+    private final String platformName;
 
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private ObjectBuffer reuseBuffer;
@@ -333,8 +333,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         String entry = getTaskEntryName(task);
 
         if (deviceContext.getInstalledCode(task.getId(), entry) != null) {
-            OCLInstalledCode installedCode = deviceContext.getInstalledCode(task.getId(), entry);
-            return installedCode;
+            return deviceContext.getInstalledCode(task.getId(), entry);
         } else {
             return codeCache.installEntryPointForBinaryForFPGAs(task.getId(), lookupPath, entry);
         }
@@ -505,7 +504,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }
-        } else if (!type.isPrimitive() && !type.isArray()) {
+        } else if (!type.isPrimitive()) {
             if (object instanceof AtomicInteger) {
                 result = new AtomicsBuffer(new int[] {}, deviceContext);
             } else {

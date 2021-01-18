@@ -22,8 +22,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 
@@ -31,12 +29,14 @@
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
+
 #include <CL/cl.h>
+
 #endif
 
-#include <stdio.h>
-#include "macros.h"
-#include "utils.h"
+#include <iostream>
+#include "OCLEvent.h"
+#include "ocl_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
@@ -44,20 +44,15 @@
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventInfo
-(JNIEnv *env, jclass clazz, jlong event_id, jint param_name, jbyteArray array) {
-    OPENCL_PROLOGUE;
-
+        (JNIEnv *env, jclass clazz, jlong event_id, jint param_name, jbyteArray array) {
     jbyte *value;
     jsize len;
-
-    value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-    len = (*env)->GetArrayLength(env, array);
-
+    value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    len = env->GetArrayLength(array);
     size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetEventInfo",
-            clGetEventInfo((cl_event) event_id, (cl_event_info) param_name, len, (void *) value, &return_size),);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    cl_int status = clGetEventInfo((cl_event) event_id, (cl_event_info) param_name, len, (void *) value, &return_size);
+    LOG_OCL_AND_VALIDATE("clGetEventInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
 /*
@@ -66,17 +61,13 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clG
  * Signature: (JJ[B)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
-(JNIEnv *env, jclass clazz, jlong event_id, jlong param_name, jbyteArray array) {
-    OPENCL_PROLOGUE;
-
-    jbyte *value;
-    value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-
+        (JNIEnv *env, jclass clazz, jlong event_id, jlong param_name, jbyteArray array) {
+    jbyte *value = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
     size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clGetEventProfilingInfo",
-            clGetEventProfilingInfo((cl_event) event_id, (cl_profiling_info) param_name, sizeof(cl_ulong), (void *) value, NULL), 0);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, array, value, 0);
+    cl_int status = clGetEventProfilingInfo((cl_event) event_id, (cl_profiling_info) param_name, sizeof(cl_ulong),
+                                            (void *) value, NULL);
+    LOG_OCL_AND_VALIDATE("clGetEventProfilingInfo", status);
+    env->ReleasePrimitiveArrayCritical(array, value, 0);
 }
 
 /*
@@ -85,21 +76,15 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clG
  * Signature: ([J)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clWaitForEvents
-(JNIEnv *env, jclass clazz, jlongArray array) {
-    OPENCL_PROLOGUE;
-
-	jsize len;
-	cl_event* events;
-
-	if (array != NULL) {
-		events = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-		len = (*env)->GetArrayLength(env, array);
-
-		OPENCL_SOFT_ERROR("clWaitForEvents",
-    	        clWaitForEvents((cl_uint) len, (const cl_event *) events), 0);
-
-		(*env)->ReleasePrimitiveArrayCritical(env, array, events, 0);
-	}
+        (JNIEnv *env, jclass clazz, jlongArray array) {
+    if (array != NULL) {
+        jsize len;
+        cl_event *events = static_cast<cl_event *>(env->GetPrimitiveArrayCritical(array, NULL));
+        len = env->GetArrayLength(array);
+        cl_int status = clWaitForEvents((cl_uint) len, (const cl_event *) events);
+        LOG_OCL_AND_VALIDATE("clWaitForEvents", status);
+        env->ReleasePrimitiveArrayCritical(array, events, 0);
+    }
 }
 
 /*
@@ -108,8 +93,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
-(JNIEnv *env, jclass clazz, jlong event) {
-    OPENCL_PROLOGUE;
-    OPENCL_SOFT_ERROR("clReleaseEvent",
-            clReleaseEvent((const cl_event) event),);
+        (JNIEnv *env, jclass clazz, jlong event) {
+    cl_int status = clReleaseEvent((const cl_event) event);
+    LOG_OCL_AND_VALIDATE("clReleaseEvent", status);
 }

@@ -23,23 +23,20 @@
  */
 
 #include <jni.h>
-/* Header for class uk_ac_manchester_tornado_drivers_ptx_PTXPlatform */
+#include <cuda.h>
 
-#ifndef _Included_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
-#define _Included_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <iostream>
+#include "PTX.h"
+#include "ptx_log.h"
 
-    /*
- * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXPlatform
- * Method:    cuDeviceGetCount
- * Signature: ()I
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTX
+ * Method:    cuInit
+ * Signature: ()J
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXPlatform_cuDeviceGetCount
-        (JNIEnv *, jclass);
-
-#ifdef __cplusplus
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTX_cuInit
+  (JNIEnv *env, jclass clazz) {
+    CUresult result = cuInit(0);
+    LOG_PTX_AND_VALIDATE("cuInit", 0);
+    return (jlong) result;
 }
-#endif
-#endif

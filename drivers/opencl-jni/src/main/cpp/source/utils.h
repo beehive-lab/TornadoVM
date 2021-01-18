@@ -20,19 +20,26 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 
+#ifndef utils_h
+#define utils_h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CL_TARGET_OPENCL_VERSION 120
+
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
+    #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+    #include <CL/cl.h>
 #endif
 
 char *getOpenCLError(char *, cl_int);
 
-void resetAndStartTimer();
-
-unsigned long long getElapsedTime();
+#ifdef __cplusplus
+}
+#endif
+#endif

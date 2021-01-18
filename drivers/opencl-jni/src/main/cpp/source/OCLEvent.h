@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 /* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLEvent */
@@ -31,37 +29,37 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
-     * Method:    clGetEventInfo
-     * Signature: (JI[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventInfo
-    (JNIEnv *, jclass, jlong, jint, jbyteArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
+ * Method:    clGetEventInfo
+ * Signature: (JI[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventInfo
+        (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
-     * Method:    clGetEventProfilingInfo
-     * Signature: (JJ[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
-    (JNIEnv *, jclass, jlong, jlong, jbyteArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
+ * Method:    clGetEventProfilingInfo
+ * Signature: (JJ[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
+        (JNIEnv *, jclass, jlong, jlong, jbyteArray);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
-     * Method:    clWaitForEvents
-     * Signature: ([J)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clWaitForEvents
-    (JNIEnv *, jclass, jlongArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
+ * Method:    clWaitForEvents
+ * Signature: ([J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clWaitForEvents
+        (JNIEnv *, jclass, jlongArray);
 
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
-     * Method:    clReleaseEvent
-     * Signature: (J)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
-    (JNIEnv *, jclass, jlong);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
+ * Method:    clReleaseEvent
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
+        (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

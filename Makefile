@@ -1,7 +1,7 @@
 all: build
 
-# Variable passed for build:
-# BACKEND - which backend to include in the build. Can be any combination of { opencl, ptx }. Default: opencl
+# Variable passed for the build process:
+# BACKEND=<ptx|opencl>. It specifies which backend/s to use { opencl, ptx }. The default one is `opencl`.
 BACKEND?=opencl
 
 build jdk-8:
@@ -18,7 +18,6 @@ graal-jdk-11:
 
 ptx:
 	./bin/compile.sh jdk-8 BACKEND=ptx,opencl
-	
 
 offline:
 	./bin/compile.sh jdk-8 $(BACKEND) OFFLINE
@@ -37,7 +36,6 @@ tests:
 test-slam:
 	tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 
 
-
 test-hdgraphics:
 	@[ "${HDGRAPHICS_ID}" ] || ( echo ">> HDGRAPHICS_ID is not set. Please do \`export HDGRAPHICS_ID=<dev-id>\`"; exit 1 )
 	tornado-test.py -V -J"-Ds0.t0.device=0:${HDGRAPHICS_ID} -Ds0.t1.device=0:${HDGRAPHICS_ID}" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats
@@ -46,10 +44,8 @@ test-hdgraphics:
 	tornado-test.py -V -J"-Ds0.t0.device=0:${HDGRAPHICS_ID} -Ds0.t1.device=0:${HDGRAPHICS_ID}" uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong
 	tornado-test.py -V -J"-Ds0.t0.device=0:${HDGRAPHICS_ID} -Ds0.t1.device=0:${HDGRAPHICS_ID}" uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic
 
-
 eclipse:
 	mvn eclipse:eclipse
 
 clean-graphs:
 	rm *.cfg *.bgv *.log
-

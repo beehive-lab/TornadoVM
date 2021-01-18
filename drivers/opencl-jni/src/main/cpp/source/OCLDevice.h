@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 #include <jni.h>
 /* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLDevice */
@@ -31,13 +29,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /*
-     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
-     * Method:    clGetDeviceInfo
-     * Signature: (JI[B)V
-     */
-    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
-    (JNIEnv *, jclass, jlong, jint, jbyteArray);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
+ * Method:    clGetDeviceInfo
+ * Signature: (JI[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
+        (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 #ifdef __cplusplus
 }

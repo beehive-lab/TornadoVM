@@ -24,10 +24,10 @@
 
 #include <jni.h>
 #include <cuda.h>
-#include <stdio.h>
 
+#include <iostream>
 #include "PTXContext.h"
-#include "macros.h"
+#include "ptx_log.h"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXContext
@@ -36,12 +36,10 @@
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxCreate
   (JNIEnv *env, jclass clazz, jlong cuDevice) {
-    CUresult result;
     CUdevice *dev = (CUdevice *) cuDevice;
-
-    CUcontext *ctx = malloc(sizeof(CUcontext));
-    CUDA_CHECK_ERROR("cuCtxCreate", cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, *dev), result);
-
+    CUcontext *ctx = static_cast<CUcontext *>(malloc(sizeof(CUcontext)));
+    CUresult result = cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, *dev);
+    LOG_PTX_AND_VALIDATE("cuCtxCreate", result);
     return (jlong) ctx;
 }
 
@@ -52,11 +50,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxDestroy
   (JNIEnv *env, jclass clazz, jlong cuContext) {
-    CUresult result;
     CUcontext *ctx = (CUcontext*) cuContext;
-
-    CUDA_CHECK_ERROR("cuCtxDestroy", cuCtxDestroy(*ctx), result);
-
+    CUresult result = cuCtxDestroy(*ctx);
+    LOG_PTX_AND_VALIDATE("cuCtxDestroy", result);
     return (jlong) result;
 }
 
@@ -67,14 +63,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuC
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemAlloc
   (JNIEnv *env, jclass clazz, jlong cuContext, jlong num_bytes) {
-    CUresult result;
     CUcontext* ctx = (CUcontext*) cuContext;
-
-    CUDA_CHECK_ERROR("cuCtxSetCurrent", cuCtxSetCurrent(*ctx), result);
+    CUresult result = cuCtxSetCurrent(*ctx);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
 
     CUdeviceptr dev_ptr;
-    CUDA_CHECK_ERROR("cuMemAlloc", cuMemAlloc(&dev_ptr, (size_t) num_bytes), result);
-
+    result = cuMemAlloc(&dev_ptr, (size_t) num_bytes);
+    LOG_PTX_AND_VALIDATE("cuMemAlloc", result);
     if (result != CUDA_SUCCESS) return (jlong) result;
     return (jlong) dev_ptr;
 }
@@ -86,12 +81,12 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuMemFree
   (JNIEnv *env, jclass clazz, jlong cuContext, jlong dev_ptr) {
-    CUresult result;
     CUcontext* ctx = (CUcontext*) cuContext;
-    CUDA_CHECK_ERROR("cuCtxSetCurrent", cuCtxSetCurrent(*ctx), result);
+    CUresult result = cuCtxSetCurrent(*ctx);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
 
-    CUDA_CHECK_ERROR("cuMemFree", cuMemFree((CUdeviceptr) dev_ptr), result);
-
+    result = cuMemFree((CUdeviceptr) dev_ptr);
+    LOG_PTX_AND_VALIDATE("cuMemFree", result);
     return (jlong) result;
 }
 
@@ -102,9 +97,8 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuM
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXContext_cuCtxSetCurrent
   (JNIEnv *env, jclass clazz, jlong cuContext) {
-    CUresult result;
     CUcontext* ctx = (CUcontext*) cuContext;
-    CUDA_CHECK_ERROR("cuCtxSetCurrent", cuCtxSetCurrent(*ctx), result);
-
+    CUresult result = cuCtxSetCurrent(*ctx);
+    LOG_PTX_AND_VALIDATE("cuCtxSetCurrent", result);
     return (jlong) result;
 }
