@@ -57,6 +57,7 @@ public class MatrixMul1D {
         float[] matrixCCUDA = new float[N * N];
         float[] matrixCOCL = new float[N * N];
         float[] matrixCOCLNewApi = new float[N * N];
+        float[] matrixCCUDANewApi = new float[N * N];
 
         IntStream.range(0, N * N).parallel().forEach(idx -> {
             matrixA[idx] = 2.5f;
@@ -165,6 +166,42 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
+        // Time New API CUDA
+        WorkerGrid workerCUDA = new WorkerGrid1D(N);
+        GridTask gridTaskCUDA = new GridTask();
+        gridTaskCUDA.set("cuda_new_api.t0", worker);
+        TornadoVMContext contextCUDA = new TornadoVMContext(workerCUDA);
+
+        TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_new_api") //
+                .task("t0", MatrixMul1D::matrixMultiplicationNewApi, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
+                .streamOut(matrixCCUDANewApi); //
+        // Change the Grid
+        workerCUDA.setGlobalWork(N, N, 1);
+        workerCUDA.setLocalWork(32, 1, 1);
+        cudaNewApiTask.mapAllTo(cudaDevice);
+
+        // Warmup New Api OPENCL
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
+            cudaNewApiTask.execute(gridTaskCUDA);
+        }
+
+        // Time OPENCL
+        long[] execTimesCUDANewApi = new long[EXECUTE_ITERATIONS];
+
+        for (int i = 0; i < EXECUTE_ITERATIONS; i++) {
+            start = System.currentTimeMillis();
+            cudaNewApiTask.execute(gridTaskCUDA);
+            stop = System.currentTimeMillis();
+            execTimesCUDANewApi[i] = stop - start;
+        }
+
+        OptionalDouble avgCUDAOptionalNewApi = Arrays.stream(execTimesCUDANewApi).average();
+        double averageCUDANewApi;
+        if (avgCUDAOptionalNewApi.isPresent())
+            averageCUDANewApi = avgCUDAOptionalNewApi.getAsDouble();
+        else
+            throw new Exception("Could not get average execution time");
+
         // Warm up sequential
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             matrixMultiplication(matrixA, matrixB, matrixCSeq, N);
@@ -191,6 +228,7 @@ public class MatrixMul1D {
         boolean validationCUDA = true;
         boolean validationOCL = true;
         boolean validationOCLNewApi = true;
+        boolean validationCUDANewApi = true;
 
         if (CHECK_RESULT) {
             for (int i = 0; i < N; i++) {
@@ -207,7 +245,12 @@ public class MatrixMul1D {
                     System.out.println("OpenCL new api validation failed");
                     System.out.println("Result is (" + matrixCOCLNewApi[i] + ") - while should be (" + matrixCSeq[i] + ")");
                 }
-                correctResult = validationCUDA && validationOCL && validationOCLNewApi;
+                if (Math.abs(matrixCCUDANewApi[i] - matrixCSeq[i]) > DELTA) {
+                    validationCUDANewApi = false;
+                    System.out.println("CUDA new api validation failed");
+                    System.out.println("Result is (" + matrixCCUDANewApi[i] + ") - while should be (" + matrixCSeq[i] + ")");
+                }
+                correctResult = validationCUDA && validationOCL && validationOCLNewApi && validationCUDANewApi;
 
                 if (!correctResult) {
                     break;
@@ -226,20 +269,25 @@ public class MatrixMul1D {
         double CUDAGigaFlops = (1.0E-9 * flops) / (averageCUDA / 1000.0f);
         double OpenCLGigaFlops = (1.0E-9 * flops) / (averageOpenCL / 1000.0f);
         double OpenCLNewApiGigaFlops = (1.0E-9 * flops) / (averageOpenCLNewApi / 1000.0f);
+        double CUDANewApiGigaFlops = (1.0E-9 * flops) / (averageCUDANewApi / 1000.0f);
         double CUDAspeedup = averageSeq / averageCUDA;
         double OpenCLspeedup = averageSeq / averageOpenCL;
         double OpenCLNewApispeedup = averageSeq / averageOpenCLNewApi;
+        double CUDANewApispeedup = averageSeq / averageCUDANewApi;
 
         String formatCUDAFGlops = String.format("%.2f", CUDAGigaFlops);
         String formatOpenCLFGlops = String.format("%.2f", OpenCLGigaFlops);
         String formatOpenCLNewApiFGlops = String.format("%.2f", OpenCLNewApiGigaFlops);
+        String formatCUDANewApiFGlops = String.format("%.2f", CUDANewApiGigaFlops);
 
         System.out.println("\tOpenCL Execution: " + formatOpenCLFGlops + " GFlops, Total time = " + averageOpenCL + " ms");
         System.out.println("\tOpenCL Execution New Api: " + formatOpenCLNewApiFGlops + " GFlops, Total time = " + averageOpenCLNewApi + " ms");
         System.out.println("\tPTX Execution: " + formatCUDAFGlops + " GFlops, Total Time = " + averageCUDA + " ms");
+        System.out.println("\tPTX Execution New Api: " + formatCUDANewApiFGlops + " GFlops, Total time = " + averageCUDANewApi + " ms");
         System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
         System.out.println("\tOpenCL Speedup with New Api: " + OpenCLNewApispeedup + "x");
         System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
+        System.out.println("\tPTX Speedup with New Api: " + CUDANewApispeedup + "x");
         System.out.println();
 
     }
