@@ -64,15 +64,20 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        TaskSchedule scheduleCUDA = new TaskSchedule("s0").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
+        WorkerGrid workerCUDAOld = new WorkerGrid2D(N, N);
+        GridTask gridTaskCUDAOld = new GridTask();
+        gridTaskCUDAOld.set("cuda_old_api.t0", workerCUDAOld);
+        TaskSchedule scheduleCUDA = new TaskSchedule("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
+        workerCUDAOld.setGlobalWork(N, N, 1);
+        workerCUDAOld.setLocalWork(256, 1, 1);
         scheduleCUDA.mapAllTo(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            scheduleCUDA.execute();
+            scheduleCUDA.execute(gridTaskCUDAOld);
         }
 
         // Time CUDA
@@ -80,7 +85,7 @@ public class MatrixMul1D {
         long[] execTimesCUDA = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesCUDA.length; i++) {
             start = System.currentTimeMillis();
-            scheduleCUDA.execute();
+            scheduleCUDA.execute(gridTaskCUDAOld);
             stop = System.currentTimeMillis();
             execTimesCUDA[i] = stop - start;
         }
@@ -92,7 +97,11 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
-        TaskSchedule scheduleOCL = new TaskSchedule("s1").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
+        WorkerGrid workerOpenCLOld = new WorkerGrid2D(N, N);
+        GridTask gridTaskOpenCLOld = new GridTask();
+        gridTaskOpenCLOld.set("ocl_old_api.t0", workerOpenCLOld);
+
+        TaskSchedule scheduleOCL = new TaskSchedule("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
@@ -107,18 +116,20 @@ public class MatrixMul1D {
             System.err.println("There is no device with both OpenCL and CUDA-PTX support");
             System.exit(1);
         }
+        workerOpenCLOld.setGlobalWork(N, N, 1);
+        workerOpenCLOld.setLocalWork(256, 1, 1);
         scheduleOCL.mapAllTo(oclDevice);
 
         // Warm up OpenCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            scheduleOCL.execute();
+            scheduleOCL.execute(gridTaskOpenCLOld);
         }
 
         // Time OpenCL
         long[] execTimesOCL = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesOCL.length; i++) {
             start = System.currentTimeMillis();
-            scheduleOCL.execute();
+            scheduleOCL.execute(gridTaskOpenCLOld);
             stop = System.currentTimeMillis();
             execTimesOCL[i] = stop - start;
         }
@@ -131,22 +142,22 @@ public class MatrixMul1D {
             throw new Exception("Could not get average execution time");
 
         // Time New API OpenCL
-        WorkerGrid worker = new WorkerGrid1D(N);
-        GridTask gridTask = new GridTask();
-        gridTask.set("ocl_new_api.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        WorkerGrid workerOpenCLNew = new WorkerGrid2D(N, N);
+        GridTask gridTaskOpenCLNew = new GridTask();
+        gridTaskOpenCLNew.set("ocl_new_api.t0", workerOpenCLNew);
+        TornadoVMContext context = new TornadoVMContext(workerOpenCLNew);
 
         TaskSchedule oclNewApiTask = new TaskSchedule("ocl_new_api") //
                 .task("t0", MatrixMul1D::matrixMultiplicationNewApi, context, matrixA, matrixB, matrixCOCLNewApi, N) //
                 .streamOut(matrixCOCLNewApi); //
         // Change the Grid
-        worker.setGlobalWork(N, N, 1);
-        worker.setLocalWork(32, 1, 1);
+        workerOpenCLNew.setGlobalWork(N, N, 1);
+        workerOpenCLNew.setLocalWork(256, 1, 1);
         oclNewApiTask.mapAllTo(oclDevice);
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            oclNewApiTask.execute(gridTask);
+            oclNewApiTask.execute(gridTaskOpenCLNew);
         }
 
         // Time OPENCL
@@ -154,7 +165,7 @@ public class MatrixMul1D {
 
         for (int i = 0; i < EXECUTE_ITERATIONS; i++) {
             start = System.currentTimeMillis();
-            oclNewApiTask.execute(gridTask);
+            oclNewApiTask.execute(gridTaskOpenCLNew);
             stop = System.currentTimeMillis();
             execTimesOCLNewApi[i] = stop - start;
         }
@@ -167,22 +178,22 @@ public class MatrixMul1D {
             throw new Exception("Could not get average execution time");
 
         // Time New API CUDA
-        WorkerGrid workerCUDA = new WorkerGrid1D(N);
-        GridTask gridTaskCUDA = new GridTask();
-        gridTaskCUDA.set("cuda_new_api.t0", worker);
-        TornadoVMContext contextCUDA = new TornadoVMContext(workerCUDA);
+        WorkerGrid workerCudaNew = new WorkerGrid2D(N, N);
+        GridTask gridTaskCudaNew = new GridTask();
+        gridTaskCudaNew.set("cuda_new_api.t0", workerCudaNew);
+        TornadoVMContext contextCUDA = new TornadoVMContext(workerCudaNew);
 
         TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_new_api") //
                 .task("t0", MatrixMul1D::matrixMultiplicationNewApi, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
                 .streamOut(matrixCCUDANewApi); //
         // Change the Grid
-        workerCUDA.setGlobalWork(N, N, 1);
-        workerCUDA.setLocalWork(32, 1, 1);
+        workerCudaNew.setGlobalWork(N, N, 1);
+        workerCudaNew.setLocalWork(256, 1, 1);
         cudaNewApiTask.mapAllTo(cudaDevice);
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            cudaNewApiTask.execute(gridTaskCUDA);
+            cudaNewApiTask.execute(gridTaskCudaNew);
         }
 
         // Time OPENCL
@@ -190,7 +201,7 @@ public class MatrixMul1D {
 
         for (int i = 0; i < EXECUTE_ITERATIONS; i++) {
             start = System.currentTimeMillis();
-            cudaNewApiTask.execute(gridTaskCUDA);
+            cudaNewApiTask.execute(gridTaskCudaNew);
             stop = System.currentTimeMillis();
             execTimesCUDANewApi[i] = stop - start;
         }
