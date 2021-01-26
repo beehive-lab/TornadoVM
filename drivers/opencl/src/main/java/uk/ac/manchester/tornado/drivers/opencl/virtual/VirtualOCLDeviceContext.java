@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoExecutionHandler;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
@@ -112,6 +114,12 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     @Override
     public void sync() {}
+
+    @Override
+    public void sync(TornadoExecutionHandler handler) {
+        sync();
+        handler.handle(TornadoExecutionStatus.COMPLETE, null);
+    }
 
     @Override
     public int enqueueBarrier() {

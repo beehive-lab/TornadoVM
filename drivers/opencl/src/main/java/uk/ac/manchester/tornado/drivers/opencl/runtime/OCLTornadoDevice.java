@@ -41,6 +41,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoExecutionHandler;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -585,7 +586,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
-            return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return state.getBuffer().enqueueWrite(object, batchSize, offset, events, true/*events == null*/);
         }
         return null;
     }
@@ -596,17 +597,23 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             ensureAllocated(object, batchSize, state);
         }
         state.setContents(true);
-        return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+        return state.getBuffer().enqueueWrite(object, batchSize, offset, events, true/*events == null*/);
     }
 
     @Override
     public int streamOut(Object object, long offset, TornadoDeviceObjectState state, int[] events) {
-        TornadoInternalError.guarantee(state.isValid(), "invalid variable");
-        int event = state.getBuffer().enqueueRead(object, offset, events, events == null);
-        if (events != null) {
-            return event;
+        if (state.isAtomicRegionPresent()) {
+            int eventID = state.getBuffer().enqueueRead(null, 0, null, false);
+            if (object instanceof AtomicInteger) {
+                int[] arr = getAtomic().getIntBuffer();
+                int indexFromGlobalRegion = mappingAtomics.get(object);
+                ((AtomicInteger) object).set(arr[indexFromGlobalRegion]);
+            }
+            return eventID;
+        } else {
+            TornadoInternalError.guarantee(state.isValid(), "invalid variable");
+            return state.getBuffer().enqueueRead(object, offset, events, true/*events == null*/);
         }
-        return -1;
     }
 
     @Override
@@ -661,6 +668,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public void sync() {
         getDeviceContext().sync();
+    }
+
+    @Override
+    public void sync(TornadoExecutionHandler handler) {
+        getDeviceContext().sync(handler);
     }
 
     @Override

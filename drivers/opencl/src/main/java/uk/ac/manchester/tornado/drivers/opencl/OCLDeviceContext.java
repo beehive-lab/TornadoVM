@@ -44,6 +44,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_FLOAT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_INT;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLEvent.DESC_WRITE_SHORT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
@@ -53,9 +54,12 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoExecutionHandler;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
@@ -156,6 +160,34 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
             queue.flush();
         }
         queue.finish();
+    }
+
+    public void sync(TornadoExecutionHandler handler) {
+        long oclEvent = queue.enqueueMarker();
+        if (queue.getOpenclVersion() >= 120) {
+            eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
+        }
+        try {
+            OCLEvent.clAttachCallback(oclEvent, new OCLEvent.Callback() {
+                void execute(long oclEventID, int status) {
+                    try {  
+                        OCLEvent.clReleaseEvent(oclEvent);
+                    } catch(OCLException exIgnore) {
+                    }
+                    if (status == CL_COMPLETE.getValue()) {
+                        handler.handle(TornadoExecutionStatus.COMPLETE, null);
+                    } else {
+                        Throwable ex = new OCLException(
+                            String.format("OpenCL error on event %s, code %s", DESC_SYNC_MARKER, status)
+                        );
+                        handler.handle(TornadoExecutionStatus.ERROR, ex);  
+                    }
+                }  
+            });
+            queue.flush();
+        } catch (OCLException ex) {
+            handler.handle(TornadoExecutionStatus.ERROR, ex);  
+        }
     }
 
     public long getDeviceId() {

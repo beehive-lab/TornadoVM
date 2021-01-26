@@ -41,6 +41,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
@@ -272,8 +275,28 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
+    public CompletableFuture<TornadoAPI> executeAsync() {
+        return selfFuture(taskScheduleImpl.schedule().waitAsyncOn());
+    }
+
+    @Override
+    public CompletableFuture<TornadoAPI> executeAsync(Executor executor) {
+        return selfFuture(taskScheduleImpl.schedule().waitAsyncOn(executor));
+    }
+
+    @Override
     public void execute(GridTask gridTask) {
         taskScheduleImpl.schedule(gridTask).waitOn();
+    }
+
+    @Override
+    public CompletableFuture<TornadoAPI> executeAsync(GridTask gridTask) {
+        return selfFuture(taskScheduleImpl.schedule(gridTask).waitAsyncOn());
+    }
+
+    @Override
+    public CompletableFuture<TornadoAPI> executeAsync(GridTask gridTask, Executor executor) {
+        return selfFuture(taskScheduleImpl.schedule(gridTask).waitAsyncOn(executor));
     }
 
     @Override
@@ -435,5 +458,9 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     @Override
     public boolean isFinished() {
         return taskScheduleImpl.isFinished();
+    }
+
+    private CompletableFuture<TornadoAPI> selfFuture(CompletableFuture<?> any) {
+        return any.thenApply(__ -> this);     
     }
 }

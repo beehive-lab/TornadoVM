@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
@@ -167,6 +168,10 @@ public interface TornadoDevice {
     int enqueueMarker(int[] events);
 
     void sync();
+    default void sync(TornadoExecutionHandler handler) {
+        sync();
+        handler.handle(TornadoExecutionStatus.COMPLETE, null);
+    }
 
     void flush();
 

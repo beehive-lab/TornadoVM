@@ -43,10 +43,6 @@ package uk.ac.manchester.tornado.api.common;
 
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 
-public interface Event extends ProfiledAction, SynchronisationPoint {
-    default void waitOn(TornadoExecutionHandler handler) {
-        waitOn();
-        handler.handle(TornadoExecutionStatus.COMPLETE, null);
-    }
-    void waitForEvents();
+public interface TornadoExecutionHandler {
+    void handle(TornadoExecutionStatus status, Throwable deviceSpecificError);
 }

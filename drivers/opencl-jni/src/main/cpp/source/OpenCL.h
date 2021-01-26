@@ -57,6 +57,9 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGet
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
         (JNIEnv *, jclass, jlongArray);
 
+jint JNI_OnLoad(JavaVM *vm, void *reserved);
+
+void JNI_OnUnload(JavaVM *vm, void *reserved);
 #ifdef __cplusplus
 }
 #endif

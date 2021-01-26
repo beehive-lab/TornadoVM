@@ -24,6 +24,7 @@
 #include <jni.h>
 
 #define CL_TARGET_OPENCL_VERSION 120
+#define EXTERN
 
 #ifdef __APPLE__
     #include <OpenCL/cl.h>
@@ -35,6 +36,16 @@
 #include <stdio.h>
 #include "OpenCL.h"
 #include "ocl_log.h"
+#include "global_vars.h"
+
+jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    jvm = vm;
+    return JNI_VERSION_1_2;
+}
+
+void JNI_OnUnload(JavaVM *vm, void *reserved) {
+    jvm = NULL;
+}
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL

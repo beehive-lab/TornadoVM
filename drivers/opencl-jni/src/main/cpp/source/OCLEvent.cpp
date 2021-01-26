@@ -37,7 +37,8 @@
 #include <iostream>
 #include "OCLEvent.h"
 #include "ocl_log.h"
-
+#include "global_vars.h"
+#include "utils.h"
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
  * Method:    clGetEventInfo
@@ -95,5 +96,69 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
         (JNIEnv *env, jclass clazz, jlong event) {
     cl_int status = clReleaseEvent((const cl_event) event);
+    LOG_OCL_AND_VALIDATE("clReleaseEvent", status);
+}
+
+void CL_CALLBACK onOpenCLEventCompletion(cl_event event, cl_int eventStatus, void *user_data);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
+ * Method:    clAttachCallback
+ * Signature: (JLuk/ac/manchester/tornado/drivers/opencl/CLEvent$Callback;)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clAttachCallback
+        (JNIEnv *env, jclass clazz, jlong event, jobject callback) {
+    jobject sharedCallback = env->NewGlobalRef(callback);
+    cl_int status;
+    status = clRetainEvent((const cl_event) event); 
+    LOG_OCL_AND_VALIDATE("clRetainEvent", status);
+    status = clSetEventCallback((const cl_event) event, CL_COMPLETE, &onOpenCLEventCompletion, sharedCallback);
+    LOG_OCL_AND_VALIDATE("clSetEventCallback", status);
+}
+
+void CL_CALLBACK onOpenCLEventCompletion(cl_event event, cl_int eventStatus, void *user_data) {
+    JNIEnv *env;
+    int jniStatus = jvm->GetEnv((void **)&env, JNI_VERSION_1_2);
+    bool attached = false;
+    if (jniStatus == JNI_EDETACHED) {
+        //std::cout << "GetEnv: not attached to current thread" << std::endl;
+        if (jvm->AttachCurrentThread((void **)&env, NULL) != 0) {
+            //std::cout << "Failed to attach" << std::endl;
+        } else {
+            //std::cout << "Attached ok" << std::endl;
+            attached = true;
+        }
+    } else if (jniStatus == JNI_EVERSION) {
+        //std::cout << "GetEnv: version not supported" << std::endl;
+    } else if (jniStatus == JNI_OK) {
+	//
+    } else {
+        //std::cout << "GetEnv: unknown jniStatus " << jniStatus << std::endl;
+    }
+    if (env != NULL) {
+        jobject target = static_cast<jobject>(user_data); 
+        jclass clazz = env->GetObjectClass(target);
+        if (clazz != NULL) {
+            jmethodID method = env->GetMethodID(clazz, "execute", "(JI)V");
+            if (method != NULL) {
+                env->CallVoidMethod(target, method, event, eventStatus);
+            } else {
+              throwNoSuchMethodError(env, "uk/ac/manchester/tornado/drivers/opencl/CLEvent$Callback", "execute", "(JI)V");
+            }
+            env->DeleteLocalRef(clazz);
+        } else {
+            throwError(env, "Unable to get object class");
+        }
+
+        env->DeleteGlobalRef(target);
+
+        if (env->ExceptionCheck()) {
+            //env->ExceptionDescribe();
+        }
+    }
+    if (attached) {
+        jvm->DetachCurrentThread();
+    }
+    cl_int status = clReleaseEvent(event);
     LOG_OCL_AND_VALIDATE("clReleaseEvent", status);
 }

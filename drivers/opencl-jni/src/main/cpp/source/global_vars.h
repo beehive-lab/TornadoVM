@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,36 +22,19 @@
  *
  */
 
-#ifndef utils_h
-#define utils_h
+#ifndef EXTERN
+#define EXTERN extern
+#endif
+
+#include <jni.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define CL_TARGET_OPENCL_VERSION 120
+EXTERN JavaVM *jvm;
 
-#ifdef __APPLE__
-    #include <OpenCL/cl.h>
-#else
-    #include <CL/cl.h>
-#endif
-
-#include <jni.h>
-
-char *getOpenCLError(char *, cl_int);
-
-jint throwError(JNIEnv *env, const char *message);
-
-jint throwNoClassDefFoundError(JNIEnv *env, const char *message);
-
-jint throwNoSuchMethodError(JNIEnv *env, const char *className, const char *methodName, const char *signature );
-/*
-jint throwNoSuchFieldError(JNIEnv *env, const char *message);
-
-jint throwOutOfMemoryError(JNIEnv *env, const char *message);
-*/
 #ifdef __cplusplus
 }
 #endif
-#endif
+

@@ -58,4 +58,49 @@ char *getOpenCLError(char *func, cl_int code) {
     return const_cast<char *>(outString.str().c_str());
 }
 
+jint throwError(JNIEnv *env, const char *message) {
+    const char *className = "java/lang/Error";
+    jclass exClass = env->FindClass(className);
+    return env->ThrowNew(exClass, message);
+}
 
+jint throwNoClassDefFoundError(JNIEnv *env, const char *message) {
+    const char *className = "java/lang/NoClassDefFoundError";
+    jclass exClass = env->FindClass(className);
+    if (exClass == NULL) {
+        return throwNoClassDefFoundError(env, className);
+    }
+    return env->ThrowNew(exClass, message);
+}
+
+jint throwNoSuchMethodError(JNIEnv *env, const char *className, const char *methodName, const char *signature) {
+    const char *exClassName = "java/lang/NoSuchMethodError" ;
+    jclass exClass = env->FindClass(exClassName);
+    if (exClass == NULL) {
+        return throwNoClassDefFoundError(env, exClassName);
+    }
+    std::stringstream message;
+    message << className << '.' << methodName << " ("  << signature <<  ")";
+    return env->ThrowNew(exClass, const_cast<char *>(message.str().c_str()));
+}
+
+/*
+jint throwNoSuchFieldError(JNIEnv *env, const char *message) {
+    const char *className = "java/lang/NoSuchFieldError" ;
+    jclass exClass = env->FindClass(env, className);
+    if (exClass == NULL) {
+        return throwNoClassDefFoundError(env, className);
+    }
+
+    return env->ThrowNew( env, exClass, message );
+}
+
+jint throwOutOfMemoryError(JNIEnv *env, const char *message) {
+    const char *className = "java/lang/OutOfMemoryError" ;
+    jclass exClass = env->FindClass(className);
+    if (exClass == NULL) {
+        return throwNoClassDefFoundError(env, className);
+    }
+    return env->ThrowNew(exClass, message);
+}
+*/

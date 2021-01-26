@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.TornadoExecutionHandler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
@@ -59,6 +60,8 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
     OCLMemoryManager getMemoryManager();
 
     void sync();
+
+    void sync(TornadoExecutionHandler handler);
 
     int enqueueBarrier();
 

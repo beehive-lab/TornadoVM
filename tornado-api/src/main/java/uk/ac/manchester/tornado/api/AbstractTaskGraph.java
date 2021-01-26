@@ -41,6 +41,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -83,6 +86,12 @@ public interface AbstractTaskGraph extends ProfileInterface {
     void clearProfiles();
 
     void waitOn();
+
+    default CompletableFuture<AbstractTaskGraph> waitAsyncOn() {
+        return waitAsyncOn(ForkJoinPool.commonPool());
+    } 
+ 
+    CompletableFuture<AbstractTaskGraph> waitAsyncOn(Executor executor);
 
     void streamInInner(Object... objects);
 

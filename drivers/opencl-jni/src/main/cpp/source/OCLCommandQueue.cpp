@@ -221,7 +221,8 @@ jlong transferFromHostToDevice(JNIEnv * env, jclass javaClass,
         std::cout << "[TornadoVM-JNI] H2D time: " << writeTime << " (ns)" << std::endl;
     } else {
         /* we must wait irrespective of jboolean blocking flag or we risk Java GC/OpenCL Runtime race condition */
-        clWaitForEvents(1, &event);
+        // No need, only introduce blocking  
+        // clWaitForEvents(1, &event);
     }
     if (hostArray != NULL) {
         env->ReleasePrimitiveArrayCritical(hostArray, buffer, JNI_ABORT);
@@ -334,7 +335,8 @@ jlong transfersFromDeviceToHost(JNIEnv *env, jclass javaClass,
         std::cout << "[TornadoVM-JNI] D2H time: " << readTime << " (ns)" << std::endl;
     } else {
         /* we must wait irrespective of jboolean blocking flag or we risk Java GC/OpenCL Runtime race condition */
-        clWaitForEvents(1, &readEvent);
+        // No need, only introduce blocking
+        //clWaitForEvents(1, &readEvent);
     }
     if (hostArray != NULL) {
         env->ReleasePrimitiveArrayCritical(hostArray, buffer, JNI_ABORT);
