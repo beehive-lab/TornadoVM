@@ -124,7 +124,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 
-* 1.0, xocc v2018.2 OK
+* OpenCL 1.0, `xocc` v2018.2:  OK
 
 ## Known Driver Issues
 
