@@ -45,11 +45,21 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
 
     protected long[] globalWork;
     protected long[] localWork;
+    protected long[] numOfWorkgroups;
     protected long[] globalOffset;
 
     public AbstractWorkerGrid(long x, long y, long z) {
         globalWork = new long[] { x, y, z };
         globalOffset = new long[] { 0, 0, 0 };
+    }
+
+    private void calculateNumberOfWorkgroups() {
+        if (globalWork!=null && localWork!=null) {
+            for (int i = 0; i < globalWork.length; i++) {
+                numOfWorkgroups[i] = globalWork[i] / localWork[i];
+                System.out.println(numOfWorkgroups[i] + "= " + globalWork[i] + "/" + localWork[i]);
+            }
+        }
     }
 
     @Override
@@ -60,6 +70,11 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     @Override
     public long[] getLocalWork() {
         return localWork;
+    }
+
+    @Override
+    public long[] getNumberOfWorkgroups() {
+        return numOfWorkgroups;
     }
 
     @Override
@@ -75,6 +90,7 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     @Override
     public void setLocalWork(long x, long y, long z) {
         localWork = new long[] { x, y, z };
+        calculateNumberOfWorkgroups();
     }
 
     @Override
