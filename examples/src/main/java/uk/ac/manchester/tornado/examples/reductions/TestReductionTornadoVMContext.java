@@ -1,7 +1,6 @@
-package uk.ac.manchester.tornado.examples;
+package uk.ac.manchester.tornado.examples.reductions;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridTask;
@@ -10,7 +9,6 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class TestReductionTornadoVMContext {
 
@@ -111,19 +109,15 @@ public class TestReductionTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionTornadoVMContext::reductionLocal, input, reduce, localSize, context).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionTornadoVMContext::reductionLocal, input, reduce, localSize, context)
+                .task("t1", TestReductionTornadoVMContext::rAdd, reduce, (size / localSize)).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridTask);
 
         // Final SUM
-        float finalSum = 0;
-        int reduceSize = size / localSize;
-        // rAdd(reduce, reduceSize);
-        TaskSchedule s1 = new TaskSchedule("s1").streamIn(reduce, reduceSize).task("t1", TestReductionTornadoVMContext::rAdd, reduce, reduceSize).streamOut(reduce);
-        s1.execute();
-        finalSum = reduce[0];
+        float finalSum = reduce[0];
 
         System.out.println("Final SUM = " + finalSum + " vs seq= " + sequential);
         if ((sequential - finalSum) == 0) {
