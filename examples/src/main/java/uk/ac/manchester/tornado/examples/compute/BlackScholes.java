@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -29,8 +28,14 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
  * compiler framework.
  *
+ * How to run:
+ * 
+ * tornado uk.ac.manchester.tornado.examples.compute.BlackScholes
+ * 
  */
 public class BlackScholes {
+
+    private static final int WARM_UP_ITERATIONS = 1000;
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
         for (@Parallel int idx = 0; idx < callResult.length; idx++) {
@@ -51,10 +56,10 @@ public class BlackScholes {
             final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
             final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
 
-            float d1 = (float) ((float) (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
-            float d2 = (float) ((float) d1 - (v * TornadoMath.sqrt(T)));
-            callResult[idx] = (float) (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
-            putResult[idx] = (float) (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+            float d1 = (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T);
+            float d2 = d1 - (v * TornadoMath.sqrt(T));
+            callResult[idx] = S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2);
+            putResult[idx] = K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1);
         }
     }
 
@@ -71,7 +76,7 @@ public class BlackScholes {
         final float oneBySqrt2pi = 0.398942280f;
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
-        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
+        float y = one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5))));
         return (X < zero) ? (one - y) : y;
     }
 
@@ -91,30 +96,52 @@ public class BlackScholes {
     }
 
     public static void blackScholes(int size) {
-
         Random random = new Random();
         float[] input = new float[size];
         float[] callPrice = new float[size];
         float[] putPrice = new float[size];
         float[] seqCall = new float[size];
         float[] seqPut = new float[size];
-        TaskSchedule graph = new TaskSchedule("s0");
-
         for (int i = 0; i < size; i++) {
             input[i] = random.nextFloat();
         }
 
-        System.gc();
-        graph.task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
-        graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+        TaskSchedule graph = new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice) //
+                .streamOut(callPrice, putPrice);
+
+        for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+            graph.execute();
+        }
+        long start = System.nanoTime();
+        graph.execute();
+        long end = System.nanoTime();
+
+        for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
+            blackScholesKernel(input, seqCall, seqPut);
+        }
+        long start2 = System.nanoTime();
         blackScholesKernel(input, seqCall, seqPut);
+        long end2 = System.nanoTime();
+
         boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
+
         System.out.println("Validation " + results + " \n");
+        System.out.println("Seq     : " + (end2 - start2) + " (ns)");
+        System.out.println("Parallel: " + (end - start) + " (ns)");
+        System.out.println("Speedup : " + ((end2 - start2) / (end - start)) + "x");
     }
 
     public static void main(String[] args) {
-        System.out.println("BlackScholes Tornado");
-        int size = Integer.parseInt(args[0]);
+        System.out.println("BlackScholes TornadoVM");
+        int size = 1024;
+        if (args.length > 0) {
+            try {
+                size = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+            }
+        }
         System.out.println("Input size: " + size + " \n");
         blackScholes(size);
     }
