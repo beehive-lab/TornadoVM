@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.runtime.EventSet;
@@ -330,30 +331,43 @@ public class TaskMetaData extends AbstractMetaData {
         return enableParallelization() && hasDomain() && domain.getDepth() > 0;
     }
 
+    private long[] calculateNumberOfWorkgroupsFromDomain(DomainTree domain) {
+        long[] numOfWorkgroups = new long[domain.getDepth()];
+        if (globalWork != null && localWork != null) {
+            for (int i = 0; i < numOfWorkgroups.length; i++) {
+                numOfWorkgroups[i] = globalWork[i] / localWork[i];
+            }
+        }
+        return numOfWorkgroups;
+    }
+
     public void printThreadDims() {
         StringBuilder deviceDebug = new StringBuilder();
         boolean deviceBelongsToPTX = isDevicePTX(getDevice());
         deviceDebug.append("task info: " + getId() + "\n");
-        deviceDebug.append("\tplatform          : " + getDevice().getPlatformName() + "\n");
-        deviceDebug.append("\tdevice            : " + getDevice().getDescription() + "\n");
-        deviceDebug.append("\tdims              : " + (hasDomain() ? domain.getDepth() : getWorkerGrid(getId()).dimension()) + "\n");
-        if(!deviceBelongsToPTX) {
+        deviceDebug.append("\tplatform              : " + getDevice().getPlatformName() + "\n");
+        deviceDebug.append("\tdevice                : " + getDevice().getDescription() + "\n");
+        deviceDebug.append("\tdims                  : " + (hasDomain() ? domain.getDepth() : getWorkerGrid(getId()).dimension()) + "\n");
+        if (!deviceBelongsToPTX) {
             long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;
-            deviceDebug.append("\tglobal work offset: " + formatWorkDimensionArray(go, "0") + "\n");
+            deviceDebug.append("\tglobal work offset    : " + formatWorkDimensionArray(go, "0") + "\n");
         }
-        if(deviceBelongsToPTX) {
+        if (deviceBelongsToPTX) {
             long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-            deviceDebug.append("\tthread dimensions  : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tthread dimensions     : " + formatWorkDimensionArray(gw, "1") + "\n");
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
-            deviceDebug.append("\tblocks dimensions  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
-            long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : new long[] {globalWork[0]/localWork[0], globalWork[1]/localWork[1], 0}; //TODO Fix dimensions
-            deviceDebug.append("\tgrids dimensions  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
-        } else {
+            deviceDebug.append("\tblocks dimensions     : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
+            long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : calculateNumberOfWorkgroupsFromDomain(domain);
+            // dimensions
+            deviceDebug.append("\tgrids dimensions      : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
+        } else
+
+        {
             long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-            deviceDebug.append("\tglobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
-            deviceDebug.append("\tlocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
-            long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : new long[] {globalWork[0]/localWork[0], globalWork[1]/localWork[1], 0};
+            deviceDebug.append("\tlocal  work size      : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
+            long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : new long[] { globalWork[0] / localWork[0], globalWork[1] / localWork[1], 0 };
             deviceDebug.append("\tnumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
         }
         System.out.println(deviceDebug);
