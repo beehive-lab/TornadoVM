@@ -54,11 +54,9 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     }
 
     private void calculateNumberOfWorkgroups() {
-        if (globalWork!=null && localWork!=null) {
-            for (int i = 0; i < globalWork.length; i++) {
-                numOfWorkgroups[i] = globalWork[i] / localWork[i];
-                System.out.println(numOfWorkgroups[i] + "= " + globalWork[i] + "/" + localWork[i]);
-            }
+        numOfWorkgroups = new long[globalWork.length];
+        for (int i = 0; i < globalWork.length; i++) {
+            numOfWorkgroups[i] = globalWork[i] / localWork[i];
         }
     }
 
