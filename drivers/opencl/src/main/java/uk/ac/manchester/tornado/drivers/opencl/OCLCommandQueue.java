@@ -110,7 +110,14 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
+    /*
+     * for OpenCL 1.1-specific implementations
+     */
     native static void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
+
+    native static long clEnqueueMarker(long queueId) throws OCLException;
+
+    native static void clEnqueueBarrier(long queueId) throws OCLException;
 
     /*
      * for OpenCL 1.2 implementations
@@ -356,21 +363,24 @@ public class OCLCommandQueue extends TornadoLogger {
     }
 
     public long enqueueBarrier(long[] waitEvents) {
-        return (openclVersion < 120) ? enqueueBarrier_OCLv1_1(waitEvents) : enqueueBarrier_OCLv1_2(waitEvents);
+        return (openclVersion < 120) ? enqueueBarrier11(waitEvents) : enqueueBarrier12(waitEvents);
     }
 
-    private int enqueueBarrier_OCLv1_1(long[] events) {
+    private long enqueueBarrier11(long[] events) {
         try {
-            if (events != null) {
+            if (events != null && events.length > 0) {
                 clEnqueueWaitForEvents(commandQueue, events);
+            } else {
+                clEnqueueBarrier(commandQueue);
             }
+            return clEnqueueMarker(commandQueue); 
         } catch (OCLException e) {
             fatal(e.getMessage());
         }
         return -1;
     }
 
-    private long enqueueBarrier_OCLv1_2(long[] waitEvents) {
+    private long enqueueBarrier12(long[] waitEvents) {
         try {
             return clEnqueueBarrierWithWaitList(commandQueue, waitEvents);
         } catch (OCLException e) {
@@ -386,8 +396,17 @@ public class OCLCommandQueue extends TornadoLogger {
         return (openclVersion < 120) ? enqueueMarker11(waitEvents) : enqueueMarker12(waitEvents);
     }
 
-    private int enqueueMarker11(long[] events) {
-        return enqueueBarrier_OCLv1_1(events);
+    private long enqueueMarker11(long[] events) {
+        if (events != null && events.length > 0) {
+            return enqueueBarrier11(events);
+        } else {
+            try {
+                return clEnqueueMarker(commandQueue);
+            } catch (OCLException e) {
+                fatal(e.getMessage());
+            }
+            return -1;
+        }
     }
 
     private long enqueueMarker12(long[] waitEvents) {

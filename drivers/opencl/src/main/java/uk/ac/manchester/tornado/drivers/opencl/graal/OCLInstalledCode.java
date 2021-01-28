@@ -120,7 +120,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         int task;
         if (meta == null) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, internalEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
             deviceContext.flush();
             deviceContext.finish();
         } else {

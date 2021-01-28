@@ -164,30 +164,15 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     public void sync(TornadoExecutionHandler handler) {
         long oclEvent = queue.enqueueMarker();
-        if (queue.getOpenclVersion() >= 120) {
-            eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
+        if (oclEvent <= 0) {
+            sync();
+            handler.handle(TornadoExecutionStatus.COMPLETE, null);
+            return;
         }
-        try {
-            OCLEvent.clAttachCallback(oclEvent, new OCLEvent.Callback() {
-                void execute(long oclEventID, int status) {
-                    try {  
-                        OCLEvent.clReleaseEvent(oclEvent);
-                    } catch(OCLException exIgnore) {
-                    }
-                    if (status == CL_COMPLETE.getValue()) {
-                        handler.handle(TornadoExecutionStatus.COMPLETE, null);
-                    } else {
-                        Throwable ex = new OCLException(
-                            String.format("OpenCL error on event %s, code %s", DESC_SYNC_MARKER, status)
-                        );
-                        handler.handle(TornadoExecutionStatus.ERROR, ex);  
-                    }
-                }  
-            });
-            queue.flush();
-        } catch (OCLException ex) {
-            handler.handle(TornadoExecutionStatus.ERROR, ex);  
-        }
+        int eventId = eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
+        OCLEvent event = new OCLEvent(eventsWrapper, queue, eventId, oclEvent);
+        event.waitOn(handler);
+        queue.flush(); 
     }
 
     public long getDeviceId() {
@@ -196,12 +181,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     public int enqueueBarrier() {
         long oclEvent = queue.enqueueBarrier();
-        return (queue.getOpenclVersion() < 120) ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_BARRIER, DEFAULT_TAG, queue);
+        return oclEvent <= 0 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_BARRIER, DEFAULT_TAG, queue);
     }
 
     public int enqueueMarker() {
         long oclEvent = queue.enqueueMarker();
-        return queue.getOpenclVersion() < 120 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
+        return oclEvent <= 0 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
     }
 
     public OCLProgram createProgramWithSource(byte[] source, long[] lengths) {
@@ -406,12 +391,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     public int enqueueBarrier(int[] events) {
         long oclEvent = queue.enqueueBarrier(eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null);
-        return queue.getOpenclVersion() < 120 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_BARRIER, DEFAULT_TAG, queue);
+        return oclEvent <= 0 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_BARRIER, DEFAULT_TAG, queue);
     }
 
     public int enqueueMarker(int[] events) {
         long oclEvent = queue.enqueueMarker(eventsWrapper.serialiseEvents(events, queue) ? eventsWrapper.waitEventsBuffer : null);
-        return queue.getOpenclVersion() < 120 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
+        return oclEvent <= 0 ? -1 : eventsWrapper.registerEvent(oclEvent, DESC_SYNC_MARKER, DEFAULT_TAG, queue);
     }
 
     @Override
