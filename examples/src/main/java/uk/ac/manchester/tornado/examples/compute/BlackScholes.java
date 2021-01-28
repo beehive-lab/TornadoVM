@@ -139,7 +139,7 @@ public class BlackScholes {
         if (args.length > 0) {
             try {
                 size = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ignored) {
             }
         }
         System.out.println("Input size: " + size + " \n");
