@@ -128,11 +128,11 @@ void CL_CALLBACK onOpenCLEventCompletion(cl_event event, cl_int eventStatus, voi
             //std::cout << "Attached ok" << std::endl;
             attached = true;
         }
-    } else if (jniStatus == JNI_EVERSION) {
-        //std::cout << "GetEnv: version not supported" << std::endl;
     } else if (jniStatus == JNI_OK) {
 	//
     } else {
+        // ERRORS
+        // if (jniStatus == JNI_EVERSION) {}
         //std::cout << "GetEnv: unknown jniStatus " << jniStatus << std::endl;
     }
     if (env != NULL) {
@@ -149,12 +149,7 @@ void CL_CALLBACK onOpenCLEventCompletion(cl_event event, cl_int eventStatus, voi
         } else {
             throwError(env, "Unable to get object class");
         }
-
         env->DeleteGlobalRef(target);
-
-        if (env->ExceptionCheck()) {
-            //env->ExceptionDescribe();
-        }
     }
     if (attached) {
         jvm->DetachCurrentThread();
