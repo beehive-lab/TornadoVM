@@ -72,7 +72,6 @@
                 <platform>windows-i386</platform>
                 <build.type>debug</build.type>
                 <cmake.classifier>windows-i386</cmake.classifier>
-                <!--cmake.generator>Visual Studio 14 2015</cmake.generator-->
                 <cmake.generator>Unix Makefiles</cmake.generator>
                 <cmake.config>${build.type}</cmake.config>
                 <!--
@@ -97,7 +96,6 @@
                 <platform>windows-i386</platform>
                 <build.type>release</build.type>
                 <cmake.classifier>windows-i386</cmake.classifier>
-                <!--cmake.generator>Visual Studio 14 2015</cmake.generator-->
                 <cmake.generator>Unix Makefiles</cmake.generator>
                 <cmake.config>${build.type}</cmake.config>
                 <!--
@@ -112,7 +110,6 @@
                 <platform>windows-amd64</platform>
                 <build.type>debug</build.type>
                 <cmake.classifier>windows-amd64</cmake.classifier>
-                <!--cmake.generator>Visual Studio 14 2015</cmake.generator-->
                 <cmake.generator>Unix Makefiles</cmake.generator>
                 <!--<cmake.options>-Ax64</cmake.options>-->
                 <cmake.config>${build.type}</cmake.config>
@@ -134,7 +131,6 @@
                 <platform>windows-amd64</platform>
                 <build.type>release</build.type>
                 <cmake.classifier>windows-amd64</cmake.classifier>
-                <!--cmake.generator>Visual Studio 14 2015</cmake.generator-->
                 <cmake.generator>Unix Makefiles</cmake.generator>
                 <!--<cmake.options>-Ax64</cmake.options>-->
                 <cmake.config>${build.type}</cmake.config>

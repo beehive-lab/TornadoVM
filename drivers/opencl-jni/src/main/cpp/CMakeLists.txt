@@ -29,4 +29,6 @@ add_library(tornado-opencl SHARED
 		source/opencl_time_utils.cpp)
 
 target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
-set_target_properties(tornado-opencl PROPERTIES PREFIX "")
+if(CMAKE_HOST_WIN32)
+    set_target_properties(tornado-opencl PROPERTIES PREFIX "")
+endif()

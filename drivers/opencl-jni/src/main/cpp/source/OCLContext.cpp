@@ -81,18 +81,18 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_allocateOffHeapMemory
 (JNIEnv *env, jclass clazz, jlong size, jlong alignment) {
-    /*
     void *ptr;
+#if _WIN32
+    ptr = _aligned_malloc((size_t) alignment, (size_t) size);
+    if (ptr == 0) {
+        printf("OpenCL off-heap memory allocation (aligned_malloc) failed.\n");
+    }
+#else
     int rc = posix_memalign(&ptr, (size_t) alignment, (size_t) size);
     if (rc != 0) {
-        printf("posix_memalign: did not work!\n");
+        printf("OpenCL off-heap memory allocation (posix_memalign) failed. Error value: %d.\n", rc);
     }
-    */
-    void *ptr = _aligned_malloc((size_t) alignment, (size_t) size);
-    if (ptr == 0) {
-        printf("_aligned_malloc: did not work!\n");
-    }
-
+#endif()
     memset(ptr, 0, (size_t) size);
     size_t i = 0;
     for (; i < (size_t) size / 4; i++) {
