@@ -24,13 +24,13 @@ import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestCombinedTaskSchedule {
+public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     public static void vectorAddV1(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
@@ -142,6 +142,7 @@ public class TestCombinedTaskSchedule {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
+        gridTask.set("api_v1_v2.t0", worker);
         gridTask.set("api_v1_v2.t1", worker);
         gridTask.set("api_v1_v2.t2", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
