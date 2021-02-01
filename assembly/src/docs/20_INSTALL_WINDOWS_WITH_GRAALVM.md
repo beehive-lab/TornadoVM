@@ -3,7 +3,7 @@
 ### Maven
 Download Apache Maven from the [official site](https://maven.apache.org/download.cgi) and extract it to the any location. Below it's assumed that Maven's home is `C:/Maven`.
 ### MSys2
-1. Download [MSys2](https://www.msys2.org/) installer from the official site and run it. You may choose any installation directory, below it will be referred as `<MSYS2>`. IMPORTANT: the only executable you should use as a terminal is `<MSYS2>/mingw64.exe`, don't use others (msys2.exe, mingw32.exe) as this would lead to unpredictable results.
+1. Download [MSys2](https://www.msys2.org/) installer from the official site and run it. You may choose any installation directory, below it will be referred as `<MSYS2>`. IMPORTANT: the only executable you should use as a terminal is `<MSYS2>/mingw64.exe`.
 
 2. Update MSys2 _**system**_ packages. Start `<MSYS2>/mingw64.exe` and run the following command in the terminal:
 ```bash
