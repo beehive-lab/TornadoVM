@@ -345,7 +345,8 @@ public class TaskMetaData extends AbstractMetaData {
         StringBuilder deviceDebug = new StringBuilder();
         boolean deviceBelongsToPTX = isDevicePTX(getDevice());
         deviceDebug.append("task info: " + getId() + "\n");
-        deviceDebug.append("\tplatform              : " + getDevice().getPlatformName() + "\n");
+        deviceDebug.append("\tbackend               : " + (deviceBelongsToPTX ? "PTX" : "OpenCL") + "\n");
+        // deviceDebug.append("\tplatform : " + getDevice().getPlatformName() + "\n");
         deviceDebug.append("\tdevice                : " + getDevice().getDescription() + "\n");
         deviceDebug.append("\tdims                  : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
         if (!deviceBelongsToPTX) {
