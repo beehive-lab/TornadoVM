@@ -104,7 +104,7 @@ The latest command, `make`, depends on the Graal version you are using:
 The `BACKEND` parameter has to be a comma-separated list of `ptx` and `opencl` options. You may build `ptx` only when NVIDIA GPU Computing Toolkit (CUDA) is installed.
 
 ## Verifying build
-Don't close `<MSYS2>/mingw64.exe` after build. Run the following command to see that TornadoVM is working:
+Don't close `<MSYS2>/mingw64.exe` after the build. Run the following command to see that TornadoVM is working:
 ```bash
 tornado --devices
 ```
