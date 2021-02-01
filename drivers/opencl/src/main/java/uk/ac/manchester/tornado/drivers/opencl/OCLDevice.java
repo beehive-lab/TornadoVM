@@ -201,7 +201,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         }
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_VENDOR.getValue());
         try {
-            deviceVendorName = new String(buffer.array(), "ASCII");
+            deviceVendorName = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
             deviceVendorName = "unknown";
         }
@@ -214,7 +214,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         }
         queryOpenCLAPI(OCLDeviceInfo.CL_DRIVER_VERSION.getValue());
         try {
-            driverVersion = new String(buffer.array(), "ASCII");
+            driverVersion = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
             driverVersion = "unknown";
         }
@@ -225,12 +225,12 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         if (deviceVersion == null) {
             queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_VERSION.getValue());
             try {
-                deviceVersion = new String(buffer.array(), "ASCII");
+                deviceVersion = new String(buffer.array(), "ASCII").trim();
             } catch (UnsupportedEncodingException e) {
                 deviceVersion = "unknown";
             }
         }
-        return deviceVersion.trim();
+        return deviceVersion;
     }
 
     public String getDeviceOpenCLCVersion() {
@@ -251,7 +251,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         }
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_EXTENSIONS.getValue());
         try {
-            deviceExtensions = new String(buffer.array(), "ASCII");
+            deviceExtensions = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
             deviceExtensions = "unknown";
         }
