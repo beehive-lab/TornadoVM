@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
@@ -145,6 +146,22 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         return 0;
     }
 
+    @Override
+    public void assertDimensions(Object o, long[] localWork) {
+        PTXModule module = (PTXModule) o;
+        long totalThreads = 1;
+        int maxWorkGroupSize = module.getMaxThreadBlocks();
+        for (long l : localWork) {
+            totalThreads *= l;
+        }
+
+        if (totalThreads > maxWorkGroupSize) {
+            throw new TornadoBailoutRuntimeException(
+                    "The total number of threads per block dimension exceed the hardware capacity. The product of x, y and z in setLocalWork(x, y, z) should be less than or equal to "
+                            + maxWorkGroupSize + ". In this case it was: " + localWork[0] + " * " + localWork[1] + " * " + localWork[2] + " = " + totalThreads + ".");
+        }
+    }
+
     public ByteOrder getByteOrder() {
         return device.getByteOrder();
     }
@@ -211,6 +228,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             blockDimension = scheduler.calculateBlockDimension(module);
             gridDimension = scheduler.calculateGridDimension(module, blockDimension);
         }
+        assertDimensions(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
         int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, module.metaData);
         return kernelLaunchEvent;

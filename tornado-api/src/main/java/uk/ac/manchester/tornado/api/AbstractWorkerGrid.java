@@ -57,18 +57,6 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
         globalOffset = new long[] { 0, 0, 0 };
     }
 
-    private void assertDimensions(long[] localWork) {
-        long totalThreads = 1;
-        for (int i = 0; i < localWork.length; i++) {
-            totalThreads *= localWork[i];
-        }
-        if (totalThreads > 1024) {
-            throw new TornadoRuntimeException(
-                    "The total number of threads per block dimension exceed the hardware capacity. The product of x, y and z in setLocalWork should be less than or equal to 1024. In this case it was: "
-                            + localWork[0] + " * " + localWork[1] + " * " + localWork[2] + " = " + totalThreads + ".");
-        }
-    }
-
     private void calculateNumberOfWorkgroups() {
         numOfWorkgroups = new long[globalWork.length];
         for (int i = 0; i < globalWork.length; i++) {
@@ -104,7 +92,6 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     @Override
     public void setLocalWork(long x, long y, long z) {
         localWork = new long[] { x, y, z };
-        assertDimensions(localWork);
         calculateNumberOfWorkgroups();
     }
 

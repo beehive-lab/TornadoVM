@@ -48,11 +48,13 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
@@ -149,6 +151,22 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     @Override
     public OCLMemoryManager getMemoryManager() {
         return memoryManager;
+    }
+
+    @Override
+    public void assertDimensions(Object module, long[] localWork) {
+        long totalThreads = 1;
+        long[] blockMaxWorkGroupSize = getDevice().getDeviceMaxWorkGroupSize();
+        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
+        for (long l : localWork) {
+            totalThreads *= l;
+        }
+
+        if (totalThreads > maxWorkGroupSize) {
+            throw new TornadoBailoutRuntimeException(
+                    "The total number of threads per block dimension exceed the hardware capacity. The product of x, y and z in setLocalWork(x, y, z) should be less than or equal to "
+                            + maxWorkGroupSize + ". In this case it was: " + localWork[0] + " * " + localWork[1] + " * " + localWork[2] + " = " + totalThreads + ".");
+        }
     }
 
     public void sync() {
