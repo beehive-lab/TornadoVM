@@ -45,7 +45,7 @@ C:/Maven/bin/mvn.cmd --settings ${SETTINGS} "$@"
 You should only change path to Maven executable to the actual location of Maven in your system.
 
 ## Get TornadoVM sources
-Clone latest TornadoVM sources from Git repository using `<MSYS2>/mingw64.exe`:
+Clone the latest TornadoVM sources from Git repository using `<MSYS2>/mingw64.exe`:
 ```
 cd D:/MyProjects
 git clone https://github.com/beehive-lab/TornadoVM.git
