@@ -82,7 +82,7 @@ export PTX_LDFLAGS=-L\"$CUDA_PATH/lib/x64\"
 # LEFT THE REST OF FILE 'AS IS'
 # DON'T ALTER!
 export PATH=$PWD/bin/bin:$PATH               ## This directory will be automatically generated during Tornado compilation
-export TORNADO_SDK=$PWD/bin/sdk              ## This directory will be automatically generated during Tornado compilation
+export TORNADO_SDK=$(pwd -W)/bin/sdk         ## This directory will be automatically generated during Tornado compilation
 CMAKE_FILE=$(where cmake | head -n 1)
 export CMAKE_ROOT=${CMAKE_FILE%\\*\\*}
 ```
