@@ -19,8 +19,10 @@
 
 [Link](https://github.com/intel/compute-runtime/releases)   
 
-The following drivers have been tested on Linux - CentOS 7.9
+The following drivers have been tested on Linux - CentOS 7.9.2009
 
+* 21.03.18857: OK  ( OpenCL 3.0 )
+* 21.02.18820: OK  ( OpenCL 3.0 )
 * 21.01.18793: OK  ( OpenCL 3.0 )
 * 20.47.18513: OK
 * 20.46.18421: OK
@@ -60,6 +62,7 @@ The following drivers have been tested on Linux - CentOS 7.9
 * 19.23.13131: OK
 
 The following drivers have been tested on Linux - Ubuntu 20.04
+
 * 20.28.17293: OK
 * 20.22.16952: OK
 * 20.16.16582: OK
@@ -121,7 +124,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 
-* 1.0, xocc v2018.2 OK
+* OpenCL 1.0, `xocc` v2018.2:  OK
 
 ## Known Driver Issues
 
