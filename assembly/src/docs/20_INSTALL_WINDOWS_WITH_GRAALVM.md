@@ -115,7 +115,7 @@ Now try to run a simple test. For Graal JDK 11:
 tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
 ```
 
-... for Graal JDK 8:
+To run examples with Graal JDK 8:
 ```bash 
 tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
 ```
