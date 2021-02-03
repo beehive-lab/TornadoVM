@@ -79,7 +79,7 @@ export JAVA_HOME="C:/graalvm-ce-java8-20.2.0"
 export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2"
 export PTX_LDFLAGS=-L\"$CUDA_PATH/lib/x64\"
 
-# LEFT THE REST OF FILE 'AS IS'
+# LEAVE THE REST OF FILE 'AS IS'
 # DON'T ALTER!
 export PATH=$PWD/bin/bin:$PATH               ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$(pwd -W)/bin/sdk         ## This directory will be automatically generated during Tornado compilation
