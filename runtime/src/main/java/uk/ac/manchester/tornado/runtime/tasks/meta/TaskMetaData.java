@@ -360,9 +360,7 @@ public class TaskMetaData extends AbstractMetaData {
             deviceDebug.append("\tblocks dimensions     : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
             long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
             deviceDebug.append("\tgrids dimensions      : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
-        } else
-
-        {
+        } else {
             long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
             deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
