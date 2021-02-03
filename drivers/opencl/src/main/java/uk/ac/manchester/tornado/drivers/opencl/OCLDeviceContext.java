@@ -155,12 +155,13 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     @Override
     public void assertDimensions(Object module, long[] localWork) {
-        long totalThreads = 1;
+        if (localWork == null) {
+            return;
+        }
+
         long[] blockMaxWorkGroupSize = getDevice().getDeviceMaxWorkGroupSize();
         long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
-        for (long l : localWork) {
-            totalThreads *= l;
-        }
+        long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
 
         if (totalThreads > maxWorkGroupSize) {
             throw new TornadoBailoutRuntimeException(

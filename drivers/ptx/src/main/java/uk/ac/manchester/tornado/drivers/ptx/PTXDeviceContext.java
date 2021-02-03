@@ -149,11 +149,8 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public void assertDimensions(Object o, long[] localWork) {
         PTXModule module = (PTXModule) o;
-        long totalThreads = 1;
         int maxWorkGroupSize = module.getMaxThreadBlocks();
-        for (long l : localWork) {
-            totalThreads *= l;
-        }
+        long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
 
         if (totalThreads > maxWorkGroupSize) {
             throw new TornadoBailoutRuntimeException(
