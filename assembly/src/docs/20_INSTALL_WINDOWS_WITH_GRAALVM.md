@@ -54,7 +54,7 @@ cd TornadoVM
 We will refer hereafter the directory with TornadoVM sources as `<TornadoVM>`.
 
 ## Get Graal 20.2.0
-Visist [GraalVM Community Edition 20.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0) and download either of the following builds:
+Visit [GraalVM Community Edition 20.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-20.2.0) and download either of the following builds:
 - [graalvm-ce-java8-windows-amd64-20.2.0.zip](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java8-windows-amd64-20.2.0.zip) -- Graal JDK 8 x64
 - [graalvm-ce-java11-windows-amd64-20.2.0.zip](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.2.0/graalvm-ce-java11-windows-amd64-20.2.0.zip) -- Graal JDK 11 x64
 
