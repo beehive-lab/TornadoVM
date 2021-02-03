@@ -120,10 +120,9 @@ To run examples with Graal JDK 8:
 tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
 ```
 
-If "sanity checks" from above work, you can execute complete test suite for TornadoVM:
+To run all unit-tests:
 ```bash
-tornado-test.py -V
-```
+make tests
 
 ## Known issues
 1. If you already have MSys2 installed and heavily customized you may experience issues with build or tests. We are suggesting to start with fresh MSys2 installation in this case and follow the instructions above. Most notably, make sure that you have no `mingw-w64-x86_64-python` installed - it prevents Python scripts that execute tests from running. Also, make sure that you have updated all GCC / Make / CMake packages mentioned.
