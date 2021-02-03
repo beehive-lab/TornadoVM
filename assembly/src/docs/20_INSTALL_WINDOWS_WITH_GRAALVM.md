@@ -110,9 +110,14 @@ tornado --devices
 ```
 You should see a list of OpenCL and/or CUDA devices available on your system.
 
-Now try to run a simple test. For Graal JDK 11:
+Now try to run a simple test. To run examples with Graal JDK 11, TornadoVM uses modules:
 ```bash 
 tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
+```
+
+To run individual tests:
+```bash
+tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
 ```
 
 To run examples with Graal JDK 8:
@@ -120,9 +125,15 @@ To run examples with Graal JDK 8:
 tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
 ```
 
+To run individual tests:
+```bash
+tornado -Dtornado.unittests.verbose=True -Xmx6g  uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
+```
+
 To run all unit-tests:
 ```bash
 make tests
+```
 
 ## Known issues
 1. If you already have MSys2 installed and heavily customized you may experience issues with build or tests. We are suggesting to start with fresh MSys2 installation in this case and follow the instructions above. Most notably, make sure that you have no `mingw-w64-x86_64-python` installed - it prevents Python scripts that execute tests from running. Also, make sure that you have updated all GCC / Make / CMake packages mentioned.
