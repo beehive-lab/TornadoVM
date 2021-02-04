@@ -19,7 +19,7 @@ The following table includes the platforms that TornadoVM can be executed.
 TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command:
 
 ```bash
-$ make BACKENDS={opencl,ptx}
+$ make BACKENDS=opencl,ptx
 ```
 
 As well as being built with two compiler backends, TornadoVM can be executed with the following two configurations:
