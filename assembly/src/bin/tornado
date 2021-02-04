@@ -120,7 +120,20 @@ if [[ $JAVA_VERSION == "9.0" || $JAVA_VERSION == "10.0" ]]; then
   exit 0
 fi
 
-TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib:$EXTERNAL_DIRS "
+case "$(uname -s)" in
+   CYGWIN*|MINGW32*|MSYS*|MINGW*)
+     PATH_SEPARATOR=";"
+     ;;
+
+   *)
+     PATH_SEPARATOR=":"
+     ;;
+esac
+EXTERNAL_DIRS_P=""
+if test "${EXTERNAL_DIRS+defined}"; then
+  EXTERNAL_DIRS_P="${PATH_SEPARATOR}${EXTERNAL_DIRS}"
+fi 
+TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib${EXTERNAL_DIRS_P}"
 if [ "$JAVA_VERSION" = "1.8" ]; then
   TORNADO_FLAGS="${TORNADO_FLAGS} -Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado"
 else
