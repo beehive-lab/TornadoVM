@@ -15,11 +15,17 @@ echo -e "Commit  : $(git rev-parse --short HEAD)"
 if [ -L bin ]
 then
   unlink bin
+else
+  # Windows cleanup - Mingw copies files during `ln`
+  rm -rf bin
 fi
 
 if [ -L sdk ]
 then
   unlink sdk
+else
+  # Windows cleanup - Mingw copies files during `ln`
+  rm -rf sdk
 fi
 
 cd ..
