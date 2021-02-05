@@ -278,7 +278,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3IJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_BLOCKING(Int, int);
+    WRITE_DEVICE_TO_HOST_BLOCKING(Int, jint);
 }
 
 /*
@@ -298,7 +298,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3FJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_BLOCKING(Float, float);
+    WRITE_DEVICE_TO_HOST_BLOCKING(Float, jfloat);
 }
 
 /*
@@ -308,7 +308,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJ_3DJ_3B
         (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_BLOCKING(Double, double);
+    WRITE_DEVICE_TO_HOST_BLOCKING(Double, jdouble);
 }
 
 /*
@@ -328,7 +328,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3SJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jshortArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_ASYNC(short);
+    WRITE_DEVICE_TO_HOST_ASYNC(jshort);
 }
 
 /*
@@ -338,7 +338,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3CJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jcharArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_ASYNC(char);
+    WRITE_DEVICE_TO_HOST_ASYNC(jchar);
 }
 
 /*
@@ -348,7 +348,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3IJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jintArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_ASYNC(int);
+    WRITE_DEVICE_TO_HOST_ASYNC(jint);
 }
 
 /*
@@ -358,7 +358,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3JJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jlongArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_ASYNC(long);
+    WRITE_DEVICE_TO_HOST_ASYNC(jlong);
 }
 
 /*
@@ -368,7 +368,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3FJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jfloatArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_ASYNC(float);
+    WRITE_DEVICE_TO_HOST_ASYNC(jfloat);
 }
 
 /*
@@ -378,7 +378,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJ_3DJ_3B
         (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jdoubleArray array, jlong hostOffset, jbyteArray stream_wrapper) {
-    WRITE_DEVICE_TO_HOST_ASYNC(double);
+    WRITE_DEVICE_TO_HOST_ASYNC(jdouble);
 }
 
 #define TRANSFER_FROM_HOST_TO_DEVICE_BLOCKING(TYPE, JAVATYPE)           \
@@ -499,7 +499,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3SJ_3B
         (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jshortArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Short, short);
+    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Short, jshort);
 }
 
 /*
@@ -519,7 +519,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3IJ_3B
         (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jintArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Int, int);
+    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Int, jint);
 }
 
 /*
@@ -529,7 +529,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3JJ_3B
         (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlongArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Long, long);
+    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Long, jlong);
 }
 
 /*
@@ -539,7 +539,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3FJ_3B
         (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jfloatArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Float, float);
+    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Float, jfloat);
 }
 
 /*
@@ -549,7 +549,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
  */
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJ_3DJ_3B
         (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jdoubleArray array, jlong host_offset, jbyteArray stream_wrapper) {
-    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Double, double);
+    TRANSFER_FROM_HOST_TO_DEVICE_ASYNC(Double, jdouble);
 }
 
 /*
