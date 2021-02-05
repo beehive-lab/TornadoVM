@@ -11,6 +11,7 @@ The following table includes the platforms that TornadoVM can be executed.
 | Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
 | Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
 | Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
+| Windows 10		     | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
 
 
 ## 1. Installation
@@ -18,7 +19,7 @@ The following table includes the platforms that TornadoVM can be executed.
 TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command:
 
 ```bash
-$ make BACKENDS={opencl,ptx}
+$ make BACKENDS=opencl,ptx
 ```
 
 As well as being built with two compiler backends, TornadoVM can be executed with the following two configurations:
@@ -26,6 +27,8 @@ As well as being built with two compiler backends, TornadoVM can be executed wit
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
   * TornadoVM with JDK11+ (e.g. OpenJDK, Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
+
+Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
 
 Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](18_MALI.md).
 
