@@ -87,7 +87,7 @@ public abstract class OCLKernelScheduler {
         }
 
         if (meta.isDebug()) {
-            meta.printThreadDims();
+            meta.printThreadDims(null, null);
         }
         final int taskEvent = launch(kernel, meta, waitEvents, batchThreads);
         updateProfiler(taskEvent, meta);
