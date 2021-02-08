@@ -154,7 +154,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     }
 
     @Override
-    public void assertDimensions(Object module, long[] localWork) {
+    public void assertGridDimensions(Object module, long[] localWork) {
         if (localWork == null) {
             return;
         }

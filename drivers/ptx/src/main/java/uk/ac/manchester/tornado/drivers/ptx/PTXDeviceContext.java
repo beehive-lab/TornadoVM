@@ -147,7 +147,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     @Override
-    public void assertDimensions(Object o, long[] localWork) {
+    public void assertGridDimensions(Object o, long[] localWork) {
         PTXModule module = (PTXModule) o;
         int maxWorkGroupSize = module.getMaxThreadBlocks();
         long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
@@ -225,7 +225,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             blockDimension = scheduler.calculateBlockDimension(module);
             gridDimension = scheduler.calculateGridDimension(module, blockDimension);
         }
-        assertDimensions(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+        assertGridDimensions(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
         int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, module.metaData);
         return kernelLaunchEvent;

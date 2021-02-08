@@ -205,7 +205,7 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
-    public void assertDimensions(Object module, long[] localWork) {}
+    public void assertGridDimensions(Object module, long[] localWork) {}
 
     public boolean isKernelAvailable() {
         return true;
