@@ -346,7 +346,6 @@ public class TaskMetaData extends AbstractMetaData {
         boolean deviceBelongsToPTX = isDevicePTX(getDevice());
         deviceDebug.append("task info: " + getId() + "\n");
         deviceDebug.append("\tbackend               : " + (deviceBelongsToPTX ? "PTX" : "OpenCL") + "\n");
-        // deviceDebug.append("\tplatform : " + getDevice().getPlatformName() + "\n");
         deviceDebug.append("\tdevice                : " + getDevice().getDescription() + "\n");
         deviceDebug.append("\tdims                  : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
         if (!deviceBelongsToPTX) {
@@ -357,9 +356,11 @@ public class TaskMetaData extends AbstractMetaData {
             long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
             deviceDebug.append("\tthread dimensions     : " + formatWorkDimensionArray(gw, "1") + "\n");
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
-            deviceDebug.append("\tblocks dimensions     : " + (lw == null ? formatWorkDimensionArray(Arrays.stream(ptxBlockDim).mapToLong(i -> i).toArray(), "1") : formatWorkDimensionArray(lw, "1")) + "\n");
+            deviceDebug.append(
+                    "\tblocks dimensions     : " + (lw == null ? formatWorkDimensionArray(Arrays.stream(ptxBlockDim).mapToLong(i -> i).toArray(), "1") : formatWorkDimensionArray(lw, "1")) + "\n");
             long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
-            deviceDebug.append("\tgrids dimensions      : " + (nw == null ? formatWorkDimensionArray(Arrays.stream(ptxGridDim).mapToLong(i -> i).toArray(), "1") : formatWorkDimensionArray(nw, "1")) + "\n");
+            deviceDebug.append(
+                    "\tgrids dimensions      : " + (nw == null ? formatWorkDimensionArray(Arrays.stream(ptxGridDim).mapToLong(i -> i).toArray(), "1") : formatWorkDimensionArray(nw, "1")) + "\n");
         } else {
             long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
             deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
