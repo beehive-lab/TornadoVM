@@ -67,7 +67,4 @@ public interface TornadoDeviceContext {
     String getDeviceName();
 
     int getDriverIndex();
-
-    void checkGridDimensions(Object o, long[] localWork);
-
 }

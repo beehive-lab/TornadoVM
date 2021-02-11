@@ -153,23 +153,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         return memoryManager;
     }
 
-    @Override
-    public void checkGridDimensions(Object module, long[] localWork) {
-        if (localWork == null) {
-            return;
-        }
-
-        long[] blockMaxWorkGroupSize = getDevice().getDeviceMaxWorkGroupSize();
-        long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
-        long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
-
-        if (totalThreads > maxWorkGroupSize) {
-            throw new TornadoBailoutRuntimeException(
-                    "The total number of threads per block dimension exceed the hardware capacity. The product of x, y and z in setLocalWork(x, y, z) should be less than or equal to "
-                            + maxWorkGroupSize + ". In this case it was: " + localWork[0] + " * " + localWork[1] + " * " + localWork[2] + " = " + totalThreads + ".");
-        }
-    }
-
     public void sync() {
         if (USE_SYNC_FLUSH) {
             queue.flush();

@@ -204,9 +204,6 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
         return useRelativeAddresses;
     }
 
-    @Override
-    public void checkGridDimensions(Object module, long[] localWork) {}
-
     public boolean isKernelAvailable() {
         return true;
     }

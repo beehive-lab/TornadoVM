@@ -146,19 +146,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         return 0;
     }
 
-    @Override
-    public void checkGridDimensions(Object o, long[] localWork) {
-        PTXModule module = (PTXModule) o;
-        int maxWorkGroupSize = module.getMaxThreadBlocks();
-        long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
-
-        if (totalThreads > maxWorkGroupSize) {
-            throw new TornadoBailoutRuntimeException(
-                    "The total number of threads per block dimension exceed the hardware capacity. The product of x, y and z in setLocalWork(x, y, z) should be less than or equal to "
-                            + maxWorkGroupSize + ". In this case it was: " + localWork[0] + " * " + localWork[1] + " * " + localWork[2] + " = " + totalThreads + ".");
-        }
-    }
-
     public ByteOrder getByteOrder() {
         return device.getByteOrder();
     }
@@ -225,7 +212,8 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             blockDimension = scheduler.calculateBlockDimension(module);
             gridDimension = scheduler.calculateGridDimension(module, blockDimension);
         }
-        checkGridDimensions(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+        PTXGridInfo gridInfo = new PTXGridInfo(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+        gridInfo.checkGridDimensions();
         int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, module.metaData);
         return kernelLaunchEvent;
