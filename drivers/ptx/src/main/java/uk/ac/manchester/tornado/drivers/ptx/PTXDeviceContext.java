@@ -206,14 +206,19 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             } else {
                 blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getMaxThreadBlocks(), grid.dimension(), module.javaName);
             }
+
+            PTXGridInfo gridInfo = new PTXGridInfo(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getMaxThreadBlocks(), grid.dimension(), module.javaName);
+                System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
+            }
             gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
         } else if (module.metaData.isParallel()) {
             scheduler.calculateGlobalWork(module.metaData, batchThreads);
             blockDimension = scheduler.calculateBlockDimension(module);
             gridDimension = scheduler.calculateGridDimension(module, blockDimension);
         }
-        PTXGridInfo gridInfo = new PTXGridInfo(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
-        gridInfo.checkGridDimensions();
         int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, module.metaData);
         return kernelLaunchEvent;

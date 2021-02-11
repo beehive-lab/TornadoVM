@@ -148,7 +148,7 @@ public class TestGrid extends TornadoTestBase {
         testMatrixIntegers(256, 128);
     }
 
-    @Test(expected = TornadoBailoutRuntimeException.class)
+    @Test
     public void testOutOfRangeDimensions() {
         int N = 512;
 

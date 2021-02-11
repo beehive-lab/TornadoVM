@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.common.GridInfo;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 
 import java.util.Arrays;
 
@@ -39,19 +38,11 @@ public class OCLGridInfo implements GridInfo {
     }
 
     @Override
-    public void checkGridDimensions() {
-        if (localWork == null) {
-            return;
-        }
-
+    public boolean checkGridDimensions() {
         long[] blockMaxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
         long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
         long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
 
-        if (totalThreads > maxWorkGroupSize) {
-            throw new TornadoBailoutRuntimeException(
-                    "The total number of threads per block dimension exceed the hardware capacity. The product of x, y and z in setLocalWork(x, y, z) should be less than or equal to "
-                            + maxWorkGroupSize + ". In this case it was: " + localWork[0] + " * " + localWork[1] + " * " + localWork[2] + " = " + totalThreads + ".");
-        }
+        return totalThreads <= maxWorkGroupSize;
     }
 }
