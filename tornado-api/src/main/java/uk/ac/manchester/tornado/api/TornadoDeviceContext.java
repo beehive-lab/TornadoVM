@@ -68,6 +68,6 @@ public interface TornadoDeviceContext {
 
     int getDriverIndex();
 
-    void assertGridDimensions(Object o, long[] localWork);
+    void checkGridDimensions(Object o, long[] localWork);
 
 }

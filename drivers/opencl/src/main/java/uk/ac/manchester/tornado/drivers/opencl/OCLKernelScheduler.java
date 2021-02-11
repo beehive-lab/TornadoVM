@@ -67,7 +67,7 @@ public abstract class OCLKernelScheduler {
             long[] global = grid.getGlobalWork();
             long[] offset = grid.getGlobalOffset();
             long[] local = grid.getLocalWork();
-            deviceContext.assertGridDimensions(null, local);
+            deviceContext.checkGridDimensions(null, local);
             return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
         } else {
             return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
