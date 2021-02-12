@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
@@ -448,5 +449,10 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
 
+    }
+
+    @Override
+    public TornadoVMBackend getTornadoVMBackend() {
+        return TornadoVMBackend.VIRTUAL;
     }
 }

@@ -39,6 +39,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
@@ -342,34 +343,33 @@ public class TaskMetaData extends AbstractMetaData {
 
     public void printThreadDims(long[] ptxBlockDim, long[] ptxGridDim) {
         StringBuilder deviceDebug = new StringBuilder();
-        boolean deviceBelongsToPTX = isDevicePTX(getLogicDevice());
+        boolean deviceBelongsToPTX = isPTXDevice(getLogicDevice());
         deviceDebug.append("task info: " + getId() + "\n");
-        deviceDebug.append("\tbackend               : " + (deviceBelongsToPTX ? "PTX" : "OpenCL") + "\n");
+        deviceDebug.append("\tbackend               : " + getLogicDevice().getTornadoVMBackend().name() + "\n");
         deviceDebug.append("\tdevice                : " + getLogicDevice().getDescription() + "\n");
         deviceDebug.append("\tdims                  : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
         if (!deviceBelongsToPTX) {
             long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;
             deviceDebug.append("\tglobal work offset    : " + formatWorkDimensionArray(go, "0") + "\n");
         }
+        long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
         if (deviceBelongsToPTX) {
-            long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
             deviceDebug.append("\tthread dimensions     : " + formatWorkDimensionArray(gw, "1") + "\n");
             deviceDebug.append("\tblocks dimensions     : " + formatWorkDimensionArray(ptxBlockDim, "1") + "\n");
             deviceDebug.append("\tgrids dimensions      : " + formatWorkDimensionArray(ptxGridDim, "1") + "\n");
         } else {
-            long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-            deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
             long[] lw = this.isWorkerGridAvailable() ? ptxBlockDim : localWork;
-            deviceDebug.append("\tlocal  work size      : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
             long[] nw = this.isWorkerGridAvailable() ? (ptxBlockDim == null ? null : getWorkerGrid(getId()).getNumberOfWorkgroups())
                     : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
+            deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tlocal  work size      : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
             deviceDebug.append("\tnumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
         }
         System.out.println(deviceDebug);
     }
 
-    public boolean isDevicePTX(TornadoAcceleratorDevice device) {
-        return device.getPlatformName().toLowerCase().equals("ptx");
+    public boolean isPTXDevice(TornadoAcceleratorDevice device) {
+        return device.getTornadoVMBackend().equals(TornadoVMBackend.PTX);
     }
 
     @Override
