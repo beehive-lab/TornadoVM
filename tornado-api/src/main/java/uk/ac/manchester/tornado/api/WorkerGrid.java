@@ -48,6 +48,8 @@ public interface WorkerGrid {
 
     long[] getLocalWork();
 
+    long[] getNumberOfWorkgroups();
+
     long[] getGlobalOffset();
 
     void setGlobalWork(long x, long y, long z);

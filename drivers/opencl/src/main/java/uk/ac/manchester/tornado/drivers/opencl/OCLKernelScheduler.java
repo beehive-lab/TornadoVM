@@ -30,6 +30,8 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.util.Arrays;
+
 public abstract class OCLKernelScheduler {
 
     protected final OCLDeviceContext deviceContext;
@@ -67,6 +69,17 @@ public abstract class OCLKernelScheduler {
             long[] global = grid.getGlobalWork();
             long[] offset = grid.getGlobalOffset();
             long[] local = grid.getLocalWork();
+            if (local != null) {
+                OCLGridInfo gridInfo = new OCLGridInfo(deviceContext.getDevice(), local);
+                boolean checkedDimensions = gridInfo.checkGridDimensions();
+                if (!checkedDimensions) {
+                    System.out.println("Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.");
+                    local = null;
+                }
+            }
+            if (meta.isDebug()) {
+                meta.printThreadDims(local, null);
+            }
             return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
         } else {
             return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
@@ -85,9 +98,6 @@ public abstract class OCLKernelScheduler {
             }
         }
 
-        if (meta.isDebug()) {
-            meta.printThreadDims();
-        }
         final int taskEvent = launch(kernel, meta, waitEvents, batchThreads);
         updateProfiler(taskEvent, meta);
         return taskEvent;

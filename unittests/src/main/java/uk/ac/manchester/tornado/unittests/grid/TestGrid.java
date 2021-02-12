@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
@@ -145,5 +146,29 @@ public class TestGrid extends TornadoTestBase {
     @Test
     public void testDynamicGrid03() {
         testMatrixIntegers(256, 128);
+    }
+
+    @Test
+    public void testOutOfRangeDimensions() {
+        int N = 512;
+
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] matrixC = new float[N * N];
+
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = 2.5f;
+            matrixB[idx] = 3.5f;
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0").task("mxm", TestGrid::matrixMultiplication, matrixA, matrixB, matrixC, N).streamOut(matrixC);
+
+        WorkerGrid2D worker = new WorkerGrid2D(N, N);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.mxm", worker);
+        worker.setGlobalWork(N, N, 1);
+        worker.setLocalWork(256, 256, 1);
+
+        s0.execute(gridTask);
     }
 }

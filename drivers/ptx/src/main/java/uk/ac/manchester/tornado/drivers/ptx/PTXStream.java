@@ -184,10 +184,8 @@ public class PTXStream extends TornadoLogger {
         assert Arrays.stream(gridDim).filter(i -> i <= 0).count() == 0;
         assert Arrays.stream(blockDim).filter(i -> i <= 0).count() == 0;
 
-        if (DEBUG) {
-            System.out.println("Executing: " + module.kernelFunctionName);
-            System.out.println("   Blocks: " + Arrays.toString(blockDim));
-            System.out.println("    Grids: " + Arrays.toString(gridDim));
+        if (module.metaData.isDebug()) {
+            module.metaData.printThreadDims(Arrays.stream(blockDim).mapToLong(i -> i).toArray(), Arrays.stream(gridDim).mapToLong(i -> i).toArray());
         }
 
         return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], DYNAMIC_SHARED_MEMORY_BYTES,

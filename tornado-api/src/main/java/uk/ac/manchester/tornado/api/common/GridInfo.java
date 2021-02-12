@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,65 +39,8 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.common;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-
-import java.util.Arrays;
-
-public abstract class AbstractWorkerGrid implements WorkerGrid {
-
-    protected long[] globalWork;
-    protected long[] localWork;
-    protected long[] numOfWorkgroups;
-    protected long[] globalOffset;
-
-    public AbstractWorkerGrid(long x, long y, long z) {
-        globalWork = new long[] { x, y, z };
-        globalOffset = new long[] { 0, 0, 0 };
-    }
-
-    private void calculateNumberOfWorkgroups() {
-        numOfWorkgroups = new long[globalWork.length];
-        for (int i = 0; i < globalWork.length; i++) {
-            numOfWorkgroups[i] = globalWork[i] / localWork[i];
-        }
-    }
-
-    @Override
-    public long[] getGlobalWork() {
-        return globalWork;
-    }
-
-    @Override
-    public long[] getLocalWork() {
-        return localWork;
-    }
-
-    @Override
-    public long[] getNumberOfWorkgroups() {
-        return numOfWorkgroups;
-    }
-
-    @Override
-    public long[] getGlobalOffset() {
-        return globalOffset;
-    }
-
-    @Override
-    public void setGlobalWork(long x, long y, long z) {
-        globalWork = new long[] { x, y, z };
-    }
-
-    @Override
-    public void setLocalWork(long x, long y, long z) {
-        localWork = new long[] { x, y, z };
-        calculateNumberOfWorkgroups();
-    }
-
-    @Override
-    public void setGlobalOffset(long x, long y, long z) {
-        globalOffset = new long[] { x, y, z };
-    }
-
+public interface GridInfo {
+    boolean checkGridDimensions();
 }
