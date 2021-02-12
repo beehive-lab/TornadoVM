@@ -107,7 +107,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public OCLTargetDevice getDevice() {
+    public OCLTargetDevice getPhysicalDevice() {
         return device;
     }
 

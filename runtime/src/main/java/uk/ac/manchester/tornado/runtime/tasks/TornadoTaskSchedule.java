@@ -252,7 +252,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public TornadoDevice getDevice() {
-        return meta().getDevice();
+        return meta().getLogicDevice();
     }
 
     private void triggerRecompile() {
@@ -281,7 +281,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             task.meta().setDevice(device);
             if (task instanceof CompilableTask) {
                 ResolvedJavaMethod method = getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                if (!meta().getDevice().getDeviceContext().isCached(method.getName(), task)) {
+                if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
@@ -393,7 +393,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         BitSet deviceContexts = graph.filter(ContextNode.class);
         final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
         contextNode.setDeviceIndex(meta().getDeviceIndex());
-        executionContext.addDevice(meta().getDevice());
+        executionContext.addDevice(meta().getLogicDevice());
     }
 
     /**
@@ -461,7 +461,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
             return COMPILE_ONLY;
-        } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getDevice()))) {
+        } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
             return COMPILE_AND_UPDATE;
         } else if (updateData) {
             return COMPILE_ONLY;
@@ -477,7 +477,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             compile(compileInfo.updateDevice);
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
-        executionContext.addLastDevice(meta().getDevice());
+        executionContext.addLastDevice(meta().getLogicDevice());
 
         if (updateData) {
             executionContext.newStack(true);
@@ -1125,7 +1125,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getDeviceName());
+                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
 
                 long start = timer.time();
                 performStreamInThread(task, streamInObjects);

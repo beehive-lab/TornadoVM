@@ -71,7 +71,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return System.getProperty(key);
     }
 
-    public TornadoAcceleratorDevice getDevice() {
+    public TornadoAcceleratorDevice getLogicDevice() {
         if (device == null) {
             device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
         }

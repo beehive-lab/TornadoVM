@@ -182,8 +182,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             if (!deviceContext.isCached(resolvedMethod.getName(), executable)) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 // profiler
-                profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
-                profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
+                profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
+                profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
@@ -587,7 +587,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoTargetDevice getDevice() {
+    public TornadoTargetDevice getPhysicalDevice() {
         return device;
     }
 

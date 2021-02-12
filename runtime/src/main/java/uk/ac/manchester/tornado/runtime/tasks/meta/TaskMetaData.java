@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.runtime.EventSet;
@@ -159,7 +158,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void addProfile(int id) {
-        final TornadoAcceleratorDevice device = getDevice();
+        final TornadoAcceleratorDevice device = getLogicDevice();
         BitSet events;
         if (!profiles.containsKey(device)) {
             events = new BitSet(EVENT_WINDOW);
@@ -233,13 +232,13 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public TornadoAcceleratorDevice getDevice() {
+    public TornadoAcceleratorDevice getLogicDevice() {
         if (scheduleMetaData.isDeviceManuallySet()) {
-            return scheduleMetaData.getDevice();
+            return scheduleMetaData.getLogicDevice();
         } else if (scheduleMetaData.isDeviceDefined() && !isDeviceDefined()) {
-            return scheduleMetaData.getDevice();
+            return scheduleMetaData.getLogicDevice();
         }
-        return super.getDevice();
+        return super.getLogicDevice();
     }
 
     public int getDims() {
@@ -343,10 +342,10 @@ public class TaskMetaData extends AbstractMetaData {
 
     public void printThreadDims(long[] ptxBlockDim, long[] ptxGridDim) {
         StringBuilder deviceDebug = new StringBuilder();
-        boolean deviceBelongsToPTX = isDevicePTX(getDevice());
+        boolean deviceBelongsToPTX = isDevicePTX(getLogicDevice());
         deviceDebug.append("task info: " + getId() + "\n");
         deviceDebug.append("\tbackend               : " + (deviceBelongsToPTX ? "PTX" : "OpenCL") + "\n");
-        deviceDebug.append("\tdevice                : " + getDevice().getDescription() + "\n");
+        deviceDebug.append("\tdevice                : " + getLogicDevice().getDescription() + "\n");
         deviceDebug.append("\tdims                  : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
         if (!deviceBelongsToPTX) {
             long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;

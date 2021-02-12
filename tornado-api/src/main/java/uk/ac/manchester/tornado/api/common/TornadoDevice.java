@@ -186,7 +186,7 @@ public interface TornadoDevice {
 
     TornadoDeviceContext getDeviceContext();
 
-    TornadoTargetDevice getDevice();
+    TornadoTargetDevice getPhysicalDevice();
 
     TornadoMemoryProvider getMemoryProvider();
 

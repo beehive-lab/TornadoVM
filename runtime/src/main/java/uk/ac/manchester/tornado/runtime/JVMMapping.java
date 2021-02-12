@@ -192,7 +192,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoTargetDevice getDevice() {
+    public TornadoTargetDevice getPhysicalDevice() {
         return null;
     }
 

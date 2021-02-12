@@ -258,7 +258,7 @@ public class TornadoExecutionContext {
      * @return {@link TornadoAcceleratorDevice}
      */
     public TornadoAcceleratorDevice getDefaultDevice() {
-        return meta.getDevice();
+        return meta.getLogicDevice();
     }
 
     public SchedulableTask getTask(String id) {

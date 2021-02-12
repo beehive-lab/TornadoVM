@@ -266,9 +266,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             } else {
                 if (meta.isDebug()) {
                     System.out.println("Running on: ");
-                    System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
-                    if (meta.getDevice() instanceof OCLTornadoDevice) {
-                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getDeviceName());
+                    System.out.println("\tPlatform: " + meta.getLogicDevice().getPlatformName());
+                    if (meta.getLogicDevice() instanceof OCLTornadoDevice) {
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getLogicDevice()).getPhysicalDevice().getDeviceName());
                     }
                 }
                 if (meta.getGlobalWork() == null) {
