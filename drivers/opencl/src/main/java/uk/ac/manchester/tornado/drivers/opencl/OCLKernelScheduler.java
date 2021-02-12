@@ -78,9 +78,6 @@ public abstract class OCLKernelScheduler {
                     local = null;
                 }
             }
-            if (Tornado.DEBUG) {
-                meta.printThreadDims(local, null);
-            }
             return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
         } else {
             return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
@@ -99,6 +96,9 @@ public abstract class OCLKernelScheduler {
             }
         }
 
+        if (meta.isDebug()) {
+            meta.printThreadDims(null, null);
+        }
         final int taskEvent = launch(kernel, meta, waitEvents, batchThreads);
         updateProfiler(taskEvent, meta);
         return taskEvent;
