@@ -96,4 +96,8 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
         }
     }
 
+    @Override
+    public void setLocalWorkToNull() {
+        this.localWork = null;
+    }
 }

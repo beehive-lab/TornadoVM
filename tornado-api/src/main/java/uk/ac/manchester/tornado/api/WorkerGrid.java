@@ -56,5 +56,7 @@ public interface WorkerGrid {
 
     void setLocalWork(long x, long y, long z);
 
+    void setLocalWorkToNull();
+
     void setGlobalOffset(long x, long y, long z);
 }
