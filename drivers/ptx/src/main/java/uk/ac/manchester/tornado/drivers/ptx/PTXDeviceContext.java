@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
@@ -204,6 +205,13 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
                 blockDimension = Arrays.stream(grid.getLocalWork()).mapToInt(l -> (int) l).toArray();
             } else {
                 blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getMaxThreadBlocks(), grid.dimension(), module.javaName);
+            }
+
+            PTXGridInfo gridInfo = new PTXGridInfo(module, Arrays.stream(blockDimension).mapToLong(i -> i).toArray());
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                blockDimension = scheduler.calculateBlockDimension(grid.getGlobalWork(), module.getMaxThreadBlocks(), grid.dimension(), module.javaName);
+                System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
             }
             gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
         } else if (module.metaData.isParallel()) {

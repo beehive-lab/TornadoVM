@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.runtime.EventSet;
@@ -330,19 +331,46 @@ public class TaskMetaData extends AbstractMetaData {
         return enableParallelization() && hasDomain() && domain.getDepth() > 0;
     }
 
-    public void printThreadDims() {
+    private long[] calculateNumberOfWorkgroupsFromDomain(DomainTree domain) {
+        long[] numOfWorkgroups = new long[domain.getDepth()];
+        if (globalWork != null && localWork != null) {
+            for (int i = 0; i < numOfWorkgroups.length; i++) {
+                numOfWorkgroups[i] = globalWork[i] / localWork[i];
+            }
+        }
+        return numOfWorkgroups;
+    }
+
+    public void printThreadDims(long[] ptxBlockDim, long[] ptxGridDim) {
         StringBuilder deviceDebug = new StringBuilder();
+        boolean deviceBelongsToPTX = isDevicePTX(getDevice());
         deviceDebug.append("task info: " + getId() + "\n");
-        deviceDebug.append("\tplatform          : " + getDevice().getPlatformName() + "\n");
-        deviceDebug.append("\tdevice            : " + getDevice().getDescription() + "\n");
-        deviceDebug.append("\tdims              : " + (domain == null ? "0" : domain.getDepth()) + "\n");
-        long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;
-        deviceDebug.append("\tglobal work offset: " + formatWorkDimensionArray(go, "0") + "\n");
-        long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-        deviceDebug.append("\tglobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
-        long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
-        deviceDebug.append("\tlocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
+        deviceDebug.append("\tbackend               : " + (deviceBelongsToPTX ? "PTX" : "OpenCL") + "\n");
+        deviceDebug.append("\tdevice                : " + getDevice().getDescription() + "\n");
+        deviceDebug.append("\tdims                  : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
+        if (!deviceBelongsToPTX) {
+            long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;
+            deviceDebug.append("\tglobal work offset    : " + formatWorkDimensionArray(go, "0") + "\n");
+        }
+        if (deviceBelongsToPTX) {
+            long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
+            deviceDebug.append("\tthread dimensions     : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tblocks dimensions     : " + formatWorkDimensionArray(ptxBlockDim, "1") + "\n");
+            deviceDebug.append("\tgrids dimensions      : " + formatWorkDimensionArray(ptxGridDim, "1") + "\n");
+        } else {
+            long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
+            deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
+            long[] lw = this.isWorkerGridAvailable() ? ptxBlockDim : localWork;
+            deviceDebug.append("\tlocal  work size      : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
+            long[] nw = this.isWorkerGridAvailable() ? (ptxBlockDim == null ? null : getWorkerGrid(getId()).getNumberOfWorkgroups())
+                    : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
+            deviceDebug.append("\tnumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
+        }
         System.out.println(deviceDebug);
+    }
+
+    public boolean isDevicePTX(TornadoAcceleratorDevice device) {
+        return device.getPlatformName().toLowerCase().equals("ptx");
     }
 
     @Override

@@ -567,7 +567,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
             updateProfiler();
         } catch (TornadoBailoutRuntimeException e) {
-            deoptimizeToSequentialJava(e);
+            if (TornadoOptions.RECOVER_BAILOUT) {
+                deoptimizeToSequentialJava(e);
+            } else {
+                if (Tornado.DEBUG) {
+                    e.printStackTrace();
+                }
+                throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.toString());
+            }
         }
     }
 

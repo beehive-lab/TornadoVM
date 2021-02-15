@@ -298,7 +298,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private void debugInfo(final TaskMetaData meta) {
         if (meta.isDebug()) {
-            meta.printThreadDims();
+            meta.printThreadDims(null, null);
         }
     }
 
