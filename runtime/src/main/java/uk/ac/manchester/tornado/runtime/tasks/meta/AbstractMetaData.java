@@ -386,7 +386,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    AbstractMetaData(String id, int defaultDriver, int defaultIndex) {
+    AbstractMetaData(String id, AbstractMetaData parent) {
         this.id = id;
         shouldRecompile = true;
 
@@ -395,6 +395,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
             driverIndex = a[0];
             deviceIndex = a[1];
+        } else if (null != parent) {
+            driverIndex = parent.getDriverIndex();
+            deviceIndex = parent.getDeviceIndex();
         } else {
             driverIndex = Tornado.DEFAULT_DRIVER_INDEX;
             deviceIndex = Tornado.DEFAULT_DEVICE_INDEX;

@@ -62,7 +62,7 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean canAssumeExact;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
-        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData.getDriverIndex(), scheduleMetaData.getDeviceIndex());
+        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
