@@ -60,6 +60,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w", "-cl-std=CL2.0"));
     private TornadoProfiler profiler;
     private GridTask gridTask;
+    private long[] ptxBlockDim;
+    private long[] ptxGridDim;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
@@ -471,6 +473,22 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public WorkerGrid getWorkerGrid(String taskName) {
         return gridTask.get(taskName);
+    }
+
+    public long[] getPTXBlockDim() {
+        return ptxBlockDim;
+    }
+
+    public long[] getPTXGridDim() {
+        return ptxGridDim;
+    }
+
+    public void setPtxBlockDim(long[] blockDim) {
+        this.ptxBlockDim = blockDim;
+    }
+
+    public void setPtxGridDim(long[] gridDim) {
+        this.ptxGridDim = gridDim;
     }
 
     @Override

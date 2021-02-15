@@ -341,7 +341,7 @@ public class TaskMetaData extends AbstractMetaData {
         return numOfWorkgroups;
     }
 
-    public void printThreadDims(long[] ptxBlockDim, long[] ptxGridDim) {
+    public void printThreadDims() {
         StringBuilder deviceDebug = new StringBuilder();
         boolean deviceBelongsToPTX = isPTXDevice(getLogicDevice());
         deviceDebug.append("Task info: " + getId() + "\n");
@@ -355,8 +355,8 @@ public class TaskMetaData extends AbstractMetaData {
         long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
         if (deviceBelongsToPTX) {
             deviceDebug.append("\tThread dimensions : " + formatWorkDimensionArray(gw, "1") + "\n");
-            deviceDebug.append("\tBlocks dimensions : " + formatWorkDimensionArray(ptxBlockDim, "1") + "\n");
-            deviceDebug.append("\tGrids dimensions  : " + formatWorkDimensionArray(ptxGridDim, "1") + "\n");
+            deviceDebug.append("\tBlocks dimensions : " + formatWorkDimensionArray(getPTXBlockDim(), "1") + "\n");
+            deviceDebug.append("\tGrids dimensions  : " + formatWorkDimensionArray(getPTXGridDim(), "1") + "\n");
         } else {
             long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
             deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
