@@ -61,8 +61,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private TornadoProfiler profiler;
     private GridTask gridTask;
 
-    private static final int DEFAULT_DRIVER_INDEX = 0;
-    private static final int DEFAULT_DEVICE_INDEX = 0;
     private DeviceBuffer deviceBuffer;
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
@@ -388,7 +386,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    AbstractMetaData(String id, int defaultDriver, int defaultIndex) {
+    AbstractMetaData(String id, AbstractMetaData parent) {
         this.id = id;
         shouldRecompile = true;
 
@@ -397,9 +395,12 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
             driverIndex = a[0];
             deviceIndex = a[1];
+        } else if (null != parent) {
+            driverIndex = parent.getDriverIndex();
+            deviceIndex = parent.getDeviceIndex();
         } else {
-            driverIndex = defaultDriver;
-            deviceIndex = defaultIndex;
+            driverIndex = Tornado.DEFAULT_DRIVER_INDEX;
+            deviceIndex = Tornado.DEFAULT_DEVICE_INDEX;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));
