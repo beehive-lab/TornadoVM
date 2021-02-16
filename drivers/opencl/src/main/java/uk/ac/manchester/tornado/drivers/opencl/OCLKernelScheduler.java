@@ -97,6 +97,7 @@ public abstract class OCLKernelScheduler {
             if (!checkedDimensions) {
                 System.out.println(WARNING_THREAD_LOCAL);
                 grid.setLocalWorkToNull();
+                grid.setNumGroupsToNull();
             }
         }
     }
