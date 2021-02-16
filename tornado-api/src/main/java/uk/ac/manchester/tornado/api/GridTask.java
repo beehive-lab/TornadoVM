@@ -47,8 +47,16 @@ public class GridTask {
 
     private final ConcurrentHashMap<String, WorkerGrid> gridTaskMap;
 
+    public GridTask() {
+        gridTaskMap = new ConcurrentHashMap<>();
+    }
+
     public GridTask(String taskName, WorkerGrid workerGrid) {
         gridTaskMap = new ConcurrentHashMap<>();
+        gridTaskMap.put(taskName, workerGrid);
+    }
+
+    public void setWorkerGrid(String taskName, WorkerGrid workerGrid) {
         gridTaskMap.put(taskName, workerGrid);
     }
 
