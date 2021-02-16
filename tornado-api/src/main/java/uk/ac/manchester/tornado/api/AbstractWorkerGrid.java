@@ -102,7 +102,7 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     }
 
     @Override
-    public void setNumGroupsToNull() {
+    public void setNumberOfWorkgroupsToNull() {
         this.numOfWorkgroups = null;
     }
 }

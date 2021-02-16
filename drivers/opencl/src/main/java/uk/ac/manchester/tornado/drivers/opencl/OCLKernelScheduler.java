@@ -27,11 +27,8 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.Arrays;
 
 public abstract class OCLKernelScheduler {
 
@@ -97,7 +94,7 @@ public abstract class OCLKernelScheduler {
             if (!checkedDimensions) {
                 System.out.println(WARNING_THREAD_LOCAL);
                 grid.setLocalWorkToNull();
-                grid.setNumGroupsToNull();
+                grid.setNumberOfWorkgroupsToNull();
             }
         }
     }

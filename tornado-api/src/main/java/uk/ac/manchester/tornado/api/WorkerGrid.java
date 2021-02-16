@@ -60,5 +60,5 @@ public interface WorkerGrid {
 
     void setGlobalOffset(long x, long y, long z);
 
-    void setNumGroupsToNull();
+    void setNumberOfWorkgroupsToNull();
 }
