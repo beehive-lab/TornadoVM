@@ -78,7 +78,7 @@ public class PTX {
     }
 
     public static PTXTornadoDevice defaultDevice() {
-        final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
+        final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.ptx.device", "0"));
         return new PTXTornadoDevice(deviceIndex);
     }
 

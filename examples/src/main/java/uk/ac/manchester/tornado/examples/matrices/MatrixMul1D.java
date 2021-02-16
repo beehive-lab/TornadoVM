@@ -9,7 +9,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 public class MatrixMul1D {
 
@@ -108,7 +107,7 @@ public class MatrixMul1D {
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);
-            if (device.getDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getDevice().getDeviceName())) {
+            if (device.getPhysicalDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getPhysicalDevice().getDeviceName())) {
                 oclDevice = device;
             }
         }

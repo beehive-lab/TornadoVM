@@ -246,7 +246,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
             TornadoAcceleratorDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
-            OCLTargetDevice dev = (OCLTargetDevice) device.getDevice();
+            OCLTargetDevice dev = (OCLTargetDevice) device.getPhysicalDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }

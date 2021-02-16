@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,26 +39,22 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.enums;
 
-public interface WorkerGrid {
-    int dimension();
+public enum TornadoVMBackend {
 
-    long[] getGlobalWork();
+    OpenCL("OpenCL"), //
+    PTX("PTX"), //
+    JAVA("Java"), //
+    VIRTUAL("Virtual");
 
-    long[] getLocalWork();
+    String name;
 
-    long[] getNumberOfWorkgroups();
+    TornadoVMBackend(String backendName) {
+        this.name = backendName;
+    }
 
-    long[] getGlobalOffset();
-
-    void setGlobalWork(long x, long y, long z);
-
-    void setLocalWork(long x, long y, long z);
-
-    void setLocalWorkToNull();
-
-    void setGlobalOffset(long x, long y, long z);
-
-    void setNumberOfWorkgroupsToNull();
+    String getName() {
+        return name;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,10 +28,10 @@ import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
 
-import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXMultiplyAddNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFMANode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorElementOpNode;
 
-public class PTXMulAddPhase extends Phase {
+public class PTXFMAPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
@@ -48,7 +48,7 @@ public class PTXMulAddPhase extends Phase {
                     return;
                 }
 
-                PTXMultiplyAddNode newNode = new PTXMultiplyAddNode(x, y, z);
+                PTXFMANode newNode = new PTXFMANode(x, y, z);
                 graph.addWithoutUnique(newNode);
 
                 mul.removeUsage(addNode);

@@ -37,9 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
@@ -63,7 +63,7 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean canAssumeExact;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
-        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData.getDriverIndex(), scheduleMetaData.getDeviceIndex());
+        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
@@ -159,7 +159,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void addProfile(int id) {
-        final TornadoAcceleratorDevice device = getDevice();
+        final TornadoAcceleratorDevice device = getLogicDevice();
         BitSet events;
         if (!profiles.containsKey(device)) {
             events = new BitSet(EVENT_WINDOW);
@@ -233,13 +233,13 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public TornadoAcceleratorDevice getDevice() {
+    public TornadoAcceleratorDevice getLogicDevice() {
         if (scheduleMetaData.isDeviceManuallySet()) {
-            return scheduleMetaData.getDevice();
+            return scheduleMetaData.getLogicDevice();
         } else if (scheduleMetaData.isDeviceDefined() && !isDeviceDefined()) {
-            return scheduleMetaData.getDevice();
+            return scheduleMetaData.getLogicDevice();
         }
-        return super.getDevice();
+        return super.getLogicDevice();
     }
 
     public int getDims() {
@@ -341,36 +341,34 @@ public class TaskMetaData extends AbstractMetaData {
         return numOfWorkgroups;
     }
 
-    public void printThreadDims(long[] ptxBlockDim, long[] ptxGridDim) {
+    public void printThreadDims() {
         StringBuilder deviceDebug = new StringBuilder();
-        boolean deviceBelongsToPTX = isDevicePTX(getDevice());
-        deviceDebug.append("task info: " + getId() + "\n");
-        deviceDebug.append("\tbackend               : " + (deviceBelongsToPTX ? "PTX" : "OpenCL") + "\n");
-        deviceDebug.append("\tdevice                : " + getDevice().getDescription() + "\n");
-        deviceDebug.append("\tdims                  : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
+        boolean deviceBelongsToPTX = isPTXDevice(getLogicDevice());
+        deviceDebug.append("Task info: " + getId() + "\n");
+        deviceDebug.append("\tBackend           : " + getLogicDevice().getTornadoVMBackend().name() + "\n");
+        deviceDebug.append("\tDevice            : " + getLogicDevice().getDescription() + "\n");
+        deviceDebug.append("\tDims              : " + (this.isWorkerGridAvailable() ? getWorkerGrid(getId()).dimension() : (hasDomain() ? domain.getDepth() : 0)) + "\n");
         if (!deviceBelongsToPTX) {
             long[] go = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalOffset() : globalOffset;
-            deviceDebug.append("\tglobal work offset    : " + formatWorkDimensionArray(go, "0") + "\n");
+            deviceDebug.append("\tGlobal work offset: " + formatWorkDimensionArray(go, "0") + "\n");
         }
+        long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
         if (deviceBelongsToPTX) {
-            long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-            deviceDebug.append("\tthread dimensions     : " + formatWorkDimensionArray(gw, "1") + "\n");
-            deviceDebug.append("\tblocks dimensions     : " + formatWorkDimensionArray(ptxBlockDim, "1") + "\n");
-            deviceDebug.append("\tgrids dimensions      : " + formatWorkDimensionArray(ptxGridDim, "1") + "\n");
+            deviceDebug.append("\tThread dimensions : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tBlocks dimensions : " + formatWorkDimensionArray(getPTXBlockDim(), "1") + "\n");
+            deviceDebug.append("\tGrids dimensions  : " + formatWorkDimensionArray(getPTXGridDim(), "1") + "\n");
         } else {
-            long[] gw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getGlobalWork() : globalWork;
-            deviceDebug.append("\tglobal work size      : " + formatWorkDimensionArray(gw, "1") + "\n");
-            long[] lw = this.isWorkerGridAvailable() ? ptxBlockDim : localWork;
-            deviceDebug.append("\tlocal  work size      : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
-            long[] nw = this.isWorkerGridAvailable() ? (ptxBlockDim == null ? null : getWorkerGrid(getId()).getNumberOfWorkgroups())
-                    : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
-            deviceDebug.append("\tnumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
+            long[] lw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getLocalWork() : localWork;
+            long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
+            deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
+            deviceDebug.append("\tLocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
+            deviceDebug.append("\tNumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
         }
         System.out.println(deviceDebug);
     }
 
-    public boolean isDevicePTX(TornadoAcceleratorDevice device) {
-        return device.getPlatformName().toLowerCase().equals("ptx");
+    public boolean isPTXDevice(TornadoAcceleratorDevice device) {
+        return device.getTornadoVMBackend().equals(TornadoVMBackend.PTX);
     }
 
     @Override

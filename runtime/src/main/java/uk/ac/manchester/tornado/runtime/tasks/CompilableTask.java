@@ -81,7 +81,7 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public TornadoAcceleratorDevice getDevice() {
-        return meta.getDevice();
+        return meta.getLogicDevice();
     }
 
     @Override

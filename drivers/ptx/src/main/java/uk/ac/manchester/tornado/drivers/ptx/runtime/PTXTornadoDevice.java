@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -182,8 +183,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             if (!deviceContext.isCached(resolvedMethod.getName(), executable)) {
                 PTXProviders providers = (PTXProviders) getBackend().getProviders();
                 // profiler
-                profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
-                profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getDevice().getDevice().getDeviceName());
+                profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
+                profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
@@ -587,7 +588,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoTargetDevice getDevice() {
+    public TornadoTargetDevice getPhysicalDevice() {
         return device;
     }
 
@@ -646,6 +647,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     }
 
+    @Override
+    public TornadoVMBackend getTornadoVMBackend() {
+        return TornadoVMBackend.PTX;
+    }
+
     /**
      * In CUDA the context is not attached to the whole process, but to individual
      * threads Therefore, in the case of new threads executing a task schedule, we
@@ -665,4 +671,5 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     public String toString() {
         return getPlatformName() + " -- " + device.getDeviceName();
     }
+
 }
