@@ -30,14 +30,14 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.util.Arrays;
-
 public abstract class OCLKernelScheduler {
 
     protected final OCLDeviceContext deviceContext;
 
     protected double min;
     protected double max;
+
+    public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
     OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
@@ -69,17 +69,6 @@ public abstract class OCLKernelScheduler {
             long[] global = grid.getGlobalWork();
             long[] offset = grid.getGlobalOffset();
             long[] local = grid.getLocalWork();
-            if (local != null) {
-                OCLGridInfo gridInfo = new OCLGridInfo(deviceContext.getDevice(), local);
-                boolean checkedDimensions = gridInfo.checkGridDimensions();
-                if (!checkedDimensions) {
-                    System.out.println("Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.");
-                    local = null;
-                }
-            }
-            if (meta.isDebug()) {
-                meta.printThreadDims(local, null);
-            }
             return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
         } else {
             return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
@@ -87,8 +76,30 @@ public abstract class OCLKernelScheduler {
         }
     }
 
-    public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
+    /**
+     * Checks if the selected local work group fits on the target device. If it does
+     * not fit, it sets the local work group to null, so the OpenCL driver chooses a
+     * default value. In this case, the threads configured in the local work sizes
+     * depends on each OpenCL driver.
+     * 
+     * @param meta
+     *            TaskMetaData.
+     */
+    private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
+        WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+        long[] local = grid.getLocalWork();
+        if (local != null) {
+            OCLGridInfo gridInfo = new OCLGridInfo(deviceContext.getDevice(), local);
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                System.out.println(WARNING_THREAD_LOCAL);
+                grid.setLocalWorkToNull();
+                grid.setNumberOfWorkgroupsToNull();
+            }
+        }
+    }
 
+    public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);
@@ -96,8 +107,13 @@ public abstract class OCLKernelScheduler {
             if (!meta.isLocalWorkDefined()) {
                 calculateLocalWork(meta);
             }
+        } else {
+            checkLocalWorkGroupFitsOnDevice(meta);
         }
 
+        if (meta.isDebug()) {
+            meta.printThreadDims();
+        }
         final int taskEvent = launch(kernel, meta, waitEvents, batchThreads);
         updateProfiler(taskEvent, meta);
         return taskEvent;

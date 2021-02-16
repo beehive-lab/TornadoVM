@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -33,9 +33,9 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 
-@NodeInfo(shortName = "MulAdd")
-public class PTXMultiplyAddNode extends FloatingNode implements ArithmeticLIRLowerable {
-    public static final NodeClass<PTXMultiplyAddNode> TYPE = NodeClass.create(PTXMultiplyAddNode.class);
+@NodeInfo(shortName = "PTX-FMA")
+public class PTXFMANode extends FloatingNode implements ArithmeticLIRLowerable {
+    public static final NodeClass<PTXFMANode> TYPE = NodeClass.create(PTXFMANode.class);
 
     @Input
     protected ValueNode x;
@@ -44,7 +44,7 @@ public class PTXMultiplyAddNode extends FloatingNode implements ArithmeticLIRLow
     @Input
     protected ValueNode z;
 
-    public PTXMultiplyAddNode(ValueNode x, ValueNode y, ValueNode z) {
+    public PTXFMANode(ValueNode x, ValueNode y, ValueNode z) {
         super(TYPE, StampFactory.forKind(x.getStackKind()));
 
         this.x = x;

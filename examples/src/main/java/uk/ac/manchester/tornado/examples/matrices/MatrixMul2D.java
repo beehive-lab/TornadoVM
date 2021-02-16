@@ -86,7 +86,7 @@ public class MatrixMul2D {
         }
 
         // Time CUDA
-        long start, stop;
+        long start,stop;
         long[] execTimesCUDA = new long[TIMING_ITERATIONS];
 
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
@@ -104,7 +104,7 @@ public class MatrixMul2D {
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);
-            if (device.getDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getDevice().getDeviceName())) {
+            if (device.getPhysicalDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getPhysicalDevice().getDeviceName())) {
                 oclDevice = device;
             }
         }

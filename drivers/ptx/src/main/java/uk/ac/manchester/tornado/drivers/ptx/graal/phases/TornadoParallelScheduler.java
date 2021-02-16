@@ -24,7 +24,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -73,7 +72,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
         PTXTornadoDevice device = (PTXTornadoDevice) context.getDeviceMapping();
         final TornadoSchedulingStrategy strategy = device.getPreferredSchedule();
-        long[] maxWorkItemSizes = device.getDevice().getDeviceMaxWorkItemSizes();
+        long[] maxWorkItemSizes = device.getPhysicalDevice().getDeviceMaxWorkItemSizes();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(node -> {
             if (context.getMeta().enableParallelization() && maxWorkItemSizes[node.index()] > 1) {
