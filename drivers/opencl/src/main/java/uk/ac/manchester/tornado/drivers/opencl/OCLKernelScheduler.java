@@ -40,6 +40,8 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
+    public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
+
     OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
     }
@@ -72,28 +74,34 @@ public abstract class OCLKernelScheduler {
             long[] local = grid.getLocalWork();
             return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
         } else {
-            System.out.println("Running with Local Work: " + meta.getLocalWork());
             return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
                     waitEvents);
         }
     }
 
+    /**
+     * Checks if the selected local work group fits on the target device. If it does
+     * not fit, it sets the local work group to null, so the OpenCL driver chooses a
+     * default value. In this case, the threads configured in the local work sizes
+     * depends on each OpenCL driver.
+     * 
+     * @param meta
+     *            TaskMetaData.
+     */
     private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
-        // Check if the LocalWorkGroup fits on the device
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
             OCLGridInfo gridInfo = new OCLGridInfo(deviceContext.getDevice(), local);
             boolean checkedDimensions = gridInfo.checkGridDimensions();
             if (!checkedDimensions) {
-                System.out.println("Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.");
+                System.out.println(WARNING_THREAD_LOCAL);
                 grid.setLocalWorkToNull();
             }
         }
     }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
-
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);

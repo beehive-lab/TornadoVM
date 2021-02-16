@@ -362,7 +362,7 @@ public class TaskMetaData extends AbstractMetaData {
             long[] nw = this.isWorkerGridAvailable() ? getWorkerGrid(getId()).getNumberOfWorkgroups() : (hasDomain() ? calculateNumberOfWorkgroupsFromDomain(domain) : null);
             deviceDebug.append("\tGlobal work size  : " + formatWorkDimensionArray(gw, "1") + "\n");
             deviceDebug.append("\tLocal  work size  : " + (lw == null ? "null" : formatWorkDimensionArray(lw, "1")) + "\n");
-            deviceDebug.append("\tnumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
+            deviceDebug.append("\tNumber of workgroups  : " + (nw == null ? "null" : formatWorkDimensionArray(nw, "1")) + "\n");
         }
         System.out.println(deviceDebug);
     }
