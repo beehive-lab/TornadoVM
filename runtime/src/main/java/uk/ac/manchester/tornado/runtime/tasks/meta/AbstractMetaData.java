@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveD
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridTask;
@@ -376,6 +377,22 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         }
     }
 
+    private static final ThreadLocal<TaskMetaDataInterface> PARENT_METADATA = new ThreadLocal<>();
+    public static <T> T usingParent(TaskMetaDataInterface parent, Supplier<T> supplier) {
+        TaskMetaDataInterface prev = PARENT_METADATA.get();
+        PARENT_METADATA.set(parent);
+        try {
+            return supplier.get();
+        } finally {
+            if (null != prev) {
+                PARENT_METADATA.set(prev);
+            } else {
+                PARENT_METADATA.remove();
+            }
+        }  
+    }
+
+
     @Override
     public void setNumThreads(long threads) {
         this.numThreads = threads;
@@ -386,18 +403,19 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    AbstractMetaData(String id, AbstractMetaData parent) {
+    AbstractMetaData(String id, TaskMetaDataInterface parent) {
         this.id = id;
         shouldRecompile = true;
 
         isDeviceDefined = getProperty(id + ".device") != null;
+        TaskMetaDataInterface xparent;
         if (isDeviceDefined) {
             int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
             driverIndex = a[0];
             deviceIndex = a[1];
-        } else if (null != parent) {
-            driverIndex = parent.getDriverIndex();
-            deviceIndex = parent.getDeviceIndex();
+        } else if (null != (xparent = PARENT_METADATA.get()) || null != (xparent = parent)) {
+            driverIndex = xparent.getDriverIndex();
+            deviceIndex = xparent.getDeviceIndex();
         } else {
             driverIndex = Tornado.DEFAULT_DRIVER_INDEX;
             deviceIndex = Tornado.DEFAULT_DEVICE_INDEX;
@@ -493,4 +511,5 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     public boolean isGridSchedulerEnabled() {
         return this.useGridScheduler;
     }
+
 }

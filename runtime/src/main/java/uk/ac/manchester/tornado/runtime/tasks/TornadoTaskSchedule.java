@@ -751,7 +751,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects, graph);
+        reduceTaskScheduleMeta = new ReduceTaskSchedule(this, taskPackages, streamInObjects, streamOutObjects, graph);
         reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }

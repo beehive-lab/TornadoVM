@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
@@ -52,6 +53,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.meta.AbstractMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
@@ -60,12 +62,10 @@ class ReduceTaskSchedule {
 
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
-    private static final int DEFAULT_DRIVER_INDEX = 0;
-    private static final int DEFAULT_DEVICE_INDEX = 0;
-    private static AtomicInteger counterName = new AtomicInteger(0);
-    private static AtomicInteger counterSeqName = new AtomicInteger(0);
+    private static final AtomicInteger counterName = new AtomicInteger(0);
+    private static final AtomicInteger counterSeqName = new AtomicInteger(0);
 
-    private String idTaskSchedule;
+    private TornadoTaskSchedule owner;
     private ArrayList<TaskPackage> taskPackages;
     private ArrayList<Object> streamOutObjects;
     private ArrayList<Object> streamInObjects;
@@ -82,9 +82,9 @@ class ReduceTaskSchedule {
     private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
 
-    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
+    ReduceTaskSchedule(TornadoTaskSchedule owner, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
+        this.owner = owner;
         this.taskPackages = taskPackages;
-        this.idTaskSchedule = taskScheduleID;
         this.streamInObjects = streamInObjects;
         this.streamOutObjects = streamOutObjects;
         this.sketchGraph = graph;
@@ -124,19 +124,6 @@ class ReduceTaskSchedule {
             }
             TornadoOptions.FPGA_BINARIES = originalBinaries;
         }
-    }
-
-    private int[] changeDriverAndDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
-        String idTaskName = tsName + "." + taskName;
-        boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
-        if (isDeviceDefined) {
-            int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
-            int driverNumber = info[0];
-            int deviceNumber = info[1];
-            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", driverNumber + ":" + deviceNumber);
-            return info;
-        }
-        return null;
     }
 
     private void fillOutputArrayWithNeutral(Object reduceArray, Object neutral) {
@@ -420,7 +407,7 @@ class ReduceTaskSchedule {
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.get();
-        String tsName = idTaskSchedule;
+        String tsName = owner.meta().getId();
 
         HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
         ArrayList<Integer> sizesReductionArray = new ArrayList<>();
@@ -432,9 +419,6 @@ class ReduceTaskSchedule {
             reduceOperandTable = new HashMap<>();
         }
 
-        int driverToRun = DEFAULT_DRIVER_INDEX;
-        int deviceToRun = DEFAULT_DEVICE_INDEX;
-
         // Create new buffer variables and update the corresponding streamIn and
         // streamOut
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
@@ -444,11 +428,11 @@ class ReduceTaskSchedule {
 
             ArrayList<Object> streamReduceList = new ArrayList<>();
 
-            int[] driverAndDevice = changeDriverAndDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
-            if (driverAndDevice != null) {
-                driverToRun = driverAndDevice[0];
-                deviceToRun = driverAndDevice[1];
-            }
+            TaskMetaDataInterface originalMeta = owner.getTask(tsName + "." + taskPackage.getId()).meta();
+            int driverToRun = originalMeta.getDriverIndex();
+            int deviceToRun = originalMeta.getDeviceIndex();
+
+            // TODO Check device propagation here!
             inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), false);
 
             if (tableReduce.containsKey(taskNumber)) {
@@ -527,7 +511,8 @@ class ReduceTaskSchedule {
             }
         }
 
-        rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
+        // Inherit device of the owning schedule   
+        rewrittenTaskSchedule = AbstractMetaData.usingParent(owner.meta(), () -> new TaskSchedule(taskScheduleReduceName));
         updateStreamInOutVariables(metaReduceTable.getTable());
 
         // Compose Task Schedule
@@ -537,12 +522,12 @@ class ReduceTaskSchedule {
 
             // Update the reference for the new tasks if there is a data
             // dependency with the new variables created by the TornadoVM
-            int taskType = taskPackages.get(taskNumber).getTaskType();
+            int taskType = taskPackage.getTaskType();
             for (int i = 0; i < taskType; i++) {
-                Object key = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
+                Object key = taskPackage.getTaskParameters()[i + 1];
                 if (originalReduceVariables.containsKey(key)) {
                     Object value = originalReduceVariables.get(key);
-                    taskPackages.get(taskNumber).getTaskParameters()[i + 1] = value;
+                    taskPackage.getTaskParameters()[i + 1] = value;
                 }
             }
 
@@ -551,8 +536,8 @@ class ReduceTaskSchedule {
             // reduce parallel tasks
             if (tableReduce.containsKey(taskNumber)) {
                 // We only analyze for parallel tasks
-                for (int i = 0; i < taskPackages.get(taskNumber).getTaskParameters().length - 1; i++) {
-                    Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
+                for (int i = 0; i < taskPackage.getTaskParameters().length - 1; i++) {
+                    Object parameterToMethod = taskPackage.getTaskParameters()[i + 1];
                     if (reduceOperandTable.containsKey(parameterToMethod)) {
                         if (reduceOperandTable.get(parameterToMethod).size() > 1) {
                             rewrittenTaskSchedule.forceCopyIn(parameterToMethod);
@@ -561,7 +546,7 @@ class ReduceTaskSchedule {
                 }
             }
 
-            rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
+            rewrittenTaskSchedule.addTask(taskPackage);
 
             // Add extra task with the final reduction
             if (tableReduce.containsKey(taskNumber)) {
@@ -578,31 +563,37 @@ class ReduceTaskSchedule {
 
                 ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
 
+                TaskMetaDataInterface originalMeta = owner.getTask(tsName + "." + taskPackage.getId()).meta();
+
                 for (int i = 0; i < streamUpdateList.size(); i++) {
                     Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
-                        String fullName = rewrittenTaskSchedule.getTaskScheduleName() + "." + newTaskSequentialName;
-                        TornadoRuntime.setProperty(fullName + ".device", driverToRun + ":" + deviceToRun);
+
+                        // TODO Check device propagation here!
                         inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
 
-                        switch (operation) {
-                            case ADD:
-                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                break;
-                            case MUL:
-                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                break;
-                            case MAX:
-                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                break;
-                            case MIN:
-                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                break;
-                            default:
-                                throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
-                        }
+                        // Inherit device of the original task
+                        AbstractMetaData.usingParent(originalMeta, () -> { 
+                            switch (operation) {
+                                case ADD:
+                                    ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                    break;
+                                case MUL:
+                                    ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                    break;
+                                case MAX:
+                                    ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                    break;
+                                case MIN:
+                                    ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                    break;
+                                default:
+                                    throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
+                            }
+                            return (Object)null;
+                        }); 
 
                         if (hybridMode) {
                             if (hybridMergeTable == null) {
