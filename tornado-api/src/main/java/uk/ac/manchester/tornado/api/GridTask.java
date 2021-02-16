@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,11 +47,8 @@ public class GridTask {
 
     private final ConcurrentHashMap<String, WorkerGrid> gridTaskMap;
 
-    public GridTask() {
+    public GridTask(String taskName, WorkerGrid workerGrid) {
         gridTaskMap = new ConcurrentHashMap<>();
-    }
-
-    public void set(String taskName, WorkerGrid workerGrid) {
         gridTaskMap.put(taskName, workerGrid);
     }
 

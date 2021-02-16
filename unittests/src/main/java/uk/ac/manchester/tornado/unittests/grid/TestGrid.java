@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,14 @@ import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
 
+/**
+ * How to run?
+ * 
+ * <code>
+ * tornado-test.py -V uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.grid.TestGrid 
+ * </code>
+ * 
+ */
 public class TestGrid extends TornadoTestBase {
 
     private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
@@ -68,8 +76,7 @@ public class TestGrid extends TornadoTestBase {
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
         ts.execute(gridTask);
 
         // Change the Grid
@@ -100,8 +107,7 @@ public class TestGrid extends TornadoTestBase {
                 .streamOut(c); //
 
         WorkerGrid2D worker = new WorkerGrid2D(numElements, numElements);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t1", worker);
+        GridTask gridTask = new GridTask("s0.t1", worker);
         ts.execute(gridTask);
 
         worker.setGlobalWork(512, 512, 1);
@@ -132,8 +138,7 @@ public class TestGrid extends TornadoTestBase {
                 .streamOut(matrixB);
 
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
-        GridTask gridTask = new GridTask();
-        gridTask.set("foo.bar", worker);
+        GridTask gridTask = new GridTask("foo.bar", worker);
         ts.execute(gridTask);
 
         for (int i = 0; i < X; i++) {
@@ -164,8 +169,7 @@ public class TestGrid extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0").task("mxm", TestGrid::matrixMultiplication, matrixA, matrixB, matrixC, N).streamOut(matrixC);
 
         WorkerGrid2D worker = new WorkerGrid2D(N, N);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.mxm", worker);
+        GridTask gridTask = new GridTask("s0.mxm", worker);
         worker.setGlobalWork(N, N, 1);
         worker.setLocalWork(256, 256, 1);
 
