@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,18 +29,18 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 
 public class TestVectorAdditionTornadoVMContextApi {
-    public static void vectorAdd(TornadoVMContext context, int[] a, int[] b, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
-    }
-
     public static void vectorAddJava(int[] a, int[] b, int[] c) {
         for (int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }
 
+    public static void vectorAdd1(TornadoVMContext context, int[] a, int[] b, int[] c) {
+        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    }
+
     @Test
-    public void vectorAddTornadoVMContextApi() {
+    public void vectorAddTornadoVMContextApi1() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -55,7 +55,106 @@ public class TestVectorAdditionTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd, context, a, b, cTornado).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd1, context, a, b, cTornado).streamOut(cTornado);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(1, 1, 1);
+        s0.execute(gridTask);
+
+        vectorAddJava(a, b, cJava);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(cJava[i], cTornado[i]);
+        }
+    }
+
+    public static void vectorAdd2(int[] a, TornadoVMContext context, int[] b, int[] c) {
+        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    }
+
+    @Test
+    public void vectorAddTornadoVMContextApi2() {
+        final int size = 16;
+        int[] a = new int[size];
+        int[] b = new int[size];
+        int[] cJava = new int[size];
+        int[] cTornado = new int[size];
+
+        Arrays.fill(a, 10);
+        Arrays.fill(b, 20);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", worker);
+        TornadoVMContext context = new TornadoVMContext(worker);
+
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd2, a, context, b, cTornado).streamOut(cTornado);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(1, 1, 1);
+        s0.execute(gridTask);
+
+        vectorAddJava(a, b, cJava);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(cJava[i], cTornado[i]);
+        }
+    }
+
+    public static void vectorAdd3(int[] a, int[] b, TornadoVMContext context, int[] c) {
+        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    }
+
+    @Test
+    public void vectorAddTornadoVMContextApi3() {
+        final int size = 16;
+        int[] a = new int[size];
+        int[] b = new int[size];
+        int[] cJava = new int[size];
+        int[] cTornado = new int[size];
+
+        Arrays.fill(a, 10);
+        Arrays.fill(b, 20);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", worker);
+        TornadoVMContext context = new TornadoVMContext(worker);
+
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd3, a, b, context, cTornado).streamOut(cTornado);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(1, 1, 1);
+        s0.execute(gridTask);
+
+        vectorAddJava(a, b, cJava);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(cJava[i], cTornado[i]);
+        }
+    }
+
+    public static void vectorAdd4(int[] a, int[] b, int[] c, TornadoVMContext context) {
+        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    }
+
+    @Test
+    public void vectorAddTornadoVMContextApi4() {
+        final int size = 16;
+        int[] a = new int[size];
+        int[] b = new int[size];
+        int[] cJava = new int[size];
+        int[] cTornado = new int[size];
+
+        Arrays.fill(a, 10);
+        Arrays.fill(b, 20);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", worker);
+        TornadoVMContext context = new TornadoVMContext(worker);
+
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd4, a, b, cTornado, context).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
