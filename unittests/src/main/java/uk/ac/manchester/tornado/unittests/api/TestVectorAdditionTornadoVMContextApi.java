@@ -58,7 +58,7 @@ public class TestVectorAdditionTornadoVMContextApi {
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd1, context, a, b, cTornado).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
-        worker.setLocalWork(1, 1, 1);
+        worker.setLocalWorkToNull();
         s0.execute(gridTask);
 
         vectorAddJava(a, b, cJava);
@@ -91,7 +91,6 @@ public class TestVectorAdditionTornadoVMContextApi {
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd2, a, context, b, cTornado).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
-        worker.setLocalWork(1, 1, 1);
         s0.execute(gridTask);
 
         vectorAddJava(a, b, cJava);
