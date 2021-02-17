@@ -376,22 +376,50 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             return getProperty(id + "." + keySuffix);
         }
     }
+    
+    private static final ThreadLocal<int[]> HARD_DEVICE_OVERRIDE = new ThreadLocal<>();
+    private static final ThreadLocal<int[]> SOFT_DEVICE_OVERRIDE = new ThreadLocal<>();
+    @SuppressWarnings("unchecked")
+    private static final ThreadLocal<int[]>[] DEVICE_OVERRIDES = new ThreadLocal[]{HARD_DEVICE_OVERRIDE, SOFT_DEVICE_OVERRIDE};
 
-    private static final ThreadLocal<TaskMetaDataInterface> PARENT_METADATA = new ThreadLocal<>();
-    public static <T> T usingParent(TaskMetaDataInterface parent, Supplier<T> supplier) {
-        TaskMetaDataInterface prev = PARENT_METADATA.get();
-        PARENT_METADATA.set(parent);
+    public static <T> T withHardDeviceOverride(TaskMetaDataInterface proto, Supplier<T> supplier) {
+        return withHardDeviceOverride(proto.getDriverIndex(), proto.getDeviceIndex(), supplier);
+    }
+    
+    public static <T> T withHardDeviceOverride(int driverIndex, int deviceIndex, Supplier<T> supplier) {
+        return withDeviceOverride(new int[] {driverIndex,  deviceIndex}, null, supplier);
+    }
+    
+    public static <T> T withSoftDeviceOverride(TaskMetaDataInterface proto, Supplier<T> supplier) {
+        return withSoftDeviceOverride(proto.getDriverIndex(), proto.getDeviceIndex(), supplier);
+    }
+    
+    public static <T> T withSoftDeviceOverride(int driverIndex, int deviceIndex, Supplier<T> supplier) {
+        return withDeviceOverride(null, new int[] {driverIndex,  deviceIndex}, supplier);
+    }
+    
+    private static <T> T withDeviceOverride(int[] hardDeviceOverride, int[] softDeviceOverride, Supplier<T> supplier) {
+        int[][] previous = new int[2][];
+        int idx = 0;
+        for (ThreadLocal<int[]> tl : DEVICE_OVERRIDES) {
+            previous[idx++] = tl.get();
+        }
+        HARD_DEVICE_OVERRIDE.set(hardDeviceOverride);
+        SOFT_DEVICE_OVERRIDE.set(softDeviceOverride);
         try {
             return supplier.get();
         } finally {
-            if (null != prev) {
-                PARENT_METADATA.set(prev);
-            } else {
-                PARENT_METADATA.remove();
+            idx = 0;
+            for (ThreadLocal<int[]> tl : DEVICE_OVERRIDES) {
+                if (previous[idx] == null) {
+                    tl.remove();
+                } else {
+                    tl.set(previous[idx]);
+                }
+                idx++;
             }
-        }  
+        }
     }
-
 
     @Override
     public void setNumThreads(long threads) {
@@ -407,18 +435,23 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         this.id = id;
         shouldRecompile = true;
 
-        isDeviceDefined = getProperty(id + ".device") != null;
-        TaskMetaDataInterface xparent;
-        if (isDeviceDefined) {
-            int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
-            driverIndex = a[0];
-            deviceIndex = a[1];
-        } else if (null != (xparent = PARENT_METADATA.get()) || null != (xparent = parent)) {
-            driverIndex = xparent.getDriverIndex();
-            deviceIndex = xparent.getDeviceIndex();
+        String deviceSettings;
+        int[] deviceOverride;
+        if (null != (deviceOverride = HARD_DEVICE_OVERRIDE.get()) ||
+            null != (deviceSettings = getProperty(id + ".device")) && (null != (deviceOverride = MetaDataUtils.resolveDriverDeviceIndexes(deviceSettings))) ||
+            null != (deviceOverride = SOFT_DEVICE_OVERRIDE.get())) {
+            // Order of checks above matters
+            driverIndex = deviceOverride[0];
+            deviceIndex = deviceOverride[1];
+            isDeviceDefined = true;
+        } else if (null != parent) {
+            driverIndex = parent.getDriverIndex();
+            deviceIndex = parent.getDeviceIndex();
+            isDeviceDefined = false;
         } else {
             driverIndex = Tornado.DEFAULT_DRIVER_INDEX;
             deviceIndex = Tornado.DEFAULT_DEVICE_INDEX;
+            isDeviceDefined = false;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));
