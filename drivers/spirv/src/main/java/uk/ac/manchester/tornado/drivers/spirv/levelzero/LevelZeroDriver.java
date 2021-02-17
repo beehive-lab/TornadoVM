@@ -18,17 +18,72 @@ public class LevelZeroDriver {
         architecturePointers = new HashMap<>();
     }
 
+    /**
+     * 
+     * Initialize the 'oneAPI' driver(s)
+     * 
+     * This function must be called before any other API function. - If this
+     * function is not called then all other functions will return
+     * ::ZE_RESULT_ERROR_UNINITIALIZED.
+     * 
+     * Only one instance of each driver will be initialized per process. - This
+     * function is thread-safe for scenarios where multiple libraries may initialize
+     * the driver(s) simultaneously.
+     * 
+     * @returns An error code value:
+     * 
+     *          <code>
+     *          ::ZE_RESULT_SUCCESS - 
+     *          ::ZE_RESULT_ERROR_UNINITIALIZED -
+     *          ::ZE_RESULT_ERROR_DEVICE_LOST -
+     *          ::ZE_RESULT_ERROR_INVALID_ENUMERATION + `0x1 < flags` -
+     *          ::ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
+     *           </code>
+     * 
+     * @param init
+     *            Flag
+     * @return
+     */
     public native int zeInit(int init);
 
     private native int zeDriverGet_native(int[] driverCount, long[] ptrPhDrivers);
 
+    /**
+     * Retrieves driver instances
+     * 
+     * A driver represents a collection of physical devices. Multiple calls to this
+     * function will return identical driver handles, in the same order. The
+     * application may pass nullptr for pDrivers when only querying the number of
+     * drivers. The application may call this function from simultaneous threads.
+     * The implementation of this function should be lock-free.
+     * 
+     * @remarks This function is similar to the clGetPlatformIDs from OpenCL.
+     * 
+     * @return A status/result value:
+     * 
+     *         <code>
+     *       ZE_RESULT_SUCCESS
+     *       ZE_RESULT_ERROR_UNINITIALIZED
+     *       ZE_RESULT_ERROR_DEVICE_LOST
+     *       ZE_RESULT_ERROR_INVALID_NULL_POINTER
+     *          + `nullptr == pCount`
+     *      </code>
+     * 
+     * @param driverHandle
+     *            Driver Handler
+     * @param deviceCount
+     *            Array with the device count
+     * @param deviceHandlerPtr
+     *            Device Handler Native Pointers. Pass null to obtain the number of
+     *            devices within the driver.
+     */
     private native int zeDeviceGet(long driverHandle, int[] deviceCount, ZeDevicesHandle deviceHandlerPtr);
 
     private native int zeDriverGetProperties(long driverHandler, ZeDriverProperties driverProperties);
 
     public int zeDriverGet(int[] driverCount, ZeDriverHandle driverHandler) {
-        long[] pointers = driverHandler == null? null: driverHandler.getZe_driver_handle_t_ptr();
-        int result =  zeDriverGet_native(driverCount, pointers);
+        long[] pointers = driverHandler == null ? null : driverHandler.getZe_driver_handle_t_ptr();
+        int result = zeDriverGet_native(driverCount, pointers);
         architectureMap.put(driverHandler, null);
         return result;
     }
@@ -45,7 +100,7 @@ public class LevelZeroDriver {
 
     public int zeDeviceGet(ZeDriverHandle driverHandler, int indexDriver, int[] deviceCount, ZeDevicesHandle deviceHandle) {
         if (!architectureMap.containsKey(driverHandler)) {
-            throw  new RuntimeException("Driver not initialized");
+            throw new RuntimeException("Driver not initialized");
         }
         int result = zeDeviceGet(driverHandler.getZe_driver_handle_t_ptr()[indexDriver], deviceCount, deviceHandle);
         if (deviceHandle != null) {

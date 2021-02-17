@@ -7,11 +7,6 @@ public class LevelZeroContext {
     ZeContextHandle contextHandle;
     ZeContextDesc contextDescription;
 
-    static {
-        // Use -Djava.library.path=./levelZeroLib/build/
-        System.loadLibrary("tornado-levelzero");
-    }
-
     native int zeContextCreate(long driverHandler, ZeContextDesc contextDescriptionPtr, long[] contextPtr);
 
     public int zeContextCreate_native(long driverHandler, int indexDriverHandler) {
@@ -52,10 +47,12 @@ public class LevelZeroContext {
         return zeCommandListCreateImmediate_native(contextPtr, deviceHandlerPtr, commandQueueDescription, commandList);
     }
 
-    native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr, LevelZeroBufferInteger buffer);
+    native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+            LevelZeroBufferInteger buffer);
 
-    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr, LevelZeroBufferInteger buffer) {
-        return zeMemAllocShared_native(contextPtr, deviceMemAllocDesc,  hostMemAllocDesc,  bufferSize,  alignment,  deviceHandlerPtr,  buffer);
+    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+            LevelZeroBufferInteger buffer) {
+        return zeMemAllocShared_native(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
     }
 
     native int zeModuleCreate_native(long contextPtr, long deviceHandlerPtr, LevelZeroBinaryModule binaryModule, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog);
