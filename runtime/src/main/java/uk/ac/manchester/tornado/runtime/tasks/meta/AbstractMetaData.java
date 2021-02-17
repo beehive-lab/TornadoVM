@@ -43,7 +43,6 @@ import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
@@ -64,7 +63,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private long[] ptxBlockDim;
     private long[] ptxGridDim;
 
-    private DeviceBuffer deviceBuffer;
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
 

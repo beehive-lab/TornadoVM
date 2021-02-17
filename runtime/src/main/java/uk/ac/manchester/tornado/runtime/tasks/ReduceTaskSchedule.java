@@ -94,8 +94,7 @@ class ReduceTaskSchedule {
         return TornadoOptions.FPGA_BINARIES == null ? false : true;
     }
 
-    private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
-        String idTaskName = tsName + "." + taskName;
+    private void inspectBinariesFPGA(String taskScheduleName, TaskMetaDataInterface taskMeta, String taskNameSimple, String sequentialTaskName) {
         StringBuffer originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
             String[] binaries = originalBinaries.toString().split(",");
@@ -111,14 +110,11 @@ class ReduceTaskSchedule {
 
             for (int i = 0; i < binaries.length; i += 2) {
                 String givenTaskName = binaries[i + 1].split(".device")[0];
-                if (givenTaskName.equals(idTaskName)) {
-                    int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
-                    int deviceNumber = info[1];
-
-                    if (!sequential) {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
+                if (givenTaskName.equals(taskMeta.getId())) {
+                    if (null == sequentialTaskName) {
+                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskNameSimple + ".device=0:" + taskMeta.getDeviceIndex());
                     } else {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName + ".device=0:" + deviceNumber);
+                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + sequentialTaskName + ".device=0:" + taskMeta.getDeviceIndex());
                     }
                 }
             }
@@ -406,7 +402,7 @@ class ReduceTaskSchedule {
 
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
-        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.get();
+        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.getAndIncrement();
         String tsName = owner.meta().getId();
 
         HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
@@ -433,7 +429,7 @@ class ReduceTaskSchedule {
             int deviceToRun = originalMeta.getDeviceIndex();
 
             // TODO Check device propagation here!
-            inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), false);
+            inspectBinariesFPGA(taskScheduleReduceName, originalMeta, taskPackage.getId(), null);
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -569,10 +565,10 @@ class ReduceTaskSchedule {
                     Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
-                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
+                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.getAndIncrement();
 
                         // TODO Check device propagation here!
-                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
+                        inspectBinariesFPGA(taskScheduleReduceName, originalMeta, taskPackage.getId(), newTaskSequentialName);
 
                         // Inherit device of the original task
                         AbstractMetaData.usingParent(originalMeta, () -> { 
@@ -601,14 +597,12 @@ class ReduceTaskSchedule {
                             }
                             hybridMergeTable.put(newArray, operation);
                         }
-                        counterSeqName.incrementAndGet();
                     }
                 }
             }
         }
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         executeExpression();
-        counterName.incrementAndGet();
         return rewrittenTaskSchedule;
     }
 

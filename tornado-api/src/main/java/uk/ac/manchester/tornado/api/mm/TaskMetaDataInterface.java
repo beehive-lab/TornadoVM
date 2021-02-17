@@ -47,6 +47,8 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 
 public interface TaskMetaDataInterface {
+	
+	String getId();
 
     List<TornadoEvents> getProfiles();
 
