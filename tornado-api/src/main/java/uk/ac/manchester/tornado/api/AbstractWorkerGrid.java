@@ -41,10 +41,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-
-import java.util.Arrays;
-
 public abstract class AbstractWorkerGrid implements WorkerGrid {
 
     protected long[] globalWork;
@@ -55,13 +51,6 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     public AbstractWorkerGrid(long x, long y, long z) {
         globalWork = new long[] { x, y, z };
         globalOffset = new long[] { 0, 0, 0 };
-    }
-
-    private void calculateNumberOfWorkgroups() {
-        numOfWorkgroups = new long[globalWork.length];
-        for (int i = 0; i < globalWork.length; i++) {
-            numOfWorkgroups[i] = globalWork[i] / localWork[i];
-        }
     }
 
     @Override
@@ -100,4 +89,20 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
         globalOffset = new long[] { x, y, z };
     }
 
+    private void calculateNumberOfWorkgroups() {
+        numOfWorkgroups = new long[globalWork.length];
+        for (int i = 0; i < globalWork.length; i++) {
+            numOfWorkgroups[i] = globalWork[i] / localWork[i];
+        }
+    }
+
+    @Override
+    public void setLocalWorkToNull() {
+        this.localWork = null;
+    }
+
+    @Override
+    public void setNumberOfWorkgroupsToNull() {
+        this.numOfWorkgroups = null;
+    }
 }

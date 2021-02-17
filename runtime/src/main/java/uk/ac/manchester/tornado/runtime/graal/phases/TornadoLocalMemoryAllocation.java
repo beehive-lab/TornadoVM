@@ -62,9 +62,9 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
     }
 
     private int calculateLocalMemAllocSize(TornadoHighTierContext context) {
-        int maxBlockSize = (int) context.getDeviceMapping().getDevice().getDeviceMaxWorkItemSizes()[0];
+        int maxBlockSize = (int) context.getDeviceMapping().getPhysicalDevice().getDeviceMaxWorkItemSizes()[0];
 
-        if (context.getDeviceMapping().getDevice().getDeviceMaxWorkItemSizes()[0] == context.getMeta().getDomain().get(0).cardinality()) {
+        if (context.getDeviceMapping().getPhysicalDevice().getDeviceMaxWorkItemSizes()[0] == context.getMeta().getDomain().get(0).cardinality()) {
             maxBlockSize /= 4;
         }
 

@@ -9,7 +9,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 public class MatrixMul1D {
 
@@ -43,9 +42,7 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        TaskSchedule scheduleCUDA = new TaskSchedule("s0")
-                .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N)
-                .streamOut(matrixC);
+        TaskSchedule scheduleCUDA = new TaskSchedule("s0").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N).streamOut(matrixC);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -57,7 +54,7 @@ public class MatrixMul1D {
         }
 
         // Time CUDA
-        long start, stop;
+        long start,stop;
         long[] execTimesCUDA = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesCUDA.length; i++) {
             start = System.currentTimeMillis();
@@ -68,20 +65,19 @@ public class MatrixMul1D {
 
         OptionalDouble avgCudaOptional = Arrays.stream(execTimesCUDA).average();
         double averageCUDA;
-        if (avgCudaOptional.isPresent()) averageCUDA = avgCudaOptional.getAsDouble();
-        else throw new Exception("Could not get average execution time");
+        if (avgCudaOptional.isPresent())
+            averageCUDA = avgCudaOptional.getAsDouble();
+        else
+            throw new Exception("Could not get average execution time");
 
-
-        TaskSchedule scheduleOCL = new TaskSchedule("s1")
-                .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N)
-                .streamOut(matrixC);
+        TaskSchedule scheduleOCL = new TaskSchedule("s1").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N).streamOut(matrixC);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;
         for (int i = 0; i < oclDriver.getDeviceCount(); i++) {
             TornadoDevice device = oclDriver.getDevice(i);
-            if (device.getDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getDevice().getDeviceName())) {
+            if (device.getPhysicalDevice().getDeviceName().equalsIgnoreCase(cudaDevice.getPhysicalDevice().getDeviceName())) {
                 oclDevice = device;
             }
         }
@@ -107,9 +103,10 @@ public class MatrixMul1D {
 
         OptionalDouble avgOpenCLOptional = Arrays.stream(execTimesOCL).average();
         double averageOpenCL;
-        if (avgOpenCLOptional.isPresent()) averageOpenCL = avgOpenCLOptional.getAsDouble();
-        else throw new Exception("Could not get average execution time");
-
+        if (avgOpenCLOptional.isPresent())
+            averageOpenCL = avgOpenCLOptional.getAsDouble();
+        else
+            throw new Exception("Could not get average execution time");
 
         // Warm up sequential
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -127,9 +124,10 @@ public class MatrixMul1D {
 
         OptionalDouble avgSeqOptional = Arrays.stream(execTimesSeq).average();
         double averageSeq;
-        if (avgSeqOptional.isPresent()) averageSeq = avgSeqOptional.getAsDouble();
-        else throw new Exception("Could not get average execution time");
-
+        if (avgSeqOptional.isPresent())
+            averageSeq = avgSeqOptional.getAsDouble();
+        else
+            throw new Exception("Could not get average execution time");
 
         // Compute Gigaflops and performance
         double flops = 2 * Math.pow(N, 3);
@@ -146,6 +144,6 @@ public class MatrixMul1D {
         System.out.println("\tOpenCL Speedup: " + OpenCLspeedup + "x");
         System.out.println("\tPTX Speedup: " + CUDAspeedup + "x");
         System.out.println();
-        
+
     }
 }

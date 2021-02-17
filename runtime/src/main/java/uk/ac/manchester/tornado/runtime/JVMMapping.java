@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
@@ -192,7 +193,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoTargetDevice getDevice() {
+    public TornadoTargetDevice getPhysicalDevice() {
         return null;
     }
 
@@ -289,6 +290,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
 
+    }
+
+    @Override
+    public TornadoVMBackend getTornadoVMBackend() {
+        return TornadoVMBackend.JAVA;
     }
 
 }

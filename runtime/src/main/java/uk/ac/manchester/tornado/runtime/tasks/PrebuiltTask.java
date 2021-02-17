@@ -111,7 +111,7 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public TornadoAcceleratorDevice getDevice() {
-        return meta.getDevice();
+        return meta.getLogicDevice();
     }
 
     @Override

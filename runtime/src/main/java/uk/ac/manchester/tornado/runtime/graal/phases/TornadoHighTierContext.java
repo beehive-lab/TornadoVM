@@ -75,7 +75,7 @@ public class TornadoHighTierContext extends HighTierContext {
     }
 
     public TornadoAcceleratorDevice getDeviceMapping() {
-        return meta.getDevice();
+        return meta.getLogicDevice();
     }
 
     public boolean hasMeta() {
