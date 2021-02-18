@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,8 +66,7 @@ public class TestGridScheduler {
         float sequential = computeSequential(a, b, sequentialC);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b, size).task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC).task("t1", TestGridScheduler::reduceAdd, tornadoC, size)
                 .streamOut(tornadoC);
@@ -93,10 +92,13 @@ public class TestGridScheduler {
         float sequential = computeSequential(a, b, sequentialC);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b, size).task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC).streamOut(tornadoC);
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(a, b, size) //
+                .task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC) //
+                .streamOut(tornadoC);
+
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
