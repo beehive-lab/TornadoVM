@@ -186,12 +186,12 @@ public class TornadoSketcher {
     }
 
     static void buildSketch(SketchRequest request) {
-        if (cacheContainsSketch(request.resolvedMethod, request.meta.getDriverIndex(), request.meta.getDeviceIndex())) {
+        if (cacheContainsSketch(request.resolvedMethod, request.driverIndex, request.deviceIndex)) {
             return;
         }
         List<TornadoSketcherCacheEntry> sketches = cache.computeIfAbsent(request.resolvedMethod, k -> Collections.synchronizedList(new ArrayList<>(TornadoVMBackend.values().length)));
         Future<Sketch> result = getTornadoExecutor().submit(new TornadoSketcherCallable(request));
-        sketches.add(new TornadoSketcherCacheEntry(request.meta.getDriverIndex(), request.meta.getDeviceIndex(), result));
+        sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
     }
 
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
