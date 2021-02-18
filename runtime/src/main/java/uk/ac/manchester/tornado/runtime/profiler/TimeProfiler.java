@@ -225,7 +225,7 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public void dumpJson(StringBuffer json, String id) {
-        String jsonContent = this.createJson(json, id);
+        String jsonContent = createJson(json, id);
         System.out.println(jsonContent);
     }
 
