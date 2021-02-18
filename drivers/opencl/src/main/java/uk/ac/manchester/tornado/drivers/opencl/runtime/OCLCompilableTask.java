@@ -48,7 +48,11 @@ public class OCLCompilableTask extends CompilableTask {
     private final Map<OCLBackend, OCLInstalledCode> codeCache;
 
     public OCLCompilableTask(ScheduleMetaData meta, String id, Method method, Object thisObject, Object... args) {
-        super(meta, id, method, thisObject, args);
+        this(meta, id, Collections.emptyMap(), method, thisObject, args);
+    }
+    
+    public OCLCompilableTask(ScheduleMetaData meta, String id, Map<String, Object> properties, Method method, Object thisObject, Object... args) {
+        super(meta, id, properties, method, thisObject, args);
         this.codeCache = new HashMap<>();
     }
 

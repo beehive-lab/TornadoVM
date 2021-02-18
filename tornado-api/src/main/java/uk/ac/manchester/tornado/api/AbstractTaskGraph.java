@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -116,7 +118,11 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy);
 
-    void addTask(TaskPackage taskPackage);
+    default void addTask(TaskPackage taskPackage) {
+        addTask(taskPackage, Collections.emptyMap());
+    }
+    
+    void addTask(TaskPackage taskPackage, Map<String, Object> properties);
 
     void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 

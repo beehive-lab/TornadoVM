@@ -25,9 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
+import java.util.Collections;
+
 public class ScheduleMetaData extends AbstractMetaData {
 
     public ScheduleMetaData(String id) {
-        super(id, null);
+        super(id, Collections.emptyMap(), null);
     }
 }

@@ -26,6 +26,8 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -50,11 +52,15 @@ public class CompilableTask implements SchedulableTask {
     private boolean forceCompiler;
 
     public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
+        this(meta, id, Collections.emptyMap(), method, args);
+    }
+    
+    public CompilableTask(ScheduleMetaData meta, String id, Map<String, Object> properties, Method method, Object... args) {
         this.method = method;
         this.args = args;
         this.shouldCompile = true;
         this.resolvedArgs = args;
-        this.meta = TaskMetaData.create(meta, id, method, false);
+        this.meta = TaskMetaData.create(meta, id, properties, method, false);
     }
 
     @Override

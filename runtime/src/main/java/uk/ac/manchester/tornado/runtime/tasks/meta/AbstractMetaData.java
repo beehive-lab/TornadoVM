@@ -30,9 +30,10 @@ import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Map;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridTask;
@@ -48,7 +49,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
-    private String id;
+    private final String id;
+    private final Map<String, Object> properties;
     private TornadoAcceleratorDevice device;
     private boolean shouldRecompile;
     private final boolean isDeviceDefined;
@@ -119,6 +121,16 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         this.deviceIndex = getDeviceIndex(driverIndex, device);
         this.device = device;
     }
+    
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
 
     @Override
     public int getDriverIndex() {
@@ -132,10 +144,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public String getCpuConfig() {
         return cpuConfig;
-    }
-
-    public String getId() {
-        return id;
     }
 
     public boolean isDebug() {
@@ -376,50 +384,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             return getProperty(id + "." + keySuffix);
         }
     }
-    
-    private static final ThreadLocal<int[]> HARD_DEVICE_OVERRIDE = new ThreadLocal<>();
-    private static final ThreadLocal<int[]> SOFT_DEVICE_OVERRIDE = new ThreadLocal<>();
-    @SuppressWarnings("unchecked")
-    private static final ThreadLocal<int[]>[] DEVICE_OVERRIDES = new ThreadLocal[]{HARD_DEVICE_OVERRIDE, SOFT_DEVICE_OVERRIDE};
-
-    public static <T> T withHardDeviceOverride(TaskMetaDataInterface proto, Supplier<T> supplier) {
-        return withHardDeviceOverride(proto.getDriverIndex(), proto.getDeviceIndex(), supplier);
-    }
-    
-    public static <T> T withHardDeviceOverride(int driverIndex, int deviceIndex, Supplier<T> supplier) {
-        return withDeviceOverride(new int[] {driverIndex,  deviceIndex}, null, supplier);
-    }
-    
-    public static <T> T withSoftDeviceOverride(TaskMetaDataInterface proto, Supplier<T> supplier) {
-        return withSoftDeviceOverride(proto.getDriverIndex(), proto.getDeviceIndex(), supplier);
-    }
-    
-    public static <T> T withSoftDeviceOverride(int driverIndex, int deviceIndex, Supplier<T> supplier) {
-        return withDeviceOverride(null, new int[] {driverIndex,  deviceIndex}, supplier);
-    }
-    
-    private static <T> T withDeviceOverride(int[] hardDeviceOverride, int[] softDeviceOverride, Supplier<T> supplier) {
-        int[][] previous = new int[2][];
-        int idx = 0;
-        for (ThreadLocal<int[]> tl : DEVICE_OVERRIDES) {
-            previous[idx++] = tl.get();
-        }
-        HARD_DEVICE_OVERRIDE.set(hardDeviceOverride);
-        SOFT_DEVICE_OVERRIDE.set(softDeviceOverride);
-        try {
-            return supplier.get();
-        } finally {
-            idx = 0;
-            for (ThreadLocal<int[]> tl : DEVICE_OVERRIDES) {
-                if (previous[idx] == null) {
-                    tl.remove();
-                } else {
-                    tl.set(previous[idx]);
-                }
-                idx++;
-            }
-        }
-    }
 
     @Override
     public void setNumThreads(long threads) {
@@ -431,16 +395,22 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    AbstractMetaData(String id, TaskMetaDataInterface parent) {
+    AbstractMetaData(String id, Map<String, Object> properties, TaskMetaDataInterface parent) {
         this.id = id;
+        this.properties = null == properties ? Collections.emptyMap() : Collections.unmodifiableMap(properties);
+        
         shouldRecompile = true;
 
-        String deviceSettings;
-        int[] deviceOverride;
-        if (null != (deviceOverride = HARD_DEVICE_OVERRIDE.get()) ||
-            null != (deviceSettings = getProperty(id + ".device")) && (null != (deviceOverride = MetaDataUtils.resolveDriverDeviceIndexes(deviceSettings))) ||
-            null != (deviceOverride = SOFT_DEVICE_OVERRIDE.get())) {
-            // Order of checks above matters
+        String xdevice;
+        Number xdriverIndex, xdeviceIndex;
+        if (null != (xdriverIndex = (Number)this.properties.get("driverIndex")) && null != (xdeviceIndex = (Number)this.properties.get("deviceIndex"))) {
+            driverIndex = xdriverIndex.intValue();
+            deviceIndex = xdeviceIndex.intValue();
+            isDeviceDefined = true;            
+        } else if (null != (xdevice = (String)this.properties.get("device")) ||
+                   null != (xdevice = getProperty(id + ".device"))) {
+            
+            int[] deviceOverride = MetaDataUtils.resolveDriverDeviceIndexes(xdevice);
             driverIndex = deviceOverride[0];
             deviceIndex = deviceOverride[1];
             isDeviceDefined = true;

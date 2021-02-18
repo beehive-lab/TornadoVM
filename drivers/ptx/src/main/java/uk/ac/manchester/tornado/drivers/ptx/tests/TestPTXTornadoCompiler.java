@@ -88,6 +88,7 @@ public class TestPTXTornadoCompiler {
         PTXBackend backend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
         ScheduleMetaData scheduleMeta = new ScheduleMetaData("ptxBackend");
         TaskMetaData meta = new TaskMetaData(scheduleMeta, "add");
+        meta.setDevice(PTX.defaultDevice());
         new PTXCompilationResult("add", meta);
 
         byte[] source = PTX_KERNEL.getBytes();

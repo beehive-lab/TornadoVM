@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Map;
+
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
@@ -74,6 +76,16 @@ public interface TornadoAPI {
      * @return {@link @TornadoAPI}
      */
     TornadoAPI addTask(TaskPackage taskPackage);
+    
+    /**
+     * It adds a task by using a {@link TaskPackage}.
+     * 
+     * @param taskPackage
+     *            {@link uk.ac.manchester.tornado.api.common.TaskPackage}
+     * @param task-specific metadata properties           
+     * @return {@link @TornadoAPI}
+     */
+    TornadoAPI addTask(TaskPackage taskPackage, Map<String, Object> properties);
 
     /**
      * Add task with no parameter.

@@ -29,15 +29,16 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -61,7 +62,6 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.AbstractMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
@@ -73,23 +73,31 @@ class ReduceTaskSchedule {
     private static final AtomicInteger counterName = new AtomicInteger(0);
     private static final AtomicInteger counterSeqName = new AtomicInteger(0);
 
+    
+    static class CompiledTaskPackage {
+        final TaskPackage task;
+        final InstalledCode code;
+        CompiledTaskPackage(TaskPackage task, InstalledCode code) {
+            this.task = task;
+            this.code = code;
+        }
+    }
+    
     private TornadoTaskSchedule owner;
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
     private List<Object> streamInObjects;
     private Map<Object, Object> originalReduceVariables;
-    private Map<Object, Object> hostHybridVariables;
+    private Map<Object, Object> hostHybridVariables = new ConcurrentHashMap<>();
     private Map<Object, Object> neutralElementsNew = new HashMap<>();
     private Map<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
     private Map<Object, LinkedList<Integer>> reduceOperandTable;
     private CachedGraph<?> sketchGraph;
     private boolean hybridMode;
-    private boolean hybridInitialized;
-    private List<CompletableFuture<?>> runningHybridJobs;
-    private List<Function<Map<Object, Object>,CompletableFuture<Void>>> pendingHybridJobs;
     private Map<Object, REDUCE_OPERATION> hybridMergeTable;
-
+    private List<CompletableFuture<CompiledTaskPackage>> compilationHostJobs = new ArrayList<>();
+    
     ReduceTaskSchedule(TornadoTaskSchedule owner, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<Object> streamOutObjects, CachedGraph<?> graph) {
         this.owner = owner;
         this.taskPackages = taskPackages;
@@ -98,7 +106,7 @@ class ReduceTaskSchedule {
         this.sketchGraph = graph;
     }
 
-    private boolean isAheadOfTime() {
+    private static boolean isAheadOfTime() {
         return TornadoOptions.FPGA_BINARIES == null ? false : true;
     }
 
@@ -132,7 +140,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private void fillOutputArrayWithNeutral(Object reduceArray, Object neutral) {
+    private static void fillOutputArrayWithNeutral(Object reduceArray, Object neutral) {
         if (reduceArray instanceof int[]) {
             Arrays.fill((int[]) reduceArray, (int) neutral);
         } else if (reduceArray instanceof float[]) {
@@ -146,7 +154,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private Object createNewReduceArray(Object reduceVariable, int size) {
+    private static Object createNewReduceArray(Object reduceVariable, int size) {
         if (size == 1) {
             return reduceVariable;
         }
@@ -163,7 +171,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private Object createNewReduceArray(Object reduceVariable) {
+    private static Object createNewReduceArray(Object reduceVariable) {
         if (reduceVariable instanceof int[]) {
             return new int[1];
         } else if (reduceVariable instanceof float[]) {
@@ -177,7 +185,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private Object getNeutralElement(Object originalArray) {
+    private static Object getNeutralElement(Object originalArray) {
         if (originalArray instanceof int[]) {
             return ((int[]) originalArray)[0];
         } else if (originalArray instanceof float[]) {
@@ -191,7 +199,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private boolean isPowerOfTwo(final long number) {
+    private static boolean isPowerOfTwo(final long number) {
         return ((number & (number - 1)) == 0);
     }
 
@@ -242,32 +250,6 @@ class ReduceTaskSchedule {
         return false;
     }
 
-    private void joinHostThreads() {
-        if (runningHybridJobs != null && !runningHybridJobs.isEmpty()) {
-            CompletableFuture.allOf(runningHybridJobs.toArray(new CompletableFuture[0])).whenComplete((__, ex) -> {
-                hybridInitialized = false;
-                if (null != ex) {
-                    ex.printStackTrace();
-                }
-            });
-        }
-    }
-
-    private static Supplier<InstalledCode> createCompilationJob(TaskPackage taskPackage, long sizeTargetDevice) {
-        Object codeTask = taskPackage.getTaskParameters()[0];
-        return () -> {
-            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-            assert originalGraph != null;
-            StructuredGraph graph = (StructuredGraph) originalGraph.copy(getDebugContext());
-            ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
-            return CodeAnalysis.compileAndInstallMethod(graph);            
-        };
-    }
-    
-    private Function<Map<Object, Object>, CompletableFuture<Void>> pendingCompilationState(TaskPackage taskPackage, CompletableFuture<InstalledCode> compilationJob) {
-        return hostHybridVariables -> compilationJob.thenAccept(installedCode -> runBinaryCodeForReduction(taskPackage, installedCode, hostHybridVariables)); 
-    }
-
     private void updateStreamInOutVariables(HashMap<Integer, MetaReduceTasks> tableReduce) {
         // Update Stream IN and Stream OUT
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
@@ -310,29 +292,39 @@ class ReduceTaskSchedule {
         }
     }
 
-    private boolean isDeviceAnAccelerator(int driverIndex, int deviceToRun) {
+    private static boolean isDeviceAnAccelerator(int driverIndex, int deviceToRun) {
         TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceToRun).getDeviceType();
         return (deviceType == TornadoDeviceType.ACCELERATOR);
     }
 
-    private void updateGlobalAndLocalDimensionsFPGA(int driverIndex, int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
+    private static Map<String, Object> overrideGlobalAndLocalDimensionsFPGA(int driverIndex, int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
+        Map<String, Object> result = new HashMap<>();
         // Update GLOBAL and LOCAL Dims if device to run is the FPGA
         if (isAheadOfTime() && isDeviceAnAccelerator(driverIndex, deviceToRun)) {
-            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
-            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
+            result.put("global.dims", Integer.valueOf(inputSize));
+            result.put("local.dims", Integer.valueOf(64));
         }
+        return result;
     }
 
     private Object createHostArrayForHybridMode(Object originalReduceArray, TaskPackage taskPackage, int sizeTargetDevice) {
         hybridMode = true;
-        if (hostHybridVariables == null) {
-            hostHybridVariables = new HashMap<>();
-        }
         Object hybridArray = createNewReduceArray(originalReduceArray);
         Object neutralElement = getNeutralElement(originalReduceArray);
         fillOutputArrayWithNeutral(hybridArray, neutralElement);
         taskPackage.setNumThreadsToRun(sizeTargetDevice);
         return hybridArray;
+    }
+    
+    private static Supplier<InstalledCode> createCompilationJob(TaskPackage taskPackage, long sizeTargetDevice) {
+        Object codeTask = taskPackage.getTaskParameters()[0];
+        return () -> {
+            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
+            assert originalGraph != null;
+            StructuredGraph graph = (StructuredGraph) originalGraph.copy(getDebugContext());
+            ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
+            return CodeAnalysis.compileAndInstallMethod(graph);            
+        };
     }
 
     /**
@@ -371,6 +363,9 @@ class ReduceTaskSchedule {
         // Create new buffer variables and update the corresponding streamIn and
         // streamOut
         Executor executor = TornadoCoreRuntime.getTornadoExecutor();
+        Map<String, Integer> inputSizes = new HashMap<>();
+        compilationHostJobs.clear();
+        
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
             ArrayList<Integer> listOfReduceIndexParameters;
@@ -403,8 +398,6 @@ class ReduceTaskSchedule {
 
                     inputSize = metaReduceTasks.getInputSize(taskNumber);
 
-                    updateGlobalAndLocalDimensionsFPGA(driverToRun, deviceToRun, taskScheduleReduceName, taskPackage, inputSize);
-
                     // Analyse Input Size - if not power of 2 -> split host and device executions
                     boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
                     Object hostHybridModeArray = null;
@@ -419,6 +412,8 @@ class ReduceTaskSchedule {
                         }
                     }
 
+                    inputSizes.put(originalMeta.getId(), Integer.valueOf(inputSize));
+                    
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(driverToRun, deviceToRun, inputSize);
                     Object newDeviceArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
@@ -441,27 +436,18 @@ class ReduceTaskSchedule {
                 streamReduceTable.put(taskNumber, streamReduceList);
 
                 if (hybridMode) {
-                    CompletableFuture<InstalledCode> compilationJob = CompletableFuture.supplyAsync(createCompilationJob(taskPackage, inputSize), executor);
+                    CompletableFuture<CompiledTaskPackage> compilationJob = CompletableFuture.supplyAsync(createCompilationJob(taskPackage, inputSize), executor)
+                                                                                             .thenApply(installedCode -> new CompiledTaskPackage(taskPackage, installedCode));
                     
-                    if (pendingHybridJobs == null) {
-                        pendingHybridJobs = new ArrayList<>();
-                    }
-                    Function<Map<Object, Object>, CompletableFuture<Void>> pending = pendingCompilationState(taskPackage, compilationJob);
-                    pendingHybridJobs.add(pending);
-                    
-                    if (runningHybridJobs == null) {
-                        runningHybridJobs = new ArrayList<>();
-                    }
-
-                    CompletableFuture<Void> sequentialExecutionJob = pending.apply(hostHybridVariables);
-                    runningHybridJobs.add(sequentialExecutionJob);
-                    hybridInitialized = true;
+                    compilationHostJobs.add(compilationJob);
                 }
             }
         }
 
+        rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
         // Inherit device of the owning schedule   
-        rewrittenTaskSchedule = AbstractMetaData.withSoftDeviceOverride(owner.meta(), () -> new TaskSchedule(taskScheduleReduceName));
+        rewrittenTaskSchedule.setDevice(owner.getDevice());
+        
         updateStreamInOutVariables(metaReduceTable.getTable());
 
         // Compose Task Schedule
@@ -495,7 +481,16 @@ class ReduceTaskSchedule {
                 }
             }
 
-            rewrittenTaskSchedule.addTask(taskPackage);
+            TaskMetaDataInterface originalMeta = owner.getTask(tsName + "." + taskPackage.getId()).meta();
+            int driverToRun = originalMeta.getDriverIndex();
+            int deviceToRun = originalMeta.getDeviceIndex();
+            int inputSize = inputSizes.getOrDefault(originalMeta.getId(), Integer.valueOf(0));
+            
+            Map<String, Object> properties = new HashMap<>();
+            properties.putAll(overrideGlobalAndLocalDimensionsFPGA(driverToRun, deviceToRun, taskScheduleReduceName, taskPackage, inputSize));
+            // Inherit device of the original task
+            properties.putAll(overrideDriverAndDevice(driverToRun, deviceToRun));
+            rewrittenTaskSchedule.addTask(taskPackage, Collections.unmodifiableMap(properties));
 
             // Add extra task with the final reduction
             if (tableReduce.containsKey(taskNumber)) {
@@ -512,37 +507,35 @@ class ReduceTaskSchedule {
 
                 ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
 
-                TaskMetaDataInterface originalMeta = owner.getTask(tsName + "." + taskPackage.getId()).meta();
-
                 for (int i = 0; i < streamUpdateList.size(); i++) {
                     Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
-                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.getAndIncrement();
+                        String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.getAndIncrement();
+                        Map<String, Object> newTaskSequentialProperties = new HashMap<>();
+                        // Inherit device of the original task
+                        newTaskSequentialProperties.putAll(overrideDriverAndDevice(driverToRun, deviceToRun));
+                        newTaskSequentialProperties = Collections.unmodifiableMap(newTaskSequentialProperties);
 
                         // TODO Check device propagation here!
                         inspectBinariesFPGA(taskScheduleReduceName, originalMeta, taskPackage.getId(), newTaskSequentialName);
 
-                        // Inherit device of the original task
-                        AbstractMetaData.withSoftDeviceOverride(originalMeta, () -> { 
-                            switch (operation) {
-                                case ADD:
-                                    ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                    break;
-                                case MUL:
-                                    ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                    break;
-                                case MAX:
-                                    ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                    break;
-                                case MIN:
-                                    ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
-                                    break;
-                                default:
-                                    throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
-                            }
-                            return (Object)null;
-                        }); 
+                        switch (operation) {
+                            case ADD:
+                                ReduceFactory.handleAdd(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                break;
+                            case MUL:
+                                ReduceFactory.handleMul(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                break;
+                            case MAX:
+                                ReduceFactory.handleMax(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                break;
+                            case MIN:
+                                ReduceFactory.handleMin(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                break;
+                            default:
+                                throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
+                        }
 
                         if (hybridMode) {
                             if (hybridMergeTable == null) {
@@ -561,15 +554,28 @@ class ReduceTaskSchedule {
 
     void executeExpression() {
         setNeutralElement();
-        if (hybridMode && !hybridInitialized) {
-            hybridInitialized = true;
-            runningHybridJobs.clear();
-            runningHybridJobs.addAll(
-                pendingHybridJobs.stream().map(j -> j.apply(hostHybridVariables)).collect(Collectors.toList()) 
-            );
-        }
+        List<CompletableFuture<?>> runningHostJobs = forkSequentialHostJobs();
         rewrittenTaskSchedule.execute();
+        awaitSequentialHostJobs(runningHostJobs);
         updateOutputArray();
+    }
+    
+    private List<CompletableFuture<?>> forkSequentialHostJobs() {
+        Executor executor = TornadoCoreRuntime.getTornadoExecutor();
+        return compilationHostJobs
+                .stream()
+                .map(f -> f.thenAcceptAsync(ctp -> runBinaryCodeForReduction(ctp.task, ctp.code, hostHybridVariables), executor))
+                .collect(Collectors.toList());
+    }
+    
+    private static void awaitSequentialHostJobs(List<CompletableFuture<?>> runningHostJobs) {
+        if (runningHostJobs != null && !runningHostJobs.isEmpty()) {
+            CompletableFuture.allOf(runningHostJobs.toArray(new CompletableFuture[0])).whenComplete((__, ex) -> {
+                if (null != ex) {
+                    ex.printStackTrace();
+                }
+            }).join();
+        }
     }
 
     private void setNeutralElement() {
@@ -593,7 +599,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private int operateFinalReduction(int a, int b, REDUCE_OPERATION operation) {
+    private static int operateFinalReduction(int a, int b, REDUCE_OPERATION operation) {
         switch (operation) {
             case ADD:
                 return a + b;
@@ -608,7 +614,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private float operateFinalReduction(float a, float b, REDUCE_OPERATION operation) {
+    private static float operateFinalReduction(float a, float b, REDUCE_OPERATION operation) {
         switch (operation) {
             case ADD:
                 return a + b;
@@ -623,7 +629,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private double operateFinalReduction(double a, double b, REDUCE_OPERATION operation) {
+    private static double operateFinalReduction(double a, double b, REDUCE_OPERATION operation) {
         switch (operation) {
             case ADD:
                 return a + b;
@@ -638,7 +644,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private long operateFinalReduction(long a, long b, REDUCE_OPERATION operation) {
+    private static long operateFinalReduction(long a, long b, REDUCE_OPERATION operation) {
         switch (operation) {
             case ADD:
                 return a + b;
@@ -653,7 +659,7 @@ class ReduceTaskSchedule {
         }
     }
 
-    private void updateVariableFromAccelerator(Object originalReduceVariable, Object newArray) {
+    private static void updateVariableFromAccelerator(Object originalReduceVariable, Object newArray) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 ((int[]) originalReduceVariable)[0] = ((int[]) newArray)[0];
@@ -708,7 +714,6 @@ class ReduceTaskSchedule {
      * </p>
      */
     private void updateOutputArray() {
-        joinHostThreads();
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
             Object originalReduceVariable = pair.getKey();
             Object newArray = pair.getValue();
@@ -777,5 +782,12 @@ class ReduceTaskSchedule {
             value--;
         }
         return value;
+    }
+    
+    private static Map<String, Object> overrideDriverAndDevice(int driverIndex, int deviceIndex) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("driverIndex", driverIndex);
+        result.put("deviceIndex", deviceIndex);
+        return result;
     }
 }

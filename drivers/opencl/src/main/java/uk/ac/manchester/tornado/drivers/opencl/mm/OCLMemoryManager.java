@@ -35,11 +35,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
-    private final ScheduleMetaData scheduleMeta;
     private final long callStackLimit;
     private long callStackPosition;
     private long deviceBufferPosition;
@@ -61,7 +59,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         deviceContext = device;
         callStackLimit = OCL_CALL_STACK_LIMIT;
         initialised = false;
-        scheduleMeta = new ScheduleMetaData("mm-" + device.getDeviceId());
         reset();
     }
 
@@ -175,7 +172,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         deviceBufferAddress = address;
         initialised = true;
         info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getDeviceName());
-        scheduleMeta.setDevice(backend.getDeviceContext().asMapping());
     }
 
     public long toAbsoluteAddress() {

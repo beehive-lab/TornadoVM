@@ -325,7 +325,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public void runLookUpBufferAddressKernel() {
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        // meta name is non-unique, set device explicitly
+        meta.setDevice(deviceContext.asMapping());
         OCLCodeCache codeCache = deviceContext.getCodeCache();
         if (deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
             lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
@@ -364,6 +366,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      */
     private TaskMetaData fpgaInstallCodeLookUpBuffer() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        meta.setDevice(deviceContext.asMapping());
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
         OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
