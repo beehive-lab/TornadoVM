@@ -28,6 +28,10 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 
 public class EmptyProfiler implements TornadoProfiler {
 
+    public EmptyProfiler() {
+
+    }
+
     @Override
     public void addValueToMetric(ProfilerType type, String taskName, long value) {
     }
@@ -79,7 +83,6 @@ public class EmptyProfiler implements TornadoProfiler {
 
     @Override
     public void dump() {
-
     }
 
     @Override
@@ -89,12 +92,10 @@ public class EmptyProfiler implements TornadoProfiler {
 
     @Override
     public void dumpJson(StringBuffer stringBuffer, String id) {
-
     }
 
     @Override
     public void clean() {
-
     }
 
     @Override

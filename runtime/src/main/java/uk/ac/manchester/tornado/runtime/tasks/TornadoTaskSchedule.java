@@ -375,7 +375,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private static class MillesecTimer extends Timer {
+    private static class MilliSecTimer extends Timer {
         @Override
         long time() {
             return System.currentTimeMillis();
@@ -1165,7 +1165,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void runScheduleWithParallelProfiler(Policy policy) {
 
-        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
+        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
         long masterThreadID = Thread.currentThread().getId();
@@ -1449,7 +1449,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runWithSequentialProfiler(Policy policy) {
-        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
+        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         int numDevices = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
         final int totalTornadoDevices = numDevices + 1;
         long[] totalTimers = new long[totalTornadoDevices];
