@@ -786,8 +786,8 @@ class ReduceTaskSchedule {
     
     private static Map<String, Object> overrideDriverAndDevice(int driverIndex, int deviceIndex) {
         Map<String, Object> result = new HashMap<>();
-        result.put("driverIndex", driverIndex);
-        result.put("deviceIndex", deviceIndex);
+        result.put("driverIndex", Integer.valueOf(driverIndex));
+        result.put("deviceIndex", Integer.valueOf(deviceIndex));
         return result;
     }
 }

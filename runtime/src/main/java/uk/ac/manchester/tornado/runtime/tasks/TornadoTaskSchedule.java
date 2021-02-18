@@ -40,16 +40,28 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
@@ -87,6 +99,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
@@ -130,16 +143,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private String taskScheduleName;
 
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
-    private ArrayList<Object> streamOutObjects = new ArrayList<>();
-    private ArrayList<Object> streamInObjects = new ArrayList<>();
+    private List<Object> streamOutObjects = new ArrayList<>();
+    private List<Object> streamInObjects = new ArrayList<>();
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
 
-    private static ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
+    private static final AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
     private static int baseGlobalIndex = 0;
-    private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
 
     private StringBuffer bufferLogProfiler = new StringBuffer();
     private CachedGraph<?> graph;
@@ -150,7 +163,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
-    private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
+    private static final boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
     private static final String TASK_SCHEDULE_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
     private static final int HISTORY_POINTS_PREDICTION = 5;
@@ -751,7 +764,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects, graph);
+        reduceTaskScheduleMeta = new ReduceTaskSchedule(this, taskPackages, streamInObjects, streamOutObjects, graph);
         reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }
@@ -825,7 +838,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         int type = taskPackage.getTaskType();
         switch (type) {
             case 0:
-                @SuppressWarnings("rawtypes") Task task = (Task) taskPackage.getTaskParameters()[0];
+                Task task = (Task) taskPackage.getTaskParameters()[0];
                 task.apply();
                 break;
             case 1:
@@ -915,7 +928,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private int synchronizeWithPolicy(Policy policy, long[] totalTimers) {
+    private static int synchronizeWithPolicy(Policy policy, long[] totalTimers) {
         // Set the Performance policy by default;
         if (policy == null) {
             policy = Policy.PERFORMANCE;
@@ -943,32 +956,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return deviceWinnerIndex;
     }
 
-    private int syncWinner(Thread[] threads) {
-        int winner = 0;
-        boolean isAlive = true;
-        while (isAlive) {
-
-            for (int i = 0; i < threads.length; i++) {
-                isAlive = threads[i].isAlive();
-                if (!isAlive) {
-                    if (TornadoOptions.DEBUG_POLICY) {
-                        System.out.println("Thread " + threads[i].getName() + " finished");
-                    }
-                    winner = i;
-                    // kill the others
-                    for (int j = 0; j < threads.length; j++) {
-                        if (i != j) {
-                            threads[j].interrupt();
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        return winner;
-    }
-
-    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+    static void performStreamInThread(TaskSchedule task, List<Object> inputObjects) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -1029,7 +1017,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+    static void performStreamOutThreads(TaskSchedule task, List<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -1097,11 +1085,36 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             runSequentialCodeInThread(taskPackage);
         }
     }
+    
+    private static <T> Callable<T> runWithRenamedThread(String newThreadName, Callable<T> code) {
+        return () -> {
+            Thread currentThread = Thread.currentThread();
+            String oldThreadName = currentThread.getName();
+            boolean threadRenamed = false;
+            try {
+                currentThread.setName(newThreadName);
+                threadRenamed = true;
+            } catch (SecurityException ex) {
+                
+            }
+            try {
+                return code.call();
+            } finally  {
+                if (threadRenamed) {
+                    currentThread.setName(oldThreadName);
+                }            
+            }
+        };
+    }
+    
+    private static String deviceName(int driverIndex, int deviceIndex) {
+        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex).getPhysicalDevice().getDeviceName(); 
+    }
 
-    private void runParallelSequential(Policy policy, Thread[] threads, int indexSequential, Timer timer, long[] totalTimers) {
+    private Callable<Long> runParallelSequential(Policy policy, Timer timer) {
         // Last Thread runs the sequential code
-        threads[indexSequential] = new Thread(() -> {
-            long start = System.currentTimeMillis();
+       return runWithRenamedThread("Thread-sequential", () -> {
+            long start = timer.time();
             if (policy == Policy.PERFORMANCE) {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     runAllTasksJavaSequential();
@@ -1109,104 +1122,106 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 start = timer.time();
             }
             final long endSequentialCode = timer.time();
-            Thread.currentThread().setName("Thread-sequential");
             if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("Seq finished: " + Thread.currentThread().getName());
             }
 
-            totalTimers[indexSequential] = (endSequentialCode - start);
+            return Long.valueOf(endSequentialCode - start);
         });
     }
 
-    private void runParallelTaskSchedules(int numDevices, Thread[] threads, Timer timer, Policy policy, long[] totalTimers) {
-        for (int i = 0; i < numDevices; i++) {
-            final int taskScheduleNumber = i;
-            threads[i] = new Thread(() -> {
-                String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
-                TaskSchedule task = new TaskSchedule(taskScheduleName);
-
-                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
-
-                long start = timer.time();
-                performStreamInThread(task, streamInObjects);
-                for (int k = 0; k < taskPackages.size(); k++) {
-                    String taskID = taskPackages.get(k).getId();
-                    TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
-                    if (Tornado.DEBUG) {
-                        System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
-                    }
-                    task.addTask(taskPackages.get(k));
+    private List<Callable<Long>> runParallelTaskSchedules(int driverIndex, int numDevices, Policy policy, Timer timer) {
+        return IntStream.range(0, numDevices).mapToObj(taskScheduleNumber -> runWithRenamedThread("Thread-DEV: " + deviceName(driverIndex, taskScheduleNumber), () -> {
+            String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
+            TaskSchedule task = new TaskSchedule(taskScheduleName);
+            
+            long start = timer.time();
+            performStreamInThread(task, streamInObjects);
+            for (TaskPackage taskPackage : taskPackages) {
+                String taskID = taskPackage.getId();
+                /*
+                TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", driverIndex + ":" + taskScheduleNumber);
+                */
+                if (Tornado.DEBUG) {
+                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=" + driverIndex + ":" + taskScheduleNumber);
                 }
-                performStreamOutThreads(task, streamOutObjects);
+                task.addTask(taskPackage, overrideDriverAndDevice(driverIndex,  taskScheduleNumber));
+            }
+            performStreamOutThreads(task, streamOutObjects);
 
-                if (policy == Policy.PERFORMANCE) {
-                    // first warm up
-                    for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
-                        task.execute();
-                    }
-                    start = timer.time();
+            if (policy == Policy.PERFORMANCE) {
+                // first warm up
+                for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
+                    task.execute();
                 }
-                task.execute();
-                final long end = timer.time();
-                taskScheduleIndex.put(taskScheduleNumber, task);
+                start = timer.time();
+            }
+            task.execute();
+            final long end = timer.time();
+            taskScheduleIndex.put(taskScheduleNumber, task);
 
-                if (USE_GLOBAL_TASK_CACHE) {
-                    globalTaskScheduleIndex.put(offsetGlobalIndex.get(), task);
-                    offsetGlobalIndex.incrementAndGet();
-                } else {
-                    globalTaskScheduleIndex.put(taskScheduleNumber, task);
-                }
-
-                totalTimers[taskScheduleNumber] = end - start;
-            });
-        }
+            if (USE_GLOBAL_TASK_CACHE) {
+                globalTaskScheduleIndex.put(offsetGlobalIndex.getAndIncrement(), task);
+            } else {
+                globalTaskScheduleIndex.put(taskScheduleNumber, task);
+            }
+            return Long.valueOf(end - start);
+        })).collect(Collectors.toList());
 
     }
 
-    private void runScheduleWithParallelProfiler(Policy policy) {
-
-        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+    private void runScheduleWithParallelProfiler(int driverIndex, Policy policy) {
+        Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(driverIndex);
         int numDevices = tornadoDriver.getDeviceCount();
         long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
-        final int numThreads = numDevices + 1;
-        final int indexSequential = numDevices;
-        Thread[] threads = new Thread[numThreads];
-        long[] totalTimers = new long[numThreads];
+        int numThreads = numDevices + 1;
+        List<Callable<Long>> jobs = new ArrayList<>(numThreads);
+        
+        // Run all task schedules in parallel        
+        jobs.addAll(runParallelTaskSchedules(driverIndex, numDevices, policy, timer));
 
         // Last Thread runs the sequential code
-        runParallelSequential(policy, threads, indexSequential, timer, totalTimers);
+        jobs.add(runParallelSequential(policy, timer));
+        
+        CompletionService<Long> ecs = new ExecutorCompletionService<>(TornadoCoreRuntime.getTornadoExecutor());
+        List<Future<Long>> futures = jobs.stream().map(job -> ecs.submit(job)).collect(Collectors.toList());
 
-        // Run all task schedules in parallel
-        runParallelTaskSchedules(numDevices, threads, timer, policy, totalTimers);
-
-        // FORK
-        for (int i = 0; i < numThreads; i++) {
-            threads[i].start();
-        }
-
-        // Define the winner, based on the first thread to finish
-        if (policy == Policy.LATENCY) {
-            int deviceWinnerIndex = syncWinner(threads);
-            policyTimeTable.put(policy, deviceWinnerIndex);
-        }
-
-        // JOIN
-        for (Thread t : threads) {
+        // Define the winner, based on the first thread to finish successfully
+        Future<Long> winningFuture = IntStream.range(0, numThreads).mapToObj(__ -> {
             try {
-                t.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                Future<Long> result = ecs.take();
+                result.get();
+                return result;
+            } catch (InterruptedException | ExecutionException ex) {
+                return null;
             }
+        }).filter(Objects::nonNull).findFirst().orElse(null);
+        
+        if (policy == Policy.LATENCY) {
+            if (winningFuture != null) {
+                int deviceWinnerIndex = futures.indexOf(winningFuture);
+                policyTimeTable.put(policy, deviceWinnerIndex);
+            }
+            futures.forEach(f -> f.cancel(true));
         }
+        
+        // Join and collect results 
+        long[] totalTimers = futures.stream().mapToLong(f -> {
+            try {
+                return f.get().longValue();
+            } catch (InterruptedException | ExecutionException ex) {
+                return Long.MAX_VALUE;
+            }
+        }).toArray();
 
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (TornadoOptions.DEBUG_POLICY) {
-                System.out.println(getListDevices());
+                System.out.println(getListDevices(driverIndex));
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -1218,23 +1233,26 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private TaskSchedule taskRecompilation(int deviceWinnerIndex) {
+    private TaskSchedule taskRecompilation(int driverIndex, int deviceWinnerIndex) {
         // Force re-compilation in device <deviceWinnerIndex>
         String taskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
         TaskSchedule taskToCompile = new TaskSchedule(taskScheduleName);
         performStreamInThread(taskToCompile, streamInObjects);
         for (TaskPackage taskPackage : taskPackages) {
+            /*
             String taskID = taskPackage.getId();
-            TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
-            taskToCompile.addTask(taskPackage);
+            TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", driverIndex + ":" + deviceWinnerIndex);
+            */
+            taskToCompile.addTask(taskPackage, overrideDriverAndDevice(driverIndex,  deviceWinnerIndex));
         }
         performStreamOutThreads(taskToCompile, streamOutObjects);
         return taskToCompile;
     }
 
-    private void runTaskScheduleParallelSelected(int deviceWinnerIndex) {
+    private void runTaskScheduleParallelSelected(int driverIndex, int deviceWinnerIndex) {
+        // TODO: This code should be safe to remove
         for (TaskPackage taskPackage : taskPackages) {
-            TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
+            TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", driverIndex + ":" + deviceWinnerIndex);
         }
         if (TornadoOptions.DEBUG_POLICY) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
@@ -1245,7 +1263,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 // This is only if compilation is not using Partial Evaluation
                 task = globalTaskScheduleIndex.get(deviceWinnerIndex);
             } else {
-                task = taskRecompilation(deviceWinnerIndex);
+                task = taskRecompilation(driverIndex, deviceWinnerIndex);
                 // Save the TaskSchedule in cache
                 taskScheduleIndex.put(deviceWinnerIndex, task);
             }
@@ -1255,15 +1273,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph scheduleWithProfile(Policy policy) {
+        int driverIndex = DEFAULT_DRIVER_INDEX;
         if (policyTimeTable.get(policy) == null) {
-            runScheduleWithParallelProfiler(policy);
+            runScheduleWithParallelProfiler(driverIndex, policy);
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
-            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
+            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDeviceCount()) {
                 runSequential();
             } else {
-                runTaskScheduleParallelSelected(deviceWinnerIndex);
+                runTaskScheduleParallelSelected(driverIndex, deviceWinnerIndex);
             }
         }
         return this;
@@ -1280,9 +1299,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @SuppressWarnings("unused")
-    private void cloneInputOutputObjects() {
+    private void cloneInputOutputObjects(int driverIndex) {
         final long startSearchProfiler = (TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(driverIndex);
         int numDevices = tornadoDriver.getDeviceCount();
         // Clone objects (only outputs) for each device
         for (int deviceNumber = 0; deviceNumber < numDevices; deviceNumber++) {
@@ -1325,7 +1344,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
     }
 
-    private void runAllTaskSchedulesInAcceleratorsSequentually(int numDevices, Timer timer, Policy policy, long[] totalTimers) {
+    private void runAllTaskSchedulesInAcceleratorsSequentually(int driverIndex, int numDevices, Timer timer, Policy policy, long[] totalTimers) {
         String[] ignoreTaskNames = System.getProperties().getProperty("tornado.ignore.tasks", "").split(",");
 
         // Running sequentially for all the devices
@@ -1337,9 +1356,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             performStreamInThread(task, streamInObjects);
 
             boolean ignoreTask = false;
-            for (int k = 0; k < taskPackages.size(); k++) {
-                String taskID = taskPackages.get(k).getId();
-
+            for (TaskPackage taskPackage : taskPackages) {
+                String taskID = taskPackage.getId();
                 String name = taskScheduleName + "." + taskID;
                 for (String s : ignoreTaskNames) {
                     if (s.equals(name)) {
@@ -1349,11 +1367,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     }
                 }
 
-                TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
+                /*
+                TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", driverIndex + ":" + taskNumber);
+                */
                 if (Tornado.DEBUG) {
-                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskNumber);
+                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=" + driverIndex + ":" + taskNumber);
                 }
-                task.addTask(taskPackages.get(k));
+                task.addTask(taskPackage, overrideDriverAndDevice(driverIndex,  taskNumber));
             }
 
             if (ignoreTask) {
@@ -1373,8 +1393,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
             // TaskSchedules Global
             if (USE_GLOBAL_TASK_CACHE) {
-                globalTaskScheduleIndex.put(offsetGlobalIndex.get(), task);
-                offsetGlobalIndex.incrementAndGet();
+                globalTaskScheduleIndex.put(offsetGlobalIndex.getAndIncrement(), task);
             } else {
                 globalTaskScheduleIndex.put(taskNumber, task);
             }
@@ -1421,12 +1440,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private String getListDevices() {
+    private String getListDevices(int driverIndex) {
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
         StringBuilder str = new StringBuilder();
         str.append("                  : [");
-        int num = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        int num = driver.getDeviceCount();
         for (int i = 0; i < num; i++) {
-            TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i).getDeviceType();
+            TornadoDeviceType deviceType = driver.getDevice(i).getDeviceType();
             String type = "JAVA";
             switch (deviceType) {
                 case CPU:
@@ -1441,6 +1461,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 case ACCELERATOR:
                     type = "ACCELERATOR";
                     break;
+                default:
+                    break;
             }
             str.append(type + " ,");
         }
@@ -1448,9 +1470,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return str.toString();
     }
 
-    private void runWithSequentialProfiler(Policy policy) {
+    private void runWithSequentialProfiler(int driverIndex, Policy policy) {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
-        int numDevices = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
+        int numDevices = getTornadoRuntime().getDriver(driverIndex).getDeviceCount();
         final int totalTornadoDevices = numDevices + 1;
         long[] totalTimers = new long[totalTornadoDevices];
 
@@ -1458,7 +1480,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         runSequentialTaskSchedule(policy, timer, totalTimers, numDevices);
 
         // Run Task Schedules on the accelerator
-        runAllTaskSchedulesInAcceleratorsSequentually(numDevices, timer, policy, totalTimers);
+        runAllTaskSchedulesInAcceleratorsSequentually(driverIndex, numDevices, timer, policy, totalTimers);
 
         if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
@@ -1467,7 +1489,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateHistoryTables(policy, deviceWinnerIndex);
 
             if (TornadoOptions.DEBUG_POLICY) {
-                System.out.println(getListDevices());
+                System.out.println(getListDevices(driverIndex));
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -1518,14 +1540,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return size;
     }
 
-    private void runInParallel(int deviceWinnerIndex, int numDevices) {
+    private void runInParallel(int driverIndex, int deviceWinnerIndex, int numDevices) {
         // Run with the winner device
         if (deviceWinnerIndex >= numDevices) {
             // Last index corresponds to the sequential in HostVM
             runSequential();
         } else {
             // It runs the parallel in the corresponding device
-            runTaskScheduleParallelSelected(deviceWinnerIndex);
+            runTaskScheduleParallelSelected(driverIndex, deviceWinnerIndex);
         }
     }
 
@@ -1565,10 +1587,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy) {
-        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
+        int driverIndex = DEFAULT_DRIVER_INDEX;
+        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDeviceCount();
 
         if (!executionHistoryPolicy.containsKey(policy)) {
-            runWithSequentialProfiler(policy);
+            runWithSequentialProfiler(driverIndex, policy);
 
             if (EXEPERIMENTAL_MULTI_HOST_HEAP) {
                 restoreVarsIntoJavaHeap(policy, numDevices);
@@ -1582,7 +1605,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             if (!methodHistory.containsKey(fullMethodName)) {
                 // current methods to be compiled are not registered with the
                 // current policy.
-                runWithSequentialProfiler(policy);
+                runWithSequentialProfiler(driverIndex, policy);
             } else {
 
                 // If current methods are found with the current policy -> match
@@ -1597,18 +1620,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 // 2. Make decision
                 if (table.isKeyInTable(inputSize)) {
                     int deviceWinnerIndex = table.getDeviceNumber(inputSize);
-                    runInParallel(deviceWinnerIndex, numDevices);
+                    runInParallel(driverIndex, deviceWinnerIndex, numDevices);
                 } else {
                     // Input size not found
                     if (table.getNumKeys() < HISTORY_POINTS_PREDICTION) {
                         // not enough to make a decision -> run with the whole
                         // profiler
-                        runWithSequentialProfiler(policy);
+                        runWithSequentialProfiler(driverIndex, policy);
                     } else {
                         // get the closet one to the input history data
                         int closestKey = table.getClosestKey(inputSize);
                         int deviceWinnerIndex = table.getTree().get(closestKey);
-                        runInParallel(deviceWinnerIndex, numDevices);
+                        runInParallel(driverIndex, deviceWinnerIndex, numDevices);
                     }
                 }
             }
@@ -1618,10 +1641,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph scheduleWithProfileSequential(Policy policy) {
-        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
+        int driverIndex = DEFAULT_DRIVER_INDEX;
+        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDeviceCount();
 
         if (policyTimeTable.get(policy) == null) {
-            runWithSequentialProfiler(policy);
+            runWithSequentialProfiler(driverIndex, policy);
 
             if (EXEPERIMENTAL_MULTI_HOST_HEAP) {
                 restoreVarsIntoJavaHeap(policy, numDevices);
@@ -1636,69 +1660,71 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 runSequential();
             } else {
                 // Otherwise, it runs the parallel in the corresponding device
-                runTaskScheduleParallelSelected(deviceWinnerIndex);
+                runTaskScheduleParallelSelected(driverIndex, deviceWinnerIndex);
             }
         }
         return this;
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void addInner(int index, int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
+        Map<String, Object> properties = getTask(meta().getId() + "." + id).meta().getProperties();
         switch (type) {
             case 0:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task) parameters[0]));
                 break;
             case 1:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task1) parameters[0], parameters[1]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task1) parameters[0], parameters[1]));
                 break;
             case 2:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task2) parameters[0], parameters[1], parameters[2]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task2) parameters[0], parameters[1], parameters[2]));
                 break;
             case 3:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
                 break;
             case 4:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
                 break;
             case 5:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
                 break;
             case 6:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
                 break;
             case 7:
                 updateInner(index,
-                        TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
+                        TaskUtils.createTask(method, meta, id, properties, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
                 break;
             case 8:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8]));
                 break;
             case 9:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9]));
                 break;
             case 10:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10]));
                 break;
             case 11:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task11) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task11) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11]));
                 break;
             case 12:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task12) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task12) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12]));
                 break;
             case 13:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task13) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task13) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13]));
                 break;
             case 14:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task14) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task14) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14]));
                 break;
             case 15:
-                updateInner(index, TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
+                updateInner(index, TaskUtils.createTask(method, meta, id, properties, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6],
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
@@ -1707,62 +1733,62 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
+    private void addInner(int type, Method method, ScheduleMetaData meta, String id, Map<String, Object> properties, Object[] parameters) {
         switch (type) {
             case 0:
-                addInner(TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task) parameters[0]));
                 break;
             case 1:
-                addInner(TaskUtils.createTask(method, meta, id, (Task1) parameters[0], parameters[1]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task1) parameters[0], parameters[1]));
                 break;
             case 2:
-                addInner(TaskUtils.createTask(method, meta, id, (Task2) parameters[0], parameters[1], parameters[2]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task2) parameters[0], parameters[1], parameters[2]));
                 break;
             case 3:
-                addInner(TaskUtils.createTask(method, meta, id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
                 break;
             case 4:
-                addInner(TaskUtils.createTask(method, meta, id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
                 break;
             case 5:
-                addInner(TaskUtils.createTask(method, meta, id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
                 break;
             case 6:
-                addInner(TaskUtils.createTask(method, meta, id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
                 break;
             case 7:
-                addInner(TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
                 break;
             case 8:
-                addInner(TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8]));
                 break;
             case 9:
-                addInner(TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9]));
                 break;
             case 10:
-                addInner(TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10]));
                 break;
             case 11:
-                addInner(TaskUtils.createTask(method, meta, id, (Task11) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task11) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11]));
                 break;
             case 12:
-                addInner(TaskUtils.createTask(method, meta, id, (Task12) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task12) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12]));
                 break;
             case 13:
-                addInner(TaskUtils.createTask(method, meta, id, (Task13) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task13) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13]));
                 break;
             case 14:
-                addInner(TaskUtils.createTask(method, meta, id, (Task14) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task14) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14]));
                 break;
             case 15:
-                addInner(TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, properties, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
@@ -1798,7 +1824,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void addTask(TaskPackage taskPackage) {
+    public void addTask(TaskPackage taskPackage, Map<String, Object> properties) {
         taskPackages.add(taskPackage);
         String id = taskPackage.getId();
         int type = taskPackage.getTaskType();
@@ -1815,7 +1841,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         meta.setNumThreads(taskPackage.getNumThreadsToRun());
 
         try {
-            addInner(type, method, meta, id, parameters);
+            addInner(type, method, meta, id, properties, parameters);
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
             if (!Tornado.DEBUG) {
@@ -1926,5 +1952,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public String getProfileLog() {
         return bufferLogProfiler.toString();
+    }
+    
+    private static Map<String, Object> overrideDriverAndDevice(int driverIndex, int deviceIndex) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("driverIndex", Integer.valueOf(driverIndex));
+        result.put("deviceIndex", Integer.valueOf(deviceIndex));
+        return Collections.unmodifiableMap(result);
     }
 }
