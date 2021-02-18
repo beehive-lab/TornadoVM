@@ -51,3 +51,10 @@ bin/sdk
 .unittestingStatus
 *dependency-reduced-pom.xml
 graalJars/
+drivers/opencl-jni/src/main/cpp/.idea/
+drivers/opencl-jni/src/main/cpp/cmake-build-debug/
+drivers/ptx-jni/src/main/cpp/.idea/
+drivers/ptx-jni/src/main/cpp/cmake-build-debug/
+drivers/spirv-levelzero-jni/target/
+drivers/spirv/target/
+

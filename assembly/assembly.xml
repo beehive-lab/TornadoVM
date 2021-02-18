@@ -125,6 +125,7 @@
             <includes>
                 <include>tornado:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>tornado:tornado-drivers-opencl-jni:jar:libs</include>
+                <include>tornado:tornado-drivers-spirv-levelzero-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

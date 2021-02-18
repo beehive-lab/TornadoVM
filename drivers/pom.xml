@@ -13,7 +13,6 @@
 
     <modules>
         <module>drivers-common</module>
-        <module>spirv</module>
     </modules>
 
     <profiles>
@@ -26,6 +25,7 @@
                 <module>opencl</module>
                 <module>opencl-jni</module>
                 <module>spirv</module>
+                <module>spirv-levelzero-jni</module>
             </modules>
         </profile>
 

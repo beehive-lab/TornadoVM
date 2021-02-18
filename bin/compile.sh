@@ -37,6 +37,7 @@ options="-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P$1,${selected_backends} "
 if [[ $3 == "OFFLINE" ]]; then
   options="-o $options"
 fi
+echo "mvn $options install"
 mvn $options install 
 
 if [ $? -eq 0 ]; then
