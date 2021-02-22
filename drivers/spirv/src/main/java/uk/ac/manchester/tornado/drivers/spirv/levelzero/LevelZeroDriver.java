@@ -2,11 +2,13 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class LevelZeroDriver {
 
-    private HashMap<ZeDriverHandle, ArrayList<LevelZeroDevice>> architectureMap;
-    private HashMap<ZeDriverHandle, ZeDevicesHandle> architecturePointers;
+    private Map<ZeDriverHandle, ArrayList<LevelZeroDevice>> architectureMap;
+    private Map<ZeDriverHandle, ZeDevicesHandle> architecturePointers;
 
     static {
         // Use -Djava.library.path=./levelZeroLib/build/

@@ -172,4 +172,9 @@ public class TornadoOptions {
      */
     public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", "False");;
 
+    /**
+     * Use Level Zero as a dispatcher for SPIRV
+     */
+    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "True");
+
 }

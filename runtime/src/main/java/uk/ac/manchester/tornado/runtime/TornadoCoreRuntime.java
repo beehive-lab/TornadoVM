@@ -150,6 +150,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         tornadoVMDrivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
+            System.out.println("Loading DRIVER: " + provider);
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
                 tornadoVMDrivers[index] = provider.createDriver(options, vmRuntime, vmConfig);

@@ -10,6 +10,10 @@ public class ZeDriverHandle extends ZePointer {
         this.ze_driver_handle_t_ptr = new long[numDrivers];
     }
 
+    public int getNumDrivers() {
+        return numDrivers;
+    }
+
     public long[] getZe_driver_handle_t_ptr() {
         return this.ze_driver_handle_t_ptr;
     }
