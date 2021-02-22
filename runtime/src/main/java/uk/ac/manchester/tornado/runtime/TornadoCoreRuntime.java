@@ -81,7 +81,11 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         options = new OptionValues(opts);
     }
 
-    private static final Executor EXECUTOR = Executors.newCachedThreadPool();
+    private static final Executor EXECUTOR = Executors.newCachedThreadPool(code -> {
+        Thread t = Executors.defaultThreadFactory().newThread(code);
+        t.setDaemon(true);
+        return t;
+    });
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
     private static final JVMMapping JVM = new JVMMapping();
 

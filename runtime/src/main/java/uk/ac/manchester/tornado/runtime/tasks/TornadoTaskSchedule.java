@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1174,7 +1175,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(driverIndex);
         int numDevices = tornadoDriver.getDeviceCount();
-        long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
         int numThreads = numDevices + 1;
@@ -1193,6 +1193,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         Future<Long> winningFuture = IntStream.range(0, numThreads).mapToObj(__ -> {
             try {
                 Future<Long> result = ecs.take();
+                // Ensure result is valid
                 result.get();
                 return result;
             } catch (InterruptedException | ExecutionException ex) {
@@ -1201,23 +1202,25 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }).filter(Objects::nonNull).findFirst().orElse(null);
         
         if (policy == Policy.LATENCY) {
-            if (winningFuture != null) {
+            if (null != winningFuture) {
                 int deviceWinnerIndex = futures.indexOf(winningFuture);
                 policyTimeTable.put(policy, deviceWinnerIndex);
             }
-            futures.forEach(f -> f.cancel(true));
+            // TODO: investigate why interrupting thread crash JVM (from ACCESS_VIOLATION to Virtual Zero Function call in Graal)
+            // Disable termination for now
+            // futures.forEach(f -> {if (f != winningFuture) f.cancel(true);});
         }
         
         // Join and collect results 
         long[] totalTimers = futures.stream().mapToLong(f -> {
             try {
                 return f.get().longValue();
-            } catch (InterruptedException | ExecutionException ex) {
+            } catch (InterruptedException | ExecutionException | CancellationException ex) {
                 return Long.MAX_VALUE;
             }
         }).toArray();
 
-        if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
+        if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (TornadoOptions.DEBUG_POLICY) {
@@ -1251,9 +1254,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void runTaskScheduleParallelSelected(int driverIndex, int deviceWinnerIndex) {
         // TODO: This code should be safe to remove
+        /*
         for (TaskPackage taskPackage : taskPackages) {
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", driverIndex + ":" + deviceWinnerIndex);
         }
+        */
         if (TornadoOptions.DEBUG_POLICY) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
