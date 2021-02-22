@@ -64,7 +64,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         computeCapability = initComputeCapability();
         targetArchitecture = ptxVersion.getArchitecture(computeCapability);
 
-        // A PTXcontext for the CUDevice must be created first before cuMemGetInfo
+        // A PTXContext for the CUDevice must be created first before cuMemGetInfo
         // is invoked.
         context = new PTXContext(this);
         maxAllocationSize = cuMemGetInfo();

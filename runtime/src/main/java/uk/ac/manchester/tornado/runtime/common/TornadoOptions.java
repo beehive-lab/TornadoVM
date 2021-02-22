@@ -175,6 +175,6 @@ public class TornadoOptions {
     /**
      * Use Level Zero as a dispatcher for SPIRV
      */
-    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "False");
+    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "True");
 
 }

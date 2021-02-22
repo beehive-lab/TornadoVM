@@ -21,8 +21,14 @@ public class SPIRVProxy {
     static {
         try {
             if (TornadoOptions.USE_LEVELZERO_FOR_SPIRV) {
+                /*
+                 * Use the LevelZero SPIRV Dispatcher
+                 */
                 dispatcher = new SPIRVLevelZeroDriver();
             } else {
+                /*
+                 * Using the OpenCL SPIRV Dispatcher
+                 */
                 dispatcher = new SPIRVOpenCLDriver();
             }
         } catch (ExceptionInInitializerError e) {
