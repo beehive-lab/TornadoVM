@@ -86,12 +86,13 @@ public class PTXHotSpotBackendFactory {
         GraphBuilderConfiguration.Plugins plugins;
         PTXLoweringProvider lowerer;
 
-        try (InitTimer t = timer("create providers")) {
+        try (InitTimer ignored = timer("create providers")) {
             TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, target, vmConfig);
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, JavaKind.Long);
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes);
+            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider,
+                    metaAccessExtensionProvider, snippetReflection, wordTypes);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
@@ -100,12 +101,13 @@ public class PTXHotSpotBackendFactory {
             replacements.setGraphBuilderPlugins(plugins);
 
             suites = new PTXSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
-            providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, suites, snippetReflection, platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
+            providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, suites, snippetReflection,
+                    platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
 
         }
-        try (InitTimer rt = timer("instantiate backend")) {
+        try (InitTimer ignored = timer("instantiate backend")) {
             return new PTXBackend(providers, deviceContext, target, codeCache, options);
         }
 

@@ -1,8 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+
+import java.nio.ByteOrder;
 
 public class SPIRVDevice {
 
@@ -10,6 +11,17 @@ public class SPIRVDevice {
     private int platformIndex;
     private int deviceIndex;
     private LevelZeroDevice l0Device;
+
+    public ByteOrder getByteOrder() {
+        switch (dispatcher) {
+            case OpenCL:
+                return oclDevice.getByteOrder();
+            case LevelZero:
+                // SPIRV is always Little ENDIAN
+                return ByteOrder.LITTLE_ENDIAN;
+        }
+        return null;
+    }
 
     public enum SPIRV_DISPATCHER {
         OpenCL, LevelZero;

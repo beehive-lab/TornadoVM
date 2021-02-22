@@ -44,21 +44,17 @@ import org.graalvm.compiler.word.WordTypes;
 public class OCLProviders extends Providers {
 
     private final OCLSuitesProvider suites;
-    private final Plugins graphBuilderPlugins;
 
     public OCLProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection,
-                        ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, Plugins plugins,
-                        OCLSuitesProvider suitesProvider, PlatformConfigurationProvider platformConfigurationProvider, MetaAccessExtensionProvider metaAccessExtensionProvider, WordTypes wordTypes) {
-        super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes);
+            ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, Plugins plugins,
+            OCLSuitesProvider suitesProvider, PlatformConfigurationProvider platformConfigurationProvider, MetaAccessExtensionProvider metaAccessExtensionProvider, WordTypes wordTypes) {
+        super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider,
+                snippetReflection, wordTypes);
         this.suites = suitesProvider;
-        this.graphBuilderPlugins = plugins;
     }
 
     public OCLSuitesProvider getSuitesProvider() {
         return suites;
     }
 
-    public Plugins getGraphBuilderPlugins() {
-        return graphBuilderPlugins;
-    }
 }
