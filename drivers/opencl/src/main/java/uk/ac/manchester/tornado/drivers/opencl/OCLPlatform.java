@@ -76,6 +76,10 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
 
     native static long clCreateContext(long platform, long[] devices) throws OCLException;
 
+    public List<OCLTargetDevice> getDevices() {
+        return devices;
+    }
+
     public OCLContext createContext() {
         OCLContext contextObject = null;
         final LongBuffer deviceIds = LongBuffer.allocate(devices.size());

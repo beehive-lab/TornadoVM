@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 
 public class SPIRVDevice {
@@ -15,9 +17,12 @@ public class SPIRVDevice {
 
     private SPIRV_DISPATCHER dispatcher;
 
-    public SPIRVDevice(int platformIndex, int deviceIndex) {
+    private OCLTargetDevice oclDevice;
+
+    public SPIRVDevice(int platformIndex, int deviceIndex, OCLTargetDevice device) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
+        this.oclDevice = device;
         this.dispatcher = SPIRV_DISPATCHER.LevelZero;
     }
 

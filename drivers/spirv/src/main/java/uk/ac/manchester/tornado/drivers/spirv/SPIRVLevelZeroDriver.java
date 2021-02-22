@@ -13,8 +13,7 @@ public class SPIRVLevelZeroDriver implements SPIRVDispatcher {
     private ZeDriverHandle driversHandler;
     private List<SPIRVPlatform> spirvPlatforms;
 
-    @Override
-    public void init() {
+    public SPIRVLevelZeroDriver() {
         driver = new LevelZeroDriver();
         driver.zeInit(ZeInitFlag.ZE_INIT_FLAG_GPU_ONLY);
 

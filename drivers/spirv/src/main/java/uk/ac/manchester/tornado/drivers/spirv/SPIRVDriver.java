@@ -18,6 +18,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
+        System.out.println("Num platforms: " + numSPIRVPlatforms);
         info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
 
         if (numSPIRVPlatforms < 1) {
@@ -30,6 +31,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
+            System.out.println("PLATFORM INITIALIZED: " + platformIndex);
             SPIRVPlatform platform = SPIRVProxy.getPlatform(platformIndex);
             int numDevices = platform.getNumDevices();
             backends[platformIndex] = new SPIRVBackend[numDevices];

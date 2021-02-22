@@ -19,14 +19,14 @@ public class SPIRVProxy {
     private static SPIRVDispatcher dispatcher;
 
     static {
-        // If some condition, then create either Level Zero or OCL Dispatcher
         try {
             if (TornadoOptions.USE_LEVELZERO_FOR_SPIRV) {
                 dispatcher = new SPIRVLevelZeroDriver();
-                dispatcher.init();
+            } else {
+                dispatcher = new SPIRVOpenCLDriver();
             }
         } catch (ExceptionInInitializerError e) {
-            System.out.println("ERROR DURING LezelZero Init: " + e.getMessage());
+            System.out.println("[ERROR] Level-Zero Initialization is not correct: " + e.getMessage());
         }
     }
 
@@ -34,7 +34,7 @@ public class SPIRVProxy {
         return dispatcher.getNumPlatforms();
     }
 
-    public static SPIRVPlatform getPlatform(int i) {
-        return dispatcher.getPlatform(i);
+    public static SPIRVPlatform getPlatform(int platformIndex) {
+        return dispatcher.getPlatform(platformIndex);
     }
 }

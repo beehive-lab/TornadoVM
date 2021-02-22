@@ -23,5 +23,11 @@
             <artifactId>tornado-drivers-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-drivers-opencl</artifactId>
+            <version>0.9-dev</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
