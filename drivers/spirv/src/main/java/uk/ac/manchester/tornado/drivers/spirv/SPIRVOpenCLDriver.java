@@ -19,7 +19,6 @@ public class SPIRVOpenCLDriver implements SPIRVDispatcher {
 
     public SPIRVOpenCLDriver() {
         int numOpenCLPlatforms = OpenCL.getNumPlatforms();
-        System.out.println("NUM OPENCL PLATFORMS: " + numOpenCLPlatforms);
         spirvPlatforms = new ArrayList<>();
         for (int platformIndex = 0; platformIndex < numOpenCLPlatforms; platformIndex++) {
             TornadoPlatform oclPlatform = OpenCL.getPlatform(platformIndex);
