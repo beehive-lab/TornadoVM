@@ -47,7 +47,6 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public SpeculationLog createSpeculationLog() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -75,7 +74,6 @@ public class OCLCodeProvider implements CodeCacheProvider {
     @Override
     public InstalledCode installCode(ResolvedJavaMethod rjm, CompiledCode cc, InstalledCode ic, SpeculationLog sl, boolean bln) {
         unimplemented("waiting for CompiledCode to be implemented first");
-        // return addMethod(method, method.getName(), result.);
         return null;
     }
 

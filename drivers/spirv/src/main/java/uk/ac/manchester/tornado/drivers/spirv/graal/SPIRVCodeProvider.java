@@ -9,8 +9,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 /**
- * Access to the code cache for SPIRV and interaction with JVMCI
+ * Access to the code cache for SPIRV and interaction with JVMCI.
  */
 public class SPIRVCodeProvider implements CodeCacheProvider {
 
@@ -22,12 +24,12 @@ public class SPIRVCodeProvider implements CodeCacheProvider {
 
     @Override
     public InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault) {
+        unimplemented("waiting for CompiledCode to be implemented first");
         return null;
     }
 
     @Override
     public void invalidateInstalledCode(InstalledCode installedCode) {
-
     }
 
     /**
@@ -63,7 +65,8 @@ public class SPIRVCodeProvider implements CodeCacheProvider {
 
     @Override
     public long getMaxCallTargetOffset(long address) {
-        return 0;
+        unimplemented("Max call target offset not implemented yet.");
+        return -1;
     }
 
     @Override

@@ -388,7 +388,7 @@ public class OCLCompiler {
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
         Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(kernelGraph, resolvedMethod, args, meta, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, true, batchThreads);
+                profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, true, batchThreads);
 
         kernelCompilationRequest.execute();
 
@@ -403,7 +403,7 @@ public class OCLCompiler {
             final StructuredGraph graph = builder.build();
             final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
             Request<OCLCompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                    profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true, 0);
+                    profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true, 0);
 
             methodCompilationRequest.execute();
             workList.addAll(compResult.getNonInlinedMethods());
@@ -436,7 +436,7 @@ public class OCLCompiler {
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
         Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(kernelGraph, resolvedMethod, args, taskMeta, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, false, batchThreads);
+                profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, false, batchThreads);
 
         kernelCompilationRequest.execute();
 
@@ -456,7 +456,7 @@ public class OCLCompiler {
 
             Request<OCLCompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, //
                     null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), //
-                    optimisticOpts, profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), //
+                    optimisticOpts, profilingInfo, suitesProvider.getSuites(), suitesProvider.getLIRSuites(), //
                     compResult, factory, false, false, 0);
 
             methodCompilationRequest.execute();

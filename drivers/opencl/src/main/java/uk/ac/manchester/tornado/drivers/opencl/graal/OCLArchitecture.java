@@ -48,6 +48,7 @@ public class OCLArchitecture extends Architecture {
 
     public static class OCLRegister {
 
+        // FIXME: THis field can be removed
         public final int number;
         public final String name;
         public final OCLKind lirKind;

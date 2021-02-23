@@ -11,7 +11,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
  */
 public class SPIRVTargetDescription extends TargetDescription {
 
-    public SPIRVTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects) {
+    public SPIRVTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
         super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
     }
 

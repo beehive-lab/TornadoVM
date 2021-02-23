@@ -44,7 +44,7 @@ public class LevelZeroDevice {
     public int zeDeviceGetMemoryProperties(long deviceHandlerPtr, int[] memoryCount, ZeMemoryProperties[] memoryProperties) {
         if (memoryProperties != null) {
             // Initialize properties
-            IntStream.range(0, memoryCount[0]).forEach(i-> memoryProperties[i] = new ZeMemoryProperties());
+            IntStream.range(0, memoryCount[0]).forEach(i -> memoryProperties[i] = new ZeMemoryProperties());
         }
         int result = zeDeviceGetMemoryProperties_native(deviceHandlerPtr, memoryCount, memoryProperties);
         return result;
@@ -57,7 +57,7 @@ public class LevelZeroDevice {
     public int zeDeviceGetCacheProperties(long deviceHandlerPtr, int[] cacheCount, ZeDeviceCacheProperties[] cacheProperties) {
         if (cacheProperties != null) {
             // Initialize properties
-            IntStream.range(0, cacheCount[0]).forEach(i-> cacheProperties[i] = new ZeDeviceCacheProperties());
+            IntStream.range(0, cacheCount[0]).forEach(i -> cacheProperties[i] = new ZeDeviceCacheProperties());
         }
         return zeDeviceGetCacheProperties_native(deviceHandlerPtr, cacheCount, cacheProperties);
     }
@@ -67,8 +67,12 @@ public class LevelZeroDevice {
     public int zeDeviceGetCommandQueueGroupProperties(long deviceHandlerPtr, int[] numQueueGroups, ZeCommandQueueGroupProperties[] commandQueueGroupProperties) {
         if (commandQueueGroupProperties != null) {
             // Initialize properties
-            IntStream.range(0, numQueueGroups[0]).forEach(i-> commandQueueGroupProperties[i] = new ZeCommandQueueGroupProperties());
+            IntStream.range(0, numQueueGroups[0]).forEach(i -> commandQueueGroupProperties[i] = new ZeCommandQueueGroupProperties());
         }
         return zeDeviceGetCommandQueueGroupProperties_native(deviceHandlerPtr, numQueueGroups, commandQueueGroupProperties);
+    }
+
+    public String getDeviceExtensions() {
+        return null;
     }
 }

@@ -11,6 +11,7 @@ public class SPIRVDevice {
     private int platformIndex;
     private int deviceIndex;
     private LevelZeroDevice l0Device;
+    private SPIRVContext context;
 
     public ByteOrder getByteOrder() {
         switch (dispatcher) {
@@ -21,6 +22,30 @@ public class SPIRVDevice {
                 return ByteOrder.LITTLE_ENDIAN;
         }
         return null;
+    }
+
+    public SPIRVContext getSPIRVContext() {
+        return context;
+    }
+
+    public boolean isDeviceDoubleFPSupported() {
+        switch (dispatcher) {
+            case OpenCL:
+                return oclDevice.isDeviceDoubleFPSupported();
+            case LevelZero:
+                return true;
+        }
+        return false;
+    }
+
+    public String getDeviceExtensions() {
+        switch (dispatcher) {
+            case OpenCL:
+                return oclDevice.getDeviceExtensions();
+            case LevelZero:
+                return l0Device.getDeviceExtensions();
+        }
+        return "";
     }
 
     public enum SPIRV_DISPATCHER {

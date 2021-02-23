@@ -108,7 +108,8 @@ public class OCLHotSpotBackendFactory {
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes);
+            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider,
+                    metaAccessExtensionProvider, snippetReflection, wordTypes);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
@@ -118,7 +119,8 @@ public class OCLHotSpotBackendFactory {
 
             suites = new OCLSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites, platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
+            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites,
+                    platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }

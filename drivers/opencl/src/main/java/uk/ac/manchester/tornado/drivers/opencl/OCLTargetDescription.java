@@ -37,12 +37,13 @@ public class OCLTargetDescription extends TargetDescription {
 
     private static final int STACK_ALIGNMENT = 8;
     private static final boolean INLINE_OBJECTS = true;
+    private static final int IMPLICIT_NULL_CHECK_LIMIT = 4096;
     private final boolean supportsFP64;
     private final String extensions;
     private final boolean supportsInt64Atomics;
 
     public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
-        this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS, supportsFP64, extensions);
+        this(arch, false, STACK_ALIGNMENT, IMPLICIT_NULL_CHECK_LIMIT, INLINE_OBJECTS, supportsFP64, extensions);
     }
 
     protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
