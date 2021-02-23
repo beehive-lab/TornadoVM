@@ -1,9 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
-import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
-import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
-import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase;
+import org.graalvm.compiler.lir.phases.*;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -28,26 +26,26 @@ public class SPIRVCompilerConfiguration implements TornadoCompilerConfiguration 
 
     @Override
     public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider) {
-        return null;
-    }
-
-    @Override
-    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
-        return null;
+        return new SPIRVHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
     }
 
     @Override
     public TornadoMidTier createMidTier(OptionValues options) {
-        return null;
+        return new SPIRVMidTier(options);
+    }
+
+    @Override
+    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
+        return new SPIRVLowTier(options, deviceContext, addressLowering);
     }
 
     @Override
     public LIRPhaseSuite<PostAllocationOptimizationPhase.PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options) {
-        return null;
+        return new PostAllocationOptimizationStage(options);
     }
 
     @Override
     public LIRPhaseSuite<PreAllocationOptimizationPhase.PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options) {
-        return null;
+        return new PreAllocationOptimizationStage(options);
     }
 }
