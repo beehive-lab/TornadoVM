@@ -134,4 +134,8 @@ public class FieldBuffer {
         return field.getName();
     }
 
+    public long size() {
+        return objectBuffer.size();
+    }
+
 }
