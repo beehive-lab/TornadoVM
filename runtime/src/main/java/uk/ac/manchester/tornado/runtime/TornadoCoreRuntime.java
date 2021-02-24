@@ -36,8 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -60,6 +62,7 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -81,7 +84,19 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         options = new OptionValues(opts);
     }
 
-    private static final Executor EXECUTOR = Executors.newCachedThreadPool();
+    private static final ThreadFactory executorThreadFactory = new ThreadFactory() {
+        private int threadId = 0;
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, String.format("TornadoExecutorThread - %d", threadId));
+            thread.setDaemon(true);
+            threadId++;
+            return thread;
+        }
+    };
+
+    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(TornadoOptions.TORNADO_SKETCHER_THREADS, executorThreadFactory);
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
     private static final JVMMapping JVM = new JVMMapping();
 
@@ -98,7 +113,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return debugContext;
     }
 
-    public static Executor getTornadoExecutor() {
+    public static ExecutorService getTornadoExecutor() {
         return EXECUTOR;
     }
 

@@ -32,60 +32,27 @@ import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+public class SketchRequest {
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-public class SketchRequest implements Future<Sketch>, Runnable {
-
-    public final TaskMetaData meta;
-    public final Providers providers;
-
+    final int driverIndex;
+    final int deviceIndex;
+    final TaskMetaData meta;
     final ResolvedJavaMethod resolvedMethod;
+    final Providers providers;
     final PhaseSuite<HighTierContext> graphBuilderSuite;
     final TornadoSketchTier sketchTier;
-    public Sketch result;
 
-    public SketchRequest(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
+    public SketchRequest(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
         this.resolvedMethod = resolvedMethod;
         this.providers = providers;
         this.graphBuilderSuite = graphBuilderSuite;
         this.sketchTier = sketchTier;
         this.meta = meta;
+        this.driverIndex = driverIndex;
+        this.deviceIndex = deviceIndex;
     }
 
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
-    }
-
-    @Override
     public void run() {
         TornadoSketcher.buildSketch(this);
-    }
-
-    @Override
-    public Sketch get() throws InterruptedException {
-        while (!isDone()) {
-            Thread.sleep(100);
-        }
-        return result;
-    }
-
-    @Override
-    public Sketch get(long timeout, TimeUnit unit) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
-    }
-
-    @Override
-    public boolean isDone() {
-        return result != null;
     }
 }
