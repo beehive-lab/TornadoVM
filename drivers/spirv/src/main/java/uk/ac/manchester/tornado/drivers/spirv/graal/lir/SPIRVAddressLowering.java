@@ -5,6 +5,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 
+// FIXME: REVISIT 
 public class SPIRVAddressLowering extends AddressLoweringPhase.AddressLowering {
 
     // FIXME: Revisit SPIRVAddressLowering During Graal Optimization Phases

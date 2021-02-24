@@ -15,5 +15,4 @@ public class SPIRVContext extends TornadoLogger {
         this.devices = devices;
         this.id = id;
     }
-
 }

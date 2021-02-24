@@ -18,6 +18,7 @@ import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvid
 import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVAddressLowering;
@@ -57,8 +58,7 @@ public class SPIRVHotSpotBackendFactory {
                 device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
         // TODO: Finish this call
-        // SPIRVDeviceContext deviceContext =
-        // device.getSPIRVContext().getDeviceContext();
+        SPIRVDeviceContext deviceContext = device.getSPIRVContext().getDeviceContext();
 
         SPIRVCodeProvider codeProvider = new SPIRVCodeProvider(targetDescription);
 
@@ -81,7 +81,7 @@ public class SPIRVHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            // FIXME: DeviceContext cannot be null
+            // FIXME: Device-Context cannot be null
             suites = new SPIRVSuitesProvider(options, null, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, snippetReflection, constantFieldProvider, //
