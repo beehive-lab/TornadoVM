@@ -85,13 +85,12 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     }
 
     private static final ThreadFactory executorThreadFactory = new ThreadFactory() {
-        private int threadId = 0;
+        private final  AtomicInteger threadId = new AtomicInteger(0);
 
         @Override
         public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, String.format("TornadoExecutorThread - %d", threadId));
+            Thread thread = new Thread(r, String.format("TornadoExecutorThread - %d", threadId.incrementAndGet()));
             thread.setDaemon(true);
-            threadId++;
             return thread;
         }
     };
