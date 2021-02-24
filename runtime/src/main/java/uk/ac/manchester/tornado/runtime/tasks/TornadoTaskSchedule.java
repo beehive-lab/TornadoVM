@@ -1160,7 +1160,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
                 start = timer.time();
             }
-            task.execute();
+            try {
+                task.execute();
+            } finally {
+                if (!task.isFinished()) {
+                    // Execute was interrupted, need to reset device 
+                    // while it's in unpredictable state 
+                    task.getDevice().reset();
+                    return Long.MAX_VALUE;
+                }
+            }
             final long end = timer.time();
             taskScheduleIndex.put(taskScheduleNumber, task);
 
@@ -1209,9 +1218,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 int deviceWinnerIndex = futures.indexOf(winningFuture);
                 policyTimeTable.put(policy, deviceWinnerIndex);
             }
-            // TODO: investigate why interrupting thread crash JVM (from ACCESS_VIOLATION to Virtual Zero Function call in Graal)
-            // Disable termination for now
-            //futures.forEach(f -> {if (f != winningFuture) f.cancel(true);});
+            futures.stream()
+                   .filter(f -> f != winningFuture)
+                   .forEach(f -> f.cancel(true));
         }
         
         // Join and collect results 

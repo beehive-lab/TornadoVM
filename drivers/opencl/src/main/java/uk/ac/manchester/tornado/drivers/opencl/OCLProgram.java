@@ -104,7 +104,10 @@ public class OCLProgram extends TornadoLogger {
 
     public void build(String options) {
         buffer.clear();
-
+        if (Thread.currentThread().isInterrupted()) {
+            // Prevent ACCESS_VIOLATION in AMD devices
+            throw new RuntimeException("Thread was interrupted before build");
+        }
         try {
             clBuildProgram(id, devices, options);
         } catch (OCLException e) {
