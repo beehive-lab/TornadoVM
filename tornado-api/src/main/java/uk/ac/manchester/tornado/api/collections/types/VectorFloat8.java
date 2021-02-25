@@ -155,23 +155,6 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
         return vector;
     }
 
-    /**
-     * Prints the vector using the specified format string
-     *
-     * @param fmt
-     *
-     * @return
-     */
-    public String toString(String fmt) {
-        String str = "";
-        out.printf("has %d elements\n", numElements);
-        for (int i = 0; i < numElements; i++) {
-            str += get(i).toString() + " ";
-        }
-
-        return str;
-    }
-
     public String toString() {
         if (this.numElements > elementSize) {
             return String.format("VectorFloat8 <%d>", this.numElements);

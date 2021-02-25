@@ -151,22 +151,6 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         return vector;
     }
 
-    /**
-     * Prints the vector using the specified format string
-     *
-     * @param fmt String Format
-     * @return String
-     */
-    public String toString(String fmt) {
-        StringBuffer sb = new StringBuffer("[");
-        sb.append("[ ");
-        for (int i = 0; i < numElements; i++) {
-            sb.append(String.format(fmt, get(i)) + " ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
     public String toString() {
         if (this.numElements > elementSize) {
             return String.format("VectorFloat3 <%d>", this.numElements);

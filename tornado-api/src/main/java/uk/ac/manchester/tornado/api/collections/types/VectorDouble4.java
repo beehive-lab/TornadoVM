@@ -149,22 +149,6 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
         return vector;
     }
 
-    /**
-     * Prints the vector using the specified format string
-     *
-     * @param fmt
-     * @return
-     */
-    public String toString(String fmt) {
-        String str = "";
-
-        for (int i = 0; i < numElements; i++) {
-            str += get(i).toString() + " ";
-        }
-
-        return str;
-    }
-
     public String toString() {
         if (this.numElements > elementSize) {
             return String.format("VectorDouble4 <%d>", this.numElements);
