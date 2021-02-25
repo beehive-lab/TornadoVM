@@ -2,7 +2,9 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -80,5 +82,9 @@ public class SPIRVDeviceContext extends TornadoLogger implements Initialisable, 
     @Override
     public int getDriverIndex() {
         return 0;
+    }
+
+    public SPIRVTornadoDevice asMapping() {
+        return new SPIRVTornadoDevice(device.getPlatformIndex(), device.getDeviceIndex());
     }
 }

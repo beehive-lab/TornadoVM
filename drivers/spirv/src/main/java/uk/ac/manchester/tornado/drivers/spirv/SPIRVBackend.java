@@ -52,4 +52,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return null;
     }
+
+    public SPIRVDeviceContext getDeviceContext() {
+        return context;
+    }
+
 }

@@ -7,7 +7,7 @@ import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
 
-public class SPIRVTornadoDriver implements TornadoDriverProvider {
+public class SPIRVTornadoDriverProvider implements TornadoDriverProvider {
 
     private final TornadoDrivers priority = TornadoDrivers.SPIRV;
 

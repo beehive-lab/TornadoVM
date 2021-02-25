@@ -174,7 +174,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return checkAndInitBackend(0, index);
     }
 
-    public int getNumDevices(int platform) {
+    private int getNumDevices(int platform) {
         try {
             return backends[platform].length;
         } catch (NullPointerException e) {
