@@ -4,15 +4,16 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.util.List;
 
-public class SPIRVContext extends TornadoLogger {
+public abstract class SPIRVContext extends TornadoLogger {
 
     SPIRVPlatform platform;
     List<SPIRVDevice> devices;
-    long id;
 
-    public SPIRVContext(SPIRVPlatform platform, long id, List<SPIRVDevice> devices) {
+    public SPIRVContext(SPIRVPlatform platform, List<SPIRVDevice> devices) {
         this.platform = platform;
         this.devices = devices;
-        this.id = id;
+
     }
+
+    public abstract SPIRVDeviceContext createDeviceContext(int deviceIndex);
 }

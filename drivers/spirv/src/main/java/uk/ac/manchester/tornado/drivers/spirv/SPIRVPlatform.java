@@ -5,4 +5,7 @@ public interface SPIRVPlatform {
     int getNumDevices();
 
     SPIRVDevice getDevice(int k);
+
+    SPIRVContext createContext();
+
 }

@@ -240,6 +240,7 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
         return String.format("id=0x%x, device count=%d", contextID, getNumDevices());
     }
 
+    @Override
     public OCLDeviceContext createDeviceContext(int index) {
         debug("creating device context for device: %s", devices.get(index).toString());
         createCommandQueue(index);

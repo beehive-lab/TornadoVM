@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
-import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatform;
+import uk.ac.manchester.tornado.drivers.opencl.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,4 +37,13 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
     public SPIRVDevice getDevice(int deviceIndex) {
         return spirvDevices.get(deviceIndex);
     }
+
+    @Override
+    public SPIRVOCLContext createContext() {
+        if (context == null) {
+            context = oclPlatform.createContext();
+        }
+        return new SPIRVOCLContext(this, spirvDevices, context);
+    }
+
 }

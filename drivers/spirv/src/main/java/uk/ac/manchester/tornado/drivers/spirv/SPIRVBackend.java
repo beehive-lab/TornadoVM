@@ -21,8 +21,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         super(providers);
     }
 
-    public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider) {
+    SPIRVDeviceContext context;
+
+    public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
+        this.context = deviceContext;
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -32,17 +33,18 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
     private void discoverDevices(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon, int numPlatforms) {
         for (int platformIndex = 0; platformIndex < numPlatforms; platformIndex++) {
             SPIRVPlatform platform = SPIRVProxy.getPlatform(platformIndex);
+            SPIRVContext context = platform.createContext();
             int numDevices = platform.getNumDevices();
             backends[platformIndex] = new SPIRVBackend[numDevices];
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
-                backends[platformIndex][deviceIndex] = createSPIRVBackend(options, vmRuntime, vmCon, device);
+                backends[platformIndex][deviceIndex] = createSPIRVBackend(options, vmRuntime, vmCon, device, context);
             }
         }
     }
 
-    private SPIRVBackend createSPIRVBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig, SPIRVDevice device) {
-        return SPIRVHotSpotBackendFactory.createBackend(options, vmRuntime, vmConfig, device);
+    private SPIRVBackend createSPIRVBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
+        return SPIRVHotSpotBackendFactory.createBackend(options, vmRuntime, vmConfig, device, context);
     }
 
     @Override

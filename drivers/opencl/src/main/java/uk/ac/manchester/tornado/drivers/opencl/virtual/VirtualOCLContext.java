@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -50,18 +49,19 @@ public class VirtualOCLContext extends TornadoLogger implements OCLExecutionEnvi
         return devices;
     }
 
-    public void cleanup() {}
+    public void cleanup() {
+    }
 
     @Override
     public String toString() {
         return getClass().getName();
     }
 
-    public OCLDeviceContextInterface createDeviceContext(int index) {
+    @Override
+    public VirtualOCLDeviceContext createDeviceContext(int index) {
         debug("creating device context for device: %s", devices.get(index).toString());
         return new VirtualOCLDeviceContext(devices.get(index), this);
     }
-
 
     public int getPlatformIndex() {
         return platform.getIndex();
@@ -72,5 +72,6 @@ public class VirtualOCLContext extends TornadoLogger implements OCLExecutionEnvi
     }
 
     @Override
-    public void createCommandQueue(int index) {}
+    public void createCommandQueue(int index) {
+    }
 }

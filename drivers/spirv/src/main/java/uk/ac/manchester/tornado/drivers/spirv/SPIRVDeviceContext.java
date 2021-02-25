@@ -6,7 +6,21 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+/**
+ * Class to map an SPIRV device (Device represented either in Level Zero or an
+ * OpenCL device) with an SPIRV Context.
+ */
 public class SPIRVDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
+
+    private SPIRVDevice device;
+    private SPIRVCommandQueue queue;
+    private SPIRVContext context;
+
+    public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
+        this.device = device;
+        this.queue = queue;
+        this.context = context;
+    }
 
     @Override
     public boolean isInitialised() {

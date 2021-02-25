@@ -16,10 +16,8 @@ import org.graalvm.compiler.word.WordTypes;
 import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.spirv.*;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVAddressLowering;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -48,7 +46,7 @@ public class SPIRVHotSpotBackendFactory {
     private static final SPIRVCompilerConfiguration compilerConfiguration = new SPIRVCompilerConfiguration();
     private static final SPIRVAddressLowering addressLowering = new SPIRVAddressLowering();
 
-    public static SPIRVBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, SPIRVDevice device) {
+    public static SPIRVBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
         JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
@@ -57,8 +55,7 @@ public class SPIRVHotSpotBackendFactory {
         SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT,
                 device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
-        // TODO: Finish this call
-        SPIRVDeviceContext deviceContext = device.getSPIRVContext().getDeviceContext();
+        SPIRVDeviceContext deviceContext = context.createDeviceContext(device.getDeviceIndex());
 
         SPIRVCodeProvider codeProvider = new SPIRVCodeProvider(targetDescription);
 
@@ -81,8 +78,7 @@ public class SPIRVHotSpotBackendFactory {
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            // FIXME: Device-Context cannot be null
-            suites = new SPIRVSuitesProvider(options, null, plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new SPIRVSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, snippetReflection, constantFieldProvider, //
                     foreignCalls, lowerer, replacements, stampProvider, plugins, suites, //
@@ -92,7 +88,7 @@ public class SPIRVHotSpotBackendFactory {
         }
 
         try (InitTimer rt = timer("Instantiate SPIRV Backend")) {
-            return new SPIRVBackend(options, providers, targetDescription, codeProvider);
+            return new SPIRVBackend(options, providers, targetDescription, codeProvider, deviceContext);
         }
     }
 
@@ -100,7 +96,9 @@ public class SPIRVHotSpotBackendFactory {
      * Create the Plugins and register the SPIRV Plugins
      * 
      * @param metaAccess
+     *            {@link HotSpotMetaAccessProvider}
      * @param replacements
+     *            {@link TornadoReplacements}
      * @return Plugins for SPIRV
      */
     private static Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements) {

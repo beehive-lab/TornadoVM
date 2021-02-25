@@ -88,7 +88,6 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
@@ -138,7 +137,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
-    final OCLExecutionEnvironment tornadoContext;
     final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
@@ -151,13 +149,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
-    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLExecutionEnvironment openclContext,
-            OCLDeviceContextInterface deviceContext) {
+    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLDeviceContextInterface deviceContext) {
         super(providers);
         this.options = options;
         this.target = target;
         this.codeCache = codeCache;
-        this.tornadoContext = openclContext;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");

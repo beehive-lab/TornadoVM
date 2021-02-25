@@ -41,6 +41,8 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
     private final int index;
     private final long id;
     private final List<OCLTargetDevice> devices;
+
+    // FIXME <REVISIT> It seems that this object is no longer needed
     private final Set<OCLContext> contexts;
 
     public OCLPlatform(int index, long id) {
