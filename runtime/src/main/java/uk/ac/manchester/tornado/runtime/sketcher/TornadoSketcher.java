@@ -27,23 +27,7 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
@@ -57,8 +41,7 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -67,6 +50,25 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 public class TornadoSketcher {
 
@@ -126,9 +128,11 @@ public class TornadoSketcher {
             return false;
         }
 
-        for (TornadoSketcherCacheEntry entry : entries) {
-            if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
-                return true;
+        synchronized (entries) {
+            for (TornadoSketcherCacheEntry entry : entries) {
+                if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -137,35 +141,60 @@ public class TornadoSketcher {
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod, int driverIndex, int deviceIndex) {
         Sketch sketch = null;
         guarantee(cache.containsKey(resolvedMethod), "cache miss for: %s", resolvedMethod.getName());
+        List<TornadoSketcherCacheEntry> entries = cache.get(resolvedMethod);
         try {
-            List<TornadoSketcherCacheEntry> entries = cache.get(resolvedMethod);
-            for (TornadoSketcherCacheEntry entry : entries) {
-                if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
-                    sketch = entry.getSketchFuture().get();
-                    break;
+            synchronized (entries) {
+                for (TornadoSketcherCacheEntry entry : entries) {
+                    if (entry.matchesDriverAndDevice(driverIndex, deviceIndex)) {
+                        sketch = entry.getSketchFuture().get();
+                        break;
+                    }
                 }
             }
             guarantee(sketch != null, "No sketch available for %d:%d %s", driverIndex, deviceIndex, resolvedMethod.getName());
         } catch (InterruptedException | ExecutionException e) {
+            fatal("Failed to retrieve sketch for %d:%d %s ", driverIndex, deviceIndex, resolvedMethod.getName());
+            if (Tornado.DEBUG) {
+                e.printStackTrace();
+            }
+            if (e.getCause() instanceof TornadoRuntimeException) {
+                throw (TornadoRuntimeException) e.getCause();
+            }
+            if (e.getCause() instanceof TornadoBailoutRuntimeException) {
+                throw (TornadoBailoutRuntimeException) e.getCause();
+            }
             throw new TornadoInternalError(e);
         }
         return sketch;
     }
 
-    static void buildSketch(SketchRequest request) {
-        if (cacheContainsSketch(request.resolvedMethod, request.meta.getDriverIndex(), request.meta.getDeviceIndex())) {
-            return;
+    private static class TornadoSketcherCallable implements Callable<Sketch> {
+        private final SketchRequest request;
+
+        public TornadoSketcherCallable(SketchRequest request) {
+            this.request = request;
         }
-        List<TornadoSketcherCacheEntry> sketches = cache.computeIfAbsent(request.resolvedMethod, k -> new ArrayList<>());
-        sketches.add(new TornadoSketcherCacheEntry(request.meta.getDriverIndex(), request.meta.getDeviceIndex(), request));
-        try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
-            request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
-        } catch (Throwable e) {
-            throw getDebugContext().handle(e);
+
+        @Override
+        public Sketch call() throws Exception {
+            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
+                return buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
+            } catch (Throwable e) {
+                throw getDebugContext().handle(e);
+            }
         }
     }
 
-    private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
+    static void buildSketch(SketchRequest request) {
+        if (cacheContainsSketch(request.resolvedMethod, request.driverIndex, request.deviceIndex)) {
+            return;
+        }
+        List<TornadoSketcherCacheEntry> sketches = cache.computeIfAbsent(request.resolvedMethod, k -> Collections.synchronizedList(new ArrayList<>(TornadoVMBackend.values().length)));
+        Future<Sketch> result = getTornadoExecutor().submit(new TornadoSketcherCallable(request));
+        sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
+    }
+
+    private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
@@ -198,7 +227,8 @@ public class TornadoSketcher {
                             throw new TornadoRuntimeException(
                                     "[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
                         }
-                        getTornadoExecutor().execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier));
+                        SketchRequest newRequest = new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, driverIndex, deviceIndex);
+                        buildSketch(newRequest);
                     });
 
             return new Sketch(CachedGraph.fromReadonlyCopy(graph), meta);
@@ -208,7 +238,7 @@ public class TornadoSketcher {
             if (Tornado.DEBUG) {
                 e.printStackTrace();
             }
-            throw new TornadoBailoutRuntimeException("unable to build sketch for method: " + resolvedMethod.getName() + "(" + e.getMessage() + ")");
+            throw new TornadoBailoutRuntimeException("Unable to build sketch for method: " + resolvedMethod.getName() + "(" + e.getMessage() + ")");
         }
     }
 }

@@ -525,7 +525,13 @@ public class PTXObjectWrapper implements ObjectBuffer {
 
     @Override
     public long size() {
-        return bytesToAllocate;
+        long size = bytesToAllocate;
+        for (FieldBuffer wrappedField : wrappedFields) {
+            if (wrappedField != null) {
+                size += wrappedField.size();
+            }
+        }
+        return size;
     }
 
 }

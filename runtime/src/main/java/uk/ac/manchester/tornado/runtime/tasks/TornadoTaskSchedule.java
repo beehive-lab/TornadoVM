@@ -110,6 +110,7 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
@@ -311,9 +312,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (task instanceof CompilableTask) {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+            final TaskMetaData taskMetaData = compilableTask.meta();
+            new SketchRequest(taskMetaData, resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
             this.graph = lookup.getGraph();
         }
     }
@@ -331,7 +333,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (task instanceof CompilableTask) {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+            final TaskMetaData taskMetaData = compilableTask.meta();
+            new SketchRequest(taskMetaData, resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
