@@ -42,11 +42,9 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.String.format;
-import static java.lang.System.out;
 import static java.nio.FloatBuffer.wrap;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt4;
 
 import java.nio.FloatBuffer;
 

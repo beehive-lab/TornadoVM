@@ -39,7 +39,6 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.String.format;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
 import static uk.ac.manchester.tornado.api.collections.types.Int4.add;
 import static uk.ac.manchester.tornado.api.collections.types.Int4.loadFromArray;
 

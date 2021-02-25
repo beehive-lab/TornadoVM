@@ -1,25 +1,26 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.IllegalFormatConversionException;
 import java.util.Random;
 
 import org.junit.Ignore;
@@ -55,9 +56,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::dotMethodFloat2, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::dotMethodFloat2, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         assertEquals(7, output.get(0), 0.001);
@@ -76,9 +77,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::dotMethodFloat3, a, b, output)
-            .streamOut(output)
-            .execute();        
+                .task("t0", TestFloats::dotMethodFloat3, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         assertEquals(10, output.get(0), 0.001f);
@@ -97,9 +98,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::dotMethodFloat4, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::dotMethodFloat4, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         assertEquals(20, output.get(0), 0.001f);
@@ -118,9 +119,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::dotMethodFloat6, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::dotMethodFloat6, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         assertEquals(56, output.get(0), 0.001f);
@@ -139,9 +140,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::dotMethodFloat8, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::dotMethodFloat8, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         assertEquals(120, output.get(0), 0.001f);
@@ -173,9 +174,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::testFloat3Add, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::testFloat3Add, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -187,7 +188,7 @@ public class TestFloats extends TornadoTestBase {
 
     /**
      * Test using the {@link Float} Java Wrapper class
-     * 
+     *
      * @param a
      * @param b
      * @param result
@@ -213,9 +214,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::addFloat, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::addFloat, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -225,7 +226,7 @@ public class TestFloats extends TornadoTestBase {
 
     /**
      * Test using the {@link Float2} Tornado wrapper class
-     * 
+     *
      * @param a
      * @param b
      * @param result
@@ -251,9 +252,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::addFloat2, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::addFloat2, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -305,7 +306,7 @@ public class TestFloats extends TornadoTestBase {
 
     /**
      * Test using Tornado {@link VectorFloat3} data type
-     * 
+     *
      * @param a
      * @param b
      * @param results
@@ -318,7 +319,6 @@ public class TestFloats extends TornadoTestBase {
 
     @Test
     public void testVectorFloat3() {
-
         int size = 8;
 
         VectorFloat3 a = new VectorFloat3(size);
@@ -332,9 +332,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::addVectorFloat3, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::addVectorFloat3, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -345,9 +345,33 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
+
+    @Test
+    public void testVectorFloat3toString() {
+        int size = 2;
+
+        VectorFloat3 a = new VectorFloat3(size);
+        VectorFloat3 b = new VectorFloat3(size);
+        VectorFloat3 output = new VectorFloat3(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Float3(i, i, i));
+            b.set(i, new Float3((float) size - i, (float) size - i, (float) size - i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::addVectorFloat3, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        System.out.println(" Test Output " + output.toString());
+    }
+
     /**
      * Test using Tornado {@link VectorFloat4} data type
-     * 
+     *
      * @param a
      * @param b
      * @param results
@@ -374,9 +398,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::addVectorFloat4, a, b, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::addVectorFloat4, a, b, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -467,10 +491,10 @@ public class TestFloats extends TornadoTestBase {
         // Parallel computation with Tornado
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap)
-            .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce)
-            .streamOut(outputReduce)
-            .execute();
+                .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap)
+                .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce)
+                .streamOut(outputReduce)
+                .execute();
         //@formatter:on
 
         assertEquals(seqReduce[0], outputReduce[0], 0.001);
@@ -494,9 +518,9 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", TestFloats::vectorPhiTest, input, output)
-            .streamOut(output)
-            .execute();
+                .task("t0", TestFloats::vectorPhiTest, input, output)
+                .streamOut(output)
+                .execute();
         //@formatter:on
 
         assertEquals(8.0f, output.get(0).getS0(), 0.001);

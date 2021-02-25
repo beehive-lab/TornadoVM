@@ -178,7 +178,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     public String toString() {
         String result = String.format("MatrixFloat <%d x %d>", M, N);
-        result += "\n" + toString(FloatOps.fmt4m);
+        result += "\n" + toString(FloatOps.FMT_4_M);
         return result;
     }
 

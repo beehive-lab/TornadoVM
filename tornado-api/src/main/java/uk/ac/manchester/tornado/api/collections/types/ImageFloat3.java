@@ -167,7 +167,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     public String toString() {
         String result = String.format("ImageFloat3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(FloatOps.fmt3);
+            result += "\n" + toString(FloatOps.FMT_3);
         }
         return result;
     }

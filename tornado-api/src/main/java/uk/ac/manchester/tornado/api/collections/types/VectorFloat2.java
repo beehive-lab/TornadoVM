@@ -42,7 +42,6 @@ import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
 import static uk.ac.manchester.tornado.api.collections.types.Float2.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float2.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
 
 import java.nio.FloatBuffer;
 

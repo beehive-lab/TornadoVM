@@ -41,7 +41,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.Double3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Double3.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
 
 import java.nio.DoubleBuffer;
 
