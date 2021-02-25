@@ -105,6 +105,8 @@ public class SPIRVHotSpotBackendFactory {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 
+        // FIXME <PENDING> Apply new Plugins for SPIRV
+
         return plugins;
     }
 
