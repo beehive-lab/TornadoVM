@@ -17,11 +17,13 @@ public class SPIRVDeviceContext extends TornadoLogger implements Initialisable, 
     private SPIRVDevice device;
     private SPIRVCommandQueue queue;
     private SPIRVContext context;
+    private SPIRVTornadoDevice tornadoDevice;
 
     public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
         this.device = device;
         this.queue = queue;
         this.context = context;
+        this.tornadoDevice = new SPIRVTornadoDevice(device);
     }
 
     @Override
@@ -85,6 +87,6 @@ public class SPIRVDeviceContext extends TornadoLogger implements Initialisable, 
     }
 
     public SPIRVTornadoDevice asMapping() {
-        return new SPIRVTornadoDevice(device.getPlatformIndex(), device.getDeviceIndex());
+        return tornadoDevice;
     }
 }

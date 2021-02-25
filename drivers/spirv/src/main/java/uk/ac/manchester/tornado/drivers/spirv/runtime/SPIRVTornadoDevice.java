@@ -37,6 +37,13 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         device = SPIRVProxy.getPlatform(platformIndex).getDevice(deviceIndex);
     }
 
+    public SPIRVTornadoDevice(SPIRVDevice lowLevelDevice) {
+        System.out.println("Creating SPIRV TornadoDevice");
+        this.platformIndex = lowLevelDevice.getPlatformIndex();
+        this.deviceIndex = lowLevelDevice.getDeviceIndex();
+        device = lowLevelDevice;
+    }
+
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
         return null;
