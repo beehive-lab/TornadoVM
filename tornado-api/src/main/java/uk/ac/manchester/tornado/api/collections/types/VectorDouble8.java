@@ -167,11 +167,14 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public String toString() {
-        if (numElements > elementSize) {
-            return format("VectorDouble8 <%d>", numElements);
-        } else {
-            return toString(fmt3);
+        if (this.numElements > elementSize) {
+            return String.format("VectorDouble8 <%d>", this.numElements);
         }
+        StringBuilder tempString = new StringBuilder();
+        for (int i = 0; i < numElements; i++) {
+            tempString.append(" ").append(this.get(i).toString());
+        }
+        return tempString.toString();
     }
 
     public Double8 sum() {

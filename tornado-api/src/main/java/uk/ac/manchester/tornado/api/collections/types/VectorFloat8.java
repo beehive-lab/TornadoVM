@@ -173,11 +173,14 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString() {
-        if (numElements > elementSize) {
-            return format("VectorFloat8 <%d>", numElements);
-        } else {
-            return toString(fmt4);
+        if (this.numElements > elementSize) {
+            return String.format("VectorFloat8 <%d>", this.numElements);
         }
+        StringBuilder tempString = new StringBuilder();
+        for (int i = 0; i < numElements; i++) {
+            tempString.append(" ").append(this.get(i).toString());
+        }
+        return tempString.toString();
     }
 
     public Float8 sum() {
