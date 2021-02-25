@@ -27,7 +27,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         // Create a command queue
         // ============================================
         // A) Get the number of command queue groups
-        LevelZeroDevice device = spirvDevice.getL0Device();
+        LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
 
         int[] numQueueGroups = new int[1];
         device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, null);

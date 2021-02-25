@@ -42,7 +42,7 @@ public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
         for (int i = 0; i < deviceCount; i++) {
             LevelZeroDevice device = driver.getDevice(driversHandler, i);
             devices.add(device);
-            SPIRVDevice spirvDevice = new SPIRVDevice(indexDriver, i, devices.get(i));
+            SPIRVDevice spirvDevice = new SPIRVLevelZeroDevice(indexDriver, i, devices.get(i));
             spirvDevices.add(spirvDevice);
         }
     }

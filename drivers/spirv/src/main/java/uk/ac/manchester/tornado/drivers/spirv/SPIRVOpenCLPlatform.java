@@ -18,7 +18,7 @@ public class SPIRVOpenCLPlatform implements SPIRVPlatform {
         spirvDevices = new ArrayList<>();
 
         for (int i = 0; i < context.getNumDevices(); i++) {
-            SPIRVDevice spirvDevice = new SPIRVDevice(platformIndex, i, context.devices().get(i));
+            SPIRVDevice spirvDevice = new SPIRVOCLDevice(platformIndex, i, context.devices().get(i));
             spirvDevices.add(spirvDevice);
         }
 
