@@ -37,7 +37,7 @@ public class ZeDeviceProperties {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("=========================\n");
-        builder.append("Device Compute Properties\n");
+        builder.append("Device Properties\n");
         builder.append("=========================\n");
         builder.append("Type                : " + ZeUtils.zeTypeToString(type) + "\n");
         builder.append("pNext               : " + pNext + "\n");

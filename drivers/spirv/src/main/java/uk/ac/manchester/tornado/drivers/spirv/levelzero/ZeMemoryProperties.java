@@ -13,14 +13,14 @@ public class ZeMemoryProperties {
 
     private long ptrZeMemoryProperty;
 
-    public ZeMemoryProperties () {
+    public ZeMemoryProperties() {
         this.type = Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_MEMORY_PROPERTIES;
     }
 
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("=========================\n");
-        builder.append("Device Image Properties\n");
+        builder.append("Device Memory Properties\n");
         builder.append("=========================\n");
         builder.append("Type        : " + ZeUtils.zeTypeToString(type) + "\n");
         builder.append("pNext       : " + pNext + "\n");

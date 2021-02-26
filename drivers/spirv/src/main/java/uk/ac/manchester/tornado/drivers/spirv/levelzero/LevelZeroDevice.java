@@ -4,13 +4,15 @@ import java.util.stream.IntStream;
 
 public class LevelZeroDevice {
 
-    private ZeDriverHandle driver;
+    private LevelZeroDriver driver;
+    private ZeDriverHandle driverHandle;
     private int deviceIndex;
     private long deviceHandlerPtr;
     private ZeDeviceProperties deviceProperties;
 
-    public LevelZeroDevice(ZeDriverHandle driver, int deviceIndex, long deviceHandlerPointer) {
+    public LevelZeroDevice(LevelZeroDriver driver, ZeDriverHandle driverHandler, int deviceIndex, long deviceHandlerPointer) {
         this.driver = driver;
+        this.driverHandle = driverHandler;
         this.deviceIndex = deviceIndex;
         this.deviceHandlerPtr = deviceHandlerPointer;
     }
@@ -75,4 +77,20 @@ public class LevelZeroDevice {
     public String getDeviceExtensions() {
         return null;
     }
+
+    public LevelZeroDriver getDriver() {
+        return this.driver;
+    }
+
+    public ZeDriverHandle getDriverHandler() {
+        return this.driverHandle;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SPIRV LEVELZERO Device");
+        return sb.toString();
+    }
+
 }

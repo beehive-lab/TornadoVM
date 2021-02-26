@@ -241,22 +241,22 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public long getMaxGlobalMemory() {
-        return 0;
+        return device.getDeviceGlobalMemorySize();
     }
 
     @Override
     public long getDeviceLocalMemorySize() {
-        return 0;
+        return device.getDeviceLocalMemorySize();
     }
 
     @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
-        return new long[0];
+        return device.getDeviceMaxWorkgroupDimensions();
     }
 
     @Override
     public String getDeviceOpenCLCVersion() {
-        return null;
+        return device.getDeviceOpenCLCVersion();
     }
 
     @Override
@@ -283,4 +283,10 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoVMBackend getTornadoVMBackend() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return device.getName();
+    }
+
 }

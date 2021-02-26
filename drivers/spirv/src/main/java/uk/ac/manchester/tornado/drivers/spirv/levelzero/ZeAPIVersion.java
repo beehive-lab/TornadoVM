@@ -9,8 +9,12 @@ public class ZeAPIVersion {
         this.apiVersionPtr = 0;
     }
 
-    public long getAPIVersion() {
+    public long getAPIVersionPtr() {
         return apiVersionPtr;
+    }
+
+    public String getAPIVersion() {
+        return version;
     }
 
     public void setVersionString(String version) {

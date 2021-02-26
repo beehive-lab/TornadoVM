@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 
 import java.nio.ByteOrder;
 
@@ -37,9 +36,15 @@ public abstract class SPIRVDevice {
         return platformIndex;
     }
 
-    public String getName() {
-        return name;
-    }
+    public abstract String getName();
 
     public abstract Object getDevice();
+
+    public abstract long getDeviceGlobalMemorySize();
+
+    public abstract long getDeviceLocalMemorySize();
+
+    public abstract long[] getDeviceMaxWorkgroupDimensions();
+
+    public abstract String getDeviceOpenCLCVersion();
 }

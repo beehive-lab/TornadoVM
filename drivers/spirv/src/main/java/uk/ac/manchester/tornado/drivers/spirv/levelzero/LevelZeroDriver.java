@@ -93,7 +93,7 @@ public class LevelZeroDriver {
     private void updateArchitecture(int numDevices, ZeDriverHandle driverHandler, ZeDevicesHandle deviceHandle) {
         ArrayList<LevelZeroDevice> devices = new ArrayList<>();
         for (int i = 0; i < numDevices; i++) {
-            LevelZeroDevice device = new LevelZeroDevice(driverHandler, i, deviceHandle.getDevicePtrAtIndex(i));
+            LevelZeroDevice device = new LevelZeroDevice(this, driverHandler, i, deviceHandle.getDevicePtrAtIndex(i));
             devices.add(device);
         }
         architecturePointers.put(driverHandler, deviceHandle);
