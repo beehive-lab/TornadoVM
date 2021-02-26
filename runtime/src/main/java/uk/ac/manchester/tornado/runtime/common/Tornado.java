@@ -63,13 +63,13 @@ public final class Tornado implements TornadoCI {
      * Priority of the PTX Backend. The higher the number, the more priority over
      * the rest of the backends.
      */
-    public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "10"));
+    public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
 
     /**
      * Priority of the OpenCL Backend. The higher the number, the more priority over
      * the rest of the backends.
      */
-    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "1"));
+    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
 
     /**
      * Priority of the SPIRV Backend. The higher the number, the more priority over

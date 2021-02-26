@@ -153,7 +153,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         StringBuilder sb = new StringBuilder();
         sb.append(deviceProperties.toString() + "\n");
         sb.append(computeProperties.toString() + "\n");

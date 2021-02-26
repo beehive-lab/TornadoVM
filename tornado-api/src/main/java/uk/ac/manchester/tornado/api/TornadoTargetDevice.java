@@ -61,6 +61,6 @@ public interface TornadoTargetDevice {
 
     long getDeviceMaxAllocationSize();
 
-    Object getDeviceInfo();
+    String getDeviceInfo();
 
 }

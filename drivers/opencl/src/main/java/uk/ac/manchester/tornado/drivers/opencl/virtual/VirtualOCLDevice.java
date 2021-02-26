@@ -197,7 +197,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         return "DummyDeviceInfo";
     }
 
@@ -210,4 +210,3 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
         return availableProcessors;
     }
 }
-

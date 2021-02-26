@@ -86,7 +86,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         throw new UnsupportedOperationException("");
     }
 

@@ -153,7 +153,7 @@ public class PTXDevice implements TornadoTargetDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         return getDeviceName();
     }
 

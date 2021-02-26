@@ -452,7 +452,7 @@ public class OCLDevice implements OCLTargetDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         sb.append(String.format("Freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
