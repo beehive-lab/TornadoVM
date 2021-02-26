@@ -14,6 +14,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -55,6 +56,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     public SPIRVDeviceContext getDeviceContext() {
         return context;
+    }
+
+    public TornadoSuitesProvider getTornadoSuites() {
+        return ((SPIRVProviders) getProviders()).getSuitesProvider();
     }
 
 }

@@ -27,6 +27,7 @@ import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public abstract class TornadoBackend<P extends Providers> extends Backend {
 

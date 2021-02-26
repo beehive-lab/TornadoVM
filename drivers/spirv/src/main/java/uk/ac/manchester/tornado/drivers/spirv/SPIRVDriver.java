@@ -58,7 +58,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
     }
 
     @Override
-    public TornadoBackend getDefaultBackend() {
+    public SPIRVBackend getDefaultBackend() {
         return null;
     }
 
@@ -69,12 +69,12 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     @Override
     public TornadoSuitesProvider getSuitesProvider() {
-        return null;
+        return getDefaultBackend().getTornadoSuites();
     }
 
     @Override
     public TornadoDevice getDefaultDevice() {
-        return null;
+        return getDefaultBackend().getDeviceContext().asMapping();
     }
 
     @Override
@@ -114,7 +114,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     @Override
     public TornadoDeviceType getTypeDefaultDevice() {
-        return null;
+        return getDefaultDevice().getDeviceType();
     }
 
     @Override

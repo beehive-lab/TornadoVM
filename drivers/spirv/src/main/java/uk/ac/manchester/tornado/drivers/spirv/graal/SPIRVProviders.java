@@ -42,7 +42,7 @@ public class SPIRVProviders extends Providers {
         this.suites = suites;
     }
 
-    public SPIRVProviders getSuitesProvider() {
-        return (SPIRVProviders) suites;
+    public TornadoSuitesProvider getSuitesProvider() {
+        return suites;
     }
 }
