@@ -65,7 +65,7 @@ public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
     public SPIRVContext createContext() {
         ZeContextDesc contextDescription = new ZeContextDesc();
         levelZeroContext = new LevelZeroContext(driversHandler, contextDescription);
-        levelZeroContext.zeContextCreate_native(driversHandler.getZe_driver_handle_t_ptr()[indexDriver], indexDriver);
+        levelZeroContext.zeContextCreate(driversHandler.getZe_driver_handle_t_ptr()[indexDriver], indexDriver);
         spirvContext = new SPIRVLevelZeroContext(this, spirvDevices, levelZeroContext);
         return spirvContext;
     }

@@ -9,7 +9,7 @@ public class LevelZeroContext {
 
     native int zeContextCreate(long driverHandler, ZeContextDesc contextDescriptionPtr, long[] contextPtr);
 
-    public int zeContextCreate_native(long driverHandler, int indexDriverHandler) {
+    public int zeContextCreate(long driverHandler, int indexDriverHandler) {
         long[] contextPointers = new long[1];
         int status = zeContextCreate(driverHandler, contextDescription, contextPointers);
         this.contextHandle = new ZeContextHandle(contextPointers);
