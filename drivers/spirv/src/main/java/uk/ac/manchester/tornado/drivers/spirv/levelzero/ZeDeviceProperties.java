@@ -4,8 +4,9 @@ import java.util.Arrays;
 
 public class ZeDeviceProperties {
 
-    private int type;
+    private int stype;
     private long pNext;
+    private int type;
     private int vendorId;
     private int deviceId;
     private int flags;
@@ -30,7 +31,26 @@ public class ZeDeviceProperties {
     private String name;
 
     public ZeDeviceProperties() {
-        type = Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    }
+
+    public ZeDeviceType getType(int type) {
+        switch (type) {
+            case 1:
+                return ZeDeviceType.ZE_DEVICE_TYPE_GPU;
+            case 2:
+                return ZeDeviceType.ZE_DEVICE_TYPE_GPU;
+            case 3:
+                return ZeDeviceType.ZE_DEVICE_TYPE_FPGA;
+            case 4:
+                return ZeDeviceType.ZE_DEVICE_TYPE_MCA;
+            default:
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
+    }
+
+    public ZeDeviceType getType() {
+        return getType(this.type);
     }
 
     @Override
@@ -39,8 +59,9 @@ public class ZeDeviceProperties {
         builder.append("=========================\n");
         builder.append("Device Properties\n");
         builder.append("=========================\n");
-        builder.append("Type                : " + ZeUtils.zeTypeToString(type) + "\n");
+        builder.append("STye                : " + ZeUtils.zeTypeToString(stype) + "\n");
         builder.append("pNext               : " + pNext + "\n");
+        builder.append("Type                : " + getType(type) + "\n");
         builder.append("vendorId            : " + vendorId + "\n");
         builder.append("deviceId            : " + deviceId + "\n");
         builder.append("flags               : " + flags + "\n");
@@ -62,8 +83,8 @@ public class ZeDeviceProperties {
         return builder.toString();
     }
 
-    public int getType() {
-        return type;
+    public int getStype() {
+        return stype;
     }
 
     public long getpNext() {

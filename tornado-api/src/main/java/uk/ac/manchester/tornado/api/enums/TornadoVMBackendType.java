@@ -41,16 +41,17 @@
  */
 package uk.ac.manchester.tornado.api.enums;
 
-public enum TornadoVMBackend {
+public enum TornadoVMBackendType {
 
     OpenCL("OpenCL"), //
     PTX("PTX"), //
+    SPIRV("SPIRV"), //
     JAVA("Java"), //
     VIRTUAL("Virtual");
 
     String name;
 
-    TornadoVMBackend(String backendName) {
+    TornadoVMBackendType(String backendName) {
         this.name = backendName;
     }
 

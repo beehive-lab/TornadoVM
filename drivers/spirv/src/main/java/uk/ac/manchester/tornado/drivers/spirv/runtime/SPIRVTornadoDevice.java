@@ -5,13 +5,14 @@ import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -231,12 +232,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoDeviceType getDeviceType() {
-        return null;
+        return device.getTornadoDeviceType();
     }
 
     @Override
     public long getMaxAllocMemory() {
-        return 0;
+        return device.getMaxAllocMemory();
     }
 
     @Override
@@ -266,22 +267,22 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int getDriverIndex() {
-        return 0;
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(SPIRVDriver.class);
     }
 
     @Override
     public Object getAtomic() {
-        return null;
+        throw new RuntimeException("Unimplemented");
     }
 
     @Override
     public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public TornadoVMBackend getTornadoVMBackend() {
-        return null;
+    public TornadoVMBackendType getTornadoVMBackend() {
+        return TornadoVMBackendType.SPIRV;
     }
 
     @Override

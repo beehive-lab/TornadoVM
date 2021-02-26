@@ -39,7 +39,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
@@ -368,7 +368,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public boolean isPTXDevice(TornadoAcceleratorDevice device) {
-        return device.getTornadoVMBackend().equals(TornadoVMBackend.PTX);
+        return device.getTornadoVMBackend().equals(TornadoVMBackendType.PTX);
     }
 
     @Override

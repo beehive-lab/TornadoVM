@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 
 import java.nio.ByteOrder;
@@ -47,4 +48,8 @@ public abstract class SPIRVDevice {
     public abstract long[] getDeviceMaxWorkgroupDimensions();
 
     public abstract String getDeviceOpenCLCVersion();
+
+    public abstract long getMaxAllocMemory();
+
+    public abstract TornadoDeviceType getTornadoDeviceType();
 }

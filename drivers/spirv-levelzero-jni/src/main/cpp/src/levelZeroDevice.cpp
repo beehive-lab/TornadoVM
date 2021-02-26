@@ -15,7 +15,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         (JNIEnv *env, jobject object, jlong javaDeviceHandler, jobject javaDeviceProperties) {
 
     jclass descriptionClass = env->GetObjectClass(javaDeviceProperties);
-    jfieldID fieldType = env->GetFieldID(descriptionClass, "type", "I");
+    jfieldID fieldType = env->GetFieldID(descriptionClass, "stype", "I");
     ze_structure_type_t type = static_cast<ze_structure_type_t>(env->GetIntField(javaDeviceProperties, fieldType));
 
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
@@ -25,11 +25,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeDeviceGetProperties", result);
 
     // Update object
-    jfieldID field = env->GetFieldID(descriptionClass, "type", "I");
+    jfieldID field = env->GetFieldID(descriptionClass, "stype", "I");
     env->SetIntField(javaDeviceProperties, field, device_properties.stype);
 
     field = env->GetFieldID(descriptionClass, "pNext", "J");
     env->SetLongField(javaDeviceProperties, field, reinterpret_cast<jlong>(device_properties.pNext));
+
+    field = env->GetFieldID(descriptionClass, "type", "I");
+    env->SetIntField(javaDeviceProperties, field, device_properties.type);
 
     field = env->GetFieldID(descriptionClass, "vendorId", "I");
     env->SetIntField(javaDeviceProperties, field, device_properties.vendorId);

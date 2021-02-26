@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
 
 import java.nio.ByteOrder;
@@ -116,5 +117,23 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     @Override
     public String getDeviceOpenCLCVersion() {
         return " (LEVEL ZERO) " + apiVersion.getAPIVersion();
+    }
+
+    @Override
+    public long getMaxAllocMemory() {
+        return deviceProperties.getMaxMemAllocSize();
+    }
+
+    @Override
+    public TornadoDeviceType getTornadoDeviceType() {
+        ZeDeviceType type = deviceProperties.getType();
+        if (type == ZeDeviceType.ZE_DEVICE_TYPE_GPU) {
+            return TornadoDeviceType.GPU;
+        } else if (type == ZeDeviceType.ZE_DEVICE_TYPE_FPGA) {
+            return TornadoDeviceType.FPGA;
+        } else if (type == ZeDeviceType.ZE_DEVICE_TYPE_CPU) {
+            return TornadoDeviceType.CPU;
+        }
+        return null;
     }
 }

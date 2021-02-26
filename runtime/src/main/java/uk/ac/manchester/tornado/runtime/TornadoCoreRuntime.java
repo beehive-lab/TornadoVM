@@ -197,8 +197,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
                 return driverIndex;
             }
         }
-        shouldNotReachHere("Could not find index for driver: " + driverClass);
-        return -1;
+        throw shouldNotReachHere("Could not find index for driver: " + driverClass);
     }
 
     public MetaAccessProvider getMetaAccess() {

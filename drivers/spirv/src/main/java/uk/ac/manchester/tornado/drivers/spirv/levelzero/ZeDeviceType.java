@@ -24,8 +24,13 @@ public enum ZeDeviceType {
 
     ZE_DEVICE_TYPE_FORCE_UINT32(0x7fffffff);
 
-    final int value;
+    int value;
+
     ZeDeviceType(int value) {
         this.value = value;
+    }
+
+    int getValue() {
+        return value;
     }
 }

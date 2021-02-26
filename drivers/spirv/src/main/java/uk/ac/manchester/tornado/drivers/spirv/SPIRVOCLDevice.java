@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 
 import java.nio.ByteOrder;
@@ -31,8 +32,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public String getName() {
-        System.err.println("[SPIRVOCLDevice] OCL NAME UNIMPLEMENTED");
-        return null;
+        throw new UnsupportedOperationException("getName");
     }
 
     @Override
@@ -42,25 +42,31 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public long getDeviceGlobalMemorySize() {
-        System.err.println("[SPIRVOCLDevice] UNIMPLEMENTED");
-        return -1;
+        throw new UnsupportedOperationException("getDeviceGlobalMemorySize");
     }
 
     @Override
     public long getDeviceLocalMemorySize() {
-        System.err.println("[SPIRVOCLDevice] UNIMPLEMENTED getDeviceLocalMemorySize");
-        return 0;
+        throw new UnsupportedOperationException("getDeviceLocalMemorySize");
     }
 
     @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
-        System.err.println("[SPIRVOCLDevice] UNIMPLEMENTED getDeviceMaxWorkgroupDimensions");
-        return new long[0];
+        throw new UnsupportedOperationException("getDeviceMaxWorkgroupDimensions");
     }
 
     @Override
     public String getDeviceOpenCLCVersion() {
-        System.err.println("[SPIRVOCLDevice] UNIMPLEMENTED getDeviceOpenCLCVersion");
-        return null;
+        throw new UnsupportedOperationException("getDeviceOpenCLCVersion");
+    }
+
+    @Override
+    public long getMaxAllocMemory() {
+        throw new UnsupportedOperationException("getMaxAllocMemory");
+    }
+
+    @Override
+    public TornadoDeviceType getTornadoDeviceType() {
+        throw new UnsupportedOperationException("getTornadoDeviceType");
     }
 }
