@@ -39,7 +39,7 @@ public class ZeDeviceProperties {
             case 1:
                 return ZeDeviceType.ZE_DEVICE_TYPE_GPU;
             case 2:
-                return ZeDeviceType.ZE_DEVICE_TYPE_GPU;
+                return ZeDeviceType.ZE_DEVICE_TYPE_CPU;
             case 3:
                 return ZeDeviceType.ZE_DEVICE_TYPE_FPGA;
             case 4:
