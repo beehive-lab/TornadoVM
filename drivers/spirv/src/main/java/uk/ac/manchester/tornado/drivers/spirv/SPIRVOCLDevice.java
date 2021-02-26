@@ -41,6 +41,11 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     }
 
     @Override
+    public String getDeviceName() {
+        return null;
+    }
+
+    @Override
     public long getDeviceGlobalMemorySize() {
         throw new UnsupportedOperationException("getDeviceGlobalMemorySize");
     }
@@ -48,6 +53,41 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     @Override
     public long getDeviceLocalMemorySize() {
         throw new UnsupportedOperationException("getDeviceLocalMemorySize");
+    }
+
+    @Override
+    public int getDeviceMaxComputeUnits() {
+        throw new UnsupportedOperationException("");
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkItemSizes() {
+        throw new UnsupportedOperationException("");
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkGroupSize() {
+        throw new UnsupportedOperationException("");
+    }
+
+    @Override
+    public int getDeviceMaxClockFrequency() {
+        throw new UnsupportedOperationException("");
+    }
+
+    @Override
+    public long getDeviceMaxConstantBufferSize() {
+        throw new UnsupportedOperationException("");
+    }
+
+    @Override
+    public long getDeviceMaxAllocationSize() {
+        throw new UnsupportedOperationException("");
+    }
+
+    @Override
+    public Object getDeviceInfo() {
+        throw new UnsupportedOperationException("");
     }
 
     @Override
@@ -69,4 +109,10 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     public TornadoDeviceType getTornadoDeviceType() {
         throw new UnsupportedOperationException("getTornadoDeviceType");
     }
+
+    @Override
+    public String getPlatformName() {
+        throw new UnsupportedOperationException("");
+    }
+
 }

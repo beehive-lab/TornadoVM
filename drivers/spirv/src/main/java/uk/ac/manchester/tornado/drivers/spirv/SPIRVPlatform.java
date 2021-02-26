@@ -7,5 +7,4 @@ public interface SPIRVPlatform {
     SPIRVDevice getDevice(int k);
 
     SPIRVContext createContext();
-
 }

@@ -70,4 +70,9 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         return spirvDeviceContext;
     }
 
+    @Override
+    public SPIRVDeviceContext getDeviceContext() {
+        return spirvDeviceContext;
+    }
+
 }

@@ -16,4 +16,6 @@ public abstract class SPIRVContext extends TornadoLogger {
     }
 
     public abstract SPIRVDeviceContext createDeviceContext(int deviceIndex);
+
+    public abstract SPIRVDeviceContext getDeviceContext();
 }

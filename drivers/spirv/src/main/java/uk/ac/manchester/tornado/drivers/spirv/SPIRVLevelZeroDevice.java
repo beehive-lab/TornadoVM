@@ -19,20 +19,25 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     public SPIRVLevelZeroDevice(int platformIndex, int deviceIndex, LevelZeroDevice device) {
         super(platformIndex, deviceIndex);
         this.device = device;
-        this.deviceName = getDeviceName();
         this.totalMemorySize = getTotalGlobalMemory();
-        getDeviceComputeProperties();
-        getDriverVersion();
+        initDeviceProperties();
+        initDeviceComputeProperties();
+        initDriverVersion();
     }
 
-    private String getDeviceName() {
+    private void initDeviceProperties() {
         deviceProperties = new ZeDeviceProperties();
         int result = device.zeDeviceGetProperties(device.getDeviceHandlerPtr(), deviceProperties);
         errorLog("zeDeviceGetProperties", result);
+        deviceName = deviceProperties.getName();
+    }
+
+    @Override
+    public String getDeviceName() {
         return deviceProperties.getName();
     }
 
-    private void getDeviceComputeProperties() {
+    private void initDeviceComputeProperties() {
         computeProperties = new ZeComputeProperties();
         int result = device.zeDeviceGetComputeProperties(device.getDeviceHandlerPtr(), computeProperties);
         errorLog("zeDeviceGetComputeProperties", result);
@@ -56,7 +61,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         return memorySize;
     }
 
-    private void getDriverVersion() {
+    private void initDriverVersion() {
         apiVersion = new ZeAPIVersion();
         LevelZeroDriver driver = device.getDriver();
         ZeDriverHandle driverHandler = device.getDriverHandler();
@@ -105,6 +110,42 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         return computeProperties.getMaxSharedLocalMemory();
     }
 
+    // FIXME - Not sure this is the max of compute UNITS
+    @Override
+    public int getDeviceMaxComputeUnits() {
+        return deviceProperties.getNumEUsPerSubslice();
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkItemSizes() {
+        return new long[0];
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkGroupSize() {
+        return new long[0];
+    }
+
+    @Override
+    public int getDeviceMaxClockFrequency() {
+        return deviceProperties.getCoreClockRate();
+    }
+
+    @Override
+    public long getDeviceMaxConstantBufferSize() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public long getDeviceMaxAllocationSize() {
+        return deviceProperties.getMaxMemAllocSize();
+    }
+
+    @Override
+    public Object getDeviceInfo() {
+        throw new RuntimeException("Not implemented");
+    }
+
     @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
         long[] maxWorkGroup = new long[3];
@@ -136,4 +177,10 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         }
         return null;
     }
+
+    @Override
+    public String getPlatformName() {
+        return "LevelZero";
+    }
+
 }

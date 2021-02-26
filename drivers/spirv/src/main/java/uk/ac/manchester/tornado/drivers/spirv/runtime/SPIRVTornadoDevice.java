@@ -202,27 +202,27 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String getDeviceName() {
-        return null;
+        return "spirv-" + device.getDeviceIndex();
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return String.format("%s %s", device.getName(), device.getTornadoDeviceType());
     }
 
     @Override
     public String getPlatformName() {
-        return null;
+        return device.getPlatformName();
     }
 
     @Override
     public TornadoDeviceContext getDeviceContext() {
-        return null;
+        return device.getSPIRVContext().getDeviceContext();
     }
 
     @Override
-    public TornadoTargetDevice getPhysicalDevice() {
-        return null;
+    public SPIRVDevice getPhysicalDevice() {
+        return device;
     }
 
     @Override
