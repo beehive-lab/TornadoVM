@@ -31,7 +31,6 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -42,7 +41,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.CL_TRUE;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
-public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
+public class OCLDevice implements OCLTargetDevice {
 
     private final long id;
     private final int index;
