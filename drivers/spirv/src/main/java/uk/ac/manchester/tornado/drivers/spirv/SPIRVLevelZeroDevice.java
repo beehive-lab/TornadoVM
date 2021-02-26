@@ -1,7 +1,15 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeComputeProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 
 import java.nio.ByteOrder;
 
@@ -30,11 +38,6 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         int result = device.zeDeviceGetProperties(device.getDeviceHandlerPtr(), deviceProperties);
         errorLog("zeDeviceGetProperties", result);
         deviceName = deviceProperties.getName();
-    }
-
-    @Override
-    public String getDeviceName() {
-        return deviceProperties.getName();
     }
 
     private void initDeviceComputeProperties() {
@@ -101,6 +104,11 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
+    public String getDeviceName() {
+        return deviceProperties.getName();
+    }
+
+    @Override
     public long getDeviceGlobalMemorySize() {
         return totalMemorySize;
     }
@@ -116,11 +124,13 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         return deviceProperties.getNumEUsPerSubslice();
     }
 
+    // FIXME
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
         return new long[0];
     }
 
+    // FIXME
     @Override
     public long[] getDeviceMaxWorkGroupSize() {
         return new long[0];
@@ -131,6 +141,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         return deviceProperties.getCoreClockRate();
     }
 
+    // FIXME
     @Override
     public long getDeviceMaxConstantBufferSize() {
         throw new RuntimeException("Not implemented");
@@ -143,7 +154,11 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
     @Override
     public Object getDeviceInfo() {
-        throw new RuntimeException("Not implemented");
+        StringBuilder sb = new StringBuilder();
+        sb.append(deviceProperties.toString() + "\n");
+        sb.append(computeProperties.toString() + "\n");
+        sb.append(memoryProperties.toString() + "\n");
+        return sb.toString();
     }
 
     @Override
