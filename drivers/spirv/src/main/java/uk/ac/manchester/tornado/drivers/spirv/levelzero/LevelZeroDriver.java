@@ -35,11 +35,12 @@ public class LevelZeroDriver {
      * @returns An error code value:
      * 
      *          <code>
-     *          ::ZE_RESULT_SUCCESS - 
-     *          ::ZE_RESULT_ERROR_UNINITIALIZED -
-     *          ::ZE_RESULT_ERROR_DEVICE_LOST -
-     *          ::ZE_RESULT_ERROR_INVALID_ENUMERATION + `0x1 < flags` -
-     *          ::ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
+     *              ZE_RESULT_SUCCESS  
+     *              ZE_RESULT_ERROR_UNINITIALIZED 
+     *              ZE_RESULT_ERROR_DEVICE_LOST 
+     *              ZE_RESULT_ERROR_INVALID_ENUMERATION 
+     *                 + `0x1 < flags` 
+     *              ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
      *           </code>
      * 
      * @param init
@@ -64,12 +65,12 @@ public class LevelZeroDriver {
      * @return A status/result value:
      * 
      *         <code>
-     *       ZE_RESULT_SUCCESS
-     *       ZE_RESULT_ERROR_UNINITIALIZED
-     *       ZE_RESULT_ERROR_DEVICE_LOST
-     *       ZE_RESULT_ERROR_INVALID_NULL_POINTER
-     *          + `nullptr == pCount`
-     *      </code>
+     *              ZE_RESULT_SUCCESS
+     *              ZE_RESULT_ERROR_UNINITIALIZED
+     *              ZE_RESULT_ERROR_DEVICE_LOST
+     *              ZE_RESULT_ERROR_INVALID_NULL_POINTER
+     *                  + `nullptr == pCount`
+     *         </code>
      * 
      * @param driverHandle
      *            Driver Handler
