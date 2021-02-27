@@ -118,20 +118,106 @@ public class LevelZeroDriver {
         return null;
     }
 
+    /**
+     * Retrieves properties of the driver.
+     * 
+     * <ul>
+     * <li>The application may call this function from simultaneous threads.</li>
+     * <li>The implementation of this function should be lock-free.</li>
+     * </ul>
+     * 
+     * This call is similar to clGetPlatformInfo from OpenCL.
+     * 
+     * @param driverHandler
+     *            {@link ZeDriverHandle}
+     * @param indexDriver
+     *            Index from the Level Zero Platform to query
+     * @param driverProperties
+     *            {@link ZeDriverProperties}
+     * 
+     * @return an integer representing one of the following values:
+     * 
+     *         <code>
+     *              ZE_RESULT_SUCCESS
+     *              ZE_RESULT_ERROR_UNINITIALIZED
+     *              ZE_RESULT_ERROR_DEVICE_LOST
+     *              ZE_RESULT_ERROR_INVALID_NULL_HANDLE
+     *                 + `nullptr == driverHandler`
+     *             ZE_RESULT_ERROR_INVALID_NULL_POINTER
+     *                + `nullptr == driverProperties`
+     *        </code>
+     * 
+     */
     public int zeDriverGetProperties(ZeDriverHandle driverHandler, int indexDriver, ZeDriverProperties driverProperties) {
         int result = zeDriverGetProperties(driverHandler.getZe_driver_handle_t_ptr()[indexDriver], driverProperties);
         return result;
     }
 
-    native int zeDriverGetApiVersion(long driverHandler, ZeAPIVersion apiVersion);
+    private native int zeDriverGetApiVersion(long driverHandler, ZeAPIVersion apiVersion);
 
+    /**
+     * Returns the API version supported by the specified driver.
+     * 
+     * <ul>
+     * <li>The application may call this function from simultaneous threads.</li>
+     * <li>The implementation of this function should be lock-free.</li>
+     * </ul>
+     * 
+     * This call is similar to `clGetPlatformInfo` from OpenCL.
+     * 
+     * @param driverHandler
+     *            {@link ZeDriverHandle}
+     * @param indexDriver
+     *            Driver Index.
+     * @param apiVersion
+     *            {@link ZeAPIVersion}
+     * 
+     * @return An error code:
+     * 
+     *         <code>
+     *              ZE_RESULT_SUCCESS
+     *              ZE_RESULT_ERROR_UNINITIALIZED
+     *              ZE_RESULT_ERROR_DEVICE_LOST
+     *              ZE_RESULT_ERROR_INVALID_NULL_HANDLE
+     *                 + `nullptr == driverHandler`
+     *             ZE_RESULT_ERROR_INVALID_NULL_POINTER
+     *                + `nullptr == driverProperties`
+     *        </code>
+     */
     public int zeDriverGetApiVersion(ZeDriverHandle driverHandler, int indexDriver, ZeAPIVersion apiVersion) {
         int result = zeDriverGetApiVersion(driverHandler.getZe_driver_handle_t_ptr()[indexDriver], apiVersion);
         return result;
     }
 
-    native int zeContextDestroy(long contextHandlerPtr);
+    private native int zeContextDestroy(long contextHandlerPtr);
 
+    /**
+     * Destroys a context.
+     * 
+     * <ul>
+     * <li>The application must ensure the device is not currently referencing the
+     * context before it is deleted.</li>
+     * <li>The implementation of this function may immediately free all Host and
+     * Device allocations associated with this context.</li>
+     * <li>The application must **not** call this function from simultaneous threads
+     * with the same context handle.</li>
+     * <li>The implementation of this function must be thread-safe.</li>
+     * </ul>
+     * 
+     * @param context
+     *            {@link LevelZeroContext}
+     * 
+     * @returns An error code:
+     * 
+     *          <code>
+     *              ZE_RESULT_SUCCESS
+     *              ZE_RESULT_ERROR_UNINITIALIZED
+     *              ZE_RESULT_ERROR_DEVICE_LOST
+     *              ZE_RESULT_ERROR_INVALID_NULL_HANDLE
+     *                 + `nullptr == context`
+     *             ZE_RESULT_ERROR_HANDLE_OBJECT_IN_USE
+     *          </code>
+     */
     public int zeContextDestroy(LevelZeroContext context) {
         int result = zeContextDestroy(context.getDefaultContextPtr());
         context.initPtr();
