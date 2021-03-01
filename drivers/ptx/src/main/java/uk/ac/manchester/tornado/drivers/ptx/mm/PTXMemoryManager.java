@@ -129,6 +129,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
      */
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
+        // FIXME <REFACTOR> This allocate memory directly in the deviceContext
         this.deviceHeapPointer = deviceContext.getDevice().getPTXContext().allocateMemory(numBytes);
     }
 
