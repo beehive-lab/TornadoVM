@@ -57,9 +57,17 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
         return SPIRVHotSpotBackendFactory.createBackend(options, vmRuntime, vmConfig, device, context);
     }
 
+    private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
+        SPIRVBackend backend = backends[platformIndex][deviceIndex];
+        if (!backend.isInitialised()) {
+            backend.init();
+        }
+        return backend;
+    }
+
     @Override
     public SPIRVBackend getDefaultBackend() {
-        return null;
+        return checkAndInitBackend(0, 0);
     }
 
     @Override

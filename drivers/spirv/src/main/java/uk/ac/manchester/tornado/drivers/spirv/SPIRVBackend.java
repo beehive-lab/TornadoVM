@@ -23,6 +23,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     SPIRVDeviceContext context;
+    private boolean isInitialized;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -32,6 +33,19 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     @Override
     public String decodeDeopt(long value) {
         return null;
+    }
+
+    @Override
+    public boolean isInitialised() {
+        return isInitialized;
+    }
+
+    @Override
+    public void init() {
+        if (!isInitialized) {
+
+            isInitialized = true;
+        }
     }
 
     @Override

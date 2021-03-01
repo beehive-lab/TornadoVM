@@ -136,10 +136,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return target;
     }
 
+    @Override
     public boolean isInitialised() {
         return isInitialised;
     }
 
+    @Override
     public void init() {
         if (isInitialised) {
             return;

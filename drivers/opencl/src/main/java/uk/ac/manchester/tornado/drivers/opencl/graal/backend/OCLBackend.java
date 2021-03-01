@@ -173,6 +173,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
     }
 
+    @Override
     public boolean isInitialised() {
         return backEndInitialized;
     }
@@ -371,6 +372,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
+    @Override
     public void init() {
         if (VIRTUAL_DEVICE_ENABLED) {
             compileLookupBufferKernel();
