@@ -318,6 +318,7 @@ public class OCLDevice implements OCLTargetDevice {
 
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
+
         if (maxWorkItemSizes != null) {
             return maxWorkItemSizes;
         }

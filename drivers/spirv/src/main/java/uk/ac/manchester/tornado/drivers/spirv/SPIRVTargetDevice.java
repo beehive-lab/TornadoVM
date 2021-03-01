@@ -5,6 +5,7 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 import java.nio.ByteOrder;
 
+// FIXME: Interface that might be removed.
 public interface SPIRVTargetDevice extends TornadoTargetDevice {
 
     long getId();

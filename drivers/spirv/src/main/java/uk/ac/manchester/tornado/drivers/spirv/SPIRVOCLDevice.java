@@ -2,13 +2,16 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 import java.nio.ByteOrder;
 
 public class SPIRVOCLDevice extends SPIRVDevice {
 
+    // Holds a reference to the OpenCL device implementation from the OpenCL
+    // backend. It reuses the JNI low level code from the OpenCL Backend.
     private OCLTargetDevice device;
-    private long totalGlobalMemory;
 
     public SPIRVOCLDevice(int platformIndex, int deviceIndex, OCLTargetDevice device) {
         super(platformIndex, deviceIndex);
@@ -32,7 +35,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public String getName() {
-        throw new UnsupportedOperationException("getName");
+        return "SPIRV OCL - " + device.getDeviceName();
     }
 
     @Override
@@ -42,47 +45,47 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public String getDeviceName() {
-        return null;
+        return device.getDeviceName();
     }
 
     @Override
     public long getDeviceGlobalMemorySize() {
-        throw new UnsupportedOperationException("getDeviceGlobalMemorySize");
+        return device.getDeviceGlobalMemorySize();
     }
 
     @Override
     public long getDeviceLocalMemorySize() {
-        throw new UnsupportedOperationException("getDeviceLocalMemorySize");
+        return device.getDeviceLocalMemorySize();
     }
 
     @Override
     public int getDeviceMaxComputeUnits() {
-        throw new UnsupportedOperationException("");
+        return device.getDeviceMaxComputeUnits();
     }
 
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
-        throw new UnsupportedOperationException("");
+        return device.getDeviceMaxWorkItemSizes();
     }
 
     @Override
     public long[] getDeviceMaxWorkGroupSize() {
-        throw new UnsupportedOperationException("");
+        return device.getDeviceMaxWorkGroupSize();
     }
 
     @Override
     public int getDeviceMaxClockFrequency() {
-        throw new UnsupportedOperationException("");
+        return device.getDeviceMaxClockFrequency();
     }
 
     @Override
     public long getDeviceMaxConstantBufferSize() {
-        throw new UnsupportedOperationException("");
+        return device.getDeviceMaxConstantBufferSize();
     }
 
     @Override
     public long getDeviceMaxAllocationSize() {
-        throw new UnsupportedOperationException("");
+        return device.getDeviceMaxAllocationSize();
     }
 
     @Override
@@ -92,27 +95,38 @@ public class SPIRVOCLDevice extends SPIRVDevice {
 
     @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
-        throw new UnsupportedOperationException("getDeviceMaxWorkgroupDimensions");
+        return device.getDeviceMaxWorkItemSizes();
     }
 
     @Override
     public String getDeviceOpenCLCVersion() {
-        throw new UnsupportedOperationException("getDeviceOpenCLCVersion");
+        return device.getDeviceOpenCLCVersion();
     }
 
     @Override
     public long getMaxAllocMemory() {
-        throw new UnsupportedOperationException("getMaxAllocMemory");
+        return device.getDeviceMaxAllocationSize();
     }
 
     @Override
     public TornadoDeviceType getTornadoDeviceType() {
-        throw new UnsupportedOperationException("getTornadoDeviceType");
+        OCLDeviceType type = device.getDeviceType();
+        switch (type) {
+            case CL_DEVICE_TYPE_CPU:
+                return TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU:
+                return TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                return TornadoDeviceType.FPGA;
+            case CL_DEVICE_TYPE_ALL:
+                return TornadoDeviceType.DEFAULT;
+        }
+        return null;
     }
 
     @Override
     public String getPlatformName() {
-        throw new UnsupportedOperationException("");
+        return OpenCL.getPlatform(getPlatformIndex()).getName();
     }
 
 }

@@ -32,14 +32,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     private int platformIndex;
 
     public SPIRVTornadoDevice(int platformIndex, int deviceIndex) {
-        System.out.println("Creating SPIRV TornadoDevice");
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
         device = SPIRVProxy.getPlatform(platformIndex).getDevice(deviceIndex);
     }
 
     public SPIRVTornadoDevice(SPIRVDevice lowLevelDevice) {
-        System.out.println("Creating SPIRV TornadoDevice");
         this.platformIndex = lowLevelDevice.getPlatformIndex();
         this.deviceIndex = lowLevelDevice.getDeviceIndex();
         device = lowLevelDevice;

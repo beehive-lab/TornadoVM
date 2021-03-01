@@ -2,24 +2,26 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 
 import java.nio.ByteOrder;
 
 public abstract class SPIRVDevice implements TornadoTargetDevice {
 
-    private String name;
     private int platformIndex;
     private int deviceIndex;
-    private SPIRVContext context;
+    private SPIRVDeviceContext context;
 
     public SPIRVDevice(int platformIndex, int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
     }
 
+    public void setSPIRVDeviceContext(SPIRVDeviceContext spirvDeviceContext) {
+        this.context = spirvDeviceContext;
+    }
+
     public SPIRVContext getSPIRVContext() {
-        return context;
+        return this.context.getSpirvContext();
     }
 
     public abstract boolean isDeviceDoubleFPSupported();
@@ -27,8 +29,6 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
     public abstract String getDeviceExtensions();
 
     public abstract ByteOrder getByteOrder();
-
-    private OCLTargetDevice oclDevice;
 
     public int getDeviceIndex() {
         return deviceIndex;
@@ -55,4 +55,5 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
     public abstract TornadoDeviceType getTornadoDeviceType();
 
     public abstract String getPlatformName();
+
 }

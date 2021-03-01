@@ -67,6 +67,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     @Override
     public SPIRVDeviceContext createDeviceContext(int deviceIndex) {
         spirvDeviceContext = new SPIRVDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
+        devices.get(deviceIndex).setSPIRVDeviceContext(spirvDeviceContext);
         return spirvDeviceContext;
     }
 

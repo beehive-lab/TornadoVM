@@ -2,28 +2,41 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 /**
  * Class to map an SPIRV device (Device represented either in Level Zero or an
  * OpenCL device) with an SPIRV Context.
  */
-public class SPIRVDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
+public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
 
     private SPIRVDevice device;
     private SPIRVCommandQueue queue;
-    private SPIRVContext context;
+    private SPIRVContext spirvContext;
+    private OCLExecutionEnvironment oclContext;
     private SPIRVTornadoDevice tornadoDevice;
 
-    public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
+    private void init(SPIRVDevice device, SPIRVCommandQueue queue) {
         this.device = device;
         this.queue = queue;
-        this.context = context;
         this.tornadoDevice = new SPIRVTornadoDevice(device);
+    }
+
+    public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
+        init(device, queue);
+        this.spirvContext = context;
+    }
+
+    public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, OCLExecutionEnvironment context) {
+        init(device, queue);
+        this.oclContext = context;
+    }
+
+    public SPIRVContext getSpirvContext() {
+        return this.spirvContext;
     }
 
     @Override
