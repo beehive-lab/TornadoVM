@@ -20,10 +20,11 @@ public class SPIRVOCLContext extends SPIRVContext {
         }
 
         spirvoclDeviceContext = new ArrayList<>();
-        for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
+        for (SPIRVDevice device : devices) {
             // We do not need command queue from this class, it was already created in the
             // constructor
-            SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(devices.get(deviceIndex), null, context);
+            SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(device, null, context);
+            device.setDeviContext(deviceContext);
             spirvoclDeviceContext.add(deviceContext);
         }
     }

@@ -1,6 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueListHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +34,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         // Create LevelZeroDeviceContext
         for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
             SPIRVDeviceContext deviceContext = new SPIRVDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
+            devices.get(deviceIndex).setDeviContext(deviceContext);
             spirvDeviceContext.add(deviceContext);
         }
     }

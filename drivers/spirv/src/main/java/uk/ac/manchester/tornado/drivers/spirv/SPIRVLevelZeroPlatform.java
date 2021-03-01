@@ -1,6 +1,11 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 
 import java.util.ArrayList;
 import java.util.List;

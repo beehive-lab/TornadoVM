@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -13,11 +12,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -215,7 +210,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoDeviceContext getDeviceContext() {
-        return device.getSPIRVContext().getDeviceContext(deviceIndex);
+        return device.getDeviContext();
     }
 
     @Override

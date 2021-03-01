@@ -9,15 +9,19 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
 
     private int platformIndex;
     private int deviceIndex;
-    private SPIRVDeviceContext context;
+    private SPIRVDeviceContext deviceContext;
 
     public SPIRVDevice(int platformIndex, int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
     }
 
-    public SPIRVContext getSPIRVContext() {
-        return this.context.getSpirvContext();
+    public void setDeviContext(SPIRVDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
+    }
+
+    public SPIRVDeviceContext getDeviContext() {
+        return this.deviceContext;
     }
 
     public abstract boolean isDeviceDoubleFPSupported();
