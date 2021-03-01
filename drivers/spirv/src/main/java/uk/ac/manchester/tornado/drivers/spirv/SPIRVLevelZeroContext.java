@@ -1,14 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +76,27 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     @Override
     public SPIRVDeviceContext getDeviceContext(int deviceIndex) {
         return spirvDeviceContext.get(deviceIndex);
+    }
+
+    @Override
+    public long allocateMemory(long numBytes) {
+
+        System.out.println("Allocating with Level Zero");
+
+        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        deviceMemAllocDesc.setOrdinal(0);
+
+        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+        hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+
+        LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
+
+        LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(0).getDevice().getDevice();
+
+        levelZeroContext.zeMemAllocShared(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), bufferA);
+
+        return bufferA.getPtrBuffer();
     }
 
 }

@@ -57,11 +57,11 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;
 
-    public OCLMemoryManager(final OCLDeviceContext device) {
-        deviceContext = device;
+    public OCLMemoryManager(final OCLDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
         callStackLimit = OCL_CALL_STACK_LIMIT;
         initialised = false;
-        scheduleMeta = new ScheduleMetaData("mm-" + device.getDeviceId());
+        scheduleMeta = new ScheduleMetaData("mm-" + deviceContext.getDeviceId());
         reset();
     }
 
@@ -90,6 +90,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return heapLimit - heapPosition;
     }
 
+    @Override
     public final void reset() {
         callStackPosition = 0;
         deviceBufferPosition = 0;
@@ -185,7 +186,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     long toAbsoluteDeviceAddress(final long address) {
         long result = address;
 
-        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped arround: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
+        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
         result += deviceBufferAddress;
 
         return result;

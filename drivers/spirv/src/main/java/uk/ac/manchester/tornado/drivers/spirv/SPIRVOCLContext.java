@@ -34,4 +34,9 @@ public class SPIRVOCLContext extends SPIRVContext {
         return spirvoclDeviceContext.get(deviceIndex);
     }
 
+    @Override
+    public long allocateMemory(long numBytes) {
+        throw new RuntimeException("Unimplemented");
+    }
+
 }

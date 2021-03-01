@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DUMP_EVENTS;
 
-public class PTXContext extends TornadoLogger {
+public class PTXContext {
 
     private final long ptxContext;
     private final PTXDevice device;

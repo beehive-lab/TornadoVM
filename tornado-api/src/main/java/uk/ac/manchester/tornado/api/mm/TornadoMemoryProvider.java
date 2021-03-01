@@ -57,4 +57,6 @@ public interface TornadoMemoryProvider {
 
     boolean isInitialised();
 
+    void reset();
+
 }

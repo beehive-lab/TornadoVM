@@ -97,7 +97,7 @@ public class TestOpenCLJITCompiler {
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
-        // Get the Graal Resoved Java Method
+        // Get the Graal Resolved Java Method
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
@@ -181,6 +181,7 @@ public class TestOpenCLJITCompiler {
             double seq = 0.12 * a[i] * b[i];
             if (Math.abs(c[i] - seq) > 0.01) {
                 correct = false;
+                break;
             }
         }
         if (!correct) {

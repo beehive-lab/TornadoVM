@@ -88,6 +88,11 @@ public class TornadoOptions {
     public final static int PTX_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
 
     /**
+     * Sets the call stack limit in bytes for the SPIRV backend. Default is 8192.
+     */
+    public final static int SPIRV_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.spirv.callstack.limit", "8192"));
+
+    /**
      * Prints the generated code by the TornadoVM compiler. Default is False.
      */
     public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
@@ -180,6 +185,6 @@ public class TornadoOptions {
     /**
      * Use Level Zero as a dispatcher for SPIRV
      */
-    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "False");
+    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "True");
 
 }

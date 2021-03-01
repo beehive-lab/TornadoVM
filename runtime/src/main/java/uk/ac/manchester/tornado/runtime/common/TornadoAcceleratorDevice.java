@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 
+// FIXME <ADD JAVA DOC>
 public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     TornadoSchedulingStrategy getPreferredSchedule();

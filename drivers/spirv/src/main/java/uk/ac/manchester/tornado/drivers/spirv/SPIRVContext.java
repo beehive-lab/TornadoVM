@@ -1,10 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
 import java.util.List;
 
-public abstract class SPIRVContext extends TornadoLogger {
+public abstract class SPIRVContext {
 
     SPIRVPlatform platform;
     List<SPIRVDevice> devices;
@@ -17,4 +15,5 @@ public abstract class SPIRVContext extends TornadoLogger {
 
     public abstract SPIRVDeviceContext getDeviceContext(int deviceIndex);
 
+    public abstract long allocateMemory(long numBytes);
 }

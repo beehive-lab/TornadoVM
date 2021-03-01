@@ -20,7 +20,7 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
         this.deviceContext = deviceContext;
     }
 
-    public SPIRVDeviceContext getDeviContext() {
+    public SPIRVDeviceContext getDeviceContext() {
         return this.deviceContext;
     }
 

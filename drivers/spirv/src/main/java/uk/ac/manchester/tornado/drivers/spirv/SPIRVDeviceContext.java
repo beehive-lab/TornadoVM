@@ -2,8 +2,11 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 
@@ -18,11 +21,13 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     private SPIRVContext spirvContext;
     private OCLExecutionEnvironment oclContext;
     private SPIRVTornadoDevice tornadoDevice;
+    private SPIRVMemoryManager memoryManager;
 
     private void init(SPIRVDevice device, SPIRVCommandQueue queue) {
         this.device = device;
         this.queue = queue;
         this.tornadoDevice = new SPIRVTornadoDevice(device);
+        this.memoryManager = new SPIRVMemoryManager(this);
     }
 
     public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
@@ -39,14 +44,18 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
         return this.spirvContext;
     }
 
+    public SPIRVDevice getDevice() {
+        return device;
+    }
+
     @Override
     public boolean isInitialised() {
         return false;
     }
 
     @Override
-    public TornadoMemoryProvider getMemoryManager() {
-        return null;
+    public SPIRVMemoryManager getMemoryManager() {
+        return this.memoryManager;
     }
 
     @Override
@@ -102,4 +111,5 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     public SPIRVTornadoDevice asMapping() {
         return tornadoDevice;
     }
+
 }
