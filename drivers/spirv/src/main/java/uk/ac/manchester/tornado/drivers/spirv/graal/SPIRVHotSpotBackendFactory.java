@@ -55,7 +55,7 @@ public class SPIRVHotSpotBackendFactory {
         SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT,
                 device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
-        SPIRVDeviceContext deviceContext = context.createDeviceContext(device.getDeviceIndex());
+        SPIRVDeviceContext deviceContext = context.getDeviceContext(device.getDeviceIndex());
 
         SPIRVCodeProvider codeProvider = new SPIRVCodeProvider(targetDescription);
 

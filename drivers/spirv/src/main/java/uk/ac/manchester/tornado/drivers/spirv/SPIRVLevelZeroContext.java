@@ -8,7 +8,7 @@ import java.util.List;
 public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private LevelZeroContext levelZeroContext;
-    private SPIRVDeviceContext spirvDeviceContext;
+    private List<SPIRVDeviceContext> spirvDeviceContext;
     private List<SPIRVCommandQueue> commandQueues;
 
     public SPIRVLevelZeroContext(SPIRVPlatform platform, List<SPIRVDevice> devices, LevelZeroContext levelZeroContext) {
@@ -19,6 +19,14 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         for (SPIRVDevice device : devices) {
             ZeCommandQueueListHandle commandQueue = createCommandQueue(device);
             commandQueues.add(new SPIRVLevelZeroCommandQueue(commandQueue));
+        }
+
+        spirvDeviceContext = new ArrayList<>();
+
+        // Create LevelZeroDeviceContext
+        for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
+            SPIRVDeviceContext deviceContext = new SPIRVDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
+            spirvDeviceContext.add(deviceContext);
         }
     }
 
@@ -65,15 +73,8 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     }
 
     @Override
-    public SPIRVDeviceContext createDeviceContext(int deviceIndex) {
-        spirvDeviceContext = new SPIRVDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
-        devices.get(deviceIndex).setSPIRVDeviceContext(spirvDeviceContext);
-        return spirvDeviceContext;
-    }
-
-    @Override
-    public SPIRVDeviceContext getDeviceContext() {
-        return spirvDeviceContext;
+    public SPIRVDeviceContext getDeviceContext(int deviceIndex) {
+        return spirvDeviceContext.get(deviceIndex);
     }
 
 }

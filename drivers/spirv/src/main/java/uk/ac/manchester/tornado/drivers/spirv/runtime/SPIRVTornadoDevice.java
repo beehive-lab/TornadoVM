@@ -215,7 +215,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoDeviceContext getDeviceContext() {
-        return device.getSPIRVContext().getDeviceContext();
+        return device.getSPIRVContext().getDeviceContext(deviceIndex);
     }
 
     @Override

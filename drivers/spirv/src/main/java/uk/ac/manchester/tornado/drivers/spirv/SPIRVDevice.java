@@ -16,10 +16,6 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
         this.deviceIndex = deviceIndex;
     }
 
-    public void setSPIRVDeviceContext(SPIRVDeviceContext spirvDeviceContext) {
-        this.context = spirvDeviceContext;
-    }
-
     public SPIRVContext getSPIRVContext() {
         return this.context.getSpirvContext();
     }
