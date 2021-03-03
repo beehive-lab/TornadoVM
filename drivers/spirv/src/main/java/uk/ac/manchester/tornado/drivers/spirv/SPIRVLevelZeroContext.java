@@ -33,6 +33,14 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
     }
 
+    /**
+     * Note: In future implementations, we could request a low-latency command queue
+     * from Level Zero.
+     * 
+     * @param spirvDevice
+     *            {@link SPIRVDevice}
+     * @return {@link ZeCommandQueueListHandle}
+     */
     private ZeCommandQueueListHandle createCommandQueue(SPIRVDevice spirvDevice) {
         // ============================================
         // Create a command queue
