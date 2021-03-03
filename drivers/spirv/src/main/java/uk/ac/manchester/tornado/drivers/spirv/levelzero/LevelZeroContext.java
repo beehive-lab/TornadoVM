@@ -50,9 +50,17 @@ public class LevelZeroContext {
     native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
             LevelZeroBufferInteger buffer);
 
+    native int zeMemAllocShared_nativeByte(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+            LevelZeroByteBuffer buffer);
+
     public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
             LevelZeroBufferInteger buffer) {
         return zeMemAllocShared_native(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
+    }
+
+    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+            LevelZeroByteBuffer buffer) {
+        return zeMemAllocShared_nativeByte(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
     }
 
     native int zeModuleCreate_native(long contextPtr, long deviceHandlerPtr, LevelZeroBinaryModule binaryModule, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog);

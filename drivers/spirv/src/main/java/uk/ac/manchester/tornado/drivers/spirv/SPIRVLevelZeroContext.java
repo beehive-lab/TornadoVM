@@ -90,7 +90,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
-        LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
+        LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
 
         LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(0).getDevice().getDevice();
 

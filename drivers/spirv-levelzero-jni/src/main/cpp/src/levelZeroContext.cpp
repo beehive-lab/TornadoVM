@@ -353,6 +353,71 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
+ * Method:    zeMemAllocShared_nativeByte
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocShared_1nativeByte
+        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jobject javaHostMemAllocDesc, jint bufferSize, jint aligmnent, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
+
+    ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
+    ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
+
+    jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
+    jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
+    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
+
+    void* buffer = nullptr;
+    if (ptrBuffer != -1) {
+        buffer = reinterpret_cast<void *>(ptrBuffer);
+    }
+
+    jclass javaDeviceMemAllocDescClass = env->GetObjectClass(javaDeviceMemAllocDesc);
+    jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "stype", "I");
+    int typeDeviceDesc = env->GetIntField(javaDeviceMemAllocDesc, fieldTypeDeviceDesc);
+    jfieldID fieldFlagsDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "flags", "J");
+    long flagDeviceDesc = env->GetLongField(javaDeviceMemAllocDesc, fieldFlagsDeviceDesc);
+    jfieldID fieldOrdinalDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "ordinal", "J");
+    long ordinalDeviceDesc = env->GetLongField(javaDeviceMemAllocDesc, fieldOrdinalDeviceDesc);
+
+    ze_device_mem_alloc_desc_t deviceDesc = {};
+    deviceDesc.stype = static_cast<ze_structure_type_t>(typeDeviceDesc);
+    deviceDesc.ordinal = ordinalDeviceDesc;
+    deviceDesc.flags = flagDeviceDesc;
+
+    jclass javaHostMemAllocDescClass = env->GetObjectClass(javaHostMemAllocDesc);
+    jfieldID fieldTypeHostDesc = env->GetFieldID(javaHostMemAllocDescClass, "stype", "I");
+    int typeHostDesc = env->GetIntField(javaHostMemAllocDesc, fieldTypeHostDesc);
+    jfieldID fieldFlagsHostDesc = env->GetFieldID(javaHostMemAllocDescClass, "flags", "J");
+    long flagsHostDesc = env->GetLongField(javaHostMemAllocDesc, fieldFlagsHostDesc);
+
+    ze_host_mem_alloc_desc_t hostDesc;
+    hostDesc.stype = static_cast<ze_structure_type_t>(typeHostDesc);
+    hostDesc.flags = flagsHostDesc;
+
+    ze_result_t result = zeMemAllocShared(context, &deviceDesc, &hostDesc, bufferSize, aligmnent, device, &buffer);
+    LOG_ZE_JNI("zeMemAllocShared - [ByteBuffer]", result);
+
+    // Update Device Description
+    env->SetIntField(javaDeviceMemAllocDescClass, fieldTypeDeviceDesc, deviceDesc.stype);
+    jfieldID pNext = env->GetFieldID(javaDeviceMemAllocDescClass, "pNext", "J");
+    env->SetLongField(javaDeviceMemAllocDescClass, pNext, (jlong) deviceDesc.pNext);
+    env->SetLongField(javaDeviceMemAllocDescClass, fieldOrdinalDeviceDesc, deviceDesc.ordinal);
+    env->SetLongField(javaDeviceMemAllocDescClass, fieldFlagsDeviceDesc, deviceDesc.flags);
+
+    // Update host description
+    env->SetIntField(javaHostMemAllocDesc, fieldTypeHostDesc, hostDesc.stype);
+    pNext = env->GetFieldID(javaHostMemAllocDescClass, "pNext", "J");
+    env->SetLongField(javaHostMemAllocDesc, pNext, (jlong) deviceDesc.pNext);
+    env->SetLongField(javaHostMemAllocDesc, fieldTypeHostDesc, hostDesc.flags);
+
+    // Set Buffer Pointer
+    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<jlong>(buffer));
+
+    return result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeModuleCreate_native
  * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBinaryModule;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleHandle;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeBuildLogHandle;)I
  */
