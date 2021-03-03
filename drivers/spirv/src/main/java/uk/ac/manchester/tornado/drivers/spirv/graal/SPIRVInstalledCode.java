@@ -25,4 +25,8 @@ public class SPIRVInstalledCode extends InstalledCode implements TornadoInstalle
     public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         return 0;
     }
+
+    public String getGeneratedSourceCode() {
+        return " NOT IMPLEMENTED YET";
+    }
 }
