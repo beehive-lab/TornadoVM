@@ -187,4 +187,9 @@ public class TornadoOptions {
      */
     public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "True");
 
+    /**
+     * Select Shared Memory allocator for SPIRV-Level Zero implementation.
+     */
+    public static final boolean L0_SHARED_MEMORY_ALLOCATOR = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", "True");;
+
 }

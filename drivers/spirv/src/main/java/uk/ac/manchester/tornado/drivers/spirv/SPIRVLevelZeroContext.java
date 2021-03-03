@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,15 +81,20 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     @Override
     public long allocateMemory(long numBytes) {
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-        deviceMemAllocDesc.setOrdinal(0);
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
-        hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-        LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
-        LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(0).getDevice().getDevice();
-        levelZeroContext.zeMemAllocShared(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), bufferA);
-        return bufferA.getPtrBuffer();
+
+        if (TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
+            ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+            deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+            deviceMemAllocDesc.setOrdinal(0);
+            ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+            hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+            LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
+            LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(0).getDevice().getDevice();
+            levelZeroContext.zeMemAllocShared(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), bufferA);
+            return bufferA.getPtrBuffer();
+        } else {
+            throw new RuntimeException("No other memory allocator has been implemented yet.");
+        }
     }
 
 }
