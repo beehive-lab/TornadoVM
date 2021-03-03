@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -52,25 +52,25 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
 
     public static final Class<Int4> TYPE = Int4.class;
 
-    private static final String numberFormat = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
+    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
 
     /**
      * backing array
      */
     @Payload
-    final protected int[] storage;
+    protected final int[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 4;
+    static final private int NUM_ELEMENTS = 4;
 
     public Int4(int[] storage) {
         this.storage = storage;
     }
 
     public Int4() {
-        this(new int[numElements]);
+        this(new int[NUM_ELEMENTS]);
     }
 
     public Int4(int x, int y, int z, int w) {
@@ -157,7 +157,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public String toString() {
-        return toString(numberFormat);
+        return toString(NUMBER_FORMAT);
     }
 
     protected static Int4 loadFromArray(final int[] array, int index) {
@@ -188,7 +188,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /*
