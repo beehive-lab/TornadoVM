@@ -11,15 +11,14 @@ import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
+import uk.ac.manchester.tornado.drivers.spirv.graal.*;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
@@ -79,32 +78,38 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
-    @Override
-    public SuitesProvider getSuites() {
-        return null;
+    public SPIRVSuitesProvider getTornadoSuites() {
+        return ((SPIRVProviders) getProviders()).getSuitesProvider();
     }
 
     @Override
     public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
+        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
+    }
+
+    @Override
+    public SuitesProvider getSuites() {
+        unimplemented("Get suites method in SPIRVBackend not implemented yet.");
         return null;
     }
 
     @Override
     protected CompiledCode createCompiledCode(ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult, boolean isDefault, OptionValues options) {
+        unimplemented("Create compiled code method in SPIRVBackend not implemented yet.");
         return null;
     }
 
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
-        return null;
+        return new SPIRVReferenceMapBuilder();
     }
 
     public SPIRVDeviceContext getDeviceContext() {
         return context;
     }
 
-    public TornadoSuitesProvider getTornadoSuites() {
-        return ((SPIRVProviders) getProviders()).getSuitesProvider();
+    public void reset() {
+        getDeviceContext().reset();
     }
 
 }

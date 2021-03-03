@@ -112,4 +112,7 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
         return tornadoDevice;
     }
 
+    public void reset() {
+        throw new RuntimeException("Unimplemented");
+    }
 }

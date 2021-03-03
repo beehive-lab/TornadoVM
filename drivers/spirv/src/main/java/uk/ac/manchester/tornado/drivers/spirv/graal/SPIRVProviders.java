@@ -18,7 +18,7 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public class SPIRVProviders extends Providers {
 
-    private final TornadoSuitesProvider suites;
+    private final SPIRVSuitesProvider suites;
 
     public SPIRVProviders(MetaAccessProvider metaAccess, //
             CodeCacheProvider codeCache, //
@@ -30,7 +30,7 @@ public class SPIRVProviders extends Providers {
             Replacements replacements, //
             StampProvider stampProvider, //
             GraphBuilderConfiguration.Plugins plugins, //
-            TornadoSuitesProvider suites, //
+            SPIRVSuitesProvider suites, //
             PlatformConfigurationProvider platformConfigurationProvider, //
             MetaAccessExtensionProvider metaAccessExtensionProvider, //
             WordTypes wordTypes) {
@@ -42,7 +42,7 @@ public class SPIRVProviders extends Providers {
         this.suites = suites;
     }
 
-    public TornadoSuitesProvider getSuitesProvider() {
+    public SPIRVSuitesProvider getSuitesProvider() {
         return suites;
     }
 }

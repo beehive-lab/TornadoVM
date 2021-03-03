@@ -23,6 +23,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.backend;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
@@ -119,6 +120,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     @Override
     protected CompiledCode createCompiledCode(ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult, boolean isDefault, OptionValues options) {
+        unimplemented("Create compiled code method in PTXBackend not implemented yet.");
         return null;
     }
 
