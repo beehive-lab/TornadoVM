@@ -11,26 +11,39 @@ import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.util.Providers;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    public SPIRVBackend(Providers providers) {
-        super(providers);
-    }
-
     SPIRVDeviceContext context;
     private boolean isInitialized;
+    private final OptionValues options;
+    private final SPIRVTargetDescription targetDescription;
+    private final SPIRVArchitecture spirvArchitecture;
+    private final SPIRVDeviceContext deviceContext;
+    private final SPIRVCodeProvider codeCache;
+    SPIRVInstalledCode lookupCode;
+    final ScheduleMetaData scheduleMetaData;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
         this.context = deviceContext;
+        this.options = options;
+        this.targetDescription = targetDescription;
+        this.codeCache = codeProvider;
+        this.deviceContext = deviceContext;
+        spirvArchitecture = targetDescription.getArch();
+        scheduleMetaData = new ScheduleMetaData("spirvBackend");
+
     }
 
     @Override

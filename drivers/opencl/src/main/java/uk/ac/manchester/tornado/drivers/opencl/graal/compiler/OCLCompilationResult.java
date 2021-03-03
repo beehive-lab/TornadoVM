@@ -35,10 +35,10 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCompilationResult extends CompilationResult {
 
-    protected Set<ResolvedJavaMethod> nonInlinedMethods;
-    protected TaskMetaData meta;
-    protected OCLBackend backend;
-    protected String id;
+    private Set<ResolvedJavaMethod> nonInlinedMethods;
+    private TaskMetaData meta;
+    private OCLBackend backend;
+    private String id;
 
     public OCLCompilationResult(String id, String name, TaskMetaData meta, OCLBackend backend) {
         super(name);
@@ -73,6 +73,7 @@ public class OCLCompilationResult extends CompilationResult {
         return meta;
     }
 
+    // FIXME <REFACTOR> This method can be removed
     public OCLBackend getBackend() {
         return backend;
     }

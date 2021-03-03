@@ -96,6 +96,7 @@ public class PTXCompiler {
     private static final TimerKey BackEnd = DebugContext.timer("PTXBackend");
     private static final TimerKey EmitLIR = DebugContext.timer("PTXEmitLIR");
     private static final TimerKey EmitCode = DebugContext.timer("PTXEmitCode");
+
     private static final PTXLIRGenerationPhase LIR_GENERATION_PHASE = new PTXLIRGenerationPhase();
 
     public static class PTXCompilationRequest {
