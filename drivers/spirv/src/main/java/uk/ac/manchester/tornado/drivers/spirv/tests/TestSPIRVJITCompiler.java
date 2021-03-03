@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.drivers.spirv.tests;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLJITCompiler;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
@@ -95,7 +94,7 @@ public class TestSPIRVJITCompiler {
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
-        MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", a, b, c);
+        MetaCompilation compileMethod = compileMethod(TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
 
         // FIXME <TODO> <COMPLETE>
 

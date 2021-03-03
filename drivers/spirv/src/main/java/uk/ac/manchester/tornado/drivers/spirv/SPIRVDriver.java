@@ -10,6 +10,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -58,6 +59,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
         SPIRVBackend backend = backends[platformIndex][deviceIndex];
+        Tornado.info("SPIRV Backend Initialization");
         if (!backend.isInitialised()) {
             backend.init();
         }

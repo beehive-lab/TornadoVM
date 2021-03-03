@@ -142,10 +142,10 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         final int numDevices = context.getNumDevices();
         info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
         backends[platformIndex] = new OCLBackend[numDevices];
-        for (int j = 0; j < numDevices; j++) {
-            final OCLTargetDevice device = context.devices().get(j);
+        for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
+            final OCLTargetDevice device = context.devices().get(deviceIndex);
             info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][j] = createOCLBackend(options, vmRuntime, vmConfig, context, j);
+            backends[platformIndex][deviceIndex] = createOCLBackend(options, vmRuntime, vmConfig, context, deviceIndex);
         }
     }
 

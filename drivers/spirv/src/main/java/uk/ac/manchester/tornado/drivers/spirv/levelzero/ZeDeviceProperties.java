@@ -13,7 +13,7 @@ public class ZeDeviceProperties {
     private int subdeviceId;
 
     private int coreClockRate;
-    private int maxMemAllocSize;
+    private long maxMemAllocSize;
     private int maxHardwareContexts;
     private int maxCommandQueuePriority;
 
@@ -111,7 +111,7 @@ public class ZeDeviceProperties {
         return coreClockRate;
     }
 
-    public int getMaxMemAllocSize() {
+    public long getMaxMemAllocSize() {
         return maxMemAllocSize;
     }
 

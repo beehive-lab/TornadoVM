@@ -43,6 +43,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         this.deviceContext = deviceContext;
         spirvArchitecture = targetDescription.getArch();
         scheduleMetaData = new ScheduleMetaData("spirvBackend");
+        this.isInitialized = false;
 
     }
 
@@ -72,6 +73,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     @Override
     public void init() {
         if (!isInitialized) {
+            Tornado.info("Initialization of the SPIRV Backend - Calling Memory Allocator");
             allocateHeapMemoryOnDevice();
             isInitialized = true;
         }

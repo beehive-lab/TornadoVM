@@ -49,7 +49,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     field = env->GetFieldID(descriptionClass, "coreClockRate", "I");
     env->SetIntField(javaDeviceProperties, field, device_properties.coreClockRate);
 
-    field = env->GetFieldID(descriptionClass, "maxMemAllocSize", "I");
+    field = env->GetFieldID(descriptionClass, "maxMemAllocSize", "J");
     env->SetIntField(javaDeviceProperties, field, device_properties.maxMemAllocSize);
 
     field = env->GetFieldID(descriptionClass, "maxHardwareContexts", "I");
