@@ -30,7 +30,9 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestMatrixMultiplicationTornadoVMContextApi {
+public class TestMatrixMultiplicationTornadoVMContext {
+
+    private static final int TS = 4;
 
     public static void matrixMultiplicationJava(float[] a, float[] b, float[] c, int size) {
         for (int i = 0; i < size; i++) {
@@ -72,7 +74,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication1D, context, a, b, cTornado, size).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication1D, context, a, b, cTornado, size).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
@@ -112,7 +114,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication2D, context, a, b, cTornado, size).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication2D, context, a, b, cTornado, size).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, size, 1);
         worker.setLocalWork(1, 1, 1);
@@ -177,10 +179,10 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::mxm2DTornadoVMContextApiV2, context, a, b, cTornado, size).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContext::mxm2DTornadoVMContextApiV2, context, a, b, cTornado, size).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, size, 1);
-        worker.setLocalWork(1, 1, 1);
+        worker.setLocalWork(TS, TS, 1);
         s0.execute(gridTask);
 
         matrixMultiplicationJava(a, b, cJava, size);
