@@ -11,6 +11,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import org.graalvm.compiler.word.WordTypes;
 import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
@@ -107,6 +108,10 @@ public class SPIRVHotSpotBackendFactory {
 
         // FIXME <PENDING> Apply new Plugins for SPIRV
         SPIRVGraphBuilderPlugins.registerParametersPlugins(plugins);
+        SPIRVGraphBuilderPlugins.registerNewInstancePlugins(plugins);
+
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, false, false, false);
+        SPIRVGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
 
         return plugins;
     }
