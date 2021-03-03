@@ -21,11 +21,14 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MatrixMultiplication1D {
 
-    private static final int WARMING_UP_ITERATIONS = 150;
+    private static final int WARMING_UP_ITERATIONS = 15;
 
     private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -62,6 +65,12 @@ public class MatrixMultiplication1D {
             matrixB[idx] = r.nextFloat();
         });
 
+        WorkerGrid workerGrid = new WorkerGrid1D(size);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", workerGrid);
+        workerGrid.setGlobalWork(size, 1, 1);
+        workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
+
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size)
@@ -70,12 +79,12 @@ public class MatrixMultiplication1D {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute();
+            t.execute(gridTask);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute();
+        t.execute(gridTask);
         long end = System.currentTimeMillis();
 
         // Run sequential
