@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.api;
+package uk.ac.manchester.tornado.unittests.matrices;
 
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.GridTask;
@@ -91,7 +91,7 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         float sum = 0;
 
         for (int k = 0; k < size; k++) {
-            sum += a[(idx * size) + k] * b[(k * size) + jdx];
+            sum += a[(k * size) + idx] * b[(jdx * size) + k];
         }
         c[(idx * size) + jdx] = sum;
     }
@@ -113,6 +113,71 @@ public class TestMatrixMultiplicationTornadoVMContextApi {
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::matrixMultiplication2D, context, a, b, cTornado, size).streamOut(cTornado);
+        // Change the Grid
+        worker.setGlobalWork(size, size, 1);
+        worker.setLocalWork(1, 1, 1);
+        s0.execute(gridTask);
+
+        matrixMultiplicationJava(a, b, cJava, size);
+
+        for (int i = 0; i < size * size; i++) {
+            assertEquals(cJava[i], cTornado[i], 0);
+        }
+    }
+
+    public static void mxm2DTornadoVMContextApiV2(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
+        int row = context.localIdx;
+        int col = context.localIdy;
+        int globalRow = TS * context.groupIdx + row;
+        int globalCol = TS * context.groupIdy + col;
+
+        float[] aSub = context.allocateFloatLocalArray(TS * TS);
+        float[] bSub = context.allocateFloatLocalArray(TS * TS);
+
+        float sum = 0;
+
+        // Loop over all tiles
+        int numTiles = size / TS;
+        for (int t = 0; t < numTiles; t++) {
+
+            // Load one tile of A and B into local memory
+            int tiledRow = TS * t + row;
+            int tiledCol = TS * t + col;
+            aSub[col * TS + row] = A[tiledCol * size + globalRow];
+            bSub[col * TS + row] = B[globalCol * size + tiledRow];
+
+            // Synchronise to make sure the tile is loaded
+            context.localBarrier();
+
+            // Perform the computation for a single tile
+            for (int k = 0; k < TS; k++) {
+                sum += aSub[k * TS + row] * bSub[col * TS + k];
+            }
+            // Synchronise before loading the next tile
+            context.localBarrier();
+        }
+
+        // Store the final result in C
+        C[(globalCol * size) + globalRow] = sum;
+    }
+
+    @Test
+    public void mxm2DTornadoVMContextApiV2() {
+        final int size = 16;
+        float[] a = new float[size * size];
+        float[] b = new float[size * size];
+        float[] cJava = new float[size * size];
+        float[] cTornado = new float[size * size];
+
+        Arrays.fill(a, 2);
+        Arrays.fill(b, 4);
+
+        WorkerGrid worker = new WorkerGrid2D(size, size);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", worker);
+        TornadoVMContext context = new TornadoVMContext(worker);
+
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContextApi::mxm2DTornadoVMContextApiV2, context, a, b, cTornado, size).streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, size, 1);
         worker.setLocalWork(1, 1, 1);

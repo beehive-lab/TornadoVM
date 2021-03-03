@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,30 +15,31 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.api;
-
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
+package uk.ac.manchester.tornado.unittests.reductions;
 
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.GridTask;
-import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
-public class TestIntReductionsTornadoVMContext {
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
-    public static int computeSequential(int[] input) {
-        int acc = 0;
-        for (int v : input) {
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
+public class TestFloatReductionsTornadoVMContext {
+
+    public static float computeSequential(float[] input) {
+        float acc = 0;
+        for (float v : input) {
             acc += v;
         }
         return acc;
     }
 
-    public static void intReductionGlobalMemory(TornadoVMContext context, int[] a, int[] b) {
+    public static void floatReductionGlobalMemory(TornadoVMContext context, float[] a, float[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -57,11 +58,11 @@ public class TestIntReductionsTornadoVMContext {
     }
 
     @Test
-    public void testIntReductionsGlobalMemory() {
+    public void testFloatReductionsGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        int[] input = new int[size];
-        int[] reduce = new int[size / localSize];
+        float[] input = new float[size];
+        float[] reduce = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         float sequential = computeSequential(input);
 
@@ -70,7 +71,7 @@ public class TestIntReductionsTornadoVMContext {
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestIntReductionsTornadoVMContext::intReductionGlobalMemory, context, input, reduce).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestFloatReductionsTornadoVMContext::floatReductionGlobalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -85,13 +86,13 @@ public class TestIntReductionsTornadoVMContext {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void intReductionLocalMemory(TornadoVMContext context, int[] a, int[] b) {
+    public static void floatReductionLocalMemory(TornadoVMContext context, float[] a, float[] b) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
 
-        int[] localA = context.allocateIntLocalArray(1024);
+        float[] localA = context.allocateFloatLocalArray(256);
         localA[localIdx] = a[globalIdx];
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
@@ -105,20 +106,20 @@ public class TestIntReductionsTornadoVMContext {
     }
 
     @Test
-    public void testIntReductionsLocalMemory() {
+    public void testFloatReductionsLocalMemory() {
         final int size = 1024;
-        final int localSize = 1024;
-        int[] input = new int[size];
-        int[] reduce = new int[size / localSize];
+        final int localSize = 256;
+        float[] input = new float[size];
+        float[] reduce = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
-        int sequential = computeSequential(input);
+        float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.set("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestIntReductionsTornadoVMContext::intReductionLocalMemory, context, input, reduce).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestFloatReductionsTornadoVMContext::floatReductionLocalMemory, context, input, reduce).streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -126,7 +127,7 @@ public class TestIntReductionsTornadoVMContext {
 
         // Final SUM
         int finalSum = 0;
-        for (int v : reduce) {
+        for (float v : reduce) {
             finalSum += v;
         }
 
