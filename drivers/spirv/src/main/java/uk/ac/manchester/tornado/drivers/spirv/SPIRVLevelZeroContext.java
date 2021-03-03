@@ -19,7 +19,8 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         commandQueues = new ArrayList<>();
         for (SPIRVDevice device : devices) {
             ZeCommandQueueListHandle commandQueue = createCommandQueue(device);
-            commandQueues.add(new SPIRVLevelZeroCommandQueue(commandQueue));
+            System.out.println("CREATING COMMAND QUEUE FOR DEVICE: " + device);
+            commandQueues.add(new SPIRVLevelZeroCommandQueue(commandQueue, (LevelZeroDevice) device.getDevice()));
         }
 
         spirvDeviceContext = new ArrayList<>();
@@ -77,6 +78,19 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     @Override
     public SPIRVDeviceContext getDeviceContext(int deviceIndex) {
         return spirvDeviceContext.get(deviceIndex);
+    }
+
+    @Override
+    public SPIRVCommandQueue createCommandQueue(int deviceIndex) {
+        return getCommandQueueForDevice(deviceIndex);
+    }
+
+    @Override
+    public SPIRVCommandQueue getCommandQueueForDevice(int deviceIndex) {
+        if (deviceIndex < commandQueues.size()) {
+            return commandQueues.get(deviceIndex);
+        }
+        return null;
     }
 
     @Override

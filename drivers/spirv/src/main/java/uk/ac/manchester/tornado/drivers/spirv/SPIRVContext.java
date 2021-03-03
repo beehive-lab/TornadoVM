@@ -15,5 +15,9 @@ public abstract class SPIRVContext {
 
     public abstract SPIRVDeviceContext getDeviceContext(int deviceIndex);
 
+    public abstract SPIRVCommandQueue createCommandQueue(int deviceIndex);
+
+    public abstract SPIRVCommandQueue getCommandQueueForDevice(int deviceIndex);
+
     public abstract long allocateMemory(long numBytes);
 }

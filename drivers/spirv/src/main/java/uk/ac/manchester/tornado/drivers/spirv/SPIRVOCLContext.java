@@ -35,6 +35,16 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
+    public SPIRVCommandQueue createCommandQueue(int deviceIndex) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public SPIRVCommandQueue getCommandQueueForDevice(int deviceIndex) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
     public long allocateMemory(long numBytes) {
         throw new RuntimeException("Unimplemented");
     }
