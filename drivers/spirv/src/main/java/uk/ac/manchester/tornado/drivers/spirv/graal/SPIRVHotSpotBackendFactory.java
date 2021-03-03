@@ -16,9 +16,9 @@ import org.graalvm.compiler.word.WordTypes;
 import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.drivers.spirv.*;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilerConfiguration;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVGraphBuilderPlugins;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVAddressLowering;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -106,6 +106,7 @@ public class SPIRVHotSpotBackendFactory {
         Plugins plugins = new Plugins(invocationPlugins);
 
         // FIXME <PENDING> Apply new Plugins for SPIRV
+        SPIRVGraphBuilderPlugins.registerParametersPlugins(plugins);
 
         return plugins;
     }
