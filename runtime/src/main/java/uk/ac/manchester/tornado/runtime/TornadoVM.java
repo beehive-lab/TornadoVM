@@ -389,9 +389,8 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private ExecutionInfo compileTaskFromBytecodeToBinary(final int contextIndex, final int stackIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
-        final SchedulableTask task = tasks.get(taskIndex);
-        final TornadoAcceleratorDevice device = (TornadoAcceleratorDevice)task.getDevice();//contexts.get(contextIndex);
-        
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+
         if (device.getDeviceContext().wasReset() && finishedWarmup) {
             throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
         }
@@ -401,6 +400,7 @@ public class TornadoVM extends TornadoLogger {
         final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
+        final SchedulableTask task = tasks.get(taskIndex);
 
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
@@ -411,7 +411,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (installedCodes[taskIndex] == null) {
-            //task.mapTo(device);
+            task.mapTo(device);
             try {
                 task.attachProfiler(timeProfiler);
                 if (taskIndex == (tasks.size() - 1)) {
