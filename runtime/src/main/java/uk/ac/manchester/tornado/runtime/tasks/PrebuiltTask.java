@@ -54,7 +54,7 @@ public class PrebuiltTask implements SchedulableTask {
         this.filename = filename;
         this.args = args;
         this.argumentsAccess = access;
-        meta = new TaskMetaData(scheduleMeta, id, null, access.length);
+        meta = new TaskMetaData(scheduleMeta, id, access.length);
         for (int i = 0; i < access.length; i++) {
             meta.getArgumentsAccess()[i] = access[i];
         }

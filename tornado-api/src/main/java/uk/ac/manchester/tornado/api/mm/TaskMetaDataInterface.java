@@ -42,7 +42,6 @@
 package uk.ac.manchester.tornado.api.mm;
 
 import java.util.List;
-import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
@@ -50,8 +49,6 @@ import uk.ac.manchester.tornado.api.common.TornadoEvents;
 public interface TaskMetaDataInterface {
 	
 	String getId();
-	
-	Map<String, Object> getProperties();
 
     List<TornadoEvents> getProfiles();
 

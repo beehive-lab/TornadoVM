@@ -30,10 +30,10 @@ import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridTask;
@@ -50,7 +50,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private final String id;
-    private final Map<String, Object> properties;
     private TornadoAcceleratorDevice device;
     private boolean shouldRecompile;
     private final boolean isDeviceDefined;
@@ -125,11 +124,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     @Override
     public String getId() {
         return id;
-    }
-
-    @Override
-    public Map<String, Object> getProperties() {
-        return properties;
     }
 
     @Override
@@ -394,22 +388,30 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     public long getNumThreads() {
         return numThreads;
     }
+    
+    protected static final ThreadLocal<Map<String, Object>> PROPERTIES_OVERRIDE = new ThreadLocal<>(); 
+    
+    public static <T> T withPropertiesOverride(Map<String, Object> currentPropertiesOverride, Supplier<T> action) {
+        Map<String, Object> previousPropertiesOverride = PROPERTIES_OVERRIDE.get();
+        PROPERTIES_OVERRIDE.set(currentPropertiesOverride);
+        try {
+            return action.get();
+        } finally {
+            if (null == previousPropertiesOverride) {
+                PROPERTIES_OVERRIDE.remove();
+            } else {
+                PROPERTIES_OVERRIDE.set(previousPropertiesOverride);
+            }
+        }
+    }
 
-    AbstractMetaData(String id, Map<String, Object> properties, TaskMetaDataInterface parent) {
+    AbstractMetaData(String id, TaskMetaDataInterface parent) {
         this.id = id;
-        this.properties = null == properties ? Collections.emptyMap() : Collections.unmodifiableMap(properties);
         
         shouldRecompile = true;
 
         String xdevice;
-        Number xdriverIndex, xdeviceIndex;
-        if (null != (xdriverIndex = (Number)this.properties.get("driverIndex")) && null != (xdeviceIndex = (Number)this.properties.get("deviceIndex"))) {
-            driverIndex = xdriverIndex.intValue();
-            deviceIndex = xdeviceIndex.intValue();
-            isDeviceDefined = true;            
-        } else if (null != (xdevice = (String)this.properties.get("device")) ||
-                   null != (xdevice = getProperty(id + ".device"))) {
-            
+        if (null != (xdevice = getProperty(id + ".device"))) {
             int[] deviceOverride = MetaDataUtils.resolveDriverDeviceIndexes(xdevice);
             driverIndex = deviceOverride[0];
             deviceIndex = deviceOverride[1];

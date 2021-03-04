@@ -41,8 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.Collections;
-import java.util.Map;
+
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
@@ -86,12 +85,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
 
     @Override
     public TaskSchedule addTask(TaskPackage taskPackage) {
-        return addTask(taskPackage, Collections.emptyMap());
-    }
-
-    @Override
-    public TaskSchedule addTask(TaskPackage taskPackage, Map<String, Object> properties) {
-        taskScheduleImpl.addTask(taskPackage, properties);
+        taskScheduleImpl.addTask(taskPackage);
         return this;
     }
 
@@ -329,6 +323,12 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     @Override
     public TornadoDevice getDeviceForTask(String id) {
         return taskScheduleImpl.getDeviceForTask(id);
+    }
+    
+    @Override
+    public TaskSchedule setDeviceForTask(String id, TornadoDevice device) {
+        taskScheduleImpl.setDeviceForTask(id, device);
+        return this;
     }
 
     @Override

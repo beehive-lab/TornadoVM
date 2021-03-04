@@ -23,10 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import java.util.Map;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 class ReduceFactory {
@@ -159,76 +156,76 @@ class ReduceFactory {
         array[0] = acc;
     }
 
-    static void handleAdd(Object newArray, int sizeReduceArray, TaskSchedule task, String taskName, Map<String, Object> properties) {
+    static void handleAdd(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rAdd, (int[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rAdd, (int[]) newArray, sizeReduceArray);
                 break;
             case "long[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rAdd, (long[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rAdd, (long[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rAdd, (float[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rAdd, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rAdd, (double[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rAdd, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
-    static void handleMul(Object newArray, int sizeReduceArray, TaskSchedule task, String taskName, Map<String, Object> properties) {
+    static void handleMul(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMul, (int[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMul, (int[]) newArray, sizeReduceArray);
                 break;
             case "long[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMul, (long[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMul, (long[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMul, (float[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMul, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMul, (double[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMul, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
-    static void handleMax(Object newArray, int sizeReduceArray, TaskSchedule task, String taskName, Map<String, Object> properties) {
+    static void handleMax(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMax, (int[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMax, (int[]) newArray, sizeReduceArray);
                 break;
             case "long[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMax, (long[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMax, (long[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMax, (float[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMax, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMax, (double[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMax, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
-    static void handleMin(Object newArray, int sizeReduceArray, TaskSchedule task, String taskName, Map<String, Object> properties) {
+    static void handleMin(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMin, (int[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMin, (int[]) newArray, sizeReduceArray);
                 break;
             case "long[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMin, (long[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMin, (long[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMin, (float[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMin, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.addTask(TaskPackage.createPackage(taskName, ReduceFactory::rMin, (double[]) newArray, sizeReduceArray), properties);
+                task.task(taskName, ReduceFactory::rMin, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());

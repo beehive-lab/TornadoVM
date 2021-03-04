@@ -301,6 +301,26 @@ public class TornadoExecutionContext {
         }
         return getTask(id) == null ? null : tornadoDevice;
     }
+    
+    public void setDeviceForTask(String id, TornadoDevice mapping) {
+        if (mapping instanceof TornadoAcceleratorDevice) {
+            SchedulableTask task = getTask(id);
+            if (null == task) {
+                throw new RuntimeException("Unknwon task with id = " + id);
+            }
+            TornadoAcceleratorDevice accelerator = (TornadoAcceleratorDevice)mapping;
+            int taskIndex = tasks.indexOf(task);
+            int deviceIndex = devices.indexOf(accelerator);
+            if (deviceIndex == -1) {
+                deviceIndex = devices.size();
+                devices.add(accelerator);
+            }
+            task.mapTo(accelerator);
+            taskToDevice[taskIndex] = deviceIndex;
+        } else {
+            throw new RuntimeException("Device " + mapping.getClass() + " not supported yet");
+        }
+    }
 
     public String getId() {
         return name;

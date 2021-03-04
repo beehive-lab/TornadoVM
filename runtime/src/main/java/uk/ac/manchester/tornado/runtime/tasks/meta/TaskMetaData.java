@@ -33,7 +33,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,8 +62,8 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean globalWorkDefined;
     private boolean canAssumeExact;
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, Map<String, Object> properties, int numParameters) {
-        super(scheduleMetaData.getId() + "." + taskID, properties, scheduleMetaData);
+    public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
+        super(scheduleMetaData.getId() + "." + taskID, scheduleMetaData);
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
@@ -85,19 +84,16 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id) {
-        this(scheduleMetaData, id, null, 0);
+        this(scheduleMetaData, id, 0);
     }
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
-        return create(scheduleMeta, id, Collections.emptyMap(), method, readMetaData);
-    }
-    
-    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Map<String, Object> properties, Method method, boolean readMetaData) {
-        return new TaskMetaData(scheduleMeta, id, properties, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
+        return new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
     }
 
     private void inspectLocalWork() {
-        Object value = getProperties().get("local.dims");
+        Map<String, Object> properties = PROPERTIES_OVERRIDE.get();
+        Object value = null == properties ? null : properties.get("local.dims");
         if (null == value) {
             value = getProperty(getId() + ".local.dims");
         }
@@ -112,7 +108,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     private void inspectGlobalWork() {
-        Object value = getProperties().get("global.dims");
+        Map<String, Object> properties = PROPERTIES_OVERRIDE.get();
+        Object value = null == properties ? null : properties.get("global.dims");
         if (null == value) {
             value = getProperty(getId() + ".global.dims");
         }

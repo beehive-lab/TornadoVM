@@ -62,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.meta.AbstractMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
@@ -298,13 +299,15 @@ class ReduceTaskSchedule {
     }
 
     private static Map<String, Object> overrideGlobalAndLocalDimensionsFPGA(int driverIndex, int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
-        Map<String, Object> result = new HashMap<>();
         // Update GLOBAL and LOCAL Dims if device to run is the FPGA
         if (isAheadOfTime() && isDeviceAnAccelerator(driverIndex, deviceToRun)) {
+            Map<String, Object> result = new HashMap<>();
             result.put("global.dims", Integer.valueOf(inputSize));
             result.put("local.dims", Integer.valueOf(64));
+            return result;
+        } else  {
+            return Collections.emptyMap();
         }
-        return result;
     }
 
     private Object createHostArrayForHybridMode(Object originalReduceArray, TaskPackage taskPackage, int sizeTargetDevice) {
@@ -482,15 +485,23 @@ class ReduceTaskSchedule {
             }
 
             TaskMetaDataInterface originalMeta = owner.getTask(tsName + "." + taskPackage.getId()).meta();
-            int driverToRun = originalMeta.getDriverIndex();
-            int deviceToRun = originalMeta.getDeviceIndex();
-            int inputSize = inputSizes.getOrDefault(originalMeta.getId(), Integer.valueOf(0));
-            
-            Map<String, Object> properties = new HashMap<>();
-            properties.putAll(overrideGlobalAndLocalDimensionsFPGA(driverToRun, deviceToRun, taskScheduleReduceName, taskPackage, inputSize));
+            TornadoDevice originalDevice = owner.getDeviceForTask(originalMeta.getId());
+
+            Map<String, Object> propertiesOverride = new HashMap<>();
+            propertiesOverride.putAll(overrideGlobalAndLocalDimensionsFPGA(
+                originalMeta.getDriverIndex(), originalMeta.getDeviceIndex(), 
+                taskScheduleReduceName, taskPackage, 
+                inputSizes.getOrDefault(originalMeta.getId(), Integer.valueOf(0))
+            ));
+
+            if (propertiesOverride.isEmpty()) {
+                rewrittenTaskSchedule.addTask(taskPackage);
+            } else {
+                // Execute with overriden gloabl/local FPGA dimensions (inherited from parent task)
+                AbstractMetaData.withPropertiesOverride(propertiesOverride, () -> rewrittenTaskSchedule.addTask(taskPackage));
+            }
             // Inherit device of the original task
-            properties.putAll(overrideDriverAndDevice(driverToRun, deviceToRun));
-            rewrittenTaskSchedule.addTask(taskPackage, Collections.unmodifiableMap(properties));
+            rewrittenTaskSchedule.setDeviceForTask(taskScheduleReduceName + "." + taskPackage.getId(), originalDevice);
 
             // Add extra task with the final reduction
             if (tableReduce.containsKey(taskNumber)) {
@@ -512,30 +523,29 @@ class ReduceTaskSchedule {
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
                         String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.getAndIncrement();
-                        Map<String, Object> newTaskSequentialProperties = new HashMap<>();
-                        // Inherit device of the original task
-                        newTaskSequentialProperties.putAll(overrideDriverAndDevice(driverToRun, deviceToRun));
-                        newTaskSequentialProperties = Collections.unmodifiableMap(newTaskSequentialProperties);
 
                         // TODO Check device propagation here!
                         inspectBinariesFPGA(taskScheduleReduceName, originalMeta, taskPackage.getId(), newTaskSequentialName);
 
                         switch (operation) {
                             case ADD:
-                                ReduceFactory.handleAdd(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MUL:
-                                ReduceFactory.handleMul(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MAX:
-                                ReduceFactory.handleMax(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MIN:
-                                ReduceFactory.handleMin(newArray, sizeReduceArray, rewrittenTaskSchedule, newTaskSequentialName, newTaskSequentialProperties);
+                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
                         }
+                        
+                        // Inherit device of the original task
+                        rewrittenTaskSchedule.setDeviceForTask(taskScheduleReduceName + "." + newTaskSequentialName, originalDevice);
 
                         if (hybridMode) {
                             if (hybridMergeTable == null) {
@@ -782,12 +792,5 @@ class ReduceTaskSchedule {
             value--;
         }
         return value;
-    }
-    
-    private static Map<String, Object> overrideDriverAndDevice(int driverIndex, int deviceIndex) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("driverIndex", Integer.valueOf(driverIndex));
-        result.put("deviceIndex", Integer.valueOf(deviceIndex));
-        return result;
     }
 }
