@@ -127,7 +127,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        return toString(FloatOps.fmt2);
+        return toString(FloatOps.FMT_2);
     }
 
     protected static Float2 loadFromArray(final float[] array, int index) {

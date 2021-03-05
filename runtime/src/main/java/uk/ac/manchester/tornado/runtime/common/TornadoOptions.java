@@ -154,6 +154,11 @@ public class TornadoOptions {
     public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
 
     /**
+     * Sets the number of threads for the Tornado Sketcher. Default is 4.
+     */
+    public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
+
+    /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
      *
