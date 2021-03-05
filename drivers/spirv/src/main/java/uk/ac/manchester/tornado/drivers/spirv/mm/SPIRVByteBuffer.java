@@ -87,4 +87,20 @@ public class SPIRVByteBuffer {
         return new SPIRVByteBuffer(numBytes, offset, deviceContext);
     }
 
+    public long toBuffer() {
+        return deviceContext.getMemoryManager().toBuffer();
+    }
+
+    public int enqueueRead() {
+        return enqueueRead(null);
+    }
+
+    public int enqueueRead(final int[] events) {
+        return deviceContext.enqueueReadBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
+    }
+
+    public int enqueueWrite(int[] events) {
+        // XXX: offset 0
+        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
+    }
 }

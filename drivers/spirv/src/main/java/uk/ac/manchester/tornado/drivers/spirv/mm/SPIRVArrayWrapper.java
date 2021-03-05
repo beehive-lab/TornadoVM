@@ -10,6 +10,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
@@ -82,8 +83,8 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void read(Object reference) {
-
+    public void read(Object object) {
+        read(object, 0, null, false);
     }
 
     @Override
@@ -120,14 +121,63 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
     }
 
+    // FIXME <REFACTOR> <S>
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        return 0;
+    public int enqueueRead(Object objectReference, long hostOffset, int[] events, boolean useDeps) {
+        final T array = cast(objectReference);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        }
+        final int returnEvent;
+        if (isFinal) {
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        } else {
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        }
+        return useDeps ? returnEvent : -1;
     }
 
+    // FIXME <REFACTOR> <S>
+    private SPIRVByteBuffer buildArrayHeaderBatch(final long arraySize) {
+        final SPIRVByteBuffer header = getArrayHeader();
+        int index = 0;
+        while (index < arrayLengthOffset) {
+            header.buffer.put((byte) 0);
+            index++;
+        }
+        header.buffer.putLong(arraySize);
+        return header;
+    }
+
+    // FIXME <REFACTOR> <S>
     @Override
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
-        return null;
+        final T array = cast(reference);
+        ArrayList<Integer> listEvents = new ArrayList<>();
+
+        if (array == null) {
+            throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
+        }
+        final int returnEvent;
+        if (isFinal && onDevice) {
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        } else {
+            // We first write the header for the object and then we write actual
+            // buffer
+            final int headerEvent;
+            if (batchSize <= 0) {
+                headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
+            } else {
+                headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
+            }
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            onDevice = true;
+            // returnEvent = deviceContext.enqueueMarker(internalEvents);
+
+            listEvents.add(headerEvent);
+            listEvents.add(returnEvent);
+        }
+        return useDeps ? listEvents : null;
     }
 
     // FIXME <REFACTOR> <S>

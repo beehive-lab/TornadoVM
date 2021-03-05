@@ -23,7 +23,11 @@ import uk.ac.manchester.tornado.runtime.common.*;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * This is the core class for the actual runtime.
+ */
 public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
@@ -208,6 +212,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
+    // FIXME <REFACTOR> <S>
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         if (!state.hasBuffer()) {
@@ -254,17 +259,35 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        return null;
+        if (batchSize > 0 || !objectState.isValid()) {
+            ensureAllocated(object, batchSize, objectState);
+        }
+        objectState.setContents(true);
+        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
     }
 
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        return 0;
+        TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
+        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events == null);
+        if (events != null) {
+            return event;
+        }
+        return -1;
     }
 
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        return 0;
+        if (objectState.isAtomicRegionPresent()) {
+            int eventID = objectState.getBuffer().enqueueRead(null, 0, null, false);
+            if (object instanceof AtomicInteger) {
+                throw new RuntimeException("Atomics Not supported yet");
+            }
+            return eventID;
+        } else {
+            TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
+            return objectState.getBuffer().read(object, hostOffset, events, events == null);
+        }
     }
 
     @Override
@@ -415,6 +438,19 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public String toString() {
         return device.getName();
+    }
+
+    // FIXME <THis should be in the parent class> All backends
+    public void sync(Object... objects) {
+        for (Object obj : objects) {
+            sync(obj);
+        }
+    }
+
+    // FIXME <THis should be in the parent class> All backends
+    public void sync(Object object) {
+        final DeviceObjectState state = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object).getDeviceState(this);
+        resolveEvent(streamOut(object, 0, state, null)).waitOn();
     }
 
 }
