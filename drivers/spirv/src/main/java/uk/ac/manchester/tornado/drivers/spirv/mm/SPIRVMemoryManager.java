@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -101,5 +102,24 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getSpirvContext().allocateMemory(numBytes);
+    }
+
+    // FIXME <REFACTOR> <S>
+    public SPIRVByteBuffer getSubBuffer(int bufferOffset, int numBytes) {
+        return new SPIRVByteBuffer(numBytes, bufferOffset, deviceContext);
+    }
+
+    // FIXME <REFACTOR> <S>
+    public long tryAllocate(long bytesToAllocate, int headerSize, int alignment) {
+        final long alignedDataStart = align(heapPosition + headerSize, alignment);
+        final long headerStart = alignedDataStart - headerSize;
+        if (headerStart + bytesToAllocate < heapLimit) {
+            heapPosition = headerStart + bytesToAllocate;
+        } else {
+            throw new TornadoOutOfMemoryException("Out of memory on the target device -> " + deviceContext.getDevice().getDeviceName() + ". [Heap Limit is: "
+                    + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytesToAllocate, true)
+                    + "]\nUse flag -Dtornado.heap.allocation=<XGB> to tune the device heap. E.g., -Dtornado.heap.allocation=2GB\n");
+        }
+        return headerStart;
     }
 }

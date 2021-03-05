@@ -5,7 +5,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 import java.nio.ByteBuffer;
 
-// FIXME <Refactor> This class is similar to the other backends
+// FIXME <Refactor> <S>
 public class SPIRVByteBuffer {
 
     protected ByteBuffer buffer;

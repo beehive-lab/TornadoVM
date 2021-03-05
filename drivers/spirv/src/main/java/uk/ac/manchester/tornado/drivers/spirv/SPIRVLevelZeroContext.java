@@ -102,7 +102,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     @Override
     public long allocateMemory(long numBytes) {
-
         if (TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
             ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
             deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
@@ -112,6 +111,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
             LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(0).getDevice().getDevice();
             levelZeroContext.zeMemAllocShared(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), bufferA);
+            // FIXME NOTE: Not sure if we should return the raw pointer here for Level Zero
             return bufferA.getPtrBuffer();
         } else {
             throw new RuntimeException("No other memory allocator has been implemented yet.");

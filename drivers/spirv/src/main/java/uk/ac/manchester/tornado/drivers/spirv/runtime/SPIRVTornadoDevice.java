@@ -184,7 +184,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
-    // FIXME <REFACTOR> Common 3 backends
+    // FIXME <REFACTOR> <S>
     private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
         try {
             state.getBuffer().allocate(object, batchSize);
