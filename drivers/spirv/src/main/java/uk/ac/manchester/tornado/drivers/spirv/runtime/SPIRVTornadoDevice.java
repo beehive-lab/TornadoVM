@@ -12,13 +12,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.opencl.mm.*;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.*;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.*;
 
@@ -119,14 +118,24 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     private ObjectBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
         if (klass == int[].class) {
             return new SPIRVIntArrayWrapper(device, batchSize);
+        } else if (klass == float[].class) {
+            return new SPIRVFloatArrayWrapper(device, batchSize);
+        } else if (klass == double[].class) {
+            return new SPIRVDoubleArrayWrapper(device, batchSize);
+        } else if (klass == short[].class) {
+            return new SPIRVShortArrayWrapper(device, batchSize);
+        } else if (klass == byte[].class) {
+            return new SPIRVByteArrayWrapper(device, batchSize);
+        } else if (klass == long[].class) {
+            return new SPIRVLongArrayWrapper(device, batchSize);
+        } else if (klass == char[].class) {
+            return new SPIRVCharArrayWrapper(device, batchSize);
         }
         throw new RuntimeException("[SPIRV] Array Wrapper Not Implemented yet: " + klass);
     }
 
     private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
-        ObjectBuffer result = null;
-
-        return result;
+        throw new RuntimeException("[SPIRV] createMultiArrayWrapper Not supported yet");
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
