@@ -5,12 +5,20 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.*;
 
@@ -108,13 +116,130 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     }
 
-    @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
-        return 0;
+    private ObjectBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
+        if (klass == int[].class) {
+            return new SPIRVIntArrayWrapper(device, batchSize);
+        }
+        throw new RuntimeException("[SPIRV] Array Wrapper Not Implemented yet: " + klass);
+    }
+
+    private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
+        ObjectBuffer result = null;
+
+        return result;
+    }
+
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
+        ObjectBuffer result = null;
+        if (type.isArray()) {
+            if (!type.getComponentType().isArray()) {
+                return createArrayWrapper(type, deviceContext, batchSize);
+            } else {
+                final Class<?> componentType = type.getComponentType();
+                if (RuntimeUtilities.isPrimitiveArray(componentType)) {
+                    return createMultiArrayWrapper(componentType, type, deviceContext, batchSize);
+                } else {
+                    throw new RuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented");
+                }
+            }
+        } else if (!type.isPrimitive()) {
+            throw new RuntimeException("Not implemented yet");
+        }
+
+        TornadoInternalError.guarantee(result != null, "Unable to create a buffer for object with type: " + type);
+        return null;
+    }
+
+    private void checkBatchSize(long batchSize) {
+        if (batchSize > 0) {
+            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
+        }
+    }
+
+    private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
+
+        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, (SPIRVDeviceContext) getDeviceContext(), batchSize);
+        buffer.allocate(object, batchSize);
+        state.setBuffer(buffer);
+
+        if (buffer.getClass() == AtomicsBuffer.class) {
+            state.setAtomicRegion();
+        }
+
+        final Class<?> type = object.getClass();
+        if (!type.isArray()) {
+            checkBatchSize(batchSize);
+        }
+        state.setValid(true);
+    }
+
+    // FIXME <REFACTOR> Common 3 backends
+    private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
+        // We re-allocate if the buffer size has changed
+        final ObjectBuffer buffer = state.getBuffer();
+        try {
+            buffer.allocate(object, batchSize);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // FIXME <REFACTOR> Common 3 backends
+    private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
+        try {
+            state.getBuffer().allocate(object, batchSize);
+            final Class<?> type = object.getClass();
+            if (!type.isArray()) {
+                checkBatchSize(batchSize);
+                state.getBuffer().write(object);
+            }
+            state.setValid(true);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
-    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
+    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
+        if (!state.hasBuffer()) {
+            reserveMemory(object, batchSize, state);
+        } else {
+            checkForResizeBuffer(object, batchSize, state);
+        }
+        if (!state.isValid()) {
+            reAllocateInvalidBuffer(object, batchSize, state);
+        }
+        return -1;
+    }
+
+    /**
+     * It allocates and copy in the content of the object to the target device.
+     *
+     * @param object
+     *            to be allocated
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of pending events (dependencies)
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
+     * @param offset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @return A list of event IDs
+     */
+    @Override
+    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long offset) {
+        if (!objectState.isValid()) {
+            ensureAllocated(object, batchSize, objectState);
+        }
+
+        if (BENCHMARKING_MODE || !objectState.hasContents()) {
+            objectState.setContents(true);
+            return objectState.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+        }
         return null;
     }
 

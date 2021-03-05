@@ -115,4 +115,20 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     public void reset() {
         throw new RuntimeException("Unimplemented");
     }
+
+    public int readBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+        return 0;
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+        return 0;
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+        return 0;
+    }
 }

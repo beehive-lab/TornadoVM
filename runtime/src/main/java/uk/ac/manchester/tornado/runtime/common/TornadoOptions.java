@@ -119,6 +119,11 @@ public class TornadoOptions {
     public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
 
     /**
+     * Sets the array memory alignment for SPIRV devices. Default is 128 bytes.
+     */
+    public static final int SPIRV_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.spirv.array.align", "128"));
+
+    /**
      * Enables OpenCL code generation based on a virtual device. Default is False.
      */
     public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", "False");
