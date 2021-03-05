@@ -45,7 +45,7 @@ import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
 import static java.util.Arrays.copyOfRange;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt;
+import static uk.ac.manchester.tornado.api.collections.types.FloatOps.FMT;
 import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
 
 import java.nio.FloatBuffer;
@@ -211,7 +211,7 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     public String toString() {
         String result = format("MatrixFloat <%d x %d>", M, N);
         if (M < 16 && N < 16) {
-            result += "\n" + toString(fmt);
+            result += "\n" + toString(FMT);
         }
         return result;
     }

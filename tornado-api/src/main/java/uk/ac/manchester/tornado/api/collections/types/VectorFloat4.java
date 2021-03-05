@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -59,10 +59,8 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Creates a vector using the provided backing array
      *
-     * @param numElements
-     *            Number of elements
-     * @param array
-     *            Array to be stored
+     * @param numElements Number of elements
+     * @param array       Array to be stored
      */
     protected VectorFloat4(int numElements, float[] array) {
         this.numElements = numElements;
@@ -79,8 +77,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Creates an empty vector with
      *
-     * @param numElements
-     *            Number of elements
+     * @param numElements Number of elements
      */
     public VectorFloat4(int numElements) {
         this(numElements, new float[numElements * elementSize]);
@@ -97,8 +94,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Returns the float at the given index of this vector
      *
-     * @param index
-     *            Position
+     * @param index Position
      * @return value
      */
     public Float4 get(int index) {
@@ -108,10 +104,8 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Sets the float at the given index of this vector
      *
-     * @param index
-     *            position
-     * @param value
-     *            value to be stored
+     * @param index position
+     * @param value value to be stored
      */
     public void set(int index, Float4 value) {
         value.storeToArray(storage, toIndex(index));
@@ -120,8 +114,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Sets the elements of this vector to that of the provided vector
      *
-     * @param values
-     *            set a {@link VectorFloat4} into the internal array
+     * @param values set a {@link VectorFloat4} into the internal array
      */
     public void set(VectorFloat4 values) {
         for (int i = 0; i < numElements; i++) {
@@ -132,8 +125,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Sets the elements of this vector to that of the provided array
      *
-     * @param values
-     *            set an input array into the internal array
+     * @param values set an input array into the internal array
      */
     public void set(float[] values) {
         VectorFloat4 vector = new VectorFloat4(values);
@@ -159,29 +151,15 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
         return vector;
     }
 
-    /**
-     * Prints the vector using the specified format string
-     *
-     * @param fmt
-     *            String Format
-     * @return String
-     */
-    public String toString(String fmt) {
-        StringBuffer sb = new StringBuffer("[");
-        sb.append("[ ");
-        for (int i = 0; i < numElements; i++) {
-            sb.append(String.format(fmt, get(i)) + " ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
     public String toString() {
-        if (numElements > elementSize) {
-            return String.format("VectorFloat4 <%d>", numElements);
-        } else {
-            return toString(FloatOps.fmt4);
+        if (this.numElements > elementSize) {
+            return String.format("VectorFloat4 <%d>", this.numElements);
         }
+        StringBuilder tempString = new StringBuilder();
+        for (int i = 0; i < numElements; i++) {
+            tempString.append(" ").append(this.get(i).toString());
+        }
+        return tempString.toString();
     }
 
     public Float4 sum() {

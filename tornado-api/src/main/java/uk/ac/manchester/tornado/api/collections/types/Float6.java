@@ -173,7 +173,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        return toString(FloatOps.fmt6);
+        return toString(FloatOps.FMT_6);
     }
 
     public static Float6 loadFromArray(final float[] array, int index) {
