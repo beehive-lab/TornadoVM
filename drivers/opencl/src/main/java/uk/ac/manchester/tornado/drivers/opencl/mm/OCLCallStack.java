@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 import java.util.HashMap;
 
+import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;

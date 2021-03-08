@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.mm;
+package uk.ac.manchester.tornado.drivers.common.mm;
 
 import java.nio.ByteBuffer;
 
@@ -31,17 +31,17 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class PrimitiveSerialiser {
 
-    private static final void align(ByteBuffer buffer, int align) {
+    private static void align(ByteBuffer buffer, int align) {
         while (buffer.position() % align != 0) {
             buffer.put((byte) 0);
         }
     }
 
-    public static final void put(ByteBuffer buffer, Object value) {
+    public static void put(ByteBuffer buffer, Object value) {
         put(buffer, value, 0);
     }
 
-    public static final void put(ByteBuffer buffer, Object value, int alignment) {
+    public static void put(ByteBuffer buffer, Object value, int alignment) {
         if (value instanceof Integer) {
             buffer.putInt((int) value);
         } else if (value instanceof Long) {

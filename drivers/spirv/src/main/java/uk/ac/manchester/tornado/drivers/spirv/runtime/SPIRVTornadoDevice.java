@@ -56,7 +56,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public CallStack createStack(int numArgs) {
-        return null;
+        return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
     @Override
@@ -366,7 +366,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoDeviceContext getDeviceContext() {
+    public SPIRVDeviceContext getDeviceContext() {
         return device.getDeviceContext();
     }
 
