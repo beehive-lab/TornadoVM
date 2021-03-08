@@ -12,6 +12,8 @@ On CentOS:
 $ scl enable devtoolset-9 bash # Only for CentOS
 ```
 
+Using commit id `0d30b1fa712253c68bfdfa3863d380df4301b8a4` from Level Zero.
+
 ```bash
 $ git clone https://github.com/oneapi-src/level-zero
 $ mkdir build
@@ -21,7 +23,9 @@ $ cmake --build . --config Release
 $ cmake --build . --config Release --target package
 ```
 
-Export `ZE_SHARED_LOADER`:
+Export `ZE_SHARED_LOADER` pointing to `libze_loader.so`:
+
+Example:
 
 ```bash 
 export ZE_SHARED_LOADER="/home/juan/manchester/SPIRV/level-zero/build/lib/libze_loader.so"
