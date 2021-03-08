@@ -29,7 +29,7 @@ public class TestVM {
 
     }
 
-    public void runWithTornadoVM(SPIRVTornadoDevice device, int[] a) {
+    public void runWithTornadoVM(SPIRVTornadoDevice device, int[] a, int[] b, int[] c) {
 
         System.out.println("Running Runtime For Buffer creation and copy");
 
@@ -37,16 +37,34 @@ public class TestVM {
         GlobalObjectState stateA = new GlobalObjectState();
         DeviceObjectState objectStateA = stateA.getDeviceState(device);
 
+        // We allocate buffer B
+        GlobalObjectState stateB = new GlobalObjectState();
+        DeviceObjectState objectStateB = stateB.getDeviceState(device);
+
+        // We allocate buffer C
+        GlobalObjectState stateC = new GlobalObjectState();
+        DeviceObjectState objectStateC = stateC.getDeviceState(device);
+
         // Copy-in buffer
         device.ensurePresent(a, objectStateA, null, 0, 0);
+
+        // Allocate buffer B
+        device.ensureAllocated(b, 0, objectStateB);
+
+        // Stream IN
+        device.streamIn(c, 0, 0, objectStateC, null);
 
     }
 
     public void test() {
         TornadoDevice device = invokeSPIRVBackend();
         int[] a = new int[64];
+        int[] b = new int[64];
+        int[] c = new int[64];
 
-        runWithTornadoVM((SPIRVTornadoDevice) device, a);
+        if (device instanceof SPIRVTornadoDevice) {
+            runWithTornadoVM((SPIRVTornadoDevice) device, a, b, c);
+        }
     }
 
     public static void main(String[] args) {
