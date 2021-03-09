@@ -28,29 +28,4 @@ public class LevelZeroKernel {
     public int zeKernelSetArgumentValue(long ptrZeKernelHandle, int argIndex, int argSize, LevelZeroBufferInteger argValue) {
         return zeKernelSetArgumentValue_native(ptrZeKernelHandle, argIndex, argSize, argValue);
     }
-
-    native int zeCommandListAppendLaunchKernel_native(long commandListHandler, long ptrZeKernelHandle, ZeGroupDispatch dispatch, Object signalEvent, int numWaitEvents, Object phWaitEvents);
-
-    public int zeCommandListAppendLaunchKernel(long commandListHandler, long ptrZeKernelHandle, ZeGroupDispatch dispatch, Object signalEvent, int numWaitEvents, Object phWaitEvents) {
-        return zeCommandListAppendLaunchKernel_native(commandListHandler, ptrZeKernelHandle, dispatch,signalEvent, numWaitEvents, phWaitEvents);
-    }
-
-    native int zeCommandListClose_native(long ptrZeCommandListHandle);
-
-    public int zeCommandListClose(long ptrZeCommandListHandle) {
-        return zeCommandListClose_native(ptrZeCommandListHandle);
-    }
-
-    native int zeCommandQueueExecuteCommandLists_native(long commandQueueHandlerPointer, int numCommandLists, long commandList, Object hFence);
-
-    public int zeCommandQueueExecuteCommandLists(long commandQueueHandlerPointer, int numCommandLists, long commandList, Object hFence) {
-        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandList, hFence);
-    }
-
-
-    native int zeCommandQueueSynchronize_native(long commandQueueHandlerPointer, long timeOut);
-
-    public int zeCommandQueueSynchronize(long commandQueueHandlerPointer, long timeOut) {
-        return zeCommandQueueSynchronize_native(commandQueueHandlerPointer, timeOut);
-    }
 }

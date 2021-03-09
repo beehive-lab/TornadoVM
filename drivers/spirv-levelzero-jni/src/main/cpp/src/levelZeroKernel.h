@@ -31,38 +31,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1native
         (JNIEnv *, jobject, jlong, jint, jint, jobject);
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
- * Method:    zeCommandListAppendLaunchKernel_native
- * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeGroupDispatch;Ljava/lang/Object;ILjava/lang/Object;)I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeCommandListAppendLaunchKernel_1native
-        (JNIEnv *, jobject, jlong, jlong, jobject, jobject, jint, jobject);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
- * Method:    zeCommandListClose_native
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeCommandListClose_1native
-        (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
- * Method:    zeCommandQueueExecuteCommandLists_native
- * Signature: (JIJLjava/lang/Object;)I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeCommandQueueExecuteCommandLists_1native
-        (JNIEnv *, jobject, jlong, jint, jlong, jobject);
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
- * Method:    zeCommandQueueSynchronize_native
- * Signature: (JJ)I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeCommandQueueSynchronize_1native
-        (JNIEnv *, jobject, jlong, jlong);
-
 #ifdef __cplusplus
 }
 #endif

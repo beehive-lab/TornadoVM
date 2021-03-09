@@ -2,47 +2,7 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
 import java.io.IOException;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeComputeProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceCacheProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceImageProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryAccessProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
 
 public class TestLevelZero {
 
@@ -185,7 +145,8 @@ public class TestLevelZero {
             System.out.println(p);
         }
 
-        ZeCommandQueueHandle commandQueue = new ZeCommandQueueHandle();
+        ZeCommandQueueHandle commandQueueHandle = new ZeCommandQueueHandle();
+        LevelZeroCommandQueue commandQueue = new LevelZeroCommandQueue(context, commandQueueHandle);
         ZeCommandQueueDescription commandQueueDescription = new ZeCommandQueueDescription();
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
@@ -199,16 +160,17 @@ public class TestLevelZero {
         commandQueueDescription.setIndex(0);
         commandQueueDescription.setMode(ZeCommandQueueMode.ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS);
         // zeCommandQueueCreate(context, device, &cmdQueueDesc, &cmdQueue);
-        result = context.zeCommandQueueCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandQueueDescription, commandQueue);
+        result = context.zeCommandQueueCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandQueueDescription, commandQueueHandle);
         LevelZeroUtils.errorLog("zeCommandQueueCreate", result);
 
         // ============================================
         // Create a command list
         // ============================================
-        ZeCommandQueueListHandle commandList = new ZeCommandQueueListHandle();
+        ZeCommandQueueListHandle zeCommandListHandler = new ZeCommandQueueListHandle();
+        LevelZeroCommandList commandList = new LevelZeroCommandList(context, zeCommandListHandler);
         ZeCommandListDescription commandListDescription = new ZeCommandListDescription();
         commandListDescription.setCommandQueueGroupOrdinal(commandQueueDescription.getOrdinal());
-        result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandListDescription, commandList);
+        result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandListDescription, zeCommandListHandler);
         LevelZeroUtils.errorLog("zeCommandListCreate", result);
 
         final int elements = 8192;
@@ -291,16 +253,16 @@ public class TestLevelZero {
         dispatch.setGroupCountZ(1);
 
         // Launch the kernel on the Intel Integrated GPU
-        result = levelZeroKernel.zeCommandListAppendLaunchKernel(commandList.getPtrZeCommandListHandle(), kernel.getPtrZeKernelHandle(), dispatch, null, 0, null);
+        result = commandList.zeCommandListAppendLaunchKernel(zeCommandListHandler.getPtrZeCommandListHandle(), kernel.getPtrZeKernelHandle(), dispatch, null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendLaunchKernel", result);
 
-        result = levelZeroKernel.zeCommandListClose(commandList.getPtrZeCommandListHandle());
+        result = commandList.zeCommandListClose(zeCommandListHandler.getPtrZeCommandListHandle());
         LevelZeroUtils.errorLog("zeCommandListClose", result);
 
-        result = levelZeroKernel.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPointer(), 1, commandList.getPtrZeCommandListHandle(), null);
+        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueueHandle.getCommandQueueHandlerPointer(), 1, zeCommandListHandler.getPtrZeCommandListHandle(), null);
         LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
 
-        result = levelZeroKernel.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPointer(), Long.MAX_VALUE);
+        result = commandQueue.zeCommandQueueSynchronize(commandQueueHandle.getCommandQueueHandlerPointer(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
 
         boolean isEqual = bufferA.isEqual(bufferB, elements);
@@ -314,10 +276,10 @@ public class TestLevelZero {
         result |= context.zeMemFree(context.getDefaultContextPtr(), bufferB);
         LevelZeroUtils.errorLog("zeMemFree", result);
 
-        result = context.zeCommandListDestroy(commandList);
+        result = context.zeCommandListDestroy(zeCommandListHandler);
         LevelZeroUtils.errorLog("zeCommandListDestroy", result);
 
-        result = context.zeCommandQueueDestroy(commandQueue);
+        result = context.zeCommandQueueDestroy(commandQueueHandle);
         LevelZeroUtils.errorLog("zeCommandQueueDestroy", result);
 
         result = driver.zeContextDestroy(context);

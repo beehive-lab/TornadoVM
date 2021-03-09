@@ -118,6 +118,7 @@ public class TestCopies {
         deviceMemAllocDesc.setFlags(0);
         int alignment = 1;
 
+        // This is the equivalent of a clCreateBuffer
         int result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, alignment, device.getDeviceHandlerPtr(), deviceBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
