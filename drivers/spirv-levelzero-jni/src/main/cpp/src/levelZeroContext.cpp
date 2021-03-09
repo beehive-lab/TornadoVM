@@ -418,6 +418,59 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
+ * Method:    zeMemAllocDevice_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1native
+        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jint allocSize, jint alignment, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
+
+    ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
+    ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
+
+    jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
+    jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
+    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
+
+    void* buffer = nullptr;
+    if (ptrBuffer != -1) {
+        buffer = reinterpret_cast<void *>(ptrBuffer);
+    }
+
+    jclass javaDeviceMemAllocDescClass = env->GetObjectClass(javaDeviceMemAllocDesc);
+    jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "stype", "I");
+    int typeDeviceDesc = env->GetIntField(javaDeviceMemAllocDesc, fieldTypeDeviceDesc);
+    jfieldID fieldFlagsDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "flags", "J");
+    long flagDeviceDesc = env->GetLongField(javaDeviceMemAllocDesc, fieldFlagsDeviceDesc);
+    jfieldID fieldOrdinalDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "ordinal", "J");
+    long ordinalDeviceDesc = env->GetLongField(javaDeviceMemAllocDesc, fieldOrdinalDeviceDesc);
+
+    ze_device_mem_alloc_desc_t deviceDesc = {};
+    deviceDesc.stype = static_cast<ze_structure_type_t>(typeDeviceDesc);
+    deviceDesc.ordinal = ordinalDeviceDesc;
+    deviceDesc.flags = flagDeviceDesc;
+
+    ze_result_t result = zeMemAllocDevice(context, &deviceDesc, allocSize, alignment, device, &buffer);
+    LOG_ZE_JNI("zeMemAllocDevice", result);
+
+    // Update Device Description
+    env->SetIntField(javaDeviceMemAllocDescClass, fieldTypeDeviceDesc, deviceDesc.stype);
+    jfieldID pNext = env->GetFieldID(javaDeviceMemAllocDescClass, "pNext", "J");
+    env->SetLongField(javaDeviceMemAllocDescClass, pNext, (jlong) deviceDesc.pNext);
+    env->SetLongField(javaDeviceMemAllocDescClass, fieldOrdinalDeviceDesc, deviceDesc.ordinal);
+    env->SetLongField(javaDeviceMemAllocDescClass, fieldFlagsDeviceDesc, deviceDesc.flags);
+
+    // Set Buffer Pointer and attributes
+    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
+    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
+    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<jlong>(buffer));
+    env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
+    env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
+
+    return result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeModuleCreate_native
  * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBinaryModule;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleHandle;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeBuildLogHandle;)I
  */

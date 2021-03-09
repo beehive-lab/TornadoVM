@@ -3,13 +3,29 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 public class LevelZeroByteBuffer {
 
     private long ptrBuffer;
+    private int size;
+    private int alignment;
 
     public LevelZeroByteBuffer() {
         this.ptrBuffer = -1;
     }
 
+    public LevelZeroByteBuffer(int size, int alignment) {
+        this.size = size;
+        this.alignment = alignment;
+        this.ptrBuffer = -1;
+    }
+
     public long getPtrBuffer() {
-        return ptrBuffer;
+        return this.ptrBuffer;
+    }
+
+    public int getSize() {
+        return this.size;
+    }
+
+    public int getAlignment() {
+        return this.alignment;
     }
 
     public void memset(byte value, int bufferSize) {
