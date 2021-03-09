@@ -28,4 +28,7 @@ public class ZeContextDesc {
         return type;
     }
 
+    public void setSType(int type) {
+        this.type = type;
+    }
 }

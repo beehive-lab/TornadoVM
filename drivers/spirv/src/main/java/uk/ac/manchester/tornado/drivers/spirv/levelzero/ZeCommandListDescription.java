@@ -36,5 +36,8 @@ public class ZeCommandListDescription {
     public void setCommandQueueGroupOrdinal(long ordinal) {
         this.commandQueueGroupOrdinal = ordinal;
     }
-}
 
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+}

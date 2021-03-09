@@ -57,4 +57,12 @@ public class ZeCommandQueueDescription {
     public void setMode(int mode) {
         this.mode = mode;
     }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
 }
