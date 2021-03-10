@@ -154,10 +154,15 @@ public class TestCopies {
             heapBuffer[i] = (char) i;
         }
 
+        // Copy from HEAP -> Device Allocated Memory
         result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, heapBuffer, allocSize, null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
-
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+
+        // Copy From Device-Allocated memory to host (heapBuffer2)
+        result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), heapBuffer2, deviceBuffer, allocSize, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
 
         return false;
     }
