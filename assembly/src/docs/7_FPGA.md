@@ -54,7 +54,8 @@ $ vim etc/intel-fpga.conf
 ```conf
 [device]
 DEVICE_NAME=p385a_sch_ax115
-
+[compiler]
+COMPILER=aoc
 [options]
 FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile
 DIRECTORY_BITSTREAM=fpga-source-comp/
@@ -69,18 +70,35 @@ $ vim etc/xilinx-fpga.conf
 ```conf
 [device]
 DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
-
+[compiler]
+COMPILER=xocc
 [options]
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
-In order to use the Xilinx Toolchain, it is required to initialize the env variables of the toolchain as follows:
-- For SDAccel (2018.2 & 2018.3):
+In order to use the Xilinx Toolchain, it is required to initialize the env variables of the SDAccel toolchain as follows:
+
 ```bash
 source /opt/Xilinx/SDx/2018.2/settings64.sh
 ```
 
-- For Vitis (2020.2):
+### Example of configuration file for Xilinx Alveo U50:
+
+```bash
+$ vim etc/xilinx-fpga.conf
+```
+
+```conf
+[device]
+DEVICE_NAME=xilinx_u50_gen3x16_xdma_201920_3
+[compiler]
+COMPILER=v++
+[options]
+FLAGS=-O3 -j12
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
+In order to use the Xilinx Toolchain, it is required to initialize the env variables of the Vitis toolchain as follows:
 ```bash
 source /opt/Xilinx/Vitis/2020.2/settings64.sh
 source /opt/xilinx/xrt/setup.sh
@@ -94,6 +112,8 @@ $ vim etc/xilinx-fpga.conf
 
 ```conf
 DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
+[compiler]
+COMPILER=xocc
 [options]
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
@@ -115,19 +135,34 @@ tornado \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
+Note: The Full JIT mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.heap.allocation=64MB`.
+
+```bash
+tornado \
+    -Ds0.t0.device=0:1 \
+    -Dtornado.heap.allocation=64MB \
+    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
+```
+
 ### 2. Ahead of Time Execution Mode
 
-Ahead of time execution mode allows the user to generate a pre-generated bitstream of the Tornado tasks and then load it in a separated execution. The FPGA bitstream file should be named as `lookupBufferAddress`.
+Ahead of time execution mode allows the user to use a pre-generated bitstream of the Tornado tasks and then load it in a separated execution. The FPGA bitstream file should reside in the `DIRECTORY_BITSTREAM` as configured in Step 1, and should be named as `lookupBufferAddress`.
 
 Example:  
 
 ```bash
 tornado \
     -Ds0.t0.device=0:1 \
-    -Ds0.t0.global.dims=1024 \
-    -Ds0.t0.local.dims=64 \
-    -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+```
+
+Note: The Full JIT mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.heap.allocation=64MB`.
+
+```bash
+tornado \
+    -Ds0.t0.device=0:1 \
+    -Dtornado.heap.allocation=64MB \
+    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
 ### 3. Emulation Mode
