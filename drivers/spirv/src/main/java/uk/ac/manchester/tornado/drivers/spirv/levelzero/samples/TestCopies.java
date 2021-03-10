@@ -169,6 +169,7 @@ public class TestCopies {
     }
 
     public static boolean testAppendMemoryCopyFromHostToDeviceToHeap(LevelZeroContext context, LevelZeroDevice device) {
+
         final int allocSize = 4096;
         byte[] heapBuffer = new byte[allocSize];
 
@@ -193,6 +194,49 @@ public class TestCopies {
         result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, allocSize, device.getDeviceHandlerPtr(), deviceBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
+        // // Copy from HEAP -> Device Allocated Memory
+        // result =
+        // commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(),
+        // deviceBuffer, hostBuffer, allocSize, null, 0, null);
+        // LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
+        // result =
+        // commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(),
+        // null, 0, null);
+        // LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+        //
+        // // Copy From Device-Allocated memory to host (heapBuffer2)
+        // result =
+        // commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(),
+        // heapBuffer, deviceBuffer, allocSize, null, 0, null);
+        // LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
+        //
+        // // Close the command list
+        // result =
+        // commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
+        // LevelZeroUtils.errorLog("zeCommandListClose", result);
+        // result =
+        // commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(),
+        // 1, commandList.getCommandListHandler(), null);
+        // LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
+        // result =
+        // commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(),
+        // Long.MAX_VALUE);
+        // LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
+        //
+        // boolean isValid = true;
+        // for (int i = 0; i < allocSize; i++) {
+        // if (heapBuffer[i] != heapBuffer2[i]) {
+        // System.out.println(heapBuffer[i] + " != " + heapBuffer2[i]);
+        // isValid = false;
+        // break;
+        // }
+        // }
+
+        // Free resources
+        context.zeMemFree(context.getDefaultContextPtr(), hostBuffer);
+        context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
+        context.zeCommandListDestroy(commandList.getCommandListHandler());
+        context.zeCommandQueueDestroy(commandQueue.getCommandQueueHandle());
         return false;
     }
 
