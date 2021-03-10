@@ -39,7 +39,6 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.String.format;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt3;
 import static uk.ac.manchester.tornado.api.collections.types.Int2.add;
 import static uk.ac.manchester.tornado.api.collections.types.Int2.loadFromArray;
 
@@ -150,29 +149,15 @@ public class VectorInt2 implements PrimitiveStorage<DoubleBuffer> {
         return vector;
     }
 
-    /**
-     * Prints the vector using the specified format string
-     *
-     * @param fmt
-     *
-     * @return
-     */
-    public String toString(String fmt) {
-        String str = "";
-
-        for (int i = 0; i < numElements; i++) {
-            str += get(i).toString() + " ";
-        }
-
-        return str;
-    }
-
     public String toString() {
-        if (numElements > elementSize) {
-            return format("VectorInt2 <%d>", numElements);
-        } else {
-            return toString(fmt3);
+        if (this.numElements > elementSize) {
+            return String.format("VectorInt2 <%d>", this.numElements);
         }
+        StringBuilder tempString = new StringBuilder();
+        for (int i = 0; i < numElements; i++) {
+            tempString.append(" ").append(this.get(i).toString());
+        }
+        return tempString.toString();
     }
 
     public Int2 sum() {
