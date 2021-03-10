@@ -135,6 +135,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeEventDestroy_1native
         (JNIEnv *, jobject, jlong);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
+ * Method:    zeMemAllocHost_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeMemAllocHostDesc;IILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocHost_1native
+        (JNIEnv *, jobject, jlong, jobject, jint, jint, jobject);
+
 #ifdef __cplusplus
 }
 #endif

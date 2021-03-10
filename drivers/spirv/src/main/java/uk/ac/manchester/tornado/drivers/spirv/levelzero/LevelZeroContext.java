@@ -263,4 +263,9 @@ public class LevelZeroContext {
         return result;
     }
 
+    private native int zeMemAllocHost_native(long contextPtr, ZeMemAllocHostDesc hostMemAllocDesc, int allocSize, int alignment, LevelZeroByteBuffer hostBuffer);
+
+    public int zeMemAllocHost(long contextPtr, ZeMemAllocHostDesc hostMemAllocDesc, int allocSize, int alignment, LevelZeroByteBuffer hostBuffer) {
+        return zeMemAllocHost_native(contextPtr, hostMemAllocDesc, allocSize, alignment, hostBuffer);
+    }
 }

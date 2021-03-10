@@ -783,3 +783,54 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     }
     return 0;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
+ * Method:    zeMemAllocHost_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeMemAllocHostDesc;IILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocHost_1native
+        (JNIEnv *env, jobject, jlong javaContextPtr, jobject javaHostMemAllocDesc, jint allocSize, jint alignment, jobject javaLevelZeroBuffer) {
+
+
+    ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
+
+    jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
+    jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
+    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
+
+    void* buffer = nullptr;
+    if (ptrBuffer != -1) {
+        buffer = reinterpret_cast<void *>(ptrBuffer);
+    }
+
+    jclass javaHostDescClass = env->GetObjectClass(javaHostMemAllocDesc);
+    jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaHostDescClass, "stype", "I");
+    int typeDeviceDesc = env->GetIntField(javaHostMemAllocDesc, fieldTypeDeviceDesc);
+    jfieldID fieldFlagsDeviceDesc = env->GetFieldID(javaHostDescClass, "flags", "J");
+    long flagDeviceDesc = env->GetLongField(javaHostMemAllocDesc, fieldFlagsDeviceDesc);
+
+    ze_host_mem_alloc_desc_t deviceDesc = {};
+    deviceDesc.stype = static_cast<ze_structure_type_t>(typeDeviceDesc);
+    deviceDesc.flags = flagDeviceDesc;
+    deviceDesc.pNext = nullptr;
+
+    ze_result_t result = zeMemAllocHost(context, &deviceDesc, allocSize, alignment, (void**) &buffer);
+    LOG_ZE_JNI("zeMemAllocHost", result);
+
+    // Update Host Description
+    env->SetIntField(javaHostDescClass, fieldTypeDeviceDesc, deviceDesc.stype);
+    jfieldID pNext = env->GetFieldID(javaHostDescClass, "pNext", "J");
+    env->SetLongField(javaHostDescClass, pNext, (jlong) deviceDesc.pNext);
+    env->SetLongField(javaHostDescClass, fieldFlagsDeviceDesc, deviceDesc.flags);
+
+    // Set Buffer Pointer and attributes
+    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
+    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
+    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<jlong>(buffer));
+    env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
+    env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
+
+    return result;
+
+}

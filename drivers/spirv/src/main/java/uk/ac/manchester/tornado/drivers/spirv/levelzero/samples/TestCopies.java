@@ -1,26 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
 
 import java.util.Arrays;
 
@@ -188,8 +168,35 @@ public class TestCopies {
         return isValid;
     }
 
-    public static void main(String[] args) {
+    public static boolean testAppendMemoryCopyFromHostToDeviceToHeap(LevelZeroContext context, LevelZeroDevice device) {
+        final int allocSize = 4096;
+        byte[] heapBuffer = new byte[allocSize];
 
+        LevelZeroByteBuffer hostBuffer = new LevelZeroByteBuffer();
+        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
+
+        ZeCommandQueueHandle zeCommandQueueHandle = createCommandQueue(context, device);
+        ZeCommandListHandle zeCommandQueueListHandle = createCommandList(context, device);
+        LevelZeroCommandList commandList = new LevelZeroCommandList(context, zeCommandQueueListHandle);
+        LevelZeroCommandQueue commandQueue = new LevelZeroCommandQueue(context, zeCommandQueueHandle);
+
+        ZeMemAllocHostDesc hostMemAllocDesc = new ZeMemAllocHostDesc();
+        hostMemAllocDesc.setFlags(0);
+        int result = context.zeMemAllocHost(context.getContextHandle().getContextPtr()[0], hostMemAllocDesc, allocSize, 1, hostBuffer);
+        LevelZeroUtils.errorLog("zeMemAllocHost", result);
+
+        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        deviceMemAllocDesc.setOrdinal(0);
+        deviceMemAllocDesc.setFlags(0);
+
+        // This is the equivalent of a clCreateBuffer
+        result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, allocSize, device.getDeviceHandlerPtr(), deviceBuffer);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        return false;
+    }
+
+    public static void main(String[] args) {
         LevelZeroDriver driver = new LevelZeroDriver();
         LevelZeroContext context = zeInitContext(driver);
         LevelZeroDevice device = zeGetDevices(context, driver);
@@ -200,7 +207,9 @@ public class TestCopies {
         System.out.println("\tVendor ID: " + Integer.toHexString(deviceProperties.getVendorId()));
 
         boolean isValid = testAppendMemoryCopyFromHeapToDeviceToHeap(context, device);
+        if (isValid) {
+            isValid = testAppendMemoryCopyFromHostToDeviceToHeap(context, device);
+        }
         System.out.println("is valid? " + isValid);
-
     }
 }
