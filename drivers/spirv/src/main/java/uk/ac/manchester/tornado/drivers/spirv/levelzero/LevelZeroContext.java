@@ -81,28 +81,144 @@ public class LevelZeroContext {
 
     native int zeMemFree_native(long contextHandlePtr, long bufferA);
 
-    public int zeMemFree(long contextHandlePtr, LevelZeroBufferInteger bufferA) {
-        int result = zeMemFree_native(contextHandlePtr, bufferA.getPtrBuffer());
-        bufferA.initPtr();
+    /**
+     * Frees allocated host memory, device memory, or shared memory on the context.
+     *
+     * <ul>
+     * <li>The application must ensure the device is not currently referencing the
+     * memory before it is freed</li>
+     * <li>The implementation of this function may immediately free all Host and
+     * Device allocations associated with this memory</li>
+     * <li>The application must not call this function from simultaneous threads
+     * with the same pointer.</li>
+     * <li>The implementation of this function must be thread-safe.</li>
+     * </ul>
+     *
+     * @param contextHandlePtr
+     *            [in] handle pointer of the context object
+     * @param buffer
+     *            [in][release] pointer to memory to free
+     *
+     * @return
+     *
+     *         ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == contextHandlePtr
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == buffer
+     */
+    public int zeMemFree(long contextHandlePtr, LevelZeroBufferInteger buffer) {
+        int result = zeMemFree_native(contextHandlePtr, buffer.getPtrBuffer());
+        buffer.initPtr();
         return result;
     }
 
+    /**
+     * Frees allocated host memory, device memory, or shared memory on the context.
+     * 
+     * <ul>
+     * <li>The application must ensure the device is not currently referencing the
+     * memory before it is freed</li>
+     * <li>The implementation of this function may immediately free all Host and
+     * Device allocations associated with this memory</li>
+     * <li>The application must not call this function from simultaneous threads
+     * with the same pointer.</li>
+     * <li>The implementation of this function must be thread-safe.</li>
+     * </ul>
+     * 
+     * @param contextHandlePtr
+     *            [in] handle pointer of the context object
+     * @param buffer
+     *            [in][release] pointer to memory to free
+     * 
+     * @return
+     * 
+     *         ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == contextHandlePtr
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == buffer
+     */
     public int zeMemFree(long contextHandlePtr, LevelZeroByteBuffer buffer) {
         int result = zeMemFree_native(contextHandlePtr, buffer.getPtrBuffer());
         buffer.initPtr();
         return result;
     }
 
-    native int zeCommandListDestroy_native(long ptrZeCommandListHandle);
+    private native int zeCommandListDestroy_native(long ptrZeCommandListHandle);
 
+    /**
+     * Destroys a command list.
+     * 
+     * <ul>
+     * <li>The application must ensure the device is not currently referencing the
+     * command list before it is deleted.</li>
+     * <li>The implementation of this function may immediately free all Host and
+     * Device allocations associated with this command list.</li>
+     * <li>The application must not call this function from simultaneous threads
+     * with the same command list handle.</li>
+     * <li>The implementation of this function must be thread-safe.</li>
+     * </ul>
+     * 
+     * @param ptrZeCommandListHandle
+     *            [in][release] handle of command list object to destroy
+     * @return ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr ==
+     *         ptrZeCommandListHandle
+     *
+     *         ZE_RESULT_ERROR_HANDLE_OBJECT_IN_USE
+     */
     public int zeCommandListDestroy(ZeCommandListHandle ptrZeCommandListHandle) {
         int result = zeCommandListDestroy_native(ptrZeCommandListHandle.getPtrZeCommandListHandle());
         ptrZeCommandListHandle.initPtr();
         return result;
     }
 
-    native int zeCommandQueueDestroy_native(long ptrZeCommandListHandle);
+    private native int zeCommandQueueDestroy_native(long ptrZeCommandListHandle);
 
+    /**
+     * Destroys a command queue.
+     * 
+     * <ul>
+     * <li>The application must destroy all fence handles created from the command
+     * queue before destroying the command queue itself</li>
+     * <li>The application must ensure the device is not currently referencing the
+     * command queue before it is deleted</li>
+     * <li>The implementation of this function may immediately free all Host and
+     * Device allocations associated with this command queue</li>
+     * <li>The application must not call this function from simultaneous threads
+     * with the same command queue handle.</li>
+     * <li>The implementation of this function must be thread-safe.</li>
+     * </ul>
+     * 
+     * @param commandQueueHandle
+     *            [in][release] handle of command queue object to destroy
+     * @return
+     * 
+     *         ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr == commandQueueHandle
+     *
+     *         ZE_RESULT_ERROR_HANDLE_OBJECT_IN_USE
+     * 
+     */
     public int zeCommandQueueDestroy(ZeCommandQueueHandle commandQueueHandle) {
         int result = zeCommandQueueDestroy_native(commandQueueHandle.getCommandQueueHandlerPointer());
         commandQueueHandle.initPtr();
@@ -113,25 +229,25 @@ public class LevelZeroContext {
         this.contextHandle.initPtr();
     }
 
-    native int zeModuleBuildLogGetString_native(ZeBuildLogHandle buildLog, int[] sizeLog, String errorMessage);
+    private native int zeModuleBuildLogGetString_native(ZeBuildLogHandle buildLog, int[] sizeLog, String errorMessage);
 
     public int zeModuleBuildLogGetString(ZeBuildLogHandle buildLog, int[] sizeLog, String errorMessage) {
         return zeModuleBuildLogGetString_native(buildLog, sizeLog, errorMessage);
     }
 
-    native int zeEventPoolCreate_native(long defaultContextPtr, ZeEventPoolDescription eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool);
+    private native int zeEventPoolCreate_native(long defaultContextPtr, ZeEventPoolDescription eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool);
 
     public int zeEventPoolCreate(long defaultContextPtr, ZeEventPoolDescription eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool) {
         return zeEventPoolCreate_native(defaultContextPtr, eventPoolDesc, numDevices, deviceHandlerPtr, eventPool);
     }
 
-    native int zeEventCreate_native(ZeEventPoolHandle eventPool, ZeEventDescription eventDescription, ZeEventHandle event);
+    private native int zeEventCreate_native(ZeEventPoolHandle eventPool, ZeEventDescription eventDescription, ZeEventHandle event);
 
     public int zeEventCreate(ZeEventPoolHandle eventPool, ZeEventDescription eventDescription, ZeEventHandle event) {
         return zeEventCreate_native(eventPool, eventDescription, event);
     }
 
-    native int zeEventPoolDestroy_native(long eventPool);
+    private native int zeEventPoolDestroy_native(long eventPool);
 
     public int zeEventPoolDestroy(ZeEventPoolHandle event) {
         int result = zeEventPoolDestroy_native(event.getPtrZeEventPoolHandle());
@@ -139,7 +255,7 @@ public class LevelZeroContext {
         return result;
     }
 
-    native int zeEventDestroy_native(long event);
+    private native int zeEventDestroy_native(long event);
 
     public int zeEventDestroy(ZeEventHandle event) {
         int result = zeEventDestroy_native(event.getPtrZeEventHandle());

@@ -3,7 +3,6 @@
 #include <iostream>
 #include "ze_api.h"
 #include "ze_log.h"
-#include "limits"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
@@ -65,7 +64,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
     jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
 
-    //char* sourceBuffer = reinterpret_cast<char *>(env->GetByteArrayElements(array, 0));
     jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
     jbyte *dstBuffer = reinterpret_cast<jbyte *>(ptr);
 
@@ -87,18 +85,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, dstBuffer, sourceBuffer, size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
-//    result = zeCommandListAppendBarrier(cmdList, nullptr, 0, nullptr);
-//    LOG_ZE_JNI("zeCommandListAppendBarrier", result);
-//
-//    char *heapBuffer2 = new char[size];
-//    zeCommandListAppendMemoryCopy(cmdList, heapBuffer2, dstBuffer, size, nullptr, 0, nullptr);
-//    LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
-//
-//    result = zeCommandQueueExecuteCommandLists(commandQueue, 1, &cmdList, nullptr);
-//    LOG_ZE_JNI("zeCommandQueueExecuteCommandLists", result);
-//    result = zeCommandQueueSynchronize(commandQueue, std::numeric_limits<uint32_t>::max());
-//    LOG_ZE_JNI("zeCommandQueueSynchronize", result);
-
     env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
 
     return result;
@@ -119,7 +105,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
 
     jbyte *dstBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
-    //char* dstBuffer = reinterpret_cast<char *>(env->GetByteArrayElements(array, 0));
     jbyte *sourceBuffer = reinterpret_cast<jbyte *>(ptr);
 
     ze_event_handle_t hSignalEvent = nullptr;
@@ -140,17 +125,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, dstBuffer, sourceBuffer, size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
-//
-//    zeCommandListClose(cmdList);
-//
-//    result = zeCommandQueueExecuteCommandLists(commandQueue, 1, &cmdList, nullptr);
-//    LOG_ZE_JNI("zeCommandQueueExecuteCommandLists", result);
-//    result = zeCommandQueueSynchronize(commandQueue, std::numeric_limits<uint32_t>::max());
-//    LOG_ZE_JNI("zeCommandQueueSynchronize", result);
-//
-//    for (int i =0; i < 10; i++) {
-//        std::cout<< "BACK: " << dstBuffer[i] << std::endl;
-//    }
 
     env->ReleasePrimitiveArrayCritical(array, dstBuffer, JNI_ABORT);
     return result;
