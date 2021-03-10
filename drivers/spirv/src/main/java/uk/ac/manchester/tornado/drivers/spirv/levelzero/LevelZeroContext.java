@@ -35,15 +35,15 @@ public class LevelZeroContext {
         return zeCommandQueueCreate_native(contextPtr, deviceHandlerPtr, commandQueueDescription, commandQueue);
     }
 
-    native int zeCommandListCreate_native(long contextPtr, long deviceHandlerPtr, ZeCommandListDescription commandListDescription, ZeCommandQueueListHandle commandList);
+    native int zeCommandListCreate_native(long contextPtr, long deviceHandlerPtr, ZeCommandListDescription commandListDescription, ZeCommandListHandle commandList);
 
-    public int zeCommandListCreate(long contextPtr, long deviceHandlerPtr, ZeCommandListDescription commandListDescription, ZeCommandQueueListHandle commandList) {
+    public int zeCommandListCreate(long contextPtr, long deviceHandlerPtr, ZeCommandListDescription commandListDescription, ZeCommandListHandle commandList) {
         return zeCommandListCreate_native(contextPtr, deviceHandlerPtr, commandListDescription, commandList);
     }
 
-    public native int zeCommandListCreateImmediate_native(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandQueueListHandle commandList);
+    public native int zeCommandListCreateImmediate_native(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandListHandle commandList);
 
-    public int zeCommandListCreateImmediate(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandQueueListHandle commandList) {
+    public int zeCommandListCreateImmediate(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandListHandle commandList) {
         return zeCommandListCreateImmediate_native(contextPtr, deviceHandlerPtr, commandQueueDescription, commandList);
     }
 
@@ -87,9 +87,15 @@ public class LevelZeroContext {
         return result;
     }
 
+    public int zeMemFree(long contextHandlePtr, LevelZeroByteBuffer buffer) {
+        int result = zeMemFree_native(contextHandlePtr, buffer.getPtrBuffer());
+        buffer.initPtr();
+        return result;
+    }
+
     native int zeCommandListDestroy_native(long ptrZeCommandListHandle);
 
-    public int zeCommandListDestroy(ZeCommandQueueListHandle ptrZeCommandListHandle) {
+    public int zeCommandListDestroy(ZeCommandListHandle ptrZeCommandListHandle) {
         int result = zeCommandListDestroy_native(ptrZeCommandListHandle.getPtrZeCommandListHandle());
         ptrZeCommandListHandle.initPtr();
         return result;

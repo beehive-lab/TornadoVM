@@ -147,18 +147,18 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     // Get command list
     jclass commandListClass = env->GetObjectClass(javaCommandList);
-    jfieldID field = env->GetFieldID(commandListClass, "ptrZeCommandListHandle", "J");
-    jlong commandListPointer = env->GetLongField(commandListClass, field);
+    //jfieldID field = env->GetFieldID(commandListClass, "ptrZeCommandListHandle", "J");
+//    jlong commandListPointer = env->GetLongField(commandListClass, field);
 
-    ze_command_list_handle_t commandList;
-    if (commandListPointer != -1) {
-        commandList = reinterpret_cast<ze_command_list_handle_t>(commandListPointer);
-    }
+    ze_command_list_handle_t commandList = nullptr;
+//    if (commandListPointer != -1) {
+//        commandList = reinterpret_cast<ze_command_list_handle_t>(commandListPointer);
+//    }
 
     // Reconstruct command list description
     ze_command_list_desc_t cmdListDesc = {};
     jclass commandDescriptionClass = env->GetObjectClass(javaCommandListDescription);
-    field = env->GetFieldID(commandDescriptionClass, "ptrZeCommandListDescription", "J");
+    jfieldID field = env->GetFieldID(commandDescriptionClass, "ptrZeCommandListDescription", "J");
     long ptrZeCommandDescription = env->GetLongField(javaCommandListDescription, field);
     if (ptrZeCommandDescription != -1) {
         ze_command_list_desc_t *cmdListDescPtr = reinterpret_cast<ze_command_list_desc_t*>(ptrZeCommandDescription);

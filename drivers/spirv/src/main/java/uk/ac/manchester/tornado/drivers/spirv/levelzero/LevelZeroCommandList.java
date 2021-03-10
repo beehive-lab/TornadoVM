@@ -3,14 +3,14 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 public class LevelZeroCommandList {
 
     private LevelZeroContext context;
-    private ZeCommandQueueListHandle zeCommandList;
+    private ZeCommandListHandle zeCommandList;
 
-    public LevelZeroCommandList(LevelZeroContext context, ZeCommandQueueListHandle zeCommandList) {
+    public LevelZeroCommandList(LevelZeroContext context, ZeCommandListHandle zeCommandList) {
         this.context = context;
         this.zeCommandList = zeCommandList;
     }
 
-    public ZeCommandQueueListHandle getCommandListHandler() {
+    public ZeCommandListHandle getCommandListHandler() {
         return this.zeCommandList;
     }
 
@@ -30,11 +30,33 @@ public class LevelZeroCommandList {
 
     native int zeCommandListClose_native(long ptrZeCommandListHandle);
 
+    /**
+     * Closes a command list; ready to be executed by a command queue.
+     * 
+     * <ul>
+     * <li>The application must **not** call this function from simultaneous threads
+     * with the same command list handle.</li>
+     * <li>The implementation of this function should be lock-free.</li>
+     * </ul>
+     * 
+     * @param ptrZeCommandListHandle
+     *            [in] Pointer handler of command list object to close
+     * @return
+     * 
+     *         ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: (null == hCommandList)
+     * 
+     */
     public int zeCommandListClose(long ptrZeCommandListHandle) {
         return zeCommandListClose_native(ptrZeCommandListHandle);
     }
 
-    private native int zeCommandListAppendMemoryCopy_native(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, char[] heapBuffer, int allocSize, ZeEventHandle hSignalEvents,
+    private native int zeCommandListAppendMemoryCopy_native(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, byte[] heapBuffer, int allocSize, ZeEventHandle hSignalEvents,
             int numWaitEvents, ZeEventHandle phWaitEvents);
 
     /**
@@ -96,15 +118,15 @@ public class LevelZeroCommandList {
      *         numWaitEvents)
      * 
      */
-    public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, char[] srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
+    public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, byte[] srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_native(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
-    private native int zeCommandListAppendMemoryCopy_nativeBack(long commandListHandlerPtr, char[] deviceBuffer, LevelZeroByteBuffer heapBuffer, int allocSize, ZeEventHandle hSignalEvents,
+    private native int zeCommandListAppendMemoryCopy_nativeBack(long commandListHandlerPtr, byte[] deviceBuffer, LevelZeroByteBuffer heapBuffer, int allocSize, ZeEventHandle hSignalEvents,
             int numWaitEvents, ZeEventHandle phWaitEvents);
 
-    public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, char[] dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
+    public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, byte[] dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_nativeBack(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }

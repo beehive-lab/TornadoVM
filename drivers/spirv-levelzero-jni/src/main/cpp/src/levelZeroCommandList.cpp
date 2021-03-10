@@ -1,10 +1,9 @@
 #include "levelZeroCommandList.h"
 
 #include <iostream>
-
 #include "ze_api.h"
 #include "ze_log.h"
-
+#include "limits"
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
@@ -55,10 +54,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
  * Method:    zeCommandListAppendMemoryCopy_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[CILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[BILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1native
-        (JNIEnv * env, jobject, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jcharArray array, jint size, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
+        (JNIEnv * env, jobject, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jbyteArray array, jint size, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
 
     ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
 
@@ -66,15 +65,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
     jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
 
-    char *buffer = nullptr;
-    if (ptr != -1) {
-        buffer = reinterpret_cast<char *>(ptr);
-    }
+    //char* sourceBuffer = reinterpret_cast<char *>(env->GetByteArrayElements(array, 0));
+    jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    jbyte *dstBuffer = reinterpret_cast<jbyte *>(ptr);
 
     ze_event_handle_t hSignalEvent = nullptr;
     if (javaEvenHandle != nullptr) {
         jclass klassEvent = env->GetObjectClass(javaEvenHandle);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrBuffer", "J");
+        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
         jlong ptrHSignalEvent = env->GetLongField(javaEvenHandle, fieldPointer);
         hSignalEvent = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }
@@ -82,13 +80,26 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     ze_event_handle_t phWaitEvents = nullptr;
     if (javaWaitEvents != nullptr) {
         jclass klassEvent = env->GetObjectClass(javaWaitEvents);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrBuffer", "J");
+        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
         jlong ptrHSignalEvent = env->GetLongField(javaWaitEvents, fieldPointer);
         phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }
 
-    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, buffer, array, size, hSignalEvent, numWaitEvents, &phWaitEvents);
+    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, dstBuffer, sourceBuffer, size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
+//    result = zeCommandListAppendBarrier(cmdList, nullptr, 0, nullptr);
+//    LOG_ZE_JNI("zeCommandListAppendBarrier", result);
+//
+//    char *heapBuffer2 = new char[size];
+//    zeCommandListAppendMemoryCopy(cmdList, heapBuffer2, dstBuffer, size, nullptr, 0, nullptr);
+//    LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
+//
+//    result = zeCommandQueueExecuteCommandLists(commandQueue, 1, &cmdList, nullptr);
+//    LOG_ZE_JNI("zeCommandQueueExecuteCommandLists", result);
+//    result = zeCommandQueueSynchronize(commandQueue, std::numeric_limits<uint32_t>::max());
+//    LOG_ZE_JNI("zeCommandQueueSynchronize", result);
+
+    env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
 
     return result;
 }
@@ -96,10 +107,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
  * Method:    zeCommandListAppendMemoryCopy_nativeBack
- * Signature: (J[CLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ * Signature: (JJ[BLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeBack
-        (JNIEnv *env, jobject object, jlong javaCommandListHandler, jcharArray array, jobject javaLevelZeroBuffer, jint size, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
+        (JNIEnv *env, jobject , jlong javaCommandListHandler, jbyteArray array, jobject javaLevelZeroBuffer, jint size, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
 
     ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
 
@@ -107,15 +118,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
     jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
 
-    char *buffer = nullptr;
-    if (ptr != -1) {
-        buffer = reinterpret_cast<char *>(ptr);
-    }
+    jbyte *dstBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    //char* dstBuffer = reinterpret_cast<char *>(env->GetByteArrayElements(array, 0));
+    jbyte *sourceBuffer = reinterpret_cast<jbyte *>(ptr);
 
     ze_event_handle_t hSignalEvent = nullptr;
     if (javaEvenHandle != nullptr) {
         jclass klassEvent = env->GetObjectClass(javaEvenHandle);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrBuffer", "J");
+        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
         jlong ptrHSignalEvent = env->GetLongField(javaEvenHandle, fieldPointer);
         hSignalEvent = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }
@@ -123,13 +133,26 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     ze_event_handle_t phWaitEvents = nullptr;
     if (javaWaitEvents != nullptr) {
         jclass klassEvent = env->GetObjectClass(javaWaitEvents);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrBuffer", "J");
+        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
         jlong ptrHSignalEvent = env->GetLongField(javaWaitEvents, fieldPointer);
         phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }
 
-    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, array, buffer, size, hSignalEvent, numWaitEvents, &phWaitEvents);
+    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, dstBuffer, sourceBuffer, size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
+//
+//    zeCommandListClose(cmdList);
+//
+//    result = zeCommandQueueExecuteCommandLists(commandQueue, 1, &cmdList, nullptr);
+//    LOG_ZE_JNI("zeCommandQueueExecuteCommandLists", result);
+//    result = zeCommandQueueSynchronize(commandQueue, std::numeric_limits<uint32_t>::max());
+//    LOG_ZE_JNI("zeCommandQueueSynchronize", result);
+//
+//    for (int i =0; i < 10; i++) {
+//        std::cout<< "BACK: " << dstBuffer[i] << std::endl;
+//    }
+
+    env->ReleasePrimitiveArrayCritical(array, dstBuffer, JNI_ABORT);
     return result;
 }
 
@@ -146,7 +169,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     ze_event_handle_t hSignalEvent = nullptr;
     if (javaEvenHandle != nullptr) {
         jclass klassEvent = env->GetObjectClass(javaEvenHandle);
-        jfieldID fieldPointer = env->GetFieldID(klassEvent, "ptrBuffer", "J");
+        jfieldID fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
         jlong ptrHSignalEvent = env->GetLongField(javaEvenHandle, fieldPointer);
         hSignalEvent = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }
@@ -154,7 +177,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     ze_event_handle_t phWaitEvents = nullptr;
     if (javaWaitEvents != nullptr) {
         jclass klassEvent = env->GetObjectClass(javaWaitEvents);
-        jfieldID fieldPointer = env->GetFieldID(klassEvent, "ptrBuffer", "J");
+        jfieldID fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
         jlong ptrHSignalEvent = env->GetLongField(javaWaitEvents, fieldPointer);
         phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }

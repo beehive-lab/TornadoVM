@@ -166,7 +166,7 @@ public class TestLevelZero {
         // ============================================
         // Create a command list
         // ============================================
-        ZeCommandQueueListHandle zeCommandListHandler = new ZeCommandQueueListHandle();
+        ZeCommandListHandle zeCommandListHandler = new ZeCommandListHandle();
         LevelZeroCommandList commandList = new LevelZeroCommandList(context, zeCommandListHandler);
         ZeCommandListDescription commandListDescription = new ZeCommandListDescription();
         commandListDescription.setCommandQueueGroupOrdinal(commandQueueDescription.getOrdinal());
@@ -259,7 +259,7 @@ public class TestLevelZero {
         result = commandList.zeCommandListClose(zeCommandListHandler.getPtrZeCommandListHandle());
         LevelZeroUtils.errorLog("zeCommandListClose", result);
 
-        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueueHandle.getCommandQueueHandlerPointer(), 1, zeCommandListHandler.getPtrZeCommandListHandle(), null);
+        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueueHandle.getCommandQueueHandlerPointer(), 1, zeCommandListHandler, null);
         LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
 
         result = commandQueue.zeCommandQueueSynchronize(commandQueueHandle.getCommandQueueHandlerPointer(), Long.MAX_VALUE);

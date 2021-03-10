@@ -1,10 +1,10 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeCommandQueueListHandle {
+public class ZeCommandListHandle {
 
     private long ptrZeCommandListHandle;
 
-    public ZeCommandQueueListHandle() {
+    public ZeCommandListHandle() {
         this.ptrZeCommandListHandle = -1;
     }
 

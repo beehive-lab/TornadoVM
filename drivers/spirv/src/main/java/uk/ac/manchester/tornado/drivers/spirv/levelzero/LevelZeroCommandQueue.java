@@ -18,15 +18,19 @@ public class LevelZeroCommandQueue {
         return this.zeCommandQueueHandle;
     }
 
-    native int zeCommandQueueExecuteCommandLists_native(long commandQueueHandlerPointer, int numCommandLists, long commandList, Object hFence);
+    native int zeCommandQueueExecuteCommandLists_native(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, Object hFence);
 
-    public int zeCommandQueueExecuteCommandLists(long commandQueueHandlerPointer, int numCommandLists, long commandList, Object hFence) {
-        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandList, hFence);
+    public int zeCommandQueueExecuteCommandLists(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, Object hFence) {
+        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandListHandler, hFence);
     }
 
     native int zeCommandQueueSynchronize_native(long commandQueueHandlerPointer, long timeOut);
 
     public int zeCommandQueueSynchronize(long commandQueueHandlerPointer, long timeOut) {
         return zeCommandQueueSynchronize_native(commandQueueHandlerPointer, timeOut);
+    }
+
+    public long getCommandQueueHandlerPtr() {
+        return this.zeCommandQueueHandle.getCommandQueueHandlerPointer();
     }
 }

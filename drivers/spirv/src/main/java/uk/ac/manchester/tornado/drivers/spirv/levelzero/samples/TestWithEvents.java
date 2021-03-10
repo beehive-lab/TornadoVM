@@ -4,7 +4,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueListHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
@@ -59,7 +59,7 @@ public class TestWithEvents {
         LevelZeroDevice device = driver.getDevice(driverHandler, 0);
 
         ZeCommandQueueDescription commandQueueDescription = new ZeCommandQueueDescription();
-        ZeCommandQueueListHandle commandList = new ZeCommandQueueListHandle();
+        ZeCommandListHandle commandList = new ZeCommandListHandle();
         result = context.zeCommandListCreateImmediate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandQueueDescription, commandList);
         LevelZeroUtils.errorLog("zeCommandListCreateImmediate", result);
 
