@@ -157,6 +157,8 @@ public class TestCopies {
         result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, heapBuffer, allocSize, null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
 
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+
         return false;
     }
 

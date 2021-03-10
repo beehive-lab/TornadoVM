@@ -100,4 +100,43 @@ public class LevelZeroCommandList {
             ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_native(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }
+
+    private native int zeCommandListAppendBarrier_native(long commandListHandlerPtr, ZeEventHandle hSignalEvent, int numWaitEvents, Object phWaitEvents);
+
+    /**
+     * Appends an execution and global memory barrier into a command list.
+     * 
+     * @param commandListHandlerPtr
+     *            [in] handle pointer of the command list
+     * @param hSignalEvent
+     *            [in][optional] {@link ZeEventHandle} of the event to signal on
+     *            completion
+     * @param numWaitEvents
+     *            [in][optional] number of events to wait on before executing
+     *            barrier; It must be 0 if `null == phWaitEvents`
+     * @param phWaitEvents
+     *            [in][optional][range(0, numWaitEvents)] handle of the events to
+     *            wait on before executing the barrier.
+     * 
+     * @remark: This method is similar to: clEnqueueBarrierWithWaitList
+     * 
+     * @return
+     * 
+     *         ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr == hCommandList
+     *
+     *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *
+     *         ZE_RESULT_ERROR_INVALID_SIZE: (nullptr == phWaitEvents) && (0 <
+     *         numWaitEvents)
+     * 
+     */
+    public int zeCommandListAppendBarrier(long commandListHandlerPtr, ZeEventHandle hSignalEvent, int numWaitEvents, Object phWaitEvents) {
+        return zeCommandListAppendBarrier_native(commandListHandlerPtr, hSignalEvent, numWaitEvents, phWaitEvents);
+    }
 }
