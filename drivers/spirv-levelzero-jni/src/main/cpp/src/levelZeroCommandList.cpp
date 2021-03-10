@@ -95,11 +95,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
- * Method:    zeCommandListAppendMemoryCopy_native
+ * Method:    zeCommandListAppendMemoryCopy_nativeBack
  * Signature: (J[CLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1native__J_3CLuk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_2ILuk_ac_manchester_tornado_drivers_spirv_levelzero_ZeEventHandle_2ILuk_ac_manchester_tornado_drivers_spirv_levelzero_ZeEventHandle_2
-        (JNIEnv *env, jobject, jlong javaCommandListHandler, jcharArray array, jobject javaLevelZeroBuffer, jint size, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeBack
+        (JNIEnv *env, jobject object, jlong javaCommandListHandler, jcharArray array, jobject javaLevelZeroBuffer, jint size, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
 
     ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
 
@@ -130,7 +130,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, array, buffer, size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
-
     return result;
 }
 

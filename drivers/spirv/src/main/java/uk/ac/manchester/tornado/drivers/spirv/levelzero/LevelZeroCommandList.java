@@ -101,12 +101,12 @@ public class LevelZeroCommandList {
         return zeCommandListAppendMemoryCopy_native(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
-    private native int zeCommandListAppendMemoryCopy_native(long commandListHandlerPtr, char[] deviceBuffer, LevelZeroByteBuffer heapBuffer, int allocSize, ZeEventHandle hSignalEvents,
+    private native int zeCommandListAppendMemoryCopy_nativeBack(long commandListHandlerPtr, char[] deviceBuffer, LevelZeroByteBuffer heapBuffer, int allocSize, ZeEventHandle hSignalEvents,
             int numWaitEvents, ZeEventHandle phWaitEvents);
 
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, char[] dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
-        return zeCommandListAppendMemoryCopy_native(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
+        return zeCommandListAppendMemoryCopy_nativeBack(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
     private native int zeCommandListAppendBarrier_native(long commandListHandlerPtr, ZeEventHandle hSignalEvent, int numWaitEvents, Object phWaitEvents);
