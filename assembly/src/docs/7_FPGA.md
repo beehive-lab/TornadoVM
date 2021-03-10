@@ -12,8 +12,8 @@ This [document](17_AWS.md) shows a full guideline for running TornadoVM on Amazo
 We have currently tested with an Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150) and a Xilinx KCU1500 FPGA card.
 We have also tested it on the AWS EC2 F1 instance with `xilinx_aws-vu9p-f1-04261818_dynamic_5_0 device`.
 
-* HLS Versions: Intel Quartus 17.1.0 Build 240, Xilinx SDAccel 2018.2, Xilinx SDAccel 2018.3
-* TornadoVM Version: >= 0.6
+* HLS Versions: Intel Quartus 17.1.0 Build 240, Xilinx SDAccel 2018.2, Xilinx SDAccel 2018.3, Xilinx Vitis 2020.2
+* TornadoVM Version: >= 0.9
 * AWS AMI Version: 1.6.0
 
 If the OpenCL ICD loaders are installed correctly, the output of the ```clinfo``` it should be the following:  
@@ -74,6 +74,17 @@ DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
 FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
+In order to use the Xilinx Toolchain, it is required to initialize the env variables of the toolchain as follows:
+- For SDAccel (2018.2 & 2018.3):
+```bash
+source /opt/Xilinx/SDx/2018.2/settings64.sh
+```
+
+- For Vitis (2020.2):
+```bash
+source /opt/Xilinx/Vitis/2020.2/settings64.sh
+source /opt/xilinx/xrt/setup.sh
+```
 
 ### Example of configuration file for AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0:
 
@@ -90,7 +101,7 @@ DIRECTORY_BITSTREAM=fpga-source-comp/
 
 ## Step 2: Select one of the three FPGA Execution Modes  
 
-### Full JIT Mode  
+### 1. Full JIT Mode  
 
 This mode allows the compilation and execution of a given task for the FPGA. As it provides full end-to-end execution, the compilation is expected to take up to 2 hours due HLS bistream generation process.  
 
@@ -104,7 +115,7 @@ tornado \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
-### Ahead of Time Execution Mode
+### 2. Ahead of Time Execution Mode
 
 Ahead of time execution mode allows the user to generate a pre-generated bitstream of the Tornado tasks and then load it in a separated execution. The FPGA bitstream file should be named as `lookupBufferAddress`.
 
@@ -119,12 +130,15 @@ tornado \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
-### Emulation Mode [on Intel FPGAs]
+### 3. Emulation Mode
 
 Emulation mode can be used for fast-prototying and ensuring program functional correctness before going through the full JIT process (HLS).
 
-Before executing the tornado program, the following env variable needs to be exported:  
+Before executing the tornado program, the following steps needs to be executed based on the FPGA vendors' toolchain:  
 
+#### A) Emulation of an Intel platform:
+
+- Set the `CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA` env variable to `1`, so as to enable the execution on the emulated device. 
 ```bash
 $ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1
 ```
@@ -136,3 +150,25 @@ env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado \
     -Ds0.t0.device=0:1 \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
+
+#### B) Emulation of a Xilinx platform (using Vitis):
+
+- Configure the device characteristics (e.g. which platform, number of devices) with the [Xilinx Emulation Configuration Utility (emconfigutil)](https://www.xilinx.com/html_docs/xilinx2020_2/vitis_doc/nrj1570599837825.html).  Then you can use the TornadoVM Makefile and pass the configuration parameters as variables (e.g. `make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>`). *Be aware that the platform name must be the same with the device name in Step 1.* The default options configure one `xilinx_u50_gen3x16_xdma_201920_3` device. For example:
+```bash
+make xilinx_emulation FPGA_PLATFORM=xilinx_u50_gen3x16_xdma_201920_3 NUM_OF_FPGA_DEVICES=1
+```
+
+- Set the `XCL_EMULATION_MODE` env variable to `sw_emu`, so as to enable the execution on the emulated device. 
+```bash
+$ export XCL_EMULATION_MODE=sw_emu
+```
+
+Example:  
+
+```bash
+tornado \
+    -Ds0.t0.device=0:1 \
+    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+```
+
+Note: The emulation mode through SDAccel results in wrong results. However when we run in the Full JIT or the Ahead of Time modes the kernels return correct results. 
