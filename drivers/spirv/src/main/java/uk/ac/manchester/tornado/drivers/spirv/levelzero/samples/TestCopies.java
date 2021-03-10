@@ -8,7 +8,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
