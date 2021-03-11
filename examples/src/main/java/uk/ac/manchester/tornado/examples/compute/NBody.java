@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,10 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBody {
+
+    private static boolean VALIDATION = true;
+    private static float DELT = 0.005f;
+    private static float ESP_SQR = 500.0f;
 
     private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
         for (@Parallel int i = 0; i < numBodies; i++) {
@@ -56,9 +60,24 @@ public class NBody {
         }
     }
 
+    public static boolean validate(int numBodies, float[] posTornadoVM, float[] velTornadoVM, float[] posSequential, float[] velSequential) {
+        boolean isValid = true;
+
+        for (int i = 0; i < numBodies * 4; i++) {
+            if (Math.abs(posSequential[i] - posTornadoVM[i]) > 0.1) {
+                isValid = false;
+                break;
+            }
+            if (Math.abs(velSequential[i] - velTornadoVM[i]) > 0.1) {
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
+    }
+
     public static void main(String[] args) {
-        float delT,espSqr;
-        float[] posSeq,velSeq;
+        float[] posTornadoVM,velTornadoVM;
 
         StringBuffer resultsIterations = new StringBuffer();
 
@@ -74,26 +93,23 @@ public class NBody {
 
         System.out.println("Running Nbody with " + numBodies + " bodies" + " and " + iterations + " iterations");
 
-        delT = 0.005f;
-        espSqr = 500.0f;
+        float[] posSeq = new float[numBodies * 4];
+        float[] velSeq = new float[numBodies * 4];
 
-        float[] auxPositionRandom = new float[numBodies * 4];
-        float[] auxVelocityZero = new float[numBodies * 3];
-
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            auxPositionRandom[i] = (float) Math.random();
+        for (int i = 0; i < posSeq.length; i++) {
+            posSeq[i] = (float) Math.random();
         }
 
-        Arrays.fill(auxVelocityZero, 0.0f);
+        Arrays.fill(velSeq, 0.0f);
 
-        posSeq = new float[numBodies * 4];
-        velSeq = new float[numBodies * 4];
+        posTornadoVM = new float[numBodies * 4];
+        velTornadoVM = new float[numBodies * 4];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            posSeq[i] = auxPositionRandom[i];
+        for (int i = 0; i < posSeq.length; i++) {
+            posTornadoVM[i] = posSeq[i];
         }
-        for (int i = 0; i < auxVelocityZero.length; i++) {
-            velSeq[i] = auxVelocityZero[i];
+        for (int i = 0; i < velSeq.length; i++) {
+            velTornadoVM[i] = velSeq[i];
         }
 
         long start = 0;
@@ -101,7 +117,7 @@ public class NBody {
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            nBody(numBodies, posSeq, velSeq, delT, espSqr);
+            nBody(numBodies, posSeq, velSeq, DELT, ESP_SQR);
             end = System.nanoTime();
             uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody sequential", start, end);
             resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
@@ -114,7 +130,7 @@ public class NBody {
 
         // @formatter:off
         final TaskSchedule t0 = new TaskSchedule("s0")
-                .task("t0", NBody::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, DELT, ESP_SQR).streamOut(posTornadoVM, velTornadoVM);
         // @formatter:on
 
         t0.warmup();
@@ -135,6 +151,17 @@ public class NBody {
 
         System.out.println(resultsIterations.toString());
 
+        if (VALIDATION) {
+            boolean isValid = validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
+            if (isValid) {
+                System.out.println("Result is correct");
+            } else {
+                System.out.println("Result is wrong");
+            }
+        }
+
+        System.out.println("Sequential time: " + timeSequential + " ns");
+        System.out.println("TornadoVM time: " + timeParallel + " ns");
         System.out.println("Speedup in peak performance: " + (timeSequential / timeParallel) + "x");
     }
 
