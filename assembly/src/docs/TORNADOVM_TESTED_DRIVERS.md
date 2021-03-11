@@ -21,6 +21,8 @@
 
 The following drivers have been tested on Linux >= CentOS 7.3
 
+* 21.09.19150: OK  ( OpenCL 3.0 )
+* 21.08.19096: OK  ( OpenCL 3.0 )
 * 21.07.19042: OK  ( OpenCL 3.0 )
 * 21.06.18993: OK  ( OpenCL 3.0 )
 * 21.05.18936: OK  ( OpenCL 3.0 )
@@ -100,6 +102,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### OpenCL drivers
 
+* 460.56   : OK
 * 460.39   : OK
 * 450.80.02: OK
 * 450.66   : OK
