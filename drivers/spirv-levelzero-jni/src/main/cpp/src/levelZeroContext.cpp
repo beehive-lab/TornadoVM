@@ -832,5 +832,4 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
 
     return result;
-
 }
