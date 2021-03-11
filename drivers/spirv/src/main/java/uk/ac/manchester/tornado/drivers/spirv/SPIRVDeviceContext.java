@@ -2,9 +2,6 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
