@@ -125,7 +125,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[INTEGER]", result);
     env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
-
     return result;
 }
 

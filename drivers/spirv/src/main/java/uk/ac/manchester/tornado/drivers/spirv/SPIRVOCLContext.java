@@ -59,4 +59,14 @@ public class SPIRVOCLContext extends SPIRVContext {
         throw new RuntimeException("Unimplemented");
     }
 
+    @Override
+    public void enqueueBarrier(int deviceIndex) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public void flush(int deviceIndex) {
+        throw new RuntimeException("Unimplemented");
+    }
+
 }

@@ -227,4 +227,11 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
         return 0;
     }
 
+    public void enqueueBarrier(int deviceIndex) {
+        spirvContext.enqueueBarrier(deviceIndex);
+    }
+
+    public void flush(int deviceIndex) {
+        spirvContext.flush(deviceIndex);
+    }
 }

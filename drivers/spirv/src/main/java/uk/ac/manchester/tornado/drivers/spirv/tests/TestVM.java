@@ -54,6 +54,11 @@ public class TestVM {
         // Stream IN
         device.streamIn(c, 0, 0, objectStateC, null);
 
+        // Add a barrier
+        device.enqueueBarrier();
+
+        device.flush();
+
     }
 
     public void test() {

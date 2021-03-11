@@ -307,6 +307,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int enqueueBarrier() {
+        device.getDeviceContext().enqueueBarrier(deviceIndex);
         return 0;
     }
 
@@ -332,7 +333,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void flush() {
-
+        device.getDeviceContext().flush(deviceIndex);
     }
 
     @Override
