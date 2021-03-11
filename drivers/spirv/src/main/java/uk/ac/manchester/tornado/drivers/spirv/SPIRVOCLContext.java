@@ -54,4 +54,9 @@ public class SPIRVOCLContext extends SPIRVContext {
         throw new RuntimeException("Unimplemented");
     }
 
+    @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+        throw new RuntimeException("Unimplemented");
+    }
+
 }

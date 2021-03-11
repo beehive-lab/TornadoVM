@@ -22,4 +22,6 @@ public abstract class SPIRVContext {
     public abstract long allocateMemory(int deviceIndex, long numBytes);
 
     public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents);
+
+    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents);
 }
