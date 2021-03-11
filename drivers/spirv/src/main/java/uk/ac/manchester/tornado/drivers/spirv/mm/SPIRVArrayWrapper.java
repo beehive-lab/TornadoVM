@@ -100,6 +100,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
         return header;
     }
 
+    // FIXME <REFACTOR> This is common for all three backends.
     /*
      * Retrieves a buffer that will contain the contents of the array header. This
      * also re-sizes the buffer.
