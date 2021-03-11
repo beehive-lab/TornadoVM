@@ -19,5 +19,7 @@ public abstract class SPIRVContext {
 
     public abstract SPIRVCommandQueue getCommandQueueForDevice(int deviceIndex);
 
-    public abstract long allocateMemory(long numBytes);
+    public abstract long allocateMemory(int deviceIndex, long numBytes);
+
+    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents);
 }

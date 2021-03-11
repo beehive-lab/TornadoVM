@@ -198,7 +198,8 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
-        return 0;
+        int result = spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
+        return result;
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {

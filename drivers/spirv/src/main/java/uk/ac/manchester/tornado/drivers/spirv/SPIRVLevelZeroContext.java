@@ -27,8 +27,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private LevelZeroContext levelZeroContext;
     private List<SPIRVDeviceContext> spirvDeviceContext;
-    private List<SPIRVCommandQueue> commandQueues;
+    private List<SPIRVLevelZeroCommandQueue> commandQueues;
+    LevelZeroByteBuffer deviceBuffer;
 
+    // This class should only receives 1 device, not a list of devices.
     public SPIRVLevelZeroContext(SPIRVPlatform platform, List<SPIRVDevice> devices, LevelZeroContext levelZeroContext) {
         super(platform, devices);
         this.levelZeroContext = levelZeroContext;
@@ -120,7 +122,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     }
 
     @Override
-    public long allocateMemory(long numBytes) {
+    public long allocateMemory(int deviceIndex, long numBytes) {
         if (TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
             ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
             deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
@@ -128,13 +130,31 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
             hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
             LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
-            LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(0).getDevice().getDevice();
+            LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(deviceIndex).getDevice().getDevice();
             levelZeroContext.zeMemAllocShared(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), bufferA);
             // FIXME NOTE: Not sure if we should return the raw pointer here for Level Zero
             return bufferA.getPtrBuffer();
         } else {
-            throw new RuntimeException("No other memory allocator has been implemented yet.");
+            System.out.println("Using Device Memory Allocator");
+            deviceBuffer = new LevelZeroByteBuffer();
+            ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+            deviceMemAllocDesc.setOrdinal(0);
+            deviceMemAllocDesc.setFlags(0);
+            LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
+            int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, (int) numBytes, (int) numBytes, l0Device.getDeviceHandlerPtr(),
+                    deviceBuffer);
+            LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+            return deviceBuffer.getPtrBuffer();
         }
+    }
+
+    @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+        // XXX: Assumes Device 0
+        SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
+        LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
+        int result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, value, (int) bytes, null, 0, null);
+        return result;
     }
 
 }

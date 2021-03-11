@@ -101,7 +101,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
-        this.deviceHeapPointer = deviceContext.getSpirvContext().allocateMemory(numBytes);
+        this.deviceHeapPointer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), numBytes);
     }
 
     // FIXME <REFACTOR> <S>
