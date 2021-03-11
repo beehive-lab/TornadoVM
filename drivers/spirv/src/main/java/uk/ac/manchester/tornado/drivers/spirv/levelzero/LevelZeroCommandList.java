@@ -32,25 +32,22 @@ public class LevelZeroCommandList {
 
     /**
      * Closes a command list; ready to be executed by a command queue.
-     * 
+     *
      * <ul>
      * <li>The application must **not** call this function from simultaneous threads
      * with the same command list handle.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * @param ptrZeCommandListHandle
      *            [in] Pointer handler of command list object to close
-     * @return
-     * 
-     *         ZE_RESULT_SUCCESS
-     *
+     * @return ZE_RESULT_SUCCESS
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: (null == hCommandList)
-     * 
      */
     public int zeCommandListClose(long ptrZeCommandListHandle) {
         return zeCommandListClose_native(ptrZeCommandListHandle);
@@ -61,9 +58,9 @@ public class LevelZeroCommandList {
 
     /**
      * Copies host, device, or shared memory.
-     * 
+     * <p>
      * Details:
-     * 
+     *
      * <ul>
      * <li>The application must ensure the memory pointed to by dstptr and srcptr is
      * accessible by the device on which the command list was created.</li>
@@ -78,10 +75,10 @@ public class LevelZeroCommandList {
      * with the same command list handle.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     * <p>
      * This function is similar to: clEnqueueCopyBuffer, clEnqueueReadBuffer,
      * clEnqueueWriteBuffer, and clEnqueueSVMMemCpy.
-     * 
+     *
      * @param commandListHandlerPtr
      *            [in] handle of command list
      * @param dstBuffer
@@ -100,23 +97,22 @@ public class LevelZeroCommandList {
      *            [in][optional][range(0, numWaitEvents)] handle of the events to
      *            wait on before launching
      * @return Status of the call:
-     * 
+     *         <p>
      *         ZE_RESULT_SUCCESS
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
      *         srcptr
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
      *         numWaitEvents)
-     * 
      */
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, byte[] srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
@@ -135,7 +131,7 @@ public class LevelZeroCommandList {
 
     /**
      * Appends an execution and global memory barrier into a command list.
-     * 
+     *
      * @param commandListHandlerPtr
      *            [in] handle pointer of the command list
      * @param hSignalEvent
@@ -147,26 +143,29 @@ public class LevelZeroCommandList {
      * @param phWaitEvents
      *            [in][optional][range(0, numWaitEvents)] handle of the events to
      *            wait on before executing the barrier.
-     * 
-     * @remark: This method is similar to: clEnqueueBarrierWithWaitList
-     * 
-     * @return
-     * 
-     *         ZE_RESULT_SUCCESS
-     *
+     * @return ZE_RESULT_SUCCESS
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr == hCommandList
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_SIZE: (nullptr == phWaitEvents) && (0 <
      *         numWaitEvents)
-     * 
+     * @remark: This method is similar to: clEnqueueBarrierWithWaitList
      */
     public int zeCommandListAppendBarrier(long commandListHandlerPtr, ZeEventHandle hSignalEvent, int numWaitEvents, Object phWaitEvents) {
         return zeCommandListAppendBarrier_native(commandListHandlerPtr, hSignalEvent, numWaitEvents, phWaitEvents);
+    }
+
+    private native int zeCommandListAppendMemoryCopy_nativeBuffers(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents,
+            int numWaitEvents, ZeEventHandle phWaitEvents);
+
+    public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
+            ZeEventHandle phWaitEvents) {
+        return zeCommandListAppendMemoryCopy_nativeBuffers(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 }

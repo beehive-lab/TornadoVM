@@ -47,6 +47,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendBarrier_1native
         (JNIEnv *, jobject, jlong, jobject, jint, jobject);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemoryCopy_nativeBuffers
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;Luk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeBuffers
+        (JNIEnv *, jobject, jlong, jobject, jobject, jint, jobject, jint, jobject);
+
 #ifdef __cplusplus
 }
 #endif

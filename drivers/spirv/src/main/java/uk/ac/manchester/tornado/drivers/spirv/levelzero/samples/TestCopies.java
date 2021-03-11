@@ -199,34 +199,24 @@ public class TestCopies {
         result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, allocSize, device.getDeviceHandlerPtr(), deviceBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
-        // // Copy from ze Host Allocated -> Device Allocated Memory
-        // result =
-        // commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(),
-        // deviceBuffer, hostBuffer, allocSize, null, 0, null);
-        // LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
-        // result =
-        // commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(),
-        // null, 0, null);
-        // LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
-        //
-        // // Copy From Device-Allocated memory to host (heapBuffer2)
-        // result =
-        // commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(),
-        // heapBuffer, deviceBuffer, allocSize, null, 0, null);
-        // LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
-        //
-        // // Close the command list
-        // result =
-        // commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
-        // LevelZeroUtils.errorLog("zeCommandListClose", result);
-        // result =
-        // commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(),
-        // 1, commandList.getCommandListHandler(), null);
-        // LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
-        // result =
-        // commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(),
-        // Long.MAX_VALUE);
-        // LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
+        // Copy from ze Host Allocated -> Device Allocated Memory
+        result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, hostBuffer, allocSize, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+
+        // Copy From Device-Allocated memory to host (heapBuffer2)
+        result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), heapBuffer, deviceBuffer, allocSize, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
+
+        // Close the command list
+        result = commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
+        LevelZeroUtils.errorLog("zeCommandListClose", result);
+        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(), 1, commandList.getCommandListHandler(), null);
+        LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
+        result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
+        LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
+
         //
         // boolean isValid = true;
         // for (int i = 0; i < allocSize; i++) {
