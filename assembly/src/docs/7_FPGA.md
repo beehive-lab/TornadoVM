@@ -146,17 +146,20 @@ tornado \
 
 ### 2. Ahead of Time Execution Mode
 
-Ahead of time execution mode allows the user to use a pre-generated bitstream of the Tornado tasks and then load it in a separated execution. The FPGA bitstream file should reside in the `DIRECTORY_BITSTREAM` as configured in Step 1, and should be named as `lookupBufferAddress`.
+Ahead of time execution mode allows the user to use a pre-generated bitstream of the Tornado tasks and then load it in a separated execution. The path of the FPGA bitstream file should be given via the `-Dtornado.precompiled.binary` flag, and the file should be named as `lookupBufferAddress`.
 
 Example:  
 
 ```bash
 tornado \
     -Ds0.t0.device=0:1 \
+    -Ds0.t0.global.dims=1024 \
+    -Ds0.t0.local.dims=64 \
+    -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
     uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
-Note: The Full JIT mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.heap.allocation=64MB`.
+Note: The Ahead of Time mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.heap.allocation=64MB`.
 
 ```bash
 tornado \
