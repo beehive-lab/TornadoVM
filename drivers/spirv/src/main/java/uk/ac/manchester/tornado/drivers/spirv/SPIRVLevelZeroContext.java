@@ -150,11 +150,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     @Override
     public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
-        // XXX: Assumes Device 0
         SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
         LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
-        int result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, value, (int) bytes, null, 0, null);
-        return result;
+        commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, value, (int) bytes, null, 0, null);
+        commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        return 0;
     }
-
 }
