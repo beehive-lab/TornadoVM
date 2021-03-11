@@ -164,6 +164,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
         final int returnEvent;
+        // FIXME: <REFACTOR>
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
