@@ -13,7 +13,10 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
@@ -87,9 +90,49 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
         read(object, 0, null, false);
     }
 
+    /*
+     * Retrieves a buffer that will contain the contents of the array header. This
+     * also re-sizes the buffer.
+     */
+    private SPIRVByteBuffer prepareArrayHeader() {
+        final SPIRVByteBuffer header = getArrayHeader();
+        header.buffer.position(header.buffer.capacity());
+        return header;
+    }
+
+    /*
+     * Retrieves a buffer that will contain the contents of the array header. This
+     * also re-sizes the buffer.
+     */
+    private boolean validateArrayHeader(final T array) {
+        final SPIRVByteBuffer header = prepareArrayHeader();
+        header.read();
+        final int numElements = header.getInt(arrayLengthOffset);
+        final boolean valid = numElements == Array.getLength(array);
+        if (!valid) {
+            fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            header.dump(8);
+        }
+        return valid;
+    }
+
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        return 0;
+        final T array = cast(reference);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        }
+
+        if (VALIDATE_ARRAY_HEADERS) {
+            if (validateArrayHeader(array)) {
+                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            } else {
+                shouldNotReachHere("Array header is invalid");
+            }
+        } else {
+            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        }
+        return -1;
     }
 
     // FIXME <REFACTOR> <Same for all backends>

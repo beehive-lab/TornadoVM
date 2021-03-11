@@ -59,6 +59,9 @@ public class TestVM {
 
         device.flush();
 
+        // Copy Back Data
+        device.streamOutBlocking(a, 0, objectStateA, null);
+
     }
 
     public void test() {
