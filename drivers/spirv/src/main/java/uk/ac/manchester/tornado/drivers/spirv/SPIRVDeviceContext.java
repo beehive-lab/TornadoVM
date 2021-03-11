@@ -87,7 +87,7 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
 
     @Override
     public int getDeviceIndex() {
-        return 0;
+        return device.getDeviceIndex();
     }
 
     @Override
@@ -118,7 +118,7 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
-        return 0;
+        return spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {

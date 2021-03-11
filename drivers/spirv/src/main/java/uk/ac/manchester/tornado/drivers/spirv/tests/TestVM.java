@@ -8,6 +8,8 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
+import java.util.Arrays;
+
 public class TestVM {
 
     public TornadoDevice invokeSPIRVBackend() {
@@ -57,10 +59,13 @@ public class TestVM {
         // Add a barrier
         device.enqueueBarrier();
 
-        device.flush();
-
         // Copy Back Data
         device.streamOutBlocking(a, 0, objectStateA, null);
+
+        // Flush and execute all pending in the command queue
+        device.flush();
+
+        System.out.println(Arrays.toString(a));
 
     }
 
@@ -69,6 +74,8 @@ public class TestVM {
         int[] a = new int[64];
         int[] b = new int[64];
         int[] c = new int[64];
+
+        Arrays.fill(a, 100);
 
         if (device instanceof SPIRVTornadoDevice) {
             runWithTornadoVM((SPIRVTornadoDevice) device, a, b, c);
