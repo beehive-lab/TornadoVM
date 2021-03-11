@@ -239,6 +239,74 @@ public class TestCopies {
         return isValid;
     }
 
+    private static boolean testAppendMemoryCopyFromHeapToSubregionDeviceToHeap(LevelZeroContext context, LevelZeroDevice device) {
+
+        // Device Buffer is 4096 Bytes
+        final int allocSize = 4096;
+        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
+
+        // SubRegion is 1024 bytes
+        final int subRegionBuffer = 1024;
+        byte[] heapBuffer = new byte[subRegionBuffer];
+        byte[] heapBuffer2 = new byte[subRegionBuffer];
+
+        LevelZeroCommandQueue commandQueue = createCommandQueue(context, device);
+        LevelZeroCommandList commandList = createCommandList(context, device);
+
+        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        deviceMemAllocDesc.setOrdinal(0);
+        deviceMemAllocDesc.setFlags(0);
+        int alignment = 1;
+
+        // This is the equivalent of a clCreateBuffer
+        int result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, alignment, device.getDeviceHandlerPtr(), deviceBuffer);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        // Initialize second buffer (Java side) to 0
+        Arrays.fill(heapBuffer2, (byte) 0);
+
+        // Fill heap buffer (Java side)
+        for (int i = 0; i < subRegionBuffer; i++) {
+            heapBuffer[i] = 'a';
+        }
+
+        int deviceOffset = 1024;
+        int hostOffset = 0;
+
+        // Copy from HEAP -> Device Allocated Memory
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceBuffer, heapBuffer, subRegionBuffer, deviceOffset, hostOffset, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+
+        // Copy From Device-Allocated memory to host (heapBuffer2)
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), heapBuffer2, deviceBuffer, subRegionBuffer, hostOffset, deviceOffset, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
+
+        // Close the command list
+        result = commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
+        LevelZeroUtils.errorLog("zeCommandListClose", result);
+        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(), 1, commandList.getCommandListHandler(), null);
+        LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
+        result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
+        LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
+
+        boolean isValid = true;
+        for (int i = 0; i < subRegionBuffer; i++) {
+            if (heapBuffer[i] != heapBuffer2[i]) {
+                System.out.println(heapBuffer[i] + " != " + heapBuffer2[i]);
+                isValid = false;
+                break;
+            }
+        }
+
+        // Free resources
+        context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
+        context.zeCommandListDestroy(commandList.getCommandListHandler());
+        context.zeCommandQueueDestroy(commandQueue.getCommandQueueHandle());
+        return isValid;
+    }
+
     public static void main(String[] args) {
         LevelZeroDriver driver = new LevelZeroDriver();
         LevelZeroContext context = zeInitContext(driver);
@@ -250,9 +318,11 @@ public class TestCopies {
         System.out.println("\tVendor ID: " + Integer.toHexString(deviceProperties.getVendorId()));
 
         boolean isValid = testAppendMemoryCopyFromHeapToDeviceToHeap(context, device);
-        if (isValid) {
+        if (isValid)
             isValid = testAppendMemoryCopyFromHostToDeviceToHeap(context, device);
-        }
+        if (isValid)
+            isValid = testAppendMemoryCopyFromHeapToSubregionDeviceToHeap(context, device);
         System.out.println("is valid? " + isValid);
     }
+
 }
