@@ -194,10 +194,14 @@ public class TestCopies {
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
-
-        // This is the equivalent of a clCreateBuffer
         result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, allocSize, device.getDeviceHandlerPtr(), deviceBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        // Initialize buffers
+        byte[] initArray = new byte[allocSize];
+        Arrays.fill(initArray, (byte) 100);
+        hostBuffer.copy(initArray);
+        Arrays.fill(heapBuffer, (byte) 0);
 
         // Copy from ze Host Allocated -> Device Allocated Memory
         result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, hostBuffer, allocSize, null, 0, null);
@@ -217,22 +221,22 @@ public class TestCopies {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
 
-        //
-        // boolean isValid = true;
-        // for (int i = 0; i < allocSize; i++) {
-        // if (heapBuffer[i] != heapBuffer2[i]) {
-        // System.out.println(heapBuffer[i] + " != " + heapBuffer2[i]);
-        // isValid = false;
-        // break;
-        // }
-        // }
+        byte[] b = hostBuffer.getByteBuffer();
+        boolean isValid = true;
+        for (int i = 0; i < allocSize; i++) {
+            if (heapBuffer[i] != b[i]) {
+                System.out.println(heapBuffer[i] + " != " + b[i]);
+                isValid = false;
+                break;
+            }
+        }
 
         // Free resources
         context.zeMemFree(context.getDefaultContextPtr(), hostBuffer);
         context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
         context.zeCommandListDestroy(commandList.getCommandListHandler());
         context.zeCommandQueueDestroy(commandQueue.getCommandQueueHandle());
-        return false;
+        return isValid;
     }
 
     public static void main(String[] args) {

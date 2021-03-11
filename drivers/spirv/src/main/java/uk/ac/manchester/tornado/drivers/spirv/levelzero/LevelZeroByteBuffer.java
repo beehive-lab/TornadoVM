@@ -40,7 +40,24 @@ public class LevelZeroByteBuffer {
         this.ptrBuffer = -1;
     }
 
-    native void memset_native(LevelZeroByteBuffer javaBuffer, byte value, int bufferSize);
+    private native void memset_native(LevelZeroByteBuffer javaBuffer, byte value, int bufferSize);
 
-    native boolean isEqual(long bufferAPtr, long bufferBPtr, int size);
+    private native boolean isEqual(long bufferAPtr, long bufferBPtr, int size);
+
+    private native void copy_native(long ptrBuffer, byte[] array);
+
+    /**
+     * Copies the input array into the LevelZeroBuffer
+     * 
+     * @param array
+     */
+    public void copy(byte[] array) {
+        copy_native(this.ptrBuffer, array);
+    }
+
+    private native byte[] getByteBuffer_native(long ptrBuffer, int size);
+
+    public byte[] getByteBuffer() {
+        return getByteBuffer_native(this.ptrBuffer, this.size);
+    }
 }

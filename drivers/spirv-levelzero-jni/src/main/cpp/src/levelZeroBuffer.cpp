@@ -104,3 +104,31 @@ JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero
     }
     return outputValidationSuccessful;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer
+ * Method:    copy_native
+ * Signature: (J[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_copy_1native
+        (JNIEnv *env, jobject object, jlong javaBufferPtr, jbyteArray javaArray) {
+    void *buffer = reinterpret_cast<void *>(javaBufferPtr);
+    jbyte *offHeapByteArray = static_cast<jbyte *>(buffer);
+    jbyte *arrayByte = env->GetByteArrayElements(javaArray, 0);
+    int size = env->GetArrayLength(javaArray);
+    memccpy(offHeapByteArray, arrayByte, 0, size);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer
+ * Method:    getByteBuffer_native
+ * Signature: (JI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_getByteBuffer_1native
+        (JNIEnv * env, jobject object, jlong javaBufferPtr, jint size) {
+    void *buffer = reinterpret_cast<void *>(javaBufferPtr);
+    jbyte *offHeapByteArray = static_cast<jbyte *>(buffer);
+    jbyteArray javaArray = env->NewByteArray(size);
+    env->SetByteArrayRegion(javaArray, 0, size, offHeapByteArray);
+    return javaArray;
+}

@@ -39,8 +39,23 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_isEqual
         (JNIEnv *, jobject, jlong, jlong, jint);
 
-
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer
+ * Method:    copy_native
+ * Signature: (J[B)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_copy_1native
+        (JNIEnv *, jobject, jlong, jbyteArray);
 #ifdef __cplusplus
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer
+ * Method:    getByteBuffer_native
+ * Signature: (JI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_getByteBuffer_1native
+        (JNIEnv *, jobject, jlong, jint);
+
 }
 #endif
 #endif
