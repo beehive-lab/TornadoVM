@@ -172,7 +172,7 @@ tornado \
 
 Emulation mode can be used for fast-prototying and ensuring program functional correctness before going through the full JIT process (HLS).
 
-Before executing the tornado program, the following steps needs to be executed based on the FPGA vendors' toolchain:  
+Before executing the TornadoVM program, the following steps needs to be executed based on the FPGA vendors' toolchain:  
 
 #### A) Emulation of an Intel platform:
 
