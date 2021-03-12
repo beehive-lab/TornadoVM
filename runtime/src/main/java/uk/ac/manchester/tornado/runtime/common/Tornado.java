@@ -108,7 +108,8 @@ public final class Tornado implements TornadoCI {
 
     private static boolean isFPGAEmulation() {
         String cl_context_emulator_device_intelfpga = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
-        return cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1"));
+        String cl_context_emulator_device_xilinxfpga = System.getenv("XCL_EMULATION_MODE");
+        return (cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1"))) || (cl_context_emulator_device_xilinxfpga != null && (cl_context_emulator_device_xilinxfpga.equals("sw_emu")));
     }
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);

@@ -135,7 +135,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage,value);
+        Arrays.fill(storage, value);
     }
 
     public ImageFloat3 duplicate() {
@@ -218,7 +218,11 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
         return Float3.sqrt(varience);
     }
-    
+
+    public String summerise() {
+        return String.format("ImageFloat3<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
+    }
+
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
