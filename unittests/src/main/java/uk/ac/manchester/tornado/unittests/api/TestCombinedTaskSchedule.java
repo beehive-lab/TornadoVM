@@ -194,4 +194,40 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
             assertEquals(cJava[i], cTornado[i]);
         }
     }
+
+    @Test
+    public void combinedApiWithDifferentWorkerGrids() {
+        final int size = 16;
+        int[] a = new int[size];
+        int[] b = new int[size];
+        int[] cTornado = new int[size];
+        int[] cJava = new int[size];
+
+        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
+        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
+
+        WorkerGrid workerT0 = new WorkerGrid1D(size);
+        WorkerGrid workerT1 = new WorkerGrid1D(size);
+        GridTask gridTask = new GridTask();
+        gridTask.setWorkerGrid("s0.t0", workerT0);
+        gridTask.setWorkerGrid("s0.t1", workerT1);
+        TornadoVMContext context = new TornadoVMContext(workerT1);
+
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado)
+                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado).task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado).streamOut(cTornado);
+        // Change the dimension of the Grids
+        workerT0.setGlobalWork(size, 1, 1);
+        workerT0.setLocalWork(size / 2, 1, 1);
+        workerT1.setGlobalWork(size, 1, 1);
+        workerT1.setLocalWorkToNull();
+        s0.execute(gridTask);
+
+        vectorAddV1(a, b, cJava);
+        vectorMulV1(cJava, b, cJava);
+        vectorSubV1(cJava, b, cJava);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(cJava[i], cTornado[i]);
+        }
+    }
 }
