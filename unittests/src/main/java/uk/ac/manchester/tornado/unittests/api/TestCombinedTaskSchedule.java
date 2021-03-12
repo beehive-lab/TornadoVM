@@ -74,9 +74,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("api_v1.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        GridTask gridTask = new GridTask("api_v1.t0", worker);
 
         TaskSchedule s0 = new TaskSchedule("api_v1").streamIn(a, b).task("t0", TestCombinedTaskSchedule::vectorAddV1, a, b, cTornado)
                 .task("t1", TestCombinedTaskSchedule::vectorMulV1, cTornado, b, cTornado).task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado).streamOut(cTornado);
@@ -107,9 +105,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("api_v2.t0", worker);
-        gridTask.set("api_v2.t1", worker);
-        gridTask.set("api_v2.t2", worker);
+        gridTask.setWorkerGrid("api_v2.t0", worker);
+        gridTask.setWorkerGrid("api_v2.t1", worker);
+        gridTask.setWorkerGrid("api_v2.t2", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("api_v2").streamIn(a, b).task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado)
@@ -142,9 +140,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("api_v1_v2.t0", worker);
-        gridTask.set("api_v1_v2.t1", worker);
-        gridTask.set("api_v1_v2.t2", worker);
+        gridTask.setWorkerGrid("api_v1_v2.t0", worker);
+        gridTask.setWorkerGrid("api_v1_v2.t1", worker);
+        gridTask.setWorkerGrid("api_v1_v2.t2", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("api_v1_v2").streamIn(a, b).task("t0", TestCombinedTaskSchedule::vectorAddV1, a, b, cTornado)
@@ -177,8 +175,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("api_v1_v2.t0", worker);
-        gridTask.set("api_v1_v2.t1", worker);
+        gridTask.setWorkerGrid("api_v1_v2.t0", worker);
+        gridTask.setWorkerGrid("api_v1_v2.t1", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("api_v1_v2").streamIn(a, b).task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado)

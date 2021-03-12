@@ -129,8 +129,7 @@ public class NBody {
         System.out.println(resultsIterations.toString());
 
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", workerGrid);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
         workerGrid.setLocalWork(1024, 1, 1);
 

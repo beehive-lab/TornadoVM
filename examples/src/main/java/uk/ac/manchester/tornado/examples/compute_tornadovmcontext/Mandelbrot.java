@@ -141,8 +141,7 @@ public class Mandelbrot {
                 short[] result = new short[SIZE * SIZE];
 
                 WorkerGrid workerGrid = new WorkerGrid2D(SIZE, SIZE);
-                GridTask gridTask = new GridTask();
-                gridTask.set("s0.t0", workerGrid);
+                GridTask gridTask = new GridTask("s0.t0", workerGrid);
                 TornadoVMContext context = new TornadoVMContext(workerGrid);
                 workerGrid.setGlobalWork(SIZE, SIZE, 1);
                 workerGrid.setLocalWork(32, 32, 1);

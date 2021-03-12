@@ -69,8 +69,7 @@ public class MatrixMultiplication2D {
         }
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", workerGrid);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
         workerGrid.setGlobalWork(size, size, 1);
         workerGrid.setLocalWork(32, 32, 1);
 

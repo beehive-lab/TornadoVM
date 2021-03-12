@@ -66,8 +66,7 @@ public class TestReductionsLongTornadoVMContext {
         long sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionsLongTornadoVMContext::longReductionGlobalMemory, context, input, reduce).streamOut(reduce);
@@ -115,7 +114,7 @@ public class TestReductionsLongTornadoVMContext {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionsLongTornadoVMContext::longReductionLocalMemory, context, input, reduce).streamOut(reduce);

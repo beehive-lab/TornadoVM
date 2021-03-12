@@ -49,8 +49,7 @@ public class HilbertMatrix {
         float[] output = new float[NROWS * NCOLS];
 
         WorkerGrid workerGrid = new WorkerGrid2D(NROWS, NCOLS);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", workerGrid);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext(workerGrid);
         workerGrid.setGlobalWork(NROWS, NCOLS, 1);
         workerGrid.setLocalWork(32, 32, 1);

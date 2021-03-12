@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
 import java.util.ArrayList;
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -123,8 +122,7 @@ public class RenderTrack {
         }
 
         WorkerGrid workerGrid = new WorkerGrid2D(n, m);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", workerGrid);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext(workerGrid);
         workerGrid.setGlobalWork(n, m, 1);
         workerGrid.setLocalWork(32, 32, 1);

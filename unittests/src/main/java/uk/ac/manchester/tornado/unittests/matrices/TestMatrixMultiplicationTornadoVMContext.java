@@ -70,8 +70,7 @@ public class TestMatrixMultiplicationTornadoVMContext {
         Arrays.fill(b, 4);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication1D, context, a, b, cTornado, size).streamOut(cTornado);
@@ -111,7 +110,7 @@ public class TestMatrixMultiplicationTornadoVMContext {
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication2D, context, a, b, cTornado, size).streamOut(cTornado);
@@ -176,7 +175,7 @@ public class TestMatrixMultiplicationTornadoVMContext {
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestMatrixMultiplicationTornadoVMContext::mxm2DTornadoVMContextApiV2, context, a, b, cTornado, size).streamOut(cTornado);

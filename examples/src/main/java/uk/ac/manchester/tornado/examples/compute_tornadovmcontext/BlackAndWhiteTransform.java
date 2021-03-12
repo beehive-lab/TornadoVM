@@ -138,8 +138,7 @@ public class BlackAndWhiteTransform {
 
                 if (tornadoTask == null) {
                     workerGrid = new WorkerGrid2D(w, s);
-                    gridTask = new GridTask();
-                    gridTask.set("s0.t0", workerGrid);
+                    gridTask = new GridTask("s0.t0", workerGrid);
                     TornadoVMContext context = new TornadoVMContext(workerGrid);
 
                     tornadoTask = new TaskSchedule("s0");

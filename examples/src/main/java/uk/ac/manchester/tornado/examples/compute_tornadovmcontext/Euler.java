@@ -185,8 +185,7 @@ public class Euler {
         long[] outputE = new long[size];
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.s0", workerGrid);
+        GridTask gridTask = new GridTask("s0.s0", workerGrid);
         TornadoVMContext context = new TornadoVMContext(workerGrid);
         workerGrid.setGlobalWork(size, size, 1);
 

@@ -159,11 +159,9 @@ public class BFS {
         currentDepth = new int[] { 0 };
 
         WorkerGrid workerGrid = new WorkerGrid2D(numNodes, numNodes);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s1.t1", workerGrid);
+        GridTask gridTask = new GridTask("s1.t1", workerGrid);
         TornadoVMContext context = new TornadoVMContext(workerGrid);
         workerGrid.setGlobalWork(numNodes, numNodes, 1);
-        // workerGrid.setLocalWork(32, 32, 1);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskSchedule s1 = new TaskSchedule("s1");

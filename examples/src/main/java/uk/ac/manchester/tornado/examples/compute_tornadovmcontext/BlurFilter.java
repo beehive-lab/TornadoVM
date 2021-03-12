@@ -162,8 +162,7 @@ public class BlurFilter {
             TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
             WorkerGrid workerGrid = new WorkerGrid2D(w, h);
-            GridTask gridTask = new GridTask();
-            gridTask.set("s0.t0", workerGrid);
+            GridTask gridTask = new GridTask("s0.t0", workerGrid);
             TornadoVMContext context = new TornadoVMContext(workerGrid);
             TaskSchedule parallelFilter = new TaskSchedule("blur") //
                     .task("red", BlurFilterImage::compute, context, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //

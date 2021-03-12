@@ -67,8 +67,7 @@ public class TestReductionsFloatsTornadoVMContext {
         float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionsFloatsTornadoVMContext::floatReductionGlobalMemory, context, input, reduce).streamOut(reduce);
@@ -115,8 +114,7 @@ public class TestReductionsFloatsTornadoVMContext {
         float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionsFloatsTornadoVMContext::floatReductionLocalMemory, context, input, reduce).streamOut(reduce);

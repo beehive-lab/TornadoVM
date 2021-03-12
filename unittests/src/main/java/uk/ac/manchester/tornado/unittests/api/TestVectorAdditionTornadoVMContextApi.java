@@ -51,8 +51,7 @@ public class TestVectorAdditionTornadoVMContextApi {
         Arrays.fill(b, 20);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        GridTask gridTask = new GridTask("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd1, context, a, b, cTornado).streamOut(cTornado);
@@ -85,7 +84,7 @@ public class TestVectorAdditionTornadoVMContextApi {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd2, a, context, b, cTornado).streamOut(cTornado);
@@ -117,7 +116,7 @@ public class TestVectorAdditionTornadoVMContextApi {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd3, a, b, context, cTornado).streamOut(cTornado);
@@ -150,7 +149,7 @@ public class TestVectorAdditionTornadoVMContextApi {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", worker);
+        gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd4, a, b, cTornado, context).streamOut(cTornado);

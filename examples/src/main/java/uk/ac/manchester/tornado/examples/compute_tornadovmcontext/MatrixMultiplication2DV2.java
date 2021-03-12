@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.api.GridTask;
  *     $ tornado --debug uk.ac.manchester.tornado.examples.compute_tornadovmcontext.MatrixMultiplication2Dv2
  * </code>
  */
-public class MatrixMultiplication2Dv2 {
+public class MatrixMultiplication2DV2 {
 
     private static final int WARMING_UP_ITERATIONS = 15;
     private static final int TS = 32;
@@ -115,15 +115,14 @@ public class MatrixMultiplication2Dv2 {
         });
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask();
-        gridTask.set("s0.t0", workerGrid);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext(workerGrid);
         workerGrid.setGlobalWork(size, size, 1);
         workerGrid.setLocalWork(32, 32, 1);
 
         //@formatter:off        
         TaskSchedule t = new TaskSchedule("s0") //
-                .task("t0", MatrixMultiplication2Dv2::matrixMultiplicationNewApi, context, matrixA, matrixB, matrixC, size) //
+                .task("t0", MatrixMultiplication2DV2::matrixMultiplicationNewApi, context, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC);
         //@formatter:on
 

@@ -205,8 +205,7 @@ public class TestScanTornadoVMContext {
 
         // Prefix kernel
         WorkerGrid worker1 = new WorkerGrid1D(size);
-        GridTask gridTask1 = new GridTask();
-        gridTask1.set("s1.t0", worker1);
+        GridTask gridTask1 = new GridTask("s1.t0", worker1);
         TornadoVMContext context1 = new TornadoVMContext(worker1);
 
         TaskSchedule s1 = new TaskSchedule("s1").streamIn(input).task("t0", TestScanTornadoVMContext::prefixKernel, context1, input).streamOut(input);
@@ -217,8 +216,7 @@ public class TestScanTornadoVMContext {
 
         // Global kernel
         WorkerGrid worker2 = new WorkerGrid1D(size);
-        GridTask gridTask2 = new GridTask();
-        gridTask2.set("s2.t0", worker2);
+        GridTask gridTask2 = new GridTask("s2.t0", worker2);
         TornadoVMContext context2 = new TornadoVMContext(worker2);
 
         TaskSchedule s2 = new TaskSchedule("s2").streamIn(input).task("t0", TestScanTornadoVMContext::globalKernel, context2, input).streamOut(input);
@@ -229,8 +227,7 @@ public class TestScanTornadoVMContext {
 
         // Sum kernel
         WorkerGrid worker3 = new WorkerGrid1D(size);
-        GridTask gridTask3 = new GridTask();
-        gridTask3.set("s3.t0", worker3);
+        GridTask gridTask3 = new GridTask("s3.t0", worker3);
         TornadoVMContext context = new TornadoVMContext(worker3);
 
         TaskSchedule s3 = new TaskSchedule("s3").streamIn(input).task("t0", TestScanTornadoVMContext::sumKernel, context, input).streamOut(input);

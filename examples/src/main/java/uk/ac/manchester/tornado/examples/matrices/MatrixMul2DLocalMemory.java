@@ -145,8 +145,7 @@ public class MatrixMul2DLocalMemory {
         });
 
         WorkerGrid workerCUDAOld = new WorkerGrid2D(N, N);
-        GridTask gridTaskCUDAOld = new GridTask();
-        gridTaskCUDAOld.set("cuda_old_api.t0", workerCUDAOld);
+        GridTask gridTaskCUDAOld = new GridTask("cuda_old_api.t0", workerCUDAOld);
         TaskSchedule scheduleCUDA = new TaskSchedule("cuda_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -178,8 +177,7 @@ public class MatrixMul2DLocalMemory {
             throw new Exception("Could not get average execution time");
 
         WorkerGrid workerOpenCLOld = new WorkerGrid2D(N, N);
-        GridTask gridTaskOpenCLOld = new GridTask();
-        gridTaskOpenCLOld.set("ocl_old_api.t0", workerOpenCLOld);
+        GridTask gridTaskOpenCLOld = new GridTask("ocl_old_api.t0", workerOpenCLOld);
 
         TaskSchedule scheduleOCL = new TaskSchedule("ocl_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
 
@@ -223,8 +221,7 @@ public class MatrixMul2DLocalMemory {
 
         // Time New API OpenCL
         WorkerGrid workerOpenCLNew = new WorkerGrid2D(N, N);
-        GridTask gridTaskOpenCLNew = new GridTask();
-        gridTaskOpenCLNew.set("ocl_advanced_api.t0", workerOpenCLNew);
+        GridTask gridTaskOpenCLNew = new GridTask("ocl_advanced_api.t0", workerOpenCLNew);
         TornadoVMContext context = new TornadoVMContext(workerOpenCLNew);
 
         TaskSchedule oclNewApiTask = new TaskSchedule("ocl_advanced_api") //
@@ -259,8 +256,7 @@ public class MatrixMul2DLocalMemory {
 
         // Time New API CUDA
         WorkerGrid workerCudaNew = new WorkerGrid2D(N, N);
-        GridTask gridTaskCudaNew = new GridTask();
-        gridTaskCudaNew.set("cuda_advanced_api.t0", workerCudaNew);
+        GridTask gridTaskCudaNew = new GridTask("cuda_advanced_api.t0", workerCudaNew);
         TornadoVMContext contextCUDA = new TornadoVMContext(workerCudaNew);
 
         TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_advanced_api") //
