@@ -42,11 +42,9 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.String.format;
-import static java.lang.System.out;
 import static java.nio.FloatBuffer.wrap;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.loadFromArray;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt4;
 
 import java.nio.FloatBuffer;
 
@@ -155,29 +153,15 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
         return vector;
     }
 
-    /**
-     * Prints the vector using the specified format string
-     *
-     * @param fmt
-     *
-     * @return
-     */
-    public String toString(String fmt) {
-        String str = "";
-        out.printf("has %d elements\n", numElements);
-        for (int i = 0; i < numElements; i++) {
-            str += get(i).toString() + " ";
-        }
-
-        return str;
-    }
-
     public String toString() {
-        if (numElements > elementSize) {
-            return format("VectorFloat8 <%d>", numElements);
-        } else {
-            return toString(fmt4);
+        if (this.numElements > elementSize) {
+            return String.format("VectorFloat8 <%d>", this.numElements);
         }
+        StringBuilder tempString = new StringBuilder();
+        for (int i = 0; i < numElements; i++) {
+            tempString.append(" ").append(this.get(i).toString());
+        }
+        return tempString.toString();
     }
 
     public Float8 sum() {

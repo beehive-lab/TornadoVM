@@ -147,7 +147,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        return toString(FloatOps.fmt4);
+        return toString(FloatOps.FMT_4);
     }
 
     /**

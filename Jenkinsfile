@@ -144,22 +144,19 @@ void buildAndTest(String JDK, String tornadoProfile) {
     }
      stage('Clone & Build KFusion') {
         timeout(time: 5, unit: 'MINUTES') {
-            // TODO Remove the single backend build once the slambench compilation failure is fixed.
-            sh "make ${tornadoProfile} BACKEND=opencl"
             sh 'cd ${KFUSION_ROOT} && git reset HEAD --hard && git fetch && git pull origin master && mvn clean install -DskipTests'
         }
     }
     stage('OpenCL: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
+            sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=PTX/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings"
             sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
         }
     }
     stage('PTX: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
-            // TODO Remove the single backend build once the slambench compilation failure is fixed.
-            sh "cd ${TORNADO_ROOT} && make ${tornadoProfile} BACKEND=ptx"
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
             sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
         }

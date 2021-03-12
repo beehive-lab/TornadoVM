@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
@@ -134,9 +135,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     public ImageFloat3 duplicate() {
@@ -146,28 +145,26 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat3 m) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = m.storage[i];
-        }
+        System.arraycopy(storage, 0, m.storage, 0, storage.length);
     }
 
     public String toString(String fmt) {
-        String str = "";
+        StringBuilder str = new StringBuilder();
 
         for (int i = 0; i < Y; i++) {
             for (int j = 0; j < X; j++) {
-                str += get(j, i).toString(fmt) + "\n";
+                str.append(get(j, i).toString(fmt)).append("\n");
             }
         }
 
-        return str;
+        return str.toString();
     }
 
     @Override
     public String toString() {
         String result = String.format("ImageFloat3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(FloatOps.fmt3);
+            result += "\n" + toString(FloatOps.FMT_3);
         }
         return result;
     }

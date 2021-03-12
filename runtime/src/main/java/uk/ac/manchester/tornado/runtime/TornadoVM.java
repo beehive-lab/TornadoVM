@@ -64,6 +64,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
+import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
@@ -385,9 +386,7 @@ public class TornadoVM extends TornadoLogger {
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
             timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
         }
-
         resetEventIndexes(eventList);
-
     }
 
     private static class ExecutionInfo {
@@ -397,6 +396,14 @@ public class TornadoVM extends TornadoLogger {
         public ExecutionInfo(CallStack stack, int[] waitList) {
             this.stack = stack;
             this.waitList = waitList;
+        }
+    }
+
+    private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
+        if (task instanceof PrebuiltTask && timeProfiler instanceof TimeProfiler) {
+            PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+            timeProfiler.registerDeviceID(ProfilerType.DEVICE_ID, task.getId(), prebuiltTask.meta().getLogicDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
+            timeProfiler.registerDeviceName(ProfilerType.DEVICE, task.getId(), prebuiltTask.meta().getLogicDevice().getPhysicalDevice().getDeviceName());
         }
     }
 
@@ -436,6 +443,7 @@ public class TornadoVM extends TornadoLogger {
                     task.forceCompilation();
                 }
                 installedCodes[taskIndex] = device.installCode(task);
+                profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
             } catch (Exception e) {
                 throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);

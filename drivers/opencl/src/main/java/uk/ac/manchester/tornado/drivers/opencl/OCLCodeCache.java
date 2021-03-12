@@ -75,10 +75,9 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
-    private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
-    private final String XILINX_OPENCL_COMPILER = "xocc";
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private String fpgaName;
+    private String fpgaCompiler;
     private String compilationFlags;
     private String directoryBitstream;
     public static String fpgaBinLocation;
@@ -148,6 +147,9 @@ public class OCLCodeCache {
                 switch (line.split("=")[0]) {
                     case "DEVICE_NAME":
                         fpgaName = line.split("=")[1];
+                        break;
+                    case "COMPILER":
+                        fpgaCompiler = line.split("=")[1];
                         break;
                     case "DIRECTORY_BITSTREAM":
                         directoryBitstream = line.split("=")[1];
@@ -281,7 +283,7 @@ public class OCLCodeCache {
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
-        bufferCommand.add(INTEL_ALTERA_OPENCL_COMPILER);
+        bufferCommand.add(fpgaCompiler);
         bufferCommand.add(inputFile);
 
         bufferCommand.add(compilationFlags);
@@ -293,7 +295,7 @@ public class OCLCodeCache {
     private String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
-        bufferCommand.add(XILINX_OPENCL_COMPILER);
+        bufferCommand.add(fpgaCompiler);
 
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -c " + "-k " + kernelName);
@@ -313,7 +315,9 @@ public class OCLCodeCache {
     }
 
     private String[] composeXilinxHLSLinkCommand() {
-        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
+        StringJoiner bufferCommand = new StringJoiner(" ");
+
+        bufferCommand.add(fpgaCompiler);
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");

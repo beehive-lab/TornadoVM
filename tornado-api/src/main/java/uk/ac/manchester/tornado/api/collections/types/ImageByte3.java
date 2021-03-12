@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
@@ -69,12 +70,9 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param width
-     *            number of rows
-     * @param height
-     *            number of columns
-     * @param array
-     *            array reference which contains data
+     * @param width  number of rows
+     * @param height number of columns
+     * @param array  array reference which contains data
      */
     public ImageByte3(int width, int height, byte[] array) {
         storage = array;
@@ -86,10 +84,8 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param width
-     *            number of rows
-     * @param height
-     *            number of columns
+     * @param width  number of rows
+     * @param height number of columns
      */
     public ImageByte3(int width, int height) {
         this(width, height, new byte[width * height * elementSize]);
@@ -134,9 +130,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public void fill(byte value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     public ImageByte3 duplicate() {
@@ -146,19 +140,17 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public void set(ImageByte3 m) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = m.storage[i];
-        }
+        System.arraycopy(storage, 0, m.storage, 0, storage.length);
     }
 
     public String toString(String fmt) {
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i < Y; i++) {
             for (int j = 0; j < X; j++) {
-                str += get(j, i).toString(fmt) + "\n";
+                str.append(get(j, i).toString(fmt)).append("\n");
             }
         }
-        return str;
+        return str.toString();
     }
 
     public String toString() {
