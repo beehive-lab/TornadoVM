@@ -95,7 +95,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     private LevelZeroCommandList createCommandList(LevelZeroContext context, SPIRVDevice spirvDevice) {
         LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
         ZeCommandListDescription cmdListDescriptor = new ZeCommandListDescription();
-        cmdListDescriptor.setFlags(0);
+        cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
         cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
         ZeCommandListHandle commandListHandler = new ZeCommandListHandle();
         int result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), cmdListDescriptor, commandListHandler);
@@ -125,7 +125,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     public long allocateMemory(int deviceIndex, long numBytes) {
         if (TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
             ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-            deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+            deviceMemAllocDesc.setFlags(0);
             deviceMemAllocDesc.setOrdinal(0);
             ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
             hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);

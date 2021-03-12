@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
+import uk.ac.manchester.tornado.drivers.spirv.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
 
 import java.util.Arrays;
@@ -95,7 +96,7 @@ public class TestCopies {
 
     public static LevelZeroCommandList createCommandList(LevelZeroContext context, LevelZeroDevice device) {
         ZeCommandListDescription cmdListDescriptor = new ZeCommandListDescription();
-        cmdListDescriptor.setFlags(0);
+        cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
         cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
         ZeCommandListHandle commandListHandler = new ZeCommandListHandle();
         int result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), cmdListDescriptor, commandListHandler);
@@ -117,7 +118,7 @@ public class TestCopies {
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
-        int alignment = 1;
+        final int alignment = 1;
 
         // This is the equivalent of a clCreateBuffer
         int result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, alignment, device.getDeviceHandlerPtr(), deviceBuffer);
