@@ -314,4 +314,33 @@ public class LevelZeroCommandList {
             ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_nativeBuffers(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, hSignalEvents, numWaitEvents, phWaitEvents);
     }
+
+    private native int zeCommandListReset_native(long commandListHandlerPtr);
+
+    /**
+     * Reset a command list to initial (empty) state; ready for appending commands.
+     * 
+     * <ul>
+     * <li>The application must ensure the device is not currently referencing the
+     * command list before it is reset</li>
+     * <li>The application must not call this function from simultaneous threads
+     * with the same command list handle.</li>
+     * <li>The implementation of this function should be lock-free.</li>
+     * </ul>
+     * 
+     * @param commandListHandlerPtr
+     *            [in] handle of command list object to reset
+     * @return
+     * 
+     *         ZE_RESULT_SUCCESS
+     *
+     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *
+     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *
+     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == commandListHandlerPtr
+     */
+    public int zeCommandListReset(long commandListHandlerPtr) {
+        return zeCommandListReset_native(commandListHandlerPtr);
+    }
 }

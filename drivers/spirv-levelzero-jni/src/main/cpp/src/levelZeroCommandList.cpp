@@ -281,6 +281,17 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
 
     return result;
+}
 
-
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListReset_native
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListReset_1native
+        (JNIEnv *env, jobject, jlong javaCommandListHandlePtr) {
+    ze_command_list_handle_t commandList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandlePtr);
+    ze_result_t result = zeCommandListReset(commandList);
+    LOG_ZE_JNI("zeCommandListReset", result);
+    return result;
 }

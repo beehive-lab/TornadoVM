@@ -149,6 +149,9 @@ public class TestCopies {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
 
+        // Reset a command List
+        commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
+
         boolean isValid = true;
         for (int i = 0; i < allocSize; i++) {
             if (heapBuffer[i] != heapBuffer2[i]) {
