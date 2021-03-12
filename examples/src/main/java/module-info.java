@@ -12,6 +12,7 @@ open module tornado.examples {
     exports uk.ac.manchester.tornado.examples.common;
     exports uk.ac.manchester.tornado.examples.compression;
     exports uk.ac.manchester.tornado.examples.compute;
+    exports uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
     exports uk.ac.manchester.tornado.examples.dynamic;
     exports uk.ac.manchester.tornado.examples.fpga;
     exports uk.ac.manchester.tornado.examples.functional;
