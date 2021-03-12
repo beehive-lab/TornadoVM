@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBody {
@@ -29,7 +29,7 @@ public class NBody {
     private static float DELT = 0.005f;
     private static float ESP_SQR = 500.0f;
 
-    private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
+    private static void nBody(int numBodies, float[] refPos, float[] refVel) {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
 
@@ -44,7 +44,7 @@ public class NBody {
                     distSqr += r[k] * r[k];
                 }
 
-                float invDist = (float) (1.0f / Math.sqrt(distSqr + espSqr));
+                float invDist = (float) (1.0f / Math.sqrt(distSqr + ESP_SQR));
 
                 float invDistCube = invDist * invDist * invDist;
                 float s = refPos[index + 3] * invDistCube;
@@ -54,8 +54,8 @@ public class NBody {
                 }
             }
             for (int k = 0; k < 3; k++) {
-                refPos[body + k] += refVel[body + k] * delT + 0.5f * acc[k] * delT * delT;
-                refVel[body + k] += acc[k] * delT;
+                refPos[body + k] += refVel[body + k] * DELT + 0.5f * acc[k] * DELT * DELT;
+                refVel[body + k] += acc[k] * DELT;
             }
         }
     }
@@ -117,7 +117,7 @@ public class NBody {
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            nBody(numBodies, posSeq, velSeq, DELT, ESP_SQR);
+            nBody(numBodies, posSeq, velSeq);
             end = System.nanoTime();
             uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody sequential", start, end);
             resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
@@ -128,19 +128,23 @@ public class NBody {
 
         System.out.println(resultsIterations.toString());
 
+        WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
+        GridTask gridTask = new GridTask();
+        gridTask.set("s0.t0", workerGrid);
+        workerGrid.setGlobalWork(numBodies, 1, 1);
+        workerGrid.setLocalWork(1024, 1, 1);
+
         // @formatter:off
         final TaskSchedule t0 = new TaskSchedule("s0")
-                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, DELT, ESP_SQR).streamOut(posTornadoVM, velTornadoVM);
+                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM).streamOut(posTornadoVM, velTornadoVM);
         // @formatter:on
-
-        t0.warmup();
 
         resultsIterations = new StringBuffer();
 
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            t0.execute();
+            t0.execute(gridTask);
             end = System.nanoTime();
             uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
