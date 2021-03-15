@@ -56,7 +56,7 @@ public class TestVM {
         // Stream IN
         device.streamIn(c, 0, 0, objectStateC, null);
 
-        // b <- a
+        // b <- device-buffer(regionA)
         device.moveDataFromDeviceBufferToHost(objectStateA, b);
 
         // // Copy Back Data
