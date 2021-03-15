@@ -42,15 +42,26 @@
 package uk.ac.manchester.tornado.api;
 
 /**
- * TornadoVMContext: Advanced programming features on top of the TaskSchedule
- * API.
+ * Context of TornadoVM execution to exploit kernel-parallel applications, in
+ * which the parallelism is implicit.
+ * 
+ * The application can access thread-id for 1D, 2D and 3D dimensions.
+ * Additionally, the application can access local memory (OpenCL terminology),
+ * or shared memory (CUDA terminology) as well as synchronization primitives
+ * such as barriers.
+ * 
  * <p>
- * </> TornadoVMContext is an object exposed by the TornadoVM API in order to
- * expose the low-level programming features provided by heterogeneous
- * frameworks (e.g. OpenCL, CUDA) to the developers. TornadoVMContext provides a
- * Java API that is transparently translated to both OpenCL and PTX by the
- * TornadoVM JIT compiler. The main difference with the TaskSchedule API is that
- * the tasks within a TaskSchedule that use TornadoVMContext must be GridTasks.
+ * <ul>
+ * <li>{@link TornadoVMContext} is an object exposed by the TornadoVM API in
+ * order to leverage low-level programming features provided by heterogeneous
+ * frameworks (e.g. OpenCL, CUDA) to the developers, such as thread-id, access
+ * to local/shared memory and barriers.</li>
+ * <li>{@link TornadoVMContext} provides a Java API that is transparently
+ * translated to both OpenCL and PTX by the TornadoVM JIT compiler. The main
+ * difference with the {@link TaskSchedule} API is that the tasks within a
+ * {@link TaskSchedule} that use {@link TornadoVMContext} must be
+ * {@link GridTask}.</li>
+ * </ul>
  * </p>
  */
 public class TornadoVMContext implements ExecutionContext {
@@ -69,18 +80,18 @@ public class TornadoVMContext implements ExecutionContext {
     private WorkerGrid grid;
 
     /**
-     * Class constructor specifying a particular WorkerGrid object.
+     * Class constructor specifying a particular {@link WorkerGrid} object.
      */
     public TornadoVMContext(WorkerGrid grid) {
         this.grid = grid;
     }
 
     /**
-     * WorkerGrid is used to indicate scheduling information regarding the execution
-     * of the tasks withing a TaskSchedule. For example, the dimensions, the global
-     * work size, the local work size.
+     * Obtain the {@link WorkerGrid} that is used to indicate scheduling information
+     * regarding the execution of the tasks withing a TaskSchedule. For example, the
+     * dimensions, the global work size, the local work size.
      * 
-     * @return the WorkerGrid which is associated to TornadoVMContext
+     * @return {@link WorkerGrid} that is associated to TornadoVMContext
      */
     @Override
     public WorkerGrid getGrid() {
@@ -88,9 +99,9 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * localBarrier() is used as a barrier to synchronize the order of memory
-     * operations to the local memory (known as shared memory in PTX).
-     * <p>
+     * Method used as a barrier to synchronize the order of memory operations to the
+     * local memory (known as shared memory in PTX).
+     * 
      * OpenCL equivalent: barrier(CLK_LOCAL_MEM_FENCE);
      * 
      * PTX equivalent: barrier.sync;
@@ -100,9 +111,9 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * globalBarrier() is used as a barrier to synchronize the order of memory
-     * operations to the global memory.
-     * <p>
+     * Method used as a barrier to synchronize the order of memory operations to the
+     * global memory.
+     * 
      * OpenCL equivalent: barrier(CLK_GLOBAL_MEM_FENCE);
      *
      * PTX equivalent: barrier.sync;
@@ -113,12 +124,12 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * allocateIntLocalArray() allocates a single dimensional array in local memory
-     * (known as shared memory in PTX).
+     * It allocates a single dimensional array in local memory (known as shared
+     * memory in PTX).
      *
      * @param size
      *            the size of the array
-     * @return reference to the int array
+     * @return int[]: reference to the int array
      */
     @Override
     public int[] allocateIntLocalArray(int size) {
@@ -126,12 +137,12 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * allocateLongLocalArray() allocates a single dimensional array in local memory
-     * (known as shared memory in PTX).
+     * It allocates a single dimensional array in local memory (known as shared
+     * memory in PTX).
      *
      * @param size
      *            the size of the array
-     * @return reference to the long array
+     * @return long[]: reference to the int array
      */
     @Override
     public long[] allocateLongLocalArray(int size) {
@@ -139,12 +150,12 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * allocateFloatLocalArray() allocates a single dimensional array in local
-     * memory (known as shared memory in PTX).
+     * It allocates a single dimensional array in local memory (known as shared
+     * memory in PTX).
      *
      * @param size
      *            the size of the array
-     * @return reference to the float array
+     * @return float[]: reference to the int array
      */
     @Override
     public float[] allocateFloatLocalArray(int size) {
@@ -152,85 +163,88 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * allocateDoubleLocalArray() allocates a single dimensional array in local
-     * memory (known as shared memory in PTX).
+     * It allocates a single dimensional array in local memory (known as shared
+     * memory in PTX).
      *
      * @param size
      *            the size of the array
-     * @return reference to the double array
+     * @return double[]: reference to the int array
      */
     @Override
     public double[] allocateDoubleLocalArray(int size) {
         return new double[size];
     }
 
+    /**
+     * Dynamic dispatch - Not supported yet
+     * 
+     * @param f:
+     *            {@link FunctionalInterface}
+     * @param grid:
+     *            {@WorkerGrid}
+     */
     @Override
     public void launch(FunctionalInterface f, WorkerGrid grid) {
-
+        throw new RuntimeException("Not implemented yet");
     }
 
     /**
-     * getX() returns the thread identifier for the first dimension.
-     * <p>
+     * It returns the thread identifier for the first dimension.
+     * 
      * OpenCL equivalent: get_global_id(0);
      * 
      * PTX equivalent: blockIdx * blockDim + threadIdx
-     *
-     * @return the thread identifier of the first dimension
+     * 
      */
     public int getX() {
         return threadIdx;
     }
 
     /**
-     * getY() returns the thread identifier for the second dimension.
-     * <p>
+     * It returns the thread identifier for the second dimension.
+     * 
      * OpenCL equivalent: get_global_id(1);
      *
      * PTX equivalent: blockIdy * blockDim + threadIdy
      *
-     * @return the thread identifier of the second dimension
      */
     public int getY() {
         return threadIdy;
     }
 
     /**
-     * getZ() returns the thread identifier for the third dimension.
-     * <p>
+     * It returns the thread identifier for the third dimension.
+     * 
      * OpenCL equivalent: get_global_id(2);
      *
      * PTX equivalent: blockIdz * blockDim + threadIdz
      *
-     * @return the thread identifier of the third dimension
      */
     public int getZ() {
         return threadIdz;
     }
 
     /**
-     * getLocalGroupSize(dim) returns the local group size of the associated
-     * WorkerGrid for a particular dimension.
-     * <p>
+     * It returns the local group size of the associated WorkerGrid for a particular
+     * dimension.
+     * 
      * OpenCL equivalent: get_local_size();
      *
      * PTX equivalent: blockDim
-     *
-     * @return the number of local threads for a dimension
+     * 
      */
     public int getLocalGroupSize(int dim) {
         return (int) grid.getLocalWork()[dim];
     }
 
     /**
-     * getGlobalGroupSize(dim) returns the global group size of the associated
-     * WorkerGrid for a particular dimension.
-     * <p>
+     * It returns the global group size of the associated WorkerGrid for a
+     * particular dimension.
+     * 
      * OpenCL equivalent: get_global_size();
      *
      * PTX equivalent: gridDim * blockDim
      * 
-     * @return the number of global threads for a dimension
      */
     public int getGlobalGroupSize(int dim) {
         return (int) grid.getGlobalWork()[dim];
