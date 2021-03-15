@@ -454,4 +454,10 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         resolveEvent(streamOut(object, 0, state, null)).waitOn();
     }
 
+    /**
+     * Move Data from the device region that corresponds to buffer A into buffer B.
+     */
+    public void moveDataFromDeviceBufferToHost(DeviceObjectState objectStateA, Object b) {
+        objectStateA.getBuffer().read(b, 0, null, false);
+    }
 }

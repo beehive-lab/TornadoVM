@@ -56,16 +56,19 @@ public class TestVM {
         // Stream IN
         device.streamIn(c, 0, 0, objectStateC, null);
 
-        // Add a barrier
-        device.enqueueBarrier();
+        // b <- a
+        device.moveDataFromDeviceBufferToHost(objectStateA, b);
 
-        // Copy Back Data
+        // // Copy Back Data
         device.streamOutBlocking(a, 0, objectStateA, null);
+
+        // Add a barrier
+        // device.enqueueBarrier();
 
         // Flush and execute all pending in the command queue
         device.flush();
 
-        System.out.println(Arrays.toString(a));
+        System.out.println(Arrays.toString(b));
 
     }
 
@@ -76,6 +79,7 @@ public class TestVM {
         int[] c = new int[64];
 
         Arrays.fill(a, 100);
+        Arrays.fill(b, 0);
 
         if (device instanceof SPIRVTornadoDevice) {
             runWithTornadoVM((SPIRVTornadoDevice) device, a, b, c);

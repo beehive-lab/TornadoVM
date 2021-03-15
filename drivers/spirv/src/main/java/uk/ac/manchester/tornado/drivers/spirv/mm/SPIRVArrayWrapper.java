@@ -6,6 +6,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -294,4 +295,5 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     public long size() {
         return bytesToAllocate;
     }
+
 }

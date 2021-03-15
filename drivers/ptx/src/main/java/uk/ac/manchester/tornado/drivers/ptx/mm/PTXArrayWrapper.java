@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public abstract class PTXArrayWrapper<T> implements ObjectBuffer {

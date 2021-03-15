@@ -201,6 +201,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
     }
 
+    if (LOG_JNI) {
+        std::cout << "DEST offset: " << dstOffset << std::endl;
+        std::cout << "SOURCE offset: " << srcOffset << std::endl;
+    }
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[INTEGER]", result);
 
