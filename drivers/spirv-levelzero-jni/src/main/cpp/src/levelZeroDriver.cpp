@@ -54,9 +54,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
             driverArray[i] = reinterpret_cast<jlong>(*(&driverHandle + i));
         }
         env->ReleaseLongArrayElements(zeDriverHandler, driverArray, 0);
-        if (LOG_JNI) {
-            std::cout << "[JNI] Handler pointer: " << driverHandle << std::endl;
-        }
     }
     env->ReleaseIntArrayElements(numDrivers, arrayContent, 0);
     return result;

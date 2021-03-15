@@ -121,32 +121,36 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         return null;
     }
 
+    private ZeDeviceMemAllocDesc createDeviceDescription() {
+        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
+        deviceMemAllocDesc.setOrdinal(0);
+        return deviceMemAllocDesc;
+    }
+
+    private ZeHostMemAllocDesc createHostMemDescription() {
+        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+        hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        return hostMemAllocDesc;
+    }
+
     @Override
     public long allocateMemory(int deviceIndex, long numBytes) {
+        deviceBuffer = new LevelZeroByteBuffer();
+        LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
         if (TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
-            ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-            deviceMemAllocDesc.setFlags(0);
-            deviceMemAllocDesc.setOrdinal(0);
-            ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
-            hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-            deviceBuffer = new LevelZeroByteBuffer();
-            LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(deviceIndex).getDevice().getDevice();
+            ZeDeviceMemAllocDesc deviceMemAllocDesc = createDeviceDescription();
+            ZeHostMemAllocDesc hostMemAllocDesc = createHostMemDescription();
             int result = levelZeroContext.zeMemAllocShared(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(),
                     deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocShared", result);
             // FIXME NOTE: Not sure if we should return the raw pointer here for Level Zero
-            return deviceBuffer.getPtrBuffer();
         } else {
-            System.out.println("Using Device Memory Allocator");
-            deviceBuffer = new LevelZeroByteBuffer();
-            ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-            deviceMemAllocDesc.setOrdinal(0);
-            deviceMemAllocDesc.setFlags(0);
-            LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
+            ZeDeviceMemAllocDesc deviceMemAllocDesc = createDeviceDescription();
             int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, (int) numBytes, (int) numBytes, l0Device.getDeviceHandlerPtr(), deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-            return deviceBuffer.getPtrBuffer();
         }
+        return deviceBuffer.getPtrBuffer();
     }
 
     @Override
