@@ -129,11 +129,13 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             deviceMemAllocDesc.setOrdinal(0);
             ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
             hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-            LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
+            deviceBuffer = new LevelZeroByteBuffer();
             LevelZeroDevice l0Device = (LevelZeroDevice) spirvDeviceContext.get(deviceIndex).getDevice().getDevice();
-            levelZeroContext.zeMemAllocShared(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), bufferA);
+            int result = levelZeroContext.zeMemAllocShared(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(),
+                    deviceBuffer);
+            LevelZeroUtils.errorLog("zeMemAllocShared", result);
             // FIXME NOTE: Not sure if we should return the raw pointer here for Level Zero
-            return bufferA.getPtrBuffer();
+            return deviceBuffer.getPtrBuffer();
         } else {
             System.out.println("Using Device Memory Allocator");
             deviceBuffer = new LevelZeroByteBuffer();
@@ -141,8 +143,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             deviceMemAllocDesc.setOrdinal(0);
             deviceMemAllocDesc.setFlags(0);
             LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
-            int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, (int) numBytes, (int) numBytes, l0Device.getDeviceHandlerPtr(),
-                    deviceBuffer);
+            int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, (int) numBytes, (int) numBytes, l0Device.getDeviceHandlerPtr(), deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocDevice", result);
             return deviceBuffer.getPtrBuffer();
         }
