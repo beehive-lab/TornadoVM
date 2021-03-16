@@ -55,8 +55,6 @@ public interface ExecutionContext {
 
     double[] allocateDoubleLocalArray(int size);
 
-    void launch(FunctionalInterface f, WorkerGrid grid);
-
     WorkerGrid getGrid();
 
 }

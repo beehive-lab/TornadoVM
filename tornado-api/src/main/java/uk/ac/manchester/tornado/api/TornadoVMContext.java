@@ -176,19 +176,6 @@ public class TornadoVMContext implements ExecutionContext {
     }
 
     /**
-     * Dynamic dispatch - Not supported yet
-     * 
-     * @param f:
-     *            {@link FunctionalInterface}
-     * @param grid:
-     *            {@WorkerGrid}
-     */
-    @Override
-    public void launch(FunctionalInterface f, WorkerGrid grid) {
-        throw new RuntimeException("Not implemented yet");
-    }
-
-    /**
      * It returns the thread identifier for the first dimension.
      * 
      * OpenCL equivalent: get_global_id(0);
