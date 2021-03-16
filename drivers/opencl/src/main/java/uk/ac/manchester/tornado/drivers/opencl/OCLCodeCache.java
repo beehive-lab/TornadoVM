@@ -47,6 +47,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringJoiner;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -135,6 +136,10 @@ public class OCLCodeCache {
         }
     }
 
+    private boolean tokenStartsAComment(String token) {
+        return token.startsWith("#");
+    }
+
     private void parseFPGAConfigurationFile() {
         FileReader fileReader;
         BufferedReader bufferedReader;
@@ -144,23 +149,46 @@ public class OCLCodeCache {
             bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                switch (line.split("=")[0]) {
-                    case "DEVICE_NAME":
-                        fpgaName = line.split("=")[1];
+                StringTokenizer tokenizer = new StringTokenizer(line, " =");
+                while (tokenizer.hasMoreElements()) {
+                    String token = tokenizer.nextToken();
+                    if (tokenStartsAComment(token)) {
                         break;
-                    case "COMPILER":
-                        fpgaCompiler = line.split("=")[1];
-                        break;
-                    case "DIRECTORY_BITSTREAM":
-                        directoryBitstream = line.split("=")[1];
-                        fpgaBinLocation = "./" + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
-                        fpgaSourceDir = directoryBitstream;
-                        break;
-                    case "FLAGS":
-                        compilationFlags = line.split("=")[1];
-                        break;
-                    default:
-                        break;
+                    }
+
+                    switch (token) {
+                        case "DEVICE_NAME":
+                            fpgaName = tokenizer.nextToken(" =");
+                            break;
+                        case "COMPILER":
+                            fpgaCompiler = tokenizer.nextToken(" =");
+                            break;
+                        case "DIRECTORY_BITSTREAM":
+                            directoryBitstream = tokenizer.nextToken(" =");
+                            fpgaBinLocation = "./" + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
+                            fpgaSourceDir = directoryBitstream;
+                            break;
+                        case "FLAGS":
+                            StringBuilder buildFlags = new StringBuilder();
+
+                            // Iterate over tokens that correspond to multiple flags
+                            while (tokenizer.hasMoreElements()) {
+                                String flag = tokenizer.nextToken(" =");
+                                if (tokenStartsAComment(flag)) {
+                                    break;
+                                } else if (flag.contains("-")) {
+                                    if (compilationFlags == null) {
+                                        compilationFlags = flag;
+                                    } else {
+                                        compilationFlags = buildFlags.append(compilationFlags).append(" ").append(flag).toString();
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 }
             }
         } catch (IOException e) {
@@ -286,7 +314,9 @@ public class OCLCodeCache {
         bufferCommand.add(fpgaCompiler);
         bufferCommand.add(inputFile);
 
-        bufferCommand.add(compilationFlags);
+        if (compilationFlags != null) {
+            bufferCommand.add(compilationFlags);
+        }
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-march=emulator") : ("-board=" + fpgaName));
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
@@ -323,7 +353,9 @@ public class OCLCodeCache {
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + directoryBitstream + "reports");
         bufferCommand.add("--log_dir " + directoryBitstream + "logs");
-        bufferCommand.add(compilationFlags);
+        if (compilationFlags != null) {
+            bufferCommand.add(compilationFlags);
+        }
         bufferCommand.add("--remote_ip_cache " + directoryBitstream + "ip_cache");
         bufferCommand.add("-o " + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin");
         addObjectKernelsToLinker(bufferCommand);
