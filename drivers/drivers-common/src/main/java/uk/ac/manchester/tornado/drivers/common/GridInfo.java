@@ -39,7 +39,7 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.common;
+package uk.ac.manchester.tornado.drivers.common;
 
 public interface GridInfo {
     boolean checkGridDimensions();
