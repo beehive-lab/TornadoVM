@@ -164,8 +164,8 @@ public class OCLCodeCache {
                             fpgaCompiler = tokenizer.nextToken(" =");
                             break;
                         case "DIRECTORY_BITSTREAM":
-                            directoryBitstream = tokenizer.nextToken(" =");
-                            fpgaBinLocation = "./" + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
+                            directoryBitstream = resolveAbsoluteBitstreamDirectory(tokenizer.nextToken(" ="));
+                            fpgaBinLocation = directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
                             fpgaSourceDir = directoryBitstream;
                             break;
                         case "FLAGS":
@@ -261,25 +261,35 @@ public class OCLCodeCache {
         }
     }
 
-    private Path resolveDirectory(String dir) {
+    private String resolveAbsoluteBitstreamDirectory(String dir) {
         final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
-        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = (deviceContext.isPlatformFPGA()) ? Paths.get(tornadoRoot + "/" + dir) : Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
-        if (!Files.exists(outDir)) {
+        return Paths.get(dir).isAbsolute() ? dir : (tornadoRoot + "/" + dir);
+    }
+
+    private void createOrReuseDirectory(Path dir) {
+        if (!Files.exists(dir)) {
             try {
-                Files.createDirectories(outDir);
+                Files.createDirectories(dir);
             } catch (IOException e) {
-                error("unable to create dir: %s", outDir.toString());
+                error("unable to create dir: %s", dir.toString());
                 error(e.getMessage());
             }
         }
+        guarantee(Files.isDirectory(dir), "target directory is not a directory: %s", dir.toAbsolutePath().toString());
+    }
 
-        guarantee(Files.isDirectory(outDir), "target directory is not a directory: %s", outDir.toAbsolutePath().toString());
+    private Path resolveDirectory(String dir) {
+        final String tornadoRoot = System.getenv("TORNADO_SDK");
+        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
+        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        createOrReuseDirectory(outDir);
         return outDir;
     }
 
     private Path resolveBitstreamDirectory() {
-        return resolveDirectory(directoryBitstream);
+        Path outDir = Paths.get(directoryBitstream);
+        createOrReuseDirectory(outDir);
+        return outDir;
     }
 
     private Path resolveCacheDirectory() {
@@ -329,7 +339,7 @@ public class OCLCodeCache {
 
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -c " + "-k " + kernelName);
-        bufferCommand.add("-g " + "-I./" + directoryBitstream);
+        bufferCommand.add("-g " + "-I" + directoryBitstream);
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
         bufferCommand.add("--report_dir " + directoryBitstream + "reports");
         bufferCommand.add("--log_dir " + directoryBitstream + "logs");
