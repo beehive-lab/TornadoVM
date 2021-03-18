@@ -232,8 +232,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
             }
         }
-
-        triggerRecompile();
+        if (this.gridTask == null) {
+            System.out.println("Trigger recompilation");
+            triggerRecompile();
+        }
     }
 
     @Override
