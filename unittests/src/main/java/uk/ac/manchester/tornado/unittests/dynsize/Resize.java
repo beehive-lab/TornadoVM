@@ -19,7 +19,10 @@
 package uk.ac.manchester.tornado.unittests.dynsize;
 
 import org.junit.Test;
+import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 import java.util.stream.IntStream;
@@ -124,6 +127,69 @@ public class Resize {
 
         for (float v : d) {
             assertEquals(20.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testUpdateReferences() {
+        float[] a = createArray(256);
+        float[] b = createArray(256);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize02, a, b) //
+                .streamOut(b); //
+        ts.execute();
+
+        float[] aux = createArray(256);
+
+        // Interchange
+        ts.updateReference(b, aux);
+        ts.updateReference(a, b);
+        ts.updateReference(aux, a);
+        ts.execute();
+
+        // Interchange again
+        ts.updateReference(b, aux);
+        ts.updateReference(a, b);
+        ts.updateReference(aux, a);
+        ts.execute();
+
+        for (float v : b) {
+            assertEquals(40.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testUpdateReferencesWithGrid() {
+        float[] a = createArray(256);
+        float[] b = createArray(256);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(256);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize02, a, b) //
+                .streamOut(b); //
+        ts.execute(gridTask);
+
+        float[] aux = createArray(256);
+
+        // Interchange
+        ts.updateReference(b, aux);
+        ts.updateReference(a, b);
+        ts.updateReference(aux, a);
+        ts.execute(gridTask);
+
+        // Interchange again
+        ts.updateReference(b, aux);
+        ts.updateReference(a, b);
+        ts.updateReference(aux, a);
+        ts.execute(gridTask);
+
+        for (float v : b) {
+            assertEquals(40.0f, v, 0.001f);
         }
     }
 }
