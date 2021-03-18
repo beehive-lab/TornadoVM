@@ -52,13 +52,14 @@ $ vim etc/intel-fpga.conf
 ```
 
 ```conf
-[device]
-DEVICE_NAME=p385a_sch_ax115
-[compiler]
-COMPILER=aoc
-[options]
-FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile
-DIRECTORY_BITSTREAM=fpga-source-comp/
+# Configure the fields for FPGA compilation & execution
+# [device]
+DEVICE_NAME = p385a_sch_ax115
+# [compiler]
+COMPILER = aoc
+# [options]
+FLAGS = -v -report # Configure the compilation flags
+DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 ```
 
 ### Example of configuration file for Xilinx KCU1500:
@@ -68,13 +69,14 @@ $ vim etc/xilinx-fpga.conf
 ```
 
 ```conf
-[device]
-DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
-[compiler]
-COMPILER=xocc
-[options]
-FLAGS=-O3 -j12
-DIRECTORY_BITSTREAM=fpga-source-comp/
+# Configure the fields for FPGA compilation & execution
+# [device]
+DEVICE_NAME = xilinx_kcu1500_dynamic_5_0
+# [compiler]
+COMPILER = xocc
+# [options]
+FLAGS = -O3 -j12 # Configure the compilation flags
+DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 ```
 In order to use the Xilinx Toolchain, it is required to initialize the env variables of the SDAccel toolchain as follows:
 
@@ -89,13 +91,14 @@ $ vim etc/xilinx-fpga.conf
 ```
 
 ```conf
-[device]
-DEVICE_NAME=xilinx_u50_gen3x16_xdma_201920_3
-[compiler]
-COMPILER=v++
-[options]
-FLAGS=-O3 -j12
-DIRECTORY_BITSTREAM=fpga-source-comp/
+# Configure the fields for FPGA compilation & execution
+# [device]
+DEVICE_NAME = xilinx_u50_gen3x16_xdma_201920_3
+# [compiler]
+COMPILER = v++
+# [options]
+FLAGS = -O3 -j12 # Configure the compilation flags
+DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 ```
 
 In order to use the Xilinx Toolchain, it is required to initialize the env variables of the Vitis toolchain as follows:
@@ -111,12 +114,14 @@ $ vim etc/xilinx-fpga.conf
 ```
 
 ```conf
-DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
-[compiler]
-COMPILER=xocc
-[options]
-FLAGS=-O3 -j12
-DIRECTORY_BITSTREAM=fpga-source-comp/
+# Configure the fields for FPGA compilation & execution
+# [device]
+DEVICE_NAME = /home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
+# [compiler]
+COMPILER = xocc
+# [options]
+FLAGS = -O3 -j12 # Configure the compilation flags
+DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 ```
 
 ## Step 2: Select one of the three FPGA Execution Modes  
