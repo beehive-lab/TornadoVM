@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
 
-    private static final int LOCAL_WORK_SIZE = 64;
+    public static final int[] LOCAL_WORK_SIZE = { 64, 1, 1 };
     private static final int WARP = 32;
 
     public OCLFPGAScheduler(final OCLDeviceContext context) {
@@ -68,7 +68,7 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
 
     private void setLocalWork(final int dimensions, long[] localWork, final TaskMetaData meta) {
         for (int i = 0; i < dimensions; i++) {
-            localWork[i] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[i]);
+            localWork[i] = calculateGroupSize(LOCAL_WORK_SIZE[i], meta.getGlobalWork()[i]);
         }
     }
 
@@ -77,7 +77,7 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
         while (globalWorkSize % value != 0) {
             value--;
         }
-        if (value < LOCAL_WORK_SIZE) {
+        if (value < maxWorkItemSizes) {
             throw new RuntimeException("[ERROR] Minimum input of 64 elements to run on the FPGA");
         }
         return value;
