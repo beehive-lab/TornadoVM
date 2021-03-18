@@ -93,7 +93,7 @@ public abstract class OCLKernelScheduler {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
-            OCLGridInfo gridInfo = new OCLGridInfo(deviceContext.getDevice(), local);
+            OCLGridInfo gridInfo = new OCLGridInfo(deviceContext, local);
             boolean checkedDimensions = gridInfo.checkGridDimensions();
             if (!checkedDimensions) {
                 if (deviceContext.isPlatformFPGA()) {
