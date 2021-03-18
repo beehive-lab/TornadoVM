@@ -201,11 +201,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return taskScheduleName;
     }
 
-    private void updateReference(Object oldRef, Object newRef, List<Object> list) {
+    private void updateReference(Object oldRef, Object newRef, List<Object> listOfReferences) {
         int i = 0;
-        for (Object o : list) {
+        for (Object o : listOfReferences) {
             if (o.equals(oldRef)) {
-                list.set(i, newRef);
+                listOfReferences.set(i, newRef);
             }
             i++;
         }

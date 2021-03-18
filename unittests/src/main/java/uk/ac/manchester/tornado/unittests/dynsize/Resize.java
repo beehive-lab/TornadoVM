@@ -126,4 +126,34 @@ public class Resize {
             assertEquals(20.0f, v, 0.001f);
         }
     }
+
+    @Test
+    public void testUpdateReferences() {
+        float[] a = createArray(256);
+        float[] b = createArray(256);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", Resize::resize02, a, b) //
+                .streamOut(b); //
+        ts.execute();
+
+        float[] aux = createArray(256);
+
+        // Interchange
+        ts.updateReference(b, aux);
+        ts.updateReference(a, b);
+        ts.updateReference(aux, a);
+        ts.execute();
+
+        // Interchange again
+        ts.updateReference(b, aux);
+        ts.updateReference(a, b);
+        ts.updateReference(aux, a);
+        ts.execute();
+
+        for (float v : b) {
+            assertEquals(40.0f, v, 0.001f);
+        }
+    }
 }
