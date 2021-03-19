@@ -24,7 +24,7 @@ public class SPIRVArchitecture extends Architecture {
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
 
-    public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.UCHAR);
+    public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
 
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
         // FIXME: REVISIT THIS CONSTRUCTOR

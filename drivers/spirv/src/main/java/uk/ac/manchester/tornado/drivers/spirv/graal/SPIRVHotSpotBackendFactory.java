@@ -52,7 +52,7 @@ public class SPIRVHotSpotBackendFactory {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
-        SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.UINT, device.getByteOrder());
+        SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_FLOAT_32, device.getByteOrder());
         SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT,
                 device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 
@@ -69,7 +69,7 @@ public class SPIRVHotSpotBackendFactory {
             TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new SPIRVLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, vmConfig, targetDescription, false);
-            WordTypes wordTypes = new TornadoWordTypes(metaAccess, SPIRVKind.UINT.asJavaKind());
+            WordTypes wordTypes = new TornadoWordTypes(metaAccess, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
             Providers p = new Providers(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);

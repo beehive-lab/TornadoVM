@@ -59,26 +59,22 @@ public class SPIRVStamp extends ObjectStamp {
 
     public JavaKind getJavaKindFromPrimitive() {
         switch (spirvKind) {
-            case OPTYPEBOOL:
+            case OP_TYPE_BOOL:
                 return JavaKind.Boolean;
-            case CHAR:
-            case UCHAR:
+            case OP_TYPE_INT_8:
                 return JavaKind.Byte;
             case OP_TYPE_INT_16:
-            case USHORT:
                 return JavaKind.Short;
             case OP_TYPE_INT_32:
-            case UINT:
                 return JavaKind.Int;
             case OP_TYPE_INT_64:
-            case ULONG:
                 return JavaKind.Long;
             case OP_TYPE_FLOAT_32:
                 return JavaKind.Float;
             case OP_TYPE_FLOAT_64:
                 return JavaKind.Double;
             default:
-                return JavaKind.Illegal;
+                throw new RuntimeException("Not implemented yet");
         }
     }
 
