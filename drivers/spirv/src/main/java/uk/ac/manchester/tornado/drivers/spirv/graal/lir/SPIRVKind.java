@@ -10,78 +10,79 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+/**
+ * SPIRV Types:
+ * https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_types
+ * 
+ * Compatible with Level Zero:
+ * https://spec.oneapi.com/level-zero/latest/core/SPIRV.html
+ */
 public enum SPIRVKind implements PlatformKind {
 
     // @formatter:off
-    ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),
-    ATOMIC_ADD_FLOAT(4, java.lang.Float.TYPE),
-    ATOMIC_SUB_INT(4, java.lang.Integer.TYPE),
-    ATOMIC_MUL_INT(4, java.lang.Integer.TYPE),
-    ATOMIC_ADD_LONG(8, java.lang.Long.TYPE),
-    BOOL(1, java.lang.Boolean.TYPE),
-    CHAR(1, java.lang.Byte.TYPE),
-    UCHAR(1, null),
-    SHORT(2, java.lang.Short.TYPE),
-    USHORT(2, null),
-    INT(4, java.lang.Integer.TYPE),
-    UINT(4, null),
-    LONG(8, java.lang.Long.TYPE),
-    ULONG(8, null),
-    HALF(2, null),
-    FLOAT(4, java.lang.Float.TYPE),
-    DOUBLE(8, java.lang.Double.TYPE),
-    CHAR2(2, null, CHAR),
-    UCHAR2(2, null, UCHAR),
-    SHORT2(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, SHORT),
-    USHORT2(2, null, USHORT),
-    INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, INT),
-    UINT2(2, null, UINT),
-    LONG2(2, null, LONG),
-    ULONG2(2, null, ULONG),
-    FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, FLOAT),
-    DOUBLE2(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, DOUBLE),
-    CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, CHAR),
-    UCHAR3(3, null, UCHAR),
-    SHORT3(3, uk.ac.manchester.tornado.api.collections.types.Short3.TYPE, SHORT),
-    USHORT3(3, null, USHORT),
-    INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, INT),
-    UINT3(3, null, UINT),
-    LONG3(3, null, LONG),
-    ULONG3(3, null, ULONG),
-    FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, FLOAT),
-    DOUBLE3(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, DOUBLE),
-    CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, CHAR),
-    UCHAR4(4, null, UCHAR),
-    SHORT4(4, null, SHORT),
-    USHORT4(4, null, USHORT),
-    INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, INT),
-    UINT4(4, null, UINT),
-    LONG4(4, null, LONG),
-    ULONG4(4, null, ULONG),
-    FLOAT4(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, FLOAT),
-    DOUBLE4(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, DOUBLE),
-    CHAR8(8, null, CHAR),
-    UCHAR8(8, null, UCHAR),
-    SHORT8(8, null, SHORT),
-    USHORT8(8, null, USHORT),
-    INT8(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, INT),
-    UINT8(8, null, UINT),
-    LONG8(8, null, LONG),
-    ULONG8(8, null, ULONG),
-    FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),
-    CHAR16(16, null, CHAR),
-    UCHAR16(16, null, UCHAR),
-    SHORT16(16, null, SHORT),
-    USHORT16(16, null, USHORT),
-    INT16(16, null, INT),
-    UINT16(16, null, UINT),
-    LONG16(16, null, LONG),
-    ULONG16(16, null, ULONG),
-    FLOAT16(16, null, FLOAT),
-    DOUBLE16(16, null, DOUBLE),
-    ILLEGAL(0, null),
+    OP_TYPE_BOOL(1, java.lang.Boolean.TYPE),
+    OP_TYPE_INT_8(1, Byte.TYPE),
+    OP_TYPE_INT_16(2, Short.TYPE),
+    OP_TYPE_INT_32(4, java.lang.Integer.TYPE),
+    OP_TYPE_INT_64(8, java.lang.Long.TYPE),
+    OP_TYPE_FLOAT_16(2, java.lang.Float.TYPE),  // Half float
+    OP_TYPE_FLOAT_32(4, java.lang.Float.TYPE),
+    OP_TYPE_FLOAT_64(8, java.lang.Double.TYPE),
+    
+    // Vector types
+    
+    // OP_TYPE_VECTOR2
+    //OP_TYPE_VECTOR2_INT_8(2, uk.ac.manchester.tornado.api.collections.types.Byte2.TYPE, OP_TYPE_INT_8),
+    OP_TYPE_VECTOR2_INT_16(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR2_INT_32(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR2_INT_64(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, OP_TYPE_INT_64),
 
+    // OP_TYPE_VECTOR 3
+    OP_TYPE_VECTOR3_INT_8(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, OP_TYPE_INT_8),
+    OP_TYPE_VECTOR3_INT_16(3, uk.ac.manchester.tornado.api.collections.types.Short3.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR3_INT_32(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR3_INT_64(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, OP_TYPE_INT_64),
+
+    // OP_TYPE_VECTOR 4
+    OP_TYPE_VECTOR4_INT_8(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, OP_TYPE_INT_8),
+    //OP_TYPE_VECTOR4_INT_16(4, uk.ac.manchester.tornado.api.collections.types.Short4.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR4_INT_32(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, OP_TYPE_INT_64),
+
+    // OP_TYPE_VECTOR 8
+    //OP_TYPE_VECTOR8_INT_8(8, uk.ac.manchester.tornado.api.collections.types.Byte8.TYPE, OP_TYPE_INT_8),
+    //OP_TYPE_VECTOR8_INT_16(8, uk.ac.manchester.tornado.api.collections.types.Short8.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_64),
+
+    // OP_TYPE_VECTOR 16
+//    OP_TYPE_VECTOR16_INT_8(16, uk.ac.manchester.tornado.api.collections.types.Byte8.TYPE, OP_TYPE_INT_8),
+//    OP_TYPE_VECTOR16_INT_16(16, uk.ac.manchester.tornado.api.collections.types.Short8.TYPE, OP_TYPE_INT_16),
+//    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.collections.types.Int1.TYPE, OP_TYPE_INT_32),
+//    OP_TYPE_VECTOR16_INT_64(16, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_64),
+
+    // OP_TYPE_VECTOR2 Float
+    OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR2_FLOAT_32(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR2_FLOAT_64(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, OP_TYPE_FLOAT_64),
+
+    // OP_TYPE_VECTOR3 Float
+    OP_TYPE_VECTOR3_FLOAT_16(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR3_FLOAT_32(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR3_FLOAT_64(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, OP_TYPE_FLOAT_64),
+
+    // OP_TYPE_VECTOR4 Float
+    OP_TYPE_VECTOR4_FLOAT_16(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR4_FLOAT_32(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR4_FLOAT_64(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, OP_TYPE_FLOAT_64),
+    
+    // OP_TYPE_VECTOR8 Float
+    OP_TYPE_VECTOR8_FLOAT_16(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR8_FLOAT_32(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, OP_TYPE_FLOAT_64),
+
+    OP_TYPE_VOID(0, Void.TYPE),
+    ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
 
@@ -147,104 +148,27 @@ public enum SPIRVKind implements PlatformKind {
 
     @Override
     public char getTypeChar() {
-
         switch (kind) {
-            case BOOL:
+            case OP_TYPE_BOOL:
                 return 'z';
-            case CHAR:
-            case UCHAR:
-                return 'c';
-            case SHORT:
-            case USHORT:
+            case OP_TYPE_INT_16:
                 return 's';
-            case INT:
-            case UINT:
-            case ATOMIC_ADD_INT:
-            case ATOMIC_SUB_INT:
-            case ATOMIC_MUL_INT:
+            case OP_TYPE_INT_32:
                 return 'i';
-            case LONG:
-            case ULONG:
-            case ATOMIC_ADD_LONG:
+            case OP_TYPE_INT_64:
                 return 'l';
-            case HALF:
-                return 'h';
-            case FLOAT:
-            case ATOMIC_ADD_FLOAT:
+            case OP_TYPE_FLOAT_32:
                 return 'f';
-            case DOUBLE:
+            case OP_TYPE_FLOAT_64:
                 return 'd';
-            case CHAR2:
-            case UCHAR2:
-            case SHORT2:
-            case USHORT2:
-            case INT2:
-            case UINT2:
-            case LONG2:
-            case ULONG2:
-            case FLOAT2:
-            case DOUBLE2:
-            case CHAR3:
-            case UCHAR3:
-            case SHORT3:
-            case USHORT3:
-            case INT3:
-            case UINT3:
-            case LONG3:
-            case ULONG3:
-            case FLOAT3:
-            case DOUBLE3:
-            case CHAR4:
-            case UCHAR4:
-            case SHORT4:
-            case USHORT4:
-            case INT4:
-            case UINT4:
-            case LONG4:
-            case ULONG4:
-            case FLOAT4:
-            case DOUBLE4:
-            case CHAR8:
-            case UCHAR8:
-            case SHORT8:
-            case USHORT8:
-            case INT8:
-            case UINT8:
-            case LONG8:
-            case ULONG8:
-            case FLOAT8:
-            case DOUBLE8:
-            case CHAR16:
-            case UCHAR16:
-            case SHORT16:
-            case USHORT16:
-            case INT16:
-            case UINT16:
-            case LONG16:
-            case ULONG16:
-            case FLOAT16:
-            case DOUBLE16:
-                return 'v';
             default:
-                return '-';
+                throw new RuntimeException("SPIRVType Not implemented yet");
         }
     }
 
     @Override
     public String toString() {
-        if (this == SPIRVKind.ATOMIC_ADD_INT) {
-            return "int";
-        } else if (this == SPIRVKind.ATOMIC_SUB_INT) {
-            return "int";
-        } else if (this == SPIRVKind.ATOMIC_MUL_INT) {
-            return "int";
-        } else if (this == SPIRVKind.ATOMIC_ADD_LONG) {
-            return "long";
-        } else if (this == SPIRVKind.ATOMIC_ADD_FLOAT) {
-            return "float";
-        } else {
-            return name().toLowerCase();
-        }
+        return name().toLowerCase();
     }
 
     public String getTypePrefix() {
@@ -280,7 +204,7 @@ public enum SPIRVKind implements PlatformKind {
 
     public boolean isFloating() {
         // TODO are vectors integers?
-        return kind == FLOAT || kind == DOUBLE;
+        return kind == OP_TYPE_FLOAT_32 || kind == OP_TYPE_FLOAT_64;
     }
 
     public boolean isVector() {
@@ -318,15 +242,15 @@ public enum SPIRVKind implements PlatformKind {
 
     public static int lookupTypeIndex(SPIRVKind kind) {
         switch (kind) {
-            case SHORT:
+            case OP_TYPE_INT_16:
                 return 0;
-            case INT:
+            case OP_TYPE_INT_32:
                 return 1;
-            case FLOAT:
+            case OP_TYPE_FLOAT_32:
                 return 2;
-            case CHAR:
+            case OP_TYPE_INT_8:
                 return 3;
-            case DOUBLE:
+            case OP_TYPE_FLOAT_64:
                 return 4;
             default:
                 return -1;
@@ -361,23 +285,21 @@ public enum SPIRVKind implements PlatformKind {
     public JavaKind asJavaKind() {
         if (kind != ILLEGAL && !kind.isVector()) {
             switch (kind) {
-                case BOOL:
+                case OP_TYPE_VOID:
+                    return JavaKind.Void;
+                case OP_TYPE_BOOL:
                     return JavaKind.Boolean;
-                case CHAR:
-                case UCHAR:
+                case OP_TYPE_INT_8:
                     return JavaKind.Byte;
-                case SHORT:
-                case USHORT:
+                case OP_TYPE_INT_16:
                     return JavaKind.Short;
-                case INT:
-                case UINT:
+                case OP_TYPE_INT_32:
                     return JavaKind.Int;
-                case LONG:
-                case ULONG:
+                case OP_TYPE_INT_64:
                     return JavaKind.Long;
-                case FLOAT:
+                case OP_TYPE_FLOAT_32:
                     return JavaKind.Float;
-                case DOUBLE:
+                case OP_TYPE_FLOAT_64:
                     return JavaKind.Double;
                 default:
                     shouldNotReachHere();

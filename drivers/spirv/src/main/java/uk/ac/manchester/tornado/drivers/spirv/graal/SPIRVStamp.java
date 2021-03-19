@@ -59,23 +59,23 @@ public class SPIRVStamp extends ObjectStamp {
 
     public JavaKind getJavaKindFromPrimitive() {
         switch (spirvKind) {
-            case BOOL:
+            case OPTYPEBOOL:
                 return JavaKind.Boolean;
             case CHAR:
             case UCHAR:
                 return JavaKind.Byte;
-            case SHORT:
+            case OP_TYPE_INT_16:
             case USHORT:
                 return JavaKind.Short;
-            case INT:
+            case OP_TYPE_INT_32:
             case UINT:
                 return JavaKind.Int;
-            case LONG:
+            case OP_TYPE_INT_64:
             case ULONG:
                 return JavaKind.Long;
-            case FLOAT:
+            case OP_TYPE_FLOAT_32:
                 return JavaKind.Float;
-            case DOUBLE:
+            case OP_TYPE_FLOAT_64:
                 return JavaKind.Double;
             default:
                 return JavaKind.Illegal;
