@@ -16,6 +16,11 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
  * 
  * Compatible with Level Zero:
  * https://spec.oneapi.com/level-zero/latest/core/SPIRV.html
+ * 
+ * Note: Floating-point types are represented and stored using IEEE-754
+ * semantics. All integer formats are represented and stored using
+ * 2’s-complement format. 2’s-complement format.
+ * 
  */
 public enum SPIRVKind implements PlatformKind {
 
@@ -82,8 +87,15 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, OP_TYPE_FLOAT_64),
 
     OP_TYPE_VOID(0, Void.TYPE),
+    
+    // A pointer is represented as a long value (8 bytes)
+    OP_TYPE_POINTER(8, Long.TYPE),
+    
     ILLEGAL(0, null),
+    
+    // Atomics
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
+    
     // @formatter:on
 
     private final int size;

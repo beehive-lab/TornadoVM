@@ -18,6 +18,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
  * <p>
  * It contains information such as byte ordering, platform king, memory
  * alignment, etc.
+ *
  */
 public class SPIRVArchitecture extends Architecture {
 
