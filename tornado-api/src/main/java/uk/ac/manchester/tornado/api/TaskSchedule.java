@@ -402,6 +402,19 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
         return this;
     }
 
+    /**
+     * Update a data reference from one array to another within TornadoVM.
+     * 
+     * Arrays can be of different sizes.
+     * 
+     * If a {@link GridTask} is not passed in the {@link #execute()} method, then it
+     * will also trigger recompilation. Otherwise TornadoVM will not recompile the
+     * code, since the first compilation was generic.
+     * 
+     * 
+     * @param oldRef
+     * @param newRef
+     */
     @Override
     public void updateReference(Object oldRef, Object newRef) {
         taskScheduleImpl.updateReference(oldRef, newRef);
