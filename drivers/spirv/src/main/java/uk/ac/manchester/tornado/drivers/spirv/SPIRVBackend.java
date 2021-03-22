@@ -18,10 +18,10 @@ import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
@@ -31,7 +31,14 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
-import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.*;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVDataBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -182,8 +189,21 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
-        // emitPrologue(crb, asm, method, lir);
-        // crb.emit(lir);
-        // emitEpilogue(asm);
+        emitPrologue(crb, asm, method, lir);
+        crb.emit(lir);
+        emitEpilogue(asm);
+    }
+
+    private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir) {
+        String methodName = crb.compilationResult.getName();
+        if (crb.isKernel()) {
+            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
+        } else {
+
+        }
+    }
+
+    private void emitEpilogue(SPIRVAssembler asm) {
+
     }
 }

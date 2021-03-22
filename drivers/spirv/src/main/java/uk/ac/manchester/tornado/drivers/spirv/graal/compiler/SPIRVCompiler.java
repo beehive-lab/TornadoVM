@@ -45,6 +45,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
+/**
+ * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
+ * generates SPIRV code.
+ * 
+ */
 public class SPIRVCompiler {
 
     private static final AtomicInteger compilationId = new AtomicInteger();
