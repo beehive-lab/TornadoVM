@@ -1,21 +1,22 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
-
-import java.util.HashSet;
-import java.util.Set;
-
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 

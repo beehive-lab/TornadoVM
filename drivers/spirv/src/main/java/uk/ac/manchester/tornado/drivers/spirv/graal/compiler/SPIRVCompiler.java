@@ -1,10 +1,11 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -31,6 +32,12 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.ProfilingInfo;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
@@ -38,12 +45,6 @@ import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 /**
  * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
