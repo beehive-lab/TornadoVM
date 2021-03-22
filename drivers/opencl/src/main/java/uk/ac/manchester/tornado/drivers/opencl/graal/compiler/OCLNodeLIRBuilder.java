@@ -452,7 +452,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     public void emitIf(final IfNode x) {
         trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
-        /**
+        /*
          * test to see if this is an exception check need to implement this properly? or
          * omit!
          */

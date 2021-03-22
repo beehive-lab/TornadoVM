@@ -592,7 +592,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return crb;
     }
 
-    public FrameMap newFrameMap(RegisterConfig registerConfig) {
+    private FrameMap newFrameMap(RegisterConfig registerConfig) {
         return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 

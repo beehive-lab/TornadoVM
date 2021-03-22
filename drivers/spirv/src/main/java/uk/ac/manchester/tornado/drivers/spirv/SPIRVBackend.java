@@ -1,21 +1,39 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
+import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.drivers.spirv.graal.*;
-import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameMap;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameMapBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.*;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -82,6 +100,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return ((SPIRVProviders) getProviders()).getSuitesProvider();
     }
 
+    // FIXME <REFACTOR> Common method
     @Override
     public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
         return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
@@ -112,4 +131,59 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         getDeviceContext().reset();
     }
 
+    @Override
+    public String toString() {
+        return String.format("Backend: arch=%s, device=%s", spirvArchitecture.getName(), deviceContext.getDevice().getDeviceName());
+    }
+
+    @Override
+    public SPIRVCodeProvider getCodeCache() {
+        return codeCache;
+    }
+
+    private FrameMap newFrameMap(RegisterConfig registerConfig) {
+        return new SPIRVFrameMap(getCodeCache(), registerConfig, this);
+    }
+
+    public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
+        RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
+        return new SPIRVFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
+    }
+
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
+            StructuredGraph graph, Object stub) {
+        return new SPIRVIRGenerationResult(compilationId, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+    }
+
+    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
+        return new SPIRVLIRGenerator(getProviders(), lirGenRes);
+    }
+
+    public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
+        return new SPIRVNodeLIRBuilder(graph, lirGen, new SPIRVNodeMatchRules(lirGen));
+    }
+
+    public SPIRVCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGen, FrameMap frameMap, SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory,
+            boolean isKernel, boolean isParallel) {
+
+        SPIRVAssembler asm = createAssembler();
+        SPIRVFrameContext frameContext = new SPIRVFrameContext();
+        DataBuilder dataBuilder = new SPIRVDataBuilder();
+        SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, options, compilationResult);
+        crb.setKernel(isKernel);
+        crb.setParallel(isParallel);
+        crb.setDeviceContext(deviceContext);
+        return crb;
+    }
+
+    private SPIRVAssembler createAssembler() {
+        return new SPIRVAssembler(targetDescription);
+    }
+
+    public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
+        final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
+        // emitPrologue(crb, asm, method, lir);
+        // crb.emit(lir);
+        // emitEpilogue(asm);
+    }
 }

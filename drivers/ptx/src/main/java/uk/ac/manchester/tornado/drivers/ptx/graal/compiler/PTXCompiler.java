@@ -144,6 +144,7 @@ public class PTXCompiler {
             return PTXCompiler.compile(this);
         }
 
+        // FIXME <REFACTOR> this class can be merged into PTXCompilationRequest
         public static class PTXCompilationRequestBuilder {
             private StructuredGraph graph;
             private ResolvedJavaMethod codeOwner;

@@ -1,26 +1,4 @@
-/*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- */
-
-package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
+package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import jdk.vm.ci.code.TargetDescription;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -37,10 +15,10 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import java.util.List;
 
-public class PTXLIRGenerationPhase extends LIRPhase<PTXLIRGenerationPhase.LIRGenerationContext> {
+public class SPIRVIRGenerationPhase extends LIRPhase<SPIRVIRGenerationPhase.LIRGenerationContext> {
 
+    // FIXME <REFACTOR> This class is common for all three backends
     public static final class LIRGenerationContext {
-
         private final StructuredGraph graph;
         private final LIRGeneratorTool lirGen;
         private final NodeLIRBuilderTool nodeLirBuilder;
@@ -55,7 +33,17 @@ public class PTXLIRGenerationPhase extends LIRPhase<PTXLIRGenerationPhase.LIRGen
             this.schedule = schedule;
             this.isKernel = isKernel;
         }
+    }
 
+    private static void emitBlock(SPIRVNodeLIRBuilder nodeLirBuilder, LIRGenerationResult lirGenRes, Block b, StructuredGraph graph, BlockMap<List<Node>> blockMap, boolean isKernel) {
+        if (lirGenRes.getLIR().getLIRforBlock(b) == null) {
+            for (final Block pred : b.getPredecessors()) {
+                if (!b.isLoopHeader() || !pred.isLoopEnd()) {
+                    emitBlock(nodeLirBuilder, lirGenRes, pred, graph, blockMap, isKernel);
+                }
+            }
+            nodeLirBuilder.doBlock(b, graph, blockMap, isKernel);
+        }
     }
 
     @Override
@@ -66,21 +54,11 @@ public class PTXLIRGenerationPhase extends LIRPhase<PTXLIRGenerationPhase.LIRGen
         final BlockMap<List<Node>> blockMap = schedule.getBlockToNodesMap();
 
         for (AbstractBlockBase<?> b : lirGenRes.getLIR().linearScanOrder()) {
-            emitBlock((PTXNodeLIRBuilder) nodeLirBuilder, lirGenRes, (Block) b, graph, blockMap, context.isKernel);
+            emitBlock((SPIRVNodeLIRBuilder) nodeLirBuilder, lirGenRes, (Block) b, graph, blockMap, context.isKernel);
         }
         ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
 
         assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
 
-    private static void emitBlock(PTXNodeLIRBuilder nodeLirBuilder, LIRGenerationResult lirGenRes, Block b, StructuredGraph graph, BlockMap<List<Node>> blockMap, boolean isKernel) {
-        if (lirGenRes.getLIR().getLIRforBlock(b) == null) {
-            for (final Block pred : b.getPredecessors()) {
-                if (!b.isLoopHeader() || !pred.isLoopEnd()) {
-                    emitBlock(nodeLirBuilder, lirGenRes, pred, graph, blockMap, isKernel);
-                }
-            }
-            nodeLirBuilder.doBlock(b, graph, blockMap, isKernel);
-        }
-    }
 }

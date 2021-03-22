@@ -35,7 +35,6 @@ public class OCLFrameContext extends TornadoLogger implements FrameContext {
     @Override
     public void enter(CompilationResultBuilder crb) {
         trace("FrameContext.enter()");
-
     }
 
     @Override
