@@ -1,10 +1,10 @@
 # Expressing Kernel Parallelism within TornadoVM
 
-Applications for acceleration via TornadoVM can be programmed using both loop-parallelism (by annotating loops uging
-the `@Parallel` TornadoVM annotation), and kernel-parallelism, by using a new object called `TornadoVMContext` that is
-passed as a parameter.
+Applications for acceleration via TornadoVM can be programmed using both:
+- **loop-parallelism** by annotating loops uging the `@Parallel` TornadoVM annotation, and
+- **kernel-parallelism** by using a new object called `TornadoVMContext` that is passed as a parameter.
 
-**Definition**
+## Definition
 `TornadoVMContext` is a Java object exposed by the TornadoVM API to the developers in order to leverage Kernel Parallel
 Programming using the existing `TaskSchedule` API. An instance of the `TornadoVMContext` object is passed to each task
 that uses the kernel-parallel API. Additionally, for all tasks using the `TornadoVMContext` object, the user must
@@ -34,7 +34,7 @@ CUDA PTX terminology.
 The
 following [example](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/examples/src/main/java/uk/ac/manchester/tornado/examples/compute_tornadovmcontext/MatrixMultiplication2DV2.java)
 is the Matrix Multiplication implementation using the `TornadoVMContext` object for indexing threads and access to local
-memory. The following example also makes use of loop tiling.
+memory. The following example also makes use of loop tiling. There are three main steps to leverage the features of TornadoVMContext:
 
 1. The `TornadoVMContext` object is passed as an argument in the method that will be accelerated. This implementation
    follows the OpenCL implementation description provided
@@ -115,14 +115,13 @@ t.execute(gridTask);    // Pass the GridTask in the execute method
 
 The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the TornadoVMContext features or
 adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Such scenarios exist in
-the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/unittests/src/main/java/uk/ac/manchester/tornado/unittests/api/TestCombinedTaskSchedule.java)
-. For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three
+the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/unittests/src/main/java/uk/ac/manchester/tornado/unittests/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three
 tasks:
 
 * `t0`: The `vectorAddV2` method adds two vectors by utilizing the thread attributes provided by TornadoVMContext.
 * `t1`: The `vectorMulV2` method multiplies the result of the first task with a second vector, while also utilizing the
   thread attributes provided by TornadoVMContext.
-* `t2`: The `vectorSubV1` method performs the subtraction the result of the second task with a third vector.
+* `t2`: The `vectorSubV1` method performs the subtraction of the result of the second task with a third vector.
 
 ```java
 // Create Worker 1D Grids 
