@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
@@ -8,8 +10,6 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Access to the code cache for SPIRV and interaction with JVMCI.
@@ -30,6 +30,7 @@ public class SPIRVCodeProvider implements CodeCacheProvider {
 
     @Override
     public void invalidateInstalledCode(InstalledCode installedCode) {
+        installedCode.invalidate();
     }
 
     /**
