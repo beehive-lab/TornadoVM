@@ -1,11 +1,15 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
@@ -19,9 +23,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SPIRVLevelZeroContext extends SPIRVContext {
 
