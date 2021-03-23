@@ -1,8 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -14,7 +15,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public final class SPIRVDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+public final class SPIRVDriver implements TornadoAcceleratorDriver {
 
     private final SPIRVBackend[][] backends;
     private final SPIRVBackend[] flatBackends;
@@ -22,7 +23,7 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon) {
         int numSPIRVPlatforms = SPIRVProxy.getNumPlatforms();
-        info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
+        TornadoLogger.info("[SPIRV] Found %d platforms", numSPIRVPlatforms);
 
         if (numSPIRVPlatforms < 1) {
             throw new TornadoBailoutRuntimeException("[Warning] No SPIRV platforms found. Deoptimizing to sequential execution");
@@ -59,8 +60,8 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
 
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {
         SPIRVBackend backend = backends[platformIndex][deviceIndex];
-        Tornado.info("SPIRV Backend Initialization");
         if (!backend.isInitialised()) {
+            Tornado.info("SPIRV Backend Initialization");
             backend.init();
         }
         return backend;
@@ -134,5 +135,9 @@ public final class SPIRVDriver extends TornadoLogger implements TornadoAccelerat
     @Override
     public int getNumPlatforms() {
         return backends.length;
+    }
+
+    public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {
+        return checkAndInitBackend(platformIndex, deviceIndex);
     }
 }

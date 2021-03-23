@@ -1,10 +1,16 @@
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -12,18 +18,36 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.opencl.mm.*;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
-import uk.ac.manchester.tornado.drivers.spirv.mm.*;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCharArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.*;
-
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
  * This is the core class for the actual runtime.
@@ -71,7 +95,72 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-        return null;
+        if (task instanceof CompilableTask) {
+            return compileTask((CompilableTask) task);
+        } else {
+            throw new RuntimeException("Prebuilt task not supported yet");
+        }
+    }
+
+    public SPIRVBackend getBackend() {
+        return findDriver().getBackend(platformIndex, deviceIndex);
+    }
+
+    public static SPIRVDriver findDriver() {
+        if (driver == null) {
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class);
+            TornadoInternalError.guarantee(driver != null, "unable to find CUDA driver");
+        }
+        return driver;
+    }
+
+    private TornadoInstalledCode compileTask(CompilableTask task) {
+        TornadoProfiler profiler = task.getProfiler();
+        final SPIRVDeviceContext deviceContext = getDeviceContext();
+
+        final CompilableTask executable = task;
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
+
+        // copy meta data into task
+        final TaskMetaData sketchMeta = sketch.getMeta();
+        final TaskMetaData taskMeta = executable.meta();
+
+        // Return the code from the cache
+        if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+            return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
+        }
+
+        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] taskAccess = taskMeta.getArgumentsAccess();
+        System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
+
+        try {
+            SPIRVCompilationResult result = null;
+            // Compile the code and insert the SPIRV binary into the code cache
+            SPIRVProviders providers = (SPIRVProviders) getBackend().getProviders();
+
+            // Attach the profiler
+            profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
+            profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
+            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            result = SPIRVCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
+
+            profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            TornadoInstalledCode installedCode = deviceContext.installCode(result);
+            profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+            return installedCode;
+        } catch (
+
+        Exception e) {
+            TornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+            TornadoLogger.fatal("exception occurred when compiling %s", task.getMethod().getName());
+            TornadoLogger.fatal("exception: %s", e.toString());
+            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
+        }
     }
 
     @Override

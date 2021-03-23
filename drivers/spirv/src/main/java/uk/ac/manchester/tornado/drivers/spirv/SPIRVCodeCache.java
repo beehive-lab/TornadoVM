@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SPIRVCodeCache {
 
@@ -37,4 +37,11 @@ public class SPIRVCodeCache {
         cache.clear();
     }
 
+    public SPIRVInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+        return null;
+    }
+
+    public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
+        return cache.get(id + "-" + entryPoint);
+    }
 }

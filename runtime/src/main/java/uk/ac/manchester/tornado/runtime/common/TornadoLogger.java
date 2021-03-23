@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 
 public class TornadoLogger {
 
-    private Logger LOGGER;
+    private static Logger LOGGER;
 
     public TornadoLogger(Class<?> clazz) {
         LOGGER = Logger.getLogger(clazz == null ? this.getClass().getName() : clazz.getName());
@@ -53,29 +53,29 @@ public class TornadoLogger {
         debug(String.format(pattern, args));
     }
 
-    public final void error(final String msg) {
+    public static void error(final String msg) {
         LOGGER.setLevel(Level.SEVERE);
         LOGGER.severe(msg);
     }
 
-    public final void error(final String pattern, final Object... args) {
+    public static void error(final String pattern, final Object... args) {
         error(String.format(pattern, args));
     }
 
-    public final void fatal(final String msg) {
+    public static void fatal(final String msg) {
         LOGGER.setLevel(Level.SEVERE);
         LOGGER.severe(msg);
     }
 
-    public final void fatal(final String pattern, final Object... args) {
+    public static void fatal(final String pattern, final Object... args) {
         fatal(String.format(pattern, args));
     }
 
-    public final void info(final String msg) {
+    public static void info(final String msg) {
         LOGGER.info(msg);
     }
 
-    public final void info(final String pattern, final Object... args) {
+    public static void info(final String pattern, final Object... args) {
         info(String.format(pattern, args));
     }
 

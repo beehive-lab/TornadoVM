@@ -1,11 +1,18 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.lang.reflect.Array;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
  * Class to map an SPIRV device (Device represented either in Level Zero or an
@@ -19,12 +26,14 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     private OCLExecutionEnvironment oclContext;
     private SPIRVTornadoDevice tornadoDevice;
     private SPIRVMemoryManager memoryManager;
+    private SPIRVCodeCache codeCache;
 
     private void init(SPIRVDevice device, SPIRVCommandQueue queue) {
         this.device = device;
         this.queue = queue;
         this.tornadoDevice = new SPIRVTornadoDevice(device);
         this.memoryManager = new SPIRVMemoryManager(this);
+        this.codeCache = new SPIRVCodeCache(this);
     }
 
     public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
@@ -80,9 +89,32 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
         return false;
     }
 
-    @Override
-    public boolean isCached(String methodName, SchedulableTask task) {
-        return false;
+    private String buildKernelName(String methodName, SchedulableTask task) {
+        StringBuilder sb = new StringBuilder(methodName);
+
+        for (Object arg : task.getArguments()) {
+            // Object is either array or primitive
+            sb.append('_');
+            Class<?> argClass = arg.getClass();
+            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+                // Only need to append value.
+                // If negative value, remove the minus sign in front
+                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
+            } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
+                // Need to append type and length
+                sb.append(argClass.getComponentType().getName());
+                sb.append(Array.getLength(arg));
+            } else {
+                sb.append(argClass.getName().replace('.', '_'));
+
+                // Since with objects there is no way to know what will be a
+                // constant differentiate using the hashcode of the object
+                sb.append('_');
+                sb.append(arg.hashCode());
+            }
+        }
+
+        return sb.toString();
     }
 
     @Override
@@ -234,4 +266,26 @@ public class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
     public void flush(int deviceIndex) {
         spirvContext.flush(deviceIndex);
     }
+
+    public TornadoInstalledCode installCode(SPIRVCompilationResult result) {
+        return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
+    }
+
+    public SPIRVInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+        return codeCache.installSource(meta, id, entryPoint, code);
+    }
+
+    public boolean isCached(String id, String entryPoint) {
+        return codeCache.isCached(id + "-" + entryPoint);
+    }
+
+    @Override
+    public boolean isCached(String methodName, SchedulableTask task) {
+        return codeCache.isCached(task.getId() + "-" + methodName);
+    }
+
+    public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
+        return codeCache.getInstalledCode(id, entryPoint);
+    }
+
 }

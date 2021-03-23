@@ -1,9 +1,23 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METHODS;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Array;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.code.CompilationResult;
@@ -38,12 +52,21 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -273,6 +296,145 @@ public class SPIRVCompiler {
 
             getDebugContext().dump(DebugContext.BASIC_LEVEL, compilationResult, "After code generation");
         }
+    }
+
+    // FIXME: <REFACTOR> Common for PTX and SPIRV
+    public static String buildKernelName(String methodName, SchedulableTask task) {
+        StringBuilder sb = new StringBuilder(methodName);
+
+        for (Object arg : task.getArguments()) {
+            // Object is either array or primitive
+            sb.append('_');
+            Class<?> argClass = arg.getClass();
+            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+                // Only need to append value.
+                // If negative value, remove the minus sign in front
+                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
+            } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
+                // Need to append type and length
+                sb.append(argClass.getComponentType().getName());
+                sb.append(Array.getLength(arg));
+            } else {
+                sb.append(argClass.getName().replace('.', '_'));
+
+                // Since with objects there is no way to know what will be a
+                // constant differentiate using the hashcode of the object
+                sb.append('_');
+                sb.append(arg.hashCode());
+            }
+        }
+
+        return sb.toString();
+    }
+
+    public static SPIRVCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, SPIRVProviders providers, SPIRVBackend backend) {
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
+        ResolvedJavaMethod resolvedJavaMethod = kernelGraph.method();
+
+        TornadoLogger.info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
+
+        final TaskMetaData taskMeta = task.meta();
+        final Object[] args = task.getArguments();
+        final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();
+
+        OptimisticOptimizations optimisticOptimizations = OptimisticOptimizations.ALL;
+        ProfilingInfo profilingInfo = resolvedJavaMethod.getProfilingInfo();
+
+        SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(buildKernelName(resolvedJavaMethod.getName(), task), taskMeta);
+        CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
+
+        Set<ResolvedJavaMethod> methods = new HashSet<>();
+
+        final SPIRVSuitesProvider suitesProvider = providers.getSuitesProvider();
+
+        // @formatter:off
+        SPIRVCompilationRequest kernelCompilationRequest = new SPIRVCompilationRequest(
+                kernelGraph, 
+                resolvedJavaMethod, 
+                args, 
+                taskMeta,
+                providers,
+                backend,
+                suitesProvider.getGraphBuilderSuite(),
+                optimisticOptimizations, 
+                profilingInfo, 
+                suitesProvider.getSuites(), 
+                suitesProvider.getLIRSuites(),
+                kernelCompilationResult,
+                factory,
+                true,
+                false,
+                batchThreads);
+        // @formatter:on
+
+        kernelCompilationRequest.execute();
+
+        if (Tornado.DUMP_COMPILED_METHODS) {
+            methods.add(kernelGraph.method());
+            methods.addAll(kernelGraph.getMethods());
+            Collections.addAll(methods, kernelCompilationResult.getMethods());
+        }
+
+        final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompilationResult.getNonInlinedMethods());
+        while (!workList.isEmpty()) {
+            final ResolvedJavaMethod currentMethod = workList.pop();
+            Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), taskMeta.getDeviceIndex());
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+
+            final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(currentMethod.getName(), taskMeta);
+
+            // @formatter:off
+            SPIRVCompilationRequest methodCompilationRequest = new SPIRVCompilationRequest(
+                    graph,
+                    currentMethod,
+                    null,
+                    null,
+                    providers,
+                    backend,
+                    suitesProvider.getGraphBuilderSuite(),
+                    optimisticOptimizations,
+                    profilingInfo,
+                    suitesProvider.getSuites(),
+                    suitesProvider.getLIRSuites(),
+                    kernelCompilationResult,
+                    factory,
+                    false,
+                    false,
+                    0);
+            // @formatter:on
+
+            methodCompilationRequest.execute();
+            if (DUMP_COMPILED_METHODS) {
+                methods.add(graph.method());
+                methods.addAll(graph.getMethods());
+            }
+            kernelCompilationResult.addCompiledMethodCode(compilationResult.getTargetCode());
+        }
+
+        if (DUMP_COMPILED_METHODS) {
+            final Path outDir = Paths.get("./spirv-compiled-methods");
+            if (!Files.exists(outDir)) {
+                try {
+                    Files.createDirectories(outDir);
+                } catch (IOException e) {
+                    TornadoLogger.error("unable to create cache dir: %s", outDir.toString());
+                    TornadoLogger.error(e.getMessage());
+                }
+            }
+
+            guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
+
+            File file = new File(outDir + "/" + task.getId() + "-" + resolvedJavaMethod.getName());
+            try (PrintWriter pw = new PrintWriter(file)) {
+                for (ResolvedJavaMethod m : methods) {
+                    pw.printf("%s,%s\n", m.getDeclaringClass().getName(), m.getName());
+                }
+            } catch (IOException e) {
+                TornadoLogger.error("unable to dump source: ", e.getMessage());
+            }
+        }
+
+        return kernelCompilationResult;
     }
 
 }
