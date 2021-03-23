@@ -38,7 +38,10 @@ public class SPIRVCodeCache {
     }
 
     public SPIRVInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] code) {
-        return null;
+        System.out.println("Compile & Install SPIRV-Binary ");
+        SPIRVInstalledCode installedCode = new SPIRVInstalledCode(id, deviceContext);
+        cache.put(id, installedCode);
+        return installedCode;
     }
 
     public SPIRVInstalledCode getInstalledCode(String id, String entryPoint) {
