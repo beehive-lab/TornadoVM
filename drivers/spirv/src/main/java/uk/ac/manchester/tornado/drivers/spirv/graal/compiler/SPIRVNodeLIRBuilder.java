@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.meta.Value;
+import java.util.List;
+
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
@@ -15,13 +16,13 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 
-import java.util.List;
+import jdk.vm.ci.meta.Value;
 
 public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     public SPIRVNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
         super(graph, gen, nodeMatchRules);
-        System.out.println("Functionality pending");
+        System.out.println("Functionality pending - SPIRVNodeLIRBuilder ");
     }
 
     @Override

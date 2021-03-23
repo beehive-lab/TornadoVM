@@ -12,7 +12,6 @@ import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AbstractParallelNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -47,17 +46,14 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        System.out.println("Run Method -- TornadoParallelSkeduler for SPIRV");
         if (context.getMeta() == null || context.getMeta().enableThreadCoarsener()) {
             return;
         }
 
         SPIRVTornadoDevice device = (SPIRVTornadoDevice) context.getDeviceMapping();
-        final TornadoSchedulingStrategy strategy = device.getPreferredSchedule();
         long[] maxWorkItemSizes = device.getPhysicalDevice().getDeviceMaxWorkItemSizes();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(parallelRange -> {
-            System.out.println("PARALLEL RANGE: " + parallelRange);
             if (context.getMeta().enableParallelization() && maxWorkItemSizes[parallelRange.index()] > 1) {
                 ParallelOffsetNode offset = parallelRange.offset();
                 ParallelStrideNode stride = parallelRange.stride();
