@@ -124,10 +124,14 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         return deviceProperties.getNumEUsPerSubslice();
     }
 
-    // FIXME
+    /**
+     * Return max thread for each dimension
+     * 
+     * @return
+     */
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
-        return new long[0];
+        return getDeviceMaxWorkgroupDimensions();
     }
 
     // FIXME
