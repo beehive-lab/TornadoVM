@@ -2,7 +2,49 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
 import java.io.IOException;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeComputeProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceCacheProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceImageProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryAccessProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
 public class TestLevelZero {
 

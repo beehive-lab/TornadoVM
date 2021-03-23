@@ -1,9 +1,30 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
-import uk.ac.manchester.tornado.drivers.spirv.ZeCommandListFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.*;
-
 import java.util.Arrays;
+
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemAllocHostDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
 public class TestCopies {
 

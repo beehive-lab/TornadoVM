@@ -1,7 +1,4 @@
-package uk.ac.manchester.tornado.drivers.spirv;
-
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
+package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
 import static uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeConstants.ZE_BIT;
 
