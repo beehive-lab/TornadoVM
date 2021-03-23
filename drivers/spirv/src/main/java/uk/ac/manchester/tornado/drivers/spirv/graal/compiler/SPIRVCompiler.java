@@ -133,6 +133,7 @@ public class SPIRVCompiler {
     private static SPIRVCompilationResult compile(SPIRVCompilationRequest r) {
         assert !r.graph.isFrozen();
         try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
+            System.out.println("FRONT END COMPILATION");
             emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
                     r.batchThreads);
             boolean isParallel = false;
@@ -144,6 +145,7 @@ public class SPIRVCompiler {
             if (r.meta != null && (r.meta.isParallel() || r.meta.isGridSchedulerEnabled())) {
                 isParallel = true;
             }
+            System.out.println("BACKEND COMPILATION");
             emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);
@@ -340,7 +342,9 @@ public class SPIRVCompiler {
         OptimisticOptimizations optimisticOptimizations = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedJavaMethod.getProfilingInfo();
 
+        System.out.println("New Compilation Result");
         SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(buildKernelName(resolvedJavaMethod.getName(), task), taskMeta);
+        System.out.println("\t" + kernelCompilationResult);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -367,7 +371,9 @@ public class SPIRVCompiler {
                 batchThreads);
         // @formatter:on
 
+        System.out.println("About to execute all optimizations");
         kernelCompilationRequest.execute();
+        System.out.println("END all optimizations");
 
         if (Tornado.DUMP_COMPILED_METHODS) {
             methods.add(kernelGraph.method());

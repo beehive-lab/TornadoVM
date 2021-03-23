@@ -122,6 +122,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
 
+        System.out.println("SKETCHER: " + sketch);
+
         // copy meta data into task
         final TaskMetaData sketchMeta = sketch.getMeta();
         final TaskMetaData taskMeta = executable.meta();
@@ -144,21 +146,21 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
             profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            System.out.println("About to compile the sketcher to binary");
             result = SPIRVCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            System.out.println("From LIR To install bin code");
             TornadoInstalledCode installedCode = deviceContext.installCode(result);
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
-        } catch (
-
-        Exception e) {
-            TornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            TornadoLogger.fatal("exception occurred when compiling %s", task.getMethod().getName());
-            TornadoLogger.fatal("exception: %s", e.toString());
+        } catch (Exception e) {
+            TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            TornadoLogger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
+            TornadoLogger.fatal("Exception: %s\n", e.toString());
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }

@@ -7,7 +7,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 /**
- * Descriptor that represents the SPIRV Architecture
+ * Descriptor that represents the SPIRV Architecture.
  */
 public class SPIRVTargetDescription extends TargetDescription {
 

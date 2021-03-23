@@ -71,7 +71,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         InliningPolicy inliningPolicy = (TornadoOptions.FULL_INLINING) ? new TornadoFullInliningPolicy() : new TornadoPartialInliningPolicy();
 
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
-        appendPhase(canonicalizer);
+        // appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
             appendPhase(new InliningPhase(inliningPolicy, canonicalizer));

@@ -8,7 +8,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 /**
  * How to run?
  * 
- * tornado uk.ac.manchester.tornado.examples.spirv.Test
+ * <p>
+ * tornado --debug uk.ac.manchester.tornado.examples.spirv.Test
+ * </p>
  */
 public class Test {
     public static void add(int[] a) {
