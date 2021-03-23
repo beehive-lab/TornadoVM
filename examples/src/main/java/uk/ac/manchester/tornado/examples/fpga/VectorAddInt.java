@@ -28,8 +28,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  */
 public class VectorAddInt {
 
-    private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
+    private static void vectorAdd(int[] a, int[] b, int[] c, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
             c[i] = a[i] + b[i];
         }
     }
@@ -50,13 +50,13 @@ public class VectorAddInt {
 
         //@formatter:off
         TaskSchedule graph = new TaskSchedule("s0")
-                .task("t0", VectorAddInt::vectorAdd, a, b, c)
+                .task("t0", VectorAddInt::vectorAdd, a, b, c, size)
         .streamOut(c);
         //@formatter:on
 
         for (int idx = 0; idx < 10; idx++) {
             graph.execute();
-            vectorAdd(a, b, result);
+            vectorAdd(a, b, result, size);
 
             boolean wrongResult = false;
             for (int i = 0; i < c.length; i++) {
