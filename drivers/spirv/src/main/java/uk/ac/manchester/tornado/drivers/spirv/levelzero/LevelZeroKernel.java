@@ -10,6 +10,10 @@ public class LevelZeroKernel {
         this.kernelHandle = kernelHandle;
     }
 
+    public ZeKernelHandle getKernelHandle() {
+        return this.kernelHandle;
+    }
+
     native int zeKernelSuggestGroupSize_native(long ptrZeKernelHandle, int globalSizeX, int globalSizeY, int globalSizeZ, int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ);
 
     public int zeKernelSuggestGroupSize(long ptrZeKernelHandle, int globalSizeX, int globalSizeY, int globalSizeZ, int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {

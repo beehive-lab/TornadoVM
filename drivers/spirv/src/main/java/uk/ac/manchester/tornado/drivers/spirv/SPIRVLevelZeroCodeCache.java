@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
@@ -85,7 +86,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel);
 
         SPIRVModule spirvModule = new SPIRVLevelZeroModule(levelZeroModule, levelZeroKernel, entryPoint, binaryModule);
-        SPIRVInstalledCode installedCode = new SPIRVInstalledCode(id, spirvModule, deviceContext);
+        SPIRVInstalledCode installedCode = new SPIRVLevelZeroInstalledCode(id, spirvModule, deviceContext);
 
         // Install module in the code cache
         cache.put(id + "-" + entryPoint, installedCode);
