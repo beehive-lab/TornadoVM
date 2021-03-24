@@ -10,12 +10,13 @@ public class SPIRVOCLCodeCache extends SPIRVCodeCache {
     }
 
     @Override
-    public SPIRVInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public SPIRVInstalledCode installSPIRVBinary(String id, String entryPoint, byte[] targetCode) {
+    public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] pathToFile) {
         throw new RuntimeException("Unimplemented");
     }
+
 }

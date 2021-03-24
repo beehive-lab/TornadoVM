@@ -1,7 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
-import java.io.IOException;
-
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
@@ -45,6 +43,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
+
+import java.io.IOException;
 
 public class TestLevelZero {
 
@@ -251,7 +251,7 @@ public class TestLevelZero {
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             // Print Logs
             int[] sizeLog = new int[1];
-            String errorMessage = new String();
+            String errorMessage = "";
             result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
             System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage);
             LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);

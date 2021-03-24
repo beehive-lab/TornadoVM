@@ -118,7 +118,9 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", task.getFilename());
         try {
             final byte[] spirvBinary = Files.readAllBytes(pathToSPIRVBin);
-            return deviceContext.installCode(task.meta(), task.getId(), task.getEntryPoint(), spirvBinary);
+            // return deviceContext.installCode(task.meta(), task.getId(),
+            // task.getEntryPoint(), spirvBinary);
+            return deviceContext.installBinary(task.meta(), task.getId(), task.getEntryPoint(), task.getFilename());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -171,7 +173,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            TornadoInstalledCode installedCode = deviceContext.installCode(result);
+            TornadoInstalledCode installedCode = deviceContext.installBinary(result);
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;

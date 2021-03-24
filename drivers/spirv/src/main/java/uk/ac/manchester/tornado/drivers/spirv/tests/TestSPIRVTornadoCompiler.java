@@ -27,7 +27,7 @@ public class TestSPIRVTornadoCompiler {
 
         // byte[] binary = ...
         byte[] binary = new byte[100];
-        SPIRVInstalledCode code = codeCache.installSPIRVBinary("saxpy", "saxpy", binary);
+        SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "saxpy", "saxpy", binary);
         String generatedCode = code.getGeneratedSourceCode();
 
         if (TornadoOptions.PRINT_SOURCE) {

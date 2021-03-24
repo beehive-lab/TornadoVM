@@ -31,7 +31,8 @@ public abstract class SPIRVCodeCache {
         return cache.get(id + "-" + entryPoint);
     }
 
-    public abstract SPIRVInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] code);
+    public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile);
 
-    public abstract SPIRVInstalledCode installSPIRVBinary(String id, String entryPoint, byte[] targetCode);
+    public abstract SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] pathToFile);
+
 }

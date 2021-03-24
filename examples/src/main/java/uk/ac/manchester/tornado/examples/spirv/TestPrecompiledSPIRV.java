@@ -29,7 +29,7 @@ public class TestPrecompiledSPIRV {
         // @formatter:off
         new TaskSchedule("s0")
                 .prebuiltTask("t0",
-                        "add",
+                        "copyTest",
                         filePath,
                         new Object[] { a },
                         new Access[] { Access.WRITE },

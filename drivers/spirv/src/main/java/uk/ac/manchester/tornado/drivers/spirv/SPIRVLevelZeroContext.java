@@ -53,6 +53,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
     }
 
+    public LevelZeroContext getLevelZeroContext() {
+        return levelZeroContext;
+    }
+
     public static int getCommandQueueOrdinal(LevelZeroDevice device) {
         int[] numQueueGroups = new int[1];
         int result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, null);
