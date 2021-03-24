@@ -24,6 +24,9 @@ public abstract class SPIRVCodeCache {
     }
 
     public void reset() {
+        for (SPIRVInstalledCode code : cache.values()) {
+            code.invalidate();
+        }
         cache.clear();
     }
 
