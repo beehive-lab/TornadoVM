@@ -47,7 +47,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
         // Create LevelZeroDeviceContext
         for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
-            SPIRVDeviceContext deviceContext = new SPIRVDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
+            SPIRVDeviceContext deviceContext = new SPIRVLevelZeroDeviceContext(devices.get(deviceIndex), commandQueues.get(deviceIndex), this);
             devices.get(deviceIndex).setDeviContext(deviceContext);
             spirvDeviceContext.add(deviceContext);
         }
