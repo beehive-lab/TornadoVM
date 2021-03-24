@@ -1,5 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,6 +51,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -97,8 +102,25 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
         if (task instanceof CompilableTask) {
             return compileTask((CompilableTask) task);
+        } else if (task instanceof PrebuiltTask) {
+            return compilePreBuiltTask((PrebuiltTask) task);
         } else {
-            throw new RuntimeException("Prebuilt task not supported yet");
+            throw new RuntimeException("SchedulableTask task not supported");
+        }
+    }
+
+    private TornadoInstalledCode compilePreBuiltTask(PrebuiltTask task) {
+        final SPIRVDeviceContext deviceContext = getDeviceContext();
+        if (deviceContext.isCached(task.getId(), task.getEntryPoint())) {
+            return deviceContext.getInstalledCode(task.getId(), task.getEntryPoint());
+        }
+        final Path pathToSPIRVBin = Paths.get(task.getFilename());
+        TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", task.getFilename());
+        try {
+            final byte[] spirvBinary = Files.readAllBytes(pathToSPIRVBin);
+            return deviceContext.installCode(task.meta(), task.getId(), task.getEntryPoint(), spirvBinary);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

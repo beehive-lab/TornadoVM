@@ -9,10 +9,10 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * How to run?
  * 
  * <p>
- * tornado --debug uk.ac.manchester.tornado.examples.spirv.Test
+ * tornado --igv --debug uk.ac.manchester.tornado.examples.spirv.TestSPIRV
  * </p>
  */
-public class Test {
+public class TestSPIRV {
     public static void add(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = 10;
@@ -25,7 +25,7 @@ public class Test {
         int[] a = new int[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", Test::add, a) //
+                .task("t0", TestSPIRV::add, a) //
                 .streamOut(a) //
                 .execute(); //
 
