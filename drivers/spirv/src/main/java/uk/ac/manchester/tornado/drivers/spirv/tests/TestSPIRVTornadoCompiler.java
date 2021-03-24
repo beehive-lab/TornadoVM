@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.spirv.tests;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPlatform;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
@@ -18,7 +19,7 @@ public class TestSPIRVTornadoCompiler {
         SPIRVPlatform platform = SPIRVProxy.getPlatform(0);
         SPIRVContext context = platform.createContext();
         SPIRVDeviceContext deviceContext = context.getDeviceContext(0);
-        SPIRVCodeCache codeCache = new SPIRVCodeCache(deviceContext);
+        SPIRVCodeCache codeCache = new SPIRVLevelZeroCodeCache(deviceContext);
 
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("SPIRV-Backend");
         TaskMetaData task = new TaskMetaData(scheduleMetaData, "saxpy");

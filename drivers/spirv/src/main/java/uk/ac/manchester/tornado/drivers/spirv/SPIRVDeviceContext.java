@@ -31,7 +31,12 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         this.queue = queue;
         this.tornadoDevice = new SPIRVTornadoDevice(device);
         this.memoryManager = new SPIRVMemoryManager(this);
-        this.codeCache = new SPIRVCodeCache(this);
+        if (this instanceof SPIRVLevelZeroDeviceContext) {
+            this.codeCache = new SPIRVLevelZeroCodeCache(this);
+        } else {
+            this.codeCache = new SPIRVOCLCodeCache(this);
+        }
+
     }
 
     public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
