@@ -11,7 +11,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  *
  * <code>
- * tornado --debug uk.ac.manchester.tornado.examples.spirv.TestPrecompiledSPIRV
+ * tornado --printBytecodes --debug -Dtornado.spirv.levelzero.memoryAlloc.shared=True uk.ac.manchester.tornado.examples.spirv.TestPrecompiledSPIRV
  * </code>
  */
 public class TestPrecompiledSPIRV {
