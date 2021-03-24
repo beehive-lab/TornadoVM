@@ -81,10 +81,13 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
         LevelZeroUtils.errorLog("zeKernelCreate", result);
 
-        // We create a kernel Object
+        // Create a Level Zero kernel Object
         LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel);
 
-        SPIRVInstalledCode installedCode = new SPIRVInstalledCode(id, deviceContext);
+        SPIRVModule spirvModule = new SPIRVLevelZeroModule(levelZeroModule, levelZeroKernel, entryPoint, binaryModule);
+        SPIRVInstalledCode installedCode = new SPIRVInstalledCode(id, spirvModule, deviceContext);
+
+        // Install module in the code cache
         cache.put(id + "-" + entryPoint, installedCode);
         return installedCode;
     }
