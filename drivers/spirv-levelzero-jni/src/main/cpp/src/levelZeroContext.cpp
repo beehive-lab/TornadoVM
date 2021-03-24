@@ -450,7 +450,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     deviceDesc.flags = flagDeviceDesc;
 
     ze_result_t result = zeMemAllocDevice(context, &deviceDesc, allocSize, alignment, device, &buffer);
-    LOG_ZE_JNI("zeMemAllocDevice", result);
+    LOG_ZE_JNI("zeMemAllocDevice", result)
 
     // Update Device Description
     env->SetIntField(javaDeviceMemAllocDescClass, fieldTypeDeviceDesc, deviceDesc.stype);

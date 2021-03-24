@@ -1,16 +1,16 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 
 // FIXME <REFACTOR> THis class has similarities with the rest of the backends
 public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
@@ -20,8 +20,8 @@ public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
     private boolean onDevice;
     private byte argStart;
 
-    public SPIRVCallStack(long numBytes, long numArgs, SPIRVDeviceContext deviceContext) {
-        super(numBytes, (numArgs + RESERVED_SLOTS) << 3, deviceContext);
+    public SPIRVCallStack(long offset, int numArgs, SPIRVDeviceContext deviceContext) {
+        super(deviceContext, offset, (numArgs + RESERVED_SLOTS) << 3);
         buffer.clear();
         setArgStart(buffer);
         onDevice = false;
@@ -114,5 +114,4 @@ public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
             }
         }
     }
-
 }

@@ -415,7 +415,7 @@ public class TornadoVM extends TornadoLogger {
             try {
                 task.attachProfiler(timeProfiler);
                 if (taskIndex == (tasks.size() - 1)) {
-                    // If last task within the task-schedule -> we force compilation
+                    // If it is the last task within the task-schedule -> we force compilation
                     // This is useful when compiling code for Xilinx/Altera FPGAs, that has to
                     // be a single source
                     task.forceCompilation();

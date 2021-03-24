@@ -13,11 +13,6 @@ public class SPIRVInstalledCode extends InstalledCode implements TornadoInstalle
     private SPIRVDeviceContext deviceContext;
     private SPIRVModule spirvModule;
 
-    public SPIRVInstalledCode(String name, SPIRVDeviceContext deviceContext) {
-        super(name);
-        this.deviceContext = deviceContext;
-    }
-
     public SPIRVInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name);
         this.deviceContext = deviceContext;

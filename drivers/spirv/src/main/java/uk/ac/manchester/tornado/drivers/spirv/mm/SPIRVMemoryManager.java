@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
@@ -8,8 +10,6 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 // FIXME <REFACTOR> This class can be almost common for all three backends
 public class SPIRVMemoryManager implements TornadoMemoryProvider {
@@ -94,6 +94,10 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     public long toAbsoluteDeviceAddress(long address) {
         long result = address;
+        // FIXME : Check what happens with device memory using LevelZero.
+        if (!TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
+            deviceHeapPointer = 0;
+        }
         guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
         result += deviceHeapPointer;
         return result;
@@ -106,7 +110,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     // FIXME <REFACTOR> <S>
     public SPIRVByteBuffer getSubBuffer(int bufferOffset, int numBytes) {
-        return new SPIRVByteBuffer(numBytes, bufferOffset, deviceContext);
+        return new SPIRVByteBuffer(deviceContext, bufferOffset, numBytes);
     }
 
     // FIXME <REFACTOR> <S>

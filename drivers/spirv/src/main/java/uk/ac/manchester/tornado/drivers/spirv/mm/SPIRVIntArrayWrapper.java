@@ -5,13 +5,13 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVIntArrayWrapper extends SPIRVArrayWrapper<int[]> {
 
-    public SPIRVIntArrayWrapper(SPIRVDeviceContext device, long size) {
-        this(device, false, size);
-        System.out.println("CREATING AN INT BUFFER");
+    public SPIRVIntArrayWrapper(SPIRVDeviceContext device, long batchSize) {
+        this(device, false, batchSize);
+        System.out.println("CREATING AN INT BUFFER of BATCH-SIZE: " + batchSize);
     }
 
-    public SPIRVIntArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long size) {
-        super(device, JavaKind.Int, isFinal, size);
+    public SPIRVIntArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long batchSize) {
+        super(device, JavaKind.Int, isFinal, batchSize);
     }
 
     @Override

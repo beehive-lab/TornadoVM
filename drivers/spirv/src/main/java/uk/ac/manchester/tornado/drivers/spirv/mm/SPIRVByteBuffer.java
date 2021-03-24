@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
+import java.nio.ByteBuffer;
+
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-
-import java.nio.ByteBuffer;
 
 // FIXME <Refactor> <S>
 public class SPIRVByteBuffer {
@@ -13,11 +13,12 @@ public class SPIRVByteBuffer {
     private long offset;
     private SPIRVDeviceContext deviceContext;
 
-    public SPIRVByteBuffer(long numBytes, long offset, SPIRVDeviceContext deviceContext) {
+    public SPIRVByteBuffer(SPIRVDeviceContext deviceContext, long offset, long numBytes) {
         this.numBytes = numBytes;
         this.offset = offset;
         this.deviceContext = deviceContext;
 
+        System.out.println("!!!!!!!!!!!!!!!!!! Buffer Allocate with nuimBytes: " + numBytes + " and offset: " + offset);
         buffer = ByteBuffer.allocate((int) numBytes);
         buffer.order(deviceContext.getDevice().getByteOrder());
     }
@@ -84,7 +85,7 @@ public class SPIRVByteBuffer {
     }
 
     public SPIRVByteBuffer getSubBuffer(int offset, int numBytes) {
-        return new SPIRVByteBuffer(numBytes, offset, deviceContext);
+        return new SPIRVByteBuffer(deviceContext, offset, numBytes);
     }
 
     public long toBuffer() {
