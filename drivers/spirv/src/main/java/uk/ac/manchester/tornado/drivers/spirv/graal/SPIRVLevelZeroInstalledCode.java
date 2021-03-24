@@ -9,6 +9,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.LevelZeroUtils;
@@ -29,6 +30,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
     private void setKernelArgs(final SPIRVByteBuffer stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
 
+        // Enqueue write
+        stack.enqueueWrite(null);
+
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
@@ -37,10 +41,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         // heap (global memory)
         buffer.clear();
         buffer.putLong(stack.toBuffer());
-        // int result =
-        // levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0,
-        // Sizeof.POINTER.getNumBytes(), buffer);
-        // LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), buffer.array());
+        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
     }
 
@@ -68,17 +70,16 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
-        // FIXME <PENDING> Set arguments
-        // result =
-        // levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0,
-        // Sizeof.POINTER.getNumBytes(), bufferA);
-        // LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        setKernelArgs((SPIRVByteBuffer) stack, null, meta);
 
+        System.out.println("groupSizeX[0]: " + groupSizeX[0]);
+        System.out.println("groupSizeY[0]: " + groupSizeY[0]);
+        System.out.println("groupSizeZ[0]: " + groupSizeZ[0]);
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX((int) globalWork[0] / groupSizeX[0]);
-        dispatch.setGroupCountY((int) globalWork[1] / groupSizeY[0]);
-        dispatch.setGroupCountZ((int) globalWork[2] / groupSizeZ[0]);
+        dispatch.setGroupCountX(groupSizeX[0]);
+        dispatch.setGroupCountY(groupSizeY[0]);
+        dispatch.setGroupCountZ(groupSizeZ[0]);
 
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(0);
         LevelZeroCommandList commandList = commandQueue.getCommandList();

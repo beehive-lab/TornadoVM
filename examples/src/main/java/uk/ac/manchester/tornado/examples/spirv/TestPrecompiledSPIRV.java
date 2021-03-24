@@ -17,8 +17,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 public class TestPrecompiledSPIRV {
 
     public static void main(String[] args) {
-        final int numElements = 8;
-        int[] a = new int[256];
+        final int numElements = 256;
+        int[] a = new int[numElements];
         Arrays.fill(a, 1);
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
@@ -34,7 +34,7 @@ public class TestPrecompiledSPIRV {
                         new Object[] { a },
                         new Access[] { Access.WRITE },
                         defaultDevice,
-                        new int[] { numElements })
+                        new int[] { numElements, 1, 1 })
                 .streamOut(a)
                 .execute();
         // @formatter:on

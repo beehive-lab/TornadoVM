@@ -60,3 +60,17 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeKernelSetArgumentValue", result);
     return result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
+ * Method:    zeKernelSetArgumentValue_nativeByteArg
+ * Signature: (JII[B)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1nativeByteArg
+        (JNIEnv *env, jobject object, jlong javaKernelHandlerPtr, jint argIndex, jint argSize, jbyteArray arrayBuffer) {
+    ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
+    jbyte* buffer = env->GetByteArrayElements(arrayBuffer, 0);
+    ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, buffer);
+    LOG_ZE_JNI("zeKernelSetArgumentValue", result)
+    return result;
+}

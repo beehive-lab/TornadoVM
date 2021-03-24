@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
@@ -179,14 +179,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         scheduleMeta.setDevice(backend.getDeviceContext().asMapping());
     }
 
-    public long toAbsoluteAddress() {
-        return deviceBufferAddress;
-    }
-
-    long toAbsoluteDeviceAddress(final long address) {
+    public long toAbsoluteDeviceAddress(final long address) {
         long result = address;
 
-        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
+        TornadoInternalError.guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
         result += deviceBufferAddress;
 
         return result;
