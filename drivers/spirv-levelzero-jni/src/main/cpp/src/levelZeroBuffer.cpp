@@ -217,6 +217,9 @@ JNIEXPORT jlongArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelze
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_memset_1nativeInt
         (JNIEnv * env, jobject object, jobject javaBufferObject, jint value, jint bufferSize) {
+
+    std::cout << "Buffer copy" << std::endl;
+
     jclass klass = env->GetObjectClass(javaBufferObject);
     jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
     jlong ptr = env->GetLongField(javaBufferObject, fieldPointer);
