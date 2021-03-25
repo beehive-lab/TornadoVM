@@ -17,7 +17,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.LevelZeroUtils;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {

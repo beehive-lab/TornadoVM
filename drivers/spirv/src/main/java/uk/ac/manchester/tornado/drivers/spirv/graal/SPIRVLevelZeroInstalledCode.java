@@ -12,7 +12,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.LevelZeroUtils;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;

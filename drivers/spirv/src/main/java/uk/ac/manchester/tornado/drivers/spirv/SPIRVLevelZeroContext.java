@@ -21,7 +21,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.LevelZeroUtils;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVLevelZeroContext extends SPIRVContext {

@@ -4,10 +4,21 @@ public class LevelZeroCommandQueue {
 
     private LevelZeroContext context;
     private ZeCommandQueueHandle zeCommandQueueHandle;
+    private ZeCommandQueueDescription commandQueueDescription;
 
     public LevelZeroCommandQueue(LevelZeroContext context, ZeCommandQueueHandle zeCommandQueueHandle) {
         this.context = context;
         this.zeCommandQueueHandle = zeCommandQueueHandle;
+    }
+
+    public LevelZeroCommandQueue(LevelZeroContext context, ZeCommandQueueHandle zeCommandQueueHandle, ZeCommandQueueDescription commandQueueDescription) {
+        this.context = context;
+        this.zeCommandQueueHandle = zeCommandQueueHandle;
+        this.commandQueueDescription = commandQueueDescription;
+    }
+
+    public ZeCommandQueueDescription getCommandQueueDescription() {
+        return this.commandQueueDescription;
     }
 
     public LevelZeroContext getContext() {

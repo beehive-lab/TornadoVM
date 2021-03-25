@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
+import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils.errorLog;
+
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
@@ -39,12 +41,14 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
 /**
  * How to run?
- * 
+ *
  * <code>
- *     $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
  * </code>
  */
 public class TestLookUpBufferAddress {
+
+    private static Object LevelZeroUtils;
 
     public static LevelZeroContext zeInitContext(LevelZeroDriver driver) {
         if (driver == null) {
@@ -52,21 +56,21 @@ public class TestLookUpBufferAddress {
         }
 
         int result = driver.zeInit(ZeInitFlag.ZE_INIT_FLAG_GPU_ONLY);
-        LevelZeroUtils.errorLog("zeInit", result);
+        errorLog("zeInit", result);
 
         int[] numDrivers = new int[1];
         result = driver.zeDriverGet(numDrivers, null);
-        LevelZeroUtils.errorLog("zeDriverGet", result);
+        errorLog("zeDriverGet", result);
 
         ZeDriverHandle driverHandler = new ZeDriverHandle(numDrivers[0]);
         result = driver.zeDriverGet(numDrivers, driverHandler);
-        LevelZeroUtils.errorLog("zeDriverGet", result);
+        errorLog("zeDriverGet", result);
 
         ZeContextDesc contextDescription = new ZeContextDesc();
         contextDescription.setSType(Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC);
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0], 0);
-        LevelZeroUtils.errorLog("zeContextCreate", result);
+        errorLog("zeContextCreate", result);
         return context;
     }
 
@@ -77,12 +81,12 @@ public class TestLookUpBufferAddress {
         // Get number of devices in a driver
         int[] deviceCount = new int[1];
         int result = driver.zeDeviceGet(driverHandler, 0, deviceCount, null);
-        LevelZeroUtils.errorLog("zeDeviceGet", result);
+        errorLog("zeDeviceGet", result);
 
         // Instantiate a device Handler
         ZeDevicesHandle deviceHandler = new ZeDevicesHandle(deviceCount[0]);
         result = driver.zeDeviceGet(driverHandler, 0, deviceCount, deviceHandler);
-        LevelZeroUtils.errorLog("zeDeviceGet", result);
+        errorLog("zeDeviceGet", result);
 
         // ============================================
         // Get the device
@@ -90,14 +94,14 @@ public class TestLookUpBufferAddress {
         LevelZeroDevice device = driver.getDevice(driverHandler, 0);
         ZeDeviceProperties deviceProperties = new ZeDeviceProperties();
         result = device.zeDeviceGetProperties(device.getDeviceHandlerPtr(), deviceProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetProperties", result);
+        errorLog("zeDeviceGetProperties", result);
         return device;
     }
 
     public static int getCommandQueueOrdinal(LevelZeroDevice device) {
         int[] numQueueGroups = new int[1];
         int result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, null);
-        LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
+        errorLog("zeDeviceGetCommandQueueGroupProperties", result);
 
         if (numQueueGroups[0] == 0) {
             throw new RuntimeException("Number of Queue Groups is 0 for device: " + device.getDeviceProperties().getName());
@@ -106,7 +110,7 @@ public class TestLookUpBufferAddress {
 
         ZeCommandQueueGroupProperties[] commandQueueGroupProperties = new ZeCommandQueueGroupProperties[numQueueGroups[0]];
         result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, commandQueueGroupProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
+        errorLog("zeDeviceGetCommandQueueGroupProperties", result);
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
             if ((commandQueueGroupProperties[i].getFlags()
@@ -129,7 +133,7 @@ public class TestLookUpBufferAddress {
 
         ZeCommandQueueHandle zeCommandQueueHandle = new ZeCommandQueueHandle();
         int result = context.zeCommandQueueCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), cmdDescriptor, zeCommandQueueHandle);
-        LevelZeroUtils.errorLog("zeCommandQueueCreate", result);
+        errorLog("zeCommandQueueCreate", result);
         return new LevelZeroCommandQueue(context, zeCommandQueueHandle);
     }
 
@@ -139,7 +143,7 @@ public class TestLookUpBufferAddress {
         cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
         ZeCommandListHandle commandListHandler = new ZeCommandListHandle();
         int result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), cmdListDescriptor, commandListHandler);
-        LevelZeroUtils.errorLog("zeCommandListCreate", result);
+        errorLog("zeCommandListCreate", result);
         return new LevelZeroCommandList(context, commandListHandler);
     }
 
@@ -160,10 +164,10 @@ public class TestLookUpBufferAddress {
 
         LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
         int result = binaryModule.readBinary();
-        LevelZeroUtils.errorLog("readBinary", result);
+        errorLog("readBinary", result);
 
         result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), binaryModule, moduleDesc, module, buildLog);
-        LevelZeroUtils.errorLog("zeModuleCreate", result);
+        errorLog("zeModuleCreate", result);
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             // Print Logs
@@ -171,7 +175,7 @@ public class TestLookUpBufferAddress {
             String errorMessage = "";
             result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
             System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage);
-            LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
+            errorLog("zeModuleBuildLogGetString", result);
         }
 
         // Create Module Object
@@ -179,13 +183,13 @@ public class TestLookUpBufferAddress {
 
         // Destroy Log
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
-        LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
+        errorLog("zeModuleBuildLogDestroy", result);
 
         ZeKernelDesc kernelDesc = new ZeKernelDesc();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName("lookupBufferAddress");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
-        LevelZeroUtils.errorLog("zeKernelCreate", result);
+        errorLog("zeKernelCreate", result);
 
         // We create a kernel Object
         LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel);
@@ -196,10 +200,10 @@ public class TestLookUpBufferAddress {
         int[] groupSizeY = new int[] { 1 };
         int[] groupSizeZ = new int[] { 1 };
         result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 1, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
-        LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
+        errorLog("zeKernelSuggestGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
-        LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
+        errorLog("zeKernelSetGroupSize", result);
 
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
         deviceMemAllocDesc.setOrdinal(0);
@@ -208,12 +212,12 @@ public class TestLookUpBufferAddress {
 
         // This is the equivalent of a clCreateBuffer
         result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize * 10, allocSize * 10, device.getDeviceHandlerPtr(), deviceBuffer);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+        errorLog("zeMemAllocDevice", result);
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+        errorLog("zeCommandListAppendBarrier", result);
 
         result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceBuffer.getPtrBuffer());
-        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        errorLog("zeKernelSetArgumentValue", result);
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
@@ -223,44 +227,44 @@ public class TestLookUpBufferAddress {
 
         // Launch the kernel on the Intel Integrated GPU
         result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendLaunchKernel", result);
+        errorLog("zeCommandListAppendLaunchKernel", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+        errorLog("zeCommandListAppendBarrier", result);
 
         // Copy From Device-Allocated memory to host (heapBuffer2)
         result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), heapBuffer2, deviceBuffer, allocSize, 0, 0, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
+        errorLog("zeCommandListAppendMemoryCopy", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+        errorLog("zeCommandListAppendBarrier", result);
 
         // Close the command list
         result = commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
-        LevelZeroUtils.errorLog("zeCommandListClose", result);
+        errorLog("zeCommandListClose", result);
         result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(), 1, commandList.getCommandListHandler(), null);
-        LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
+        errorLog("zeCommandQueueExecuteCommandLists", result);
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
-        LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
+        errorLog("zeCommandQueueSynchronize", result);
 
         System.out.println("RESULT: " + Arrays.toString(heapBuffer2));
 
         // Free resources
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
-        LevelZeroUtils.errorLog("zeMemFree", result);
+        errorLog("zeMemFree", result);
         result = context.zeCommandListDestroy(commandList.getCommandListHandler());
-        LevelZeroUtils.errorLog("zeCommandListDestroy", result);
+        errorLog("zeCommandListDestroy", result);
         result = context.zeCommandQueueDestroy(commandQueue.getCommandQueueHandle());
-        LevelZeroUtils.errorLog("zeCommandQueueDestroy", result);
+        errorLog("zeCommandQueueDestroy", result);
     }
 
     /**
      * Run as follows:
-     * 
+     *
      * <code>
-     *     $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
+     * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
      * </code>
-     * 
+     *
      * @param args
      */
     public static void main(String[] args) {
@@ -275,7 +279,7 @@ public class TestLookUpBufferAddress {
         testLookUpBufferAddress(context, device);
 
         int result = driver.zeContextDestroy(context);
-        LevelZeroUtils.errorLog("zeContextDestroy", result);
+        errorLog("zeContextDestroy", result);
     }
 
 }

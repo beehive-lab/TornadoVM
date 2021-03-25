@@ -1,7 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -25,6 +23,9 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemAllocHostDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
+
+import java.util.Arrays;
 
 public class TestCopies {
 
@@ -94,6 +95,7 @@ public class TestCopies {
             if ((commandQueueGroupProperties[i].getFlags()
                     & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
                 ordinal = i;
+                System.out.println("ORDINAL: " + ordinal);
                 break;
             }
         }
