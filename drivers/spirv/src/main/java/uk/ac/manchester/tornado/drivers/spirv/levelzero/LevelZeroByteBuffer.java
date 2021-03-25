@@ -32,6 +32,10 @@ public class LevelZeroByteBuffer {
         memset_native(this, value, bufferSize);
     }
 
+    public void memset(int value, int bufferSize) {
+        memset_nativeInt(this, value, bufferSize);
+    }
+
     public boolean isEqual(LevelZeroByteBuffer bufferB, int size) {
         return isEqual(this.ptrBuffer, bufferB.getPtrBuffer(), size);
     }
@@ -41,6 +45,8 @@ public class LevelZeroByteBuffer {
     }
 
     private native void memset_native(LevelZeroByteBuffer javaBuffer, byte value, int bufferSize);
+
+    private native void memset_nativeInt(LevelZeroByteBuffer javaBuffer, int value, int bufferSize);
 
     private native boolean isEqual(long bufferAPtr, long bufferBPtr, int size);
 

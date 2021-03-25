@@ -1,7 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
+import java.io.IOException;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -44,8 +46,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
-import java.io.IOException;
-
 /**
  * Kernel to test:
  * 
@@ -62,11 +62,11 @@ import java.io.IOException;
  * <code>
  *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
  *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
- *     $ mv opencl-copy.spv /tmp/example.spv
+ *     $ cp opencl-copy.spv /tmp/copy.spv
  * </code>
  * 
  */
-public class TestLevelZero {
+public class TestLevelZeroDedicatedMemory {
 
     // Test Program
     public static void main(String[] args) throws IOException {
@@ -244,13 +244,13 @@ public class TestLevelZero {
         ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
-        LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
-        result = context.zeMemAllocShared(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferA);
-        LevelZeroUtils.errorLog("zeMemAllocShared", result);
+        LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
+        result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferA);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
-        LevelZeroBufferInteger bufferB = new LevelZeroBufferInteger();
-        result = context.zeMemAllocShared(context.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
-        LevelZeroUtils.errorLog("zeMemAllocShared", result);
+        LevelZeroByteBuffer bufferB = new LevelZeroByteBuffer();
+        result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
         bufferA.memset(100, elements);
         bufferB.memset(0, elements);
@@ -261,7 +261,7 @@ public class TestLevelZero {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/tmp/example.spv");
+        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/tmp/copy.spv");
         result = binaryModule.readBinary();
         LevelZeroUtils.errorLog("readBinary", result);
 
@@ -304,8 +304,8 @@ public class TestLevelZero {
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
-        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), bufferA);
-        result |= levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 1, Sizeof.POINTER.getNumBytes(), bufferB);
+        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), bufferA.getPtrBuffer());
+        result |= levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 1, Sizeof.POINTER.getNumBytes(), bufferB.getPtrBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
         // Dispatch SPIR-V Kernel

@@ -92,6 +92,14 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jlongArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong_getLongBuffer_1native
         (JNIEnv *, jobject, jlong, jint);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer
+ * Method:    memset_nativeInt
+ * Signature: (Luk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;II)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_memset_1nativeInt
+        (JNIEnv *, jobject, jobject, jint, jint);
+
 }
 #endif
 #endif

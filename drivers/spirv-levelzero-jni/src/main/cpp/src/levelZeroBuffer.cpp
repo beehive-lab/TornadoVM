@@ -209,3 +209,24 @@ JNIEXPORT jlongArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelze
     env->SetLongArrayRegion(javaArray, 0, size, offHeapByteArray);
     return javaArray;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer
+ * Method:    memset_nativeInt
+ * Signature: (Luk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;II)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_memset_1nativeInt
+        (JNIEnv * env, jobject object, jobject javaBufferObject, jint value, jint bufferSize) {
+    jclass klass = env->GetObjectClass(javaBufferObject);
+    jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
+    jlong ptr = env->GetLongField(javaBufferObject, fieldPointer);
+
+    int *buffer = nullptr;
+    if (ptr != -1) {
+        buffer = reinterpret_cast<int *>(ptr);
+    }
+    for (int i = 0; i < bufferSize; i++) {
+        buffer[i] = value;
+    }
+    env->SetLongField(javaBufferObject, fieldPointer, reinterpret_cast<jlong>(buffer));
+}
