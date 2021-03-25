@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
+import java.io.IOException;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
@@ -44,8 +46,26 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
-import java.io.IOException;
-
+/**
+ * Kernel to test:
+ * 
+ * <code>
+ *    __kernel void copydata(__global int* input, __global int* output) {
+ * 	         uint idx = get_global_id(0);
+ * 	         output[idx] = input[idx];
+ *    }      
+ * </code>
+ * 
+ * 
+ * To compile to SPIR-V:
+ * 
+ * <code>
+ *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
+ *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
+ *     $ mv opencl-copy.spv /tmp/example.spv
+ * </code>
+ * 
+ */
 public class TestLevelZero {
 
     // Test Program

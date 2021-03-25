@@ -204,7 +204,6 @@ public class TestLookUpBufferAddress {
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
-        final int alignment = 1;
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
 
         // This is the equivalent of a clCreateBuffer
