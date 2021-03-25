@@ -38,4 +38,10 @@ public class LevelZeroKernel {
     public int zeKernelSetArgumentValue(long ptrZeKernelHandle, int argIndex, int argSize, byte[] argValue) {
         return zeKernelSetArgumentValue_nativeByteArg(ptrZeKernelHandle, argIndex, argSize, argValue);
     }
+
+    private native int zeKernelSetArgumentValue_nativePtrArg(long ptrZeKernelHandle, int argIndex, int argSize, long ptrBuffer);
+
+    public int zeKernelSetArgumentValue(long ptrZeKernelHandle, int argIndex, int argSize, long ptrBuffer) {
+        return zeKernelSetArgumentValue_nativePtrArg(ptrZeKernelHandle, argIndex, argSize, ptrBuffer);
+    }
 }

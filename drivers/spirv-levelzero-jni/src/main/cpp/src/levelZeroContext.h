@@ -26,7 +26,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeCommandListCreate_native
- * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandListDescription;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueListHandle;)I
+ * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandListDescription;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandListHandle;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeCommandListCreate_1native
         (JNIEnv *, jobject, jlong, jlong, jobject, jobject);
@@ -34,7 +34,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeCommandListCreateImmediate_native
- * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueDescription;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueListHandle;)I
+ * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueDescription;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandListHandle;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeCommandListCreateImmediate_1native
         (JNIEnv *, jobject, jlong, jlong, jobject, jobject);
@@ -61,6 +61,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1native
+        (JNIEnv *, jobject, jlong, jobject, jint, jint, jlong, jobject);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
+ * Method:    zeMemAllocDevice_nativeLong
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferLong;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1nativeLong
         (JNIEnv *, jobject, jlong, jobject, jint, jint, jlong, jobject);
 
 /*
@@ -142,7 +150,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocHost_1native
         (JNIEnv *, jobject, jlong, jobject, jint, jint, jobject);
-
 #ifdef __cplusplus
 }
 #endif

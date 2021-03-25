@@ -56,6 +56,42 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroByteBuffer_getByteBuffer_1native
         (JNIEnv *, jobject, jlong, jint);
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Buffer Long
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong
+ * Method:    memset_native
+ * Signature: (Luk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferLong;JI)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong_memset_1native
+        (JNIEnv *, jobject, jobject, jlong, jint);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong
+ * Method:    isEqual
+ * Signature: (JJI)Z
+ */
+JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong_isEqual
+        (JNIEnv *, jobject, jlong, jlong, jint);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong
+ * Method:    copy_native
+ * Signature: (J[J)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong_copy_1native
+        (JNIEnv *, jobject, jlong, jlongArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong
+ * Method:    getLongBuffer_native
+ * Signature: (JI)[J
+ */
+JNIEXPORT jlongArray JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroBufferLong_getLongBuffer_1native
+        (JNIEnv *, jobject, jlong, jint);
+
 }
 #endif
 #endif

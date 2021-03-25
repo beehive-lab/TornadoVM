@@ -92,7 +92,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         return deviceHeapPointer;
     }
 
-    public long toAbsoluteDeviceAddress(long address) {
+    public long toAbsoluteDeviceAddress(final long address) {
         long result = address;
         // FIXME : Check what happens with device memory using LevelZero.
         if (!TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {

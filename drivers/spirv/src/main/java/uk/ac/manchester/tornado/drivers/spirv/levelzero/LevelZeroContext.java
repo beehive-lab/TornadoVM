@@ -69,6 +69,12 @@ public class LevelZeroContext {
         return zeMemAllocDevice_native(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBuffer);
     }
 
+    private native int zeMemAllocDevice_nativeLong(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroBufferLong deviceBufferLong);
+
+    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroBufferLong deviceBufferLong) {
+        return zeMemAllocDevice_nativeLong(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBufferLong);
+    }
+
     native int zeModuleCreate_native(long contextPtr, long deviceHandlerPtr, LevelZeroBinaryModule binaryModule, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog);
 
     public int zeModuleCreate(long contextPtr, long deviceHandlerPtr, LevelZeroBinaryModule binaryModule, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog) {

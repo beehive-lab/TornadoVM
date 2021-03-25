@@ -57,6 +57,15 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemoryCopy_nativeBackLong
+ * Signature: (J[JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeBackLong
+        (JNIEnv *, jobject, jlong, jlongArray, jobject, jlong, jlong, jlong, jobject, jint, jobject);
+
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
  * Method:    zeCommandListAppendBarrier_native
  * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILjava/lang/Object;)I
  */
