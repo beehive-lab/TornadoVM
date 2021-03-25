@@ -21,8 +21,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
@@ -35,6 +33,13 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * How to run?
  *
  * <code>
+ *     __kernel void checkAddress(__global long *heap, __global long* output) {
+ *           __global ulong *_frame = (__global ulong *) &heap[0];
+ *           output[get_global_id(0)]  =  (ulong) heap;
+ *      }
+ * </code>
+ * 
+ * <code>
  * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
  * </code>
  */
@@ -44,26 +49,31 @@ public class TestLookUpBufferAddress {
 
         LevelZeroCommandQueue commandQueue = LevelZeroUtils.createCommandQueue(device, context);
         LevelZeroCommandList commandList = LevelZeroUtils.createCommandList(device, context, commandQueue.getCommandQueueDescription().getOrdinal());
-        System.out.println("A");
 
-        final int elements = 2;
+        final int elements = 1;
         final int bufferSize = elements * 8;
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
 
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
-        hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-
         // Fill heap buffer (Java side)
         long[] data = new long[elements];
-        for (int i = 0; i < elements; i++) {
-            data[i] = -1;
-        }
+        Arrays.fill(data, -1);
+        long[] output = new long[elements];
 
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
-        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, bufferSize, device.getDeviceHandlerPtr(), deviceBuffer);
+        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), deviceBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        LevelZeroByteBuffer bufferB = new LevelZeroByteBuffer();
+        result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        // Copy from HEAP -> Device Allocated Memory
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceBuffer, data, bufferSize, 0, 0, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         ZeModuleHandle module = new ZeModuleHandle();
         ZeModuleDesc moduleDesc = new ZeModuleDesc();
@@ -97,7 +107,7 @@ public class TestLookUpBufferAddress {
 
         ZeKernelDesc kernelDesc = new ZeKernelDesc();
         ZeKernelHandle kernel = new ZeKernelHandle();
-        kernelDesc.setKernelName("lookupBufferAddress");
+        kernelDesc.setKernelName("checkAddress");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
         LevelZeroUtils.errorLog("zeKernelCreate", result);
 
@@ -109,13 +119,15 @@ public class TestLookUpBufferAddress {
         int[] groupSizeX = new int[] { 1 };
         int[] groupSizeY = new int[] { 1 };
         int[] groupSizeZ = new int[] { 1 };
-        result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), elements, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
+        result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 1, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceBuffer.getPtrBuffer());
+        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        result |= levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 1, Sizeof.POINTER.getNumBytes(), bufferB.getPtrBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
         // Dispatch SPIR-V Kernel
@@ -132,7 +144,7 @@ public class TestLookUpBufferAddress {
         errorLog("zeCommandListAppendBarrier", result);
 
         // Copy From Device-Allocated memory to host (data)
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), data, deviceBuffer, bufferSize, 0, 0, null, 0, null);
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, bufferB, bufferSize, 0, 0, null, 0, null);
         errorLog("zeCommandListAppendMemoryCopy", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
@@ -147,13 +159,10 @@ public class TestLookUpBufferAddress {
         errorLog("zeCommandQueueSynchronize", result);
 
         ByteBuffer b = ByteBuffer.allocate(16);
-        b.order(ByteOrder.BIG_ENDIAN);
-        b.putLong(data[0]);
-        b.putLong(data[1]);
-        System.out.println("RESULT: " + Arrays.toString(data));
-        System.out.println("RESULT (Buffer): " + b.get(0));
-        int i = Float.floatToIntBits(data[0]);
-        System.out.println("bits: " + i);
+        b.order(ByteOrder.LITTLE_ENDIAN);
+        b.putLong(output[0]);
+        System.out.println("RESULT: " + Arrays.toString(output));
+        System.out.println("RESULT (Buffer): " + b.getLong(0));
 
         // Free resources
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
