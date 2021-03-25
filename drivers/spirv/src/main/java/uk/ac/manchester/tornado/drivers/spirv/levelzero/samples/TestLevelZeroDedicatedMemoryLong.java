@@ -1,5 +1,10 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
+import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils.zeGetDevices;
+
+import java.io.IOException;
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
@@ -24,16 +29,11 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils.zeGetDevices;
-
 /**
  * Kernel to test:
  * 
  * <code>
- *    __kernel void copydata(__global int* input, __global int* output) {
+ *    __kernel void copydata(__global long* input, __global long* output) {
  * 	         uint idx = get_global_id(0);
  * 	         output[idx] = input[idx];
  *    }      
@@ -45,7 +45,7 @@ import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUt
  * <code>
  *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
  *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
- *     $ cp opencl-copy.spv /tmp/copy.spv
+ *     $ cp opencl-copy.spv /tmp/copyLong.spv
  * </code>
  * 
  * How to run?
@@ -55,7 +55,7 @@ import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUt
  * </code>
  * 
  */
-public class TestLevelZeroDedicatedMemory {
+public class TestLevelZeroDedicatedMemoryLong {
 
     public static void main(String[] args) throws IOException {
 
@@ -67,7 +67,7 @@ public class TestLevelZeroDedicatedMemory {
         LevelZeroCommandList commandList = LevelZeroUtils.createCommandList(device, context, commandQueue.getCommandQueueDescription().getOrdinal());
 
         final int elements = 256;
-        final int bufferSize = elements * 4;
+        final int bufferSize = elements * 8;
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
@@ -76,11 +76,11 @@ public class TestLevelZeroDedicatedMemory {
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
         // Fill heap buffer (Java side)
-        int[] input = new int[elements];
+        long[] input = new long[elements];
         for (int i = 0; i < elements; i++) {
-            input[i] = 123123123;
+            input[i] = Long.MAX_VALUE - 1;
         }
-        int[] output = new int[elements];
+        long[] output = new long[elements];
 
         LevelZeroByteBuffer bufferA = new LevelZeroByteBuffer();
         int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferA);
@@ -102,7 +102,7 @@ public class TestLevelZeroDedicatedMemory {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/tmp/copy.spv");
+        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/tmp/copyLong.spv");
         result = binaryModule.readBinary();
         LevelZeroUtils.errorLog("readBinary", result);
 
