@@ -24,12 +24,28 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
 public class LevelZeroUtils {
 
+    /**
+     * Utility for controlling error from a method invoked using the JNI Level Zero
+     * library.
+     * 
+     * @param method
+     *            Method called.
+     * @param result
+     *            Value obtained from last call to JNI cade.
+     */
     public static void errorLog(String method, int result) {
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             System.out.println("Error " + method);
         }
     }
 
+    /**
+     * Utility for creating a Level Zero Context.
+     * 
+     * @param driver
+     *            {@link LevelZeroDriver}
+     * @return {@link LevelZeroContext}
+     */
     public static LevelZeroContext zeInitContext(LevelZeroDriver driver) {
         if (driver == null) {
             return null;
@@ -54,6 +70,15 @@ public class LevelZeroUtils {
         return context;
     }
 
+    /**
+     * Utility for instantiating a {@link LevelZeroDevice}.
+     * 
+     * @param context
+     *            {@link LevelZeroContext}
+     * @param driver
+     *            {@link LevelZeroDriver}
+     * @return {@link LevelZeroDevice}
+     */
     public static LevelZeroDevice zeGetDevices(LevelZeroContext context, LevelZeroDriver driver) {
 
         ZeDriverHandle driverHandler = context.getDriver();
@@ -78,6 +103,15 @@ public class LevelZeroUtils {
         return device;
     }
 
+    /**
+     * Utility for creating a Level Zero Command Queue.
+     *
+     * @param device
+     *            {@link LevelZeroDevice}
+     * @param context
+     *            {@link LevelZeroContext}
+     * @return {@link LevelZeroCommandQueue}
+     */
     public static LevelZeroCommandQueue createCommandQueue(LevelZeroDevice device, LevelZeroContext context) {
         // A) Get the number of command queue groups
         int[] numQueueGroups = new int[1];
@@ -113,10 +147,18 @@ public class LevelZeroUtils {
         return commandQueue;
     }
 
+    /**
+     * Utility for creating a Level Zero Command List.
+     * 
+     * @param device
+     *            {@link LevelZeroDevice}
+     * @param context
+     *            {@link LevelZeroContext}
+     * @param ordinal
+     *            Ordinal used for the command queue creation
+     * @return {@link LevelZeroCommandList}
+     */
     public static LevelZeroCommandList createCommandList(LevelZeroDevice device, LevelZeroContext context, long ordinal) {
-        // ============================================
-        // Create a command list
-        // ============================================
         ZeCommandListHandle zeCommandListHandler = new ZeCommandListHandle();
         ZeCommandListDescription commandListDescription = new ZeCommandListDescription();
         commandListDescription.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
