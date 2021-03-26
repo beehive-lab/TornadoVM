@@ -1,10 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.utils;
 
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
@@ -19,6 +23,11 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 
@@ -166,5 +175,45 @@ public class LevelZeroUtils {
         int result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandListDescription, zeCommandListHandler);
         errorLog("zeCommandListCreate", result);
         return new LevelZeroCommandList(context, zeCommandListHandler);
+    }
+
+    public static LevelZeroKernel compileSPIRVKernel(LevelZeroDevice device, LevelZeroContext context, String kernelName, String pathToBinary) {
+        ZeModuleHandle module = new ZeModuleHandle();
+        ZeModuleDesc moduleDesc = new ZeModuleDesc();
+        ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
+        moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
+        moduleDesc.setBuildFlags("");
+
+        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule(pathToBinary);
+        int result = binaryModule.readBinary();
+        LevelZeroUtils.errorLog("readBinary", result);
+
+        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), binaryModule, moduleDesc, module, buildLog);
+        LevelZeroUtils.errorLog("zeModuleCreate", result);
+
+        if (result != ZeResult.ZE_RESULT_SUCCESS) {
+            // Print Logs
+            int[] sizeLog = new int[1];
+            String errorMessage = "";
+            result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
+            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage);
+            LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
+            System.exit(0);
+        }
+
+        // Create Module Object
+        LevelZeroModule levelZeroModule = new LevelZeroModule(module, moduleDesc, buildLog);
+
+        // Destroy Log
+        result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
+        LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
+
+        ZeKernelDesc kernelDesc = new ZeKernelDesc();
+        ZeKernelHandle kernel = new ZeKernelHandle();
+        kernelDesc.setKernelName(kernelName);
+        result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
+        LevelZeroUtils.errorLog("zeKernelCreate", result);
+
+        return new LevelZeroKernel(kernelDesc, kernel);
     }
 }

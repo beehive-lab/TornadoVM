@@ -2,11 +2,8 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
 import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils.errorLog;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -14,26 +11,19 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
 /**
  * How to run?
  *
  * <code>
- *     __kernel void checkAddress(__global long *heap, __global long* output) {
+ *     __kernel void lookUp(__global long *heap, __global long* output) {
  *           __global ulong *_frame = (__global ulong *) &heap[0];
  *           output[get_global_id(0)]  =  (ulong) heap;
  *      }
@@ -75,44 +65,8 @@ public class TestLookUpBufferAddress {
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
-        ZeModuleHandle module = new ZeModuleHandle();
-        ZeModuleDesc moduleDesc = new ZeModuleDesc();
-        ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
-        moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
-        moduleDesc.setBuildFlags("");
-
-        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
-        result = binaryModule.readBinary();
-        LevelZeroUtils.errorLog("readBinary", result);
-
-        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), binaryModule, moduleDesc, module, buildLog);
-        LevelZeroUtils.errorLog("zeModuleCreate", result);
-
-        if (result != ZeResult.ZE_RESULT_SUCCESS) {
-            // Print Logs
-            int[] sizeLog = new int[1];
-            String errorMessage = "";
-            result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
-            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage);
-            LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
-            System.exit(0);
-        }
-
-        // Create Module Object
-        LevelZeroModule levelZeroModule = new LevelZeroModule(module, moduleDesc, buildLog);
-
-        // Destroy Log
-        result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
-        LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
-
-        ZeKernelDesc kernelDesc = new ZeKernelDesc();
-        ZeKernelHandle kernel = new ZeKernelHandle();
-        kernelDesc.setKernelName("checkAddress");
-        result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
-        LevelZeroUtils.errorLog("zeKernelCreate", result);
-
-        // We create a kernel Object
-        LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel);
+        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
+        ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
@@ -158,11 +112,8 @@ public class TestLookUpBufferAddress {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         errorLog("zeCommandQueueSynchronize", result);
 
-        ByteBuffer b = ByteBuffer.allocate(16);
-        b.order(ByteOrder.LITTLE_ENDIAN);
-        b.putLong(output[0]);
-        System.out.println("RESULT: " + Arrays.toString(output));
-        System.out.println("RESULT (Buffer): " + b.getLong(0));
+        long baseAddress = output[0];
+        System.out.println("Base Address: " + baseAddress);
 
         // Free resources
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
