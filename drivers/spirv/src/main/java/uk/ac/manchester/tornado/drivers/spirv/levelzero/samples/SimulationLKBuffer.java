@@ -23,19 +23,22 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * How to run?
  *
  * <code>
- *     __kernel void lookUp(__global long *heap, __global long* output) {
- *           output[get_global_id(0)]  =  (ulong) heap;
- *      }
+ *     __kernel void lookUp(__global long *heap) {
+ *           heap[get_global_id(0)] = (ulong) heap;
+ *     }
  * </code>
- * 
+ *
  * <code>
- * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.SimulationLKBuffer
  * </code>
  */
-public class TestLookUpBufferAddress {
+public class SimulationLKBuffer {
 
-    private static void dispatchLookUpBuffer(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer,
-            LevelZeroByteBuffer bufferB, long[] output, int bufferSize) {
+    private static LevelZeroByteBuffer deviceHeapBuffer;
+    private static final int DEVICE_HEAP_SIZE = 8 * 8192;
+
+    private static void dispatchLookUpBuffer(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer, long[] output,
+            int bufferSize) {
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         // Prepare kernel for launch
@@ -50,8 +53,6 @@ public class TestLookUpBufferAddress {
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceBuffer.getPtrBuffer());
-        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
-        result |= levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 1, Sizeof.POINTER.getNumBytes(), bufferB.getPtrBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
         // Dispatch SPIR-V Kernel
@@ -68,7 +69,7 @@ public class TestLookUpBufferAddress {
         errorLog("zeCommandListAppendBarrier", result);
 
         // Copy From Device-Allocated memory to host (data)
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, bufferB, bufferSize, 0, 0, null, 0, null);
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, deviceBuffer, bufferSize, 0, 0, null, 0, null);
         errorLog("zeCommandListAppendMemoryCopy", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
@@ -86,7 +87,7 @@ public class TestLookUpBufferAddress {
         System.out.println("Base Address: " + baseAddress);
     }
 
-    private static void testLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
+    private static void simulateLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
 
         LevelZeroCommandQueue commandQueue = LevelZeroUtils.createCommandQueue(device, context);
         LevelZeroCommandList commandList = LevelZeroUtils.createCommandList(device, context, commandQueue.getCommandQueueDescription().getOrdinal());
@@ -102,28 +103,29 @@ public class TestLookUpBufferAddress {
         Arrays.fill(data, -1);
         long[] output = new long[elements];
 
-        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
-        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), deviceBuffer);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-
-        LevelZeroByteBuffer bufferB = new LevelZeroByteBuffer();
-        result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
+        deviceHeapBuffer = new LevelZeroByteBuffer();
+        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, DEVICE_HEAP_SIZE, 128, device.getDeviceHandlerPtr(), deviceHeapBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
         // Copy from HEAP -> Device Allocated Memory
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceBuffer, data, bufferSize, 0, 0, null, 0, null);
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, data, bufferSize, 0, 0, null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
-        dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceBuffer, bufferB, output, bufferSize);
+        dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceHeapBuffer, output, bufferSize);
 
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
 
+        // Run 2nd Kernel
+        // obtain the kernel
+        LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
+        ZeKernelHandle kernel = kernelCopy.getKernelHandle();
+
         // Free resources
-        result = context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
+        result = context.zeMemFree(context.getDefaultContextPtr(), deviceHeapBuffer);
         errorLog("zeMemFree", result);
         result = context.zeCommandListDestroy(commandList.getCommandListHandler());
         errorLog("zeCommandListDestroy", result);
@@ -135,7 +137,7 @@ public class TestLookUpBufferAddress {
      * Run as follows:
      *
      * <code>
-     * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLookUpBufferAddress
+     * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.SimulationLKBuffer
      * </code>
      *
      * @param args
@@ -149,7 +151,7 @@ public class TestLookUpBufferAddress {
         System.out.println("Device: ");
         System.out.println("\tName     : " + deviceProperties.getName());
         System.out.println("\tVendor ID: " + Integer.toHexString(deviceProperties.getVendorId()));
-        testLookUpBufferAddress(context, device);
+        simulateLookUpBufferAddress(context, device);
 
         int result = driver.zeContextDestroy(context);
         errorLog("zeContextDestroy", result);
