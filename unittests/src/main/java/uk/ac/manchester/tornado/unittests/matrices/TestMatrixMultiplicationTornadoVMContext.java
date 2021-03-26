@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,12 +25,13 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestMatrixMultiplicationTornadoVMContext {
+public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
 
     private static final int TS = 4;
 

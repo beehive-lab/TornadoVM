@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,12 +23,13 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestVectorAdditionTornadoVMContextApi {
+public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
     public static void vectorAddJava(int[] a, int[] b, int[] c) {
         for (int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];

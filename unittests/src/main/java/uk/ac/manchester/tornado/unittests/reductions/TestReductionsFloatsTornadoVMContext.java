@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +24,13 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestReductionsFloatsTornadoVMContext {
+public class TestReductionsFloatsTornadoVMContext extends TornadoTestBase {
 
     public static float computeSequential(float[] input) {
         float acc = 0;
