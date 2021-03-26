@@ -17,7 +17,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemAllocHostDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
 /**
@@ -29,15 +28,37 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  *     }
  * </code>
  *
+ * 
  * <code>
- * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.SimulationLKBuffer
+ *     __kernel void copyTest(__global uchar *_heap_base)
+ * {
+ *   int i_8, i_7, i_1, i_2; 
+ *   ulong ul_0, ul_6; 
+ *   long l_3, l_5, l_4; 
+ *
+ *   __global ulong *_frame = (__global ulong *) &_heap_base[0];
+ *
+ *   ul_0  =  (ulong) _frame[3];
+ *   i_1  =  get_global_id(0);
+ *   i_2  =  i_1;
+ *   l_3  =  (long) i_2;
+ *   l_4  =  l_3 << 2;
+ *   l_5  =  l_4 + 0L;
+ *   ul_6  =  ul_0 + l_5;
+ *   *((__global int *) ul_6)  =  10;
+ * }
+ * </code>
+ * 
+ * 
+ * <code> 
+ *     $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.SimulationLKBuffer
  * </code>
  */
 public class SimulationLKBuffer {
 
     private static LevelZeroByteBuffer deviceHeapBuffer;
     private static final int DEVICE_HEAP_SIZE = 8 * 8192;
-    private static LevelZeroByteBuffer stack;
+    private static long[] stack;
 
     private static void dispatchLookUpBuffer(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer, long[] output,
             int bufferSize) {
@@ -89,8 +110,7 @@ public class SimulationLKBuffer {
         System.out.println("Base Address: " + baseAddress);
     }
 
-    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer, int[] output,
-            int bufferSize) {
+    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, int[] output, int bufferSize) {
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         // Prepare kernel for launch
@@ -104,12 +124,12 @@ public class SimulationLKBuffer {
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
-        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceBuffer.getPtrBuffer());
+        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceHeapBuffer.getPtrBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(32);
+        dispatch.setGroupCountX(1);
         dispatch.setGroupCountY(1);
         dispatch.setGroupCountZ(1);
 
@@ -121,7 +141,7 @@ public class SimulationLKBuffer {
         errorLog("zeCommandListAppendBarrier", result);
 
         // Copy From Device-Allocated memory to host (data)
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, deviceBuffer, bufferSize, 0, 0, null, 0, null);
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, deviceHeapBuffer, bufferSize, 0, 0, null, 0, null);
         errorLog("zeCommandListAppendMemoryCopy", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
@@ -161,19 +181,23 @@ public class SimulationLKBuffer {
         errorLog("zeCommandListReset", result);
 
         // Run 2nd Kernel: Execute Copy
-        stack = new LevelZeroByteBuffer();
-        final int stackSize = 128 * 8;
-        ZeMemAllocHostDesc hostMemAllocDesc = new ZeMemAllocHostDesc();
-        hostMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-        result = context.zeMemAllocHost(context.getDefaultContextPtr(), hostMemAllocDesc, stackSize, 1, stack);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+        stack = new long[16];
+        stack[0] = 0;
+        stack[1] = 0;
+        stack[2] = 0;
+        stack[3] = output[0];
+
+        // Copy Host -> Device
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, stack, stack.length * Sizeof.LONG.getNumBytes(), 0, 0, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
         int[] output2 = new int[1024];
-        dispatchCopyKernel(commandList, commandQueue, kernelCopy, deviceHeapBuffer, output2, 1024);
+        dispatchCopyKernel(commandList, commandQueue, kernelCopy, output2, 1024 * Sizeof.INT.getNumBytes());
 
         // Free resources
-        result = context.zeMemFree(context.getDefaultContextPtr(), stack);
         errorLog("zeMemFree", result);
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceHeapBuffer);
         errorLog("zeMemFree", result);
