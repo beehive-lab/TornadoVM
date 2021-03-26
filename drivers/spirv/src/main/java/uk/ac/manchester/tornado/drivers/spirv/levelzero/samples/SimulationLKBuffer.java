@@ -87,6 +87,56 @@ public class SimulationLKBuffer {
         System.out.println("Base Address: " + baseAddress);
     }
 
+    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer, int[] output,
+            int bufferSize) {
+        ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
+
+        // Prepare kernel for launch
+        // A) Suggest scheduling parameters to level-zero
+        int[] groupSizeX = new int[] { 32 };
+        int[] groupSizeY = new int[] { 1 };
+        int[] groupSizeZ = new int[] { 1 };
+        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 1024, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
+        LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
+
+        result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
+        LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
+
+        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceBuffer.getPtrBuffer());
+        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+
+        // Dispatch SPIR-V Kernel
+        ZeGroupDispatch dispatch = new ZeGroupDispatch();
+        dispatch.setGroupCountX(32);
+        dispatch.setGroupCountY(1);
+        dispatch.setGroupCountZ(1);
+
+        // Launch the kernel on the Intel Integrated GPU
+        result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendLaunchKernel", result);
+
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        errorLog("zeCommandListAppendBarrier", result);
+
+        // Copy From Device-Allocated memory to host (data)
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, deviceBuffer, bufferSize, 0, 0, null, 0, null);
+        errorLog("zeCommandListAppendMemoryCopy", result);
+
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        errorLog("zeCommandListAppendBarrier", result);
+
+        // Close the command list
+        result = commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
+        errorLog("zeCommandListClose", result);
+        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(), 1, commandList.getCommandListHandler(), null);
+        errorLog("zeCommandQueueExecuteCommandLists", result);
+        result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
+        errorLog("zeCommandQueueSynchronize", result);
+
+        long baseAddress = output[0];
+        System.out.println("Base Address: " + baseAddress);
+    }
+
     private static void simulateLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
 
         LevelZeroCommandQueue commandQueue = LevelZeroUtils.createCommandQueue(device, context);
@@ -123,6 +173,8 @@ public class SimulationLKBuffer {
         // obtain the kernel
         LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
         ZeKernelHandle kernel = kernelCopy.getKernelHandle();
+        int[] output2 = new int[1024];
+        dispatchCopyKernel(commandList, commandQueue, kernelCopy, deviceHeapBuffer, output2, 1024);
 
         // Free resources
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceHeapBuffer);
