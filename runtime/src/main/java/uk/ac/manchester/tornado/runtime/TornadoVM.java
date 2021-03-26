@@ -275,6 +275,8 @@ public class TornadoVM extends TornadoLogger {
             allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
         }
 
+        resetEventIndexes(eventList);
+
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
                 Event event = device.resolveEvent(e);
