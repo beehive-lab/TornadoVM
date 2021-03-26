@@ -17,6 +17,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemAllocHostDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
 /**
@@ -36,6 +37,7 @@ public class SimulationLKBuffer {
 
     private static LevelZeroByteBuffer deviceHeapBuffer;
     private static final int DEVICE_HEAP_SIZE = 8 * 8192;
+    private static LevelZeroByteBuffer stack;
 
     private static void dispatchLookUpBuffer(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer, long[] output,
             int bufferSize) {
@@ -133,8 +135,7 @@ public class SimulationLKBuffer {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         errorLog("zeCommandQueueSynchronize", result);
 
-        long baseAddress = output[0];
-        System.out.println("Base Address: " + baseAddress);
+        System.out.println("Content: " + Arrays.toString(output));
     }
 
     private static void simulateLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
@@ -148,20 +149,10 @@ public class SimulationLKBuffer {
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
 
-        // Fill heap buffer (Java side)
-        long[] data = new long[elements];
-        Arrays.fill(data, -1);
         long[] output = new long[elements];
-
         deviceHeapBuffer = new LevelZeroByteBuffer();
-        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, DEVICE_HEAP_SIZE, 128, device.getDeviceHandlerPtr(), deviceHeapBuffer);
+        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, DEVICE_HEAP_SIZE, 1, device.getDeviceHandlerPtr(), deviceHeapBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-
-        // Copy from HEAP -> Device Allocated Memory
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, data, bufferSize, 0, 0, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
-        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
         dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceHeapBuffer, output, bufferSize);
@@ -169,14 +160,21 @@ public class SimulationLKBuffer {
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
 
-        // Run 2nd Kernel
-        // obtain the kernel
+        // Run 2nd Kernel: Execute Copy
+        stack = new LevelZeroByteBuffer();
+        final int stackSize = 128 * 8;
+        ZeMemAllocHostDesc hostMemAllocDesc = new ZeMemAllocHostDesc();
+        hostMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        result = context.zeMemAllocHost(context.getDefaultContextPtr(), hostMemAllocDesc, stackSize, 1, stack);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
         LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
-        ZeKernelHandle kernel = kernelCopy.getKernelHandle();
         int[] output2 = new int[1024];
         dispatchCopyKernel(commandList, commandQueue, kernelCopy, deviceHeapBuffer, output2, 1024);
 
         // Free resources
+        result = context.zeMemFree(context.getDefaultContextPtr(), stack);
+        errorLog("zeMemFree", result);
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceHeapBuffer);
         errorLog("zeMemFree", result);
         result = context.zeCommandListDestroy(commandList.getCommandListHandler());
