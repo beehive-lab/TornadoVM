@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
 import java.io.IOException;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -261,10 +260,6 @@ public class TestLevelZero {
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
-
-        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule("/tmp/example.spv");
-        result = binaryModule.readBinary();
-        LevelZeroUtils.errorLog("readBinary", result);
 
         result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, "/tmp/example.spv");
         LevelZeroUtils.errorLog("zeModuleCreate", result);
