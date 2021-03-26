@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.GridTask;
  * How to run?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform 
+ * $ tornado uk.ac.manchester.tornado.examples.compute_tornadovmcontext.BlackAndWhiteTransform 
  * </code>
  *
  *

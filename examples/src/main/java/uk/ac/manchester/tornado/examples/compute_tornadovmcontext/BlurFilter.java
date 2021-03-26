@@ -30,7 +30,11 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoVMContext;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -46,7 +50,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute.BlurFilter 
+ * $ tornado uk.ac.manchester.tornado.examples.compute_tornadovmcontext.BlurFilter 
  * </code>
  *
  *
