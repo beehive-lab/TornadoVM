@@ -4,10 +4,12 @@ public class LevelZeroKernel {
 
     private ZeKernelDesc kernelDesc;
     private ZeKernelHandle kernelHandle;
+    private LevelZeroModule module;
 
-    public LevelZeroKernel(ZeKernelDesc kernelDesc, ZeKernelHandle kernelHandle) {
+    public LevelZeroKernel(ZeKernelDesc kernelDesc, ZeKernelHandle kernelHandle, LevelZeroModule module) {
         this.kernelDesc = kernelDesc;
         this.kernelHandle = kernelHandle;
+        this.module = module;
     }
 
     public ZeKernelHandle getKernelHandle() {

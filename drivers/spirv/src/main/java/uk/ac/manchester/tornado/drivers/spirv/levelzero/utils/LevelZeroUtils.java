@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.utils;
 
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -184,11 +183,7 @@ public class LevelZeroUtils {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule(pathToBinary);
-        int result = binaryModule.readBinary();
-        LevelZeroUtils.errorLog("readBinary", result);
-
-        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), binaryModule, moduleDesc, module, buildLog);
+        int result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, pathToBinary);
         LevelZeroUtils.errorLog("zeModuleCreate", result);
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
@@ -214,6 +209,6 @@ public class LevelZeroUtils {
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
         LevelZeroUtils.errorLog("zeKernelCreate", result);
 
-        return new LevelZeroKernel(kernelDesc, kernel);
+        return new LevelZeroKernel(kernelDesc, kernel, levelZeroModule);
     }
 }

@@ -2,7 +2,7 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
 public class ZeModuleDesc {
 
-    private int stype;
+    private final int stype;
     private long pNext;
     private int format;
 
@@ -18,6 +18,7 @@ public class ZeModuleDesc {
     private long ptrZeModuleDesc;
 
     public ZeModuleDesc() {
+        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_MODULE_DESC;
         this.ptrZeModuleDesc = -1;
     }
 

@@ -75,10 +75,10 @@ public class LevelZeroContext {
         return zeMemAllocDevice_nativeLong(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBufferLong);
     }
 
-    native int zeModuleCreate_native(long contextPtr, long deviceHandlerPtr, LevelZeroBinaryModule binaryModule, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog);
+    native int zeModuleCreate_nativeWithPath(long contextPtr, long deviceHandlerPtr, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog, String pathToBinary);
 
-    public int zeModuleCreate(long contextPtr, long deviceHandlerPtr, LevelZeroBinaryModule binaryModule, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog) {
-        return zeModuleCreate_native(contextPtr, deviceHandlerPtr, binaryModule, moduleDesc, module, buildLog);
+    public int zeModuleCreate(long contextPtr, long deviceHandlerPtr, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog, String pathToBinary) {
+        return zeModuleCreate_nativeWithPath(contextPtr, deviceHandlerPtr, moduleDesc, module, buildLog, pathToBinary);
     }
 
     public long getDefaultContextPtr() {
@@ -104,17 +104,14 @@ public class LevelZeroContext {
      *            [in] handle pointer of the context object
      * @param buffer
      *            [in][release] pointer to memory to free
-     *
-     * @return
-     *
-     *         ZE_RESULT_SUCCESS
-     *
+     * @return ZE_RESULT_SUCCESS
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == contextHandlePtr
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == buffer
      */
     public int zeMemFree(long contextHandlePtr, LevelZeroBufferInteger buffer) {
@@ -125,7 +122,7 @@ public class LevelZeroContext {
 
     /**
      * Frees allocated host memory, device memory, or shared memory on the context.
-     * 
+     *
      * <ul>
      * <li>The application must ensure the device is not currently referencing the
      * memory before it is freed</li>
@@ -135,22 +132,19 @@ public class LevelZeroContext {
      * with the same pointer.</li>
      * <li>The implementation of this function must be thread-safe.</li>
      * </ul>
-     * 
+     *
      * @param contextHandlePtr
      *            [in] handle pointer of the context object
      * @param buffer
      *            [in][release] pointer to memory to free
-     * 
-     * @return
-     * 
-     *         ZE_RESULT_SUCCESS
-     *
+     * @return ZE_RESULT_SUCCESS
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == contextHandlePtr
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == buffer
      */
     public int zeMemFree(long contextHandlePtr, LevelZeroByteBuffer buffer) {
@@ -163,7 +157,7 @@ public class LevelZeroContext {
 
     /**
      * Destroys a command list.
-     * 
+     *
      * <ul>
      * <li>The application must ensure the device is not currently referencing the
      * command list before it is deleted.</li>
@@ -173,18 +167,18 @@ public class LevelZeroContext {
      * with the same command list handle.</li>
      * <li>The implementation of this function must be thread-safe.</li>
      * </ul>
-     * 
+     *
      * @param ptrZeCommandListHandle
      *            [in][release] handle of command list object to destroy
      * @return ZE_RESULT_SUCCESS
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr ==
      *         ptrZeCommandListHandle
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_HANDLE_OBJECT_IN_USE
      */
     public int zeCommandListDestroy(ZeCommandListHandle ptrZeCommandListHandle) {
@@ -197,7 +191,7 @@ public class LevelZeroContext {
 
     /**
      * Destroys a command queue.
-     * 
+     *
      * <ul>
      * <li>The application must destroy all fence handles created from the command
      * queue before destroying the command queue itself</li>
@@ -209,21 +203,18 @@ public class LevelZeroContext {
      * with the same command queue handle.</li>
      * <li>The implementation of this function must be thread-safe.</li>
      * </ul>
-     * 
+     *
      * @param commandQueueHandle
      *            [in][release] handle of command queue object to destroy
-     * @return
-     * 
-     *         ZE_RESULT_SUCCESS
-     *
+     * @return ZE_RESULT_SUCCESS
+     *         <p>
      *         ZE_RESULT_ERROR_UNINITIALIZED
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_DEVICE_LOST
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr == commandQueueHandle
-     *
+     *         <p>
      *         ZE_RESULT_ERROR_HANDLE_OBJECT_IN_USE
-     * 
      */
     public int zeCommandQueueDestroy(ZeCommandQueueHandle commandQueueHandle) {
         int result = zeCommandQueueDestroy_native(commandQueueHandle.getCommandQueueHandlerPointer());
@@ -274,4 +265,5 @@ public class LevelZeroContext {
     public int zeMemAllocHost(long contextPtr, ZeMemAllocHostDesc hostMemAllocDesc, int allocSize, int alignment, LevelZeroByteBuffer hostBuffer) {
         return zeMemAllocHost_native(contextPtr, hostMemAllocDesc, allocSize, alignment, hostBuffer);
     }
+
 }

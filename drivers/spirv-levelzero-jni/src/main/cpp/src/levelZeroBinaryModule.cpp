@@ -20,7 +20,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     std::ifstream file(f, std::ios::binary);
     if (file.is_open()) {
-
         file.seekg(0, file.end);
         int length = file.tellg();
         file.seekg(0, file.beg);

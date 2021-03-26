@@ -1,6 +1,8 @@
 #include "levelZeroContext.h"
 
 #include <iostream>
+#include <fstream>
+#include <memory>
 #include "ze_api.h"
 #include "ze_log.h"
 
@@ -523,11 +525,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
- * Method:    zeModuleCreate_native
- * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBinaryModule;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleHandle;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeBuildLogHandle;)I
+ * Method:    zeModuleCreate_nativeWithPath
+ * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeModuleHandle;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeBuildLogHandle;Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeModuleCreate_1native
-        (JNIEnv *env, jobject object, jlong javaContextPtr, jlong javaDeviceHandler, jobject javaBinaryModule, jobject javaModuleDesc, jobject javaModuleHandle, jobject javaBuildLog) {
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeModuleCreate_1nativeWithPath
+        (JNIEnv *env, jobject object, jlong javaContextPtr, jlong javaDeviceHandler, jobject javaModuleDesc, jobject javaModuleHandle, jobject javaBuildLog, jstring pathToBinary) {
 
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
@@ -536,14 +538,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID fieldPtrModuleDesc = env->GetFieldID(javaModuleDescClass, "ptrZeModuleDesc", "J");
     jlong ptrModuleDesc = env->GetLongField(javaModuleDesc, fieldPtrModuleDesc);
 
-    ze_module_desc_t moduleDesc;
+    ze_module_desc_t moduleDesc = {};
     if (ptrModuleDesc != -1) {
         ze_module_desc_t *moduleDescPtr = reinterpret_cast<ze_module_desc_t *>(ptrModuleDesc);
         moduleDesc = *moduleDescPtr;
     }
 
     jfieldID modDesc_field_stype = env->GetFieldID(javaModuleDescClass, "stype", "I");
-    jint type = env->GetIntField(javaModuleDesc, modDesc_field_stype);
+    jint stype = env->GetIntField(javaModuleDesc, modDesc_field_stype);
     jfieldID modDesc_field_format = env->GetFieldID(javaModuleDescClass, "format", "I");
     jint format = env->GetIntField(javaModuleDesc, modDesc_field_format);
 
@@ -551,56 +553,66 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jstring objectString = static_cast<jstring>(env->GetObjectField(javaModuleDesc, buildFlagsField));
     const char* buildFlags = env->GetStringUTFChars(objectString, 0);
 
-    jclass javaBinaryModuleClass = env->GetObjectClass(javaBinaryModule);
-    jfieldID fieldPtrToBinary = env->GetFieldID(javaBinaryModuleClass, "ptrToBinaryFile", "J");
-    jlong ptrToBinary = env->GetLongField(javaBinaryModule, fieldPtrToBinary);
+    const char* fileName = env->GetStringUTFChars(pathToBinary, 0);
+    std::string f(fileName);
 
-    jfieldID fieldSize = env->GetFieldID(javaBinaryModuleClass, "size", "I");
-    jint size = env->GetIntField(javaBinaryModule, fieldSize);
+    std::ifstream file(f, std::ios::binary);
 
-    ze_module_build_log_handle_t buildLog;
-    moduleDesc.stype = static_cast<ze_structure_type_t>(type);
-    moduleDesc.format = static_cast<ze_module_format_t>(format);
-    moduleDesc.pInputModule = reinterpret_cast<const uint8_t *>(ptrToBinary);
-    moduleDesc.inputSize = size;
-    moduleDesc.pBuildFlags = buildFlags;
-    moduleDesc.pConstants = nullptr;
+    if (file.is_open()) {
+        file.seekg(0, file.end);
+        int length = file.tellg();
+        file.seekg(0, file.beg);
 
-    jclass javaModuleClass = env->GetObjectClass(javaModuleHandle);
-    jfieldID fieldPtr = env->GetFieldID(javaModuleClass, "ptrZeModuleHandle", "J");
-    jlong ptrModule = env->GetLongField(javaModuleClass, fieldPtr);
+        std::unique_ptr<char[]> spirvInput(new char[length]);
+        file.read(spirvInput.get(), length);
 
-    ze_module_handle_t module = nullptr;
-    if (ptrModule != -1) {
-        module = reinterpret_cast<ze_module_handle_t>(ptrModule);
+        ze_module_build_log_handle_t buildLog;
+        moduleDesc.stype = static_cast<ze_structure_type_t>(stype);
+        moduleDesc.format = static_cast<ze_module_format_t>(format);
+        moduleDesc.pInputModule = reinterpret_cast<const uint8_t *>(spirvInput.get());
+        moduleDesc.inputSize = length;
+        moduleDesc.pBuildFlags = buildFlags;
+
+        jclass javaModuleClass = env->GetObjectClass(javaModuleHandle);
+        jfieldID fieldPtr = env->GetFieldID(javaModuleClass, "ptrZeModuleHandle", "J");
+        jlong ptrModule = env->GetLongField(javaModuleClass, fieldPtr);
+
+        ze_module_handle_t module = nullptr;
+        if (ptrModule != -1) {
+            module = reinterpret_cast<ze_module_handle_t>(ptrModule);
+        }
+
+        ze_result_t result = zeModuleCreate(context, device, &moduleDesc, &module, &buildLog);
+        LOG_ZE_JNI("zeModuleCreate", result);
+
+        // update module pointer
+        env->SetLongField(javaModuleHandle, fieldPtr, reinterpret_cast<jlong>(module));
+
+        // update module Description object
+        jfieldID field = env->GetFieldID(javaModuleDescClass, "pNext", "J");
+        env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pNext);
+
+        if (moduleDesc.pConstants != nullptr) {
+            field = env->GetFieldID(javaModuleDescClass, "numConstants", "I");
+            env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->numConstants);
+            field = env->GetFieldID(javaModuleDescClass, "pConstantsIds", "J");
+            env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->pConstantIds);
+
+            field = env->GetFieldID(javaModuleDescClass, "pConstantValues", "J");
+            env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->pConstantValues);
+        }
+
+        // update build log object
+        jclass javaBuildLogClass = env->GetObjectClass(javaBuildLog);
+        jfieldID fieldPtrLog = env->GetFieldID(javaBuildLogClass, "ptrZeBuildLogHandle", "J");
+        env->SetLongField(javaBuildLog, fieldPtrLog, reinterpret_cast<jlong>(buildLog));
+
+        file.close();
+
+        return result;
+    } else {
+        return -1;
     }
-
-    ze_result_t result = zeModuleCreate(context, device, &moduleDesc, &module, &buildLog);
-    LOG_ZE_JNI("zeModuleCreate", result);
-
-    // update module pointer
-    env->SetLongField(javaModuleHandle, fieldPtr, reinterpret_cast<jlong>(module));
-
-    // update module Description object
-    jfieldID field = env->GetFieldID(javaModuleDescClass, "pNext", "J");
-    env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pNext);
-
-    if (moduleDesc.pConstants != nullptr) {
-        field = env->GetFieldID(javaModuleDescClass, "numConstants", "I");
-        env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->numConstants);
-        field = env->GetFieldID(javaModuleDescClass, "pConstantsIds", "J");
-        env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->pConstantIds);
-
-        field = env->GetFieldID(javaModuleDescClass, "pConstantValues", "J");
-        env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->pConstantValues);
-    }
-
-    // update build log object
-    jclass javaBuildLogClass = env->GetObjectClass(javaBuildLog);
-    jfieldID fieldPtrLog = env->GetFieldID(javaBuildLogClass, "ptrZeBuildLogHandle", "J");
-    env->SetLongField(javaBuildLog, fieldPtrLog, reinterpret_cast<jlong>(buildLog));
-
-    return result;
 }
 
 /*

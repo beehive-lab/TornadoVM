@@ -5,7 +5,6 @@ import java.nio.file.Paths;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
@@ -44,10 +43,6 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
             throw new RuntimeException("Binary File does not exist");
         }
 
-        LevelZeroBinaryModule binaryModule = new LevelZeroBinaryModule(pathToFile);
-        int result = binaryModule.readBinary();
-        LevelZeroUtils.errorLog("readBinary", result);
-
         SPIRVContext spirvContext = deviceContext.getSpirvContext();
         SPIRVLevelZeroContext levelZeroContext = (SPIRVLevelZeroContext) spirvContext;
         LevelZeroContext context = levelZeroContext.getLevelZeroContext();
@@ -56,7 +51,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         SPIRVLevelZeroDevice levelZeroDevice = (SPIRVLevelZeroDevice) spirvDevice;
         LevelZeroDevice device = levelZeroDevice.getDevice();
 
-        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), binaryModule, moduleDesc, module, buildLog);
+        int result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, pathToFile);
         LevelZeroUtils.errorLog("zeModuleCreate", result);
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
@@ -83,9 +78,9 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         LevelZeroUtils.errorLog("zeKernelCreate", result);
 
         // Create a Level Zero kernel Object
-        LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel);
+        LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel, levelZeroModule);
 
-        SPIRVModule spirvModule = new SPIRVLevelZeroModule(levelZeroModule, levelZeroKernel, entryPoint, binaryModule);
+        SPIRVModule spirvModule = new SPIRVLevelZeroModule(levelZeroModule, levelZeroKernel, entryPoint);
         SPIRVInstalledCode installedCode = new SPIRVLevelZeroInstalledCode(id, spirvModule, deviceContext);
 
         // Install module in the code cache

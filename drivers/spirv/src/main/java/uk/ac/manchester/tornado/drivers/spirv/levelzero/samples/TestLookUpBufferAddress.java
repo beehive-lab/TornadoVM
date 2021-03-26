@@ -115,6 +115,13 @@ public class TestLookUpBufferAddress {
         long baseAddress = output[0];
         System.out.println("Base Address: " + baseAddress);
 
+        result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
+        errorLog("zeCommandListReset", result);
+
+        // Run 2nd Kernel
+        // obtain the kernel
+        LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
+
         // Free resources
         result = context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
         errorLog("zeMemFree", result);
@@ -147,5 +154,4 @@ public class TestLookUpBufferAddress {
         int result = driver.zeContextDestroy(context);
         errorLog("zeContextDestroy", result);
     }
-
 }

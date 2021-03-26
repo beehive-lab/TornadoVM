@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
+import java.io.IOException;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBinaryModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
@@ -44,8 +46,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
-
-import java.io.IOException;
 
 /**
  * Kernel to test:
@@ -266,7 +266,7 @@ public class TestLevelZero {
         result = binaryModule.readBinary();
         LevelZeroUtils.errorLog("readBinary", result);
 
-        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), binaryModule, moduleDesc, module, buildLog);
+        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, "/tmp/example.spv");
         LevelZeroUtils.errorLog("zeModuleCreate", result);
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
@@ -292,7 +292,7 @@ public class TestLevelZero {
         LevelZeroUtils.errorLog("zeKernelCreate", result);
 
         // We create a kernel Object
-        LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel);
+        LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel, levelZeroModule);
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
