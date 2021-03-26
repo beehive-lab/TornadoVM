@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  *
  * <code>
  *     __kernel void lookUp(__global long *heap, __global long* output) {
- *           __global ulong *_frame = (__global ulong *) &heap[0];
  *           output[get_global_id(0)]  =  (ulong) heap;
  *      }
  * </code>
@@ -35,37 +34,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  */
 public class TestLookUpBufferAddress {
 
-    private static void testLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
-
-        LevelZeroCommandQueue commandQueue = LevelZeroUtils.createCommandQueue(device, context);
-        LevelZeroCommandList commandList = LevelZeroUtils.createCommandList(device, context, commandQueue.getCommandQueueDescription().getOrdinal());
-
-        final int elements = 1;
-        final int bufferSize = elements * 8;
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
-        deviceMemAllocDesc.setOrdinal(0);
-
-        // Fill heap buffer (Java side)
-        long[] data = new long[elements];
-        Arrays.fill(data, -1);
-        long[] output = new long[elements];
-
-        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
-        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), deviceBuffer);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-
-        LevelZeroByteBuffer bufferB = new LevelZeroByteBuffer();
-        result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-
-        // Copy from HEAP -> Device Allocated Memory
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceBuffer, data, bufferSize, 0, 0, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
-        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
-
-        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
+    private static void distpatchLookUpBuffer(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer,
+            LevelZeroByteBuffer bufferB, long[] output, int bufferSize) {
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         // Prepare kernel for launch
@@ -73,7 +43,7 @@ public class TestLookUpBufferAddress {
         int[] groupSizeX = new int[] { 1 };
         int[] groupSizeY = new int[] { 1 };
         int[] groupSizeZ = new int[] { 1 };
-        result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 1, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
+        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 1, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
@@ -114,6 +84,40 @@ public class TestLookUpBufferAddress {
 
         long baseAddress = output[0];
         System.out.println("Base Address: " + baseAddress);
+    }
+
+    private static void testLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
+
+        LevelZeroCommandQueue commandQueue = LevelZeroUtils.createCommandQueue(device, context);
+        LevelZeroCommandList commandList = LevelZeroUtils.createCommandList(device, context, commandQueue.getCommandQueueDescription().getOrdinal());
+
+        final int elements = 1;
+        final int bufferSize = elements * 8;
+        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        deviceMemAllocDesc.setOrdinal(0);
+
+        // Fill heap buffer (Java side)
+        long[] data = new long[elements];
+        Arrays.fill(data, -1);
+        long[] output = new long[elements];
+
+        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
+        int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), deviceBuffer);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        LevelZeroByteBuffer bufferB = new LevelZeroByteBuffer();
+        result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
+        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
+
+        // Copy from HEAP -> Device Allocated Memory
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceBuffer, data, bufferSize, 0, 0, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+
+        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
+        distpatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceBuffer, bufferB, output, bufferSize);
 
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);

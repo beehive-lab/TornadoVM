@@ -608,7 +608,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         env->SetLongField(javaBuildLog, fieldPtrLog, reinterpret_cast<jlong>(buildLog));
 
         file.close();
-
         return result;
     } else {
         return -1;
