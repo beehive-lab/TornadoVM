@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.api;
+package uk.ac.manchester.tornado.unittests.tornadovmcontext.api;
 
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.GridTask;
@@ -30,34 +30,117 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * The unit-tests in this class check that TornadoVM TaskSchedule API can
+ * combine multiple tasks, which can either exploit the {@link TornadoVMContext}
+ * features or adhere to the original TornadoVM annotations
+ * {@link uk.ac.manchester.tornado.api.annotations.Parallel} or
+ * {@link uk.ac.manchester.tornado.api.annotations.Reduce}.
+ * 
+ * The following tests implement a single TaskSchedule that has three
+ * consecutive tasks: t0: Vector Addition, t1: Vector Multiplication and t2:
+ * Vector Subtraction.
+ */
 public class TestCombinedTaskSchedule extends TornadoTestBase {
 
+    /**
+     * Method that performs the vector addition of two arrays and stores the result
+     * in a third array. This method uses the
+     * {@link uk.ac.manchester.tornado.api.annotations.Parallel} annotation.
+     * 
+     * @param a
+     *            input array
+     * @param b
+     *            input array
+     * @param c
+     *            output array
+     */
     public static void vectorAddV1(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }
 
+    /**
+     * Method that performs the vector addition of two arrays and stores the result
+     * in a third array. This method uses the {@link TornadoVMContext} thread
+     * identifier.
+     *
+     * @param a
+     *            input array
+     * @param b
+     *            input array
+     * @param c
+     *            output array
+     */
     public static void vectorAddV2(TornadoVMContext context, int[] a, int[] b, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
     }
 
+    /**
+     * Method that performs the vector multiplication of two arrays and stores the
+     * result in a third array. This method uses the
+     * {@link uk.ac.manchester.tornado.api.annotations.Parallel} annotation.
+     *
+     * @param a
+     *            input array
+     * @param b
+     *            input array
+     * @param c
+     *            output array
+     */
     public static void vectorMulV1(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] * b[i];
         }
     }
 
+    /**
+     * Method that performs the vector multiplication of two arrays and stores the
+     * result in a third array. This method uses the {@link TornadoVMContext} thread
+     * identifier.
+     *
+     * @param a
+     *            input array
+     * @param b
+     *            input array
+     * @param c
+     *            output array
+     */
     public static void vectorMulV2(TornadoVMContext context, int[] a, int[] b, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] * b[context.threadIdx];
     }
 
+    /**
+     * Method that performs the vector subtraction of two arrays and stores the
+     * result in a third array. This method uses the
+     * {@link uk.ac.manchester.tornado.api.annotations.Parallel} annotation.
+     *
+     * @param a
+     *            input array
+     * @param b
+     *            input array
+     * @param c
+     *            output array
+     */
     public static void vectorSubV1(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] - b[i];
         }
     }
 
+    /**
+     * Method that performs the vector subtraction of two arrays and stores the
+     * result in a third array. This method uses the {@link TornadoVMContext} thread
+     * identifier.
+     *
+     * @param a
+     *            input array
+     * @param b
+     *            input array
+     * @param c
+     *            output array
+     */
     public static void vectorSubV2(TornadoVMContext context, int[] a, int[] b, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] - b[context.threadIdx];
     }

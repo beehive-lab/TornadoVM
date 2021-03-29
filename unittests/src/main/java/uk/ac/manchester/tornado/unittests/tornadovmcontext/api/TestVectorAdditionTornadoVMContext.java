@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.api;
+package uk.ac.manchester.tornado.unittests.tornadovmcontext.api;
 
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.GridTask;
@@ -29,19 +29,23 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
+/**
+ * The unit-tests in this class check that the {@link TornadoVMContext}
+ * parameter can be passed in any sequence.
+ */
+public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
     public static void vectorAddJava(int[] a, int[] b, int[] c) {
         for (int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }
 
-    public static void vectorAdd1(TornadoVMContext context, int[] a, int[] b, int[] c) {
+    public static void vectorAdd(TornadoVMContext context, int[] a, int[] b, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContextApi1() {
+    public void vectorAddTornadoVMContext01() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -55,7 +59,10 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         GridTask gridTask = new GridTask("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd1, context, a, b, cTornado).streamOut(cTornado);
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(a, b) //
+                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, context, a, b, cTornado) //
+                .streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
@@ -68,12 +75,12 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         }
     }
 
-    public static void vectorAdd2(int[] a, TornadoVMContext context, int[] b, int[] c) {
+    public static void vectorAdd(int[] a, TornadoVMContext context, int[] b, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContextApi2() {
+    public void vectorAddTornadoVMContext02() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -88,9 +95,10 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd2, a, context, b, cTornado).streamOut(cTornado);
-        // Change the Grid
-        worker.setGlobalWork(size, 1, 1);
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(a, b) //
+                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, a, context, b, cTornado) //
+                .streamOut(cTornado);
         s0.execute(gridTask);
 
         vectorAddJava(a, b, cJava);
@@ -100,12 +108,12 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         }
     }
 
-    public static void vectorAdd3(int[] a, int[] b, TornadoVMContext context, int[] c) {
+    public static void vectorAdd(int[] a, int[] b, TornadoVMContext context, int[] c) {
         c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContextApi3() {
+    public void vectorAddTornadoVMContext03() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -120,10 +128,10 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd3, a, b, context, cTornado).streamOut(cTornado);
-        // Change the Grid
-        worker.setGlobalWork(size, 1, 1);
-        worker.setLocalWork(1, 1, 1);
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(a, b) //
+                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, a, b, context, cTornado) //
+                .streamOut(cTornado);
         s0.execute(gridTask);
 
         vectorAddJava(a, b, cJava);
@@ -133,12 +141,12 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         }
     }
 
-    public static void vectorAdd4(int[] a, int[] b, int[] c, TornadoVMContext context) {
+    public static void vectorAdd(int[] a, int[] b, int[] c, TornadoVMContext context) {
         c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContextApi4() {
+    public void vectorAddTornadoVMContext04() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -153,10 +161,10 @@ public class TestVectorAdditionTornadoVMContextApi extends TornadoTestBase {
         gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b).task("t0", TestVectorAdditionTornadoVMContextApi::vectorAdd4, a, b, cTornado, context).streamOut(cTornado);
-        // Change the Grid
-        worker.setGlobalWork(size, 1, 1);
-        worker.setLocalWork(1, 1, 1);
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(a, b) //
+                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, a, b, cTornado, context) //
+                .streamOut(cTornado);
         s0.execute(gridTask);
 
         vectorAddJava(a, b, cJava);
