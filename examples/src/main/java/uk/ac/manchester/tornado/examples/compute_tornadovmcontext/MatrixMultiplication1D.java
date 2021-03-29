@@ -30,7 +30,7 @@ public class MatrixMultiplication1D {
 
     private static final int WARMING_UP_ITERATIONS = 15;
 
-    public static void matrixMultiplicationNewApi(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplication(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
         int idx = context.threadIdx;
 
         for (int jdx = 0; jdx < size; jdx++) {
@@ -85,7 +85,7 @@ public class MatrixMultiplication1D {
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0") //
-                .task("t0", MatrixMultiplication1D::matrixMultiplicationNewApi, context, matrixA, matrixB, matrixC, size) //
+                .task("t0", MatrixMultiplication1D::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC);
         //@formatter:on
 

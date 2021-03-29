@@ -44,7 +44,7 @@ public class MatrixMultiplication2DV2 {
     private static final int WARMING_UP_ITERATIONS = 15;
     private static final int TS = 32;
 
-    public static void matrixMultiplicationNewApi(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplication(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
         int row = context.localIdx;
         int col = context.localIdy;
         int globalRow = TS * context.groupIdx + row;
@@ -122,7 +122,7 @@ public class MatrixMultiplication2DV2 {
 
         //@formatter:off        
         TaskSchedule t = new TaskSchedule("s0") //
-                .task("t0", MatrixMultiplication2DV2::matrixMultiplicationNewApi, context, matrixA, matrixB, matrixC, size) //
+                .task("t0", MatrixMultiplication2DV2::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC);
         //@formatter:on
 

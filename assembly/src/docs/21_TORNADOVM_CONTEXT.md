@@ -41,7 +41,7 @@ memory. The following example also makes use of loop tiling. There are three mai
    in [https://github.com/cnugteren/myGEMM](https://github.com/cnugteren/myGEMM).
 
 ```java
-public static void matrixMultiplicationNewApi(TornadoVMContext context,final float[]A,final float[]B,final float[]C,final int size){
+public static void matrixMultiplication(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size){
 
         // Index thread in the first dimension ( get_global_id(0) )
         int row = context.localIdx;
