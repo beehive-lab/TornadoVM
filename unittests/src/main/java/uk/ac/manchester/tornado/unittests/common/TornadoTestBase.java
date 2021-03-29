@@ -54,9 +54,11 @@ public abstract class TornadoTestBase {
             }
         }
 
-        /* Virtual devices support a single device. Therefore, it doesn't make sense to change the device even if
-           a different device is set through the 'tornado.unittests.device' property
-        */
+        /*
+         * Virtual Device execution assumes an environment with a single device.
+         * Therefore, there is no need to change the device even if a different device
+         * is set through the 'tornado.unittests.device' property
+         */
         if (!wasDeviceInspected && !getVirtualDeviceEnabled()) {
             Tuple2<Integer, Integer> pairDriverDevice = getDriverAndDeviceIndex();
             int driverIndex = pairDriverDevice.f0();
