@@ -305,7 +305,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-            return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
+            OCLInstalledCode installedCode;
+            if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
+                // A) for FPGA
+                installedCode = deviceContext.installCode(task.getId(), executable.getEntryPoint(), source, task.shouldCompile());
+            } else {
+                // B) for CPU multi-core or GPU
+                installedCode = deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
+            }
+            return installedCode;
         } catch (IOException e) {
             e.printStackTrace();
         }
