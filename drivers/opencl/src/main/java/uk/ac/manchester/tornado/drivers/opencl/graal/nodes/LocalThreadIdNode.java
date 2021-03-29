@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,7 +44,8 @@ public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<LocalThreadIdNode> TYPE = NodeClass.create(LocalThreadIdNode.class);
 
-    @Node.Input protected ConstantNode index;
+    @Node.Input
+    protected ConstantNode index;
 
     public LocalThreadIdNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
