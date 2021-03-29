@@ -113,7 +113,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // Initialize deviceHeapPointer via the lookupBufferAddress
             TaskMetaData meta = new TaskMetaData(scheduleMetaData, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            readHeapBaseAddress(meta);
+            runAndReadLookUpKernel(meta);
 
             isInitialized = true;
         }
@@ -167,14 +167,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void runAndReadLookUpKernel(TaskMetaData meta) {
-        deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
-    }
-
-    // TODO finish this with LevelZero or any other dispatch
-    private long readHeapBaseAddress(TaskMetaData meta) {
-        System.out.println("Reading lookup Buffer Address");
         long address = context.getMemoryManager().launchAndReadLookupBufferAddress(meta);
-        return address;
+        deviceContext.getMemoryManager().init(this, address);
     }
 
     private FrameMap newFrameMap(RegisterConfig registerConfig) {

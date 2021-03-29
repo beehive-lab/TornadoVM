@@ -98,12 +98,10 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     public long toAbsoluteDeviceAddress(final long address) {
         long result = address;
-        // FIXME : Check what happens with device memory using LevelZero.
-        if (!TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
-            deviceHeapPointer = 0;
-        }
-        guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
-        result += deviceHeapPointer;
+
+        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
+        result += deviceBufferAddress;
+
         return result;
     }
 
@@ -141,5 +139,13 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     public long launchAndReadLookupBufferAddress(TaskMetaData meta) {
         return deviceContext.getSpirvContext().executeAndReadLookupBufferAddressKernel(meta);
+    }
+
+    public long toRelativeDeviceAddress(long address) {
+        long result = address;
+        if (!(Long.compareUnsigned(address, deviceBufferAddress) < 0 || Long.compareUnsigned(address, (deviceBufferAddress + heapLimit)) > 0)) {
+            result -= deviceBufferAddress;
+        }
+        return result;
     }
 }

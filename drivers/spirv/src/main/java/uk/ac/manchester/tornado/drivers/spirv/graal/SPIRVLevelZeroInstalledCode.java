@@ -9,7 +9,6 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
@@ -41,9 +40,22 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         // heap (global memory)
         buffer.clear();
         buffer.putLong(stack.toBuffer());
-        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), buffer.array());
+        System.out.println("SPIRV SET ARGS: GLOBAL HEAP: " + stack.toBuffer());
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, buffer.position(), buffer.array());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
+
+        // stack pointer
+        buffer.clear();
+        buffer.putLong(stack.toRelativeAddress());
+        System.out.println("SPIRV SET ARGS: STACK POINTER: " + stack.toRelativeAddress());
+        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, buffer.position(), buffer.array());
+        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        index++;
+
+        // Write stack
+        stack.enqueueWrite();
+
     }
 
     @Override

@@ -100,8 +100,16 @@ public class SPIRVByteBuffer {
         return deviceContext.enqueueReadBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
     }
 
+    public int enqueueWrite() {
+        return enqueueWrite(null);
+    }
+
     public int enqueueWrite(int[] events) {
         // XXX: offset 0
         return deviceContext.enqueueWriteBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
+    }
+
+    public long toRelativeAddress() {
+        return deviceContext.getMemoryManager().toRelativeDeviceAddress(offset);
     }
 }

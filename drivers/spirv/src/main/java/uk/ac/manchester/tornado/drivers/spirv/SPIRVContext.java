@@ -34,4 +34,5 @@ public abstract class SPIRVContext {
     public abstract void flush(int deviceIndex);
 
     public abstract long executeAndReadLookupBufferAddressKernel(TaskMetaData meta);
+
 }

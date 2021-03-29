@@ -77,8 +77,9 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public long toAbsoluteAddress() {
-        System.out.println("Buffer offset: " + bufferOffset);
-        return deviceContext.getMemoryManager().toAbsoluteDeviceAddress(bufferOffset);
+        long address = deviceContext.getMemoryManager().toAbsoluteDeviceAddress(bufferOffset);
+        System.out.println("\tSPIRVMemoryArrayWrapper Buffer offset: " + address);
+        return address;
     }
 
     @Override

@@ -131,7 +131,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private ZeDeviceMemAllocDesc createDeviceDescription() {
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
+        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
         return deviceMemAllocDesc;
     }
@@ -154,7 +154,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             LevelZeroUtils.errorLog("zeMemAllocShared", result);
             // FIXME NOTE: Not sure if we should return the raw pointer here for Level Zero
         } else {
-            int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, (int) numBytes, (int) numBytes, l0Device.getDeviceHandlerPtr(), deviceBuffer);
+            int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocDevice", result);
         }
         return deviceBuffer.getPtrBuffer();
@@ -232,4 +232,5 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         long address = LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceBuffer, output, bufferSize);
         return address;
     }
+
 }

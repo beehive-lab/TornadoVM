@@ -42,26 +42,27 @@ public class TestPrecompiledSPIRV {
     public static void main(String[] args) {
         final int numElements = 256;
         int[] a = new int[numElements];
-        Arrays.fill(a, 1);
+        int[] b = new int[numElements];
+        Arrays.fill(a, 100);
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         System.out.println("DEFAULT DEVICE: " + defaultDevice);
 
-        String filePath = "/tmp/example.spv";
+        String filePath = "/tmp/testCopy.spv";
 
         // @formatter:off
         new TaskSchedule("s0")
                 .prebuiltTask("t0",
                         "copyTest",
                         filePath,
-                        new Object[] { a },
-                        new Access[] { Access.WRITE },
+                        new Object[] { a, b },
+                        new Access[] { Access.READ, Access.WRITE },
                         defaultDevice,
                         new int[] { numElements, 1, 1 })
-                .streamOut(a)
+                .streamOut(b)
                 .execute();
         // @formatter:on
 
-        System.out.println("a: " + Arrays.toString(a));
+        System.out.println("b: " + Arrays.toString(b));
     }
 }

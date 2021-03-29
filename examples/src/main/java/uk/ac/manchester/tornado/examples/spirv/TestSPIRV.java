@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.exceptions.Debug;
 
 /**
  * How to run?
@@ -13,22 +14,25 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * </p>
  */
 public class TestSPIRV {
-    public static void add(int[] a) {
+    public static void copyTest(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 10;
+            Debug.printf("Hello: %d\n", i);
+            b[i] = a[i];
         }
     }
 
     public static void main(String[] args) {
 
-        final int numElements = 8;
+        final int numElements = 256;
         int[] a = new int[numElements];
+        Arrays.fill(a, 100);
+        int[] b = new int[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::add, a) //
-                .streamOut(a) //
+                .task("t0", TestSPIRV::copyTest, a, b) //
+                .streamOut(b) //
                 .execute(); //
 
-        System.out.println("a: " + Arrays.toString(a));
+        System.out.println("b: " + Arrays.toString(b));
     }
 }

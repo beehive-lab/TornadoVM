@@ -83,7 +83,6 @@ public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
             if (Tornado.DEBUG) {
                 Tornado.debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass().getSimpleName(), arg, state.getAddress(), state.getOffset());
             }
-            System.out.println("STATE: GET BUFFER: " + state.getAddress());
             buffer.putLong(state.getAddress());
         }
     }
