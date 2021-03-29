@@ -8,6 +8,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
@@ -23,6 +25,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroContext extends SPIRVContext {
 
@@ -214,5 +217,19 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
 
+    }
+
+    @Override
+    public long executeAndReadLookupBufferAddressKernel(TaskMetaData meta) {
+        int deviceIndex = 0;
+        SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
+        LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
+        LevelZeroCommandQueue commandQueue = spirvCommandQueue.getCommandQueue();
+        LevelZeroDevice device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
+        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, levelZeroContext, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
+        long[] output = new long[1];
+        final int bufferSize = Sizeof.LONG.getNumBytes();
+        long address = LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceBuffer, output, bufferSize);
+        return address;
     }
 }

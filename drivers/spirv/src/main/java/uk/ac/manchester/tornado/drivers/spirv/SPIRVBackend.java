@@ -1,11 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -22,6 +19,17 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
@@ -42,9 +50,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBu
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -71,15 +77,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     }
 
+    // FIXME <REFACTOR> <S>
     @Override
     public String decodeDeopt(long value) {
-        return null;
+        DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
+        DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
+        return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
     }
 
     @Override
     public boolean isInitialised() {
         return isInitialized;
     }
+
+    // FIXME: <REFACTOR> Common between OCL and SPIRV
 
     /**
      * It allocates the smallest of the requested heap size or the max global memory
@@ -91,7 +102,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
         Tornado.info("%s: allocating %s of heap space", context.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
-        context.getMemoryManager().allocateRegion(memorySize);
+        context.getMemoryManager().allocateDeviceMemoryRegions(memorySize);
     }
 
     @Override
@@ -99,6 +110,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (!isInitialized) {
             Tornado.info("Initialization of the SPIRV Backend - Calling Memory Allocator");
             allocateHeapMemoryOnDevice();
+
+            // Initialize deviceHeapPointer via the lookupBufferAddress
+            TaskMetaData meta = new TaskMetaData(scheduleMetaData, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            readHeapBaseAddress(meta);
+
             isInitialized = true;
         }
     }
@@ -125,6 +141,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return null;
     }
 
+    // FIXME: <Revisit> This method returns an inplemented inside the inner class.
+    // Check if we can return null instead.
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return new SPIRVReferenceMapBuilder();
@@ -146,6 +164,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     @Override
     public SPIRVCodeProvider getCodeCache() {
         return codeCache;
+    }
+
+    private void runAndReadLookUpKernel(TaskMetaData meta) {
+        deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
+    }
+
+    // TODO finish this with LevelZero or any other dispatch
+    private long readHeapBaseAddress(TaskMetaData meta) {
+        System.out.println("Reading lookup Buffer Address");
+        long address = context.getMemoryManager().launchAndReadLookupBufferAddress(meta);
+        return address;
     }
 
     private FrameMap newFrameMap(RegisterConfig registerConfig) {

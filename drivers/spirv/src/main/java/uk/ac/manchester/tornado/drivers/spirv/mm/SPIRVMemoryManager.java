@@ -5,11 +5,14 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 // FIXME <REFACTOR> This class can be almost common for all three backends
 public class SPIRVMemoryManager implements TornadoMemoryProvider {
@@ -21,7 +24,8 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
     private SPIRVDeviceContext deviceContext;
     private long callStackPosition;
     private long callStackLimit;
-    private long deviceHeapPointer;
+    private long deviceHeapPointer; // Device pointer
+    private long deviceBufferAddress; // Given by the loopUkBuffer
     private boolean initialized;
     private ScheduleMetaData scheduleMetadata;
 
@@ -103,7 +107,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         return result;
     }
 
-    public void allocateRegion(long numBytes) {
+    public void allocateDeviceMemoryRegions(long numBytes) {
         this.heapLimit = numBytes;
         this.deviceHeapPointer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), numBytes);
     }
@@ -125,5 +129,17 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
                     + "]\nUse flag -Dtornado.heap.allocation=<XGB> to tune the device heap. E.g., -Dtornado.heap.allocation=2GB\n");
         }
         return headerStart;
+    }
+
+    // FIXME <REFACTOR> same as OCL and SPIRV backends
+    public void init(SPIRVBackend spirvBackend, long baseHeapAddress) {
+        this.deviceBufferAddress = baseHeapAddress;
+        this.initialized = true;
+        TornadoLogger.info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getDeviceName());
+        scheduleMetadata.setDevice(spirvBackend.getDeviceContext().asMapping());
+    }
+
+    public long launchAndReadLookupBufferAddress(TaskMetaData meta) {
+        return deviceContext.getSpirvContext().executeAndReadLookupBufferAddressKernel(meta);
     }
 }

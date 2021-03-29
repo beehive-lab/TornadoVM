@@ -2,6 +2,8 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.List;
 
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
 public abstract class SPIRVContext {
 
     SPIRVPlatform platform;
@@ -31,4 +33,5 @@ public abstract class SPIRVContext {
 
     public abstract void flush(int deviceIndex);
 
+    public abstract long executeAndReadLookupBufferAddressKernel(TaskMetaData meta);
 }

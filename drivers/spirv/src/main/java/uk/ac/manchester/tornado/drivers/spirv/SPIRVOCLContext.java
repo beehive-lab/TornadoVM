@@ -1,9 +1,10 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLContext extends SPIRVContext {
 
@@ -71,6 +72,11 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public void flush(int deviceIndex) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public long executeAndReadLookupBufferAddressKernel(TaskMetaData meta) {
         throw new RuntimeException("Unimplemented");
     }
 
