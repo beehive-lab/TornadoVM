@@ -16,7 +16,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
 
 import java.io.IOException;
 import java.util.Arrays;

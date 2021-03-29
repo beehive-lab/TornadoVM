@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
 
 import java.util.stream.IntStream;
 
@@ -30,53 +30,27 @@ import uk.ac.manchester.tornado.api.GridTask;
  * implementation follows the OpenCL implementation description provided in
  * https://github.com/cnugteren/myGEMM.
  *
- * In detail, it applies the following optimizations: (i) Thread attributes to
- * utilize two dimensions, and (ii) Local memory & Loop tiling.
+ * In detail, it applies the following optimization: (i) Thread attributes to
+ * utilize two dimensions.
  *
  * How to run:
  *
  * <code>
- *     $ tornado --debug uk.ac.manchester.tornado.examples.compute_tornadovmcontext.MatrixMultiplication2Dv2
+ *     $ tornado --debug uk.ac.manchester.tornado.examples.tornadovmcontext.compute.MatrixMultiplication2Dv1
  * </code>
  */
-public class MatrixMultiplication2DV2 {
+public class MatrixMultiplication2DV1 {
 
     private static final int WARMING_UP_ITERATIONS = 15;
-    private static final int TS = 32;
 
     public static void matrixMultiplication(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
-        int row = context.localIdx;
-        int col = context.localIdy;
-        int globalRow = TS * context.groupIdx + row;
-        int globalCol = TS * context.groupIdy + col;
-
-        float[] aSub = context.allocateFloatLocalArray(TS * TS);
-        float[] bSub = context.allocateFloatLocalArray(TS * TS);
-
+        int globalRow = context.threadIdx;
+        int globalCol = context.threadIdy;
         float sum = 0;
 
-        // Loop over all tiles
-        int numTiles = size / TS;
-        for (int t = 0; t < numTiles; t++) {
-
-            // Load one tile of A and B into local memory
-            int tiledRow = TS * t + row;
-            int tiledCol = TS * t + col;
-            aSub[col * TS + row] = A[tiledCol * size + globalRow];
-            bSub[col * TS + row] = B[globalCol * size + tiledRow];
-
-            // Synchronise to make sure the tile is loaded
-            context.localBarrier();
-
-            // Perform the computation for a single tile
-            for (int k = 0; k < TS; k++) {
-                sum += aSub[k * TS + row] * bSub[col * TS + k];
-            }
-            // Synchronise before loading the next tile
-            context.globalBarrier();
+        for (int k = 0; k < size; k++) {
+            sum += A[(k * size) + globalRow] * B[(globalCol * size) + k];
         }
-
-        // Store the final result in C
         C[(globalCol * size) + globalRow] = sum;
     }
 
@@ -122,7 +96,7 @@ public class MatrixMultiplication2DV2 {
 
         //@formatter:off        
         TaskSchedule t = new TaskSchedule("s0") //
-                .task("t0", MatrixMultiplication2DV2::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
+                .task("t0", MatrixMultiplication2DV1::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC);
         //@formatter:on
 
@@ -159,7 +133,7 @@ public class MatrixMultiplication2DV2 {
         String formatSequentialGFlops = String.format("%.2f", sequentialGigaFlops);
 
         System.out.println("\tSequential Execution: " + formatSequentialGFlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
-        System.out.println("\tTornadoVM Execution with Local Memory and Loop Tiling: " + formatTornadoVMGFlops + " GFlops, Total Time = " + (end - start) + " ms");
+        System.out.println("\tTornadoVM Execution: " + formatTornadoVMGFlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");
         System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }

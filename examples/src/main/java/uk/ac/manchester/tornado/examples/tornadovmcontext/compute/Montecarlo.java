@@ -16,7 +16,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVMContext;

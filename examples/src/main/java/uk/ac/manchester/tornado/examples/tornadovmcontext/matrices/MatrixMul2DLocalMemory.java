@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.matrices;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.matrices;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -48,7 +48,7 @@ import java.util.stream.IntStream;
  *
  * <code>
  *     $ make BACKEND=opencl,ptx
- *     $ tornado --debug uk.ac.manchester.tornado.examples.matrices.MatrixMul2DLocalMemory
+ *     $ tornado --debug uk.ac.manchester.tornado.examples.tornadovmcontext.matrices.MatrixMul2DLocalMemory
  * </code>
  *
  */

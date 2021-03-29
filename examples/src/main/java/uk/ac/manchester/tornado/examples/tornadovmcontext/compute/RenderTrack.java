@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
 
 import java.util.ArrayList;
 import java.util.Random;

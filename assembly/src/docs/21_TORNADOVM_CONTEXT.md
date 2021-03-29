@@ -32,7 +32,7 @@ CUDA PTX terminology.
 ## Examples
 
 The
-following [example](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/examples/src/main/java/uk/ac/manchester/tornado/examples/compute_tornadovmcontext/MatrixMultiplication2DV2.java)
+following [example](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/examples/src/main/java/uk/ac/manchester/tornado/examples/tornadovmcontext/compute/MatrixMultiplication2DV2.java)
 is the Matrix Multiplication implementation using the `TornadoVMContext` object for indexing threads and access to local
 memory. The following example also makes use of loop tiling. There are three main steps to leverage the features of TornadoVMContext:
 

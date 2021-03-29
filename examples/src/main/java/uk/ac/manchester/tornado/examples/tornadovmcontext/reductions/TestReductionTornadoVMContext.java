@@ -1,4 +1,4 @@
-package uk.ac.manchester.tornado.examples.reductions;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.reductions;
 
 import java.lang.reflect.Field;
 import java.util.stream.IntStream;

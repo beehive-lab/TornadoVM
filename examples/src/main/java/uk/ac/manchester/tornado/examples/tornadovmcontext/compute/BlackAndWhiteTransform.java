@@ -16,7 +16,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.GridTask;
  * How to run?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute_tornadovmcontext.BlackAndWhiteTransform 
+ * $ tornado uk.ac.manchester.tornado.examples.tornadovmcontext.compute.BlackAndWhiteTransform 
  * </code>
  *
  *

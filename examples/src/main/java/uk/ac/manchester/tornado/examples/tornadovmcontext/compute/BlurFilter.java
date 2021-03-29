@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.compute_tornadovmcontext;
+package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute_tornadovmcontext.BlurFilter 
+ * $ tornado uk.ac.manchester.tornado.examples.tornadovmcontext.compute.BlurFilter 
  * </code>
  *
  *
