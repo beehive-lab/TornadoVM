@@ -1,6 +1,22 @@
+/*
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package uk.ac.manchester.tornado.examples.tornadovmcontext.reductions;
 
-import java.lang.reflect.Field;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridTask;
@@ -10,28 +26,9 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 
-public class TestReductionTornadoVMContext {
+public class ReductionsLocalMemory {
 
-    // Reduction in Global memory using the API 2.0
-    public static void reduction(float[] a, float[] b, TornadoVMContext context) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
-        int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
-
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                a[id] += a[id + stride];
-            }
-        }
-        context.globalBarrier();
-        if (localIdx == 0) {
-            b[groupID] = a[id];
-        }
-    }
-
-    // Reduction in Local memory using the API 2.0
+    // Reduction in Local memory using TornadoVMContext
     public static void reductionLocal(float[] a, float[] b, int localSize, TornadoVMContext context) {
         int globalIdx = context.threadIdx;
         int localIdx = context.localIdx;
@@ -59,35 +56,6 @@ public class TestReductionTornadoVMContext {
         return acc;
     }
 
-    public static void runEmulator(float[] input, float[] reduce) throws IllegalAccessException {
-        WorkerGrid worker = new WorkerGrid1D(16);
-        worker.setLocalWork(8, 1, 1);
-        TornadoVMContext context = new TornadoVMContext(worker);
-
-        Class<?> klass = context.getClass();
-        Field fieldA = null;
-        Field fieldB = null;
-        try {
-            fieldA = klass.getDeclaredField("localIdx");
-            fieldA.setAccessible(true);
-
-            fieldB = klass.getDeclaredField("groupID");
-            fieldB.setAccessible(true);
-
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        }
-
-        final int numGroups = context.getGlobalGroupSize(0) / context.getLocalGroupSize(0);
-        for (int j = (context.getLocalGroupSize(0) - 1); j >= 0; j--) {
-            for (int i = (numGroups - 1); i >= 0; i--) {
-                fieldA.set(context, j);
-                fieldB.set(context, i);
-                reduction(input, reduce, context);
-            }
-        }
-    }
-
     public static void rAdd(final float[] array, int size) {
         float acc = array[0];
         for (int i = 1; i < array.length; i++) {
@@ -109,10 +77,9 @@ public class TestReductionTornadoVMContext {
         gridTask.setWorkerGrid("s0.t0", worker);
         TornadoVMContext context = new TornadoVMContext(worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", TestReductionTornadoVMContext::reductionLocal, input, reduce, localSize, context)
-                .task("t1", TestReductionTornadoVMContext::rAdd, reduce, (size / localSize)).streamOut(reduce);
+        TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
+                .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)).streamOut(reduce);
         // Change the Grid
-        worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridTask);
 
