@@ -107,7 +107,7 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
     @Test
     public void testIntReductionsLocalMemory() {
         final int size = 1024;
-        final int localSize = 1024;
+        final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
