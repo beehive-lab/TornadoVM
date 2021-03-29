@@ -301,12 +301,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
     jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
-    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
-
     void* buffer = nullptr;
-    if (ptrBuffer != -1) {
-        buffer = reinterpret_cast<void *>(ptrBuffer);
-    }
 
     jclass javaDeviceMemAllocDescClass = env->GetObjectClass(javaDeviceMemAllocDesc);
     jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "stype", "I");
@@ -366,12 +361,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
     jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
-    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
-
     void* buffer = nullptr;
-    if (ptrBuffer != -1) {
-        buffer = reinterpret_cast<void *>(ptrBuffer);
-    }
 
     jclass javaDeviceMemAllocDescClass = env->GetObjectClass(javaDeviceMemAllocDesc);
     jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "stype", "I");
@@ -431,12 +421,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
     jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
-    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
-
     void* buffer = nullptr;
-    if (ptrBuffer != -1) {
-        buffer = reinterpret_cast<void *>(ptrBuffer);
-    }
 
     jclass javaDeviceMemAllocDescClass = env->GetObjectClass(javaDeviceMemAllocDesc);
     jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "stype", "I");
@@ -461,10 +446,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     env->SetLongField(javaDeviceMemAllocDescClass, fieldOrdinalDeviceDesc, deviceDesc.ordinal);
     env->SetLongField(javaDeviceMemAllocDescClass, fieldFlagsDeviceDesc, deviceDesc.flags);
 
+    std::cout << "Native Pointer: " << buffer << std::endl;
+
     // Set Buffer Pointer and attributes
     jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
     jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
-    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<jlong>(buffer));
+    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<ulong>(buffer));
     env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
     env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
 
@@ -483,12 +470,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     jclass javaBufferClass = env->GetObjectClass(javaLevelZeroBuffer);
     jfieldID fieldBuffer = env->GetFieldID(javaBufferClass, "ptrBuffer", "J");
-    jlong ptrBuffer = env->GetLongField(javaBufferClass, fieldBuffer);
-
     void* buffer = nullptr;
-    if (ptrBuffer != -1) {
-        buffer = reinterpret_cast<void *>(ptrBuffer);
-    }
 
     jclass javaDeviceMemAllocDescClass = env->GetObjectClass(javaDeviceMemAllocDesc);
     jfieldID fieldTypeDeviceDesc = env->GetFieldID(javaDeviceMemAllocDescClass, "stype", "I");
@@ -516,7 +498,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     // Set Buffer Pointer and attributes
     jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
     jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
-    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<jlong>(buffer));
+    env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<ulong>(buffer));
     env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
     env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
 
@@ -597,7 +579,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
             env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->numConstants);
             field = env->GetFieldID(javaModuleDescClass, "pConstantsIds", "J");
             env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->pConstantIds);
-
             field = env->GetFieldID(javaModuleDescClass, "pConstantValues", "J");
             env->SetLongField(javaModuleDesc, field, (jlong) moduleDesc.pConstants->pConstantValues);
         }

@@ -284,6 +284,7 @@ public class LevelZeroUtils {
 
         long baseAddress = output[0];
         System.out.println("Base Address: " + baseAddress);
+        commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         return baseAddress;
     }
 }

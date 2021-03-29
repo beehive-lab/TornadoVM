@@ -9,6 +9,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
@@ -41,7 +42,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         buffer.clear();
         buffer.putLong(stack.toBuffer());
         System.out.println("SPIRV SET ARGS: GLOBAL HEAP: " + stack.toBuffer());
-        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, buffer.position(), buffer.array());
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.POINTER.getNumBytes(), buffer.array());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
 
@@ -49,7 +50,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         buffer.clear();
         buffer.putLong(stack.toRelativeAddress());
         System.out.println("SPIRV SET ARGS: STACK POINTER: " + stack.toRelativeAddress());
-        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, buffer.position(), buffer.array());
+        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), buffer.array());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
 
@@ -87,9 +88,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         System.out.println("groupSizeX[0]: " + groupSizeX[0]);
         System.out.println("groupSizeY[0]: " + groupSizeY[0]);
         System.out.println("groupSizeZ[0]: " + groupSizeZ[0]);
+
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(groupSizeX[0]);
+        dispatch.setGroupCountX(64);
         dispatch.setGroupCountY(groupSizeY[0]);
         dispatch.setGroupCountZ(groupSizeZ[0]);
 

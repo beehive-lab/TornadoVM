@@ -192,12 +192,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // heap (global memory)
         buffer.clear();
+        System.out.println("stack.toBuffer(): " + stack.toBuffer());
         buffer.putLong(stack.toBuffer());
         kernel.setArg(index, buffer);
         index++;
 
         // stack pointer
         buffer.clear();
+        System.out.println("stack.toBuffer(): " + stack.toRelativeAddress());
         buffer.putLong(stack.toRelativeAddress());
         kernel.setArg(index, buffer);
         index++;

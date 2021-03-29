@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.tests;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
@@ -7,8 +9,6 @@ import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
-
-import java.util.Arrays;
 
 public class TestVM {
 
@@ -60,7 +60,7 @@ public class TestVM {
         device.moveDataFromDeviceBufferToHost(objectStateA, b);
 
         // // Copy Back Data
-        device.streamOutBlocking(a, 0, objectStateA, null);
+        // device.streamOutBlocking(a, 0, objectStateA, null);
 
         // Add a barrier
         // device.enqueueBarrier();

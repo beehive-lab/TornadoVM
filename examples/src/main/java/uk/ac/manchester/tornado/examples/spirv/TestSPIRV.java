@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.exceptions.Debug;
 
 /**
  * How to run?
@@ -16,7 +15,6 @@ import uk.ac.manchester.tornado.api.exceptions.Debug;
 public class TestSPIRV {
     public static void copyTest(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            Debug.printf("Hello: %d\n", i);
             b[i] = a[i];
         }
     }
