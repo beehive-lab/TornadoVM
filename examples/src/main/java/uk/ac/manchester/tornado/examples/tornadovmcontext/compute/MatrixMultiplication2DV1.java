@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.GridTask;
  * How to run:
  *
  * <code>
- *     $ tornado --debug uk.ac.manchester.tornado.examples.tornadovmcontext.compute.MatrixMultiplication2Dv1
+ *     $ tornado --debug uk.ac.manchester.tornado.examples.tornadovmcontext.compute.MatrixMultiplication2DV1
  * </code>
  */
 public class MatrixMultiplication2DV1 {
@@ -92,6 +92,7 @@ public class MatrixMultiplication2DV1 {
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext(workerGrid);
         workerGrid.setGlobalWork(size, size, 1);
+        // The local work group is randomly configured to be 32x32
         workerGrid.setLocalWork(32, 32, 1);
 
         //@formatter:off        

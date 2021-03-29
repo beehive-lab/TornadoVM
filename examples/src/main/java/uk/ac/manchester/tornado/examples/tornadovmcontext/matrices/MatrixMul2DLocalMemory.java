@@ -59,8 +59,6 @@ public class MatrixMul2DLocalMemory {
     private static final boolean CHECK_RESULT = true;
     private static final float DELTA = 0.01f;
     public static final int TS = 32;
-    public static final int WPT = 8;
-    public static final int RTS = TS / WPT;
 
     private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -121,8 +119,9 @@ public class MatrixMul2DLocalMemory {
 
     public static void main(String[] args) throws Exception {
         int N = 512;
-        long local_x = 32;
-        long local_y = 32;
+        // The local work group is configured to be TSxTS, to match the Tile Size (TS)
+        long local_x = TS;
+        long local_y = TS;
         if (args.length == 1) {
             N = Integer.parseInt(args[0]);
         } else if (args.length == 3) {

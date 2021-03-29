@@ -134,6 +134,7 @@ public class NBody {
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
+        // The local work group is randomly configured to be 1024, 1 ,1
         workerGrid.setLocalWork(1024, 1, 1);
 
         // @formatter:off
