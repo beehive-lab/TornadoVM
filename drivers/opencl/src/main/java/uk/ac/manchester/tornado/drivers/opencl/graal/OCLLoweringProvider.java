@@ -76,8 +76,6 @@ import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
@@ -115,13 +113,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoVMContextGroupIdNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
@@ -191,12 +189,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof InstanceOfNode) {
             // ignore InstanceOfNode nodes
-        } else if (node instanceof ThreadIdNode) {
-            lowerThreadIdNode((ThreadIdNode) node);
-        } else if (node instanceof ThreadLocalIdNode) {
-            lowerLocalThreadIdNode((ThreadLocalIdNode) node);
-        } else if (node instanceof TornadoVMContextGroupIdNode) {
-            lowerGetGroupIdNode((TornadoVMContextGroupIdNode) node);
+        } else if (node instanceof ThreadIdFixedWithNextNode) {
+            lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
+        } else if (node instanceof ThreadLocalIdFixedWithNextNode) {
+            lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
+        } else if (node instanceof GetGroupIdFixedWithNextNode) {
+            lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -289,20 +287,20 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerThreadIdNode(ThreadIdNode threadIdNode) {
+    private void lowerThreadIdNode(ThreadIdFixedWithNextNode threadIdNode) {
         StructuredGraph graph = threadIdNode.graph();
 
         GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
         graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
     }
 
-    private void lowerLocalThreadIdNode(ThreadLocalIdNode threadLocalIdNode) {
+    private void lowerLocalThreadIdNode(ThreadLocalIdFixedWithNextNode threadLocalIdNode) {
         StructuredGraph graph = threadLocalIdNode.graph();
         LocalThreadIdNode localThreadIdNode = graph.addOrUnique(new LocalThreadIdNode(ConstantNode.forInt(threadLocalIdNode.getDimension(), graph)));
         graph.replaceFixedWithFloating(threadLocalIdNode, localThreadIdNode);
     }
 
-    private void lowerGetGroupIdNode(TornadoVMContextGroupIdNode getGroupIdNode) {
+    private void lowerGetGroupIdNode(GetGroupIdFixedWithNextNode getGroupIdNode) {
         StructuredGraph graph = getGroupIdNode.graph();
         GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
         graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);

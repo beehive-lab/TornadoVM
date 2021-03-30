@@ -29,19 +29,30 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
-@NodeInfo(shortName = "GetGroupId")
-public class TornadoVMContextGroupIdNode extends FixedWithNextNode implements Lowerable {
+/**
+ * The {@link ThreadLocalIdFixedWithNextNode} is used to replace the FieldNodes
+ * that correspond to the {@link uk.ac.manchester.tornado.api.TornadoVMContext}.
+ * In essence, these fields are: localIdx, localIdy and localIdz.
+ *
+ * During lowering, this node is replaced with a FloatingNode that corresponds
+ * to a TornadoVM backend (OpenCL, PTX). That replacement is performed in
+ * OCLLoweringProvider, or PTXLoweringProvider, and drives the
+ * {@link ThreadLocalIdFixedWithNextNode} to extend FixedWithNextNode in order
+ * to be replaced by a FloatingNode.
+ */
+@NodeInfo(shortName = "LocalThreadId")
+public class ThreadLocalIdFixedWithNextNode extends FixedWithNextNode implements Lowerable {
 
     @Input
     ValueNode object;
     private final int dimension;
-    public static final NodeClass<TornadoVMContextGroupIdNode> TYPE = NodeClass.create(TornadoVMContextGroupIdNode.class);
+    public static final NodeClass<ThreadLocalIdFixedWithNextNode> TYPE = NodeClass.create(ThreadLocalIdFixedWithNextNode.class);
 
     public ValueNode object() {
         return this.object;
     }
 
-    public TornadoVMContextGroupIdNode(ValueNode index, int dimension) {
+    public ThreadLocalIdFixedWithNextNode(ValueNode index, int dimension) {
         super(TYPE, StampFactory.forInteger(32));
         this.object = index;
         this.dimension = dimension;
