@@ -53,7 +53,7 @@ public class ThreadIdFixedWithNextNode extends FixedWithNextNode implements Lowe
     }
 
     public ThreadIdFixedWithNextNode(ValueNode index, int dimension) {
-        super(TYPE, StampFactory.forInteger(32));
+        super(TYPE, StampFactory.forUnsignedInteger(32));
         this.object = index;
         this.dimension = dimension;
     }

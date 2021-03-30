@@ -53,7 +53,7 @@ public class GetGroupIdFixedWithNextNode extends FixedWithNextNode implements Lo
     }
 
     public GetGroupIdFixedWithNextNode(ValueNode index, int dimension) {
-        super(TYPE, StampFactory.forInteger(32));
+        super(TYPE, StampFactory.forUnsignedInteger(32));
         this.object = index;
         this.dimension = dimension;
     }
