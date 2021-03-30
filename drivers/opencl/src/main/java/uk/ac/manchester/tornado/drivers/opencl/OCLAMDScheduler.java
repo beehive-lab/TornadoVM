@@ -89,6 +89,9 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
             maxBlockSize /= 4;
         }
         int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
+        if (value == 0) {
+            return 1;
+        }
         while (globalWorkSize % value != 0) {
             value--;
         }
