@@ -13,9 +13,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * </p>
  */
 public class TestSPIRV {
-    public static void copyTest(int[] a, int[] b) {
+    public static void copyTest(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i];
+            a[i] = 50;
         }
     }
 
@@ -23,14 +23,14 @@ public class TestSPIRV {
 
         final int numElements = 256;
         int[] a = new int[numElements];
-        Arrays.fill(a, 100);
+        // Arrays.fill(a, 100);
         int[] b = new int[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::copyTest, a, b) //
-                .streamOut(b) //
+                .task("t0", TestSPIRV::copyTest, a) //
+                .streamOut(a) //
                 .execute(); //
 
-        System.out.println("b: " + Arrays.toString(b));
+        System.out.println("a: " + Arrays.toString(a));
     }
 }

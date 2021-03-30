@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.drivers.spirv.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
@@ -23,13 +22,9 @@ public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
     public SPIRVCallStack(long offset, int numArgs, SPIRVDeviceContext deviceContext) {
         super(deviceContext, offset, (numArgs + RESERVED_SLOTS) << 3);
         buffer.clear();
-        setArgStart(buffer);
-        onDevice = false;
-    }
-
-    private void setArgStart(ByteBuffer buffer) {
         argStart = (byte) buffer.position();
         buffer.mark();
+        onDevice = false;
     }
 
     @Override
@@ -107,6 +102,7 @@ public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
     public void setHeader(HashMap<Integer, Integer> map) {
         buffer.clear();
         for (int i = 0; i < RESERVED_SLOTS; i++) {
+            System.out.println("RESERVED SLOTS: " + i);
             if (map.containsKey(i)) {
                 buffer.putLong(map.get(i));
             } else {

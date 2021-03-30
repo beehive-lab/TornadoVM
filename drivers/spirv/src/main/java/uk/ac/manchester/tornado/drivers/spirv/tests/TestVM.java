@@ -10,6 +10,15 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
+/**
+ * Test copies within TornadoVM and Level Zero driver.
+ * 
+ * How to run?
+ * 
+ * <code>
+ *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestVM
+ * </code>
+ */
 public class TestVM {
 
     public TornadoDevice invokeSPIRVBackend() {
@@ -60,7 +69,7 @@ public class TestVM {
         device.moveDataFromDeviceBufferToHost(objectStateA, b);
 
         // // Copy Back Data
-        // device.streamOutBlocking(a, 0, objectStateA, null);
+        device.streamOutBlocking(a, 0, objectStateA, null);
 
         // Add a barrier
         // device.enqueueBarrier();

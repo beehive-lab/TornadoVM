@@ -69,11 +69,15 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1nativeByteArg
         (JNIEnv *env, jobject object, jlong javaKernelHandlerPtr, jint argIndex, jint argSize, jbyteArray arrayBuffer) {
     ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
-    jbyte *buffer = static_cast<jbyte *>((arrayBuffer == NULL) ? NULL : env->GetPrimitiveArrayCritical(arrayBuffer, 0));
-    //jbyte* buffer = env->GetByteArrayElements(arrayBuffer, 0);
+    //void *buffer = static_cast<void *>((arrayBuffer == nullptr) ? nullptr : env->GetPrimitiveArrayCritical(
+    //        arrayBuffer, 0));
+
+    jbyte* buffer = env->GetByteArrayElements(arrayBuffer, 0);
     ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, buffer);
     LOG_ZE_JNI("zeKernelSetArgumentValue", result)
-    env->ReleasePrimitiveArrayCritical(arrayBuffer, buffer, 0);
+    //if (arrayBuffer != nullptr) {
+     //   env->ReleasePrimitiveArrayCritical(arrayBuffer, buffer, 0);
+    //}
     return result;
 }
 

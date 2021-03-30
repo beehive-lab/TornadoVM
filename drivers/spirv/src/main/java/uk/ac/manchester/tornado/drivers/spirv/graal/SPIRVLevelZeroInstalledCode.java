@@ -41,21 +41,18 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         // heap (global memory)
         buffer.clear();
         buffer.putLong(stack.toBuffer());
-        System.out.println("SPIRV SET ARGS: GLOBAL HEAP: " + stack.toBuffer());
-        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.POINTER.getNumBytes(), buffer.array());
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), stack.toBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
 
         // stack pointer
         buffer.clear();
         buffer.putLong(stack.toRelativeAddress());
-        System.out.println("SPIRV SET ARGS: STACK POINTER: " + stack.toRelativeAddress());
-        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), buffer.array());
-        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        // result =
+        // levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(),
+        // index, Sizeof.LONG.getNumBytes(), buffer.array());
+        // LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
-
-        // Write stack
-        stack.enqueueWrite();
 
     }
 
