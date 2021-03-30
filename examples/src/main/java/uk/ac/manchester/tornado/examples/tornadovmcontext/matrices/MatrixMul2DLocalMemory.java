@@ -80,7 +80,7 @@ public class MatrixMul2DLocalMemory {
      * https://github.com/cnugteren/myGEMM.
      *
      */
-    public static void matrixMultiplicationLocalMemoryNewApi(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplicationLocalMemory(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
         // Thread identifiers
         int row = context.localIdx; // Local row ID (max: TS)
         int col = context.localIdy; // Local col ID (max: TS)
@@ -224,7 +224,7 @@ public class MatrixMul2DLocalMemory {
         TornadoVMContext context = new TornadoVMContext(workerOpenCLNew);
 
         TaskSchedule oclNewApiTask = new TaskSchedule("ocl_advanced_api") //
-                .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemoryNewApi, context, matrixA, matrixB, matrixCOCLNewApi, N) //
+                .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
                 .streamOut(matrixCOCLNewApi); //
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
@@ -259,7 +259,7 @@ public class MatrixMul2DLocalMemory {
         TornadoVMContext contextCUDA = new TornadoVMContext(workerCudaNew);
 
         TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_advanced_api") //
-                .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemoryNewApi, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
+                .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
                 .streamOut(matrixCCUDANewApi); //
         // Change the Grid
         workerCudaNew.setGlobalWork(N, N, 1);
