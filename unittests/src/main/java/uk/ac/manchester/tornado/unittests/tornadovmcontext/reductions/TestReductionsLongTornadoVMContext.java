@@ -87,7 +87,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
+        long finalSum = 0;
         for (long v : reduce) {
             finalSum += v;
         }
@@ -138,7 +138,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
+        long finalSum = 0;
         for (long v : reduce) {
             finalSum += v;
         }

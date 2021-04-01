@@ -88,7 +88,7 @@ public class TestReductionsFloatsTornadoVMContext extends TornadoTestBase {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
+        float finalSum = 0;
         for (float v : reduce) {
             finalSum += v;
         }
@@ -138,7 +138,7 @@ public class TestReductionsFloatsTornadoVMContext extends TornadoTestBase {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
+        float finalSum = 0;
         for (float v : reduce) {
             finalSum += v;
         }

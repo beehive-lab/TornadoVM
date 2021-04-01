@@ -87,7 +87,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
+        double finalSum = 0;
         for (double v : reduce) {
             finalSum += v;
         }
@@ -137,7 +137,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
         s0.execute(gridTask);
 
         // Final SUM
-        int finalSum = 0;
+        double finalSum = 0;
         for (double v : reduce) {
             finalSum += v;
         }
