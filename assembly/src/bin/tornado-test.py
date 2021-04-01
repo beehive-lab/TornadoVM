@@ -69,7 +69,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.tornadovmcontext.api.TestCombinedTaskSchedule"),
-    TestEntry("uk.ac.manchester.tornado.unittests.tornadovmcontext.api.TestVectorAdditionTornadoVMContextApi"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tornadovmcontext.api.TestVectorAdditionTornadoVMContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.tornadovmcontext.matrices.TestMatrixMultiplicationTornadoVMContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.tornadovmcontext.reductions.TestReductionsIntegersTornadoVMContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.tornadovmcontext.reductions.TestReductionsFloatsTornadoVMContext"),
