@@ -55,14 +55,12 @@ public class TestPrecompiledSPIRV {
                         "copyTest",
                         filePath,
                         new Object[] { a },
-                        new Access[] { Access.READ },
+                        new Access[] { Access.WRITE },
                         defaultDevice,
                         new int[] { numElements, 1, 1 })
                 .streamOut(a);
         // @formatter:on
         ts.execute();
-
-        ts.syncObject(a);
 
         System.out.println("a: " + Arrays.toString(a));
     }

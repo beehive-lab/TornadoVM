@@ -57,18 +57,18 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 public class SimulationLKBuffer {
 
     private static LevelZeroByteBuffer deviceHeapBuffer;
-    private static final int DEVICE_HEAP_SIZE = 8 * 8192;
+    private static final int DEVICE_HEAP_SIZE = 128 * 8;
     private static long[] stack;
 
-    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, int[] output, int bufferSize) {
+    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, long[] output, int bufferSize) {
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
-        int[] groupSizeX = new int[] { 32 };
+        int[] groupSizeX = new int[] { 1 };
         int[] groupSizeY = new int[] { 1 };
         int[] groupSizeZ = new int[] { 1 };
-        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 1024, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
+        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), 128, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
@@ -116,7 +116,7 @@ public class SimulationLKBuffer {
         final int elements = 1;
         final int bufferSize = elements * 8;
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
         deviceMemAllocDesc.setOrdinal(0);
 
         long[] output = new long[elements];
@@ -124,18 +124,22 @@ public class SimulationLKBuffer {
         int result = context.zeMemAllocDevice(context.getDefaultContextPtr(), deviceMemAllocDesc, DEVICE_HEAP_SIZE, 1, device.getDeviceHandlerPtr(), deviceHeapBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
-        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
+        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/tmp/lookUpBufferAddress.spv");
+        LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceHeapBuffer, output, bufferSize);
+
+        levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/tmp/lookUpBufferAddress.spv");
         LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceHeapBuffer, output, bufferSize);
 
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
 
-        // Run 2nd Kernel: Execute Copy
-        stack = new long[16];
-        stack[0] = 0;
-        stack[1] = 0;
-        stack[2] = 0;
+        // Run 2nd Kernel: Execute-Copy
+        stack = new long[5];
+        stack[0] = 777;
+        stack[1] = 2;
+        stack[2] = 3;
         stack[3] = output[0];
+        stack[4] = deviceHeapBuffer.getPtrBuffer();
 
         // Copy Host -> Device
         result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, stack, stack.length * Sizeof.LONG.getNumBytes(), 0, 0, null, 0, null);
@@ -144,8 +148,8 @@ public class SimulationLKBuffer {
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
-        int[] output2 = new int[1024];
-        dispatchCopyKernel(commandList, commandQueue, kernelCopy, output2, 1024 * Sizeof.INT.getNumBytes());
+        long[] output2 = new long[128];
+        dispatchCopyKernel(commandList, commandQueue, kernelCopy, output2, 128 * Sizeof.LONG.getNumBytes());
 
         // Free resources
         errorLog("zeMemFree", result);

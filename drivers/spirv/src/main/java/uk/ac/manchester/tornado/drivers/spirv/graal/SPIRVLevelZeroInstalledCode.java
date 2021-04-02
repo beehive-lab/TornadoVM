@@ -64,10 +64,13 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
+        setKernelArgs((SPIRVByteBuffer) stack, null, meta);
+
         long[] globalWork = new long[3];
         Arrays.fill(globalWork, 1);
         int dims = meta.getDims();
         System.arraycopy(meta.getGlobalWork(), 0, globalWork, 0, dims);
+        System.out.println(Arrays.toString(globalWork));
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
@@ -80,15 +83,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
-        setKernelArgs((SPIRVByteBuffer) stack, null, meta);
-
-        System.out.println("groupSizeX[0]: " + groupSizeX[0]);
-        System.out.println("groupSizeY[0]: " + groupSizeY[0]);
-        System.out.println("groupSizeZ[0]: " + groupSizeZ[0]);
-
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(64);
+        dispatch.setGroupCountX(32);
         dispatch.setGroupCountY(groupSizeY[0]);
         dispatch.setGroupCountZ(groupSizeZ[0]);
 
@@ -98,6 +95,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         // Launch the kernel on the Intel Integrated GPU
         result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendLaunchKernel", result);
+
+        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         return 0;
     }
