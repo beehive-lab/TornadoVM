@@ -12,7 +12,7 @@ On CentOS:
 $ scl enable devtoolset-9 bash # Only for CentOS
 ```
 
-Using commit id `0d30b1fa712253c68bfdfa3863d380df4301b8a4` from Level Zero.
+Using commit id `284ccb089184180e34864a9f1e23971d3d736bd8` from Level Zero.
 
 ```bash
 $ git clone https://github.com/oneapi-src/level-zero
