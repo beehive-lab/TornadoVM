@@ -41,7 +41,6 @@ public class ReductionsGlobalMemory {
                 a[id] += a[id + stride];
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
