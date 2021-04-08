@@ -70,8 +70,9 @@ public class MatrixMultiplication2D {
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        // [Optional] Set the global work size
         workerGrid.setGlobalWork(size, size, 1);
-        // The local work group is randomly configured to be 32x32
+        // [Optional] Set the local work group to be 32x32
         workerGrid.setLocalWork(32, 32, 1);
 
         //@formatter:off

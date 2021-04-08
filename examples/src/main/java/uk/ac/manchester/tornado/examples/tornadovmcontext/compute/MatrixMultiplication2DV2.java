@@ -117,7 +117,6 @@ public class MatrixMultiplication2DV2 {
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext();
-        workerGrid.setGlobalWork(size, size, 1);
         // The local work group is configured to be TSxTS, to match the Tile Size (TS)
         workerGrid.setLocalWork(TS, TS, 1);
 

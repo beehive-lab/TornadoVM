@@ -165,8 +165,9 @@ public class NBody {
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext();
+        // [Optional] Set the global work group
         workerGrid.setGlobalWork(numBodies, 1, 1);
-        // The local work group is randomly configured to be 1024, 1 ,1
+        // [Optional] Set the local work group
         workerGrid.setLocalWork(1024, 1, 1);
 
         // @formatter:off
