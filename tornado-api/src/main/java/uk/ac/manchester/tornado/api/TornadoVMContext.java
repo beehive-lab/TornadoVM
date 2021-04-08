@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.annotations.TornadoVMIntrinsic;
+
 /**
  * Context of TornadoVM execution to exploit kernel-parallel applications, in
  * which the parallelism is implicit.
@@ -206,6 +208,7 @@ public class TornadoVMContext implements ExecutionContext {
      * PTX equivalent: blockDim
      * 
      */
+    @TornadoVMIntrinsic
     public int getLocalGroupSize(int dim) {
         return 0;
     }
@@ -219,6 +222,7 @@ public class TornadoVMContext implements ExecutionContext {
      * PTX equivalent: gridDim * blockDim
      * 
      */
+    @TornadoVMIntrinsic
     public int getGlobalGroupSize(int dim) {
         return 0;
     }
