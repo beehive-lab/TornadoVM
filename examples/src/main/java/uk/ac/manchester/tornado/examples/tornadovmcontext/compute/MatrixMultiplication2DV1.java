@@ -90,7 +90,7 @@ public class MatrixMultiplication2DV1 {
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext(workerGrid);
+        TornadoVMContext context = new TornadoVMContext();
         workerGrid.setGlobalWork(size, size, 1);
         // The local work group is randomly configured to be 32x32
         workerGrid.setLocalWork(32, 32, 1);

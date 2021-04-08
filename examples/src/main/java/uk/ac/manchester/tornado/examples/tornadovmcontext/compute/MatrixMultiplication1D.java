@@ -79,7 +79,7 @@ public class MatrixMultiplication1D {
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext(workerGrid);
+        TornadoVMContext context = new TornadoVMContext();
         workerGrid.setGlobalWork(size, 1, 1);
         workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
 

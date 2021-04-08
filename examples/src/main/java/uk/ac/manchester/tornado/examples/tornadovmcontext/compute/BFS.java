@@ -164,7 +164,7 @@ public class BFS {
 
         WorkerGrid workerGrid = new WorkerGrid2D(numNodes, numNodes);
         GridTask gridTask = new GridTask("s1.t1", workerGrid);
-        TornadoVMContext context = new TornadoVMContext(workerGrid);
+        TornadoVMContext context = new TornadoVMContext();
         workerGrid.setGlobalWork(numNodes, numNodes, 1);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();

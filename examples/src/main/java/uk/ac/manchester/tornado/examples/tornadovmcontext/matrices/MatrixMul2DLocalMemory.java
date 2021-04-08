@@ -221,7 +221,7 @@ public class MatrixMul2DLocalMemory {
         // Time New API OpenCL
         WorkerGrid workerOpenCLNew = new WorkerGrid2D(N, N);
         GridTask gridTaskOpenCLNew = new GridTask("ocl_advanced_api.t0", workerOpenCLNew);
-        TornadoVMContext context = new TornadoVMContext(workerOpenCLNew);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule oclNewApiTask = new TaskSchedule("ocl_advanced_api") //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
@@ -256,7 +256,7 @@ public class MatrixMul2DLocalMemory {
         // Time New API CUDA
         WorkerGrid workerCudaNew = new WorkerGrid2D(N, N);
         GridTask gridTaskCudaNew = new GridTask("cuda_advanced_api.t0", workerCudaNew);
-        TornadoVMContext contextCUDA = new TornadoVMContext(workerCudaNew);
+        TornadoVMContext contextCUDA = new TornadoVMContext();
 
         TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_advanced_api") //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //

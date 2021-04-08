@@ -97,7 +97,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
         GridTask gridTask = new GridTask("s0.t0", worker);
 
         // Create a TornadoVMContext with its own worker
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -171,7 +171,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -227,7 +227,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -277,7 +277,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -333,7 +333,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -383,7 +383,7 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //

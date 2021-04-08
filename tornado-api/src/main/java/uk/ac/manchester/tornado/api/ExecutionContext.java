@@ -107,11 +107,4 @@ public interface ExecutionContext {
      * @return double[]
      */
     double[] allocateDoubleLocalArray(int size);
-
-    /**
-     * Obtain a {@link WorkerGrid}.
-     *
-     * @return {@link WorkerGrid}
-     */
-    WorkerGrid getWorkerGrid();
 }

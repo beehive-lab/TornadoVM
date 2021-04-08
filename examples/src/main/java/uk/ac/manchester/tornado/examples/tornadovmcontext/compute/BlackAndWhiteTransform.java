@@ -139,7 +139,7 @@ public class BlackAndWhiteTransform {
                 if (tornadoTask == null) {
                     workerGrid = new WorkerGrid2D(w, s);
                     gridTask = new GridTask("s0.t0", workerGrid);
-                    TornadoVMContext context = new TornadoVMContext(workerGrid);
+                    TornadoVMContext context = new TornadoVMContext();
 
                     tornadoTask = new TaskSchedule("s0");
                     tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute2D, context, imageRGB, w, s).streamOut(imageRGB);

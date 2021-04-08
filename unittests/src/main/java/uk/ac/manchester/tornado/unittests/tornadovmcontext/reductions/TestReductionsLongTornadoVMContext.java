@@ -75,7 +75,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -126,7 +126,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -182,7 +182,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -232,7 +232,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -288,7 +288,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
@@ -338,7 +338,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //

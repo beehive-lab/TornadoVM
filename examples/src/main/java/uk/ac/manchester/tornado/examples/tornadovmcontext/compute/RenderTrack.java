@@ -123,7 +123,7 @@ public class RenderTrack {
 
         WorkerGrid workerGrid = new WorkerGrid2D(n, m);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext(workerGrid);
+        TornadoVMContext context = new TornadoVMContext();
         workerGrid.setGlobalWork(n, m, 1);
         workerGrid.setLocalWork(32, 32, 1);
 

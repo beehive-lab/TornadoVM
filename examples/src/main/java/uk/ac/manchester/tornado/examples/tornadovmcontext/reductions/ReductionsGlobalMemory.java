@@ -72,7 +72,7 @@ public class ReductionsGlobalMemory {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input).task("t0", ReductionsGlobalMemory::reduction, input, reduce, context).task("t1", ReductionsGlobalMemory::rAdd, reduce, size)
                 .streamOut(reduce);

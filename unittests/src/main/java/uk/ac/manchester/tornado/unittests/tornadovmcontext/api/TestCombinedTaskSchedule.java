@@ -205,7 +205,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         gridTask.setWorkerGrid("s02.t0", worker);
         gridTask.setWorkerGrid("s02.t1", worker);
         gridTask.setWorkerGrid("s02.t2", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s02 = new TaskSchedule("s02") //
                 .streamIn(a, b) //
@@ -243,7 +243,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s03.t1", worker);
         gridTask.setWorkerGrid("s03.t2", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s03 = new TaskSchedule("s03") //
                 .streamIn(a, b) //
@@ -282,7 +282,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s04.t0", worker);
         gridTask.setWorkerGrid("s04.t1", worker);
-        TornadoVMContext context = new TornadoVMContext(worker);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s04 = new TaskSchedule("s04") //
                 .streamIn(a, b) //
@@ -322,7 +322,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s05.t0", workerT0);
         gridTask.setWorkerGrid("s05.t1", workerT1);
-        TornadoVMContext context = new TornadoVMContext(workerT1);
+        TornadoVMContext context = new TornadoVMContext();
 
         TaskSchedule s05 = new TaskSchedule("s05") //
                 .streamIn(a, b) //

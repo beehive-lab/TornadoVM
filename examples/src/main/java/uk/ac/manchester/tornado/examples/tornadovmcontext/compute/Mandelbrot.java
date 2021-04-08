@@ -142,7 +142,7 @@ public class Mandelbrot {
 
                 WorkerGrid workerGrid = new WorkerGrid2D(SIZE, SIZE);
                 GridTask gridTask = new GridTask("s0.t0", workerGrid);
-                TornadoVMContext context = new TornadoVMContext(workerGrid);
+                TornadoVMContext context = new TornadoVMContext();
                 workerGrid.setGlobalWork(SIZE, SIZE, 1);
                 workerGrid.setLocalWork(32, 32, 1);
 
