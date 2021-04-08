@@ -77,13 +77,13 @@ public class TornadoVMContext implements ExecutionContext {
     public final Integer localIdy = 0;
     public final Integer localIdz = 0;
 
-    private WorkerGrid grid;
+    private WorkerGrid workerGrid;
 
     /**
      * Class constructor specifying a particular {@link WorkerGrid} object.
      */
     public TornadoVMContext(WorkerGrid grid) {
-        this.grid = grid;
+        this.workerGrid = grid;
     }
 
     /**
@@ -94,8 +94,8 @@ public class TornadoVMContext implements ExecutionContext {
      * @return {@link WorkerGrid} that is associated to TornadoVMContext
      */
     @Override
-    public WorkerGrid getGrid() {
-        return this.grid;
+    public WorkerGrid getWorkerGrid() {
+        return this.workerGrid;
     }
 
     /**
@@ -221,7 +221,8 @@ public class TornadoVMContext implements ExecutionContext {
      * 
      */
     public int getLocalGroupSize(int dim) {
-        return (int) grid.getLocalWork()[dim];
+        // return (int) workerGrid.getLocalWork()[dim];
+        return 0;
     }
 
     /**
@@ -234,6 +235,7 @@ public class TornadoVMContext implements ExecutionContext {
      * 
      */
     public int getGlobalGroupSize(int dim) {
-        return (int) grid.getGlobalWork()[dim];
+        // return (int) workerGrid.getGlobalWork()[dim];
+        return 0;
     }
 }

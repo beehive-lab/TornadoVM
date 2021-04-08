@@ -75,7 +75,6 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
             }
         }
 
-        // context.globalBarrier();
         if (localIdx == 0) {
             // Copy the result of the reduction
             b[groupID] = a[id];

@@ -113,5 +113,5 @@ public interface ExecutionContext {
      *
      * @return {@link WorkerGrid}
      */
-    WorkerGrid getGrid();
+    WorkerGrid getWorkerGrid();
 }
