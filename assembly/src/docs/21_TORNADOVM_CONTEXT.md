@@ -49,8 +49,8 @@ public static void matrixMultiplication(TornadoVMContext context, final float[] 
         // Index thread in the seconbd dimension ( get_global_id(1) )
         int col = context.localIdy;
 
-        int globalRow = TS*context.groupIdx+row;
-        int globalCol =TS*context.groupIdy+col;
+        int globalRow = TS * context.groupIdx + row;
+        int globalCol = TS * context.groupIdy + col;
 
         // Create Local Memory via the context
         float[] aSub = context.allocateFloatLocalArray(TS*TS);
@@ -80,7 +80,7 @@ public static void matrixMultiplication(TornadoVMContext context, final float[] 
         }
 
         // Store the final result in C
-        C[(globalCol*size) + globalRow] = sum;
+        C[(globalCol * size) + globalRow] = sum;
 }
 ```
 
@@ -90,13 +90,13 @@ public static void matrixMultiplication(TornadoVMContext context, final float[] 
 
 ```java
 // Create 2D Grid of Threads with a 2D Worker
-WorkerGrid workerGrid = new WorkerGrid2D(size,size);
+WorkerGrid workerGrid = new WorkerGrid2D(size, size);
 
 // Create a GridTask that associates a task-ID with a worker grid
-GridTask gridTask = new GridTask("s0.t0",workerGrid);
+GridTask gridTask = new GridTask("s0.t0", workerGrid);
 
 // Create the TornadoVM Context
-TornadoVMContext context = new TornadoVMContext(workerGrid);
+TornadoVMContext context = new TornadoVMContext();
 
 // [Optional] Set the local work size 
 workerGrid.setLocalWork(32, 32, 1);
@@ -132,27 +132,27 @@ WorkerGrid workerT1 = new WorkerGrid1D(size);
 GridTask gridTask = new GridTask();
 
 // Associate a worker per task within the task-scheduler
-gridTask.setWorkerGrid("s0.t0",workerT0);
-gridTask.setWorkerGrid("s0.t1",workerT1);
+gridTask.setWorkerGrid("s0.t0", workerT0);
+gridTask.setWorkerGrid("s0.t1", workerT1);
 
 // Create the TornadoVMContext
-TornadoVMContext context = new TornadoVMContext(workerT1);
+TornadoVMContext context = new TornadoVMContext();
 
 // Build the TornadoVM Task-Scheduler
 TaskSchedule s0 = new TaskSchedule("s0")
      .streamIn(a,b)
-     .task("t0", TestCombinedTaskSchedule::vectorAddV2,context,a,b,cTornado)
-     .task("t1",TestCombinedTaskSchedule::vectorMulV2,context,cTornado,b,cTornado)
-     .task("t2",TestCombinedTaskSchedule::vectorSubV1,cTornado,b,cTornado)
+     .task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado)
+     .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado)
+     .task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado)
      .streamOut(cTornado);
      
 // Execute the application
 s0.execute(gridTask);
 
 // Change the Grid for the next round
-workerT0.setGlobalWork(size,1,1);
-workerT0.setLocalWork(size/2,1,1);
-workerT1.setGlobalWork(size,1,1);
+workerT0.setGlobalWork(size, 1, 1);
+workerT0.setLocalWork(size/2, 1, 1);
+workerT1.setGlobalWork(size, 1, 1);
 workerT1.setLocalWorkToNull();
 
 s0.execute(gridTask);
