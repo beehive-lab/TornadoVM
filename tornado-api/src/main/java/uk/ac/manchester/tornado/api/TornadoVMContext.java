@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -173,19 +173,6 @@ public class TornadoVMContext implements ExecutionContext {
     @Override
     public double[] allocateDoubleLocalArray(int size) {
         return new double[size];
-    }
-
-    /**
-     * Dynamic dispatch - Not supported yet
-     * 
-     * @param f:
-     *            {@link FunctionalInterface}
-     * @param grid:
-     *            {@WorkerGrid}
-     */
-    @Override
-    public void launch(FunctionalInterface f, WorkerGrid grid) {
-        throw new RuntimeException("Not implemented yet");
     }
 
     /**

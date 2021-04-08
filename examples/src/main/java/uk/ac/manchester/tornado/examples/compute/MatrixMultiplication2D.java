@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -71,6 +71,7 @@ public class MatrixMultiplication2D {
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         workerGrid.setGlobalWork(size, size, 1);
+        // The local work group is randomly configured to be 32x32
         workerGrid.setLocalWork(32, 32, 1);
 
         //@formatter:off

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,11 +51,11 @@ public interface ExecutionContext {
     /**
      * It adds a barrier for sync all threads within the same work-group to ensure
      * correct order in local memory (OpenCL terminology).
-     * 
+     *
      * Similar the OpenCL construct:
      *
      * <code>
-     *     barrier(CLK_LOCAL_MEM_FENCE);   
+     *     barrier(CLK_LOCAL_MEM_FENCE);
      * </code>
      */
     void localBarrier();
@@ -67,14 +67,14 @@ public interface ExecutionContext {
      * Similar the OpenCL construct:
      *
      * <code>
-     *     barrier(CLK_GLOBAL_MEM_FENCE);   
+     *     barrier(CLK_GLOBAL_MEM_FENCE);
      * </code>
      */
     void globalBarrier();
 
     /**
      * Array Allocation in Local Memory (OpenCL terminology)
-     * 
+     *
      * @param size
      *            size of the int-array.
      * @return int[]
@@ -83,7 +83,7 @@ public interface ExecutionContext {
 
     /**
      * Array Allocation in Local Memory (OpenCL terminology)
-     * 
+     *
      * @param size
      *            size of the long-array.
      * @return long[]
@@ -92,7 +92,7 @@ public interface ExecutionContext {
 
     /**
      * Array Allocation in Local Memory (OpenCL terminology).
-     * 
+     *
      * @param size
      *            size of the float-array.
      * @return float[]
@@ -101,7 +101,7 @@ public interface ExecutionContext {
 
     /**
      * Array Allocation in Local Memory (OpenCL terminology).
-     * 
+     *
      * @param size
      *            size of the double-array.
      * @return double[]
@@ -109,22 +109,9 @@ public interface ExecutionContext {
     double[] allocateDoubleLocalArray(int size);
 
     /**
-     * It launches a dynamic kernel.
-     * 
-     * @param f
-     *            function {@link FunctionalInterface} to be launched within the
-     *            kernel.
-     * @param grid
-     *            {@link WorkerGrid} to be used as a thread deployment for the
-     *            function.
-     */
-    void launch(FunctionalInterface f, WorkerGrid grid);
-
-    /**
      * Obtain a {@link WorkerGrid}.
-     * 
+     *
      * @return {@link WorkerGrid}
      */
     WorkerGrid getGrid();
-
 }

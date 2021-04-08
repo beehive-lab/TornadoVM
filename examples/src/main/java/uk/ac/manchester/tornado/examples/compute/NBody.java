@@ -20,7 +20,10 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBody {
@@ -131,6 +134,7 @@ public class NBody {
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
+        // The local work group is randomly configured to be 1024, 1 ,1
         workerGrid.setLocalWork(1024, 1, 1);
 
         // @formatter:off

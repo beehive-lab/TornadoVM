@@ -57,7 +57,14 @@ import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.*;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
 
 public class PTXGraphBuilderPlugins {
 

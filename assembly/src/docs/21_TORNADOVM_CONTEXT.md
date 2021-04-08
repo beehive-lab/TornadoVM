@@ -1,15 +1,16 @@
 # Expressing Kernel Parallelism within TornadoVM
 
-Applications for acceleration via TornadoVM can be programmed using both loop-parallelism (by annotating loops uging
-the `@Parallel` TornadoVM annotation), and kernel-parallelism, by using a new object called `TornadoVMContext` that is
-passed as a parameter.
+Applications for acceleration via TornadoVM can be programmed using both:
+- **loop-parallelism** by annotating loops uging the `@Parallel` TornadoVM annotation, and
+- **kernel-parallelism** by using a new object called `TornadoVMContext` that is passed as a parameter.
 
-**Definition**
+## Definition
 `TornadoVMContext` is a Java object exposed by the TornadoVM API to the developers in order to leverage Kernel Parallel
 Programming using the existing `TaskSchedule` API. An instance of the `TornadoVMContext` object is passed to each task
 that uses the kernel-parallel API. Additionally, for all tasks using the `TornadoVMContext` object, the user must
 provide a Grid of execution threads to run on the parallel device. This grid of threads is similar to the number of
-threads to be launched using CUDA or OpenCL (Number of threads per block and number of blocks).
+threads to be launched using CUDA or OpenCL (Number of threads per block and number of blocks). 
+Examples can be found in the `Grid` [unit-tests](https://github.com/beehive-lab/TornadoVM/tree/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/grid).
 
 ## TornadoVMContext Features
 
@@ -27,21 +28,20 @@ CUDA PTX terminology.
 | int[] array = allocateIntLocalArray(size) | __local int array[size] | .shared .s32 array[size] |
 | float[] array = allocateFloatLocalArray(size) | __local float array[size] | .shared .s32 array[size] |
 | long[] array = allocateLongLocalArray(size) | __local long array[size] | .shared .s64 array[size] |
-| float[] array = allocateFloatLocalArray(size) | __local double array[size] | .shared .s64 array[size] |
+| double[] array = allocateDoubleLocalArray(size) | __local double array[size] | .shared .s64 array[size] |
 
 ## Examples
 
-The
-following [example](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/examples/src/main/java/uk/ac/manchester/tornado/examples/compute_tornadovmcontext/MatrixMultiplication2DV2.java)
+The following [example](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/examples/src/main/java/uk/ac/manchester/tornado/examples/tornadovmcontext/compute/MatrixMultiplication2DV2.java)
 is the Matrix Multiplication implementation using the `TornadoVMContext` object for indexing threads and access to local
-memory. The following example also makes use of loop tiling.
+memory. The following example also makes use of loop tiling. There are three main steps to leverage the features of TornadoVMContext:
 
 1. The `TornadoVMContext` object is passed as an argument in the method that will be accelerated. This implementation
    follows the OpenCL implementation description provided
    in [https://github.com/cnugteren/myGEMM](https://github.com/cnugteren/myGEMM).
 
 ```java
-public static void matrixMultiplicationNewApi(TornadoVMContext context,final float[]A,final float[]B,final float[]C,final int size){
+public static void matrixMultiplication(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size){
 
         // Index thread in the first dimension ( get_global_id(0) )
         int row = context.localIdx;
@@ -59,32 +59,32 @@ public static void matrixMultiplicationNewApi(TornadoVMContext context,final flo
         float sum = 0;
 
         // Loop over all tiles
-        int numTiles = size/TS;
-        for(int t=0;t<numTiles; t++) {
+        int numTiles = size / TS;
+        for(int t = 0; t < numTiles; t++) {
         
             // Load one tile of A and B into local memory
-            int tiledRow=TS*t+row;
-            int tiledCol=TS*t+col;
-            aSub[col*TS+row]=A[tiledCol*size+globalRow];
-            bSub[col*TS+row]=B[globalCol*size+tiledRow];
+            int tiledRow = TS * t + row;
+            int tiledCol = TS * t + col;
+            aSub[col * TS + row] = A[tiledCol * size + globalRow];
+            bSub[col * TS + row] = B[globalCol * size + tiledRow];
 
             // Synchronise to make sure the tile is loaded
             context.localBarrier();
 
             // Perform the computation for a single tile
-            for(int k=0;k<TS; k++){
-                sum += aSub[k*TS+row]*bSub[col*TS+k];
+            for (int k = 0; k < TS; k++) {
+                sum += aSub[k * TS + row] * bSub[col * TS + k];
             }
             // Synchronise before loading the next tile
             context.globalBarrier();
         }
 
         // Store the final result in C
-        C[(globalCol*size)+globalRow] = sum;
+        C[(globalCol*size) + globalRow] = sum;
 }
 ```
 
-2. A TornadoVM program that uses the `TornadoVMContext`  must use the context with a `WorkerGrid` (1D/2D). This is
+2. A TornadoVM program that uses the `TornadoVMContext` must use the context with a `WorkerGrid` (1D/2D/3D). This is
    necessary in order to obtain awareness about the dimensions and the sizes of the threads that will be deployed.
    **Therefore, `TornadoVMContext` can only work with GridTasks.**
 
@@ -99,14 +99,14 @@ GridTask gridTask = new GridTask("s0.t0",workerGrid);
 TornadoVMContext context = new TornadoVMContext(workerGrid);
 
 // [Optional] Set the local work size 
-workerGrid.setLocalWork(32,32,1);
+workerGrid.setLocalWork(32, 32, 1);
 ```
 
 3. Define the `TaskSchedule` and execute:
 
 ```java
 TaskSchedule t=new TaskSchedule("s0") 
-   .task("t0", MxM::compute,context,matrixA,matrixB,matrixC,size) 
+   .task("t0", MxM::compute, context, matrixA, matrixB, matrixC, size) 
    .streamOut(matrixC);
 t.execute(gridTask);    // Pass the GridTask in the execute method
 ```
@@ -114,15 +114,14 @@ t.execute(gridTask);    // Pass the GridTask in the execute method
 ## Multiple Tasks in a TaskSchedule with a `WorkerGrid` and `TornadoVMContext`
 
 The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the TornadoVMContext features or
-adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Such scenarios exist in
-the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/unittests/src/main/java/uk/ac/manchester/tornado/unittests/api/TestCombinedTaskSchedule.java)
-. For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three
+adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Examples can be found in
+the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/unittests/src/main/java/uk/ac/manchester/tornado/unittests/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three
 tasks:
 
 * `t0`: The `vectorAddV2` method adds two vectors by utilizing the thread attributes provided by TornadoVMContext.
 * `t1`: The `vectorMulV2` method multiplies the result of the first task with a second vector, while also utilizing the
   thread attributes provided by TornadoVMContext.
-* `t2`: The `vectorSubV1` method performs the subtraction the result of the second task with a third vector.
+* `t2`: The `vectorSubV1` method performs the subtraction of the result of the second task with a third vector.
 
 ```java
 // Create Worker 1D Grids 
