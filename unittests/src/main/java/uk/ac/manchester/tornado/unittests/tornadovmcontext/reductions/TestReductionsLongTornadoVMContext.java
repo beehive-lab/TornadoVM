@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
@@ -58,7 +59,6 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
                 a[id] += a[id + stride];
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -166,7 +166,6 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
                 a[id] = Math.max(a[id], a[id + stride]);
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -273,7 +272,6 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
                 a[id] = Math.min(a[id], a[id + stride]);
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }

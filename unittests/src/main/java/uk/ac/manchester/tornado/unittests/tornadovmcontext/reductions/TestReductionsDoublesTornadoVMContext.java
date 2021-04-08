@@ -211,7 +211,6 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
                 a[id] = Math.max(a[id], a[id + stride]);
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -318,7 +317,6 @@ public class TestReductionsDoublesTornadoVMContext extends TornadoTestBase {
                 a[id] = Math.min(a[id], a[id + stride]);
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }

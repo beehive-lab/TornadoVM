@@ -17,18 +17,18 @@
  */
 package uk.ac.manchester.tornado.unittests.tornadovmcontext.reductions;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.GridTask;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
-
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoVMContext;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * The unit-tests in this class implement some Reduction operations (add, max,
@@ -59,7 +59,6 @@ public class TestReductionsFloatsTornadoVMContext extends TornadoTestBase {
                 a[id] += a[id + stride];
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -166,7 +165,6 @@ public class TestReductionsFloatsTornadoVMContext extends TornadoTestBase {
                 a[id] = Math.max(a[id], a[id + stride]);
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -273,7 +271,6 @@ public class TestReductionsFloatsTornadoVMContext extends TornadoTestBase {
                 a[id] = Math.min(a[id], a[id + stride]);
             }
         }
-        context.globalBarrier();
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
