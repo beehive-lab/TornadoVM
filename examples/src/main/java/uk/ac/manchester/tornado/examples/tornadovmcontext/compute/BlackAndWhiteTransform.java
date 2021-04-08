@@ -146,7 +146,6 @@ public class BlackAndWhiteTransform {
 
                 }
                 workerGrid.setGlobalWork(w, s, 1);
-                // workerGrid.setLocalWork(32, 32, 1);
 
                 taskStart = System.nanoTime();
                 tornadoTask.execute(gridTask);
