@@ -187,6 +187,7 @@ public class Euler {
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask("s0.s0", workerGrid);
         TornadoVMContext context = new TornadoVMContext();
+        // [Optional] Set the global work group
         workerGrid.setGlobalWork(size, size, 1);
 
         TaskSchedule ts = new TaskSchedule("s0") //

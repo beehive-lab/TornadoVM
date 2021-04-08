@@ -145,6 +145,7 @@ public class BlackAndWhiteTransform {
                     tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute2D, context, imageRGB, w, s).streamOut(imageRGB);
 
                 }
+                // [Optional] Set the global work group
                 workerGrid.setGlobalWork(w, s, 1);
 
                 taskStart = System.nanoTime();

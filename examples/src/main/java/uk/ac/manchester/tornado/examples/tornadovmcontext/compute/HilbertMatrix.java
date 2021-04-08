@@ -51,7 +51,9 @@ public class HilbertMatrix {
         WorkerGrid workerGrid = new WorkerGrid2D(NROWS, NCOLS);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext();
+        // [Optional] Set the global work group
         workerGrid.setGlobalWork(NROWS, NCOLS, 1);
+        // [Optional] Set the local work group
         workerGrid.setLocalWork(32, 32, 1);
         // @formatter:off
         TaskSchedule s0 = new TaskSchedule("s0")

@@ -86,7 +86,9 @@ public class Montecarlo {
         WorkerGrid workerGrid = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext();
+        // [Optional] Set the global work size
         workerGrid.setGlobalWork(size, 1, 1);
+        // [Optional] Set the local work group to be 1024, 1, 1
         workerGrid.setLocalWork(1024, 1, 1);
 
         TaskSchedule t0 = new TaskSchedule("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).streamOut(output);

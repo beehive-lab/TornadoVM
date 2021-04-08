@@ -124,7 +124,9 @@ public class RenderTrack {
         WorkerGrid workerGrid = new WorkerGrid2D(n, m);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
         TornadoVMContext context = new TornadoVMContext();
+        // [Optional] Set the global work group
         workerGrid.setGlobalWork(n, m, 1);
+        // [Optional] Set the local work group
         workerGrid.setLocalWork(32, 32, 1);
 
         TaskSchedule task = new TaskSchedule("s0").task("t0", RenderTrack::renderTrack, context, outputTornadoVM, input).streamOut(outputTornadoVM);
