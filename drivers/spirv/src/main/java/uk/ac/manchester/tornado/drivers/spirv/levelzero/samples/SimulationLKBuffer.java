@@ -25,14 +25,15 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * How to run?
  *
  * <code>
- *     __kernel void lookUp(__global long *heap) {
- *           heap[get_global_id(0)] = (ulong) heap;
- *     }
+ * __kernel void lookUp(__global uchar *heap) {
+ *        __global ulong *_frame = (__global ulong *) &heap[0];
+ *       *((__global long *) &heap[get_global_id(0)])  =  (ulong) _frame;
+ * }
+ *
  * </code>
  *
- * 
  * <code>
- *     __kernel void copyTest(__global uchar *_heap_base)
+ *  __kernel void copyTest(__global uchar *_heap_base)
  * {
  *   int i_8, i_7, i_1, i_2; 
  *   ulong ul_0, ul_6; 
@@ -44,10 +45,10 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  *   i_1  =  get_global_id(0);
  *   i_2  =  i_1;
  *   l_3  =  (long) i_2;
- *   l_4  =  l_3 << 2;
- *   l_5  =  l_4 + 0L;
+ *   l_4  =  l_3 << 3;         // Long buffer
+ *   l_5  =  l_4 + 16L;        // Randomly starting in position 16
  *   ul_6  =  ul_0 + l_5;
- *   *((__global int *) ul_6)  =  10;
+ *   *((__global int *) ul_6)  =  5555;
  * }
  * </code>
  * 
