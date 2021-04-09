@@ -18,7 +18,7 @@ public class SPIRVByteBuffer {
         this.offset = offset;
         this.deviceContext = deviceContext;
 
-        System.out.println("!!!!!!!!!!!!!!!!!! Buffer Allocate with nuimBytes: " + numBytes + " and offset: " + offset);
+        System.out.println("!!!!!!!!!!!!!!!!!! Buffer Allocate with numBytes: " + numBytes + " and offset: " + offset);
         buffer = ByteBuffer.allocate((int) numBytes);
         buffer.order(deviceContext.getDevice().getByteOrder());
     }

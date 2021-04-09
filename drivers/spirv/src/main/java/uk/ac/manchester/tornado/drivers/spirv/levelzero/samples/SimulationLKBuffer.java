@@ -2,6 +2,8 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
 import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils.errorLog;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
@@ -60,7 +62,7 @@ public class SimulationLKBuffer {
     private static final int DEVICE_HEAP_SIZE = 128 * 8;
     private static long[] stack;
 
-    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, long[] output, int bufferSize) {
+    private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, long[] output, int bufferSize, ByteBuffer stack) {
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         // Prepare kernel for launch
@@ -74,6 +76,9 @@ public class SimulationLKBuffer {
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
 
+        // result =
+        // levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0,
+        // Sizeof.POINTER.getNumBytes(), deviceHeapBuffer.getPtrBuffer());
         result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.POINTER.getNumBytes(), deviceHeapBuffer.getPtrBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
@@ -127,29 +132,32 @@ public class SimulationLKBuffer {
         LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/tmp/lookUpBufferAddress.spv");
         LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceHeapBuffer, output, bufferSize);
 
-        levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, context, "lookUp", "/tmp/lookUpBufferAddress.spv");
-        LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceHeapBuffer, output, bufferSize);
-
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
 
         // Run 2nd Kernel: Execute-Copy
-        stack = new long[5];
-        stack[0] = 777;
-        stack[1] = 2;
-        stack[2] = 3;
-        stack[3] = output[0];
-        stack[4] = deviceHeapBuffer.getPtrBuffer();
+        ByteBuffer stack = ByteBuffer.allocate(32);
+        stack.order(ByteOrder.LITTLE_ENDIAN);
+        // stack = new long[5];
+        // stack[0] = 777;
+        // stack[1] = 888;
+        // stack[2] = 999;
+        // stack[3] = output[0];
+        // stack[4] = deviceHeapBuffer.getPtrBuffer();
+        stack.putLong(777);
+        stack.putLong(888);
+        stack.putLong(999);
+        stack.putLong(output[0]);
 
         // Copy Host -> Device
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, stack, stack.length * Sizeof.LONG.getNumBytes(), 0, 0, null, 0, null);
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, stack.array(), stack.position(), 0, 0, null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         LevelZeroKernel kernelCopy = LevelZeroUtils.compileSPIRVKernel(device, context, "copyTest", "/tmp/example.spv");
         long[] output2 = new long[128];
-        dispatchCopyKernel(commandList, commandQueue, kernelCopy, output2, 128 * Sizeof.LONG.getNumBytes());
+        dispatchCopyKernel(commandList, commandQueue, kernelCopy, output2, 128 * Sizeof.LONG.getNumBytes(), stack);
 
         // Free resources
         errorLog("zeMemFree", result);

@@ -9,7 +9,6 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
@@ -41,7 +40,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         // heap (global memory)
         buffer.clear();
         buffer.putLong(stack.toBuffer());
-        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), stack.toBuffer());
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, buffer.position(), buffer.array());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
 

@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.utils;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -268,7 +271,10 @@ public class LevelZeroUtils {
         errorLog("zeCommandListAppendBarrier", result);
 
         // Copy From Device-Allocated memory to host (data)
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), output, deviceBuffer, bufferSize, 0, 0, null, 0, null);
+        ByteBuffer allocate = ByteBuffer.allocate(16);
+        allocate.order(ByteOrder.LITTLE_ENDIAN);
+
+        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), allocate.array(), deviceBuffer, bufferSize, 0, 0, null, 0, null);
         errorLog("zeCommandListAppendMemoryCopy", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
@@ -282,7 +288,8 @@ public class LevelZeroUtils {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         errorLog("zeCommandQueueSynchronize", result);
 
-        long baseAddress = output[0];
+        long baseAddress = allocate.getLong(0);
+        output[0] = baseAddress;
         System.out.println("Base Address: " + baseAddress);
         commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
