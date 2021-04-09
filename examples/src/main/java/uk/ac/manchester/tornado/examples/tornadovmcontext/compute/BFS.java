@@ -41,10 +41,13 @@ public class BFS {
 
     private static final boolean BIDIRECTIONAL = false;
     private static final boolean PRINT_SOLUTION = false;
+    private static final boolean VALIDATION = true;
 
     int[] vertices;
+    int[] verticesJava;
     int[] adjacencyMatrix;
     int[] modify;
+    int[] modifyJava;
     int[] currentDepth;
 
     public static final boolean SAMPLE = false;
@@ -137,13 +140,58 @@ public class BFS {
                 }
             }
         }
+    }
 
+    private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, int[] h_true, int[] currentDepth) {
+        for (int from = 0; from < numNodes; from++) {
+            for (int to = 0; to < numNodes; to++) {
+                int elementAccess = from * numNodes + to;
+
+                if (adjacencyMatrix[elementAccess] == 1) {
+                    int dfirst = vertices[from];
+                    int dsecond = vertices[to];
+                    if ((currentDepth[0] == dfirst) && (dsecond == -1)) {
+                        vertices[to] = dfirst + 1;
+                        h_true[0] = 0;
+                    }
+
+                    if (BIDIRECTIONAL) {
+                        if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
+                            vertices[from] = dsecond + 1;
+                            h_true[0] = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public boolean validateBFS(int[] vertices, int[] verticesJava) {
+        boolean check = true;
+        for (int i = 0; i < vertices.length; i++) {
+            if (vertices[i] != verticesJava[i]) {
+                check = false;
+            }
+        }
+        return check;
+    }
+
+    public boolean checkModify(int[] modify, int[] modifyJava) {
+        boolean check = true;
+        for (int i = 0; i < modify.length; i++) {
+            if (modify[i] != modifyJava[i]) {
+                check = false;
+            }
+        }
+        return check;
     }
 
     public void tornadoBFS(int rootNode, int numNodes) throws IOException {
 
         vertices = new int[numNodes];
+        verticesJava = new int[numNodes];
         adjacencyMatrix = new int[numNodes * numNodes];
+        boolean validModifyResults = true;
 
         if (SAMPLE) {
             initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
@@ -157,8 +205,14 @@ public class BFS {
         s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
         s0.streamOut(vertices).execute();
 
+        // initialization of Java vertices
+        initializeVertices(numNodes, verticesJava, rootNode);
+
         modify = new int[] { 1 };
         Arrays.fill(modify, 1);
+
+        modifyJava = new int[] { 1 };
+        Arrays.fill(modifyJava, 1);
 
         currentDepth = new int[] { 0 };
 
@@ -180,10 +234,16 @@ public class BFS {
             // 2. Parallel BFS
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
-            // runBFS(vertices, adjacencyMatrix, numNodes, modify,
-            // currentDepth);
+            runBFS(verticesJava, adjacencyMatrix, numNodes, modifyJava, currentDepth);
             s1.execute(gridTask);
             currentDepth[0]++;
+
+            if (VALIDATION) {
+                if (!(validModifyResults = checkModify(modify, modifyJava))) {
+                    break;
+                }
+            }
+
             for (int i = 0; i < modify.length; i++) {
                 if (modify[i] == 0) {
                     allDone &= false;
@@ -195,10 +255,19 @@ public class BFS {
                 done = true;
             }
             Arrays.fill(modify, 1);
+            Arrays.fill(modifyJava, 1);
         }
 
         if (PRINT_SOLUTION) {
             System.out.println("Solution: " + Arrays.toString(vertices));
+        }
+
+        if (VALIDATION) {
+            if (validateBFS(vertices, verticesJava) && validModifyResults) {
+                System.out.println("Validation true");
+            } else {
+                System.out.println("Validation false");
+            }
         }
     }
 
