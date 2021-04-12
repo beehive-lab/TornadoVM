@@ -90,7 +90,7 @@ public class OCLEvent extends TornadoLogger implements Event {
     protected static final int DESC_SYNC_BARRIER = 15;
     protected static final int EVENT_NONE = 16;
 
-    private static final long[] internalBuffer = new long[2];
+    private final long[] internalBuffer = new long[2];
 
     private OCLCommandQueue queue;
     private int localId;
