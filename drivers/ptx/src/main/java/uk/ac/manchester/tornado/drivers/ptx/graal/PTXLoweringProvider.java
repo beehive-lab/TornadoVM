@@ -83,7 +83,9 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXWriteNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
@@ -91,7 +93,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
@@ -109,7 +114,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private PTXGPUReduceSnippets.Templates GPUReduceSnippets;
 
-    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
+    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
+            ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
@@ -207,6 +213,12 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof InstanceOfNode) {
             // ignore InstanceOfNode nodes
+        } else if (node instanceof ThreadIdFixedWithNextNode) {
+            lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
+        } else if (node instanceof ThreadLocalIdFixedWithNextNode) {
+            lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
+        } else if (node instanceof GetGroupIdFixedWithNextNode) {
+            lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -331,6 +343,25 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 graph.replaceFixedWithFloating(integerDivRemNode, rem);
                 break;
         }
+    }
+
+    private void lowerThreadIdNode(ThreadIdFixedWithNextNode threadIdNode) {
+        StructuredGraph graph = threadIdNode.graph();
+
+        GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
+    }
+
+    private void lowerLocalThreadIdNode(ThreadLocalIdFixedWithNextNode threadLocalIdNode) {
+        StructuredGraph graph = threadLocalIdNode.graph();
+        LocalThreadIdNode localThreadIdNode = graph.addOrUnique(new LocalThreadIdNode(ConstantNode.forInt(threadLocalIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadLocalIdNode, localThreadIdNode);
+    }
+
+    private void lowerGetGroupIdNode(GetGroupIdFixedWithNextNode getGroupIdNode) {
+        StructuredGraph graph = getGroupIdNode.graph();
+        GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
     }
 
     @Override

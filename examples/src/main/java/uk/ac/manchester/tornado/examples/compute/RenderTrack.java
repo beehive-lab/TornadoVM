@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,8 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.examples.reductions.Stats;
 
 public class RenderTrack {
+
+    private static final boolean CHECK_RESULT = true;
 
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
@@ -73,7 +75,8 @@ public class RenderTrack {
             m = Integer.parseInt(args[1]);
         }
 
-        ImageByte3 output = new ImageByte3(n, m);
+        ImageByte3 outputTornadoVM = new ImageByte3(n, m);
+        ImageByte3 outputJava = new ImageByte3(n, m);
         ImageFloat3 input = new ImageFloat3(n, m);
 
         Random r = new Random();
@@ -84,17 +87,31 @@ public class RenderTrack {
             }
         }
 
-        TaskSchedule task = new TaskSchedule("s0").task("t0", RenderTrack::renderTrack, output, input).streamOut(output);
+        TaskSchedule task = new TaskSchedule("s0").task("t0", RenderTrack::renderTrack, outputTornadoVM, input).streamOut(outputTornadoVM);
         ArrayList<Long> timers = new ArrayList<>();
         task.warmup();
         for (int i = 0; i < 10; i++) {
             long start = System.nanoTime();
-            task.executeWithProfilerSequential(Policy.PERFORMANCE);
+            task.execute();
             long end = System.nanoTime();
             timers.add((end - start));
         }
 
-        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+        if (CHECK_RESULT) {
+            renderTrack(outputJava, input);
+            for (int x = 0; x < n; x++) {
+                for (int y = 0; y < m; y++) {
+                    if (outputJava.get(x, y).getX() != outputTornadoVM.get(x, y).getX() || outputJava.get(x, y).getY() != outputTornadoVM.get(x, y).getY()
+                            || outputJava.get(x, y).getZ() != outputTornadoVM.get(x, y).getZ()) {
+                        System.out.println(
+                                "Result is not correct: outputTornadoVM[" + x + "][" + y + "]: " + outputTornadoVM.get(x, y) + " !=  outputJava[" + x + "][" + y + "]: " + outputJava.get(x, y));
+                        break;
+                    }
+                }
+            }
+        }
+
+        System.out.println("Median TornadoVM Task Time: " + Stats.computeMedian(timers));
 
     }
 

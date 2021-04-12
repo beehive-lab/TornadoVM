@@ -480,8 +480,6 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", null);
         public static final PTXUnaryIntrinsic FLOAT_FLOOR = new PTXUnaryIntrinsic(CONVERT, ROUND_NEGATIVE_INFINITY_INTEGER, true, false);
 
-        public static final PTXUnaryIntrinsic LOCAL_MEMORY = new PTXUnaryIntrinsic("__local");
-
         public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc") {
             @Override
             public void emit(PTXCompilationResultBuilder crb, Value x, Variable dest) {
