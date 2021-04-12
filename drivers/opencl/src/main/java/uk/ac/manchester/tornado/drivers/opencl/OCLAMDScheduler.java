@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLAMDScheduler extends OCLKernelScheduler {
@@ -40,7 +41,15 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
 
     @Override
     public int launch(OCLKernel kernel, TaskMetaData meta, int[] waitEvents, long batchThreads) {
-        return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
+        if (meta.isWorkerGridAvailable()) {
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            long[] global = grid.getGlobalWork();
+            long[] offset = grid.getGlobalOffset();
+            long[] local = grid.getLocalWork();
+            return deviceContext.enqueueNDRangeKernel(kernel, grid.dimension(), offset, global, local, waitEvents);
+        } else {
+            return deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
+        }
     }
 
     @Override
@@ -80,6 +89,9 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
             maxBlockSize /= 4;
         }
         int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
+        if (value == 0) {
+            return 1;
+        }
         while (globalWorkSize % value != 0) {
             value--;
         }
