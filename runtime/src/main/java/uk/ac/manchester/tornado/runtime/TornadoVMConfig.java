@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,19 +23,14 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
-import sun.misc.Unsafe;
+import jdk.vm.ci.meta.MetaAccessProvider;
 
-@SuppressWarnings("restriction")
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
-    TornadoVMConfig(HotSpotVMConfigStore store) {
-        super(store);
-    }
+    private MetaAccessProvider metaAccessProvider;
 
     private final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
     private final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
@@ -43,60 +38,21 @@ public class TornadoVMConfig extends HotSpotVMConfigAccess {
     private final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
     public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
 
+    public TornadoVMConfig(HotSpotVMConfigStore store, MetaAccessProvider metaAccessProvider) {
+        super(store);
+        this.metaAccessProvider = metaAccessProvider;
+    }
+
     public final int arrayOopDescLengthOffset() {
         return useCompressedClassPointers ? hubOffset + narrowKlassSize : arrayOopDescSize;
     }
 
     public int getArrayBaseOffset(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-                return Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
-            case Byte:
-                return Unsafe.ARRAY_BYTE_BASE_OFFSET;
-            case Char:
-                return Unsafe.ARRAY_CHAR_BASE_OFFSET;
-            case Short:
-                return Unsafe.ARRAY_SHORT_BASE_OFFSET;
-            case Int:
-                return Unsafe.ARRAY_INT_BASE_OFFSET;
-            case Long:
-                return Unsafe.ARRAY_LONG_BASE_OFFSET;
-            case Float:
-                return Unsafe.ARRAY_FLOAT_BASE_OFFSET;
-            case Double:
-                return Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
-            case Object:
-                return Unsafe.ARRAY_OBJECT_BASE_OFFSET;
-            case Void:
-            case Illegal:
-            default:
-                throw shouldNotReachHere();
-        }
+        return metaAccessProvider.getArrayBaseOffset(kind);
     }
 
     public int getArrayIndexScale(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-                return Unsafe.ARRAY_BOOLEAN_INDEX_SCALE;
-            case Byte:
-                return Unsafe.ARRAY_BYTE_INDEX_SCALE;
-            case Char:
-                return Unsafe.ARRAY_CHAR_INDEX_SCALE;
-            case Short:
-                return Unsafe.ARRAY_SHORT_INDEX_SCALE;
-            case Int:
-                return Unsafe.ARRAY_INT_INDEX_SCALE;
-            case Long:
-                return Unsafe.ARRAY_LONG_INDEX_SCALE;
-            case Float:
-                return Unsafe.ARRAY_FLOAT_INDEX_SCALE;
-            case Double:
-                return Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
-            case Object:
-                return Unsafe.ARRAY_OBJECT_INDEX_SCALE;
-            default:
-                throw shouldNotReachHere();
-        }
+        return metaAccessProvider.getArrayIndexScale(kind);
     }
 
 }
