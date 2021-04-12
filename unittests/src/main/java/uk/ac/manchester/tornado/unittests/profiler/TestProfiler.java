@@ -63,15 +63,15 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(ts.getTotalTime() > 0);
         assertTrue(ts.getTornadoCompilerTime() > 0);
         assertTrue(ts.getCompileTime() > 0);
-        assertTrue(ts.getDataTransfersTime() > 0);
-        assertTrue(ts.getReadTime() > 0);
-        assertTrue(ts.getWriteTime() > 0);
+        assertTrue(ts.getDataTransfersTime() >= 0);
+        assertTrue(ts.getReadTime() >= 0);
+        assertTrue(ts.getWriteTime() >= 0);
         // We do not support dispatch time on the PTX backend
         if (!"PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
             assertTrue(ts.getDispatchTime() > 0);
         }
-        assertTrue(ts.getDeviceReadTime() > 0);
-        assertTrue(ts.getDeviceWriteTime() > 0);
+        assertTrue(ts.getDeviceReadTime() >= 0);
+        assertTrue(ts.getDeviceWriteTime() >= 0);
         assertTrue(ts.getDeviceKernelTime() > 0);
 
         assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());

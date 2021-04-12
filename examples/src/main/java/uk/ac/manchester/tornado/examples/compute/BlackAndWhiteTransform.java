@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,6 +52,8 @@ public class BlackAndWhiteTransform {
 
     public static class LoadImage extends Component {
 
+        private static final int WARMING_UP_ITERATIONS = 15;
+
         private static final long serialVersionUID = 1L;
         private BufferedImage image;
 
@@ -86,7 +88,7 @@ public class BlackAndWhiteTransform {
             }
         }
 
-	private static void compute1D(int[] image, final int w, final int s) {
+        private static void compute1D(int[] image, final int w, final int s) {
             for (@Parallel int i = 0; i < w * s; i++) {
                 int rgb = image[i];
                 int alpha = (rgb >> 24) & 0xff;
@@ -115,33 +117,38 @@ public class BlackAndWhiteTransform {
 
             int[] imageRGB = new int[w * s];
 
-            long start = System.nanoTime();
-            for (int i = 0; i < w; i++) {
-                for (int j = 0; j < s; j++) {
-                    int rgb = image.getRGB(i, j);
-                    imageRGB[i * s + j] = rgb;
+            long start = 0,end = 0;
+            long taskStart = 0,taskEnd = 0;
+            for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
+                start = System.nanoTime();
+                for (int i = 0; i < w; i++) {
+                    for (int j = 0; j < s; j++) {
+                        int rgb = image.getRGB(i, j);
+                        imageRGB[i * s + j] = rgb;
+                    }
                 }
-            }
 
-            if (tornadoTask == null) {
-                tornadoTask = new TaskSchedule("s0");
-                tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute1D, imageRGB, w, s).streamOut(imageRGB);
+                if (tornadoTask == null) {
+                    tornadoTask = new TaskSchedule("s0");
+                    tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).streamOut(imageRGB);
 
-            }
-            long taskStart = System.nanoTime();
-            tornadoTask.execute();
-            long taskEnd = System.nanoTime();
-
-            // unmarshall
-            for (int i = 0; i < w; i++) {
-                for (int j = 0; j < s; j++) {
-                    image.setRGB(i, j, imageRGB[i * s + j]);
                 }
-            }
 
-            long end = System.nanoTime();
-            System.out.println("Total time: " + (end - start) + " (ns)");
-            System.out.println("Task time: " + (taskEnd - taskStart) + " (ns)");
+                taskStart = System.nanoTime();
+                tornadoTask.execute();
+                taskEnd = System.nanoTime();
+
+                // unmarshall
+                for (int i = 0; i < w; i++) {
+                    for (int j = 0; j < s; j++) {
+                        image.setRGB(i, j, imageRGB[i * s + j]);
+                    }
+                }
+
+                end = System.nanoTime();
+            }
+            System.out.println("Total TornadoVM time: " + (end - start) + " (ns)");
+            System.out.println("Task TornadoVM time: " + (taskEnd - taskStart) + " (ns)");
 
             // draw the image
             g.drawImage(this.image, 0, 0, null);
@@ -155,25 +162,28 @@ public class BlackAndWhiteTransform {
             int w = image.getWidth();
             int s = image.getHeight();
 
-            long start = System.nanoTime();
-            for (int i = 0; i < w; i++) {
-                for (int j = 0; j < s; j++) {
+            long start = 0,end = 0;
+            for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
+                start = System.nanoTime();
+                for (int i = 0; i < w; i++) {
+                    for (int j = 0; j < s; j++) {
 
-                    int rgb = image.getRGB(i, j);
+                        int rgb = image.getRGB(i, j);
 
-                    int alpha = (rgb >> 24) & 0xff;
-                    int red = (rgb >> 16) & 0xFF;
-                    int green = (rgb >> 8) & 0xFF;
-                    int blue = (rgb & 0xFF);
+                        int alpha = (rgb >> 24) & 0xff;
+                        int red = (rgb >> 16) & 0xFF;
+                        int green = (rgb >> 8) & 0xFF;
+                        int blue = (rgb & 0xFF);
 
-                    int grayLevel = (red + green + blue) / 3;
-                    int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
+                        int grayLevel = (red + green + blue) / 3;
+                        int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
 
-                    image.setRGB(i, j, gray);
+                        image.setRGB(i, j, gray);
+                    }
                 }
+                end = System.nanoTime();
             }
-            long end = System.nanoTime();
-            System.out.println("Total time: " + (end - start) + " (ns)");
+            System.out.println("Total sequential time: " + (end - start) + " (ns)");
 
             // draw the image
             g.drawImage(this.image, 0, 0, null);

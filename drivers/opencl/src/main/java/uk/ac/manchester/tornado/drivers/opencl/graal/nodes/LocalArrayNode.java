@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -62,6 +63,13 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.length = length;
         this.elementType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
+    }
+
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementType, ConstantNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
         this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
     }
 

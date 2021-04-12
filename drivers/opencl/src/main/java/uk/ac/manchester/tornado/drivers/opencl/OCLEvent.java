@@ -90,25 +90,21 @@ public class OCLEvent extends TornadoLogger implements Event {
     protected static final int DESC_SYNC_BARRIER = 15;
     protected static final int EVENT_NONE = 16;
 
-    private static final long[] internalBuffer = new long[2];
+    private final long[] internalBuffer = new long[2];
 
-    private OCLEventsWrapper eventsWrapper;
     private OCLCommandQueue queue;
     private int localId;
     private long oclEventID;
-    private static final ByteBuffer buffer = ByteBuffer.allocate(8);
+    private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private String name;
     private int status;
 
-    static {
+    OCLEvent() {
         buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    OCLEvent() {
-    }
-
     OCLEvent(final OCLEventsWrapper eventsWrapper, final OCLCommandQueue queue, final int event, final long oclEventID) {
-        this.eventsWrapper = eventsWrapper;
+        this();
         this.queue = queue;
         this.localId = event;
         this.oclEventID = oclEventID;

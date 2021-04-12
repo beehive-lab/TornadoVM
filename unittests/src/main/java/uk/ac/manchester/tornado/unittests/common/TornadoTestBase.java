@@ -54,7 +54,12 @@ public abstract class TornadoTestBase {
             }
         }
 
-        if (!wasDeviceInspected) {
+        /*
+         * Virtual Device execution assumes an environment with a single device.
+         * Therefore, there is no need to change the device even if a different device
+         * is set through the 'tornado.unittests.device' property
+         */
+        if (!wasDeviceInspected && !getVirtualDeviceEnabled()) {
             Tuple2<Integer, Integer> pairDriverDevice = getDriverAndDeviceIndex();
             int driverIndex = pairDriverDevice.f0();
             if (driverIndex != 0) {
@@ -69,6 +74,10 @@ public abstract class TornadoTestBase {
             }
             wasDeviceInspected = true;
         }
+    }
+
+    private boolean getVirtualDeviceEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.virtual.device", "False"));
     }
 
     private Tuple2<Integer, Integer> getDriverAndDeviceIndex() {
