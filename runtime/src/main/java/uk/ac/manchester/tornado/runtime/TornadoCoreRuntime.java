@@ -39,7 +39,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -105,6 +104,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     }
 
     private static DebugContext debugContext = null;
+
     public static DebugContext getDebugContext() {
         if (debugContext == null) {
             debugContext = new DebugContext.Builder(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider())).build();
@@ -147,7 +147,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
         vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore());
+        vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
         drivers = loadDrivers();
     }
 
