@@ -234,9 +234,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoAcceleratorDevice getLogicDevice() {
-        if (scheduleMetaData.isDeviceManuallySet()) {
-            return scheduleMetaData.getLogicDevice();
-        } else if (scheduleMetaData.isDeviceDefined() && !isDeviceDefined()) {
+        if (scheduleMetaData.isDeviceManuallySet() || (scheduleMetaData.isDeviceDefined() && !isDeviceDefined())) {
             return scheduleMetaData.getLogicDevice();
         }
         return super.getLogicDevice();

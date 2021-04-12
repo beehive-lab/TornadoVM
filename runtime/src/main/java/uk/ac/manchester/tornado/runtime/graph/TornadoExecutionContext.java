@@ -257,6 +257,7 @@ public class TornadoExecutionContext {
      *
      * @return {@link TornadoAcceleratorDevice}
      */
+    @Deprecated
     public TornadoAcceleratorDevice getDefaultDevice() {
         return meta.getLogicDevice();
     }
