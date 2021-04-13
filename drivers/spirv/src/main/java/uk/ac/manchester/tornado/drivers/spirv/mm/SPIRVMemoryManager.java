@@ -98,10 +98,10 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
     public long toAbsoluteDeviceAddress(final long address) {
         long result = address;
-
-        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
+        int compare = Long.compareUnsigned(address + deviceBufferAddress, 0);
+        guarantee(compare >= 0, "absolute address may have wrapped around: %d + %d = %d", Long.toUnsignedString(address), Long.toUnsignedString(deviceHeapPointer),
+                Long.toUnsignedString(address + deviceHeapPointer));
         result += deviceBufferAddress;
-
         return result;
     }
 

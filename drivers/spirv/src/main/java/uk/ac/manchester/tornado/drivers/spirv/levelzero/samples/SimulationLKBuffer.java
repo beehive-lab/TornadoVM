@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  *   l_4  =  l_3 << 3;         // Long buffer
  *   l_5  =  l_4 + 16L;        // Randomly starting in position 16
  *   ul_6  =  ul_0 + l_5;
- *   *((__global int *) ul_6)  =  5555;
+ *   *((__global int *) ul_6)  =  555;
  * }
  * </code>
  * 
@@ -60,7 +60,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 public class SimulationLKBuffer {
 
     private static LevelZeroByteBuffer deviceHeapBuffer;
-    private static final int DEVICE_HEAP_SIZE = 128 * 8;
+    // private static final int DEVICE_HEAP_SIZE = 128 * 8;
+    private static final int DEVICE_HEAP_SIZE = 1000000000; // 1GB
     private static long[] stack;
 
     private static void dispatchCopyKernel(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, long[] output, int bufferSize, ByteBuffer stack) {
@@ -139,16 +140,10 @@ public class SimulationLKBuffer {
         // Run 2nd Kernel: Execute-Copy
         ByteBuffer stack = ByteBuffer.allocate(32);
         stack.order(ByteOrder.LITTLE_ENDIAN);
-        // stack = new long[5];
-        // stack[0] = 777;
-        // stack[1] = 888;
-        // stack[2] = 999;
-        // stack[3] = output[0];
-        // stack[4] = deviceHeapBuffer.getPtrBuffer();
         stack.putLong(777);
         stack.putLong(888);
         stack.putLong(999);
-        stack.putLong(output[0]);
+        stack.putLong(output[0] + 80L);
 
         // Copy Host -> Device
         result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceHeapBuffer, stack.array(), stack.position(), 0, 0, null, 0, null);

@@ -290,7 +290,7 @@ public class LevelZeroUtils {
 
         long baseAddress = allocate.getLong(0);
         output[0] = baseAddress;
-        System.out.println("Base Address: " + baseAddress);
+        System.out.println("Base Address: " + Long.toUnsignedString(baseAddress));
         commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
         return baseAddress;
