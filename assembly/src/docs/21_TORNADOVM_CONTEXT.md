@@ -32,7 +32,7 @@ CUDA PTX terminology.
 
 ## Examples
 
-The following [example](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/examples/src/main/java/uk/ac/manchester/tornado/examples/tornadovmcontext/compute/MatrixMultiplication2DV2.java)
+The following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/tornadovmcontext/compute/MatrixMultiplication2DV2.java)
 is the Matrix Multiplication implementation using the `TornadoVMContext` object for indexing threads and access to local
 memory. The following example also makes use of loop tiling. There are three main steps to leverage the features of TornadoVMContext:
 
@@ -115,7 +115,7 @@ t.execute(gridTask);    // Pass the GridTask in the execute method
 
 The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the TornadoVMContext features or
 adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Examples can be found in
-the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/feature/new-api/unittests/src/main/java/uk/ac/manchester/tornado/unittests/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three
+the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/tree/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/tornadovmcontext/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three
 tasks:
 
 * `t0`: The `vectorAddV2` method adds two vectors by utilizing the thread attributes provided by TornadoVMContext.
