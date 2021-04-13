@@ -17,34 +17,34 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * Running this kernel:
  * 
  * <code>
- __kernel void copyTest(__global uchar *_heap_base, ulong _frame_base)
- {
- ulong ul_0, ul_6; 
- long l_4, l_5, l_3; 
- int i_1, i_2, i_7, i_8; 
-
- __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
-
-
- // BLOCK 0
- ul_0  =  (ulong) _frame[3];
- i_1  =  get_global_id(0);
- // BLOCK 1 MERGES [0 2 ]
- i_2  =  i_1;
- for(;i_2 < 256;)  {
- // BLOCK 2
- l_3  =  (long) i_2;
- l_4  =  l_3 << 2;
- l_5  =  l_4 + 24L;
- ul_6  =  ul_0 + l_5;
- *((__global int *) ul_6)  =  333;
- i_7  =  get_global_size(0);
- i_8  =  i_7 + i_2;
- i_2  =  i_8;
- }  // B2
- // BLOCK 3
- return;
- }  //  kernel
+ *  __kernel void copyTest(__global uchar *_heap_base, ulong _frame_base)
+ * {
+ * ulong ul_0, ul_6; 
+ * long l_4, l_5, l_3; 
+ * int i_1, i_2, i_7, i_8; 
+ *
+ * __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
+ *
+ *
+ * // BLOCK 0
+ * ul_0  =  (ulong) _frame[3];
+ * i_1  =  get_global_id(0);
+ * // BLOCK 1 MERGES [0 2 ]
+ * i_2  =  i_1;
+ * for(;i_2 < 256;)  {
+ * // BLOCK 2
+ * l_3  =  (long) i_2;
+ * l_4  =  l_3 << 2;
+ * l_5  =  l_4 + 24L;
+ * ul_6  =  ul_0 + l_5;
+ *  *((__global int *) ul_6)  =  333;
+ * i_7  =  get_global_size(0);
+ * i_8  =  i_7 + i_2;
+ * i_2  =  i_8;
+ * }  // B2
+ * // BLOCK 3
+ * return;
+ * }  //  kernel
  * </code>
  * 
  * How to generate SPIRV?
@@ -56,6 +56,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * 
  */
 public class TestPrecompiledSPIRV {
+
+    private static boolean PRINT = false;
 
     public static void main(String[] args) {
         final int numElements = 256;
@@ -80,6 +82,11 @@ public class TestPrecompiledSPIRV {
         // @formatter:on
         ts.execute();
 
-        System.out.println("a: " + Arrays.toString(a));
+        if (PRINT) {
+            System.out.println("a: " + Arrays.toString(a));
+        }
+        int[] result = new int[numElements];
+        Arrays.fill(result, 333);
+        System.out.println("Result correct? " + Arrays.equals(a, result));
     }
 }
