@@ -49,34 +49,23 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1native
         (JNIEnv *env, jobject object, jlong javaKernelHandlerPtr, jint argIndex, jint argSize, jobject javaBufferObject) {
-
     ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
-
-    jclass klass = env->GetObjectClass(javaBufferObject);
-    jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
-    jlong ptr = env->GetLongField(javaBufferObject, fieldPointer);
-    void *buffer = reinterpret_cast<void *>(ptr);
-    ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, &buffer);
-    LOG_ZE_JNI("zeKernelSetArgumentValue", result);
-    return result;
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
- * Method:    zeKernelSetArgumentValue_nativeByteArg
- * Signature: (JII[B)I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1nativeByteArg
-        (JNIEnv *env, jobject object, jlong javaKernelHandlerPtr, jint argIndex, jint argSize, jbyteArray arrayBuffer) {
-    ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
-    void *buffer = static_cast<void *>((arrayBuffer == nullptr) ? nullptr : env->GetPrimitiveArrayCritical(arrayBuffer, 0));
-
-    //jbyte* buffer = env->GetByteArrayElements(arrayBuffer, 0);
-    ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, buffer);
-    LOG_ZE_JNI("zeKernelSetArgumentValue", result)
-    if (arrayBuffer != nullptr) {
-       env->ReleasePrimitiveArrayCritical(arrayBuffer, buffer, 0);
+    void *buffer = nullptr;
+    if (javaBufferObject != nullptr) {
+        jclass klass = env->GetObjectClass(javaBufferObject);
+        jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
+        jlong ptrBuffer = env->GetLongField(javaBufferObject, fieldPointer);
+        if (ptrBuffer != -1) {
+            buffer = reinterpret_cast<void *>(ptrBuffer);
+        }
     }
+    ze_result_t result;
+    if (buffer == nullptr) {
+        result = zeKernelSetArgumentValue(kernel, argIndex, argSize, nullptr);
+    } else {
+        result = zeKernelSetArgumentValue(kernel, argIndex, argSize, &buffer);
+    }
+    LOG_ZE_JNI("zeKernelSetArgumentValue", result);
     return result;
 }
 
@@ -87,8 +76,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1nativePtrArg
         (JNIEnv *env, jobject object, jlong javaKernelHandlerPtr, jint argIndex, jint argSize, jlong ptrBuffer) {
+
     ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
-    void *buffer = reinterpret_cast<void *>(ptrBuffer);
+    void *buffer = nullptr;
+    if (ptrBuffer != -1) {
+        buffer = reinterpret_cast<void *>(ptrBuffer);
+    }
     ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, &buffer);
     LOG_ZE_JNI("zeKernelSetArgumentValue [PTR]", result);
     return result;
