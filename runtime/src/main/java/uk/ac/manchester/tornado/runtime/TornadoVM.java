@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -246,9 +247,17 @@ public class TornadoVM extends TornadoLogger {
         return object instanceof AtomicInteger;
     }
 
+    private boolean isObjectTornadoVMContext(Object object) {
+        return object instanceof TornadoVMContext;
+    }
+
     private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
+
+        if (isObjectTornadoVMContext(object)) {
+            return 0;
+        }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
@@ -290,6 +299,10 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
+        if (isObjectTornadoVMContext(object)) {
+            return 0;
+        }
+
         if (TornadoOptions.printBytecodes && !isObjectAtomic(object)) {
             String verbose = String.format("vm: STREAM_IN [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
@@ -322,6 +335,10 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
+        if (isObjectTornadoVMContext(object)) {
+            return 0;
+        }
+
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: STREAM_OUT [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
@@ -349,6 +366,10 @@ public class TornadoVM extends TornadoLogger {
 
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
+
+        if (isObjectTornadoVMContext(object)) {
+            return;
+        }
 
         if (TornadoOptions.printBytecodes) {
             String verbose = String.format("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
@@ -512,6 +533,11 @@ public class TornadoVM extends TornadoLogger {
             if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
                 stack.push(constants.get(argIndex));
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
+                if (isObjectTornadoVMContext(objects.get(argIndex))) {
+                    stack.push(null);
+                    continue;
+                }
+
                 final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 

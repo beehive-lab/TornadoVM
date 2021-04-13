@@ -94,7 +94,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
@@ -104,10 +106,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 import java.util.Iterator;
@@ -183,6 +188,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof InstanceOfNode) {
             // ignore InstanceOfNode nodes
+        } else if (node instanceof ThreadIdFixedWithNextNode) {
+            lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
+        } else if (node instanceof ThreadLocalIdFixedWithNextNode) {
+            lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
+        } else if (node instanceof GetGroupIdFixedWithNextNode) {
+            lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -273,6 +284,25 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 graph.replaceFixedWithFloating(integerDivRemNode, rem);
                 break;
         }
+    }
+
+    private void lowerThreadIdNode(ThreadIdFixedWithNextNode threadIdNode) {
+        StructuredGraph graph = threadIdNode.graph();
+
+        GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
+    }
+
+    private void lowerLocalThreadIdNode(ThreadLocalIdFixedWithNextNode threadLocalIdNode) {
+        StructuredGraph graph = threadLocalIdNode.graph();
+        LocalThreadIdNode localThreadIdNode = graph.addOrUnique(new LocalThreadIdNode(ConstantNode.forInt(threadLocalIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadLocalIdNode, localThreadIdNode);
+    }
+
+    private void lowerGetGroupIdNode(GetGroupIdFixedWithNextNode getGroupIdNode) {
+        StructuredGraph graph = getGroupIdNode.graph();
+        GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
     }
 
     @Override
