@@ -59,12 +59,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
             buffer = reinterpret_cast<void *>(ptrBuffer);
         }
     }
-    ze_result_t result;
-    if (buffer == nullptr) {
-        result = zeKernelSetArgumentValue(kernel, argIndex, argSize, nullptr);
-    } else {
-        result = zeKernelSetArgumentValue(kernel, argIndex, argSize, &buffer);
-    }
+    ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, (buffer == nullptr)? nullptr: &buffer);
     LOG_ZE_JNI("zeKernelSetArgumentValue", result);
     return result;
 }
