@@ -1,7 +1,10 @@
 # TornadoVM
 
-<img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
-TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
+<img align="center" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
+
+TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
+heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated
+GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
 #####
 
@@ -15,7 +18,7 @@ Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 ## 1. Installation
 
-TornadoVM can be installed either [from scratch](INSTALL.md) or
+TornadoVM can be installed either [from source](INSTALL.md) or
 by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the
@@ -48,16 +51,16 @@ that includes NBody, DFT, KMeans computation and matrix computations.
 ## 3. Programming Model
 
 TornadoVM exposes to the programmer task-level, data-level and pipeline-level parallelism via a light Application
-Programming Interface (API). TornadoVM uses single-source property, in which the code to be accelerated and the host
-code live in the same Java program.
+Programming Interface (API). In addition, TornadoVM uses single-source property, in which the code to be accelerated and
+the host code live in the same Java program.
 
-Compute-kernels in TornadoVM can be programmed using two different APIs:
+Compute-kernels in TornadoVM can be programmed using two different approaches:
 
 #### a) Loop-parallelism
 
-Compute kernels are written in a sequential form (task for a single processors). To express parallelism, TornadoVM
-exposes two annotations that can be used in loops and parameters. They are `@Parallel` for annotating parallel loops,
-and `@Reduce` for annotating parameters used for reductions.
+Compute kernels are written in a sequential form (tasks programmed for a single thread execution). To express
+parallelism, TornadoVM exposes two annotations that can be used in loops and parameters: a) `@Parallel` for annotating
+parallel loops; and b) `@Reduce` for annotating parameters used in reductions.
 
 The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM and the
 loop-parallel API:
@@ -89,12 +92,12 @@ public class Compute {
 #### b) Kernel Parallelism
 
 Another way to express compute-kernels in TornadoVM is via the kernel-parallel API. To do so, TornadoVM exposes
-a `TornadoVMContext` in which the application can directly access to the thread-id, allocate memory in local memory
+a `TornadoVMContext` with which the application can directly access the thread-id, allocate memory in local memory
 (shared memory on NVIDIA devices), and insert barriers. This model is similar to programming compute-kernels in OpenCL
 and CUDA. Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port
 existing CUDA/OpenCL compute kernels into TornadoVM.
 
-The following code-snippet shows the naive Matrix Multiplication using the kernel-parallel API:
+The following code-snippet shows the Matrix Multiplication example using the kernel-parallel API:
 
 ```java
 public class Compute {
@@ -109,9 +112,9 @@ public class Compute {
     }
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        // When using the kernel-parallel API, we need to crete a Grid and a Worker
+        // When using the kernel-parallel API, we need to create a Grid and a Worker
 
-        WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create 2D Worker
+        WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create a 2D Worker
         GridTask gridTask = new GridTask("s0.t0", workerGrid);   // Attach the worker to the Grid
         TornadoVMContext context = new TornadoVMContext();       // Create a context
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
@@ -132,13 +135,13 @@ task-schedule object.
 
 Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that
 TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches
-devices if it knows the new device offers better performance. With the task-migration, the TornadoVM's approach is to
-only switch device if it detects an application can be executed faster than the CPU execution using the code compiled by
-C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can be seen as a complement to C2 and Graal. This is
-because there is no single hardware to best execute all workloads efficiently. GPUs are very good at exploiting SIMD
-applications, and FPGAs are very good at exploiting pipeline applications. If your applications follow those models,
-TornadoVM will likely select heterogeneous hardware. Otherwise, it will stay on the CPU using the default compilers (C2
-or Graal).
+devices if it can detect that a specific device can yield better performance (compared to another). With the
+task-migration, the TornadoVM's approach is to only switch device if it detects an application can be executed faster
+than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can
+be seen as a complement to C2 and Graal. This is because there is no single hardware to best execute all workloads
+efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are very good at exploiting pipeline
+applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise,
+it will stay on the CPU using the default compilers (C2 or Graal).
 
 To use the dynamic reconfiguration, you can execute using TornadoVM policies. For example:
 
@@ -180,7 +183,7 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
 ```
 
 To run TornadoVM, you need to either install the TornadoVM extension for GraalVM/OpenJDK, or run with our
-docker [images](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
+Docker [images](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
 ## 6. Additional Resources
 
@@ -193,33 +196,31 @@ Selected publications and citations can be found [here](assembly/src/docs/14_PUB
 
 ## 8. Acknowledgments
 
-This work was initially supported by the EPSRC
-grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and AnyScale Apps EP/L000725/1, and now it
-is funded by the [EU Horizon 2020 E2Data 780245](https://e2data.eu) and
-the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu) grants.
+This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html)
+the [EU Horizon 2020 ELEGANT 957286](https://www.elegant-h2020.eu/) grant. In addition, it has been supported
+by [EU Horizon 2020 E2Data 780245](https://e2data.eu), the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu),
+and [EPSRC PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/), and AnyScale Apps EP/L000725/1 grants.
 
 ## 9. Contributions and Collaborations
 
-We welcome collaborations! Please see how to contribute in the [CONTRIBUTING](CONTRIBUTING.md).
+We welcome collaborations! Please see how to contribute to the project in the [CONTRIBUTING](CONTRIBUTING.md) page.
 
-A mailing list is also available to discuss TornadoVM related issues:
+### Write your questions and proposals:
 
-tornado-support@googlegroups.com
+Additionally, you can open new proposals on the Github discussions
+page:[https://github.com/beehive-lab/TornadoVM/discussions](https://github.com/beehive-lab/TornadoVM/discussions)
 
-For collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
+### Mailing List:
+
+A mailing list is also available to discuss TornadoVM related issues: tornado-support@googlegroups.com
+
+### Collaborations:
+
+For Academic & Industry collaborations, please contact [here](https://www.tornadovm.org/contact-us).
 
 ## 10. TornadoVM Team
 
-This work was originated by James Clarkson under the joint supervision
-of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net).
-Currently, this project is maintained and updated by the following contributors:
-
-* [Juan Fumero](https://jjfumero.github.io/)
-* [Michail Papadimitriou](https://mikepapadim.github.io)
-* [Maria Xekalaki](https://github.com/mairooni)
-* [Athanasios Stratikopoulos](https://personalpages.manchester.ac.uk/staff/athanasios.stratikopoulos)
-* [Florin Blanaru](https://github.com/gigiblender)
-* [Christos Kotselidis](https://www.kotselidis.net)
+Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornadovm.org/about-us).
 
 ## 11. Licenses
 
