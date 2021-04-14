@@ -1,6 +1,6 @@
 # TornadoVM
 
-<img align="center" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
+<img align="right" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
 TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
 heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated
