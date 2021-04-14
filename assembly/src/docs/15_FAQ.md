@@ -11,9 +11,11 @@ processing.
 
 ## 2. How can I use it?
 
-#### Installation
+TornadoVM can be installed either [from source](INSTALL.md) or by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
-TornadoVM can be currently executed with the following two configurations:
+#### List of compatible JDKs
+
+TornadoVM can be currently executed with the following three configurations:
 
 * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
 * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
