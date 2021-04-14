@@ -65,6 +65,12 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  *     $ mv opencl-copy.spv /tmp/example.spv
  * </code>
  * 
+ * How to run?
+ * 
+ * <code>
+ *     tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZero
+ * </code>
+ * 
  */
 public class TestLevelZero {
 
@@ -261,7 +267,7 @@ public class TestLevelZero {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, "/tmp/example.spv");
+        result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, "/tmp/opencl-copy.spv");
         LevelZeroUtils.errorLog("zeModuleCreate", result);
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {

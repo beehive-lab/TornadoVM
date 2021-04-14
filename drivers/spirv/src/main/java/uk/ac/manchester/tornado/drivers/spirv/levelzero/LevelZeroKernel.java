@@ -29,13 +29,11 @@ public class LevelZeroKernel {
         return zeKernelSetGroupSize_native(ptrZeKernelHandle, groupSizeX[0], groupSizeY[0], groupSizeZ[0]);
     }
 
-    native int zeKernelSetArgumentValue_native(long ptrZeKernelHandle, int argIndex, int argSize, LevelZeroBufferInteger argValue);
+    private native int zeKernelSetArgumentValue_nativePtrArg(long ptrZeKernelHandle, int argIndex, int argSize, long ptrBuffer);
 
     public int zeKernelSetArgumentValue(long ptrZeKernelHandle, int argIndex, int argSize, LevelZeroBufferInteger argValue) {
-        return zeKernelSetArgumentValue_native(ptrZeKernelHandle, argIndex, argSize, argValue);
+        return zeKernelSetArgumentValue_nativePtrArg(ptrZeKernelHandle, argIndex, argSize, (argValue != null) ? argValue.getPtrBuffer() : -1);
     }
-
-    private native int zeKernelSetArgumentValue_nativePtrArg(long ptrZeKernelHandle, int argIndex, int argSize, long ptrBuffer);
 
     public int zeKernelSetArgumentValue(long ptrZeKernelHandle, int argIndex, int argSize, long ptrBuffer) {
         return zeKernelSetArgumentValue_nativePtrArg(ptrZeKernelHandle, argIndex, argSize, ptrBuffer);

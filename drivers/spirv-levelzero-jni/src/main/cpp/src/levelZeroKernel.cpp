@@ -44,28 +44,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
- * Method:    zeKernelSetArgumentValue_native
- * Signature: (JIILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;)I
- */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetArgumentValue_1native
-        (JNIEnv *env, jobject object, jlong javaKernelHandlerPtr, jint argIndex, jint argSize, jobject javaBufferObject) {
-    ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
-    void *buffer = nullptr;
-    if (javaBufferObject != nullptr) {
-        jclass klass = env->GetObjectClass(javaBufferObject);
-        jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
-        jlong ptrBuffer = env->GetLongField(javaBufferObject, fieldPointer);
-        if (ptrBuffer != -1) {
-            buffer = reinterpret_cast<void *>(ptrBuffer);
-        }
-    }
-    ze_result_t result = zeKernelSetArgumentValue(kernel, argIndex, argSize, (buffer == nullptr)? nullptr: &buffer);
-    LOG_ZE_JNI("zeKernelSetArgumentValue", result);
-    return result;
-}
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
  * Method:    zeKernelSetArgumentValue_nativePtrArg
  * Signature: (JIIJ)I
  */
