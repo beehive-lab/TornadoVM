@@ -25,6 +25,7 @@
   OpenJDK 12.0.2
   OpenJDK 13.0.2
   OpenJDK 14.0.2
+  Microsoft Build of OpenJDK (OpenJDK 11.0.10+9)
   ```
 
 
