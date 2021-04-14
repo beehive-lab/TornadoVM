@@ -80,7 +80,7 @@ VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 You can find more information
 here: [https://dl.acm.org/doi/10.1145/3313808.3313819](https://dl.acm.org/doi/10.1145/3313808.3313819)
 
-## 10. How it interacts with OpenJDK?
+## 10. How does it interact with OpenJDK?
 
 TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java
 bytecode to OpenCL C / PTX at runtime. As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and
