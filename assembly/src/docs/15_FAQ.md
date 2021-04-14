@@ -11,7 +11,7 @@ processing.
 
 ## 2. How can I use it?
 
-TornadoVM can be installed either [from source](INSTALL.md) or by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
+TornadoVM can be installed either [from source](INSTALL.md) or by [using Docker](13_INSTALL_WITH_DOCKER.md).
 
 #### List of compatible JDKs
 
