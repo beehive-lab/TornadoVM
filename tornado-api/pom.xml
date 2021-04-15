@@ -5,12 +5,12 @@
     <parent>
         <artifactId>tornado</artifactId>
         <groupId>tornado</groupId>
-        <version>0.9-dev</version>
+        <version>0.9</version>
     </parent>
 
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>0.9-dev</version>
+    <version>0.9</version>
 
     <name>tornado-api</name>
     <url>https://tornadovm.org</url>
