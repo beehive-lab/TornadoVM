@@ -6,7 +6,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>0.9</version>
+        <version>0.10-dev</version>
     </parent>
     <artifactId>tornado-drivers-spirv</artifactId>
     <name>tornado-drivers-spirv</name>
@@ -26,7 +26,7 @@
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-drivers-opencl</artifactId>
-            <version>0.9</version>
+            <version>0.10-dev</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
