@@ -107,6 +107,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### OpenCL drivers
 
+* 460.73.01: OK
 * 460.67   : OK
 * 460.56   : OK
 * 460.39   : OK
