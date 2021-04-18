@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,15 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.util.Random;
-
+import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+
+import java.util.Random;
 
 public class MatrixMultiplication2D {
 
@@ -65,6 +69,13 @@ public class MatrixMultiplication2D {
             }
         }
 
+        WorkerGrid workerGrid = new WorkerGrid2D(size, size);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        // [Optional] Set the global work size
+        workerGrid.setGlobalWork(size, size, 1);
+        // [Optional] Set the local work group to be 32x32
+        workerGrid.setLocalWork(32, 32, 1);
+
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
                 .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size)
@@ -73,12 +84,12 @@ public class MatrixMultiplication2D {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute();
+            t.execute(gridTask);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute();
+        t.execute(gridTask);
         long end = System.currentTimeMillis();
 
         // Run sequential
@@ -103,8 +114,9 @@ public class MatrixMultiplication2D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
-        System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
+        TornadoDeviceType deviceType = t.getDevice().getDeviceType();
+        System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
+        System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");
         System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }

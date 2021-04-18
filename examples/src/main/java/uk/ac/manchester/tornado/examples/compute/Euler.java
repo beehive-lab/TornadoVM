@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +57,7 @@ public class Euler {
      * supporting break statements within loops.
      * 
      * @param size
-     *            input suze
+     *            input size
      * @param five
      *            input array
      * @param outputA
@@ -113,7 +113,7 @@ public class Euler {
         }
 
         for (int i = 0; i < outputA.length; i++) {
-            if (outputA[i] != 0) {
+            if (outputA[i] != 0 || outputB[i] != 0 || outputC[i] != 0 || outputD[i] != 0 || outputE[i] != 0) {
                 long a = outputA[i];
                 long b = outputB[i];
                 long c = outputC[i];
@@ -145,7 +145,7 @@ public class Euler {
         }
 
         for (int i = 0; i < outputA.length; i++) {
-            if (outputA[i] != 0) {
+            if (outputA[i] != 0 || outputB[i] != 0 || outputC[i] != 0 || outputD[i] != 0 || outputE[i] != 0) {
                 long a = outputA[i];
                 long b = outputB[i];
                 long c = outputC[i];

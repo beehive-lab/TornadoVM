@@ -99,6 +99,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Set a device in the default driver in Tornado.
      *
      * @param device
+     *            {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
@@ -113,7 +114,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Set a device from a specific Tornado driver.
      *
      * @param driverIndex
+     *            Driver Index
      * @param device
+     *            {@link TornadoAcceleratorDevice}
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = driverIndex;

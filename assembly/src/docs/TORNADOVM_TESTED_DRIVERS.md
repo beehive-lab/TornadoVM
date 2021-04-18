@@ -107,6 +107,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### OpenCL drivers
 
+* 460.73.01: OK
 * 460.67   : OK
 * 460.56   : OK
 * 460.39   : OK
@@ -142,8 +143,10 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 
 * OpenCL 1.0, `xocc` v2018.2:  OK
+* OpenCL 1.0, `xocc` v2018.3:  OK
+* OpenCL 1.0, `v++`  v2020.2:  OK
 
 ## Known Driver Issues
 
 * Intel CPU OpenCL driver `18.1.0.0920` is not working with Ubuntu >= 19.04
-
+* Intel CPU OpenCL driver `1.1` on Mac OSx Catalina (v10.15.7) requires `null` for the local work group size. Any other value (e.g. 256) throws an error with the `CL_INVALID_WORK_GROUP_SIZE` OpenCL error flag, thereby resulting in 25 failed unit-tests.

@@ -1,6 +1,28 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+## TornadoVM 0.9
+15/04/2021
+
+- Expanded API for expressing kernel parallelism within Java. It can work with the existing loop parallelism in TornadoVM. 
+	- Direct access to thread-ids, OpenCL local memory (PTX shared memory), and barriers
+	- `TornadoVMContext` added:
+		- See https://github.com/beehive-lab/TornadoVM/blob/5bcd3d6dfa2506032322c32d72b7bbd750623a95/tornado-api/src/main/java/uk/ac/manchester/tornado/api/TornadoVMContext.java  
+	- Code examples:
+		- https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/tornadovmcontext
+	- Documentation:
+		- https://github.com/beehive-lab/TornadoVM/blob/master/assembly/src/docs/21_TORNADOVM_CONTEXT.md
+- Profiler integrated with Chrome debug:
+	- Use flags: `-Dtornado.chrome.event.tracer.enabled=True -Dtornado.chrome.event.tracer.filename=userFile.json`
+	- See https://github.com/beehive-lab/TornadoVM/pull/41 
+- Added support for Windows 10:
+	- See https://github.com/beehive-lab/TornadoVM/blob/develop/assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md 
+- TornadoVM running with Windows JDK 11 supported (Linux & Windows)
+- Xilinx FPGAs workflow supported for Vitis 2020.2 
+- Pre-compiled tasks for Xilinx/Intel FPGAs fixed
+- Slambench fixed when compiling for PTX and OpenCL backends
+- Several bug fixes for the runtime, JIT compiler and data management.
+
 ## TornadoVM 0.8
 19/11/2020
 

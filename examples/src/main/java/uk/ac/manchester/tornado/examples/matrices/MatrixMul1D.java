@@ -35,14 +35,16 @@ public class MatrixMul1D {
 
         float[] matrixA = new float[N * N];
         float[] matrixB = new float[N * N];
-        float[] matrixC = new float[N * N];
+        float[] matrixCSeq = new float[N * N];
+        float[] matrixCCUDA = new float[N * N];
+        float[] matrixCOCL = new float[N * N];
 
         IntStream.range(0, N * N).parallel().forEach(idx -> {
             matrixA[idx] = 2.5f;
             matrixB[idx] = 3.5f;
         });
 
-        TaskSchedule scheduleCUDA = new TaskSchedule("s0").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N).streamOut(matrixC);
+        TaskSchedule scheduleCUDA = new TaskSchedule("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -70,7 +72,7 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
-        TaskSchedule scheduleOCL = new TaskSchedule("s1").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixC, N).streamOut(matrixC);
+        TaskSchedule scheduleOCL = new TaskSchedule("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
@@ -110,14 +112,14 @@ public class MatrixMul1D {
 
         // Warm up sequential
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            matrixMultiplication(matrixA, matrixB, matrixC, N);
+            matrixMultiplication(matrixA, matrixB, matrixCSeq, N);
         }
 
         // Time sequential
         long[] execTimesSeq = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesSeq.length; i++) {
             start = System.currentTimeMillis();
-            matrixMultiplication(matrixA, matrixB, matrixC, N);
+            matrixMultiplication(matrixA, matrixB, matrixCSeq, N);
             stop = System.currentTimeMillis();
             execTimesSeq[i] = stop - start;
         }

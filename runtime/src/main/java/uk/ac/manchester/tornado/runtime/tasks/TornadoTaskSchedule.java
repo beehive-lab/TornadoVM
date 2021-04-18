@@ -263,9 +263,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return executionContext.getTask(id);
     }
 
+    /**
+     * Returns the device attached to any of the tasks. Currently, TornadoVM
+     * executes all tasks that belong to the same task-schedule on the same device.
+     * Therefore, this call returns the device attached to the first task or the
+     * first task is planning to be executed.
+     * 
+     * @return {@link TornadoDevice}
+     */
     @Override
     public TornadoDevice getDevice() {
-        return meta().getLogicDevice();
+        return executionContext.getDeviceFirstTask();
     }
 
     private void triggerRecompile() {
