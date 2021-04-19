@@ -51,7 +51,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
     @Override
     public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        System.out.println("Running CODE!!!!!!!!!! ");
+        System.out.println(">>>> Dispatching SPIRV Code on device: " + meta.getLogicDevice().getPhysicalDevice().getDeviceName());
 
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
@@ -65,9 +65,11 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         System.arraycopy(meta.getGlobalWork(), 0, globalWork, 0, dims);
         System.out.println(Arrays.toString(globalWork));
 
+        // Statically decide a block size of 32
+        final int groupSize = 32;
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
-        int[] groupSizeX = new int[] { (int) globalWork[0] };
+        int[] groupSizeX = new int[] { groupSize };
         int[] groupSizeY = new int[] { (int) globalWork[1] };
         int[] groupSizeZ = new int[] { (int) globalWork[2] };
         int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) globalWork[0], (int) globalWork[1], (int) globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
@@ -78,9 +80,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(32);
-        dispatch.setGroupCountY(groupSizeY[0]);
-        dispatch.setGroupCountZ(groupSizeZ[0]);
+        dispatch.setGroupCountX(globalWork[0] / groupSize);
+        dispatch.setGroupCountY(1);
+        dispatch.setGroupCountZ(1);
 
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(0);
         LevelZeroCommandList commandList = commandQueue.getCommandList();
