@@ -260,8 +260,10 @@ public class LevelZeroUtils {
         result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 1, Sizeof.POINTER.getNumBytes(), 0);
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
-        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 2, Sizeof.POINTER.getNumBytes(), null);
-        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+        // result =
+        // levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 2,
+        // Sizeof.POINTER.getNumBytes(), null);
+        // LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();

@@ -22,4 +22,5 @@ public class SPIRVTargetDescription extends TargetDescription {
     public SPIRVKind getSPIRVKind(JavaKind kind) {
         return (SPIRVKind) arch.getPlatformKind(kind);
     }
+
 }

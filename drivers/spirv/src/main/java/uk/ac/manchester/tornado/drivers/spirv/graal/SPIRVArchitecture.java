@@ -1,18 +1,18 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
-
-import java.nio.ByteOrder;
-
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
+
+import java.nio.ByteOrder;
+
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
 
 /**
  * It represents a SPIRV Architecture.
@@ -38,7 +38,9 @@ public class SPIRVArchitecture extends Architecture {
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
         super("TornadoVM SPIRV", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
         sp = new SPIRVRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new SPIRVRegister[] { globalSpace, sp, constantSpace, localSpace };
+        // abiRegisters = new SPIRVRegister[] { globalSpace, sp, constantSpace,
+        // localSpace };
+        abiRegisters = new SPIRVRegister[] { globalSpace, sp };
     }
 
     // FIXME <REFACTOR> ABSTRACT ALL Backends (AAB)

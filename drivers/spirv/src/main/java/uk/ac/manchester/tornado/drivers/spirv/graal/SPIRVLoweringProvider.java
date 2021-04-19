@@ -9,12 +9,16 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
+import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
@@ -65,6 +69,13 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void lower(Node node, LoweringTool tool) {
         System.out.println("Lowering node: " + node);
+        if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
+            /*
+             * No lowering, we currently generate LIR directly for these nodes.
+             */
+        } else if (node instanceof InstanceOfNode) {
+            // ignore
+        }
 
     }
 

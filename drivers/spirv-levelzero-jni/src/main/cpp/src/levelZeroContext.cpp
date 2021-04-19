@@ -445,9 +445,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     env->SetLongField(javaDeviceMemAllocDescClass, pNext, (jlong) deviceDesc.pNext);
     env->SetLongField(javaDeviceMemAllocDescClass, fieldOrdinalDeviceDesc, deviceDesc.ordinal);
     env->SetLongField(javaDeviceMemAllocDescClass, fieldFlagsDeviceDesc, deviceDesc.flags);
-
-    std::cout << "Native Pointer: " << buffer << std::endl;
-
+    
     // Set Buffer Pointer and attributes
     jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
     jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
