@@ -229,7 +229,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
         LevelZeroCommandQueue commandQueue = spirvCommandQueue.getCommandQueue();
         LevelZeroDevice device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
-        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, levelZeroContext, "lookUp", "/home/juan/manchester/tornado/tornado/assembly/src/bin/spirv/lookUpBufferAddress.spv");
+        LevelZeroKernel levelZeroKernel = LevelZeroUtils.compileSPIRVKernel(device, levelZeroContext, "lookUp", "/tmp/lookUpBufferAddress.spv");
         long[] output = new long[1];
         final int bufferSize = Sizeof.LONG.getNumBytes();
         long address = LevelZeroUtils.dispatchLookUpBuffer(commandList, commandQueue, levelZeroKernel, deviceBuffer, output, bufferSize);
