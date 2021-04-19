@@ -149,7 +149,6 @@ public class OCLArchitecture extends Architecture {
 
     @Override
     public boolean canStoreValue(RegisterCategory category, PlatformKind platformKind) {
-
         return false;
     }
 

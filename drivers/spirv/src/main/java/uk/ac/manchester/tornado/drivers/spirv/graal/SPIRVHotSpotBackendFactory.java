@@ -1,10 +1,10 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
-import jdk.vm.ci.runtime.JVMCIBackend;
+import static jdk.vm.ci.common.InitTimer.timer;
+import static org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+
+import java.util.Collections;
+
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -14,10 +14,20 @@ import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import org.graalvm.compiler.word.WordTypes;
+
+import jdk.vm.ci.common.InitTimer;
+import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.drivers.graal.TornadoMetaAccessExtensionProvider;
 import uk.ac.manchester.tornado.drivers.graal.TornadoPlatformConfigurationProvider;
 import uk.ac.manchester.tornado.drivers.graal.TornadoWordTypes;
-import uk.ac.manchester.tornado.drivers.spirv.*;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVContext;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins.SPIRVGraphBuilderPlugins;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVAddressLowering;
@@ -28,11 +38,6 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvi
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
-
-import java.util.Collections;
-
-import static jdk.vm.ci.common.InitTimer.timer;
-import static org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 
 public class SPIRVHotSpotBackendFactory {
 
@@ -52,6 +57,7 @@ public class SPIRVHotSpotBackendFactory {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
+        // We specify an architecture of 32 bits
         SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_FLOAT_32, device.getByteOrder());
         SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT,
                 device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
