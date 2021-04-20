@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURC
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -57,6 +58,9 @@ public class RuntimeUtilities {
     public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
     public static final int ONE_KILOBYTE = 1 * 1024;
+
+    public static final String FPGA_OUTPUT_FILENAME = "output.log";
+    public static final String FPGA_ERROR_FILENAME = "error.log";
 
     public static long parseSize(String size) {
         if (size.endsWith("B")) {
@@ -371,7 +375,7 @@ public class RuntimeUtilities {
         }
     }
 
-    public static void systemCall(String[] command, boolean printStandardOutput) throws IOException {
+    public static void systemCall(String[] command, boolean printStandardOutput, String loggingDirectory) throws IOException {
         String stdOutput;
         StringBuffer standardOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
@@ -389,14 +393,20 @@ public class RuntimeUtilities {
             while ((stdOutput = stdInput.readLine()) != null) {
                 standardOutput.append(stdOutput + lineSeparator);
             }
-            errorOutput.append("Standard error of the command (if any):\n");
+            standardOutput.append("--------------------------------------------------------------------\n");
+
+            errorOutput.append("Standard error (if any) of the command (" + Arrays.toString(command) + "):\n");
             while ((stdOutput = stdError.readLine()) != null) {
                 errorOutput.append(stdOutput + lineSeparator);
             }
+            errorOutput.append("--------------------------------------------------------------------\n");
+
             if (printStandardOutput) {
                 System.out.println(standardOutput.toString());
                 System.out.println(errorOutput.toString());
             }
+            writeStringToFile(loggingDirectory + FPGA_OUTPUT_FILENAME, standardOutput.toString(), true);
+            writeStringToFile(loggingDirectory + FPGA_ERROR_FILENAME, errorOutput.toString(), true);
         } catch (IOException e) {
             error("Unable to make a native system call.", e);
             throw new IOException(e);
@@ -409,6 +419,19 @@ public class RuntimeUtilities {
     public static void writeStreamToFile(File file, byte[] source, boolean append) {
         try (FileOutputStream fos = (append ? new FileOutputStream(file, true) : new FileOutputStream(file))) {
             fos.write(source);
+        } catch (IOException e) {
+            error("unable to dump source: ", e.getMessage());
+            throw new RuntimeException("unable to dump source: " + e.getMessage());
+        }
+
+    }
+
+    public static void writeStringToFile(String filename, String source, boolean append) {
+        try (FileWriter fw = new FileWriter(filename, append)) {
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(source);
+            bw.flush();
+            bw.close();
         } catch (IOException e) {
             error("unable to dump source: ", e.getMessage());
             throw new RuntimeException("unable to dump source: " + e.getMessage());

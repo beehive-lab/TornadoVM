@@ -93,6 +93,7 @@ public final class Tornado implements TornadoCI {
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
+    public static final boolean FPGA_DUMP_LOG = Boolean.parseBoolean(settings.getProperty("tornado.fpgaDumpLog", "False"));
     public static final boolean FULL_DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.fullDebug", "False"));
 
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
@@ -103,7 +104,8 @@ public final class Tornado implements TornadoCI {
     private static boolean isFPGAEmulation() {
         String cl_context_emulator_device_intelfpga = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
         String cl_context_emulator_device_xilinxfpga = System.getenv("XCL_EMULATION_MODE");
-        return (cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1"))) || (cl_context_emulator_device_xilinxfpga != null && (cl_context_emulator_device_xilinxfpga.equals("sw_emu")));
+        return (cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1")))
+                || (cl_context_emulator_device_xilinxfpga != null && (cl_context_emulator_device_xilinxfpga.equals("sw_emu")));
     }
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
