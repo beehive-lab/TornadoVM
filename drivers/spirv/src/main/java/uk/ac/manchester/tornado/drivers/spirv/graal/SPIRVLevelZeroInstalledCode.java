@@ -51,8 +51,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
     @Override
     public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        System.out.println(">>>> Dispatching SPIRV Code on device: " + meta.getLogicDevice().getPhysicalDevice().getDeviceName());
-
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
