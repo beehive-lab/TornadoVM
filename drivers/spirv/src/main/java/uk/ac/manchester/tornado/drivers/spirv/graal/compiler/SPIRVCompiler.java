@@ -53,6 +53,7 @@ import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
@@ -295,6 +296,9 @@ public class SPIRVCompiler {
             }
 
             getDebugContext().dump(DebugContext.BASIC_LEVEL, compilationResult, "After code generation");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new TornadoBailoutRuntimeException(e.getMessage());
         }
     }
 

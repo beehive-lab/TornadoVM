@@ -1,14 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -25,6 +19,16 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
@@ -47,9 +51,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -225,6 +226,5 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
-
     }
 }

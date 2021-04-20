@@ -1,12 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+
 public final class SPIRVAssembler extends Assembler {
+
     public SPIRVAssembler(TargetDescription target) {
         super(target);
     }
