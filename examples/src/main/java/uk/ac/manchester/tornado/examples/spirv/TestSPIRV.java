@@ -23,6 +23,10 @@ public class TestSPIRV {
         }
     }
 
+    public static void copyTestZero(int[] a) {
+        a[0] = 50;
+    }
+
     public static void sum(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] + c[i];
@@ -40,7 +44,7 @@ public class TestSPIRV {
         Arrays.fill(c, 150);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::sum, a, b, c) //
+                .task("t0", TestSPIRV::copyTestZero, a) //
                 .streamOut(a) //
                 .execute(); //
 

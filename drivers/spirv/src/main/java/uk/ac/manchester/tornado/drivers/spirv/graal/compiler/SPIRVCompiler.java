@@ -186,7 +186,7 @@ public class SPIRVCompiler {
             final LowTierContext lowTierContext = new LowTierContext(providers, backend);
             suites.getLowTier().apply(graph, lowTierContext);
 
-            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final LIR schedule");
 
         } catch (Throwable e) {
             throw getDebugContext().handle(e);

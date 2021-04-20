@@ -1,14 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * SPIRV Types:
@@ -138,9 +138,6 @@ public enum SPIRVKind implements PlatformKind {
 
     @Override
     public int getSizeInBytes() {
-        if (vectorLength == 3) {
-            return size + elementKind.getSizeInBytes();
-        }
         return size;
     }
 
@@ -319,4 +316,5 @@ public enum SPIRVKind implements PlatformKind {
         }
         return JavaKind.Illegal;
     }
+
 }

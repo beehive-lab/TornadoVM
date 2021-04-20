@@ -1,36 +1,61 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.meta.*;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.*;
-import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.StandardOp;
+import org.graalvm.compiler.lir.SwitchStrategy;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
-import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLMoveFactory;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVGenTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 /**
  * It traverses the SPIRV HIR and generates SPIRV LIR.
  */
 public class SPIRVLIRGenerator extends LIRGenerator {
 
+    private SPIRVGenTool spirvGenTool;
+    private SPIRVBuiltinTool spirvBuiltinTool;
+
     public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes) {
         super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVMoveFactory(), providers, lirGenRes);
+        spirvGenTool = new SPIRVGenTool(this);
+        spirvBuiltinTool = new SPIRVBuiltinTool();
+    }
+
+    @Override
+    public LIRKind getLIRKind(Stamp stamp) {
+        if (stamp instanceof SPIRVStamp) {
+            return LIRKind.value(((SPIRVStamp) stamp).getSPIRVKind());
+        } else {
+            return super.getLIRKind(stamp);
+        }
     }
 
     @Override
@@ -116,7 +141,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitPause() {
-
+        unimplemented();
     }
 
     @Override
@@ -126,11 +151,13 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
+        unimplemented();
         return null;
     }
 
     @Override
     public Value emitUncompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
+        unimplemented();
         return null;
     }
 
@@ -145,17 +172,24 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
+    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
+        unimplemented();
+        return null;
+    }
 
+    @Override
+    public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        unimplemented();
     }
 
     @Override
     protected void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key) {
-
+        unimplemented();
     }
 
     @Override
     protected JavaConstant zapValueForKind(PlatformKind kind) {
+        unimplemented();
         return null;
     }
 
@@ -166,6 +200,29 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public LIRInstruction createZapArgumentSpace(StackSlot[] zappedStack, JavaConstant[] zapValues) {
+        unimplemented();
         return null;
+    }
+
+    @Override
+    public Variable newVariable(ValueKind<?> lirKind) {
+        PlatformKind pk = lirKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = lirKind;
+        SPIRVKind spirvKind = SPIRVKind.ILLEGAL;
+        if (pk instanceof SPIRVKind) {
+            spirvKind = (SPIRVKind) pk;
+        } else {
+            shouldNotReachHere();
+        }
+
+        // Create a new variable
+        final Variable var = super.newVariable(actualLIRKind);
+        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+
+        // Format of the variable "%<type>_<number>"
+        var.setName("%" + spirvKind.getTypePrefix() + "_" + var.index);
+        SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
+        res.insertVariable(var);
+        return var;
     }
 }

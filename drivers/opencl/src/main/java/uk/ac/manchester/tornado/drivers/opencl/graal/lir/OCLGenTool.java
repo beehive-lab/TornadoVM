@@ -126,10 +126,25 @@ public class OCLGenTool {
         return null;
     }
 
-    private void emitParameterLoad(AllocatableValue dst, int index) {
-        OCLKind oclKind = (OCLKind) dst.getPlatformKind();
+    /**
+     * This represents a load from a parameter.
+     * 
+     * This an example of the target code to generate:
+     * 
+     * <code>
+     *      ulong0 = (ulong) frame[3];
+     * </code>
+     * 
+     * @param resultValue
+     *            result
+     * @param index
+     *            Parameter index to be loaded.
+     * 
+     */
+    private void emitParameterLoad(AllocatableValue resultValue, int index) {
+        OCLKind oclKind = (OCLKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(oclKind);
         final OCLUnaryOp op = getParameterLoadOp(oclKind);
-        gen.append(new AssignStmt(dst, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
+        gen.append(new AssignStmt(resultValue, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
     }
 }
