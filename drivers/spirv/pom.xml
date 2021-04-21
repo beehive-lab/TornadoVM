@@ -12,6 +12,13 @@
     <name>tornado-drivers-spirv</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>spirvproto-lib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>

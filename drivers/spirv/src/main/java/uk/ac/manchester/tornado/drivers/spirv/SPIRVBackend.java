@@ -3,6 +3,13 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -29,6 +36,8 @@ import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
+import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
@@ -216,6 +225,26 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitEpilogue(asm);
     }
 
+    private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
+        buffer.flip();
+        File out = new File(filepath);
+        try {
+            FileChannel channel = new FileOutputStream(out, false).getChannel();
+            channel.write(buffer);
+            channel.close();
+        } catch (IOException e) {
+            System.err.println("IO exception: " + e.getMessage());
+        }
+
+    }
+
+    public static void writeModuleToFile(SPIRVModule module, String filepath) throws InvalidSPIRVModuleException {
+        ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
+        out.order(ByteOrder.LITTLE_ENDIAN);
+        module.validate().write(out);
+        writeBufferToFile(out, filepath);
+    }
+
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir) {
         String methodName = crb.compilationResult.getName();
         if (crb.isKernel()) {
@@ -223,6 +252,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         } else {
 
         }
+
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
