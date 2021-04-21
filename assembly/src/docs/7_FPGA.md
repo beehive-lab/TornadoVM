@@ -128,9 +128,10 @@ DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 
 ### 1. Full JIT Mode  
 
-This mode allows the compilation and execution of a given task for the FPGA. As it provides full end-to-end execution, the compilation is expected to take up to 2 hours due HLS bistream generation process.  
+This mode allows the compilation and execution of a given task for the FPGA. As it provides full end-to-end execution, the compilation is expected to take up to 2 hours due HLS bistream generation process.
 
-The generated FPGA bitstream as well as the the generated OpenCL code can be found in the `fpga-source-comp/` directory which is place in the local directory of execution.
+The log dumps from the HLS compilation are written in the `output.log` file, and potential emerging errors in the `error.log` file.
+The compilation dumps along with the generated FPGA bitstream and the generated OpenCL code can be found in the `fpga-source-comp/` directory which is defined in the FPGA configuration file (Step 1).
 
 Example:
 
