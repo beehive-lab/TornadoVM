@@ -59,8 +59,8 @@ public class RuntimeUtilities {
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
     public static final int ONE_KILOBYTE = 1 * 1024;
 
-    public static final String FPGA_OUTPUT_FILENAME = "output.log";
-    public static final String FPGA_ERROR_FILENAME = "error.log";
+    public static final String FPGA_OUTPUT_FILENAME = "outputFPGA.log";
+    public static final String FPGA_ERROR_FILENAME = "errorFPGA.log";
 
     public static long parseSize(String size) {
         if (size.endsWith("B")) {
