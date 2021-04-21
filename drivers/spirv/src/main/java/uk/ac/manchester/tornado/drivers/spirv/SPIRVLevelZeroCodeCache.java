@@ -1,8 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -19,15 +17,48 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
     public SPIRVLevelZeroCodeCache(SPIRVDeviceContext deviceContext) {
         super(deviceContext);
     }
 
+    private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
+        buffer.flip();
+        File out = new File(filepath);
+        try {
+            FileChannel channel = new FileOutputStream(out, false).getChannel();
+            channel.write(buffer);
+            channel.close();
+        } catch (IOException e) {
+            System.err.println("IO exception: " + e.getMessage());
+        }
+
+    }
+
     @Override
     public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
-        return null;
+        System.out.println("Installing SPIRV Binary from byte[]");
+        ByteBuffer buffer = ByteBuffer.wrap(code);
+        try {
+            Path path = Files.createTempDirectory("tornadoVM-spirv");
+            String file = path.toAbsolutePath().toString() + id + entryPoint + ".spv";
+            System.out.println("SPIRV-File : " + file);
+            writeBufferToFile(buffer, file);
+            return installSPIRVBinary(meta, id, entryPoint, file);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            throw new TornadoBailoutRuntimeException(ex.getMessage());
+        }
     }
 
     @Override

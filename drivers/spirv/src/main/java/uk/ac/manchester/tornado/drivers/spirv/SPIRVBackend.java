@@ -37,7 +37,38 @@ import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
+import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
+import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpMemoryModel;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpReturn;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVAddressingModel;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryModel;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
@@ -220,9 +251,77 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
+        SPIRVModule module = new SPIRVModule(new SPIRVHeader(1, 2, 29, 0, 0));
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
         emitEpilogue(asm);
+
+        dummySPIRVModuleTest(module);
+        ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
+        out.order(ByteOrder.LITTLE_ENDIAN);
+        try {
+            module.validate().write(out);
+            for (int i = 0; i < module.getByteCount(); i++) {
+                asm.emitByte(out.get(i));
+            }
+        } catch (
+
+        InvalidSPIRVModuleException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void dummySPIRVModuleTest(SPIRVModule module) {
+        SPIRVInstScope functionScope;
+        SPIRVInstScope blockScope;
+
+        module.add(new SPIRVOpCapability(SPIRVCapability.Addresses()));
+        module.add(new SPIRVOpCapability(SPIRVCapability.Linkage()));
+        module.add(new SPIRVOpCapability(SPIRVCapability.Kernel()));
+        module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
+
+        SPIRVId opTypeInt = module.getNextId();
+        module.add(new SPIRVOpTypeInt(opTypeInt, new SPIRVLiteralInteger(32), new SPIRVLiteralInteger(0)));
+
+        SPIRVId opTypeVoid = module.getNextId();
+        module.add(new SPIRVOpTypeVoid(opTypeVoid));
+
+        SPIRVId intPointer = module.getNextId();
+        module.add(new SPIRVOpTypePointer(intPointer, SPIRVStorageClass.CrossWorkgroup(), opTypeInt));
+
+        SPIRVId functionType = module.getNextId();
+        module.add(new SPIRVOpTypeFunction(functionType, opTypeVoid, new SPIRVMultipleOperands<>(intPointer)));
+
+        SPIRVId vector = module.getNextId();
+        module.add(new SPIRVOpTypeVector(vector, opTypeInt, new SPIRVLiteralInteger(3)));
+        SPIRVId pointer = module.getNextId();
+        module.add(new SPIRVOpTypePointer(pointer, SPIRVStorageClass.Input(), vector));
+        SPIRVId input = module.getNextId();
+        module.add(new SPIRVOpVariable(pointer, input, SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
+
+        SPIRVId functionDef = module.getNextId();
+        functionScope = module.add(new SPIRVOpFunction(opTypeVoid, functionDef, SPIRVFunctionControl.DontInline(), functionType));
+        SPIRVId defParam1 = module.getNextId();
+        functionScope.add(new SPIRVOpFunctionParameter(pointer, defParam1));
+
+        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), functionDef, new SPIRVLiteralString("emptyKernel"), new SPIRVMultipleOperands<>()));
+
+        blockScope = functionScope.add(new SPIRVOpLabel(module.getNextId()));
+        SPIRVId var1 = module.getNextId();
+        blockScope.add(new SPIRVOpVariable(pointer, var1, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+        SPIRVId var4 = module.getNextId();
+        blockScope.add(new SPIRVOpVariable(intPointer, var4, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+
+        SPIRVId load = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(vector, load, input, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(16)))));
+
+        SPIRVId add = module.getNextId();
+        blockScope.add(new SPIRVOpIAdd(opTypeInt, add, var4, load));
+        blockScope.add(new SPIRVOpStore(var1, add, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+
+        blockScope.add(new SPIRVOpReturn());
+        functionScope.add(new SPIRVOpFunctionEnd());
     }
 
     private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
@@ -252,7 +351,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         } else {
 
         }
-
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {

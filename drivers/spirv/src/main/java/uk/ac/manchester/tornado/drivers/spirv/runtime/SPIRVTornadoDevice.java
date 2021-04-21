@@ -46,7 +46,6 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -160,7 +159,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
         try {
-            SPIRVCompilationResult result = null;
+            SPIRVCompilationResult result;
             // Compile the code and insert the SPIRV binary into the code cache
             SPIRVProviders providers = (SPIRVProviders) getBackend().getProviders();
 
@@ -178,9 +177,9 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
         } catch (Exception e) {
-            TornadoLogger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            TornadoLogger.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
-            TornadoLogger.fatal("Exception: %s\n", e.toString());
+            System.err.printf("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            System.err.printf("Exception occurred when compiling %s\n", task.getMethod().getName());
+            e.printStackTrace();
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
         }
     }
