@@ -1,5 +1,17 @@
 package uk.ac.manchester.spirvproto.lib;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import uk.ac.manchester.spirvproto.lib.disassembler.CLIHighlighter;
 import uk.ac.manchester.spirvproto.lib.disassembler.SPIRVPrintingOptions;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVAnnotationInst;
@@ -17,18 +29,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVSourceInst;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVGlobalInst;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class SPIRVModule implements SPIRVInstScope {
     private final SPIRVHeader header;
@@ -71,22 +71,36 @@ public class SPIRVModule implements SPIRVInstScope {
     public SPIRVInstScope add(SPIRVInstruction instruction) {
         ensureCapabilitiesPresent(instruction);
 
-        if (instruction instanceof SPIRVOpCapability) capabilities.add((SPIRVOpCapability) instruction);
-        else if (instruction instanceof SPIRVOpExtension) extensions.add((SPIRVOpExtension) instruction);
-        else if (instruction instanceof SPIRVOpExtInstImport) imports.add((SPIRVOpExtInstImport) instruction);
-        else if (instruction instanceof SPIRVOpEntryPoint) entryPoints.add((SPIRVOpEntryPoint) instruction);
-        else if (instruction instanceof SPIRVExecutionModeInst) executionModes.add((SPIRVExecutionModeInst) instruction);
-        else if (instruction instanceof SPIRVSourceInst) srcInstructions.add((SPIRVSourceInst) instruction);
-        else if (instruction instanceof SPIRVNameInst) nameInstructions.add((SPIRVNameInst) instruction);
-        else if (instruction instanceof SPIRVOpModuleProcessed) modules.add((SPIRVOpModuleProcessed) instruction);
-        else if (instruction instanceof SPIRVAnnotationInst) annotations.add((SPIRVAnnotationInst) instruction);
-        else if (instruction instanceof SPIRVGlobalInst) globals.add((SPIRVGlobalInst) instruction);
-        else if (instruction instanceof SPIRVOpMemoryModel) memoryModel = (SPIRVOpMemoryModel) instruction;
-        else if (instruction instanceof SPIRVOpFunction) return createFunction((SPIRVOpFunction) instruction);
-        else throw new IllegalArgumentException("Instruction: " + instruction.getClass().getName() + " is not a valid global instruction");
+        if (instruction instanceof SPIRVOpCapability)
+            capabilities.add((SPIRVOpCapability) instruction);
+        else if (instruction instanceof SPIRVOpExtension)
+            extensions.add((SPIRVOpExtension) instruction);
+        else if (instruction instanceof SPIRVOpExtInstImport)
+            imports.add((SPIRVOpExtInstImport) instruction);
+        else if (instruction instanceof SPIRVOpEntryPoint)
+            entryPoints.add((SPIRVOpEntryPoint) instruction);
+        else if (instruction instanceof SPIRVExecutionModeInst)
+            executionModes.add((SPIRVExecutionModeInst) instruction);
+        else if (instruction instanceof SPIRVSourceInst)
+            srcInstructions.add((SPIRVSourceInst) instruction);
+        else if (instruction instanceof SPIRVNameInst)
+            nameInstructions.add((SPIRVNameInst) instruction);
+        else if (instruction instanceof SPIRVOpModuleProcessed)
+            modules.add((SPIRVOpModuleProcessed) instruction);
+        else if (instruction instanceof SPIRVAnnotationInst)
+            annotations.add((SPIRVAnnotationInst) instruction);
+        else if (instruction instanceof SPIRVGlobalInst)
+            globals.add((SPIRVGlobalInst) instruction);
+        else if (instruction instanceof SPIRVOpMemoryModel)
+            memoryModel = (SPIRVOpMemoryModel) instruction;
+        else if (instruction instanceof SPIRVOpFunction)
+            return createFunction((SPIRVOpFunction) instruction);
+        else
+            throw new IllegalArgumentException("Instruction: " + instruction.getClass().getName() + " is not a valid global instruction");
 
         SPIRVId resultId = instruction.getResultId();
-        if (resultId != null) idToInstMap.put(resultId, instruction);
+        if (resultId != null)
+            idToInstMap.put(resultId, instruction);
 
         return this;
     }
@@ -99,6 +113,7 @@ public class SPIRVModule implements SPIRVInstScope {
 
     /**
      * Validate the module in it's current state and get a reference to the writer
+     * 
      * @return The class that can write this module
      * @throws InvalidSPIRVModuleException
      */
@@ -113,7 +128,7 @@ public class SPIRVModule implements SPIRVInstScope {
             throw new InvalidSPIRVModuleException("There are no functions declared or defined");
         }
         if (entryPoints.size() < 1) {
-            //TODO: Look for Linkage Capability
+            // TODO: Look for Linkage Capability
             throw new InvalidSPIRVModuleException("There were no entry points added");
         }
 
@@ -121,12 +136,18 @@ public class SPIRVModule implements SPIRVInstScope {
         return new SPIRVModuleWriter();
     }
 
+    public SPIRVModuleWriter close() {
+        header.setBound(idGen.getCurrentBound());
+        return new SPIRVModuleWriter();
+    }
+
     /**
      * Get the length of this module if written in binary format
+     * 
      * @return The length of the binary
      */
     public int getByteCount() {
-        final int[] wordCount = {0};
+        final int[] wordCount = { 0 };
         this.forEachInstruction(i -> wordCount[0] += i.getWordCount());
         wordCount[0] += 5; // for the header
 
@@ -160,16 +181,18 @@ public class SPIRVModule implements SPIRVInstScope {
         annotations.forEach(instructionConsumer);
         globals.forEach(instructionConsumer);
 
-        Map<Boolean, List<SPIRVFunction>> functionGroups = functions.stream().collect(
-                Collectors.partitioningBy(SPIRVFunction::hasBlocks));
+        Map<Boolean, List<SPIRVFunction>> functionGroups = functions.stream().collect(Collectors.partitioningBy(SPIRVFunction::hasBlocks));
         functionGroups.get(false).forEach(f -> f.forEachInstruction(instructionConsumer));
         functionGroups.get(true).forEach(f -> f.forEachInstruction(instructionConsumer));
     }
 
     /**
      * Print the disassembly of this module.
-     * @param output The PrintStream to print the output to
-     * @param options PrintingOptions that determine how the output should be formatted
+     * 
+     * @param output
+     *            The PrintStream to print the output to
+     * @param options
+     *            PrintingOptions that determine how the output should be formatted
      */
     public void print(PrintStream output, SPIRVPrintingOptions options) {
         this.forEachInstruction(i -> i.print(output, options));
@@ -192,8 +215,7 @@ public class SPIRVModule implements SPIRVInstScope {
             if (!capabilities.contains(opCapability)) {
                 if (this.header.genMagicNumber == SPIRVGeneratorConstants.SPIRVGenMagicNumber) {
                     this.add(opCapability);
-                }
-                else {
+                } else {
                     String inst;
                     try {
                         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -211,11 +233,14 @@ public class SPIRVModule implements SPIRVInstScope {
     }
 
     public class SPIRVModuleWriter {
-        protected SPIRVModuleWriter() { }
+        protected SPIRVModuleWriter() {
+        }
 
         /**
          * Write the module in binary format.
-         * @param output The ByteBuffer where the module should be written
+         * 
+         * @param output
+         *            The ByteBuffer where the module should be written
          */
         public void write(ByteBuffer output) {
             header.write(output);

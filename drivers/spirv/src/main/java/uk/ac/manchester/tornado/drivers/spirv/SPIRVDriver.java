@@ -89,7 +89,6 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
 
     @Override
     public void setDefaultDevice(int index) {
-
     }
 
     private int getNumDevicesForPlatform(int platform) {

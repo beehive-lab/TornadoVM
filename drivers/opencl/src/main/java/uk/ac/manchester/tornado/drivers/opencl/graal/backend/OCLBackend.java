@@ -397,6 +397,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLAssembler(target);
     }
 
+    // FIXME Remove this code
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
     }
