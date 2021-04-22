@@ -134,10 +134,10 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     private static class ReductionMetadataNode {
-        private ValueNode value;
-        private ValueNode accumulator;
-        private ValueNode inputArray;
-        private ValueNode startNode;
+        private final ValueNode value;
+        private final ValueNode accumulator;
+        private final ValueNode inputArray;
+        private final ValueNode startNode;
 
         ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
             super();
@@ -149,28 +149,23 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
     }
 
-    private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray, ValueNode indexToStore) {
+    private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray) {
         ValueNode array = null;
         if (currentNode instanceof StoreIndexedNode) {
             StoreIndexedNode store = (StoreIndexedNode) currentNode;
-            return obtainInputArray(store.value(), store.array(), store.index());
+            return obtainInputArray(store.value(), store.array());
         } else if (currentNode instanceof BinaryArithmeticNode) {
             BinaryArithmeticNode<?> value = (BinaryArithmeticNode<?>) currentNode;
-            array = obtainInputArray(value.getX(), outputArray, indexToStore);
+            array = obtainInputArray(value.getX(), outputArray);
             if (array == null) {
-                array = obtainInputArray(value.getY(), outputArray, indexToStore);
+                array = obtainInputArray(value.getY(), outputArray);
             }
         } else if (currentNode instanceof BinaryNode) {
             String currentNodeName = currentNode.getClass().getName();
             if (currentNodeName.endsWith(OCL_FP_BINARY_NODE) || currentNodeName.endsWith(PTX_FP_BINARY_NODE)) {
-                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
+                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray);
                 if (array == null) {
-                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
-                }
-            } else if (currentNodeName.endsWith(OCL_FP_BINARY_NODE) || currentNodeName.endsWith(PTX_FP_BINARY_NODE)) {
-                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
-                if (array == null) {
-                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
+                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray);
                 }
             }
         } else if (currentNode instanceof LoadIndexedNode) {
@@ -213,8 +208,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             String storeValueName = storeValue.getClass().getName();
             if (storeValueName.endsWith(OCL_FP_BINARY_NODE) || storeValueName.endsWith(PTX_FP_BINARY_NODE)) {
                 accumulator = ((BinaryNode) storeValue).getY();
-            } else if (storeValueName.endsWith(OCL_FP_BINARY_NODE) || storeValueName.endsWith(PTX_FP_BINARY_NODE)) {
-                accumulator = ((BinaryNode) storeValue).getX();
+                // TODO: Control getX case
             } else {
                 // For any other binary node
                 // if it is a builtin, we apply the general case
@@ -297,7 +291,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     continue;
                 }
 
-                ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
+                ValueNode inputArray = obtainInputArray(store.value(), store.array());
                 ValueNode startNode = obtainStartLoopNode(store);
 
                 ReductionMetadataNode reductionNode = createReductionNode(graph, store, inputArray, startNode);

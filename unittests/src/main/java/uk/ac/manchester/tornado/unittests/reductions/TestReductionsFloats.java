@@ -32,6 +32,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsFloats extends TornadoTestBase {
@@ -367,7 +368,8 @@ public class TestReductionsFloats extends TornadoTestBase {
 
     private static void maxReductionAnnotation(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i]);
+            // result[0] = Math.max(result[0], input[i]);
+            result[0] = TornadoMath.max(result[0], input[i]);
         }
     }
 
