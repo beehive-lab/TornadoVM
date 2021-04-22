@@ -368,7 +368,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
     private static void maxReductionAnnotation(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            // result[0] = Math.max(result[0], input[i]);
             result[0] = TornadoMath.max(result[0], input[i]);
         }
     }
