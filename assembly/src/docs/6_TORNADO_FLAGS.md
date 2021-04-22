@@ -46,10 +46,13 @@ Enable profilling for OpenCL/CUDA events such as kernel times and data tranfers.
 Enable usage of relative addresses which is a prerequisite for using DMA tranfers on Altera/Intel FPGAs. Nonetheless, this flag can be used for any OpenCL device.
 
 * ```-Dtornado.precompiled.binary=PATH```:
- Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel.
+ Provides the location of the bistream or pre-generated OpenCL (.cl) kernel.
 
 * ```-Dtornado.fpga.conf.file=FILE```:
  Provides the absolute path of the FPGA configuation file.
+
+* ```-Dtornado.fpgaDumpLog=true```:
+ Dumps the log information from the HLS compilation to the command prompt.
 
 * ```-Dtornado.opencl.blocking=true```:  
 Allows to force OpenCL API blocking calls.
