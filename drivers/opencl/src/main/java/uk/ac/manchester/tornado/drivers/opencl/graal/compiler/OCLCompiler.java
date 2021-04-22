@@ -83,6 +83,7 @@ import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
@@ -435,7 +436,8 @@ public class OCLCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        OCLCompilationResult kernelCompResult = new OCLCompilationResult(task.getId(), resolvedMethod.getName(), taskMeta, backend);
+        String kernelName = OCLDeviceContext.checkKernelName(resolvedMethod.getName());
+        OCLCompilationResult kernelCompResult = new OCLCompilationResult(task.getId(), kernelName, taskMeta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -458,7 +460,8 @@ public class OCLCompiler {
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
-            final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), currentMethod.getName(), taskMeta, backend);
+            String subKernelName = OCLDeviceContext.checkKernelName(currentMethod.getName());
+            final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), subKernelName, taskMeta, backend);
 
             Request<OCLCompilationResult> methodCompilationRequest = new Request<>(graph, currentMethod, //
                     null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), //
