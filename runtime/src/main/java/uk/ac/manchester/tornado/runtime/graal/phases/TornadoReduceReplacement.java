@@ -197,7 +197,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
             // We need to compare with the name because it is loaded from inner core
             // (tornado-driver).
-            if (storeValue instanceof MarkFloatingPointIntrinsicsNode) {
+            if (storeValue instanceof MarkFloatingPointIntrinsicsNode || storeValue instanceof MarkIntIntrinsicNode) {
                 accumulator = ((BinaryNode) storeValue).getY();
                 // TODO: Control getX case
             } else {
