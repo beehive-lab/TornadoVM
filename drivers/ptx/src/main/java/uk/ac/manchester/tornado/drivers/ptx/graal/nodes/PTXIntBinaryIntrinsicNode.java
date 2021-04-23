@@ -44,10 +44,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
+public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
     protected PTXIntBinaryIntrinsicNode(ValueNode x, ValueNode y, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y);
@@ -56,6 +56,11 @@ public class PTXIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
 
     public static final NodeClass<PTXIntBinaryIntrinsicNode> TYPE = NodeClass.create(PTXIntBinaryIntrinsicNode.class);
     protected final Operation operation;
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
 
     public enum Operation {
         MAX, //

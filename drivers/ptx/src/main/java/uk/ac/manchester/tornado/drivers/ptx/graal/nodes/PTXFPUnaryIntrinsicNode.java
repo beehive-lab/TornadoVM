@@ -50,10 +50,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
+public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
     protected PTXFPUnaryIntrinsicNode(ValueNode value, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), value);
@@ -63,6 +63,11 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     public static final NodeClass<PTXFPUnaryIntrinsicNode> TYPE = NodeClass.create(PTXFPUnaryIntrinsicNode.class);
     protected final Operation operation;
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
 
     // @formatter:off
     public enum Operation {

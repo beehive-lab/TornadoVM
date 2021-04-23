@@ -58,11 +58,13 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
 /**
- * Code analysis class for reductions in TornadoVM
+ * Code analysis class for reductions in TornadoVM.
  */
 public class ReduceCodeAnalysis {
 
@@ -113,11 +115,32 @@ public class ReduceCodeAnalysis {
                 } else {
                     throw new TornadoRuntimeException("[ERROR] Automatic reduce operation not supported yet: " + operation);
                 }
+            } else if (operation instanceof BinaryNode && operation instanceof MarkFloatingPointIntrinsicsNode) {
+                MarkFloatingPointIntrinsicsNode mark = (MarkFloatingPointIntrinsicsNode) operation;
+                String op = mark.getOperation();
+                if (op.equals("FMAX")) {
+                    operations.add(REDUCE_OPERATION.MAX);
+                } else if (op.equals("FMIN")) {
+                    operations.add(REDUCE_OPERATION.MIN);
+                } else {
+                    throw new TornadoRuntimeException("[ERROR] Automatic reduce operation not supported yet: " + operation);
+                }
+            } else if (operation instanceof BinaryNode && operation instanceof MarkIntIntrinsicNode) {
+                MarkIntIntrinsicNode mark = (MarkIntIntrinsicNode) operation;
+                String op = mark.getOperation();
+                if (op.equals("MAX")) {
+                    operations.add(REDUCE_OPERATION.MAX);
+                } else if (op.equals("MIN")) {
+                    operations.add(REDUCE_OPERATION.MIN);
+                } else {
+                    throw new TornadoRuntimeException("[ERROR] Automatic reduce operation not supported yet: " + operation);
+                }
             } else {
                 throw new TornadoRuntimeException("[ERROR] Automatic reduce operation not supported yet: " + operation);
             }
         }
         return operations;
+
     }
 
     private static boolean shouldSkip(int index, StructuredGraph graph) {

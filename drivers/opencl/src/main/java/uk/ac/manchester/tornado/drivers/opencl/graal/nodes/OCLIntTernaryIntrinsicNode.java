@@ -50,10 +50,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
+public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
     protected OCLIntTernaryIntrinsicNode(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y, z);
@@ -66,6 +66,11 @@ public class OCLIntTernaryIntrinsicNode extends TernaryNode implements Arithmeti
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY, Stamp stampZ) {
         return stamp(NodeView.DEFAULT);
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
     }
 
     public enum Operation {
