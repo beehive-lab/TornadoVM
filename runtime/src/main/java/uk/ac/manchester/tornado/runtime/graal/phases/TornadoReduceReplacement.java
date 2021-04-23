@@ -154,7 +154,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 array = obtainInputArray(value.getY(), outputArray);
             }
         } else if (currentNode instanceof BinaryNode) {
-            if (currentNode instanceof MarkFloatingPointIntrinsicsNode) {
+            if (currentNode instanceof MarkIntrinsicsNode) {
                 array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray);
                 if (array == null) {
                     array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray);

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,10 +24,13 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-/**
- * This interface is used for accessing all dedicated nodes for Int OpenCL math
- * functions outside the scope of opencl-driver package
- */
-public interface MarkIntIntrinsicNode extends MarkIntrinsicsNode {
+public interface MarkIntrinsicsNode {
 
+    /**
+     * Method used to return the intrinsic operation from the driver to the runtime
+     * without breaking the dependencies.
+     *
+     * @return String
+     */
+    String getOperation();
 }
