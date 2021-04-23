@@ -34,10 +34,10 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLFPIntrinsicsNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(shortName = "OCL-FMA")
-public class OCLFMANode extends FloatingNode implements ArithmeticLIRLowerable, MarkOCLFPIntrinsicsNode {
+public class OCLFMANode extends FloatingNode implements ArithmeticLIRLowerable, MarkFloatingPointIntrinsicsNode {
 
     public static final NodeClass<OCLFMANode> TYPE = NodeClass.create(OCLFMANode.class);
 
@@ -63,5 +63,10 @@ public class OCLFMANode extends FloatingNode implements ArithmeticLIRLowerable, 
 
         OCLArithmeticTool oclArithmeticTool = (OCLArithmeticTool) gen;
         builder.setResult(this, oclArithmeticTool.emitFMAInstruction(op1, op2, op3));
+    }
+
+    @Override
+    public String getOperation() {
+        return "FMA";
     }
 }

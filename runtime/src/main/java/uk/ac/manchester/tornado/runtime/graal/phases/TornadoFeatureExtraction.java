@@ -116,9 +116,9 @@ public class TornadoFeatureExtraction extends Phase {
                 updateCounter(irFeatures, ProfilerCodeFeatures.CAST);
             } else if (node instanceof FloatLessThanNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.F_CMP);
-            } else if (node instanceof MarkOCLFPIntrinsicsNode || node instanceof UnaryArithmeticNode) {
+            } else if (node instanceof MarkFloatingPointIntrinsicsNode || node instanceof UnaryArithmeticNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.F_MATH);
-            } else if (node instanceof MarkOCLIntIntrinsicNode) {
+            } else if (node instanceof MarkIntIntrinsicNode) {
                 updateCounter(irFeatures, ProfilerCodeFeatures.I_MATH);
             }
         }

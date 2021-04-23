@@ -25,8 +25,9 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**
- * This interface is used for accessing all dedicated nodes for Int OpenCL math
+ * This interface is used for accessing all dedicated nodes for FP OpenCL math
  * functions outside the scope of opencl-driver package
  */
-public interface MarkOCLIntIntrinsicNode {
+public interface MarkFloatingPointIntrinsicsNode extends MarkIntrinsicsNode {
+
 }
