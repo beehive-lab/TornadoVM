@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -23,6 +24,10 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
+import org.graalvm.compiler.nodes.memory.WriteNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.options.OptionValues;
@@ -33,6 +38,7 @@ import org.graalvm.compiler.replacements.SnippetCounter;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
@@ -75,6 +81,9 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
              */
         } else if (node instanceof InstanceOfNode) {
             // ignore
+        } else if (node instanceof StoreIndexedNode) {
+            System.out.println(" --> LIR storeIndexedNode");
+            lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         }
 
     }
@@ -147,9 +156,23 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     }
 
+    private AbstractWriteNode createMemWriteNode(JavaKind elementKind, ValueNode value, ValueNode array, AddressNode address, StructuredGraph graph, StoreIndexedNode storeIndexed) {
+        AbstractWriteNode memoryWrite;
+        memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
+        return memoryWrite;
+    }
+
     @Override
     protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
-
+        StructuredGraph graph = storeIndexed.graph();
+        JavaKind elementKind = storeIndexed.elementKind();
+        ValueNode valueToStore = storeIndexed.value();
+        ValueNode array = storeIndexed.array();
+        ValueNode index = storeIndexed.index();
+        AddressNode address = createArrayAddress(graph, array, elementKind, index);
+        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, valueToStore, array, address, graph, storeIndexed);
+        memoryWrite.setStateAfter(storeIndexed.stateAfter());
+        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override

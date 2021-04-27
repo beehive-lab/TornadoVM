@@ -17,8 +17,21 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public final class SPIRVDriver implements TornadoAcceleratorDriver {
 
+    /**
+     * Matrix of backend instances. Each row has a driver implementation (e.g.,
+     * Level Zero). Each column represents a device within that backend.
+     */
     private final SPIRVBackend[][] backends;
+
+    /**
+     * Flat representation of the backends
+     */
     private final SPIRVBackend[] flatBackends;
+
+    /**
+     * Total number of devices available (include all backends platform and
+     * devices).
+     */
     private int deviceCount;
 
     public SPIRVDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmCon) {

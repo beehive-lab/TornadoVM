@@ -31,8 +31,8 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_INT_32(4, java.lang.Integer.TYPE),
     OP_TYPE_INT_64(8, java.lang.Long.TYPE),
     OP_TYPE_FLOAT_16(2, java.lang.Float.TYPE),  // Half float
-    OP_TYPE_FLOAT_32(4, java.lang.Float.TYPE),
-    OP_TYPE_FLOAT_64(8, java.lang.Double.TYPE),
+    OP_TYPE_FLOAT_32(4, java.lang.Float.TYPE),  
+    OP_TYPE_FLOAT_64(8, java.lang.Double.TYPE),  
     
     // Vector types
     
