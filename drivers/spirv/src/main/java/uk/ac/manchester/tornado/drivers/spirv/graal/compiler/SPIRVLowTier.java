@@ -1,19 +1,25 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
+
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.*;
+import org.graalvm.compiler.phases.common.AddressLoweringPhase;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
+import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
-
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 public class SPIRVLowTier extends TornadoLowTier {
 
@@ -40,7 +46,11 @@ public class SPIRVLowTier extends TornadoLowTier {
         appendPhase(new TornadoLoopCanonicalization());
 
         // TODO: SPIRV FMA Phase
-        // appendPhase(new SPIRVFMAPhase());
+        if (TornadoOptions.ENABLE_FMA) {
+            System.out.println("FMA for SPIRV pending");
+        }
+
+        // TODO Atomics Phase for SPIRV (this is the last thing to support)
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
