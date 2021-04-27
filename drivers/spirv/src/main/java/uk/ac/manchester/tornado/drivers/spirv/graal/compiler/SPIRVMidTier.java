@@ -24,6 +24,15 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
 
+/**
+ * SPIR-V backend reuses from the OCL the following phases:
+ * 
+ * - BoundCheckEliminationPhase
+ * 
+ * - TornadoFloatingReadReplacement
+ * 
+ * - TornadoPartialLoopUnroll
+ */
 public class SPIRVMidTier extends TornadoMidTier {
 
     public SPIRVMidTier(OptionValues options) {
