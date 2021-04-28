@@ -341,9 +341,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopExit(LoopExitNode node) {
-        // I think the only case when there are no successors to the current block is when there is a ReturnNode in the current block.
-        // It doesn't make sense to emit the break statement if we have a return.
-        if (!node.loopBegin().getBlockNodes().contains((FixedNode) node.predecessor()) && gen.getCurrentBlock().getSuccessors().length != 0) {
+        if (gen.getCurrentBlock().getSuccessors().length != 0) {
             append(new PTXControlFlow.LoopBreakOp(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
@@ -459,10 +457,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        if (isLoop) {
-            append(new PTXControlFlow.LoopLabel(gen.getCurrentBlock().getId()));
-        }
-
         final Variable predicate = emitLogicNode(x.condition());
 
         if (isLoop) {
@@ -556,6 +550,9 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 append(new PTXLIRStmt.AssignStmt(result, value));
             }
         }
+
+        append(new PTXControlFlow.LoopLabel(block.getId()));
+
         label.clearIncomingValues();
     }
 

@@ -33,6 +33,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
@@ -50,7 +51,7 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
  * The terminology used in this class refers to the OpenCL Programming Model.
  */
 @NodeInfo
-public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {
+public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray, MemoryKill {
 
     public static final NodeClass<LocalArrayNode> TYPE = NodeClass.create(LocalArrayNode.class);
 

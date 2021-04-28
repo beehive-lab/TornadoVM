@@ -93,4 +93,11 @@ public abstract class TornadoTestBase {
         }
     }
 
+    public void checkForOpenCL() {
+        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
+        if ("OpenCL".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
+            throw new OpenCLNotSupported("Test not supported for the OpenCL backend");
+        }
+    }
+
 }
