@@ -1,13 +1,21 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.code.CompilationResult;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 
+import org.graalvm.compiler.code.CompilationResult;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+/**
+ * Object that represents the result of a SPIRV compilation (from GraalIR to
+ * SPIR-V binary) after all optimizations phases.
+ * 
+ * This object stores the set of methods that were compiled as well as the
+ * compilation ID that TornadoVM sets for each task within the task-schedule.
+ */
 public class SPIRVCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
@@ -28,6 +36,7 @@ public class SPIRVCompilationResult extends CompilationResult {
         nonInlinedMethods = value;
     }
 
+    // FIXME: <REFACTOR> Common in the three backends
     private byte[] prependToTargetCode(byte[] targetCode, byte[] codeToPrepend) {
         final int size = targetCode.length + codeToPrepend.length + 1;
 
