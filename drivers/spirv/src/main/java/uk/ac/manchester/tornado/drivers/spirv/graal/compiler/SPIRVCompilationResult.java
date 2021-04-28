@@ -1,21 +1,22 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.code.CompilationResult;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
-
-import org.graalvm.compiler.code.CompilationResult;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private TaskMetaData taskMetaData;
+    private String id;
 
-    public SPIRVCompilationResult(String methodName, TaskMetaData taskMetaData) {
+    public SPIRVCompilationResult(String id, String methodName, TaskMetaData taskMetaData) {
         super(methodName);
+        this.id = id;
         this.taskMetaData = taskMetaData;
     }
 
@@ -54,6 +55,6 @@ public class SPIRVCompilationResult extends CompilationResult {
     }
 
     public String getId() {
-        return getCompilationId().toString();
+        return id;
     }
 }

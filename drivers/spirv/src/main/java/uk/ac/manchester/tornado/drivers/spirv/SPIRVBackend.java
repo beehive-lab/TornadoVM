@@ -1,14 +1,15 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -25,6 +26,16 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
@@ -80,16 +91,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -252,10 +253,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
         out.order(ByteOrder.LITTLE_ENDIAN);
 
-        // Close without validation
+        // Close SPIR-V module without validation
         module.close().write(out);
         for (int i = 0; i < module.getByteCount(); i++) {
-            asm.emitByte((byte) out.get(i));
+            asm.emitByte(out.get(i));
         }
     }
 
@@ -263,9 +264,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
         SPIRVModule module = new SPIRVModule(new SPIRVHeader(1, 2, 29, 0, 0));
 
-        emitPrologue(crb, asm, method, lir, module);
-        crb.emit(lir);
-        emitEpilogue(asm);
+        // emitPrologue(crb, asm, method, lir, module);
+        // crb.emit(lir);
+        // emitEpilogue(asm);
+        dummySPIRVModuleTest(module);
 
         emitSPIRVCodeIntoASMModule(asm, module);
     }
@@ -274,10 +276,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVInstScope functionScope;
         SPIRVInstScope blockScope;
 
-        module.add(new SPIRVOpCapability(SPIRVCapability.Addresses()));
-        module.add(new SPIRVOpCapability(SPIRVCapability.Linkage()));
-        module.add(new SPIRVOpCapability(SPIRVCapability.Kernel()));
-        module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
+        emitSPIRVHeader(module);
 
         SPIRVId opTypeInt = module.getNextId();
         module.add(new SPIRVOpTypeInt(opTypeInt, new SPIRVLiteralInteger(32), new SPIRVLiteralInteger(0)));
@@ -332,7 +331,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         } catch (IOException e) {
             System.err.println("IO exception: " + e.getMessage());
         }
-
     }
 
     public static void writeModuleToFile(SPIRVModule module, String filepath) throws InvalidSPIRVModuleException {
@@ -342,16 +340,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         writeBufferToFile(out, filepath);
     }
 
+    private void emitSPIRVHeader(SPIRVModule module) {
+        module.add(new SPIRVOpCapability(SPIRVCapability.Addresses()));
+        module.add(new SPIRVOpCapability(SPIRVCapability.Linkage()));
+        module.add(new SPIRVOpCapability(SPIRVCapability.Kernel()));
+        module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
+    }
+
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         String methodName = crb.compilationResult.getName();
         if (crb.isKernel()) {
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
 
-            // Emit SPIRV Header
-            module.add(new SPIRVOpCapability(SPIRVCapability.Addresses()));
-            module.add(new SPIRVOpCapability(SPIRVCapability.Linkage()));
-            module.add(new SPIRVOpCapability(SPIRVCapability.Kernel()));
-            module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
+            // Emit SPIR-V Header
+            emitSPIRVHeader(module);
 
         } else {
 

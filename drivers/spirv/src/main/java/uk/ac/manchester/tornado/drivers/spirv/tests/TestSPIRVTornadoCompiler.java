@@ -23,7 +23,7 @@ public class TestSPIRVTornadoCompiler {
 
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("SPIRV-Backend");
         TaskMetaData task = new TaskMetaData(scheduleMetaData, "saxpy");
-        new SPIRVCompilationResult("saxpy", task);
+        new SPIRVCompilationResult("saxpy", "saxpy", task);
 
         // byte[] binary = ...
         byte[] binary = new byte[100];

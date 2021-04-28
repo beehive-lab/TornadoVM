@@ -344,7 +344,7 @@ public class SPIRVCompiler {
         OptimisticOptimizations optimisticOptimizations = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedJavaMethod.getProfilingInfo();
 
-        SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(buildKernelName(resolvedJavaMethod.getName(), task), taskMeta);
+        SPIRVCompilationResult kernelCompilationResult = new SPIRVCompilationResult(task.getId(), buildKernelName(resolvedJavaMethod.getName(), task), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -385,7 +385,7 @@ public class SPIRVCompiler {
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), taskMeta.getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
-            final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(currentMethod.getName(), taskMeta);
+            final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(task.getId(), currentMethod.getName(), taskMeta);
 
             // @formatter:off
             SPIRVCompilationRequest methodCompilationRequest = new SPIRVCompilationRequest(

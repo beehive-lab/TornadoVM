@@ -37,6 +37,8 @@ public class SPIRVCompilerConfiguration implements TornadoCompilerConfiguration 
 
     @Override
     public TornadoMidTier createMidTier(OptionValues options) {
+        // FIXME: <REFACTOR> PTX can reuse some of the phases in MIDtier from OCL and
+        // SPIRV
         return new SPIRVMidTier(options);
     }
 
