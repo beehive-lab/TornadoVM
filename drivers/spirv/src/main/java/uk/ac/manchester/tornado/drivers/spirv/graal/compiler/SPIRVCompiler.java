@@ -400,7 +400,7 @@ public class SPIRVCompiler {
                     profilingInfo,
                     suitesProvider.getSuites(),
                     suitesProvider.getLIRSuites(),
-                    kernelCompilationResult,
+                    compilationResult,
                     factory,
                     false,
                     false,

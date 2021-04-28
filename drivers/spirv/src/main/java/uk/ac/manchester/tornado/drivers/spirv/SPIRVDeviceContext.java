@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
@@ -10,8 +13,6 @@ import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.lang.reflect.Array;
 
 /**
  * Class to map an SPIRV device (Device represented either in Level Zero or an
@@ -266,6 +267,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public TornadoInstalledCode installBinary(SPIRVCompilationResult result) {
+        System.out.println(Arrays.toString(result.getTargetCode()));
         return installBinary(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
