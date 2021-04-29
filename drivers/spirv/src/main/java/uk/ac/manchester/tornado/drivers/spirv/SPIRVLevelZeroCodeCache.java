@@ -1,15 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
@@ -27,6 +17,16 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
@@ -51,18 +51,21 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ByteBuffer buffer = ByteBuffer.allocate(code.length);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.put(code);
+        String tempDirectory = System.getProperty("java.io.tmpdir");
+        String spirvTempDirectory = tempDirectory + "/tornadoVM-spirv";
+        Path path = Paths.get(spirvTempDirectory);
         try {
-            Path path = Files.createTempDirectory("tornadoVM-spirv");
-            String file = path.toAbsolutePath() + "/" + id + entryPoint + ".spv";
-            if (Tornado.DEBUG) {
-                System.out.println("SPIRV-File : " + file);
-            }
-            writeBufferToFile(buffer, file);
-            return installSPIRVBinary(meta, id, entryPoint, file);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            throw new TornadoBailoutRuntimeException(ex.getMessage());
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            throw new TornadoBailoutRuntimeException("Error - Exception when creating the temp directory for SPIR-V");
         }
+        long timeStamp = System.nanoTime();
+        String file = spirvTempDirectory + "/" + timeStamp + "-" + id + entryPoint + ".spv";
+        if (Tornado.DEBUG) {
+            System.out.println("SPIRV-File : " + file);
+        }
+        writeBufferToFile(buffer, file);
+        return installSPIRVBinary(meta, id, entryPoint, file);
     }
 
     @Override
@@ -94,8 +97,11 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
             int[] sizeLog = new int[1];
             String[] errorMessage = new String[1];
             result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
-            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage[0]);
             LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
+            System.out.println("----------------");
+            System.out.println("SPIR-V Kernel Errors from LevelZero:");
+            System.out.println(errorMessage[0]);
+            System.out.println("----------------");
             throw new TornadoBailoutRuntimeException("[Build SPIR-V ERROR]" + errorMessage[0]);
         }
 
