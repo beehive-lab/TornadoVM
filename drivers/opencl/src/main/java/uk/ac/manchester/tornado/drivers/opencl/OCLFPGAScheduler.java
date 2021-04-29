@@ -50,7 +50,7 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
 
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
-        final long[] localWork = meta.getLocalWork();
+        final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
                 setLocalWork(3, localWork, meta);

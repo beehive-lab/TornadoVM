@@ -167,14 +167,6 @@ public class OCLCompiler {
         }
     }
 
-    public static <T extends OCLCompilationResult> T compileGraph(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers,
-            OCLBackend backend, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-            T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, long batchThreads) {
-        // Ensure a debug configuration for this thread is initialized
-        return compile(new Request<>(graph, installedCodeOwner, args, meta, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
-                isKernel, false, batchThreads));
-    }
-
     /**
      * Services a given compilation request.
      *
@@ -260,9 +252,8 @@ public class OCLCompiler {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
             try (DebugContext.Scope s2 = getDebugContext().scope("OpenCLCodeGen", lirGen, lirGen.getLIR())) {
-                int bytecodeSize = graph.method() == null ? 0 : graph.getBytecodeSize();
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
-                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel);
+                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel);
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
@@ -345,11 +336,11 @@ public class OCLCompiler {
         return lirGenRes;
     }
 
-    public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, int bytecodeSize, LIRGenerationResult lirGenRes,
+    public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, LIRGenerationResult lirGenRes,
             OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(lirGenRes, frameMap, compilationResult, factory, isKernel, isParallel);
+            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, factory, isKernel, isParallel);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
 
             if (assumptions != null && !assumptions.isEmpty()) {

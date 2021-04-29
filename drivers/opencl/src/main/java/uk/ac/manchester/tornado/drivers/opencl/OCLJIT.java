@@ -69,7 +69,7 @@ public class OCLJIT {
 
             final OCLBackend backend = getTornadoRuntime().getDriver(OCLDriver.class).getDefaultBackend();
 
-            TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method, false);
+            TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method);
 
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[] {}, meta, (OCLProviders) backend.getProviders(), backend);
 

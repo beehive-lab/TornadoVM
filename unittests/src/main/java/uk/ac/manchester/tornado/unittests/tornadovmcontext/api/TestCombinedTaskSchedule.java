@@ -210,7 +210,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         TaskSchedule s02 = new TaskSchedule("s02") //
                 .streamIn(a, b) //
                 .task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado) //
-                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado).task("t2", TestCombinedTaskSchedule::vectorSubV2, context, cTornado, b, cTornado) //
+                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
+                .task("t2", TestCombinedTaskSchedule::vectorSubV2, context, cTornado, b, cTornado) //
                 .streamOut(cTornado);
         s02.execute(gridTask);
 
