@@ -445,9 +445,21 @@ public class OCLCompiler {
             Collections.addAll(methods, kernelCompResult.getMethods());
         }
 
+        /*
+         * Given the non-inlined methods A, B, C, D and the call graph below, method D can be compiled twice.
+         * A  → B → D
+         *    ↘ C ↗
+         * We use hash set below to prevent this.
+         */
+        final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
         final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
+            if (nonInlinedCompiledMethods.contains(currentMethod)) {
+                continue;
+            } else {
+                nonInlinedCompiledMethods.add(currentMethod);
+            }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 

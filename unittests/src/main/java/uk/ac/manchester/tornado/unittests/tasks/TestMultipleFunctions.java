@@ -25,8 +25,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import java.util.Random;
 
 /**
- * Tests TornadoVM dataflow analysis with different {@link uk.ac.manchester.tornado.api.common.Access} patterns, when not performing
- * inlining in the method passed to the tasks.
+ * Tests TornadoVM compilation under different scenarios, when not performing inlining in the method passed to the task.
  */
 public class TestMultipleFunctions extends TornadoTestBase {
 
@@ -115,6 +114,10 @@ public class TestMultipleFunctions extends TornadoTestBase {
         callee2(callee2ReadWrite, callee2Read);
     }
 
+    /**
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling a method and writing to one
+     * of the parameters in the callee.
+     */
     @Test
     public void testSingleTask() {
         TestArrays testArrays = new TestArrays();
@@ -134,6 +137,10 @@ public class TestMultipleFunctions extends TornadoTestBase {
         Assert.assertArrayEquals(testArrays.callerWriteSeq, testArrays.callerWriteTor);
     }
 
+    /**
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling two methods from different tasks,
+     * passing the same parameter to both tasks, and writing in only one callee.
+     */
     @Test
     public void testMultipleTasks() {
         TestArrays testArrays = new TestArrays();
@@ -155,6 +162,10 @@ public class TestMultipleFunctions extends TornadoTestBase {
         Assert.assertArrayEquals(testArrays.callerWriteSeq, testArrays.callerWriteTor);
     }
 
+    /**
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling three methods from different tasks.
+     * Performs a combination of {@link #testMultipleTasks} and {@link #testSingleTask}.
+     */
     @Test
     public void testMultipleTasksMultipleCallees() {
         TestArrays arrays = new TestArrays();
@@ -179,6 +190,42 @@ public class TestMultipleFunctions extends TornadoTestBase {
         Assert.assertArrayEquals(arrays.callerReadWriteSeq, arrays.callerReadWriteTor);
         Assert.assertArrayEquals(arrays.callee1WriteSeq, arrays.callee1WriteTor);
         Assert.assertArrayEquals(arrays.callee2ReadSeq, arrays.callee2ReadTor);
+    }
+
+    private static void functionA(int[] arr) {
+        functionB(arr);
+        functionC(arr);
+    }
+
+    private static void functionB(int[] arr) {
+        functionD(arr);
+    }
+
+    private static void functionC(int[] arr) {
+        functionD(arr);
+    }
+
+    private static void functionD(int[] arr) {
+        arr[0] = -1;
+    }
+
+    /**
+     * Tests if methods/functions invoked from different places in the call graph do not get compiled twice.
+     * A → B → D
+     *   ↘ C ↗
+     * If compiled twice, it will generate a runtime exception when launching the kernel.
+     */
+    @Test
+    public void testNoDoubleCompilation() {
+        int[] arr = new int[] { 0 };
+
+        TaskSchedule ts = new TaskSchedule("s0")
+                .task("t0", TestMultipleFunctions::functionA, arr)
+                .streamOut(arr);
+
+        ts.execute();
+
+        Assert.assertEquals(-1, arr[0]);
     }
 
 }
