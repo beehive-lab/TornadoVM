@@ -32,6 +32,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class TimeProfiler implements TornadoProfiler {
 
+    public static String NO_TASK_NAME = "noTask";
+
     private HashMap<ProfilerType, Long> profilerTime;
     private HashMap<String, HashMap<ProfilerType, Long>> taskTimers;
     private HashMap<String, HashMap<ProfilerType, Long>> taskThroughputMetrics;
@@ -184,6 +186,12 @@ public class TimeProfiler implements TornadoProfiler {
         increaseIndent();
         for (ProfilerType p : profilerTime.keySet()) {
             json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + profilerTime.get(p) + "\",\n");
+        }
+        if (taskThroughputMetrics.containsKey(NO_TASK_NAME)) {
+            HashMap<ProfilerType, Long> noTaskValues = taskThroughputMetrics.get(NO_TASK_NAME);
+            for (ProfilerType p : noTaskValues.keySet()) {
+                json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + noTaskValues.get(p) + "\",\n");
+            }
         }
 
         final int size = taskTimers.keySet().size();

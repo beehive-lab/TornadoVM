@@ -35,12 +35,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
@@ -65,7 +71,9 @@ public class TornadoExecutionContext {
     private boolean redeployOnDevice;
     private boolean defaultScheduler;
 
-    public TornadoExecutionContext(String id) {
+    private final TornadoProfiler profiler;
+
+    public TornadoExecutionContext(String id, TornadoProfiler profiler) {
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
@@ -79,6 +87,7 @@ public class TornadoExecutionContext {
         Arrays.fill(taskToDevice, -1);
         nextTask = 0;
         lastDevices = new HashSet<>();
+        this.profiler = profiler;
     }
 
     public CallStack[] getFrames() {
@@ -100,6 +109,33 @@ public class TornadoExecutionContext {
             objects.add(var);
             objectMap.put(var.hashCode(), index);
             objectState.add(index, new LocalObjectState(var));
+        }
+        return index;
+    }
+
+    public int replaceVariable(Object oldObj, Object newObj) {
+        /* Use the same index the oldObj was assigned. The argument indexes are hardcoded in the TornadoVM bytecodes
+         *  during bytecode generation and must match the indexes in the {@link objectState} and {@link objects} arrays. */
+        int index;
+        if (oldObj.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(oldObj.getClass())) {
+            index = constants.indexOf(oldObj);
+            constants.set(index, newObj);
+        } else {
+            int oldIndex = objectMap.get(oldObj.hashCode());
+            LocalObjectState oldLocalObjectState = objectState.remove(oldIndex);
+            objectMap.remove(oldObj.hashCode());
+            objects.remove(oldIndex);
+
+            /* Copy stream-in/out information to the new local object state */
+            LocalObjectState newLocalObjectState = new LocalObjectState(newObj);
+            newLocalObjectState.setStreamIn(oldLocalObjectState.isStreamIn());
+            newLocalObjectState.setForceStreamIn(oldLocalObjectState.isForcedStreamIn());
+            newLocalObjectState.setStreamOut(oldLocalObjectState.isStreamOut());
+
+            index = oldIndex;
+            objects.add(index, newObj);
+            objectMap.put(newObj.hashCode(), index);
+            objectState.add(index, newLocalObjectState);
         }
         return index;
     }
@@ -215,6 +251,10 @@ public class TornadoExecutionContext {
         return objectState.get(insertVariable(object));
     }
 
+    public LocalObjectState replaceObjectState(Object oldObj, Object newObj) {
+        return objectState.get(replaceVariable(oldObj, newObj));
+    }
+
     public void print() {
         System.out.println("device table:");
         for (int i = 0; i < devices.size(); i++) {
@@ -316,7 +356,15 @@ public class TornadoExecutionContext {
             Object object = objects.get(i);
             if (object != null) {
                 final LocalObjectState localState = objectState.get(i);
-                localState.sync(object);
+                Event event = localState.sync(object, meta().getLogicDevice());
+
+                if (TornadoOptions.isProfilerEnabled()) {
+                    long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
+                    value += event.getExecutionTime();
+                    profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
+                    DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                    profiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getBuffer().size());
+                }
             }
         }
     }
