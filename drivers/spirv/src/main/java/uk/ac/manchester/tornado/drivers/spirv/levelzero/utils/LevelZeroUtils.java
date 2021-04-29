@@ -195,9 +195,9 @@ public class LevelZeroUtils {
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             // Print Logs
             int[] sizeLog = new int[1];
-            String errorMessage = "";
+            String[] errorMessage = new String[1];
             result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
-            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage);
+            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage[1]);
             LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
             System.exit(0);
         }

@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
@@ -52,8 +53,10 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         buffer.put(code);
         try {
             Path path = Files.createTempDirectory("tornadoVM-spirv");
-            String file = path.toAbsolutePath() + id + entryPoint + ".spv";
-            System.out.println("SPIRV-File : " + file);
+            String file = path.toAbsolutePath() + "/" + id + entryPoint + ".spv";
+            if (Tornado.DEBUG) {
+                System.out.println("SPIRV-File : " + file);
+            }
             writeBufferToFile(buffer, file);
             return installSPIRVBinary(meta, id, entryPoint, file);
         } catch (IOException ex) {
@@ -89,10 +92,11 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             // Print Logs
             int[] sizeLog = new int[1];
-            String errorMessage = "";
+            String[] errorMessage = new String[1];
             result = context.zeModuleBuildLogGetString(buildLog, sizeLog, errorMessage);
-            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage);
+            System.out.println("LOGS::: " + sizeLog[0] + "  -- " + errorMessage[0]);
             LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
+            throw new TornadoBailoutRuntimeException("[Build SPIR-V ERROR]" + errorMessage[0]);
         }
 
         // Create Module Object

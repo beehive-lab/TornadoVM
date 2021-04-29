@@ -226,9 +226,9 @@ public class LevelZeroContext {
         this.contextHandle.initPtr();
     }
 
-    private native int zeModuleBuildLogGetString_native(ZeBuildLogHandle buildLog, int[] sizeLog, String errorMessage);
+    private native int zeModuleBuildLogGetString_native(ZeBuildLogHandle buildLog, int[] sizeLog, String[] errorMessage);
 
-    public int zeModuleBuildLogGetString(ZeBuildLogHandle buildLog, int[] sizeLog, String errorMessage) {
+    public int zeModuleBuildLogGetString(ZeBuildLogHandle buildLog, int[] sizeLog, String[] errorMessage) {
         return zeModuleBuildLogGetString_native(buildLog, sizeLog, errorMessage);
     }
 

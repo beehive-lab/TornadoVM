@@ -302,7 +302,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVId defParam1 = module.getNextId();
         functionScope.add(new SPIRVOpFunctionParameter(pointer, defParam1));
 
-        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), functionDef, new SPIRVLiteralString("emptyKernel"), new SPIRVMultipleOperands<>()));
+        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), functionDef, new SPIRVLiteralString("copyTestZero"), new SPIRVMultipleOperands<>()));
 
         blockScope = functionScope.add(new SPIRVOpLabel(module.getNextId()));
         SPIRVId var1 = module.getNextId();

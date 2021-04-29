@@ -637,14 +637,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeModuleBuildLogGetString_native
- * Signature: (Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeBuildLogHandle;[ILjava/lang/String;)I
+ * Signature: (Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeBuildLogHandle;[I[Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeModuleBuildLogGetString_1native
-        (JNIEnv *env, jobject object, jobject javaBuildLog, jintArray javaSizeArray, jstring javaStringMessage) {
+        (JNIEnv *env, jobject object, jobject javaBuildLogHandle, jintArray javaSizeArray, jobjectArray javaStringMessage) {
 
-    jclass javaBuildLogClass = env->GetObjectClass(javaBuildLog);
+    jclass javaBuildLogClass = env->GetObjectClass(javaBuildLogHandle);
     jfieldID fieldPtrLog = env->GetFieldID(javaBuildLogClass, "ptrZeBuildLogHandle", "J");
-    jlong ptrLog = env->GetLongField(javaBuildLog, fieldPtrLog);
+    jlong ptrLog = env->GetLongField(javaBuildLogHandle, fieldPtrLog);
 
     auto logHandle = reinterpret_cast<ze_module_build_log_handle_t>(ptrLog);
 
@@ -656,7 +656,8 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     result = zeModuleBuildLogGetString(logHandle, &szLog, stringLog);
     LOG_ZE_JNI("zeModuleBuildLogGetString", result);
 
-    env->ReleaseStringChars(javaStringMessage, reinterpret_cast<const jchar *>(stringLog));
+    jstring str = env->NewStringUTF(stringLog);
+    env->SetObjectArrayElement(javaStringMessage, 0, str);
 
     jint* sizeArray = env->GetIntArrayElements(javaSizeArray, 0);
     sizeArray[0] = szLog;
