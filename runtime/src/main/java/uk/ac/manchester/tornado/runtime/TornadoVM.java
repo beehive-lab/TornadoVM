@@ -431,7 +431,7 @@ public class TornadoVM extends TornadoLogger {
             task.setGridScheduler(true);
         }
 
-        if (installedCodes[taskIndex] == null) {
+        if (shouldCompile(installedCodes[taskIndex])) {
             task.mapTo(device);
             try {
                 task.attachProfiler(timeProfiler);
@@ -452,6 +452,10 @@ public class TornadoVM extends TornadoLogger {
             }
         }
         return new ExecutionInfo(stack, waitList);
+    }
+
+    private boolean shouldCompile(TornadoInstalledCode installedCode) {
+        return installedCode == null || !installedCode.isValid();
     }
 
     private void setObjectOwnerShip(GlobalObjectState globalState, DeviceObjectState objectState, TornadoDevice device) {
