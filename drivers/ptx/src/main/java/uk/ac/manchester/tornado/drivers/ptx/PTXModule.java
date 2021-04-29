@@ -23,21 +23,17 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
 public class PTXModule {
     public final byte[] moduleWrapper;
     public final String kernelFunctionName;
-    public final TaskMetaData metaData;
     private int maxBlockSize;
     public final String javaName;
     private final byte[] source;
 
-    public PTXModule(String name, byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
+    public PTXModule(String name, byte[] source, String kernelFunctionName) {
         moduleWrapper = cuModuleLoadData(source);
         this.source = source;
         this.kernelFunctionName = kernelFunctionName;
-        metaData = taskMetaData;
         maxBlockSize = -1;
         javaName = name;
     }

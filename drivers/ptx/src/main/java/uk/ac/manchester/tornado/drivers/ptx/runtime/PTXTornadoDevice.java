@@ -190,7 +190,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
             } else {
-                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable), taskMeta);
+                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable));
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -219,7 +219,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         try {
             byte[] source = Files.readAllBytes(path);
             source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(functionName, source, executable.meta(), executable.getEntryPoint());
+            return deviceContext.installCode(functionName, source, executable.getEntryPoint());
         } catch (IOException e) {
             e.printStackTrace();
         }
