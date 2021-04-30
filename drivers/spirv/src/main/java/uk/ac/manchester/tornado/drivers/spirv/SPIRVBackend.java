@@ -1,15 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -26,22 +25,14 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInstImport;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
@@ -50,6 +41,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpMemoryModel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpReturn;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSource;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
@@ -58,16 +50,20 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVAddressingModel;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVBuiltIn;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLinkageType;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
@@ -91,6 +87,16 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -262,12 +268,23 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
-        SPIRVModule module = new SPIRVModule(new SPIRVHeader(1, 2, 29, 0, 0));
 
-        // emitPrologue(crb, asm, method, lir, module);
+        // SPIR-V Header
+
+        // @formatter:off
+        SPIRVModule module = new SPIRVModule(
+                new SPIRVHeader(
+                        1,
+                        2,
+                        29,  
+                        0,       // The bound will be filled once the code-gen is finished
+                        0));
+        // @formatter:off
+        
+        emitPrologue(crb, asm, method, lir, module);
         // crb.emit(lir);
         // emitEpilogue(asm);
-        dummySPIRVModuleTest(module);
+        // dummySPIRVModuleTest(module);
 
         emitSPIRVCodeIntoASMModule(asm, module);
     }
@@ -341,10 +358,35 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void emitSPIRVHeader(SPIRVModule module) {
-        module.add(new SPIRVOpCapability(SPIRVCapability.Addresses()));
-        module.add(new SPIRVOpCapability(SPIRVCapability.Linkage()));
-        module.add(new SPIRVOpCapability(SPIRVCapability.Kernel()));
+        // Emit Capabilities
+        module.add(new SPIRVOpCapability(SPIRVCapability.Addresses())); // Uses physical addressing, non-logical addressing modes.
+        module.add(new SPIRVOpCapability(SPIRVCapability.Linkage())); // Uses partially linked modules and libraries. (e.g., OpenCL)
+        module.add(new SPIRVOpCapability(SPIRVCapability.Kernel())); // Uses the Kernel Execution Model.
+        module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
+
+        // Add import OpenCL STD
+        SPIRVId idImport = module.getNextId();
+        module.add(new SPIRVOpExtInstImport(idImport, new SPIRVLiteralString("OpenCL.std")));
+
+        // Set the memory model to Physical64 with OpenCL
         module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
+
+        SPIRVId idSPIRVBuiltin = module.getNextId();
+
+        // OpSource
+        // @formatter:off
+        module.add(new SPIRVOpSource( 
+                SPIRVSourceLanguage.OpenCL_C(), 
+                new SPIRVLiteralInteger(100000),  
+                new SPIRVOptionalOperand<>(),  
+                new SPIRVOptionalOperand<>()));
+        // @formatter:on
+
+        // Add Decorators for the GetGlobalID intrinsics
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(SPIRVBuiltIn.GlobalInvocationId())));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.Constant()));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString("spirv_BuiltInGlobalInvocationId"), SPIRVLinkageType.Import())));
+
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
