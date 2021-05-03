@@ -1,5 +1,15 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
@@ -17,16 +27,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
@@ -76,7 +76,8 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        final Path pathToSPIRVBin = Paths.get(pathToFile);
+        // final Path pathToSPIRVBin = Paths.get(pathToFile);
+        final Path pathToSPIRVBin = Paths.get("/tmp/testSPIRV4.spv");
         if (!pathToSPIRVBin.toFile().exists()) {
             throw new RuntimeException("Binary File does not exist");
         }

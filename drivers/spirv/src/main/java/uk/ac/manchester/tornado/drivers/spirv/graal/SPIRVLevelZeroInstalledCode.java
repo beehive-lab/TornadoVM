@@ -1,7 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
@@ -16,6 +14,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.util.Arrays;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
@@ -64,7 +64,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         System.out.println(Arrays.toString(globalWork));
 
         // Statically decide a block size of 32
-        final int groupSize = 32;
+        int groupSize = 32;
+        if (globalWork[0] <= 32) {
+            groupSize = 1;
+        }
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
         int[] groupSizeX = new int[] { groupSize };

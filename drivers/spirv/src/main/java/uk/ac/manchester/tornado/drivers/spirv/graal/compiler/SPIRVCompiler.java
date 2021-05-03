@@ -8,7 +8,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METH
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,7 +57,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
@@ -306,27 +304,28 @@ public class SPIRVCompiler {
     public static String buildKernelName(String methodName, SchedulableTask task) {
         StringBuilder sb = new StringBuilder(methodName);
 
-        for (Object arg : task.getArguments()) {
-            // Object is either array or primitive
-            sb.append('_');
-            Class<?> argClass = arg.getClass();
-            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-                // Only need to append value.
-                // If negative value, remove the minus sign in front
-                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
-            } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
-                // Need to append type and length
-                sb.append(argClass.getComponentType().getName());
-                sb.append(Array.getLength(arg));
-            } else {
-                sb.append(argClass.getName().replace('.', '_'));
-
-                // Since with objects there is no way to know what will be a
-                // constant differentiate using the hashcode of the object
-                sb.append('_');
-                sb.append(arg.hashCode());
-            }
-        }
+        // for (Object arg : task.getArguments()) {
+        // // Object is either array or primitive
+        // sb.append('_');
+        // Class<?> argClass = arg.getClass();
+        // if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+        // // Only need to append value.
+        // // If negative value, remove the minus sign in front
+        // sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
+        // } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass))
+        // {
+        // // Need to append type and length
+        // sb.append(argClass.getComponentType().getName());
+        // sb.append(Array.getLength(arg));
+        // } else {
+        // sb.append(argClass.getName().replace('.', '_'));
+        //
+        // // Since with objects there is no way to know what will be a
+        // // constant differentiate using the hashcode of the object
+        // sb.append('_');
+        // sb.append(arg.hashCode());
+        // }
+        // }
 
         return sb.toString();
     }

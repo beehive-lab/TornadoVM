@@ -196,17 +196,17 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
-        return new int[0];
+        return null;
     }
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
-        return new int[0];
+        return null;
     }
 
     @Override
     public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState) {
-        return new int[0];
+        return null;
     }
 
     @Override
