@@ -514,8 +514,6 @@ public class TornadoVM extends TornadoLogger {
             final byte argType = buffer.get();
             final int argIndex = buffer.getInt();
 
-            System.out.println("[TVM] Processing parameter: " + i + " -> " + argIndex);
-
             if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                 final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
@@ -544,7 +542,6 @@ public class TornadoVM extends TornadoLogger {
                 if (!isObjectInAtomicRegion(objectState, device, task)) {
                     final String ERROR_MESSAGE = "object is not valid: %s %s";
                     TornadoInternalError.guarantee(objectState.isValid(), ERROR_MESSAGE, objects.get(argIndex), objectState);
-                    System.out.println("PUSh");
                     stack.push(objects.get(argIndex), objectState);
                     if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {
                         setObjectOwnerShip(globalState, objectState, device);

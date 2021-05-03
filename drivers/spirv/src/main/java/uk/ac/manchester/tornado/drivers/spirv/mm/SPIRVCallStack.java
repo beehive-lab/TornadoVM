@@ -102,7 +102,6 @@ public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
     public void setHeader(HashMap<Integer, Integer> map) {
         buffer.clear();
         for (int i = 0; i < RESERVED_SLOTS; i++) {
-            System.out.println("RESERVED SLOTS: " + i);
             if (map.containsKey(i)) {
                 buffer.putLong(map.get(i));
             } else {
