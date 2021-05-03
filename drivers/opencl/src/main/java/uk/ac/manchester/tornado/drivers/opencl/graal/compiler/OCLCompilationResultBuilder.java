@@ -25,10 +25,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
+
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
@@ -41,10 +49,20 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -53,18 +71,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopCond
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
-
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 

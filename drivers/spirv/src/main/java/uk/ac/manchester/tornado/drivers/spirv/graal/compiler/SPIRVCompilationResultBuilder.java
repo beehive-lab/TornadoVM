@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +28,7 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
+import uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator;
 
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -71,8 +71,8 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
-     * emitting order}.
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()} code
+     * emitting order.
      */
     @Override
     public void emit(LIR lir) {
@@ -83,11 +83,11 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         frameContext.enter(this);
 
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-        trace("Traversing CFG: ", cfg.graph.name);
+        TornadoLIRGenerator.trace("Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
         traverseControlFlowGraph(cfg, new SPIRVBlockVisitor(this));
 
-        trace("Finished traversing CFG");
+        TornadoLIRGenerator.trace("Finished traversing CFG");
         this.lir = null;
         this.currentBlockIndex = 0;
 

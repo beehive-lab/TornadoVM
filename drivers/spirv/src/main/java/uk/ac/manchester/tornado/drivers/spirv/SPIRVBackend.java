@@ -230,6 +230,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVFrameMap(getCodeCache(), registerConfig, this);
     }
 
+    // FIXME <Refactor> common method
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         return new SPIRVFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);

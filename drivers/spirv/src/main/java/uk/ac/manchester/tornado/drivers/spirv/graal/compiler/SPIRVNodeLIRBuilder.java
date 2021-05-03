@@ -18,6 +18,10 @@ import org.graalvm.compiler.nodes.cfg.Block;
 
 import jdk.vm.ci.meta.Value;
 
+/**
+ * It traverses the HIR instructions from the Graal CFP and it generates LIR for
+ * the SPIR-V backend.
+ */
 public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     public SPIRVNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {

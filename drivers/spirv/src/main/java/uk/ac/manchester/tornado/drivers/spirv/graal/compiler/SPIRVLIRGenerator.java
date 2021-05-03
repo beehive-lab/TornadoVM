@@ -1,9 +1,13 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
@@ -16,17 +20,9 @@ import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
-
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.StackSlot;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
@@ -34,9 +30,14 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmetic
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVGenTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 /**
- * It traverses the SPIRV HIR and generates SPIRV LIR.
+ * It traverses the SPI-V HIR and generates SPIR-V LIR from which the backend
+ * will emit the SPIR-V code.
  */
 public class SPIRVLIRGenerator extends LIRGenerator {
 
@@ -74,13 +75,46 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitConvertNullToZero(AllocatableValue result, Value input) {
+        unimplemented();
+    }
+
+    @Override
+    public void emitConvertZeroToNull(AllocatableValue result, Value input) {
+        unimplemented();
+    }
+
+    @Override
+    public VirtualStackSlot allocateStackSlots(int slots) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitReadCallerStackPointer(Stamp wordStamp) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public void emitZeroMemory(Value address, Value length, boolean isAligned) {
+        unimplemented();
+    }
+
+    @Override
+    public Value emitReadReturnAddress(Stamp wordStamp, int returnAddressSize) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
         return null;
     }
 
     @Override
     public void emitDeoptimize(Value actionAndReason, Value failedSpeculation, LIRFrameState state) {
-
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
@@ -100,7 +134,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
@@ -126,7 +160,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value leftVal, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        return null;
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
@@ -217,12 +251,56 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
         // Create a new variable
         final Variable var = super.newVariable(actualLIRKind);
-        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        TornadoCodeGenerator.trace("[SPIR-V] newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
-        // Format of the variable "%<type>_<number>"
-        var.setName("%" + spirvKind.getTypePrefix() + "_" + var.index);
+        // Format of the variable "<type>_<number>"
+        var.setName(spirvKind.getTypePrefix() + "_" + var.index);
         SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
         res.insertVariable(var);
         return var;
     }
+
+    @Override
+    public SPIRVLIRKindTool getLIRKindTool() {
+        return (SPIRVLIRKindTool) super.getLIRKindTool();
+    }
+
+    public SPIRVGenTool getSpirvGenTool() {
+        return spirvGenTool;
+    }
+
+    @Override
+    public Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, boolean directPointers) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitArrayIndexOf(JavaKind arrayKind, JavaKind valueKind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value fromIndex, Value... searchValues) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
+        unimplemented();
+    }
+
+    @Override
+    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public LIRKind getValueKind(JavaKind javaKind) {
+        return super.getValueKind(javaKind);
+    }
+
 }
