@@ -68,6 +68,13 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         return installSPIRVBinary(meta, id, entryPoint, file);
     }
 
+    private void checkBinaryFileExists(String pathToFile) {
+        final Path pathToSPIRVBin = Paths.get(pathToFile);
+        if (!pathToSPIRVBin.toFile().exists()) {
+            throw new RuntimeException("Binary File does not exist");
+        }
+    }
+
     @Override
     public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
         ZeModuleHandle module = new ZeModuleHandle();
@@ -76,11 +83,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        // final Path pathToSPIRVBin = Paths.get(pathToFile);
-        final Path pathToSPIRVBin = Paths.get("/tmp/testSPIRV4.spv");
-        if (!pathToSPIRVBin.toFile().exists()) {
-            throw new RuntimeException("Binary File does not exist");
-        }
+        checkBinaryFileExists(pathToFile);
 
         SPIRVContext spirvContext = deviceContext.getSpirvContext();
         SPIRVLevelZeroContext levelZeroContext = (SPIRVLevelZeroContext) spirvContext;
