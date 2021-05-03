@@ -1,14 +1,16 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -25,11 +27,22 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInstImport;
@@ -52,6 +65,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVAddressingModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVBuiltIn;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
@@ -87,16 +101,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -279,8 +283,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                         29,  
                         0,       // The bound will be filled once the code-gen is finished
                         0));
-        // @formatter:off
-        
+        // @formatter:on
+
         emitPrologue(crb, asm, method, lir, module);
         // crb.emit(lir);
         // emitEpilogue(asm);
@@ -363,11 +367,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         module.add(new SPIRVOpCapability(SPIRVCapability.Linkage())); // Uses partially linked modules and libraries. (e.g., OpenCL)
         module.add(new SPIRVOpCapability(SPIRVCapability.Kernel())); // Uses the Kernel Execution Model.
         module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
+        module.add(new SPIRVOpCapability(SPIRVCapability.Int8()));
 
         // Add import OpenCL STD
         SPIRVId idImport = module.getNextId();
         module.add(new SPIRVOpExtInstImport(idImport, new SPIRVLiteralString("OpenCL.std")));
-
         // Set the memory model to Physical64 with OpenCL
         module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
 
@@ -387,6 +391,29 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.Constant()));
         module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString("spirv_BuiltInGlobalInvocationId"), SPIRVLinkageType.Import())));
 
+        // Type Int
+        SPIRVId ulong = module.getNextId();
+        SPIRVId uint32 = module.getNextId();
+        SPIRVId uint8 = module.getNextId();
+        module.add(new SPIRVOpTypeInt(ulong, new SPIRVLiteralInteger(64), new SPIRVLiteralInteger(0)));
+        module.add(new SPIRVOpTypeInt(uint32, new SPIRVLiteralInteger(32), new SPIRVLiteralInteger(0)));
+        module.add(new SPIRVOpTypeInt(uint8, new SPIRVLiteralInteger(8), new SPIRVLiteralInteger(0)));
+
+        // Index for the stack-frame
+        SPIRVId ulongConstant3 = module.getNextId();
+        module.add(new SPIRVOpConstant(ulong, ulongConstant3, new SPIRVContextDependentLong(BigInteger.valueOf(3))));
+
+        // Header value to skip
+        SPIRVId ulongConstant24 = module.getNextId();
+        module.add(new SPIRVOpConstant(ulong, ulongConstant24, new SPIRVContextDependentLong(BigInteger.valueOf(24))));
+
+        // This ID is dependent of one application
+        SPIRVId ulongConstant50 = module.getNextId();
+        module.add(new SPIRVOpConstant(ulong, ulongConstant50, new SPIRVContextDependentLong(BigInteger.valueOf(50))));
+
+        // OpVoid
+        SPIRVId voidType = module.getNextId();
+        module.add(new SPIRVOpTypeVoid(voidType));
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
