@@ -18,6 +18,10 @@ public final class SPIRVAssembler extends Assembler {
         super(target);
     }
 
+    public void emitAttribute(SPIRVCompilationResultBuilder crb) {
+        throw new RuntimeException("[Not supported for SPIRV] FPGA ATTRIBUTES - Check with the OpenCL Backend");
+    }
+
     /**
      * Base class for OpenCL opcodes.
      */

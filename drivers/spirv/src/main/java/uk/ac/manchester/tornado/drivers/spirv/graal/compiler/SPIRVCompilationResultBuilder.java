@@ -56,7 +56,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     public void setParallel(boolean isParallel) {
         this.isParallel = isParallel;
+    }
 
+    public boolean isParallel() {
+        return isParallel;
     }
 
     public void setDeviceContext(SPIRVDeviceContext deviceContext) {

@@ -44,12 +44,12 @@ public class TornadoLogger {
         this(null);
     }
 
-    public final void debug(final String msg) {
+    public static void debug(final String msg) {
         LOGGER.setLevel(Level.INFO);
         LOGGER.info(msg);
     }
 
-    public final void debug(final String pattern, final Object... args) {
+    public static void debug(final String pattern, final Object... args) {
         debug(String.format(pattern, args));
     }
 
@@ -79,21 +79,21 @@ public class TornadoLogger {
         info(String.format(pattern, args));
     }
 
-    public final void trace(final String msg) {
+    public static void trace(final String msg) {
         LOGGER.setLevel(Level.INFO);
         LOGGER.info(msg);
     }
 
-    public final void trace(final String pattern, final Object... args) {
+    public static void trace(final String pattern, final Object... args) {
         trace(String.format(pattern, args));
     }
 
-    public final void warn(final String msg) {
+    public static void warn(final String msg) {
         LOGGER.setLevel(Level.WARNING);
         LOGGER.warning(msg);
     }
 
-    public final void warn(final String pattern, final Object... args) {
+    public static void warn(final String pattern, final Object... args) {
         warn(String.format(pattern, args));
     }
 

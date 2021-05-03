@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -80,6 +81,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperan
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
@@ -97,8 +99,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
-import uk.ac.manchester.tornado.drivers.spirv.tests.TestLKBufferAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -115,6 +117,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     SPIRVInstalledCode lookupCode;
     final ScheduleMetaData scheduleMetaData;
 
+    final HashMap<String, SPIRVId> SPIRVSymbolTable;
+
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
         this.context = deviceContext;
@@ -125,6 +129,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         spirvArchitecture = targetDescription.getArch();
         scheduleMetaData = new ScheduleMetaData("spirvBackend");
         this.isInitialized = false;
+        this.SPIRVSymbolTable = new HashMap<>();
     }
 
     // FIXME <REFACTOR> <S>
@@ -286,9 +291,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                         0));
         // @formatter:on
 
-        TestLKBufferAccess.testAssignWithLookUpBuffer(module);
+        // TestLKBufferAccess.testAssignWithLookUpBuffer(module);
 
-        // emitPrologue(crb, asm, method, lir, module);
+        emitPrologue(crb, asm, method, lir, module);
         // crb.emit(lir);
         // emitEpilogue(asm);
         // dummySPIRVModuleTest(module);
@@ -300,7 +305,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVInstScope functionScope;
         SPIRVInstScope blockScope;
 
-        emitSPIRVHeader(module);
+        emitSPIRVHeader(module, true);
 
         SPIRVId opTypeInt = module.getNextId();
         module.add(new SPIRVOpTypeInt(opTypeInt, new SPIRVLiteralInteger(32), new SPIRVLiteralInteger(0)));
@@ -403,14 +408,36 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return idSPIRVBuiltin;
     }
 
-    private void emitSPIRVHeader(SPIRVModule module) {
+    private void emitSPIRVHeader(SPIRVModule module, boolean isParallel) {
 
         emitSPIRVCapabilities(module);
         emitImportOpenCL(module);
         emitOpenCLAddressingMode(module);
         emitOpSourceForOpenCL(module, 100000);
 
-        SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module);
+        // Generate this only if the kernel is parallel (it uses the get_global_id)
+        if (isParallel) {
+            SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module);
+            SPIRVSymbolTable.put("idSPIRVBuiltin", idSPIRVBuiltin);
+        }
+
+        // Decorate for heap_base
+        SPIRVId heapBaseAddrId = module.getNextId();
+        module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+        SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
+
+        // Decorate for frameBaseAddrId
+        SPIRVId frameBaseAddrId = module.getNextId();
+        module.add(new SPIRVOpDecorate(frameBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+        SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
+
+        // Decorate for frameId
+        SPIRVId frameId = module.getNextId();
+        module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+        SPIRVSymbolTable.put("frameId", frameId);
+
+        // For each I/O, there is a decorate with alignment 8 (it is a pointer to the
+        // data)
 
         // ------------------------------------------------------------------------------------------------------------
         // EMIT TYPES
@@ -442,13 +469,50 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         String methodName = crb.compilationResult.getName();
+        TornadoLogger.trace("[SPIR-V CodeGen] Generating code for method: %s \n", methodName);
+        boolean isParallel = crb.isParallel();
         if (crb.isKernel()) {
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-
+            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
+                asm.emitAttribute(crb); // value
+            }
             // Emit SPIR-V Header
-            emitSPIRVHeader(module);
+            // emitSPIRVHeader(module, isParallel);
+
+            emitSPIRVCapabilities(module);
+            emitImportOpenCL(module);
+            emitOpenCLAddressingMode(module);
+            emitOpSourceForOpenCL(module, 100000);
+
+            // Generate this only if the kernel is parallel (it uses the get_global_id)
+            if (isParallel) {
+                SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module);
+                SPIRVSymbolTable.put("idSPIRVBuiltin", idSPIRVBuiltin);
+            }
+
+            // Decorate for heap_base
+            SPIRVId heapBaseAddrId = module.getNextId();
+            module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+            SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
+
+            // Decorate for frameBaseAddrId
+            SPIRVId frameBaseAddrId = module.getNextId();
+            module.add(new SPIRVOpDecorate(frameBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+            SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
+
+            // Decorate for frameId
+            SPIRVId frameId = module.getNextId();
+            module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+            SPIRVSymbolTable.put("frameId", frameId);
+
+            // For each I/O, there is a decorate with alignment 8 (it is a pointer to the
+            // data)
+            // How many variables?
+            final int expectedVariables = lir.numVariables();
+            System.out.println("Expected Variable: " + expectedVariables);
 
         } else {
+            // inner function (it is no the main kernel)
 
         }
     }
