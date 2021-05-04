@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.unittests.common;
 import org.junit.Before;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class TornadoTestBase {
@@ -86,17 +87,13 @@ public abstract class TornadoTestBase {
         return new Tuple2<>(Integer.parseInt(propertyValues[0]), Integer.parseInt(propertyValues[1]));
     }
 
-    public void checkForPTX() {
+    public void assertNotBackend(TornadoVMBackend backend) {
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
-        if ("PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
-            throw new PTXNotSupported("Test not supported for the PTX backend");
-        }
-    }
-
-    public void checkForOpenCL() {
-        int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
-        if ("OpenCL".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
-            throw new OpenCLNotSupported("Test not supported for the OpenCL backend");
+        if (TornadoRuntime.getTornadoRuntime().getBackendType(driverIndex) == backend) {
+            switch (backend) {
+                case PTX: throw new TornadoPTXNotSupported("Test not supported for the PTX backend");
+                case OpenCL: throw new TornadoOpenCLNotSupported("Test not supported for the OpenCL backend");
+            }
         }
     }
 

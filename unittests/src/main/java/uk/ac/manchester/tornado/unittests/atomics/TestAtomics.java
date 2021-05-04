@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -90,7 +91,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic04() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -123,7 +124,7 @@ public class TestAtomics extends TornadoTestBase {
      */
     @Test
     public void testAtomic05_precompiled() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -166,7 +167,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic06() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 2048;
         int[] a = new int[size];
@@ -200,7 +201,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic07() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -228,7 +229,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic08() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -273,7 +274,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic09() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -298,7 +299,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic10() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -323,7 +324,7 @@ public class TestAtomics extends TornadoTestBase {
 
     @Test
     public void testAtomic11() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -356,7 +357,7 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic12() {
         // Calling multiple atomics
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -393,7 +394,7 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic13() {
         // Calling multiple atomics
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -424,7 +425,7 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic14() {
         // Calling multiple atomics
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -467,7 +468,7 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic15() {
         // Calling multiple atomics
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];
@@ -497,7 +498,7 @@ public class TestAtomics extends TornadoTestBase {
     @Test
     public void testAtomic16() {
         // Calling multiple atomics
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         final int size = 32;
         int[] a = new int[size];

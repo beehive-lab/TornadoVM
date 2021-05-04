@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -212,6 +213,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     @Override
     public String getName() {
         return "OpenCL";
+    }
+
+    @Override
+    public TornadoVMBackend getBackendType() {
+        return TornadoVMBackend.OpenCL;
     }
 
     public TornadoDeviceType getTypeDefaultDevice() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.common;
 
-public class PTXNotSupported extends RuntimeException {
+public class TornadoOpenCLNotSupported extends RuntimeException {
 
-    public PTXNotSupported(String message) {
+    public TornadoOpenCLNotSupported(String message) {
         super(message);
     }
 
-    public PTXNotSupported(String message, Throwable cause) {
+    public TornadoOpenCLNotSupported(String message, Throwable cause) {
         super(message, cause);
     }
 }
