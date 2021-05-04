@@ -14,9 +14,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 @NodeInfo
-public class SPIRVFixedArrayNode extends FixedNode implements LIRLowerable {
+public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
-    public static final NodeClass<SPIRVFixedArrayNode> TYPE = NodeClass.create(SPIRVFixedArrayNode.class);
+    public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
     @Input
     protected ConstantNode length;
@@ -26,13 +26,13 @@ public class SPIRVFixedArrayNode extends FixedNode implements LIRLowerable {
     protected ResolvedJavaType elemenType;
     // FIXME SPIRVBinarTemplate is missing
 
-    protected SPIRVFixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
+    protected FixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryBase = memoryBase;
         this.length = length;
         this.elemenType = elementType;
         this.elementKind = SPIRVKind.fromResolvedJavaType(elementType);
-        System.out.println("Memory template is missing");
+        System.out.println("NOTE -- Memory template is missing");
     }
 
     public SPIRVArchitecture.SPIRVMemoryBase getMemoryRegister() {
@@ -45,6 +45,6 @@ public class SPIRVFixedArrayNode extends FixedNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-
+        throw new RuntimeException("Not supported yet");
     }
 }

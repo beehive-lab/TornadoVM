@@ -10,11 +10,11 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo
-public class SPIRVSlotsBaseAddressNode extends ValueNode implements LIRLowerable {
+public class SlotsBaseAddressNode extends ValueNode implements LIRLowerable {
 
-    public static final NodeClass<SPIRVSlotsBaseAddressNode> TYPE = NodeClass.create(SPIRVSlotsBaseAddressNode.class);
+    public static final NodeClass<SlotsBaseAddressNode> TYPE = NodeClass.create(SlotsBaseAddressNode.class);
 
-    public SPIRVSlotsBaseAddressNode() {
+    public SlotsBaseAddressNode() {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
     }
 

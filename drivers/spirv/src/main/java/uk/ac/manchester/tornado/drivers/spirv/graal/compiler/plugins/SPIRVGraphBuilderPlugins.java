@@ -9,7 +9,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVSlotsBaseAddressNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 // FIXME <TODO> When implementing vector types for the SPIRV platform
@@ -39,7 +39,7 @@ public class SPIRVGraphBuilderPlugins {
         r.register0("getSlotsAddress", new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(JavaKind.Object, new SPIRVSlotsBaseAddressNode());
+                b.addPush(JavaKind.Object, new SlotsBaseAddressNode());
                 return true;
             }
         });

@@ -65,6 +65,6 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
     }
 
     private void setMemoryAccess(NodeLIRBuilderTool generator, Value baseValue, Value indexValue, SPIRVLIRGenerator tool) {
-        System.out.println("Missing implementation: SPIRVAddressNode#setMemoryAccess");
+        throw new RuntimeException("Operation not supported");
     }
 }

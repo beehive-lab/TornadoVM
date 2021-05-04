@@ -60,6 +60,15 @@ public final class SPIRVAssembler extends Assembler {
             this.prefix = prefix;
         }
 
+        public static SPIRVUnaryOp CAST_TO_DOUBLE() {
+            return null;
+        }
+
+        public static SPIRVUnaryOp CAST_TO_LONG() {
+            // I think we can return an OpSConvert
+            return null;
+        }
+
         public void emit(SPIRVCompilationResultBuilder crb, Value x) {
             final SPIRVAssembler asm = crb.getAssembler();
             if (prefix) {

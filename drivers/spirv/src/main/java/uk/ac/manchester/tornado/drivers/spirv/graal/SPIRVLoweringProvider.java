@@ -22,6 +22,7 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
@@ -53,8 +54,12 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.CastNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 
 public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
@@ -86,7 +91,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public void lower(Node node, LoweringTool tool) {
-        System.out.println("Lowering node: " + node);
+        SPIRVLogger.trace("Lowering node: %s\n", node);
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
@@ -97,8 +102,25 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             // ignore
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
+        } else if (node instanceof FloatConvertNode) {
+            lowerFloatConvertNode((FloatConvertNode) node);
+        } else if (node instanceof GetGroupIdFixedWithNextNode) {
+            lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         }
 
+    }
+
+    private void lowerGetGroupIdNode(GetGroupIdFixedWithNextNode getGroupIdNode) {
+        StructuredGraph graph = getGroupIdNode.graph();
+        GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
+    }
+
+    private void lowerFloatConvertNode(FloatConvertNode floatConvert) {
+        final StructuredGraph graph = floatConvert.graph();
+        final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(NodeView.DEFAULT), floatConvert.getFloatConvert(), floatConvert.getValue()));
+        floatConvert.replaceAtUsages(asFloat);
+        floatConvert.safeDelete();
     }
 
     private void lowerInvoke(Invoke invoke, LoweringTool tool, StructuredGraph graph) {
