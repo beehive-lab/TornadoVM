@@ -32,6 +32,11 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class TimeProfiler implements TornadoProfiler {
 
+    /**
+     * Use this dummy field because {@link #addValueToMetric} needs a task name. However, sync operations operate on
+     * task schedules, not on tasks.
+     * TODO remove this field when the {@link TimeProfiler} is refactored. Related to issue #94.
+     */
     public static String NO_TASK_NAME = "noTask";
 
     private HashMap<ProfilerType, Long> profilerTime;
