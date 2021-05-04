@@ -121,6 +121,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
+// <FIXME> Clean-up this class
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private LIRKind resolveStamp(Stamp stamp) {
