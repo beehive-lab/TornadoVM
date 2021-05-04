@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_BASE_OFFSET;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -14,6 +13,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 
 public class SPIRVGenTool {
@@ -25,8 +25,9 @@ public class SPIRVGenTool {
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int index) {
-        trace("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
+        SPIRVLogger.trace("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
+        SPIRVLogger.trace("LIRKIND? %s", lirKind);
         SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
 
         SPIRVTargetDescription target = (SPIRVTargetDescription) gen.target();

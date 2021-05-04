@@ -5,7 +5,7 @@ public class SPIRVLogger {
     // https://apps.timwhitlock.info/emoji/tables/unicode
 
     public static void trace(final String pattern, final Object... args) {
-        System.out.printf("\uD83D\uDC49 " + pattern, args);
+        System.out.printf("\uD83D\uDC49 " + pattern + "\n", args);
     }
 
 }

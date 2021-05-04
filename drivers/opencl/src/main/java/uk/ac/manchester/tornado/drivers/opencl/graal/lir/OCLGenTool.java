@@ -76,7 +76,6 @@ public class OCLGenTool {
         // variable via this method is not supported (and potentially a bug): "
         // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
-
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
 
         OCLTargetDescription oclTarget = gen.target();

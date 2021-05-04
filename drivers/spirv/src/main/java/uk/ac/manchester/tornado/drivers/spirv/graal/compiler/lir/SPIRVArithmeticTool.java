@@ -180,7 +180,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-
+        System.out.println("EMIT STORE FOR SPIR-V");
     }
 
     @Override
