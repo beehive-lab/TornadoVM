@@ -1,20 +1,21 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.code.CallingConvention;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
-import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+
+import jdk.vm.ci.code.CallingConvention;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 public class SPIRVIRGenerationResult extends LIRGenerationResult {
 
@@ -29,7 +30,6 @@ public class SPIRVIRGenerationResult extends LIRGenerationResult {
     public void insertVariable(Variable variable) {
         guarantee(variable.getPlatformKind() instanceof SPIRVKind, "invalid variable kind: %s", variable.getValueKind());
         SPIRVKind kind = (SPIRVKind) variable.getPlatformKind();
-
         variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(variable);
     }
 

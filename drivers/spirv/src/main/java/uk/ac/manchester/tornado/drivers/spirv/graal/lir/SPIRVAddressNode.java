@@ -57,7 +57,7 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
         Value baseValue = genValue(generator, base);
         Value indexValue = genValue(generator, index);
         if (index == null) {
-            throw new RuntimeException("Operation not supported");
+            throw new RuntimeException("Operation not supported -- INDEX IS NULL");
             // generator.setResult(this, new SPIRVUnary.MemoryAccess(memoryRegion,
             // baseValue, false));
         }

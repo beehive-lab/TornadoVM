@@ -149,9 +149,9 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable newVariable(ValueKind<?> lirKind) {
-        PlatformKind pk = lirKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = lirKind;
+    public Variable newVariable(ValueKind<?> valueKind) {
+        PlatformKind pk = valueKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = valueKind;
         OCLKind oclKind = OCLKind.ILLEGAL;
         if (pk instanceof OCLKind) {
             oclKind = (OCLKind) pk;

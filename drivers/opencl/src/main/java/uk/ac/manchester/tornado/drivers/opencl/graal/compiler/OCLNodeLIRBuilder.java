@@ -557,6 +557,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     protected void emitNode(final ValueNode node) {
         trace("emitNode: %s", node);
+        System.out.printf("emitNode: %s\n", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {

@@ -1,10 +1,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 
 /**
  * Factory class for creating moves
@@ -13,7 +15,7 @@ public class SPIRVMoveFactory implements LIRGeneratorTool.MoveFactory {
 
     @Override
     public boolean canInlineConstant(Constant constant) {
-        return false;
+        return true;
     }
 
     @Override
@@ -23,7 +25,7 @@ public class SPIRVMoveFactory implements LIRGeneratorTool.MoveFactory {
 
     @Override
     public LIRInstruction createMove(AllocatableValue result, Value input) {
-        throw new RuntimeException("PENDING Unimplemented");
+        return new SPIRVLIRStmt.AssignStmt(result, input);
     }
 
     @Override

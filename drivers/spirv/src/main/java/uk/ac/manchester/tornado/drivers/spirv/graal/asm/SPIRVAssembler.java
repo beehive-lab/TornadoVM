@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -106,6 +107,31 @@ public final class SPIRVAssembler extends Assembler {
                 emitOpcode(asm);
             }
         }
+    }
+
+    public static class SPIRVUnaryTemplate extends SPIRVUnaryOp {
+        // @formatter:off
+
+        public static final SPIRVUnaryTemplate LOAD_PARAM_INT = new SPIRVUnaryTemplate("param", "(int) " + FRAME_REF_NAME + "[%s]");
+        public static final SPIRVUnaryTemplate LOAD_PARAM_LONG = new SPIRVUnaryTemplate("param", "(long) " + FRAME_REF_NAME + "[%s]");
+        
+        // @formatter:on
+        private final String template;
+
+        protected SPIRVUnaryTemplate(String opcode, String template) {
+            super(opcode);
+            this.template = template;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, Value x) {
+
+        }
+
+        public String getTemplate() {
+            return template;
+        }
+
     }
 
     public void emit(String str) {

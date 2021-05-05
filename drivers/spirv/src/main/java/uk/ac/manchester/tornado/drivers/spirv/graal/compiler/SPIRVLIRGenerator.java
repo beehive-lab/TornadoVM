@@ -62,17 +62,17 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public <K extends ValueKind<K>> K toRegisterKind(K kind) {
-        return null;
+        return kind;
     }
 
     @Override
     public void emitNullCheck(Value address, LIRFrameState state) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     @Override
     public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
-        return null;
+        throw new RuntimeException("Unimplemented");
     }
 
     @Override
@@ -240,10 +240,9 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable newVariable(ValueKind<?> lirKind) {
-        SPIRVLogger.trace("[SPIR-V] Inserting a new variable for LirKind: %s", lirKind);
-        PlatformKind pk = lirKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = lirKind;
+    public Variable newVariable(ValueKind<?> valueKind) {
+        PlatformKind pk = valueKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = valueKind;
         SPIRVKind spirvKind = SPIRVKind.ILLEGAL;
         if (pk instanceof SPIRVKind) {
             spirvKind = (SPIRVKind) pk;
@@ -252,14 +251,14 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         }
 
         // Create a new variable
-        final Variable var = super.newVariable(actualLIRKind);
-        SPIRVLogger.trace("[SPIR-V] newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        final Variable variable = super.newVariable(actualLIRKind);
+        SPIRVLogger.trace("[SPIR-V] newVariable: %s <- %s (%s)", variable.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         // Format of the variable "<type>_<number>"
-        var.setName(spirvKind.getTypePrefix() + "_" + var.index);
+        variable.setName(spirvKind.getTypePrefix() + "_" + variable.index);
         SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
-        res.insertVariable(var);
-        return var;
+        res.insertVariable(variable);
+        return variable;
     }
 
     @Override

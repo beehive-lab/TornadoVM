@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 import java.util.Collection;
@@ -61,6 +62,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
  * the SPIR-V backend.
+ * 
+ * SPIR-V Visitor from HIR to LIR
+ * 
  */
 public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -94,33 +98,43 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
         // TODO: Analyze first how is a direct call in SPIRV
         // append(new SPIRVLIRStmt.ExprStmt);
+        throw new RuntimeException("Not supported yet");
     }
 
     @Override
     protected void emitIndirectCall(IndirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        SPIRVLogger.trace("emitIndirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
+        throw new RuntimeException("Not supported");
     }
 
     @Override
     public void visitSafepointNode(SafepointNode i) {
-        SPIRVLogger.trace("visitSafepointNode: SafepointNode=%s", i);
+        throw new RuntimeException("Not supported");
     }
 
     @Override
     public void visitBreakpointNode(BreakpointNode i) {
-        SPIRVLogger.trace("visitBreakpointNode: BreakpointNode=%s", i);
-
+        throw new RuntimeException("Not supported");
     }
 
     @Override
     public void emitInvoke(Invoke x) {
-        SPIRVLogger.trace("emitInvoke: Invoke=%s", x);
+        throw new RuntimeException("Not supported");
     }
 
     @Override
     public Value[] visitInvokeArguments(CallingConvention invokeCc, Collection<ValueNode> arguments) {
-        SPIRVLogger.trace("visitInvokeArguments: Invoke=%s", invokeCc);
-        throw new RuntimeException("Not supported");
+        final Value[] values = new Value[arguments.size()];
+        int j = 0;
+        for (ValueNode arg : arguments) {
+            if (arg != null) {
+                Value operand = operand(arg);
+                values[j] = operand;
+                j++;
+            } else {
+                throw shouldNotReachHere("I thought we no longer have null entries for two-slot types...");
+            }
+        }
+        return values;
     }
 
     private SPIRVLIRGenerator getGen() {
@@ -133,7 +147,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getSpirvGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
-            throw new RuntimeException("Unimplemented");
+            throw new RuntimeException("Unimplemented - Pending prologue for non main kernels");
         }
     }
 
@@ -154,7 +168,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             return;
         }
 
-        System.out.println("MISSING  PLATFORM PATH ");
+        System.out.println(">>>>>>>>>>>>>>>>>> MISSING PLATFORM PATCH FOR RETURN STATEMENT WITH VALUE");
     }
 
     public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
@@ -275,23 +289,23 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitIf(final IfNode x) {
-        SPIRVLogger.trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
+        throw new RuntimeException("Not supported");
 
     }
 
     @Override
     public void visitLoopEnd(final LoopEndNode loopEnd) {
-        SPIRVLogger.trace("visiting LoopEndNode: %s", loopEnd);
+        throw new RuntimeException("Not supported");
     }
 
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
-        SPIRVLogger.trace("visitMerge: ", mergeNode);
+        throw new RuntimeException("Not supported");
     }
 
     @Override
     public void emitSwitch(SwitchNode x) {
-        SPIRVLogger.trace("emitSwitch: ", x);
+        throw new RuntimeException("Not supported");
     }
 
     @Override
