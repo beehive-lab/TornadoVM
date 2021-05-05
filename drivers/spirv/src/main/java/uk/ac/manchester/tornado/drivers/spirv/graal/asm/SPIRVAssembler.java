@@ -14,19 +14,29 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvproto.lib.SPIRVFunction;
+import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
     public SPIRVModule module;
-    public SPIRVFunction functionScope;
+    public SPIRVInstScope functionScope;
+    public SPIRVId mainFunctionID;
+    public SPIRVId voidType;
+    public SPIRVId functionPre;
 
     // Table that stores the Block ID with its Label Reference ID
     public Map<Integer, SPIRVId> labelTable;
@@ -48,6 +58,24 @@ public final class SPIRVAssembler extends Assembler {
                 )));
         labelTable.put(b.getId(), label);
         functionScope.add(new SPIRVOpLabel(label));
+    }
+
+    public void emitOpMainFunction(SPIRVId... operands) {
+        functionPre = module.getNextId();
+        module.add(new SPIRVOpTypeFunction(functionPre, voidType, new SPIRVMultipleOperands<>(operands)));
+    }
+
+    public void emitEntryPointMainKernel(String kernelName) {
+        mainFunctionID = module.getNextId();
+        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), new SPIRVMultipleOperands<>()));
+    }
+
+    public void emitOpFunction() {
+        functionScope = module.add(new SPIRVOpFunction(voidType, mainFunctionID, SPIRVFunctionControl.DontInline(), functionPre));
+    }
+
+    public void closeFunction() {
+        functionScope.add(new SPIRVOpFunctionEnd());
     }
 
     /**

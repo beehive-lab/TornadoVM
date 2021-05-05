@@ -298,7 +298,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         emitPrologue(crb, asm, method, lir, asm.module);
         // crb.emit(lir);
-        // emitEpilogue(asm);
+        emitEpilogue(asm);
         // dummySPIRVModuleTest(module);
 
         emitSPIRVCodeIntoASMModule(asm, asm.module);
@@ -530,5 +530,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
+        asm.closeFunction();
     }
 }
