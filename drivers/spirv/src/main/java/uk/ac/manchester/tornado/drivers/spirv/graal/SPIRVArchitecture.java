@@ -1,18 +1,18 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+
+import java.nio.ByteOrder;
+
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
-
-import java.nio.ByteOrder;
-
-import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
 
 /**
  * It represents a SPIRV Architecture.
@@ -118,7 +118,7 @@ public class SPIRVArchitecture extends Architecture {
             case Illegal:
                 return SPIRVKind.ILLEGAL;
             default:
-                throw new RuntimeException("Should not reach here");
+                throw new RuntimeException("Java Type for SPIR-V not supported: " + javaKind.name());
 
         }
     }

@@ -11,7 +11,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 /**
- * SPIRV Types:
+ * SPIR-V Types:
  * https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#_types
  * 
  * Compatible with Level Zero:
@@ -25,14 +25,16 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public enum SPIRVKind implements PlatformKind {
 
     // @formatter:off
+    
+    // Scalar Types
     OP_TYPE_BOOL(1, java.lang.Boolean.TYPE),
-    OP_TYPE_INT_8(1, Byte.TYPE),
-    OP_TYPE_INT_16(2, Short.TYPE),
-    OP_TYPE_INT_32(4, java.lang.Integer.TYPE),
-    OP_TYPE_INT_64(8, java.lang.Long.TYPE),
-    OP_TYPE_FLOAT_16(2, java.lang.Float.TYPE),  // Half float
-    OP_TYPE_FLOAT_32(4, java.lang.Float.TYPE),  
-    OP_TYPE_FLOAT_64(8, java.lang.Double.TYPE),  
+    OP_TYPE_INT_8(1, java.lang.Byte.TYPE),          // Byte, Char
+    OP_TYPE_INT_16(2, java.lang.Short.TYPE),        // Short 
+    OP_TYPE_INT_32(4, java.lang.Integer.TYPE),      // Integer 32 bits
+    OP_TYPE_INT_64(8, java.lang.Long.TYPE),         // Long 
+    OP_TYPE_FLOAT_16(2, java.lang.Float.TYPE),      // Half float
+    OP_TYPE_FLOAT_32(4, java.lang.Float.TYPE),      // Float 32 (FP32)
+    OP_TYPE_FLOAT_64(8, java.lang.Double.TYPE),     // Double (FP64)
     
     // Vector types
     
@@ -86,10 +88,10 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTOR8_FLOAT_32(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, OP_TYPE_FLOAT_64),
 
-    OP_TYPE_VOID(0, Void.TYPE),
+    OP_TYPE_VOID(0, java.lang.Void.TYPE),
     
     // A pointer is represented as a long value (8 bytes)
-    OP_TYPE_POINTER(8, Long.TYPE),
+    OP_TYPE_POINTER(8, java.lang.Long.TYPE),
     
     ILLEGAL(0, null),
     
@@ -123,12 +125,12 @@ public enum SPIRVKind implements PlatformKind {
         this(size, javaClass, null);
     }
 
-    SPIRVKind(int size, Class<?> javaClass, SPIRVKind kind) {
+    SPIRVKind(int sizeInBytesPerElement, Class<?> javaClass, SPIRVKind kind) {
         this.kind = this;
         this.javaClass = javaClass;
         this.elementKind = kind;
-        this.size = (elementKind == null) ? size : elementKind.size * size;
-        this.vectorLength = (elementKind == null) ? 1 : size;
+        this.size = (elementKind == null) ? sizeInBytesPerElement : elementKind.size * sizeInBytesPerElement;
+        this.vectorLength = (elementKind == null) ? 1 : sizeInBytesPerElement;
     }
 
     @Override

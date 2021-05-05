@@ -58,7 +58,7 @@ public class SPIRVHotSpotBackendFactory {
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
         // We specify an architecture of 32 bits
-        SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_FLOAT_32, device.getByteOrder());
+        SPIRVArchitecture architecture = new SPIRVArchitecture(SPIRVKind.OP_TYPE_INT_64, device.getByteOrder());
         SPIRVTargetDescription targetDescription = new SPIRVTargetDescription(architecture, false, SPIRV_STACK_ALIGNMENT, SPIRV_IMPLICIT_NULL_CHECK_LIMIT, SPIRV_INLINE_OBJECT,
                 device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
 

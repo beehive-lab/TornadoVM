@@ -1,8 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,9 @@ import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
+import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
@@ -40,8 +42,10 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -53,7 +57,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
@@ -85,7 +88,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        TornadoCodeGenerator.trace("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
+        SPIRVLogger.trace("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
         if (isLegal(result) & ((SPIRVKind) result.getPlatformKind()).isVector()) {
             throw new RuntimeException("[SPIRV] CAll with Vector types not supported yet");
         }
@@ -95,17 +98,29 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitIndirectCall(IndirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-
+        SPIRVLogger.trace("emitIndirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
     }
 
     @Override
     public void visitSafepointNode(SafepointNode i) {
-
+        SPIRVLogger.trace("visitSafepointNode: SafepointNode=%s", i);
     }
 
     @Override
     public void visitBreakpointNode(BreakpointNode i) {
+        SPIRVLogger.trace("visitBreakpointNode: BreakpointNode=%s", i);
 
+    }
+
+    @Override
+    public void emitInvoke(Invoke x) {
+        SPIRVLogger.trace("emitInvoke: Invoke=%s", x);
+    }
+
+    @Override
+    public Value[] visitInvokeArguments(CallingConvention invokeCc, Collection<ValueNode> arguments) {
+        SPIRVLogger.trace("visitInvokeArguments: Invoke=%s", invokeCc);
+        throw new RuntimeException("Not supported");
     }
 
     private SPIRVLIRGenerator getGen() {
@@ -114,7 +129,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     protected void emitPrologue(final StructuredGraph graph, boolean isKernel) {
         if (isKernel) {
-            for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+            for (ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 setResult(param, getGen().getSpirvGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
@@ -123,7 +138,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void doRoot(ValueNode instr) {
-        getDebugContext().log("Visiting %s", instr);
+        SPIRVLogger.trace("Visiting %s", instr);
         emitNode(instr);
         if (hasOperand(instr)) {
             getDebugContext().log("Operand for %s = %s", instr, operand(instr));
@@ -143,7 +158,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
-        SPIRVLogger.trace("%s - block %s", graph.method().getName(), block);
+        SPIRVLogger.trace("SPIR-V LIR Builder %s - block %s", graph.method().getName(), block);
         OptionValues options = graph.getOptions();
         try (BlockScope blockScope = gen.getBlockScope(block)) {
 
@@ -218,7 +233,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitEndNode(final AbstractEndNode end) {
-        trace("visitEnd: %s", end);
         SPIRVLogger.trace("µInst visitEnd: " + end);
 
         if (end instanceof LoopEndNode) {
@@ -257,6 +271,27 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
         return gen.getLIRKind(stamp);
+    }
+
+    @Override
+    public void emitIf(final IfNode x) {
+        SPIRVLogger.trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
+
+    }
+
+    @Override
+    public void visitLoopEnd(final LoopEndNode loopEnd) {
+        SPIRVLogger.trace("visiting LoopEndNode: %s", loopEnd);
+    }
+
+    @Override
+    public void visitMerge(final AbstractMergeNode mergeNode) {
+        SPIRVLogger.trace("visitMerge: ", mergeNode);
+    }
+
+    @Override
+    public void emitSwitch(SwitchNode x) {
+        SPIRVLogger.trace("emitSwitch: ", x);
     }
 
     @Override
