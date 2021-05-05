@@ -421,7 +421,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), task), taskMeta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), task));
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -446,7 +446,7 @@ public class PTXCompiler {
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
+            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph).withCodeOwner(currentMethod).withProviders(providers)
@@ -507,7 +507,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(resolvedMethod.getName(), meta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(resolvedMethod.getName());
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         final PTXSuitesProvider suitesProvider = (PTXSuitesProvider) providers.getSuitesProvider();
@@ -522,7 +522,7 @@ public class PTXCompiler {
 
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
-            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), meta);
+            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName());
             StructuredGraph.Builder builder1 = new StructuredGraph.Builder(TornadoCoreRuntime.getOptions(), getDebugContext(), StructuredGraph.AllowAssumptions.YES);
             builder1.method(resolvedMethod);
             builder1.compilationId(id);

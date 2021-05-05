@@ -107,11 +107,11 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result, String resolvedMethodName) {
-        return codeCache.installSource(result.getName(), result.getTargetCode(), result.getTaskMeta(), resolvedMethodName);
+        return codeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName);
     }
 
-    public TornadoInstalledCode installCode(String name, byte[] code, TaskMetaData taskMeta, String resolvedMethodName) {
-        return codeCache.installSource(name, code, taskMeta, resolvedMethodName);
+    public TornadoInstalledCode installCode(String name, byte[] code, String resolvedMethodName) {
+        return codeCache.installSource(name, code, resolvedMethodName);
     }
 
     public TornadoInstalledCode getInstalledCode(String name) {
@@ -194,11 +194,11 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(PTXModule module, CallStack stack, long batchThreads) {
+    public int enqueueKernelLaunch(PTXModule module, CallStack stack, TaskMetaData taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
-        if (module.metaData.isWorkerGridAvailable()) {
-            WorkerGrid grid = module.metaData.getWorkerGrid(module.metaData.getId());
+        if (taskMeta.isWorkerGridAvailable()) {
+            WorkerGrid grid = taskMeta.getWorkerGrid(taskMeta.getId());
             int[] global = Arrays.stream(grid.getGlobalWork()).mapToInt(l -> (int) l).toArray();
 
             if (grid.getLocalWork() != null) {
@@ -214,13 +214,13 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
                 System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
             }
             gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
-        } else if (module.metaData.isParallel()) {
-            scheduler.calculateGlobalWork(module.metaData, batchThreads);
-            blockDimension = scheduler.calculateBlockDimension(module);
-            gridDimension = scheduler.calculateGridDimension(module, blockDimension);
+        } else if (taskMeta.isParallel()) {
+            scheduler.calculateGlobalWork(taskMeta, batchThreads);
+            blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
+            gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack, module.metaData), gridDimension, blockDimension);
-        updateProfiler(kernelLaunchEvent, module.metaData);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXStackOnDevice((PTXCallStack) stack, taskMeta), gridDimension, blockDimension);
+        updateProfiler(kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 

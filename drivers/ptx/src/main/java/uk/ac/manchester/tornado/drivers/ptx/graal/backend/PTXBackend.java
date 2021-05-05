@@ -221,7 +221,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         emitPrintfPrototype(crb);
         if (crb.isKernel()) {
             emitKernelFunction(asm, crb.compilationResult.getName());
-            emitParamVariableDefs(asm, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
         } else {
             emitFunctionHeader(asm, method, lirGenRes);
@@ -289,18 +288,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     private void emitKernelFunction(PTXAssembler asm, String methodName) {
         asm.emitLine("%s %s %s(%s) {", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, methodName, architecture.getABI());
-    }
-
-    private void emitParamVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
-        Map<PTXKind, Set<Variable>> kindToVariable = lirGenRes.getParamTable();
-
-        for (PTXKind type : kindToVariable.keySet()) {
-            Set<Variable> vars = kindToVariable.get(type);
-            if (vars.size() != 0) {
-                asm.emitLine("\t.param .%s %sParam<%d>;", type, type.getRegisterTypeString(), vars.size() + 1);
-            }
-        }
-
     }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {

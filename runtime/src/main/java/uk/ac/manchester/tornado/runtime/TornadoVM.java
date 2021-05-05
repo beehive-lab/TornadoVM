@@ -441,7 +441,7 @@ public class TornadoVM extends TornadoLogger {
             task.setGridScheduler(true);
         }
 
-        if (installedCodes[taskIndex] == null) {
+        if (shouldCompile(installedCodes[taskIndex])) {
             task.mapTo(device);
             try {
                 task.attachProfiler(timeProfiler);
@@ -464,13 +464,17 @@ public class TornadoVM extends TornadoLogger {
         return new ExecutionInfo(stack, waitList);
     }
 
-    private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoAcceleratorDevice device, SchedulableTask task) {
-        return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
+    private boolean shouldCompile(TornadoInstalledCode installedCode) {
+        return installedCode == null || !installedCode.isValid();
     }
 
     private void setObjectState(DeviceObjectState objectState, boolean flag) {
         objectState.setContents(flag);
         objectState.setModified(flag);
+    }
+
+    private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoAcceleratorDevice device, SchedulableTask task) {
+        return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
     }
 
     private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,

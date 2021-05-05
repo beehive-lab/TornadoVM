@@ -40,13 +40,13 @@ public class PTXCodeCache {
         cache = new ConcurrentHashMap<>();
     }
 
-    public PTXInstalledCode installSource(String name, byte[] targetCode, TaskMetaData taskMeta, String resolvedMethodName) {
+    public PTXInstalledCode installSource(String name, byte[] targetCode, String resolvedMethodName) {
         String cacheKey = name;
 
         if (!cache.containsKey(cacheKey)) {
             RuntimeUtilities.maybePrintSource(targetCode);
 
-            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name, taskMeta);
+            PTXModule module = new PTXModule(resolvedMethodName, targetCode, name);
 
             if (module.isPTXJITSuccess()) {
                 PTXInstalledCode code = new PTXInstalledCode(name, module, deviceContext);
@@ -69,6 +69,9 @@ public class PTXCodeCache {
     }
 
     public void reset() {
+        for (PTXInstalledCode code : cache.values()) {
+            code.invalidate();
+        }
         cache.clear();
     }
 }

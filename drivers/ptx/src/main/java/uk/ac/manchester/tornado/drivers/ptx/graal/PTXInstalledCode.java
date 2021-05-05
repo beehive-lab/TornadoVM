@@ -32,13 +32,15 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXInstalledCode extends InstalledCode implements TornadoInstalledCode {
-    private PTXModule module;
-    private PTXDeviceContext deviceContext;
+    private final PTXModule module;
+    private final PTXDeviceContext deviceContext;
+    private boolean valid;
 
     public PTXInstalledCode(String name, PTXModule module, PTXDeviceContext deviceContext) {
         super(name);
         this.module = module;
         this.deviceContext = deviceContext;
+        valid = false;
     }
 
     @Override
@@ -49,10 +51,23 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
 
     @Override
     public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        return deviceContext.enqueueKernelLaunch(module, stack, batchThreads);
+        return deviceContext.enqueueKernelLaunch(module, stack, meta, batchThreads);
     }
 
     public String getGeneratedSourceCode() {
         return new String(module.getSource());
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
+    }
+
+    @Override
+    public void invalidate() {
+        if (valid) {
+            module.unload();
+            valid = false;
+        }
     }
 }
