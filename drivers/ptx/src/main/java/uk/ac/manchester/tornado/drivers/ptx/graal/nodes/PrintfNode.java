@@ -78,8 +78,6 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
         PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
 
         Value stack = gen.operand(argumentStack);
-        Variable formatParam = genTool.newParamVariable(LIRKind.value(PTXKind.B64));
-        Variable stackParam = genTool.newParamVariable(LIRKind.value(PTXKind.B64));
 
         Value[] globalIDs = new Value[3];
         globalIDs[0] = gen.operand(xDim);
@@ -95,14 +93,13 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
         genTool.append(new PTXLIRStmt.StoreStmt(
                 new PTXUnary.MemoryAccess(PTXArchitecture.localSpace, stack, new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt(2 * PTXKind.S32.getSizeInBytes()))), globalIDs[2]));
 
-        Variable globalAddr = genTool.newVariable(LIRKind.value(PTXKind.B64));
-        genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddr, format, PTXMemorySpace.GLOBAL));
-        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, formatParam, null), globalAddr));
+        Variable globalAddrFormat = genTool.newVariable(LIRKind.value(PTXKind.B64));
+        Variable globalAddrStack = genTool.newVariable(LIRKind.value(PTXKind.B64));
+        genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddrFormat, format, PTXMemorySpace.GLOBAL));
 
-        genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddr, stack, PTXMemorySpace.LOCAL));
-        genTool.append(new PTXLIRStmt.StoreStmt(new PTXUnary.MemoryAccess(PTXArchitecture.paramSpace, stackParam, null), globalAddr));
+        genTool.append(new PTXLIRStmt.ConvertAddressStmt(globalAddrStack, stack, PTXMemorySpace.LOCAL));
 
-        genTool.append(new PTXLIRStmt.ExprStmt(new PTXPrintf(formatParam, stackParam)));
+        genTool.append(new PTXLIRStmt.ExprStmt(new PTXPrintf(globalAddrFormat, globalAddrStack)));
     }
 
 }
