@@ -16,7 +16,6 @@ public class SPIRVLIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getIntegerKind(int bits) {
-        System.out.println("INTEGER KIND TOOL " + bits);
         if (bits <= 8) {
             return LIRKind.value(SPIRVKind.OP_TYPE_INT_8);
         } else if (bits <= 16) {
@@ -32,7 +31,6 @@ public class SPIRVLIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getFloatingKind(int bits) {
-        System.out.println("FLOAT KIND TOOL " + bits);
         switch (bits) {
             case 32:
                 return LIRKind.value(SPIRVKind.OP_TYPE_FLOAT_32);

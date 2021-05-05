@@ -81,6 +81,20 @@ public class PTXGenTool {
         return result;
     }
 
+    /**
+     * Generate code for an address access from the stack frame.
+     * 
+     * PTX Code equivalent:
+     * 
+     * <code>
+     *     ldu.global.u64	rud1, [rud0+24];
+     * </code>
+     * 
+     * @param dst
+     *            result
+     * @param index
+     *            index from the stack frame to load.
+     */
     private void emitParameterLoad(AllocatableValue dst, int index) {
         ConstantValue stackIndex = new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt((index + STACK_BASE_OFFSET) * PTXKind.U64.getSizeInBytes()));
 

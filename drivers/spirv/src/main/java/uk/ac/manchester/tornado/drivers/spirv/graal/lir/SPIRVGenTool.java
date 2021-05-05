@@ -18,21 +18,20 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 
 public class SPIRVGenTool {
 
-    protected SPIRVLIRGenerator gen;
+    protected SPIRVLIRGenerator generator;
 
     public SPIRVGenTool(SPIRVLIRGenerator gen) {
-        this.gen = gen;
+        this.generator = gen;
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int index) {
         SPIRVLogger.trace("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
-        LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
-        SPIRVLogger.trace("LIRKIND? %s", lirKind);
+        LIRKind lirKind = generator.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
         SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
 
-        SPIRVTargetDescription target = (SPIRVTargetDescription) gen.target();
+        SPIRVTargetDescription target = (SPIRVTargetDescription) generator.target();
 
-        Variable result = (spirvKind.isVector()) ? gen.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : gen.newVariable(lirKind);
+        Variable result = (spirvKind.isVector()) ? generator.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : generator.newVariable(lirKind);
         emitParameterLoad(result, index);
 
         if (spirvKind.isVector()) {
@@ -43,17 +42,21 @@ public class SPIRVGenTool {
     }
 
     /**
-     * This represents a load from a parameter.
+     * This represents a load from a parameter from the stack-frame.
+     * 
+     * The equivalent in OpenCL is as follows:
+     * 
+     * <code>
+     *     ulong_0 = (ulong) _frame[STACK_INDEX];
+     * </code>
      *
-     * This an example of the target code to generate:
+     * This an example of the target code to generate in SPIR-V:
      *
      * <code>
-     *          %36 = OpBitcast %_ptr_CrossWorkgroup_ulong %ptridx   ;(while ptridx is a load of the heap address).
-     *                OpStore %_frame %36 Aligned 8
-     *          %37 = OpLoad %_ptr_CrossWorkgroup_ulong %_frame Aligned 8
-     *     %ptridx1 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_ulong %37 %ulong_3
-     *          %40 = OpLoad %ulong %ptridx1 Aligned 8
-     *                OpStore %ul_0 %40 Aligned 8   
+     *          %31 = OpLoad %_ptr_Function_ulong_0 %frame Aligned 8                ; Load Frame in private mem
+     *          %32 = OpInBoundsPtrAccessChain %_ptr_Function_ulong_0 %31 %ulong_3  ; Access position 3 of frame
+     *          %33 = OpLoad %ulong %32 Aligned 8                                   ; Load address of position 3
+     *          OpStore %ul0 %33 Aligned 8                                          ; Store in ul0 
      * </code>
      *
      * @param resultValue
@@ -63,9 +66,11 @@ public class SPIRVGenTool {
      *
      */
     private void emitParameterLoad(AllocatableValue resultValue, int index) {
+        SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
+        LIRKind lirKind = LIRKind.value(spirvKind);
         ConstantValue stackIndex = new ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_32), JavaConstant.forInt((index + STACK_BASE_OFFSET) * SPIRVKind.OP_TYPE_INT_64.getSizeInBytes()));
 
-        gen.append(null);
+        generator.append(null);
     }
 
 }

@@ -27,20 +27,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
-
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ParameterNode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
@@ -54,6 +50,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadSt
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLGenTool {
 
@@ -76,7 +75,6 @@ public class OCLGenTool {
         // variable via this method is not supported (and potentially a bug): "
         // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
-        System.out.printf(">>>>>>>>>>>>>>> LIRKIND? %s\n", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
         OCLTargetDescription oclTarget = gen.target();
 

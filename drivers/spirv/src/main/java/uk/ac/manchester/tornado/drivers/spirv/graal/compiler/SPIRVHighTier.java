@@ -26,9 +26,9 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoThreadScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoParallelScheduler;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoTaskSpecialization;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoThreadScheduler;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
@@ -67,7 +67,7 @@ public class SPIRVHighTier extends TornadoHighTier {
             }
         }
 
-        appendPhase(new TornadoTaskSpecialisation(canonicalizer));
+        appendPhase(new TornadoTaskSpecialization(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 

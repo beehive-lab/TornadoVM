@@ -30,11 +30,17 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
         // This should generate the following SPIR-V instruction sequence:
 
         /**
+         * Equivalent OpenCL Code:
+         * 
+         * <code>
+         *     int idx = get_global_id(dimensionIndex);
+         * </code>
+         * 
          * <code>
          *          %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
          *        %call = OpCompositeExtract %ulong %37 0
          *        %conv = OpUConvert %uint %call
-         *                OpStore %i_1 %conv Aligned 4
+         *                OpStore %idx %conv Aligned 4
          * </code>
          */
         // We should get the function SPIRVFunctionID I am in from the generator
