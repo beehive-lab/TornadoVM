@@ -69,6 +69,9 @@ public class PTXCodeCache {
     }
 
     public void reset() {
+        for (PTXInstalledCode code : cache.values()) {
+            code.invalidate();
+        }
         cache.clear();
     }
 }

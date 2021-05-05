@@ -69,6 +69,22 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
+ * Method:    cuModuleUnload
+ * Signature: ([B)J
+ */
+JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXModule_cuModuleUnload
+  (JNIEnv *env, jclass clazz, jbyteArray module_wrapper) {
+    CUresult result;
+    CUmodule module;
+    array_to_module(env, &module, module_wrapper);
+
+    result = cuModuleUnload(module);
+    LOG_PTX_AND_VALIDATE("cuModuleUnload", result);
+    return (jlong) result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXModule
  * Method:    cuOccupancyMaxPotentialBlockSize
  * Signature: ([BLjava/lang/String;)I
  */

@@ -40,6 +40,8 @@ public class PTXModule {
 
     private native static byte[] cuModuleLoadData(byte[] source);
 
+    private native static long cuModuleUnload(byte[] module);
+
     private native static int cuOccupancyMaxPotentialBlockSize(byte[] module, String funcName);
 
     public int getMaxThreadBlocks() {
@@ -55,5 +57,9 @@ public class PTXModule {
 
     public boolean isPTXJITSuccess() {
         return moduleWrapper.length != 0;
+    }
+
+    public void unload() {
+        cuModuleUnload(moduleWrapper);
     }
 }
