@@ -34,8 +34,8 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
-import uk.ac.manchester.tornado.unittests.common.TornadoOpenCLNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoPTXNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -162,14 +162,14 @@ public class TornadoHelper {
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoPTXNotSupported))) {
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMPTXNotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [PTX CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoOpenCLNotSupported))) {
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMOpenCLNotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [OPENCL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);

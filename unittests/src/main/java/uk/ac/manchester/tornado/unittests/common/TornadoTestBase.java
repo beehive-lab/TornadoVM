@@ -91,8 +91,8 @@ public abstract class TornadoTestBase {
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
         if (TornadoRuntime.getTornadoRuntime().getBackendType(driverIndex) == backend) {
             switch (backend) {
-                case PTX: throw new TornadoPTXNotSupported("Test not supported for the PTX backend");
-                case OpenCL: throw new TornadoOpenCLNotSupported("Test not supported for the OpenCL backend");
+                case PTX: throw new TornadoVMPTXNotSupported("Test not supported for the PTX backend");
+                case OpenCL: throw new TornadoVMOpenCLNotSupported("Test not supported for the OpenCL backend");
             }
         }
     }

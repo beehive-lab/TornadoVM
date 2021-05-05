@@ -18,13 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.common;
 
-public class TornadoPTXNotSupported extends RuntimeException {
+public class TornadoVMPTXNotSupported extends RuntimeException {
 
-    public TornadoPTXNotSupported(String message) {
+    public TornadoVMPTXNotSupported(String message) {
         super(message);
     }
 
-    public TornadoPTXNotSupported(String message, Throwable cause) {
+    public TornadoVMPTXNotSupported(String message, Throwable cause) {
         super(message, cause);
     }
 }
