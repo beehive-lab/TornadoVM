@@ -114,8 +114,8 @@ public class TornadoExecutionContext {
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
-        /* Use the same index the oldObj was assigned. The argument indexes are hardcoded in the TornadoVM bytecodes
-         *  during bytecode generation and must match the indexes in the {@link objectState} and {@link objects} arrays. */
+        /* Use the same index the oldObj was assigned. The argument indices are hardcoded in the TornadoVM bytecodes
+         *  during bytecode generation and must match the indices in the {@link objectState} and {@link objects} arrays. */
         int index;
         if (oldObj.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(oldObj.getClass())) {
             index = constants.indexOf(oldObj);
