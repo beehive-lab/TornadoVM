@@ -44,10 +44,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
+public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
     protected OCLIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x);
@@ -56,6 +56,11 @@ public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
 
     public static final NodeClass<OCLIntUnaryIntrinsicNode> TYPE = NodeClass.create(OCLIntUnaryIntrinsicNode.class);
     protected final Operation operation;
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
 
     public enum Operation {
         ABS, CLZ, POPCOUNT

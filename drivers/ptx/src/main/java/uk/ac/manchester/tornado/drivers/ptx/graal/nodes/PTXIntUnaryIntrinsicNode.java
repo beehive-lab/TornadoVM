@@ -21,9 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
@@ -37,18 +37,19 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkOCLIntIntrinsicNode;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
-public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkOCLIntIntrinsicNode {
+public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable, MarkIntIntrinsicNode {
 
     protected PTXIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x);
@@ -57,6 +58,11 @@ public class PTXIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
 
     public static final NodeClass<PTXIntUnaryIntrinsicNode> TYPE = NodeClass.create(PTXIntUnaryIntrinsicNode.class);
     protected final Operation operation;
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
 
     public enum Operation {
         ABS, POPCOUNT

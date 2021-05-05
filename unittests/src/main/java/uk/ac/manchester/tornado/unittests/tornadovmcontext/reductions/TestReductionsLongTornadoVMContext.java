@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -149,7 +150,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
     public static long computeMaxSequential(long[] input) {
         long acc = 0;
         for (long v : input) {
-            acc = Math.max(acc, v);
+            acc = TornadoMath.max(acc, v);
         }
         return acc;
     }
@@ -163,7 +164,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] = Math.max(a[id], a[id + stride]);
+                a[id] = TornadoMath.max(a[id], a[id + stride]);
             }
         }
         if (localIdx == 0) {
@@ -196,7 +197,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         // Final SUM
         long finalSum = 0;
         for (long v : reduce) {
-            finalSum = Math.max(finalSum, v);
+            finalSum = TornadoMath.max(finalSum, v);
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -213,7 +214,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                localA[localIdx] = Math.max(localA[localIdx], localA[localIdx + stride]);
+                localA[localIdx] = TornadoMath.max(localA[localIdx], localA[localIdx + stride]);
             }
         }
         if (localIdx == 0) {
@@ -246,7 +247,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         // Final SUM
         long finalSum = 0;
         for (long v : reduce) {
-            finalSum = Math.max(finalSum, v);
+            finalSum = TornadoMath.max(finalSum, v);
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -255,7 +256,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
     public static long computeMinSequential(long[] input) {
         long acc = 0;
         for (long v : input) {
-            acc = Math.min(acc, v);
+            acc = TornadoMath.min(acc, v);
         }
         return acc;
     }
@@ -269,7 +270,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] = Math.min(a[id], a[id + stride]);
+                a[id] = TornadoMath.min(a[id], a[id + stride]);
             }
         }
         if (localIdx == 0) {
@@ -302,7 +303,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         // Final SUM
         long finalSum = 0;
         for (long v : reduce) {
-            finalSum = Math.min(finalSum, v);
+            finalSum = TornadoMath.min(finalSum, v);
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -319,7 +320,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                localA[localIdx] = Math.min(localA[localIdx], localA[localIdx + stride]);
+                localA[localIdx] = TornadoMath.min(localA[localIdx], localA[localIdx + stride]);
             }
         }
         if (localIdx == 0) {
@@ -352,7 +353,7 @@ public class TestReductionsLongTornadoVMContext extends TornadoTestBase {
         // Final SUM
         long finalSum = 0;
         for (long v : reduce) {
-            finalSum = Math.min(finalSum, v);
+            finalSum = TornadoMath.min(finalSum, v);
         }
 
         assertEquals(sequential, finalSum, 0);

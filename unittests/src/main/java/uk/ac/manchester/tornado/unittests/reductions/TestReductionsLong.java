@@ -29,6 +29,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsLong extends TornadoTestBase {
@@ -100,7 +101,7 @@ public class TestReductionsLong extends TornadoTestBase {
 
     private static void maxReductionAnnotation(long[] input, @Reduce long[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i]);
+            result[0] = TornadoMath.max(result[0], input[i]);
         }
     }
 
@@ -133,7 +134,7 @@ public class TestReductionsLong extends TornadoTestBase {
 
     private static void minReductionAnnotation(long[] input, @Reduce long[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.min(result[0], input[i]);
+            result[0] = TornadoMath.min(result[0], input[i]);
         }
     }
 
@@ -163,7 +164,7 @@ public class TestReductionsLong extends TornadoTestBase {
     private static void maxReductionAnnotation2(long[] input, @Reduce long[] result) {
         result[0] = Long.MIN_VALUE + 1;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i] * 2);
+            result[0] = TornadoMath.max(result[0], input[i] * 2);
         }
     }
 
@@ -192,7 +193,7 @@ public class TestReductionsLong extends TornadoTestBase {
 
     private static void minReductionAnnotation2(long[] input, @Reduce long[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.min(result[0], input[i] * 50);
+            result[0] = TornadoMath.min(result[0], input[i] * 50);
         }
     }
 
