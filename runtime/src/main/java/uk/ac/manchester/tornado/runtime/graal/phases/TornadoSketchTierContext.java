@@ -35,7 +35,7 @@ public class TornadoSketchTierContext extends HighTierContext {
     private final ResolvedJavaMethod method;
 
     /**
-     * Contains the argument accesses for this method. The array gets populated in the {@link TornadoDataflowAnalysis} phase.
+     * Contains the argument accesses of the {@link #method}. The array gets populated in the {@link TornadoDataflowAnalysis} phase.
      * It includes accesses of arguments passed to non-inlined callees of the {@link #method}.
      */
     private final Access[] argumentAccess;

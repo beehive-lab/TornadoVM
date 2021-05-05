@@ -160,7 +160,7 @@ public class TornadoOptions {
 
     /**
      * It enables automatic discovery and parallelisation of loops.
-     * Please note that this option experimental and may cause issues if enabled.
+     * Please note that this option is experimental and may cause issues if enabled.
      */
     public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", "False");
 
