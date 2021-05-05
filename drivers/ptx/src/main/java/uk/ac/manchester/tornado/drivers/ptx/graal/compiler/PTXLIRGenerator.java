@@ -77,8 +77,8 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.ExprStmt
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXLIRGenerator extends LIRGenerator {
-    private PTXGenTool ptxGenTool;
-    private PTXBuiltinTool ptxBuiltinTool;
+    private final PTXGenTool ptxGenTool;
+    private final PTXBuiltinTool ptxBuiltinTool;
 
     private final Map<String, Variable> parameterAllocations;
 
@@ -407,26 +407,6 @@ public class PTXLIRGenerator extends LIRGenerator {
         } else {
             var.setName(kind.getRegisterTypeString() + indexForType);
         }
-
-        return var;
-    }
-
-    public Variable newParamVariable(ValueKind<?> lirKind) {
-        PlatformKind pk = lirKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = lirKind;
-        PTXKind kind = PTXKind.ILLEGAL;
-        if (pk instanceof PTXKind) {
-            kind = (PTXKind) pk;
-        } else {
-            shouldNotReachHere();
-        }
-
-        final Variable var = super.newVariable(actualLIRKind);
-        trace("newParamVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
-
-        PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
-        int indexForType = res.insertParameterAndGetIndex(var);
-        var.setName(kind.getRegisterTypeString() + "Param" + indexForType);
 
         return var;
     }
