@@ -2,28 +2,55 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.nodes.cfg.Block;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvproto.lib.SPIRVFunction;
+import uk.ac.manchester.spirvproto.lib.SPIRVModule;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
+    public SPIRVModule module;
+    public SPIRVFunction functionScope;
+
+    // Table that stores the Block ID with its Label Reference ID
+    public Map<Integer, SPIRVId> labelTable;
+
     public SPIRVAssembler(TargetDescription target) {
         super(target);
+        labelTable = new HashMap<>();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
-        throw new RuntimeException("[Not supported for SPIRV] FPGA ATTRIBUTES - Check with the OpenCL Backend");
+        throw new RuntimeException("[Not supported for SPIR-V] FPGA ATTRIBUTES - Check with the OpenCL Backend");
+    }
+
+    public void emitBlockLabel(Block b) {
+        SPIRVId label = module.getNextId();
+        module.add(new SPIRVOpName(label, //
+                new SPIRVLiteralString( //
+                        Integer.toString(b.getId()) //
+                )));
+        labelTable.put(b.getId(), label);
+        functionScope.add(new SPIRVOpLabel(label));
     }
 
     /**
-     * Base class for OpenCL opcodes.
+     * Base class for SPIR-V opcodes.
      */
     public static class SPIRVOp {
 

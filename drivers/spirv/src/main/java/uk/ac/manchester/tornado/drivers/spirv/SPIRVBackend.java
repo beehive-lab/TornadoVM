@@ -285,7 +285,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // SPIR-V Header
 
         // @formatter:off
-        SPIRVModule module = new SPIRVModule(
+        asm.module = new SPIRVModule(
                 new SPIRVHeader(
                         1,
                         2,
@@ -296,12 +296,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // TestLKBufferAccess.testAssignWithLookUpBuffer(module);
 
-        emitPrologue(crb, asm, method, lir, module);
+        emitPrologue(crb, asm, method, lir, asm.module);
         // crb.emit(lir);
         // emitEpilogue(asm);
         // dummySPIRVModuleTest(module);
 
-        emitSPIRVCodeIntoASMModule(asm, module);
+        emitSPIRVCodeIntoASMModule(asm, asm.module);
     }
 
     private void dummySPIRVModuleTest(SPIRVModule module) {

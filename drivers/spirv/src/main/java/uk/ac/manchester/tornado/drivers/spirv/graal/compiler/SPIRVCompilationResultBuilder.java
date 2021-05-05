@@ -10,6 +10,7 @@ import java.util.Stack;
 
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
@@ -24,7 +25,9 @@ import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
@@ -203,6 +206,54 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
         if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
             visitor.exit(basicBlock, null);
+        }
+    }
+
+    private void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
+        try {
+            SPIRVLogger.trace("op: " + op);
+            op.emitCode(crb);
+        } catch (AssertionError | RuntimeException t) {
+            throw new TornadoInternalError(t);
+        }
+    }
+
+    void emitBlock(Block block) {
+        if (block == null) {
+            return;
+        }
+
+        SPIRVLogger.trace("block: %d", block.getId());
+
+        LIRInstruction breakInst = null;
+
+        for (LIRInstruction op : lir.getLIRforBlock(block)) {
+            if (op != null) {
+
+                // if (op instanceof PTXControlFlow.LoopBreakOp) {
+                // breakInst = op;
+                // continue;
+                // }
+
+                try {
+                    emitOp(this, op);
+                } catch (TornadoInternalError e) {
+                    throw e.addContext("lir instruction", block + "@" + op.id() + " " + op + "\n");
+                }
+            }
+        }
+
+        /*
+         * Because of the way Graal handles Phi nodes, we generate the break instruction
+         * before any phi nodes are updated, therefore we need to ensure that the break
+         * is emitted as the end of the block.
+         */
+        if (breakInst != null) {
+            try {
+                emitOp(this, breakInst);
+            } catch (TornadoInternalError e) {
+                throw e.addContext("lir instruction", block + "@" + breakInst.id() + " " + breakInst + "\n");
+            }
         }
     }
 

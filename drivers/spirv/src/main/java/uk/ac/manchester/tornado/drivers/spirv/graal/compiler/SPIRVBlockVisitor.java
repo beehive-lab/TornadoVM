@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 
 public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
@@ -17,14 +18,15 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
 
     @Override
     public Block enter(Block b) {
-        System.out.println("Traversing block: " + b);
-        // assembler.emitBlockLabel(block);
-        // crb.emitBlock(block);
+        SPIRVLogger.trace("ENTERING BLOCK: " + b);
+        assembler.emitBlockLabel(b);
+        crb.emitBlock(b);
         return null;
     }
 
     @Override
     public void exit(Block b, Block value) {
+        SPIRVLogger.trace("EXIT BLOCK: " + b);
         // empty implementation
     }
 }
