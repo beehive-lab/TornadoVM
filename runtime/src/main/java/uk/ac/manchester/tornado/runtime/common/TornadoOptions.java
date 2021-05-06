@@ -159,6 +159,12 @@ public class TornadoOptions {
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
 
     /**
+     * It enables automatic discovery and parallelisation of loops.
+     * Please note that this option is experimental and may cause issues if enabled.
+     */
+    public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", "False");
+
+    /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
      *
@@ -173,7 +179,7 @@ public class TornadoOptions {
     }
 
     /**
-     * Full Inlining Policy with the TornadoVM JIT compiler
+     * Full Inlining Policy with the TornadoVM JIT compiler. Default is False.
      */
     public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", "False");;
 

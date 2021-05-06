@@ -441,10 +441,21 @@ public class PTXCompiler {
             methods.addAll(Arrays.asList(kernelCompResult.getMethods()));
         }
 
+        /*
+         * Given the non-inlined methods A, B, C, D and the call graph below, method D can be compiled twice.
+         * A  → B → D
+         *    ↘ C ↗
+         * We use hash set below to prevent this.
+         */
+        final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
         final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
-
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
+            if (nonInlinedCompiledMethods.contains(currentMethod)) {
+                continue;
+            } else {
+                nonInlinedCompiledMethods.add(currentMethod);
+            }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);

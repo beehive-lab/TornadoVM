@@ -172,9 +172,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData sketchMeta = sketch.getMeta();
         final TaskMetaData taskMeta = executable.meta();
-        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 

@@ -67,7 +67,7 @@ public class OCLAMDScheduler extends OCLKernelScheduler {
 
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
-        final long[] localWork = meta.getLocalWork();
+        final long[] localWork = meta.initLocalWork();
         switch (meta.getDims()) {
             case 3:
                 /// XXX: Support 3D
