@@ -183,4 +183,9 @@ public class TornadoOptions {
      */
     public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", "False");;
 
+    /**
+     * It enables inlining during Java bytecode parsing. Default is False.
+     */
+    public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", "False");
+
 }

@@ -53,6 +53,7 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
@@ -65,10 +66,15 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PrintfNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class PTXGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
+        if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
+            ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
+        }
+
         registerTornadoInstrinsicsPlugins(plugins);
         registerPTXBuiltinPlugins(plugins);
         PTXMathPlugins.registerTornadoMathPlugins(plugins);
