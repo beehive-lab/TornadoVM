@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXStream extends TornadoLogger {
 
@@ -180,16 +181,16 @@ public class PTXStream extends TornadoLogger {
         PTXEvent.waitForEventArray((PTXEvent[]) events.toArray());
     }
 
-    public int enqueueKernelLaunch(PTXModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
+    public int enqueueKernelLaunch(PTXModule module, TaskMetaData taskMeta, byte[] kernelParams, int[] gridDim, int[] blockDim) {
         assert Arrays.stream(gridDim).filter(i -> i <= 0).count() == 0;
         assert Arrays.stream(blockDim).filter(i -> i <= 0).count() == 0;
 
-        if (module.metaData.isDebug()) {
+        if (taskMeta.isDebug()) {
             long[] blockDims = Arrays.stream(blockDim).mapToLong(i -> i).toArray();
             long[] gridDims = Arrays.stream(gridDim).mapToLong(i -> i).toArray();
-            module.metaData.setPtxBlockDim(blockDims);
-            module.metaData.setPtxGridDim(gridDims);
-            module.metaData.printThreadDims();
+            taskMeta.setPtxBlockDim(blockDims);
+            taskMeta.setPtxGridDim(gridDims);
+            taskMeta.printThreadDims();
         }
 
         return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], DYNAMIC_SHARED_MEMORY_BYTES,
