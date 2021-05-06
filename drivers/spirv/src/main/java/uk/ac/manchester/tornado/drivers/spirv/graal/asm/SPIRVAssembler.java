@@ -1,19 +1,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.nodes.cfg.Block;
-
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
@@ -30,12 +23,17 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperan
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+
 public final class SPIRVAssembler extends Assembler {
 
     public SPIRVModule module;
     public SPIRVInstScope functionScope;
     public SPIRVId mainFunctionID;
-    public SPIRVId voidType;
     public SPIRVId functionPre;
 
     // Table that stores the Block ID with its Label Reference ID
@@ -60,7 +58,7 @@ public final class SPIRVAssembler extends Assembler {
         functionScope.add(new SPIRVOpLabel(label));
     }
 
-    public void emitOpMainFunction(SPIRVId... operands) {
+    public void emitOpMainFunction(SPIRVId voidType, SPIRVId... operands) {
         functionPre = module.getNextId();
         module.add(new SPIRVOpTypeFunction(functionPre, voidType, new SPIRVMultipleOperands<>(operands)));
     }
@@ -70,7 +68,10 @@ public final class SPIRVAssembler extends Assembler {
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), new SPIRVMultipleOperands<>()));
     }
 
-    public void emitOpFunction() {
+    public void emitOpFunction(SPIRVId voidType) {
+        if (mainFunctionID == null || functionPre == null) {
+            throw new RuntimeException("MainFunction or FunctionPre SPIR-V IDs are null. It can't generate correct SPIR-V code");
+        }
         functionScope = module.add(new SPIRVOpFunction(voidType, mainFunctionID, SPIRVFunctionControl.DontInline(), functionPre));
     }
 

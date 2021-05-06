@@ -1,16 +1,17 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.HashMap;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -28,6 +29,18 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
@@ -102,18 +115,6 @@ import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.util.HashMap;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     SPIRVDeviceContext context;
@@ -138,6 +139,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     public static final int SPIRV_MINOR_VERSION = 2;
     public static final int SPIRV_GENERATOR_ID = 29;
     public static final int SPIRV_SCHEMA = 0;
+    private SPIRVId pointerToGlobalMemoryHeap;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -318,7 +320,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         emitPrologue(crb, asm, method, lir, asm.module);
         // crb.emit(lir);
-        // emitEpilogue(asm);
+        emitEpilogue(asm);
 
         emitSPIRVCodeIntoASMModule(asm, asm.module);
     }
@@ -596,6 +598,25 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // emit Type Void
             primitives.emitTypeVoid();
+
+            // Define Pointer to HEAP
+            {
+                pointerToGlobalMemoryHeap = module.getNextId();
+                SPIRVId uchar = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_8);
+                module.add(new SPIRVOpTypePointer(pointerToGlobalMemoryHeap, SPIRVStorageClass.CrossWorkgroup(), uchar));
+            }
+
+            // Declare the function
+            {
+                SPIRVId ulong = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+                asm.emitOpMainFunction(primitives.getTypeVoid(), pointerToGlobalMemoryHeap, ulong);
+            }
+
+            // TODO ... Op Pointers
+
+            {
+                asm.emitOpFunction(primitives.getTypeVoid());
+            }
 
         } else {
 
