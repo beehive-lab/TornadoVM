@@ -229,8 +229,8 @@ public class SPIRVCompiler {
             assert startBlock.getPredecessorCount() == 0;
 
             LIR lir = null;
-            AbstractBlockBase<?>[] codeEmittingOrder = null;
-            AbstractBlockBase<?>[] linearScanOrder = null;
+            AbstractBlockBase<?>[] codeEmittingOrder;
+            AbstractBlockBase<?>[] linearScanOrder;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
                 codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
                 linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);

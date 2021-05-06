@@ -135,7 +135,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-        throw new RuntimeException("Not implemented yet");
+
+        // throw new RuntimeException("Not implemented yet");
     }
 
     @Override

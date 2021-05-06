@@ -23,6 +23,7 @@ import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -34,10 +35,13 @@ import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
@@ -67,12 +71,16 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVAddressingModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVBuiltIn;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentInt;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLinkageType;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralContextDependentNumber;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -101,6 +109,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
@@ -118,8 +127,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private final SPIRVCodeProvider codeCache;
     SPIRVInstalledCode lookupCode;
     final ScheduleMetaData scheduleMetaData;
+    private HashMap<String, Value> constants;
 
     final HashMap<String, SPIRVId> SPIRVSymbolTable;
+
+    public final int SPIRV_VERSION = 100000;
+    private SPIRVPrimitiveTypes primitives;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -132,6 +145,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         scheduleMetaData = new ScheduleMetaData("spirvBackend");
         this.isInitialized = false;
         this.SPIRVSymbolTable = new HashMap<>();
+        this.constants = new HashMap<>();
     }
 
     // FIXME <REFACTOR> <S>
@@ -280,6 +294,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
+
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
 
         // SPIR-V Header
@@ -294,12 +309,14 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                         0));
         // @formatter:on
 
-        // TestLKBufferAccess.testAssignWithLookUpBuffer(module);
+        primitives = new SPIRVPrimitiveTypes(asm.module);
+
+        // TestLKBufferAccess.testAssignWithLookUpBuffer(asm.module);
+        // dummySPIRVModuleTest(asm.module);
 
         emitPrologue(crb, asm, method, lir, asm.module);
         // crb.emit(lir);
-        emitEpilogue(asm);
-        // dummySPIRVModuleTest(module);
+        // emitEpilogue(asm);
 
         emitSPIRVCodeIntoASMModule(asm, asm.module);
     }
@@ -416,7 +433,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitSPIRVCapabilities(module);
         emitImportOpenCL(module);
         emitOpenCLAddressingMode(module);
-        emitOpSourceForOpenCL(module, 100000);
+        emitOpSourceForOpenCL(module, SPIRV_VERSION);
 
         // Generate this only if the kernel is parallel (it uses the get_global_id)
         if (isParallel) {
@@ -443,8 +460,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
         module.add(new SPIRVOpName(frameId, new SPIRVLiteralString("frame")));
 
+        // ------------------------------------------------------------------------------------------------------------
         // For each I/O, there is a decorate with alignment 8 (it is a pointer to the
         // data)
+        // TODO
 
         // ------------------------------------------------------------------------------------------------------------
         // EMIT TYPES
@@ -472,6 +491,30 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVId voidType = module.getNextId();
         module.add(new SPIRVOpTypeVoid(voidType));
         // ------------------------------------------------------------------------------------------------------------
+    }
+
+    private static class TypeConstant {
+        public SPIRVId typeID;
+        public SPIRVLiteralContextDependentNumber n;
+
+        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber n) {
+            this.typeID = typeID;
+            this.n = n;
+        }
+    }
+
+    private SPIRVLiteralContextDependentNumber buildLiteralContextNumber(SPIRVKind kind, Constant value) {
+        if (kind == SPIRVKind.OP_TYPE_INT_32) {
+            return new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(value.toValueString())));
+        } else if (kind == SPIRVKind.OP_TYPE_INT_64) {
+            return new SPIRVContextDependentLong(BigInteger.valueOf(Long.parseLong(value.toValueString())));
+        } else if (kind == SPIRVKind.OP_TYPE_FLOAT_32) {
+            return new SPIRVContextDependentFloat(Float.parseFloat(value.toValueString()));
+        } else if (kind == SPIRVKind.OP_TYPE_FLOAT_64) {
+            return new SPIRVContextDependentDouble(Double.parseDouble(value.toValueString()));
+        } else {
+            throw new RuntimeException("SPIRV - SPIRVLiteralContextDependentNumber Type not supported");
+        }
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
@@ -516,14 +559,41 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
             module.add(new SPIRVOpName(frameId, new SPIRVLiteralString("frame")));
 
-            SPIRVLogger.trace("Gen Code");
             // For each I/O, there is a decorate with alignment 8 (it is a pointer to the
             // data)
             // How many variables?
             final int expectedVariables = lir.numVariables();
             System.out.println("Expected Variable: " + expectedVariables);
 
+            // We add the type for char
+            primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_8);
+
+            // Emit Constants
+            StructuredGraph graph = cfg.graph;
+            for (ConstantNode constantNode : graph.getNodes().filter(ConstantNode.class)) {
+                // Insert all constants
+                SPIRVLogger.trace("CONSTANT NODE: " + constantNode);
+                JavaKind stackKind = constantNode.getStackKind();
+                Constant value = constantNode.getValue();
+
+                SPIRVKind kind = SPIRVKind.fromJavaKind(stackKind);
+                SPIRVId typeId;
+                if (kind.isInteger()) {
+                    typeId = primitives.getTypeInt(kind);
+                } else {
+                    throw new RuntimeException("Type not supported");
+                }
+
+                SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
+                SPIRVId idConstant = module.getNextId();
+                module.add(new SPIRVOpConstant(typeId, idConstant, literalNumber));
+            }
+
+            // emit Type Void
+            primitives.emitTypeVoid();
+
         } else {
+
             // inner function (it is no the main kernel)
 
         }

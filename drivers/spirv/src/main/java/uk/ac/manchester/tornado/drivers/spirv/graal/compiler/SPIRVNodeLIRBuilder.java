@@ -27,6 +27,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
@@ -320,6 +321,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof PragmaUnrollNode || node instanceof ThreadConfigurationNode) {
             // ignore emit-action
         } else {
+            if (node instanceof ConstantNode) {
+                // Annotate the constant
+            }
             super.emitNode(node);
         }
     }

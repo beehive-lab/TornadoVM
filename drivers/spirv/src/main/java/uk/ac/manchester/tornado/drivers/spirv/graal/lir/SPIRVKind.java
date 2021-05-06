@@ -133,6 +133,27 @@ public enum SPIRVKind implements PlatformKind {
         this.vectorLength = (elementKind == null) ? 1 : sizeInBytesPerElement;
     }
 
+    public static SPIRVKind fromJavaKind(JavaKind stackKind) {
+        switch (stackKind) {
+            case Boolean:
+                return SPIRVKind.OP_TYPE_BOOL;
+            case Byte:
+                return SPIRVKind.OP_TYPE_INT_8;
+            case Short:
+                return SPIRVKind.OP_TYPE_INT_16;
+            case Int:
+                return SPIRVKind.OP_TYPE_INT_32;
+            case Long:
+                return SPIRVKind.OP_TYPE_INT_64;
+            case Float:
+                return SPIRVKind.OP_TYPE_FLOAT_32;
+            case Double:
+                return SPIRVKind.OP_TYPE_FLOAT_64;
+            default:
+                throw new RuntimeException("Java type not supported: " + stackKind);
+        }
+    }
+
     @Override
     public Key getKey() {
         return key;
