@@ -511,7 +511,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         executionContext.addLastDevice(meta().getLogicDevice());
 
         /* Set the grid task outside the constructor of the {@link uk.ac.manchester.tornado.runtime.TornadoVM}
-           object. We might use the same TornadoVM object with different grid task objects. This happens if the
+           object. The same TornadoVM object will be used for different grid task objects, if the 
            TornadoTaskSchedule::compile method is not called in different runs of the same TaskSchedule.
         */
         vm.setGridTask(gridTask);
