@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 
@@ -1098,6 +1099,12 @@ public final class OCLAssembler extends Assembler {
             }
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
+        } else if (value instanceof OCLNullary.Parameter) {
+            /*
+             * This case covers when we want to pass a caller method parameter further down to a callee
+             * and there is no assignment of the parameter inside the caller.
+             */
+            return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }

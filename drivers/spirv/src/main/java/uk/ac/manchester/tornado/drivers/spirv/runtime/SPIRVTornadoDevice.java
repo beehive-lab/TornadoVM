@@ -146,7 +146,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData sketchMeta = sketch.getMeta();
         final TaskMetaData taskMeta = executable.meta();
 
         // Return the code from the cache
@@ -154,8 +153,9 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
         }
 
-        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
+
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
         try {

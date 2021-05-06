@@ -36,18 +36,16 @@ public class SketchRequest {
 
     final int driverIndex;
     final int deviceIndex;
-    final TaskMetaData meta;
     final ResolvedJavaMethod resolvedMethod;
     final Providers providers;
     final PhaseSuite<HighTierContext> graphBuilderSuite;
     final TornadoSketchTier sketchTier;
 
-    public SketchRequest(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
+    public SketchRequest(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
         this.resolvedMethod = resolvedMethod;
         this.providers = providers;
         this.graphBuilderSuite = graphBuilderSuite;
         this.sketchTier = sketchTier;
-        this.meta = meta;
         this.driverIndex = driverIndex;
         this.deviceIndex = deviceIndex;
     }

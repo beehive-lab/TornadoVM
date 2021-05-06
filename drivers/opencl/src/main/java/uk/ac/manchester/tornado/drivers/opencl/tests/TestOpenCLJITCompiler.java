@@ -104,7 +104,7 @@ public class TestOpenCLJITCompiler {
         OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
 
         // Create a new task for Tornado
-        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile, false);
+        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile);
         taskMeta.setDevice(OpenCL.defaultDevice());
 
         // Compile the code for OpenCL

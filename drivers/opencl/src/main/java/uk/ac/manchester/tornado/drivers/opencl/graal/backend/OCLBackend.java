@@ -576,12 +576,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
 
-    // FIXME <REFACTOR> Possibly remove this code
-    public CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, CompilationResult compilationResult, CompilationResultBuilderFactory factory) {
-        return newCompilationResultBuilder(lirGenRes, frameMap, (OCLCompilationResult) compilationResult, factory, false, false);
-    }
-
-    public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
+    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
             boolean isKernel, boolean isParallel) {
 
         OCLAssembler asm = createAssembler();

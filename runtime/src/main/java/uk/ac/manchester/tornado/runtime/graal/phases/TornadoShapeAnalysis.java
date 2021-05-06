@@ -50,7 +50,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
     private static int resolveInt(ValueNode value) {
         if (value instanceof ConstantNode) {
-            return ((ConstantNode) value).asJavaConstant().asInt();
+            return value.asJavaConstant().asInt();
         } else {
             return Integer.MIN_VALUE;
         }
@@ -105,10 +105,20 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
     }
 
+    private boolean shouldPerformShapeAnalysis(TornadoHighTierContext context) {
+        return context.hasMeta() && context.getMeta().getDomain() == null;
+    }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-
-        if (!context.hasMeta()) {
+        /*
+         An instance of {@link uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData} is assigned per task. If there is a callee that does not get inlined
+         then we might overwrite the domain for the task method (set in a previous run of this phase) with the domain of the callee.
+         We don't care about the domains of callees at the moment, since we support {@link uk.ac.manchester.tornado.api.annotations.Parallel} annotations
+         only on the root task method.
+         To circumvent the overwriting, we have the null check in the shouldPerformShapeAnalysis method.
+        */
+        if (!shouldPerformShapeAnalysis(context)) {
             return;
         }
 

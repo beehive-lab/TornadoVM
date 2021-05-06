@@ -244,13 +244,11 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             }
         } else {
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
-            int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
                 Variable result = getGen().newVariable(lirKind);
-                getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXNullary.Parameter(locals[index].getName(), lirKind)));
+                getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXNullary.Parameter(locals[param.index()].getName(), lirKind)));
                 setResult(param, result);
-                index++;
             }
         }
     }

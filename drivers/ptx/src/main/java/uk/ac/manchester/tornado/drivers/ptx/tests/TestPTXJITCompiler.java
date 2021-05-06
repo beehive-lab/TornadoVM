@@ -103,7 +103,7 @@ public class TestPTXJITCompiler {
         PTXBackend ptxBackend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
 
         // Create a new task for Tornado
-        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile, false);
+        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile);
         taskMeta.setDevice(PTX.defaultDevice());
 
         // Compile the PTX code

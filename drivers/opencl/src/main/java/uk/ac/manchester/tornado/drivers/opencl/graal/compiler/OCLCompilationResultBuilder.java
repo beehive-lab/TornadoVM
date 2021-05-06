@@ -155,35 +155,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     @Deprecated
-    private void patchLoopStms(Block header, Block body, Block backedge) {
-
-        final List<LIRInstruction> headerInsns = lir.getLIRforBlock(header);
-        final List<LIRInstruction> bodyInsns = lir.getLIRforBlock(backedge);
-
-        formatLoopHeader(headerInsns);
-
-        migrateInsnToBody(headerInsns, bodyInsns);
-
-    }
-
-    @Deprecated
-    private void migrateInsnToBody(List<LIRInstruction> header, List<LIRInstruction> body) {
-        // move all insns past the loop expression into the loop body
-        int index = header.size() - 1;
-        int insertAt = body.size() - 1;
-
-        LIRInstruction current = header.get(index);
-        while (!(current instanceof LoopConditionOp)) {
-            if (!(current instanceof LoopPostOp)) {
-                body.add(insertAt, header.remove(index));
-            }
-
-            index--;
-            current = header.get(index);
-        }
-    }
-
-    @Deprecated
     private static class DepFinder implements InstructionValueProcedure {
 
         private final Set<Value> dependencies;

@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.tests;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -9,9 +12,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.lang.reflect.Method;
-import java.util.Arrays;
 
 /**
  * Testing the SPIRV JIT Compiler and integration with the TornadoVM SPIRV
@@ -72,7 +72,7 @@ public class TestSPIRVJITCompiler {
         System.out.println("Selecting Device: " + device.getPhysicalDevice().getDeviceName());
 
         // Create a new task for TornadoVM
-        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("s0"), methodToCompile.getName(), methodToCompile, false);
+        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("s0"), methodToCompile.getName(), methodToCompile);
         taskMeta.setDevice(device);
 
         // FIXME <TODO> <COMPLETE>

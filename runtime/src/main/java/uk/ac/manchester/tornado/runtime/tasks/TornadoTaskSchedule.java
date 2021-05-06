@@ -322,7 +322,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
-            new SketchRequest(taskMetaData, resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
+            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
             this.graph = lookup.getGraph();
@@ -343,7 +343,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
-            new SketchRequest(taskMetaData, resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
+            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
