@@ -1,17 +1,16 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.util.HashMap;
-
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -29,19 +28,6 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
@@ -116,6 +102,18 @@ import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.HashMap;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     SPIRVDeviceContext context;
@@ -127,12 +125,19 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private final SPIRVCodeProvider codeCache;
     SPIRVInstalledCode lookupCode;
     final ScheduleMetaData scheduleMetaData;
-    private HashMap<String, Value> constants;
 
     final HashMap<String, SPIRVId> SPIRVSymbolTable;
-
-    public final int SPIRV_VERSION = 100000;
     private SPIRVPrimitiveTypes primitives;
+
+    // I am not 100% sure storing the Constant is the best option. Maybe we can add
+    // a string
+    final HashMap<Constant, SPIRVId> constants;
+
+    public static final int SPIRV_VERSION = 100000;
+    public static final int SPIRV_MAJOR_VERSION = 1;
+    public static final int SPIRV_MINOR_VERSION = 2;
+    public static final int SPIRV_GENERATOR_ID = 29;
+    public static final int SPIRV_SCHEMA = 0;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -298,16 +303,13 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
 
         // SPIR-V Header
-
-        // @formatter:off
-        asm.module = new SPIRVModule(
-                new SPIRVHeader(
-                        1,
-                        2,
-                        29,  
-                        0,       // The bound will be filled once the code-gen is finished
-                        0));
-        // @formatter:on
+        asm.module = new SPIRVModule( //
+                new SPIRVHeader( //
+                        SPIRV_MAJOR_VERSION, //
+                        SPIRV_MINOR_VERSION, //
+                        SPIRV_GENERATOR_ID, //
+                        0, // The bound will be filled once the code-gen is finished
+                        SPIRV_SCHEMA)); //
 
         primitives = new SPIRVPrimitiveTypes(asm.module);
 
@@ -534,6 +536,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             emitOpenCLAddressingMode(module);
             emitOpSourceForOpenCL(module, 100000);
 
+            asm.emitEntryPointMainKernel(method.getName());
+
             // Generate this only if the kernel is parallel (it uses the get_global_id)
             if (isParallel) {
                 SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module);
@@ -587,6 +591,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
                 SPIRVId idConstant = module.getNextId();
                 module.add(new SPIRVOpConstant(typeId, idConstant, literalNumber));
+                constants.put(value, idConstant);
             }
 
             // emit Type Void
