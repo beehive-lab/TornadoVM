@@ -19,7 +19,7 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
     @Override
     public Block enter(Block b) {
         SPIRVLogger.trace("ENTERING BLOCK: " + b);
-        assembler.emitBlockLabel(b);
+        assembler.emitBlockLabel(b, assembler.functionScope);
         crb.emitBlock(b);
         return null;
     }

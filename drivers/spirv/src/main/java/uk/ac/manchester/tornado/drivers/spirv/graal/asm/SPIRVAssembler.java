@@ -1,19 +1,26 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.nodes.cfg.Block;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
@@ -23,12 +30,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperan
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-
 public final class SPIRVAssembler extends Assembler {
 
     public SPIRVModule module;
@@ -37,25 +38,33 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId functionPre;
 
     // Table that stores the Block ID with its Label Reference ID
-    public Map<Integer, SPIRVId> labelTable;
+    public Map<String, SPIRVId> labelTable;
+    public Map<String, SPIRVInstScope> blockTable;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
         labelTable = new HashMap<>();
+        blockTable = new HashMap<>();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
         throw new RuntimeException("[Not supported for SPIR-V] FPGA ATTRIBUTES - Check with the OpenCL Backend");
     }
 
-    public void emitBlockLabel(Block b) {
+    public SPIRVInstScope emitBlockLabel(Block b, SPIRVInstScope functionScope) {
         SPIRVId label = module.getNextId();
-        module.add(new SPIRVOpName(label, //
-                new SPIRVLiteralString( //
-                        Integer.toString(b.getId()) //
-                )));
-        labelTable.put(b.getId(), label);
-        functionScope.add(new SPIRVOpLabel(label));
+        SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
+        labelTable.put(Integer.toString(b.getId()), label);
+        blockTable.put(Integer.toString(b.getId()), block);
+        return block;
+    }
+
+    public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
+        SPIRVId label = module.getNextId();
+        SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
+        labelTable.put(labelName, label);
+        blockTable.put(labelName, block);
+        return block;
     }
 
     public void emitOpMainFunction(SPIRVId voidType, SPIRVId... operands) {
@@ -68,14 +77,27 @@ public final class SPIRVAssembler extends Assembler {
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), new SPIRVMultipleOperands<>()));
     }
 
-    public void emitOpFunction(SPIRVId voidType) {
-        if (mainFunctionID == null || functionPre == null) {
-            throw new RuntimeException("MainFunction or FunctionPre SPIR-V IDs are null. It can't generate correct SPIR-V code");
-        }
-        functionScope = module.add(new SPIRVOpFunction(voidType, mainFunctionID, SPIRVFunctionControl.DontInline(), functionPre));
+    public SPIRVId getFunctionPredefinition() {
+        return functionPre;
     }
 
-    public void closeFunction() {
+    public SPIRVId getMainKernelId() {
+        return mainFunctionID;
+    }
+
+    public SPIRVInstScope emitOpFunction(SPIRVId voidType, SPIRVId functionID, SPIRVId functionPredefinition) {
+        if (functionID == null || functionPredefinition == null) {
+            throw new RuntimeException("MainFunction or FunctionPre SPIR-V IDs are null. It can't generate correct SPIR-V code");
+        }
+        functionScope = module.add(new SPIRVOpFunction(voidType, functionID, SPIRVFunctionControl.DontInline(), functionPredefinition));
+        return functionScope;
+    }
+
+    public void emitParameterFunction(SPIRVId typeID, SPIRVId parameterId, SPIRVInstScope functionScope) {
+        functionScope.add(new SPIRVOpFunctionParameter(typeID, parameterId));
+    }
+
+    public void closeFunction(SPIRVInstScope functionScope) {
         functionScope.add(new SPIRVOpFunctionEnd());
     }
 

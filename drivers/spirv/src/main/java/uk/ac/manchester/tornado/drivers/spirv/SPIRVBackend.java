@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
+import java.util.Stack;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -45,8 +46,10 @@ import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBitcast;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCapability;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInstImport;
@@ -54,6 +57,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpMemoryModel;
@@ -90,7 +94,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVSourceLanguage
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
@@ -129,17 +132,19 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     final HashMap<String, SPIRVId> SPIRVSymbolTable;
     private SPIRVPrimitiveTypes primitives;
-
-    // I am not 100% sure storing the Constant is the best option. Maybe we can add
-    // a string
-    final HashMap<Constant, SPIRVId> constants;
+    final HashMap<String, SPIRVId> constants;
 
     public static final int SPIRV_VERSION = 100000;
     public static final int SPIRV_MAJOR_VERSION = 1;
     public static final int SPIRV_MINOR_VERSION = 2;
     public static final int SPIRV_GENERATOR_ID = 29;
     public static final int SPIRV_SCHEMA = 0;
+
     private SPIRVId pointerToGlobalMemoryHeap;
+    private SPIRVId pointerToULongFunction;
+    private SPIRVInstScope blockScope;
+    private SPIRVId pointerToFrameAccess;
+    private SPIRVId ptrFunctionPTRCrossWorkGroupUChar;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -500,10 +505,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private static class TypeConstant {
         public SPIRVId typeID;
         public SPIRVLiteralContextDependentNumber n;
+        public String valueString;
 
-        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber n) {
+        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber n, String valueString) {
             this.typeID = typeID;
             this.n = n;
+            this.valueString = valueString;
         }
     }
 
@@ -561,9 +568,16 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
             SPIRVSymbolTable.put("frameId", frameId);
 
+            SPIRVId ul0 = module.getNextId();
+            module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+            SPIRVId ul1 = module.getNextId();
+            module.add(new SPIRVOpDecorate(ul1, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+
             module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));
             module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
             module.add(new SPIRVOpName(frameId, new SPIRVLiteralString("frame")));
+
+            Stack<TypeConstant> stack = new Stack<>();
 
             // For each I/O, there is a decorate with alignment 8 (it is a pointer to the
             // data)
@@ -578,7 +592,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             StructuredGraph graph = cfg.graph;
             for (ConstantNode constantNode : graph.getNodes().filter(ConstantNode.class)) {
                 // Insert all constants
-                SPIRVLogger.trace("CONSTANT NODE: " + constantNode);
                 JavaKind stackKind = constantNode.getStackKind();
                 Constant value = constantNode.getValue();
 
@@ -591,41 +604,128 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 }
 
                 SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
+                stack.add(new TypeConstant(typeId, literalNumber, value.toValueString()));
+
+            }
+
+            // Add constant 3 --> Frame Access
+            SPIRVId idConstant3 = module.getNextId();
+            module.add(new SPIRVOpConstant(primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64), idConstant3, new SPIRVContextDependentLong(BigInteger.valueOf(3))));
+            constants.put("3", idConstant3);
+
+            // And the reminder of the constants
+            while (!stack.isEmpty()) {
+                TypeConstant t = stack.pop();
                 SPIRVId idConstant = module.getNextId();
-                module.add(new SPIRVOpConstant(typeId, idConstant, literalNumber));
-                constants.put(value, idConstant);
+                module.add(new SPIRVOpConstant(t.typeID, idConstant, t.n));
+                constants.put(t.valueString, idConstant);
             }
 
             // emit Type Void
             primitives.emitTypeVoid();
 
             // Define Pointer to HEAP
-            {
-                pointerToGlobalMemoryHeap = module.getNextId();
-                SPIRVId uchar = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_8);
-                module.add(new SPIRVOpTypePointer(pointerToGlobalMemoryHeap, SPIRVStorageClass.CrossWorkgroup(), uchar));
-            }
+            pointerToGlobalMemoryHeap = module.getNextId();
+            SPIRVId uchar = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_8);
+            module.add(new SPIRVOpTypePointer(pointerToGlobalMemoryHeap, SPIRVStorageClass.CrossWorkgroup(), uchar));
 
             // Declare the function
+            SPIRVId ulong = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+            asm.emitOpMainFunction(primitives.getTypeVoid(), pointerToGlobalMemoryHeap, ulong);
+
+            ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
+            module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
+
+            pointerToULongFunction = module.getNextId();
+            module.add(new SPIRVOpTypePointer(pointerToULongFunction, SPIRVStorageClass.Function(), primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64)));
+
+            pointerToFrameAccess = module.getNextId();
+            module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), pointerToULongFunction));
+
+            // FIXME: Here we will have a ptr to each type of the kernel - Since this kernel
+            // stores in Int*, we need a Pointer to INT in CROSS-Work-GROUP
+            SPIRVId ptrCrossWorkGroupUInt = module.getNextId();
+            module.add(new SPIRVOpTypePointer(ptrCrossWorkGroupUInt, SPIRVStorageClass.CrossWorkgroup(), primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_32)));
+
+            // Main kernel Begins
+            SPIRVInstScope functionScope = asm.emitOpFunction(primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionPredefinition());
+            //
+            // Main kernel parameters
+            SPIRVId heap_base = module.getNextId();
+            asm.emitParameterFunction(pointerToGlobalMemoryHeap, heap_base, functionScope);
+
+            SPIRVId frame_base = module.getNextId();
+            asm.emitParameterFunction(primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64), frame_base, functionScope);
+
+            // Label Entry
+            blockScope = asm.emitBlockLabel("Entry", functionScope);
+
+            // All variable declaration + Lookup buffer access
             {
-                SPIRVId ulong = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
-                asm.emitOpMainFunction(primitives.getTypeVoid(), pointerToGlobalMemoryHeap, ulong);
+                blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul0, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+                blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+
+                blockScope.add(new SPIRVOpStore(heapBaseAddrId, heap_base, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+                blockScope.add(new SPIRVOpStore(frameBaseAddrId, frame_base, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId id20 = module.getNextId();
+                blockScope.add(new SPIRVOpLoad(pointerToGlobalMemoryHeap, id20, heapBaseAddrId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId id21 = module.getNextId();
+                blockScope.add(
+                        new SPIRVOpLoad(primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64), id21, frameBaseAddrId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId ptridx = module.getNextId();
+                blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToGlobalMemoryHeap, ptridx, id20, id21, new SPIRVMultipleOperands<>()));
+
+                SPIRVId id23 = module.getNextId();
+                blockScope.add(new SPIRVOpBitcast(pointerToULongFunction, id23, ptridx));
+
+                blockScope.add(new SPIRVOpStore(frameId, id23, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId id24 = module.getNextId();
+                blockScope.add(new SPIRVOpLoad(pointerToULongFunction, id24, frameId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId ptridx1 = module.getNextId();
+                blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToULongFunction, ptridx1, id24, constants.get("3"), new SPIRVMultipleOperands<>()));
+
+                SPIRVId id27 = module.getNextId();
+                blockScope.add(new SPIRVOpLoad(ulong, id27, ptridx1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                blockScope.add(new SPIRVOpStore(ul0, id27, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId id28 = module.getNextId();
+                blockScope.add(new SPIRVOpLoad(ulong, id28, ul0, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId add = module.getNextId();
+                blockScope.add(new SPIRVOpIAdd(ulong, add, id28, constants.get("24")));
+
+                blockScope.add(new SPIRVOpStore(ul1, add, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId id31 = module.getNextId();
+                blockScope.add(new SPIRVOpLoad(ulong, id31, ul1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId id34 = module.getNextId();
+                blockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, id34, id31));
+
+                blockScope.add(new SPIRVOpStore(id34, constants.get("50"), new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+
+                blockScope.add(new SPIRVOpReturn());
             }
 
-            // TODO ... Op Pointers
+        } else
 
-            {
-                asm.emitOpFunction(primitives.getTypeVoid());
-            }
+        {
 
-        } else {
-
-            // inner function (it is no the main kernel)
+            // Inner function to be called within the main kernel
 
         }
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
-        asm.closeFunction();
+        asm.closeFunction(asm.functionScope);
     }
 }
