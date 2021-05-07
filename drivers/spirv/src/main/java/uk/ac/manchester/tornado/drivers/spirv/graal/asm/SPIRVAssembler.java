@@ -37,6 +37,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVInstScope functionScope;
     public SPIRVId mainFunctionID;
     public SPIRVId functionPre;
+    public SPIRVInstScope currentBlockScope;
 
     // Table that stores the Block ID with its Label Reference ID
     public Map<String, SPIRVId> labelTable;
@@ -53,12 +54,8 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public SPIRVInstScope emitBlockLabel(Block b, SPIRVInstScope functionScope) {
-        SPIRVId label = module.getNextId();
-        module.add(new SPIRVOpName(label, new SPIRVLiteralString(Integer.toString(b.getId()))));
-        SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
-        labelTable.put(Integer.toString(b.getId()), label);
-        blockTable.put(Integer.toString(b.getId()), block);
-        return block;
+        String blockName = b.toString();
+        return emitBlockLabel(blockName, functionScope);
     }
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
@@ -67,6 +64,7 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
         labelTable.put(labelName, label);
         blockTable.put(labelName, block);
+        currentBlockScope = block;
         return block;
     }
 

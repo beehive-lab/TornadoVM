@@ -31,7 +31,6 @@ import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
-import uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator;
 
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -86,11 +85,11 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         frameContext.enter(this);
 
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-        TornadoLIRGenerator.trace("Traversing CFG: ", cfg.graph.name);
+        SPIRVLogger.trace("Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
         traverseControlFlowGraph(cfg, new SPIRVBlockVisitor(this));
 
-        TornadoLIRGenerator.trace("Finished traversing CFG");
+        SPIRVLogger.trace("Finished traversing CFG");
         this.lir = null;
         this.currentBlockIndex = 0;
 

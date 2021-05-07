@@ -6,6 +6,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -35,6 +36,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmetic
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVGenTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVNullary;
 
 /**
  * It traverses the SPI-V HIR and generates SPIR-V LIR from which the backend
@@ -135,11 +138,13 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
+        SPIRVLogger.trace("emitReturn: input=%s", input);
         if (input != null) {
             throw new RuntimeException("Return with value expressions not supported yet");
         } else {
-            // append(new SPIRVLIRStmt.ExprStmt(new
-            // SPIRVNullary.Expr(OCLAssembler.OCLNullaryOp.RETURN, LIRKind.Illegal)));
+            AbstractBlockBase<?> currentBlock = getCurrentBlock();
+            System.out.println("Current Block: " + currentBlock);
+            append(new SPIRVLIRStmt.ExprStmt(new SPIRVNullary.ReturnNoOperands(LIRKind.Illegal, currentBlock)));
         }
     }
 

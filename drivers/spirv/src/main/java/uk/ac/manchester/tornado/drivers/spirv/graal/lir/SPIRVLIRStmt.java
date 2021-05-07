@@ -49,13 +49,15 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns Assignment empty");
+            System.out.println("µIns Assignment empty ---?? ");
             // Code emission for assignment
-
-            // From my view, the code assembler should have access to the SPIRVModule (code
-            // gen) and emit directly the instructions using the ASM API.
-
-            // It could be a STORE OP from Left to right --> We need the ALGNMENT
+            System.out.println("rhs??? : " + rhs);
+            asm.emitValue(crb, lhs);
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
         }
 
         public AllocatableValue getResult() {
@@ -82,7 +84,12 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
+            System.out.println("µIns EXPR emitCode generation ---?? ");
+            if (expr instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) expr).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, expr);
+            }
         }
 
         public Value getExpr() {

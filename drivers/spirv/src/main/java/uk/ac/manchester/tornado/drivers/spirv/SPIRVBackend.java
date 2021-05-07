@@ -740,7 +740,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             asm.emitParameterFunction(primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64), frame_base, functionScope);
 
             // Label Entry
-            blockScope = asm.emitBlockLabel("Entry", functionScope);
+            blockScope = asm.emitBlockLabel("B0", functionScope);
 
             // All variable declaration + Lookup buffer access
             blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
@@ -753,7 +753,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // emitTestLogic(module, frameId, ulong, ul0, ul1, ptrCrossWorkGroupUInt);
 
-            blockScope.add(new SPIRVOpReturn());
+            // blockScope.add(new SPIRVOpReturn());
         } else {
             // Inner function to be called within the main kernel
             throw new RuntimeException("Not supported");
