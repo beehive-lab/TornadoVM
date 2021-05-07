@@ -633,6 +633,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             SPIRVId ulong = primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
             asm.emitOpMainFunction(primitives.getTypeVoid(), pointerToGlobalMemoryHeap, ulong);
 
+            // TODO: Create a class to handle OpPointers
             ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
 
