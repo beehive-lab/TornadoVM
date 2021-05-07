@@ -21,6 +21,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
@@ -53,6 +54,7 @@ public final class SPIRVAssembler extends Assembler {
 
     public SPIRVInstScope emitBlockLabel(Block b, SPIRVInstScope functionScope) {
         SPIRVId label = module.getNextId();
+        module.add(new SPIRVOpName(label, new SPIRVLiteralString(Integer.toString(b.getId()))));
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
         labelTable.put(Integer.toString(b.getId()), label);
         blockTable.put(Integer.toString(b.getId()), block);
@@ -61,15 +63,17 @@ public final class SPIRVAssembler extends Assembler {
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
         SPIRVId label = module.getNextId();
+        module.add(new SPIRVOpName(label, new SPIRVLiteralString(labelName)));
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
         labelTable.put(labelName, label);
         blockTable.put(labelName, block);
         return block;
     }
 
-    public void emitOpMainFunction(SPIRVId voidType, SPIRVId... operands) {
+    public SPIRVId emitOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
         functionPre = module.getNextId();
-        module.add(new SPIRVOpTypeFunction(functionPre, voidType, new SPIRVMultipleOperands<>(operands)));
+        module.add(new SPIRVOpTypeFunction(functionPre, returnType, new SPIRVMultipleOperands<>(operands)));
+        return functionPre;
     }
 
     public void emitEntryPointMainKernel(String kernelName) {
