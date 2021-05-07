@@ -113,6 +113,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCallStack;
+import uk.ac.manchester.tornado.drivers.spirv.tests.TestLKBufferAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
@@ -121,6 +122,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
+    private static final boolean SPIRV_TEST_ASSEMBLER = false;
     SPIRVDeviceContext context;
     private boolean isInitialized;
     private final OptionValues options;
@@ -322,8 +324,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // Instance the object for SPIR-V primitives handler
         primitives = new SPIRVPrimitiveTypes(asm.module);
 
-        // TestLKBufferAccess.testAssignWithLookUpBuffer(asm.module);
-        // dummySPIRVModuleTest(asm.module);
+        if (SPIRV_TEST_ASSEMBLER) {
+            TestLKBufferAccess.testAssignWithLookUpBuffer(asm.module);
+            // dummySPIRVModuleTest(asm.module);
+            emitSPIRVCodeIntoASMModule(asm, asm.module);
+            return;
+        }
 
         // 1. Emit SPIR-V preamble, variable declaration, decorators, types and
         // constants.
@@ -332,7 +338,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitPrologue(crb, asm, method, lir, asm.module);
 
         // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
-        // crb.emit(lir);
+        crb.emit(lir);
 
         // 3. Close main kernel
         emitEpilogue(asm);
@@ -540,6 +546,21 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
+    /**
+     * This methods emits the access to the stack-frame. The corresponding OpenCL
+     * code is as follows:
+     *
+     * <code>
+     * __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
+     * </code>
+     *
+     * @param module
+     * @param heapBaseAddrId
+     * @param frameBaseAddrId
+     * @param frameId
+     * @param heap_base
+     * @param frame_base
+     */
     private void emitLookUpBufferAccess(SPIRVModule module, SPIRVId heapBaseAddrId, SPIRVId frameBaseAddrId, SPIRVId frameId, SPIRVId heap_base, SPIRVId frame_base) {
         blockScope.add(new SPIRVOpStore(heapBaseAddrId, heap_base, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
         blockScope.add(new SPIRVOpStore(frameBaseAddrId, frame_base, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
@@ -557,6 +578,36 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         blockScope.add(new SPIRVOpBitcast(pointerToULongFunction, id23, ptridx));
 
         blockScope.add(new SPIRVOpStore(frameId, id23, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+    }
+
+    // This is only for testing
+    private void emitTestLogic(SPIRVModule module, SPIRVId frameId, SPIRVId ulong, SPIRVId ul0, SPIRVId ul1, SPIRVId ptrCrossWorkGroupUInt) {
+        SPIRVId id24 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(pointerToULongFunction, id24, frameId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId ptridx1 = module.getNextId();
+        blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToULongFunction, ptridx1, id24, constants.get("3"), new SPIRVMultipleOperands<>()));
+
+        SPIRVId id27 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(ulong, id27, ptridx1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        blockScope.add(new SPIRVOpStore(ul0, id27, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId id28 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(ulong, id28, ul0, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId add = module.getNextId();
+        blockScope.add(new SPIRVOpIAdd(ulong, add, id28, constants.get("24")));
+
+        blockScope.add(new SPIRVOpStore(ul1, add, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId id31 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(ulong, id31, ul1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId id34 = module.getNextId();
+        blockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, id34, id31));
+
+        blockScope.add(new SPIRVOpStore(id34, constants.get("50"), new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
@@ -634,7 +685,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
                 SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
                 stack.add(new TypeConstant(typeId, literalNumber, value.toValueString()));
-
             }
 
             // Add constant 3 --> Frame Access
@@ -693,51 +743,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             blockScope = asm.emitBlockLabel("Entry", functionScope);
 
             // All variable declaration + Lookup buffer access
-            {
-                blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul0, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-                blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul0, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
 
-                emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base);
+            emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base);
 
-                SPIRVId id24 = module.getNextId();
-                blockScope.add(new SPIRVOpLoad(pointerToULongFunction, id24, frameId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+            // emitTestLogic(module, frameId, ulong, ul0, ul1, ptrCrossWorkGroupUInt);
 
-                SPIRVId ptridx1 = module.getNextId();
-                blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToULongFunction, ptridx1, id24, constants.get("3"), new SPIRVMultipleOperands<>()));
-
-                SPIRVId id27 = module.getNextId();
-                blockScope.add(new SPIRVOpLoad(ulong, id27, ptridx1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
-
-                blockScope.add(new SPIRVOpStore(ul0, id27, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
-
-                SPIRVId id28 = module.getNextId();
-                blockScope.add(new SPIRVOpLoad(ulong, id28, ul0, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
-
-                SPIRVId add = module.getNextId();
-                blockScope.add(new SPIRVOpIAdd(ulong, add, id28, constants.get("24")));
-
-                blockScope.add(new SPIRVOpStore(ul1, add, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
-
-                SPIRVId id31 = module.getNextId();
-                blockScope.add(new SPIRVOpLoad(ulong, id31, ul1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
-
-                SPIRVId id34 = module.getNextId();
-                blockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, id34, id31));
-
-                blockScope.add(new SPIRVOpStore(id34, constants.get("50"), new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
-
-                blockScope.add(new SPIRVOpReturn());
-            }
-
-        } else
-
-        {
-
+            blockScope.add(new SPIRVOpReturn());
+        } else {
             // Inner function to be called within the main kernel
-
+            throw new RuntimeException("Not supported");
         }
     }
 
