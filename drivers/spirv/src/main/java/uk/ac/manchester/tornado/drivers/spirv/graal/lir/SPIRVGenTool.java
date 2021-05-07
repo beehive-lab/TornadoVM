@@ -70,10 +70,10 @@ public class SPIRVGenTool {
      * This an example of the target code to generate in SPIR-V:
      *
      * <code>
-     *      %31 = OpLoad %_ptr_Function_ulong_0 %frame Aligned 8                ; Load Frame in private mem
-     *      %32 = OpInBoundsPtrAccessChain %_ptr_Function_ulong_0 %31 %ulong_3  ; Access position 3 of frame
-     *      %33 = OpLoad %ulong %32 Aligned 8                                   ; Load address of position 3
-     *      OpStore %ul0 %33 Aligned 8                                          ; Store in ul0
+     *      %31 = OpLoad %_ptr_Function_ulong_0 %frame Aligned 8                   ; Load Frame in private mem
+     *      %32 = OpInBoundsPtrAccessChain %_ptr_Function_ulong_0 %31 STACK_INDEX  ; Access position 3 of frame
+     *      %33 = OpLoad %ulong %32 Aligned 8                                      ; Load address of position 3
+     *      OpStore %ul0 %33 Aligned 8                                             ; Store in ul0
      * </code>
      *
      * @param resultValue
@@ -86,6 +86,8 @@ public class SPIRVGenTool {
         LIRKind lirKind = LIRKind.value(spirvKind);
         ConstantValue stackIndex = new ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_32), JavaConstant.forInt((index + STACK_BASE_OFFSET) * SPIRVKind.OP_TYPE_INT_64.getSizeInBytes()));
 
+        generator.append(new SPIRVLIRStmt.LoadFrame(SPIRVKind.OP_TYPE_INT_64));
+        generator.append(new SPIRVLIRStmt.AccessPointerChain(STACK_BASE_OFFSET));
         SPIRVUnaryOp op = getParameterLoadOp(spirvKind);
         SPIRVLIRStmt.AssignStmt assignStmt = new SPIRVLIRStmt.AssignStmt(resultValue, new SPIRVUnary.Expr(op, lirKind, stackIndex));
         generator.append(assignStmt);

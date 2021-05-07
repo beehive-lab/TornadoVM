@@ -135,7 +135,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     final HashMap<String, SPIRVId> SPIRVSymbolTable;
     private SPIRVPrimitiveTypes primitives;
-    final HashMap<String, SPIRVId> constants;
 
     public static final int SPIRV_VERSION_FOR_OPENCL = 100000;
     public static final int SPIRV_MAJOR_VERSION = 1;
@@ -160,7 +159,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         scheduleMetaData = new ScheduleMetaData("spirvBackend");
         this.isInitialized = false;
         this.SPIRVSymbolTable = new HashMap<>();
-        this.constants = new HashMap<>();
     }
 
     // FIXME <REFACTOR> <S>
@@ -581,7 +579,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     // This is only for testing
-    private void emitTestLogic(SPIRVModule module, SPIRVId frameId, SPIRVId ulong, SPIRVId ul0, SPIRVId ul1, SPIRVId ptrCrossWorkGroupUInt) {
+    private void emitTestLogic(SPIRVModule module, SPIRVId frameId, SPIRVId ulong, SPIRVId ul0, SPIRVId ul1, SPIRVId ptrCrossWorkGroupUInt, SPIRVAssembler asm) {
+
+        final HashMap<String, SPIRVId> constants = asm.constants;
+
         SPIRVId id24 = module.getNextId();
         blockScope.add(new SPIRVOpLoad(pointerToULongFunction, id24, frameId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
 
@@ -687,6 +688,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 stack.add(new TypeConstant(typeId, literalNumber, value.toValueString()));
             }
 
+            final HashMap<String, SPIRVId> constants = asm.constants;
+
             // Add constant 3 --> Frame Access
             int reservedSlots = SPIRVCallStack.RESERVED_SLOTS;
             SPIRVId idConstant3 = module.getNextId();
@@ -748,6 +751,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul0, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            asm.frameId = frameId;
+            asm.pointerToULongFunction = pointerToULongFunction;
 
             emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base);
 

@@ -42,11 +42,17 @@ public final class SPIRVAssembler extends Assembler {
     // Table that stores the Block ID with its Label Reference ID
     public Map<String, SPIRVId> labelTable;
     public Map<String, SPIRVInstScope> blockTable;
+    public SPIRVId prevId;
+    public SPIRVId frameId;
+    public SPIRVId pointerToULongFunction;
+
+    public final HashMap<String, SPIRVId> constants;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
         labelTable = new HashMap<>();
         blockTable = new HashMap<>();
+        constants = new HashMap<>();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {

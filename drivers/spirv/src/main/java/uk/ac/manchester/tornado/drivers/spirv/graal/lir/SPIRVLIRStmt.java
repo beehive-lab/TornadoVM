@@ -7,6 +7,13 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -66,6 +73,73 @@ public class SPIRVLIRStmt {
 
         public Value getExpr() {
             return rhs;
+        }
+    }
+
+    @Opcode("LoadFrame")
+    public static class LoadFrame extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoadFrame> TYPE = LIRInstructionClass.create(LoadFrame.class);
+
+        protected SPIRVKind type;
+        protected SPIRVId address;
+
+        public LoadFrame(SPIRVKind type) {
+            super(TYPE);
+            this.type = type;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            System.out.println("µIns LoadStmt ");
+            SPIRVId loadID = asm.module.getNextId();
+
+            SPIRVId typeId = null;
+            if (type == SPIRVKind.OP_TYPE_INT_64) {
+                typeId = asm.pointerToULongFunction;
+            }
+            SPIRVId address = asm.frameId;
+            int alignment = 8;
+            asm.currentBlockScope.add(new SPIRVOpLoad( //
+                    typeId, //
+                    loadID, //
+                    address, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+            asm.prevId = loadID;
+        }
+    }
+
+    @Opcode("AccessPointerChain")
+    public static class AccessPointerChain extends AbstractInstruction {
+
+        public static final LIRInstructionClass<AccessPointerChain> TYPE = LIRInstructionClass.create(AccessPointerChain.class);
+
+        int value;
+
+        public AccessPointerChain(int value) {
+            super(TYPE);
+            this.value = value;
+
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            System.out.println("µIns AccessPointerChain ");
+            SPIRVId newID = asm.module.getNextId();
+
+            SPIRVId prev = asm.prevId;
+
+            String values = String.valueOf(value);
+            SPIRVId index = asm.constants.get(values);
+
+            asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
+                    asm.pointerToULongFunction, //
+                    newID, //
+                    prev, //
+                    index, //
+                    new SPIRVMultipleOperands<>()));
+            asm.prevId = newID;
         }
     }
 
