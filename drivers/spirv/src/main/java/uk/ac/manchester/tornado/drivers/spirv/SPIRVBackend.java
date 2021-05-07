@@ -318,15 +318,25 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                         0, // The bound will be filled once the code-gen is finished
                         SPIRV_SCHEMA)); //
 
+        // Instance the object for SPIR-V primitives handler
         primitives = new SPIRVPrimitiveTypes(asm.module);
 
         // TestLKBufferAccess.testAssignWithLookUpBuffer(asm.module);
         // dummySPIRVModuleTest(asm.module);
 
+        // 1. Emit SPIR-V preamble, variable declaration, decorators, types and
+        // constants.
+        // 1.1 Emit main function paramters and variables
+        // 1.2 Emit the logic for the Stack Frame access within TornadoVM
         emitPrologue(crb, asm, method, lir, asm.module);
+
+        // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
         // crb.emit(lir);
+
+        // 3. Close main kernel
         emitEpilogue(asm);
 
+        // 4. Write the assembler module content into Hotspot.
         emitSPIRVCodeIntoASMModule(asm, asm.module);
     }
 

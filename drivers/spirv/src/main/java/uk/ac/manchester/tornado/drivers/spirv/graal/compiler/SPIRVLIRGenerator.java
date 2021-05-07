@@ -135,8 +135,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-
-        // throw new RuntimeException("Not implemented yet");
+        if (input != null) {
+            throw new RuntimeException("Return with value expressions not supported yet");
+        } else {
+            // append(new SPIRVLIRStmt.ExprStmt(new
+            // SPIRVNullary.Expr(OCLAssembler.OCLNullaryOp.RETURN, LIRKind.Illegal)));
+        }
     }
 
     @Override
