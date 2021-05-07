@@ -22,7 +22,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
-        <jmh.version>1.23</jmh.version>
+        <jmh.version>1.29</jmh.version>
         <uberjar.name>jmhbenchmarks</uberjar.name>
     </properties>
 

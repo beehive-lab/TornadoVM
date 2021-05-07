@@ -263,10 +263,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         if (!state.hasBuffer()) {
             reserveMemory(object, batchSize, state);
-        }
-
-        if (!state.hasBuffer()) {
-            reserveMemory(object, batchSize, state);
         } else {
             checkForResizeBuffer(object, batchSize, state);
         }
