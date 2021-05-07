@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -10,6 +11,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 
 @NodeInfo
 public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
@@ -65,7 +67,8 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
     }
 
     private void setMemoryAccess(NodeLIRBuilderTool generator, Value baseValue, Value indexValue, SPIRVLIRGenerator tool) {
-        System.out.println("SET ADDRESS NODE MISSING");
-        // throw new RuntimeException("Operation not supported");
+        System.out.println(">>>> SPIRVAddressNode");
+        Variable addressNode = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
+        generator.setResult(this, new MemoryAccess(memoryRegion, addressNode));
     }
 }

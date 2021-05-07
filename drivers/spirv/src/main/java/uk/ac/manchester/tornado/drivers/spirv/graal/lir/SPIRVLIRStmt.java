@@ -18,12 +18,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 
-// FIXME <REFACTOR> Using Generics to refactor this class for the three backends
 public class SPIRVLIRStmt {
 
-    /**
-     * Base class for LIR Instructions
-     */
     protected static abstract class AbstractInstruction extends LIRInstruction {
 
         public AbstractInstruction(LIRInstructionClass<? extends LIRInstruction> c) {
@@ -56,7 +52,7 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns Assignment empty ---?? ");
+            System.out.println("µIns Assignment");
             // Code emission for assignment
             System.out.println("rhs??? : " + rhs);
             asm.emitValue(crb, lhs);
@@ -113,6 +109,11 @@ public class SPIRVLIRStmt {
     @Opcode("AccessPointerChain")
     public static class AccessPointerChain extends AbstractInstruction {
 
+        // IDEA:
+        // Include a hashTable in the ASM that maps LIRInstructions with SPIRVId
+        // SO each microInstruction receives the LIRInstructions to play with, and then
+        // we can lookup the corresponding IDs in the hash table.
+
         public static final LIRInstructionClass<AccessPointerChain> TYPE = LIRInstructionClass.create(AccessPointerChain.class);
 
         int value;
@@ -128,6 +129,7 @@ public class SPIRVLIRStmt {
             System.out.println("µIns AccessPointerChain ");
             SPIRVId newID = asm.module.getNextId();
 
+            // Note, it does not have to be necessary the prev. operation.
             SPIRVId prev = asm.prevId;
 
             String values = String.valueOf(value);

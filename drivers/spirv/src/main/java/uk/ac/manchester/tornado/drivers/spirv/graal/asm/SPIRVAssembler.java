@@ -193,6 +193,18 @@ public final class SPIRVAssembler extends Assembler {
 
     }
 
+    /**
+     * Binary opcodes
+     */
+    public static class SPIRVBinaryOp extends SPIRVOp {
+
+        public static final SPIRVBinaryOp ADD = new SPIRVBinaryOp("+");
+
+        protected SPIRVBinaryOp(String opcode) {
+            super(opcode);
+        }
+    }
+
     public void emit(String str) {
         emitSubString(str);
     }

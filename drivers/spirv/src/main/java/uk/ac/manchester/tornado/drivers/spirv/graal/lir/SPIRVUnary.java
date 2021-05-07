@@ -4,7 +4,9 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemoryBase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVUnaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -38,7 +40,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("EMPTY IMPLEMENTATION");
+            opcode.emit(crb, value);
         }
 
     }
@@ -60,6 +62,30 @@ public class SPIRVUnary {
         @Override
         public String toString() {
             return String.format("%s(%s)", opcode.toString(), value);
+        }
+
+    }
+
+    public static class MemoryAccess extends UnaryConsumer {
+
+        private final SPIRVMemoryBase base;
+        private Value index;
+        private AllocatableValue assignedTo;
+
+        MemoryAccess(SPIRVMemoryBase base, Value value) {
+            super(null, LIRKind.Illegal, value);
+            this.base = base;
+        }
+
+        MemoryAccess(SPIRVMemoryBase base, Value value, Value index, boolean needsBase) {
+            super(null, LIRKind.Illegal, value);
+            this.base = base;
+            this.index = index;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            System.out.println("\n\n - &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Generating memory access: " + base + index);
         }
 
     }

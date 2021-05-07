@@ -314,4 +314,9 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return super.getValueKind(javaKind);
     }
 
+    @Override
+    public SPIRVArithmeticTool getArithmetic() {
+        return (SPIRVArithmeticTool) super.getArithmetic();
+    }
+
 }

@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -10,7 +12,13 @@ import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -18,13 +26,15 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return (SPIRVLIRGenerator) getLIRGen();
     }
 
-    // public Variable emitBinaryAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x,
-    // Value y) {
-    // final Variable result = getGen().newVariable(lirKind);
-    // getGen().append(new OCLLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind,
-    // x, y)));
-    // return result;
-    // }
+    public SPIRVLIROp genBinaryExpr(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new SPIRVBinary.Expr(op, lirKind, x, y);
+    }
+
+    public Variable emitBinaryAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, x, y)));
+        return result;
+    }
 
     @Override
     protected boolean isNumericInteger(PlatformKind kind) {
@@ -34,8 +44,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
         SPIRVLogger.trace("[µInstructions] emitAdd: %s + %s", a, b);
-        // return emitBinaryAssign(SPIRVBinaryOp.ADD, resultKind, a, b);
-        return null;
+        return emitBinaryAssign(SPIRVBinaryOp.ADD, resultKind, a, b);
     }
 
     @Override
@@ -170,6 +179,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
+        System.out.println("[!] EMIT LOAD FOR SPIR-V - Pending");
         return null;
     }
 
@@ -180,7 +190,28 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        System.out.println("EMIT STORE FOR SPIR-V");
+        SPIRVLogger.trace("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
+        guarantee(kind.getPlatformKind() instanceof SPIRVKind, "invalid LIRKind: %s", kind);
+        SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
+
+        MemoryAccess memAccess = null;
+        Value accumulator = null;
+
+        if (address instanceof MemoryAccess) {
+            memAccess = (MemoryAccess) address;
+        } else {
+            accumulator = address;
+        }
+
+        if (spirvKind.isVector()) {
+            throw new RuntimeException("Vector types not supported yet");
+        } else {
+            if (memAccess != null) {
+                System.out.println("IMPLEMENT SPIRVAddressCastNode ");
+            }
+
+        }
+
     }
 
     @Override
