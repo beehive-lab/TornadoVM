@@ -21,6 +21,7 @@
 
 The following drivers have been tested on Linux >= CentOS 7.3
 
+* 21.16.19610: OK  ( OpenCL 3.0 )
 * 21.15.19533: OK  ( OpenCL 3.0 )
 * 21.14.19498: OK  ( OpenCL 3.0 )
 * 21.13.19438: OK  ( OpenCL 3.0 )  -- This update gets Correct LookupBuffer for SPIRV kernels (experimental)
