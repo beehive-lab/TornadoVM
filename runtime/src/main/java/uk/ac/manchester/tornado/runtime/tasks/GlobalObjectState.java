@@ -37,14 +37,11 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
     private boolean shared;
     private boolean exclusive;
 
-    private TornadoAcceleratorDevice owner;
-
     private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
         shared = false;
         exclusive = false;
-        owner = null;
         deviceStates = new ConcurrentHashMap<>();
     }
 
@@ -56,14 +53,6 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
         return exclusive;
     }
 
-    public TornadoAcceleratorDevice getOwner() {
-        return owner;
-    }
-
-    public DeviceObjectState getDeviceState() {
-        return getDeviceState(getOwner());
-    }
-
     public DeviceObjectState getDeviceState(TornadoDevice device) {
         if (!(device instanceof TornadoAcceleratorDevice)) {
             throw new RuntimeException("Device not compatible");
@@ -72,16 +61,6 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
             deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
         }
         return deviceStates.get(device);
-    }
-
-    public void setOwner(TornadoDevice device) {
-        if (!(device instanceof TornadoAcceleratorDevice)) {
-            throw new RuntimeException("Device not compatible");
-        }
-        owner = (TornadoAcceleratorDevice) device;
-        if (!deviceStates.containsKey(owner)) {
-            deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
-        }
     }
 
     public void invalidate() {
@@ -103,19 +82,11 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
         sb.append((isShared()) ? "S" : "-");
         sb.append(" ");
 
-        if (owner != null) {
-            sb.append("owner=").append(owner.toString()).append(", devices=[");
-        }
-
         for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
-            if (device != owner) {
-                sb.append(device.toString()).append(" ");
-            }
+            sb.append(device.toString()).append(" ");
         }
-
         sb.append("]");
 
         return sb.toString();
     }
-
 }
