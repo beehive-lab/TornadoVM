@@ -6,6 +6,15 @@ import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemoryBase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVUnaryOp;
@@ -53,6 +62,69 @@ public class SPIRVUnary {
 
     }
 
+    public static class LoadFromStackFrameExpr extends Expr {
+
+        protected SPIRVKind type;
+        protected SPIRVId address;
+        protected int indexFromStackFrame;
+        protected int parameterIndex;
+
+        public LoadFromStackFrameExpr(SPIRVUnaryOp opcode, LIRKind lirKind, Value value, SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
+            super(opcode, lirKind, value);
+            this.type = type;
+            this.indexFromStackFrame = indexFromStackFrame;
+            this.parameterIndex = parameterIndex;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.trace("µIns LoadFromStackFrame ");
+            SPIRVId loadID = asm.module.getNextId();
+
+            SPIRVId ptrFUnctionULong = null;
+            if (type == SPIRVKind.OP_TYPE_INT_64) {
+                ptrFUnctionULong = asm.pointerToULongFunction;
+            }
+            SPIRVId address = asm.frameId;
+            int alignment = 8;
+            asm.currentBlockScope.add(new SPIRVOpLoad( //
+                    ptrFUnctionULong, //
+                    loadID, //
+                    address, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            String values = String.valueOf(indexFromStackFrame);
+            SPIRVId index = asm.constants.get(values);
+            System.out.println("ID found for index: " + index);
+
+            SPIRVId accessPTR = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
+                    asm.pointerToULongFunction, //
+                    accessPTR, //
+                    loadID, //
+                    index, //
+                    new SPIRVMultipleOperands<>()));
+
+            // Load Address
+            SPIRVId loadPtr = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpLoad( //
+                    ptrFUnctionULong, //
+                    loadPtr, //
+                    accessPTR, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    parameterID, //
+                    accessPTR, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+        }
+
+    }
+
     public static class Intrinsic extends UnaryConsumer {
 
         public Intrinsic(SPIRVUnaryOp opcode, LIRKind lirKind, Value value) {
@@ -83,9 +155,32 @@ public class SPIRVUnary {
             this.index = index;
         }
 
+        public SPIRVMemoryBase getBase() {
+            return base;
+        }
+
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             System.out.println("\n\n - &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Generating memory access: " + base + index);
+        }
+
+        public Value getIndex() {
+            return index;
+        }
+    }
+
+    public static class SPIRVAddressCast extends UnaryConsumer {
+
+        private final SPIRVMemoryBase base;
+
+        public SPIRVAddressCast(SPIRVMemoryBase base, LIRKind valueKind) {
+            super(null, valueKind, null);
+            this.base = base;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            System.out.println("EMIT MEMORY BASE: " + getSPIRVPlatformKind());
         }
 
     }

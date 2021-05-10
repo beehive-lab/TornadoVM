@@ -94,10 +94,12 @@ public class SPIRVGenTool {
         // System.out.println("INDEX: " + index);
         // generator.append(new SPIRVLIRStmt.AccessPointerChain(STACK_BASE_OFFSET));
 
-        // SPIRVUnaryOp op = getParameterLoadOp(spirvKind);
+        SPIRVUnaryOp op = getParameterLoadOp(spirvKind);
         // SPIRVLIRStmt.AssignStmt assignStmt = new SPIRVLIRStmt.AssignStmt(resultValue,
         // new SPIRVUnary.Expr(op, lirKind, stackIndex));
-        // generator.append(assignStmt);
+        SPIRVLIRStmt.AssignStmt assignStmt = new SPIRVLIRStmt.AssignStmt(resultValue,
+                new SPIRVUnary.LoadFromStackFrameExpr(op, lirKind, stackIndex, SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET + index), index));
+        generator.append(assignStmt);
     }
 
 }

@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVNullary;
 
 /**
- * It traverses the SPI-V HIR and generates SPIR-V LIR from which the backend
+ * It traverses the SPIR-V HIR and generates SPIR-V LIR from which the backend
  * will emit the SPIR-V code.
  */
 public class SPIRVLIRGenerator extends LIRGenerator {
@@ -265,7 +265,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         SPIRVLogger.trace("[SPIR-V] newVariable: %s <- %s (%s)", variable.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         // Format of the variable "<type>_<number>"
-        variable.setName(spirvKind.getTypePrefix() + "_" + variable.index);
+        variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index);
         SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
         res.insertVariable(variable);
         return variable;
@@ -276,7 +276,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return (SPIRVLIRKindTool) super.getLIRKindTool();
     }
 
-    public SPIRVGenTool getSpirvGenTool() {
+    public SPIRVGenTool getSPIRVGenTool() {
         return spirvGenTool;
     }
 

@@ -19,6 +19,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -208,10 +209,12 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             if (memAccess != null) {
                 System.out.println("IMPLEMENT SPIRVAddressCastNode ");
+                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getBase(), LIRKind.value(spirvKind));
+                if (memAccess.getIndex() == null) {
+                    getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
+                }
             }
-
         }
-
     }
 
     @Override

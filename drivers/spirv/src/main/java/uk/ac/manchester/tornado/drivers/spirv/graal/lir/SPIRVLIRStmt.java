@@ -19,6 +19,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 
 public class SPIRVLIRStmt {
 
@@ -291,6 +293,36 @@ public class SPIRVLIRStmt {
 
         }
 
+    }
+
+    @Opcode("STORE")
+    public static class StoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<StoreStmt> TYPE = LIRInstructionClass.create(StoreStmt.class);
+
+        @Use
+        protected Value rhs;
+
+        @Use
+        protected SPIRVAddressCast cast;
+
+        @Use
+        protected MemoryAccess address;
+
+        @Use
+        protected Value index;
+
+        public StoreStmt(SPIRVAddressCast cast, MemoryAccess address, Value rhs) {
+            super(TYPE);
+            this.cast = cast;
+            this.address = address;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            System.out.println("EMIT STORE WITH ASM MODULE");
+        }
     }
 
     @Opcode("Pragma")

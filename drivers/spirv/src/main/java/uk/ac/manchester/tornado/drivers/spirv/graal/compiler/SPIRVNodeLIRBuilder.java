@@ -145,7 +145,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     protected void emitPrologue(final StructuredGraph graph, boolean isKernel) {
         if (isKernel) {
             for (ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, getGen().getSpirvGenTool().emitParameterLoad(param, param.index()));
+                setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
             throw new RuntimeException("Unimplemented - Pending prologue for non main kernels");

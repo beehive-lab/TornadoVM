@@ -35,4 +35,5 @@ public abstract class SPIRVLIROp extends Value {
         PlatformKind kind = getPlatformKind();
         return (kind instanceof SPIRVKind) ? (SPIRVKind) kind : SPIRVKind.ILLEGAL;
     }
+
 }
