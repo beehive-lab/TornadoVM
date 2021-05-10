@@ -27,7 +27,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
-import uk.ac.manchester.tornado.unittests.common.PTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestProfiler extends TornadoTestBase {

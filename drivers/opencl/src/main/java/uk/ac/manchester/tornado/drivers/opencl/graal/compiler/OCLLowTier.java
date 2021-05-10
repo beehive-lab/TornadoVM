@@ -29,12 +29,14 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
+import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
@@ -70,6 +72,8 @@ public class OCLLowTier extends TornadoLowTier {
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
+
+        appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
         appendPhase(new AddressLoweringPhase(addressLowering));
 

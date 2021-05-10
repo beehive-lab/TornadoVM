@@ -93,8 +93,8 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
-        unimplemented();
-        return null;
+        trace("emitRem: %s %% %s", a, b);
+        return emitBinaryAssign(PTXBinaryOp.REM, LIRKind.combine(a, b), a, b);
     }
 
     @Override
