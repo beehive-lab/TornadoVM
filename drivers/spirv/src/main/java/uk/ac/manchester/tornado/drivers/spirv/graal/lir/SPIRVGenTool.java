@@ -88,7 +88,9 @@ public class SPIRVGenTool {
 
         // Implement an LIR utility to load the ptr parameter from the TornadoVM call
         // stack
-        generator.append(new SPIRVLIRStmt.LoadFromStackFrame(SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET + index), index));
+        // generator.append(new
+        // SPIRVLIRStmt.LoadFromStackFrame(SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET
+        // + index), index));
 
         // generator.append(new SPIRVLIRStmt.LoadFrame(SPIRVKind.OP_TYPE_INT_64));
         // System.out.println("INDEX: " + index);

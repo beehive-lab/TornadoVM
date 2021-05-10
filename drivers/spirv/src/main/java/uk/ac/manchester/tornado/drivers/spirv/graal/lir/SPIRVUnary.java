@@ -6,6 +6,7 @@ import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
@@ -41,10 +42,6 @@ public class SPIRVUnary {
 
         public Value getValue() {
             return value;
-        }
-
-        public SPIRVUnaryOp getOpcode() {
-            return opcode;
         }
 
         @Override
@@ -118,11 +115,10 @@ public class SPIRVUnary {
             SPIRVId parameterID = asm.getParameterId(parameterIndex);
             asm.currentBlockScope.add(new SPIRVOpStore( //
                     parameterID, //
-                    accessPTR, //
+                    loadPtr, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
         }
-
     }
 
     public static class Intrinsic extends UnaryConsumer {
@@ -167,6 +163,10 @@ public class SPIRVUnary {
         public Value getIndex() {
             return index;
         }
+
+        public AllocatableValue assignedTo() {
+            return assignedTo;
+        }
     }
 
     public static class SPIRVAddressCast extends UnaryConsumer {
@@ -180,7 +180,20 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("EMIT MEMORY BASE: " + getSPIRVPlatformKind());
+            SPIRVId id31 = asm.module.getNextId();
+
+            SPIRVId ulong = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+
+            SPIRVId ul1 = asm.getParameterId(1);
+
+            asm.currentBlockScope.add(new SPIRVOpLoad(ulong, id31, ul1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+            SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
+            SPIRVId id34 = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, id34, id31));
+
+            SPIRVId uintConstant50 = asm.constants.get("50");
+            asm.currentBlockScope.add(new SPIRVOpStore(id34, uintConstant50, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
         }
 
     }

@@ -1,12 +1,19 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.nodes.cfg.Block;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
@@ -21,14 +28,9 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionContro
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 public final class SPIRVAssembler extends Assembler {
 
@@ -46,7 +48,13 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId frameId;
     public SPIRVId pointerToULongFunction;
 
-    public final HashMap<String, SPIRVId> constants;
+    // Ids for testing
+    public SPIRVId ulong;
+
+    public final Map<String, SPIRVId> constants;
+    public final Map<Value, SPIRVId> lirTable;
+    public SPIRVPrimitiveTypes primitives;
+    public SPIRVId pointerToGlobalMemoryHeap;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -54,6 +62,7 @@ public final class SPIRVAssembler extends Assembler {
         blockTable = new HashMap<>();
         constants = new HashMap<>();
         parametersId = new HashMap<>();
+        lirTable = new HashMap<>();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
@@ -116,6 +125,14 @@ public final class SPIRVAssembler extends Assembler {
 
     public SPIRVId getParameterId(int parameterIndex) {
         return parametersId.get(parameterIndex);
+    }
+
+    public void registerLIRInstructionValue(Value valueLIRInstruction, SPIRVId spirvId) {
+        lirTable.put(valueLIRInstruction, spirvId);
+    }
+
+    public SPIRVId lookUpLIRInstructions(Value valueLIRInstruction) {
+        return lirTable.get(valueLIRInstruction);
     }
 
     /**
@@ -182,7 +199,7 @@ public final class SPIRVAssembler extends Assembler {
 
         public static final SPIRVUnaryTemplate LOAD_PARAM_INT = new SPIRVUnaryTemplate("param", "(int) " + FRAME_REF_NAME + "[%s]");
         public static final SPIRVUnaryTemplate LOAD_PARAM_LONG = new SPIRVUnaryTemplate("param", "(long) " + FRAME_REF_NAME + "[%s]");
-        
+
         // @formatter:on
         private final String template;
 

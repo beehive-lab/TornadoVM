@@ -10,7 +10,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationRes
 
 public abstract class SPIRVLIROp extends Value {
 
-    protected SPIRVModule module;
+    // protected SPIRVModule module;
 
     protected SPIRVLIROp(LIRKind valueKind) {
         super(valueKind);
@@ -18,7 +18,7 @@ public abstract class SPIRVLIROp extends Value {
 
     protected SPIRVLIROp(LIRKind valueKind, SPIRVModule module) {
         super(valueKind);
-        this.module = module;
+        // this.module = module;
     }
 
     public final void emit(SPIRVCompilationResultBuilder crb) {

@@ -8,9 +8,11 @@ import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
@@ -28,7 +30,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public SPIRVLIROp genBinaryExpr(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
-        return new SPIRVBinary.Expr(op, lirKind, x, y);
+        return new SPIRVBinary.AddExpr(op, lirKind, x, y);
     }
 
     public Variable emitBinaryAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
@@ -212,6 +214,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                 SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getBase(), LIRKind.value(spirvKind));
                 if (memAccess.getIndex() == null) {
                     getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
+                }
+
+                AllocatableValue valueHolder = memAccess.assignedTo();
+                if (valueHolder != null) {
+                    getGen().append(new OCLLIRStmt.AssignStmt(valueHolder, input));
                 }
             }
         }

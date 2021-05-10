@@ -322,6 +322,10 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             System.out.println("EMIT STORE WITH ASM MODULE");
+            cast.emit(crb, asm);
+            // asm.emitValue(crb, index);
+            // asm.emitValueOrOp(crb, rhs);
+
         }
     }
 
