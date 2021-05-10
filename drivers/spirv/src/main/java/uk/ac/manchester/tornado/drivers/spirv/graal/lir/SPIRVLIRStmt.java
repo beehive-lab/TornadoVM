@@ -9,12 +9,14 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 
@@ -103,6 +105,71 @@ public class SPIRVLIRStmt {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
             asm.prevId = loadID;
+        }
+    }
+
+    @Opcode("LoadFromStackFrame")
+    public static class LoadFromStackFrame extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoadFromStackFrame> TYPE = LIRInstructionClass.create(LoadFromStackFrame.class);
+
+        protected SPIRVKind type;
+        protected SPIRVId address;
+        protected int indexFromStackFrame;
+        protected int parameterIndex;
+
+        public LoadFromStackFrame(SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
+            super(TYPE);
+            this.type = type;
+            this.indexFromStackFrame = indexFromStackFrame;
+            this.parameterIndex = parameterIndex;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.trace("µIns LoadFromStackFrame ");
+            SPIRVId loadID = asm.module.getNextId();
+
+            SPIRVId ptrFUnctionULong = null;
+            if (type == SPIRVKind.OP_TYPE_INT_64) {
+                ptrFUnctionULong = asm.pointerToULongFunction;
+            }
+            SPIRVId address = asm.frameId;
+            int alignment = 8;
+            asm.currentBlockScope.add(new SPIRVOpLoad( //
+                    ptrFUnctionULong, //
+                    loadID, //
+                    address, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            String values = String.valueOf(indexFromStackFrame);
+            SPIRVId index = asm.constants.get(values);
+            System.out.println("ID found for index: " + index);
+
+            SPIRVId accessPTR = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
+                    asm.pointerToULongFunction, //
+                    accessPTR, //
+                    loadID, //
+                    index, //
+                    new SPIRVMultipleOperands<>()));
+
+            // Load Address
+            SPIRVId loadPtr = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpLoad( //
+                    ptrFUnctionULong, //
+                    loadPtr, //
+                    accessPTR, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    parameterID, //
+                    accessPTR, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
         }
     }
 

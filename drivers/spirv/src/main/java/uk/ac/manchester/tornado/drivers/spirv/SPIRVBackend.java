@@ -650,8 +650,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             SPIRVSymbolTable.put("frameId", frameId);
 
             SPIRVId ul0 = module.getNextId();
+            asm.insertParameterId(0, ul0); // We need to generalize this call
             module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
             SPIRVId ul1 = module.getNextId();
+            asm.insertParameterId(1, ul1);
             module.add(new SPIRVOpDecorate(ul1, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
 
             module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));

@@ -1,19 +1,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.nodes.cfg.Block;
-
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
@@ -31,6 +24,12 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperan
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+
 public final class SPIRVAssembler extends Assembler {
 
     public SPIRVModule module;
@@ -42,6 +41,7 @@ public final class SPIRVAssembler extends Assembler {
     // Table that stores the Block ID with its Label Reference ID
     public Map<String, SPIRVId> labelTable;
     public Map<String, SPIRVInstScope> blockTable;
+    public Map<Integer, SPIRVId> parametersId;
     public SPIRVId prevId;
     public SPIRVId frameId;
     public SPIRVId pointerToULongFunction;
@@ -53,6 +53,7 @@ public final class SPIRVAssembler extends Assembler {
         labelTable = new HashMap<>();
         blockTable = new HashMap<>();
         constants = new HashMap<>();
+        parametersId = new HashMap<>();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
@@ -107,6 +108,14 @@ public final class SPIRVAssembler extends Assembler {
 
     public void closeFunction(SPIRVInstScope functionScope) {
         functionScope.add(new SPIRVOpFunctionEnd());
+    }
+
+    public void insertParameterId(int index, SPIRVId id) {
+        parametersId.put(index, id);
+    }
+
+    public SPIRVId getParameterId(int parameterIndex) {
+        return parametersId.get(parameterIndex);
     }
 
     /**
