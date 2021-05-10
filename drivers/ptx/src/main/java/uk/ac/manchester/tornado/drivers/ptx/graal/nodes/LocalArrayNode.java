@@ -70,11 +70,12 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.arrayTemplate = PTXKind.resolveTemplateType(elementType);
     }
 
-    public LocalArrayNode(PTXMemoryBase memoryRegister, JavaKind elementType, ConstantNode length) {
+    public LocalArrayNode(PTXMemoryBase memoryRegister, JavaKind elementKind, ConstantNode length) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.arrayTemplate = PTXKind.resolveTemplateType(elementType);
+        this.kind = PTXKind.fromResolvedJavaKind(elementKind);
+        this.arrayTemplate = PTXKind.resolveTemplateType(elementKind);
     }
 
     public PTXMemoryBase getMemoryRegister() {
@@ -90,7 +91,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         trace("emitLocalArray length=%s kind=%s", length, kind);
         final Value lengthValue = gen.operand(length);
 
-        LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
+        LIRKind lirKind = LIRKind.value(kind);
         final Variable variable = ((PTXLIRGenerator) gen.getLIRGeneratorTool()).newVariable(lirKind, true);
         final PTXBinary.Expr declaration = new PTXBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
