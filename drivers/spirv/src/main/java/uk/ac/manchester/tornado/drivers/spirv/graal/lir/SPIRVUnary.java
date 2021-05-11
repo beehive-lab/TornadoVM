@@ -146,7 +146,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("\n\n - &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Generating memory access: " + base + index);
+            SPIRVLogger.traceCodeGen("µInstr MemoryAccess (EMPTY IMPLEMENTATION)");
         }
 
         public Value getIndex() {
