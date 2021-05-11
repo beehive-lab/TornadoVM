@@ -94,7 +94,6 @@ public class SPIRVUnary {
 
             String values = String.valueOf(indexFromStackFrame);
             SPIRVId index = asm.constants.get(values);
-            System.out.println("ID found for index: " + index);
 
             SPIRVId accessPTR = asm.module.getNextId();
             asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
@@ -114,15 +113,6 @@ public class SPIRVUnary {
             ));
 
             // The final store is emitted in the assignParameter
-
-            // SPIRVId parameterID = asm.getParameterId(parameterIndex);
-            // asm.currentBlockScope.add(new SPIRVOpStore( //
-            // parameterID, //
-            // loadPtr, //
-            // new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new
-            // SPIRVLiteralInteger(alignment))) //
-            // ));
-
             asm.registerLIRInstructionValue(this, loadPtr);
         }
     }
@@ -186,7 +176,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.trace("µInstr SPIRVAddressCast");
+            SPIRVLogger.traceCodeGen("µInstr SPIRVAddressCast");
             SPIRVId idLoad = asm.module.getNextId();
 
             SPIRVKind spirvKind = (SPIRVKind) getPlatformKind();
@@ -218,6 +208,8 @@ public class SPIRVUnary {
                     value, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
                     )));
+
+            asm.registerLIRInstructionValue(this, storeAddressID);
         }
     }
 

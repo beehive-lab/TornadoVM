@@ -11,8 +11,10 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -642,8 +644,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
-    private void emitVariableDefs(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, LIR lir) {
+    private List<SPIRVId> emitVariableDefs(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, LIR lir) {
         Map<SPIRVKind, Set<Variable>> kindToVariable = new HashMap<>();
+        List<SPIRVId> ids = new ArrayList<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
@@ -670,9 +673,26 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             System.out.println("\tTYPE: " + type);
             for (Variable var : kindToVariable.get(type)) {
                 System.out.println("\tNAME: " + var);
+
+                SPIRVId ul0 = asm.module.getNextId();
+                asm.insertParameterId(0, ul0); // We need to generalize this call
+                asm.module.add(new SPIRVOpName(ul0, new SPIRVLiteralString(var.toString())));
+                asm.module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+                asm.registerLIRInstructionValue(var.toString(), ul0);
+                ids.add(ul0);
             }
         }
+        return ids;
+    }
 
+    private static class VarHandler {
+        public SPIRVKind kind;
+        public Variable variable;
+
+        public VarHandler(SPIRVKind kind, Variable variable) {
+            this.kind = kind;
+            this.variable = variable;
+        }
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
@@ -713,26 +733,22 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
             SPIRVSymbolTable.put("frameId", frameId);
 
-            emitVariableDefs(crb, asm, lir);
+            List<SPIRVId> spirvIds = emitVariableDefs(crb, asm, lir);
 
-            SPIRVId ul0 = module.getNextId();
-            asm.insertParameterId(0, ul0); // We need to generalize this call
-            module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            SPIRVId ul1 = module.getNextId();
-            asm.insertParameterId(1, ul1);
-            module.add(new SPIRVOpDecorate(ul1, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
+            // SPIRVId ul0 = module.getNextId();
+            // asm.insertParameterId(0, ul0); // We need to generalize this call
+            // module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new
+            // SPIRVLiteralInteger(8)))); // Long Type
+            // SPIRVId ul1 = module.getNextId();
+            // asm.insertParameterId(1, ul1);
+            // module.add(new SPIRVOpDecorate(ul1, SPIRVDecoration.Alignment(new
+            // SPIRVLiteralInteger(8)))); // Long Type
 
             module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));
             module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
             module.add(new SPIRVOpName(frameId, new SPIRVLiteralString("frame")));
 
             Stack<TypeConstant> stack = new Stack<>();
-
-            // For each I/O, there is a decorate with alignment 8 (it is a pointer to the
-            // data)
-            // How many variables?
-            final int expectedVariables = lir.numVariables();
-            System.out.println("Expected Variable: " + expectedVariables);
 
             // We add the type for char
             asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_8);
@@ -771,7 +787,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 module.add(new SPIRVOpConstant(t.typeID, idConstant, t.n));
                 constants.put(t.valueString, idConstant);
             }
-            stack = null;
 
             // emit Type Void
             asm.primitives.emitTypeVoid();
@@ -817,8 +832,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // All variable declaration + Lookup buffer access
             blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-            blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul0, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-            blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            for (SPIRVId id : spirvIds) {
+                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, id, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            }
+            // blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1,
+            // SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             asm.frameId = frameId;
             asm.pointerToULongFunction = pointerToULongFunction;

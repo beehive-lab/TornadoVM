@@ -53,6 +53,7 @@ public final class SPIRVAssembler extends Assembler {
 
     public final Map<String, SPIRVId> constants;
     public final Map<Value, SPIRVId> lirTable;
+    public final Map<String, SPIRVId> lirTableName;
     public SPIRVPrimitiveTypes primitives;
     public SPIRVId pointerToGlobalMemoryHeap;
 
@@ -63,6 +64,7 @@ public final class SPIRVAssembler extends Assembler {
         constants = new HashMap<>();
         parametersId = new HashMap<>();
         lirTable = new HashMap<>();
+        lirTableName = new HashMap<>();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
@@ -131,9 +133,16 @@ public final class SPIRVAssembler extends Assembler {
         lirTable.put(valueLIRInstruction, spirvId);
     }
 
+    public void registerLIRInstructionValue(String valueLIRInstruction, SPIRVId spirvId) {
+        lirTableName.put(valueLIRInstruction, spirvId);
+    }
+
     public SPIRVId lookUpLIRInstructions(Value valueLIRInstruction) {
-        System.out.println(lirTable);
         return lirTable.get(valueLIRInstruction);
+    }
+
+    public SPIRVId lookUpLIRInstructionsName(String valueLIRInstruction) {
+        return lirTableName.get(valueLIRInstruction);
     }
 
     /**
@@ -274,7 +283,11 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitValue(SPIRVCompilationResultBuilder crb, Value value) {
-        // (toString(value));
+        if (crb.getAssembler().lookUpLIRInstructions(value) == null) {
+            System.out.println(">>>>>>>>>>>>>>>>>>>> VAR NAME: " + value.toString());
+            SPIRVId id = crb.getAssembler().lookUpLIRInstructionsName(value.toString());
+            crb.getAssembler().registerLIRInstructionValue(value, id);
+        }
     }
 
     public void emitValueOrOp(SPIRVCompilationResultBuilder crb, Value value) {

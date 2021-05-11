@@ -8,7 +8,6 @@ import org.graalvm.compiler.lir.Opcode;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -118,16 +117,16 @@ public class SPIRVBinary {
                 throw new RuntimeException("Addition type not supported");
             }
 
-            SPIRVId param1 = asm.getParameterId(1);
-            asm.currentBlockScope.add(new SPIRVOpStore(//
-                    param1, //
-                    addId, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
-            ));
+            // SPIRVId param1 = asm.getParameterId(1);
+            // asm.currentBlockScope.add(new SPIRVOpStore(//
+            // param1, //
+            // addId, //
+            // new SPIRVOptionalOperand<>( //
+            // SPIRVMemoryAccess.Aligned( //
+            // new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
+            // ));
 
-            asm.registerLIRInstructionValue(this, param1);
+            asm.registerLIRInstructionValue(this, addId);
         }
     }
 

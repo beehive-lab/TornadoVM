@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -56,10 +57,11 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns Assignment");
+            SPIRVLogger.traceCodeGen("µIns Assignment");
             // Code emission for assignment
 
-            asm.emitValue(crb, lhs); /// I think I can avoid this line
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
 
             if (rhs instanceof SPIRVLIROp) {
                 ((SPIRVLIROp) rhs).emit(crb, asm);
@@ -67,10 +69,24 @@ public class SPIRVLIRStmt {
                 asm.emitValue(crb, rhs);
             }
 
+            SPIRVId value;
+            if (rhs instanceof ConstantValue) {
+                value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
+            } else {
+                value = asm.lookUpLIRInstructions(rhs);
+            }
+
+            SPIRVId storeAddressID = asm.lookUpLIRInstructions(lhs);
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    storeAddressID, //
+                    value, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
+                    )));
+
             // We can do this because the prev expression (right-hand side), register the
             // stores.
             SPIRVId register = asm.lookUpLIRInstructions(rhs);
-            asm.registerLIRInstructionValue(lhs, register);
+            asm.registerLIRInstructionValue(lhs, storeAddressID);
         }
 
         public AllocatableValue getResult() {
@@ -115,7 +131,11 @@ public class SPIRVLIRStmt {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns ASSIGNParameter");
+            SPIRVLogger.traceCodeGen("µIns ASSIGNParameter");
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
             if (rhs instanceof SPIRVLIROp) {
                 ((SPIRVLIROp) rhs).emit(crb, asm);
             } else {
@@ -123,7 +143,8 @@ public class SPIRVLIRStmt {
             }
 
             // Emit Store
-            SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            // SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            SPIRVId parameterID = asm.lookUpLIRInstructions(lhs);
             SPIRVId idExpression = asm.lookUpLIRInstructions(rhs);
             asm.currentBlockScope.add(new SPIRVOpStore( //
                     parameterID, //
@@ -173,6 +194,7 @@ public class SPIRVLIRStmt {
         }
     }
 
+    @Deprecated
     @Opcode("LoadFromStackFrame")
     public static class LoadFromStackFrame extends AbstractInstruction {
 
@@ -183,6 +205,7 @@ public class SPIRVLIRStmt {
         protected int indexFromStackFrame;
         protected int parameterIndex;
 
+        @Deprecated
         public LoadFromStackFrame(SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
             super(TYPE);
             this.type = type;
@@ -190,6 +213,7 @@ public class SPIRVLIRStmt {
             this.parameterIndex = parameterIndex;
         }
 
+        @Deprecated
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.trace("µIns LoadFromStackFrame ");
@@ -210,9 +234,8 @@ public class SPIRVLIRStmt {
 
             String values = String.valueOf(indexFromStackFrame);
             SPIRVId index = asm.constants.get(values);
-            System.out.println("ID found for index: " + index);
-
             SPIRVId accessPTR = asm.module.getNextId();
+
             asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
                     asm.pointerToULongFunction, //
                     accessPTR, //
@@ -229,12 +252,13 @@ public class SPIRVLIRStmt {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
 
-            SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            SPIRVId parameterID = asm.getParameterId(parameterIndex); /// WARNING -> THIS CALL SHOULD BE DEPRECATED
             asm.currentBlockScope.add(new SPIRVOpStore( //
                     parameterID, //
                     accessPTR, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
+
         }
     }
 
