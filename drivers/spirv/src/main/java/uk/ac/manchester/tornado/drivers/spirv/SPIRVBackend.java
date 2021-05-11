@@ -335,7 +335,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         asm.primitives = new SPIRVPrimitiveTypes(asm.module);
 
         if (SPIRV_TEST_ASSEMBLER) {
-            TestLKBufferAccess.testAssignWithLookUpBuffer(asm.module);
+            TestLKBufferAccess.testAssignWithLookUpBufferOptimized(asm.module);
             // dummySPIRVModuleTest(asm.module);
             emitSPIRVCodeIntoASMModule(asm, asm.module);
             return;
@@ -685,16 +685,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return ids;
     }
 
-    private static class VarHandler {
-        public SPIRVKind kind;
-        public Variable variable;
-
-        public VarHandler(SPIRVKind kind, Variable variable) {
-            this.kind = kind;
-            this.variable = variable;
-        }
-    }
-
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         String methodName = crb.compilationResult.getName();
         TornadoLogger.trace("[SPIR-V CodeGen] Generating code for method: %s \n", methodName);
@@ -734,15 +724,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             SPIRVSymbolTable.put("frameId", frameId);
 
             List<SPIRVId> spirvIds = emitVariableDefs(crb, asm, lir);
-
-            // SPIRVId ul0 = module.getNextId();
-            // asm.insertParameterId(0, ul0); // We need to generalize this call
-            // module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new
-            // SPIRVLiteralInteger(8)))); // Long Type
-            // SPIRVId ul1 = module.getNextId();
-            // asm.insertParameterId(1, ul1);
-            // module.add(new SPIRVOpDecorate(ul1, SPIRVDecoration.Alignment(new
-            // SPIRVLiteralInteger(8)))); // Long Type
 
             module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));
             module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
@@ -835,8 +816,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (SPIRVId id : spirvIds) {
                 blockScope.add(new SPIRVOpVariable(pointerToULongFunction, id, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
-            // blockScope.add(new SPIRVOpVariable(pointerToULongFunction, ul1,
-            // SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             asm.frameId = frameId;
             asm.pointerToULongFunction = pointerToULongFunction;

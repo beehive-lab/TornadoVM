@@ -117,15 +117,6 @@ public class SPIRVBinary {
                 throw new RuntimeException("Addition type not supported");
             }
 
-            // SPIRVId param1 = asm.getParameterId(1);
-            // asm.currentBlockScope.add(new SPIRVOpStore(//
-            // param1, //
-            // addId, //
-            // new SPIRVOptionalOperand<>( //
-            // SPIRVMemoryAccess.Aligned( //
-            // new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
-            // ));
-
             asm.registerLIRInstructionValue(this, addId);
         }
     }

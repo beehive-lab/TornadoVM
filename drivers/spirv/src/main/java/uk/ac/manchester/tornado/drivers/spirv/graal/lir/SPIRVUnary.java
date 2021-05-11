@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
@@ -10,7 +9,6 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -21,6 +19,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemor
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVUnaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * Operations for one Input
@@ -174,40 +173,39 @@ public class SPIRVUnary {
             this.valueToStore = valueToStore;
         }
 
+        /**
+         * Generates the following SPIR-V code:
+         * 
+         * <code>
+         *     %34 = OpConvertUToPtr %_ptr_CrossWorkgroup_uchar %32
+         * </code>
+         * 
+         * @param crb
+         * @param asm
+         */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("µInstr SPIRVAddressCast");
             SPIRVId idLoad = asm.module.getNextId();
-
-            SPIRVKind spirvKind = (SPIRVKind) getPlatformKind();
 
             // We force to load a pointer to long
             SPIRVId typeLoad = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
 
-            asm.currentBlockScope.add(new SPIRVOpLoad( //
-                    typeLoad, //
-                    idLoad, //
-                    addressToLoad, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
+            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                asm.currentBlockScope.add(new SPIRVOpLoad( //
+                        typeLoad, //
+                        idLoad, //
+                        addressToLoad, //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
+            } else {
+                idLoad = addressToLoad;
+            }
 
             SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
             SPIRVId storeAddressID = asm.module.getNextId();
             asm.currentBlockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
-
-            SPIRVId value;
-            if (valueToStore instanceof ConstantValue) {
-                value = asm.constants.get(((ConstantValue) this.valueToStore).getConstant().toValueString());
-            } else {
-                value = asm.lookUpLIRInstructions(valueToStore);
-            }
-
-            asm.currentBlockScope.add(new SPIRVOpStore( //
-                    storeAddressID, //
-                    value, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
-                    )));
 
             asm.registerLIRInstructionValue(this, storeAddressID);
         }

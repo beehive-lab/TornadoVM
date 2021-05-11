@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVLIRStmt {
 
@@ -69,23 +70,27 @@ public class SPIRVLIRStmt {
                 asm.emitValue(crb, rhs);
             }
 
-            SPIRVId value;
-            if (rhs instanceof ConstantValue) {
-                value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
+            SPIRVId storeAddressID;
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                storeAddressID = asm.lookUpLIRInstructions(rhs);
             } else {
-                value = asm.lookUpLIRInstructions(rhs);
-            }
+                SPIRVId value;
+                if (rhs instanceof ConstantValue) {
+                    value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
+                } else {
+                    value = asm.lookUpLIRInstructions(rhs);
+                }
 
-            SPIRVId storeAddressID = asm.lookUpLIRInstructions(lhs);
-            asm.currentBlockScope.add(new SPIRVOpStore( //
-                    storeAddressID, //
-                    value, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
-                    )));
+                storeAddressID = asm.lookUpLIRInstructions(lhs);
+                asm.currentBlockScope.add(new SPIRVOpStore( //
+                        storeAddressID, //
+                        value, //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
+                        )));
+            }
 
             // We can do this because the prev expression (right-hand side), register the
             // stores.
-            SPIRVId register = asm.lookUpLIRInstructions(rhs);
             asm.registerLIRInstructionValue(lhs, storeAddressID);
         }
 
@@ -408,10 +413,28 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("EMIT STORE WITH ASM MODULE");
+            SPIRVLogger.traceCodeGen("µInstr EmitStoreStmt");
             cast.emit(crb, asm);
             // asm.emitValue(crb, index);
             // asm.emitValueOrOp(crb, rhs);
+
+            SPIRVId value;
+            if (rhs instanceof ConstantValue) {
+                value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
+            } else {
+                value = asm.lookUpLIRInstructions(rhs);
+            }
+
+            SPIRVKind spirvKind = (SPIRVKind) cast.getLIRKind().getPlatformKind();
+
+            SPIRVId storeAddressID = asm.lookUpLIRInstructions(cast);
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    storeAddressID, //
+                    value, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
+                    )));
+
+            // asm.registerLIRInstructionValue(this, storeAddressID);
 
         }
     }

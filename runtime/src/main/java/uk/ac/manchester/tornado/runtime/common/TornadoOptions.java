@@ -169,8 +169,8 @@ public class TornadoOptions {
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
 
     /**
-     * It enables automatic discovery and parallelisation of loops.
-     * Please note that this option is experimental and may cause issues if enabled.
+     * It enables automatic discovery and parallelisation of loops. Please note that
+     * this option is experimental and may cause issues if enabled.
      */
     public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", "False");
 
@@ -207,5 +207,11 @@ public class TornadoOptions {
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
     public static final boolean L0_SHARED_MEMORY_ALLOCATOR = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", "False");
+
+    /**
+     * It optimizes loads and stores for the SPIRV backend. It uses less virtual
+     * registers.
+     */
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", "True");
 
 }
