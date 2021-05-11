@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 
 public interface TornadoDriver {
 
@@ -59,5 +60,7 @@ public interface TornadoDriver {
     String getName();
 
     int getNumPlatforms();
+
+    TornadoVMBackendType getBackendType();
 
 }

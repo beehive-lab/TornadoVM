@@ -14,11 +14,11 @@ __kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base,
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
 {
-  long l_18, l_19, l_20, l_13, l_14, l_15;
-  int i_10, i_8, i_24, i_9, i_12, i_2, i_3, i_6, i_7, i_4, i_5;
-  ulong ul_1, ul_0, ul_16, ul_21;
   bool z_11;
-  float f_22, f_23, f_17;
+  float f_17, f_23, f_22;
+  int i_3, i_4, i_2, i_7, i_8, i_24, i_5, i_6, i_12, i_9, i_10;
+  ulong ul_0, ul_16, ul_1, ul_21;
+  long l_20, l_15, l_14, l_13, l_19, l_18;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -53,7 +53,7 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
       l_15  =  l_14 + 24L;
       ul_16  =  ul_1 + l_15;
       f_17  =  *((__global float *) ul_16);
-      l_18  =  (long) i_9;
+      l_18  =  i_9;
       l_19  =  l_18 << 2;
       l_20  =  l_19 + 24L;
       ul_21  =  ul_0 + l_20;
@@ -74,8 +74,8 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
 {
-  ulong ul_15, ul_17, ul_19, ul_21, ul_23, ul_25, ul_1, ul_0, ul_3, ul_5, ul_7, ul_9, ul_11, ul_13;
-  float f_10, f_8, f_6, f_4, f_18, f_16, f_14, f_12, f_2, f_38, f_36, f_37, f_26, f_27, f_24, f_22, f_20, f_34, f_35, f_32, f_33, f_30, f_31, f_28, f_29;
+  float f_35, f_36, f_33, f_34, f_31, f_32, f_29, f_30, f_27, f_28, f_26, f_24, f_22, f_20, f_18, f_16, f_14, f_12, f_10, f_8, f_6, f_4, f_2, f_37, f_38;
+  ulong ul_15, ul_13, ul_19, ul_17, ul_23, ul_21, ul_25, ul_0, ul_3, ul_1, ul_7, ul_5, ul_11, ul_9;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 

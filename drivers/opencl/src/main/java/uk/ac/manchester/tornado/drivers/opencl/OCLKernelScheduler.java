@@ -64,6 +64,10 @@ public abstract class OCLKernelScheduler {
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
             // Register the time for the task
             meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
         }
     }
 

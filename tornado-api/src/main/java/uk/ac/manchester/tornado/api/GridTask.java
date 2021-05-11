@@ -63,4 +63,8 @@ public class GridTask {
     public WorkerGrid get(String taskName) {
         return gridTaskMap.get(taskName);
     }
+
+    public boolean contains(String taskScheduleName, String taskName) {
+        return gridTaskMap.containsKey(taskScheduleName + "." + taskName);
+    }
 }

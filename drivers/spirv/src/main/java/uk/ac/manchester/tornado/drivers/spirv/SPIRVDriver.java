@@ -6,6 +6,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
@@ -147,6 +148,11 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
     @Override
     public int getNumPlatforms() {
         return backends.length;
+    }
+
+    @Override
+    public TornadoVMBackendType getBackendType() {
+        return TornadoVMBackendType.SPIRV;
     }
 
     public SPIRVBackend getBackend(int platformIndex, int deviceIndex) {

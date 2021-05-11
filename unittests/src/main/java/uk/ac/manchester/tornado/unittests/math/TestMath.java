@@ -131,6 +131,12 @@ public class TestMath extends TornadoTestBase {
         }
     }
 
+    public static void testRemainder(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = b[i] % a[i];
+        }
+    }
+
     @Test
     public void testMathCos() {
         final int size = 128;
@@ -388,5 +394,26 @@ public class TestMath extends TornadoTestBase {
 
         testNegate(a, seq);
         assertArrayEquals(b, seq, 0.001f);
+    }
+
+    @Test
+    public void testRem() {
+        Random r = new Random();
+        final int size = 8192;
+        int[] a = new int[size];
+        int[] b = new int[size];
+        int[] seq = new int[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = r.nextInt();
+            b[i] = r.nextInt();
+            seq[i] = b[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testRemainder, a, b).streamOut(b).execute();
+
+        testRemainder(a, seq);
+        assertArrayEquals(b, seq);
     }
 }

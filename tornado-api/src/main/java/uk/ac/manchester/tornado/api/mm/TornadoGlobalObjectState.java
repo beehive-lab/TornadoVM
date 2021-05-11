@@ -49,13 +49,7 @@ public interface TornadoGlobalObjectState {
 
     boolean isExclusive();
 
-    TornadoDevice getOwner();
-
-    TornadoDeviceObjectState getDeviceState();
-
     TornadoDeviceObjectState getDeviceState(TornadoDevice device);
-
-    void setOwner(TornadoDevice device);
 
     void invalidate();
 

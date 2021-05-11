@@ -32,6 +32,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -45,7 +46,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 @NodeInfo
-public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {
+public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray, MemoryKill {
 
     public static final NodeClass<LocalArrayNode> TYPE = NodeClass.create(LocalArrayNode.class);
 

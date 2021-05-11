@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -190,6 +191,32 @@ public class Resize {
 
         for (float v : b) {
             assertEquals(40.0f, v, 0.001f);
+        }
+    }
+
+    @Test
+    public void testUpdateReferenceCopyIn() {
+        float[] a = createArray(256);
+        float[] b = createArray(256);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(256);
+        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+
+        // Do not stream in 'a'
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", Resize::resize02, a, b) //
+                .streamOut(b); //
+        ts.execute(gridTask);
+
+        float[] aux = createArray(256);
+        Arrays.fill(aux, 15);
+
+        // Update copy in variable 'a'. It should invalidate the buffer state on the device and copy in the 'aux' array.
+        ts.updateReference(a, aux);
+        ts.execute(gridTask);
+
+        for (float v : b) {
+            assertEquals(25.0f, v, 0.001f);
         }
     }
 }

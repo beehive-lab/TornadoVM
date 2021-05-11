@@ -57,6 +57,7 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -227,6 +228,11 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
             }
         }
         return null;
+    }
+
+    @Override
+    public TornadoVMBackendType getBackendType(int index) {
+        return tornadoVMDrivers[index].getBackendType();
     }
 
     @Override
