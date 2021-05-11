@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
@@ -12,6 +13,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -75,37 +77,57 @@ public class SPIRVBinary {
             super(opcode, lirKind, x, y);
         }
 
+        private SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
+            if (inputValue instanceof ConstantValue) {
+                return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
+            } else {
+                // We need to perform a load first
+                SPIRVId param = asm.lookUpLIRInstructions(inputValue);
+                SPIRVId load = asm.module.getNextId();
+                asm.currentBlockScope.add(new SPIRVOpLoad(//
+                        typeOperation, //
+                        load, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+                return load;
+            }
+        }
+
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.trace("µInstr AddExpr");
 
-            SPIRVId a = asm.lookUpLIRInstructions(x);
-            SPIRVId b = asm.lookUpLIRInstructions(y);
-            // SPIRVId type = asm.lookUpType(getValueKind());
+            LIRKind lirKind = getLIRKind();
+            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
+            SPIRVId typeOperation = asm.primitives.getTypeInt(spirvKind);
 
-            SPIRVId ulong = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
-
-            SPIRVId param = asm.getParameterId(0);
-
-            SPIRVId load = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpLoad(ulong, //
-                    load, //
-                    param, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))//
-            ));
-
-            // FIXME: THis is for an example
-            SPIRVId constant = asm.constants.get("24");
+            SPIRVId a = getId(x, asm, typeOperation, spirvKind);
+            SPIRVId b = getId(y, asm, typeOperation, spirvKind);
 
             SPIRVId addId = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpIAdd(ulong, //
-                    addId, //
-                    load, //
-                    constant));
+            if (spirvKind.isInteger()) {
+                asm.currentBlockScope.add(new SPIRVOpIAdd( //
+                        typeOperation, //
+                        addId, //
+                        a, //
+                        b));
+            } else {
+                throw new RuntimeException("Addition type not supported");
+            }
 
             SPIRVId param1 = asm.getParameterId(1);
-            asm.currentBlockScope.add(new SPIRVOpStore(param1, addId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+            asm.currentBlockScope.add(new SPIRVOpStore(//
+                    param1, //
+                    addId, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
+            ));
 
-            asm.registerLIRInstructionValue(this, addId);
+            asm.registerLIRInstructionValue(this, param1);
         }
     }
 

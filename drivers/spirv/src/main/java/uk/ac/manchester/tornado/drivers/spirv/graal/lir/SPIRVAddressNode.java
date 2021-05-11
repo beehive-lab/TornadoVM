@@ -60,14 +60,11 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
         Value indexValue = genValue(generator, index);
         if (index == null) {
             throw new RuntimeException("Operation not supported -- INDEX IS NULL");
-            // generator.setResult(this, new SPIRVUnary.MemoryAccess(memoryRegion,
-            // baseValue, false));
         }
         setMemoryAccess(generator, baseValue, indexValue, tool);
     }
 
     private void setMemoryAccess(NodeLIRBuilderTool generator, Value baseValue, Value indexValue, SPIRVLIRGenerator tool) {
-        System.out.println(">>>> SPIRVAddressNode");
         Variable addressNode = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
         generator.setResult(this, new MemoryAccess(memoryRegion, addressNode));
     }

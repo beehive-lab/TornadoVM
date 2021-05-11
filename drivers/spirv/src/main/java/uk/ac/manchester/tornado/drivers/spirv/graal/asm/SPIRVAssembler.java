@@ -132,6 +132,7 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public SPIRVId lookUpLIRInstructions(Value valueLIRInstruction) {
+        System.out.println(lirTable);
         return lirTable.get(valueLIRInstruction);
     }
 

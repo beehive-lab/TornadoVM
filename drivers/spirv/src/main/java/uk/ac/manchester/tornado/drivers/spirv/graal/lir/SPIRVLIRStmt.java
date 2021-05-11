@@ -58,22 +58,85 @@ public class SPIRVLIRStmt {
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             System.out.println("µIns Assignment");
             // Code emission for assignment
-            System.out.println("rhs??? : " + rhs);
-            asm.emitValue(crb, lhs);
+
+            asm.emitValue(crb, lhs); /// I think I can avoid this line
+
             if (rhs instanceof SPIRVLIROp) {
                 ((SPIRVLIROp) rhs).emit(crb, asm);
             } else {
                 asm.emitValue(crb, rhs);
             }
+
+            // We can do this because the prev expression (right-hand side), register the
+            // stores.
+            SPIRVId register = asm.lookUpLIRInstructions(rhs);
+            asm.registerLIRInstructionValue(lhs, register);
         }
 
         public AllocatableValue getResult() {
             return lhs;
         }
 
-        public Value getExpr() {
-            return rhs;
+    }
+
+    @Opcode("ASSIGNParameter")
+    public static class ASSIGNParameter extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ASSIGNParameter> TYPE = LIRInstructionClass.create(ASSIGNParameter.class);
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected Value rhs;
+
+        protected int alignment;
+
+        protected int parameterIndex;
+
+        public ASSIGNParameter(AllocatableValue lhs, Value rhs, int alignment, int parameterIndex) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+            this.alignment = alignment;
+            this.parameterIndex = parameterIndex;
         }
+
+        /**
+         * Emit the following SPIR-V structure:
+         * 
+         * <code>
+         *     OpStore <address> <value> Aligned <alignment>
+         * </code>
+         * 
+         * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
+         * @param asm
+         *            {@link SPIRVAssembler}
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            System.out.println("µIns ASSIGNParameter");
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            // Emit Store
+            SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            SPIRVId idExpression = asm.lookUpLIRInstructions(rhs);
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    parameterID, //
+                    idExpression, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+            asm.registerLIRInstructionValue(lhs, parameterID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
     }
 
     @Opcode("LoadFrame")

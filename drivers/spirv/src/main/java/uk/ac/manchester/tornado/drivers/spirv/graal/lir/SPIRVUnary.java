@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
@@ -112,12 +113,17 @@ public class SPIRVUnary {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
 
-            SPIRVId parameterID = asm.getParameterId(parameterIndex);
-            asm.currentBlockScope.add(new SPIRVOpStore( //
-                    parameterID, //
-                    loadPtr, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
-            ));
+            // The final store is emitted in the assignParameter
+
+            // SPIRVId parameterID = asm.getParameterId(parameterIndex);
+            // asm.currentBlockScope.add(new SPIRVOpStore( //
+            // parameterID, //
+            // loadPtr, //
+            // new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new
+            // SPIRVLiteralInteger(alignment))) //
+            // ));
+
+            asm.registerLIRInstructionValue(this, loadPtr);
         }
     }
 
@@ -145,12 +151,6 @@ public class SPIRVUnary {
             this.base = base;
         }
 
-        MemoryAccess(SPIRVMemoryBase base, Value value, Value index, boolean needsBase) {
-            super(null, LIRKind.Illegal, value);
-            this.base = base;
-            this.index = index;
-        }
-
         public SPIRVMemoryBase getBase() {
             return base;
         }
@@ -173,29 +173,52 @@ public class SPIRVUnary {
 
         private final SPIRVMemoryBase base;
 
-        public SPIRVAddressCast(SPIRVMemoryBase base, LIRKind valueKind) {
-            super(null, valueKind, null);
+        private final Value address;
+
+        private final Value valueToStore;
+
+        public SPIRVAddressCast(Value address, SPIRVMemoryBase base, LIRKind valueKind, Value valueToStore) {
+            super(null, valueKind, address);
             this.base = base;
+            this.address = address;
+            this.valueToStore = valueToStore;
         }
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVId id31 = asm.module.getNextId();
+            SPIRVLogger.trace("µInstr SPIRVAddressCast");
+            SPIRVId idLoad = asm.module.getNextId();
 
-            SPIRVId ulong = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+            SPIRVKind spirvKind = (SPIRVKind) getPlatformKind();
 
-            SPIRVId ul1 = asm.getParameterId(1);
+            // We force to load a pointer to long
+            SPIRVId typeLoad = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
 
-            asm.currentBlockScope.add(new SPIRVOpLoad(ulong, id31, ul1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+            SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
+
+            asm.currentBlockScope.add(new SPIRVOpLoad( //
+                    typeLoad, //
+                    idLoad, //
+                    addressToLoad, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
 
             SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
-            SPIRVId id34 = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, id34, id31));
+            SPIRVId storeAddressID = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
 
-            SPIRVId uintConstant50 = asm.constants.get("50");
-            asm.currentBlockScope.add(new SPIRVOpStore(id34, uintConstant50, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+            SPIRVId value;
+            if (valueToStore instanceof ConstantValue) {
+                value = asm.constants.get(((ConstantValue) this.valueToStore).getConstant().toValueString());
+            } else {
+                value = asm.lookUpLIRInstructions(valueToStore);
+            }
+
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    storeAddressID, //
+                    value, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
+                    )));
         }
-
     }
 
 }

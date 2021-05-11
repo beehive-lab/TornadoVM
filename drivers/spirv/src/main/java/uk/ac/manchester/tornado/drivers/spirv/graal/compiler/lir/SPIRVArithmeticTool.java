@@ -211,7 +211,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             if (memAccess != null) {
                 System.out.println("IMPLEMENT SPIRVAddressCastNode ");
-                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getBase(), LIRKind.value(spirvKind));
+                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getBase(), LIRKind.value(spirvKind), input);
                 if (memAccess.getIndex() == null) {
                     getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
                 }

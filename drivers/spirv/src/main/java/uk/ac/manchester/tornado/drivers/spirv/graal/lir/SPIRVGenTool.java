@@ -99,8 +99,8 @@ public class SPIRVGenTool {
         SPIRVUnaryOp op = getParameterLoadOp(spirvKind);
         // SPIRVLIRStmt.AssignStmt assignStmt = new SPIRVLIRStmt.AssignStmt(resultValue,
         // new SPIRVUnary.Expr(op, lirKind, stackIndex));
-        SPIRVLIRStmt.AssignStmt assignStmt = new SPIRVLIRStmt.AssignStmt(resultValue,
-                new SPIRVUnary.LoadFromStackFrameExpr(op, lirKind, stackIndex, SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET + index), index));
+        SPIRVLIRStmt.ASSIGNParameter assignStmt = new SPIRVLIRStmt.ASSIGNParameter(resultValue,
+                new SPIRVUnary.LoadFromStackFrameExpr(op, lirKind, stackIndex, SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET + index), index), SPIRVKind.OP_TYPE_INT_64.getSizeInBytes(), index);
         generator.append(assignStmt);
     }
 

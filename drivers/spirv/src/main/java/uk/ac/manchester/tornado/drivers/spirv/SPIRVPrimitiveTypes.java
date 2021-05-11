@@ -24,7 +24,6 @@ public class SPIRVPrimitiveTypes {
         if (!primitives.containsKey(primitive)) {
             SPIRVId typeID = module.getNextId();
             int sizeInBytes = primitive.getSizeInBytes() * 8;
-            System.out.println("ADDING TYPE: " + primitive);
             module.add(new SPIRVOpTypeInt(typeID, new SPIRVLiteralInteger(sizeInBytes), new SPIRVLiteralInteger(0)));
             primitives.put(primitive, typeID);
         }
