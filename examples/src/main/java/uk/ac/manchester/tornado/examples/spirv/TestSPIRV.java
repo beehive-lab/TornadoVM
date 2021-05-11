@@ -44,7 +44,7 @@ public class TestSPIRV {
         Arrays.fill(c, 150);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::copyTestZero, a) //
+                .task("t0", TestSPIRV::copyTest, a) //
                 .streamOut(a) //
                 .execute(); //
 
