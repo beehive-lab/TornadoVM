@@ -143,15 +143,11 @@ public class SPIRVBinary {
             SPIRVId typeBoolean = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_BOOL);
 
             SPIRVId comparison = asm.module.getNextId();
-            if (spirvKind.isInteger()) {
-                asm.currentBlockScope.add(new SPIRVOpSLessThan( //
-                        typeBoolean, //
-                        comparison, //
-                        a, //
-                        b));
-            } else {
-                throw new RuntimeException("Comparison type not supported");
-            }
+            asm.currentBlockScope.add(new SPIRVOpSLessThan( //
+                    typeBoolean, //
+                    comparison, //
+                    a, //
+                    b));
 
             asm.registerLIRInstructionValue(this, comparison);
 

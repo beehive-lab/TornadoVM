@@ -645,6 +645,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         return false;
     }
 
+    // FIXME: Remove this code
     public String toOpenCLSymbol(final Condition condition) {
         switch (condition) {
             case AE:

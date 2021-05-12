@@ -332,7 +332,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
         final Variable condition = emitLogicNode(x.condition());
         if (isLoop) {
-            SPIRVLogger.traceBuildLIR("IF FOR Loop statement");
             getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));
         } else {
             throw new RuntimeException("If statements for non-loops not supported yet");
