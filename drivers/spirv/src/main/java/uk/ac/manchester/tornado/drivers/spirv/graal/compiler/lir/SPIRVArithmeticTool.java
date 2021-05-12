@@ -49,7 +49,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        SPIRVLogger.trace("[µInstructions] emitAdd: %s + %s", a, b);
+        SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s + %s", a, b);
         return emitBinaryAssign(SPIRVBinaryOp.ADD, resultKind, a, b);
     }
 
@@ -120,8 +120,12 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShl(Value a, Value b) {
-        System.out.println("[!] EMIT emitShl - Pending");
-        return null;
+        SPIRVLogger.traceBuildLIR("emitShl: %s << %s", a, b);
+        LIRKind lirKind = LIRKind.combine(a, b);
+        final Variable result = getGen().newVariable(lirKind);
+        SPIRVBinary.ShiftLeft shiftLeft = new SPIRVBinary.ShiftLeft(SPIRVBinaryOp.BITWISE_LEFT_SHIFT, lirKind, a, b);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, shiftLeft));
+        return result;
     }
 
     @Override
@@ -152,7 +156,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
         System.out.println("[!] EMIT SIGNExtends - Pending");
-        return null;
+        return inputVal;
     }
 
     @Override

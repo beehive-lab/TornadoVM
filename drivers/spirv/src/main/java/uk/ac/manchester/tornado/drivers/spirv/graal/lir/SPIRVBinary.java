@@ -9,6 +9,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftLeftLogical;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -20,7 +21,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationRes
 
 /**
  * To be Completed
- * 
  */
 public class SPIRVBinary {
 
@@ -59,25 +59,8 @@ public class SPIRVBinary {
             SPIRVId result = asm.module.getNextId();
             System.out.println("GENERTiNG A + B");
         }
-    }
 
-    public static class Expr extends BinaryConsumer {
-
-        public Expr(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
-        }
-    }
-
-    /**
-     * Additions - based o the LIRKind (type), we will perform an addition.
-     */
-    public static class AddExpr extends BinaryConsumer {
-
-        public AddExpr(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
-        }
-
-        private SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
+        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
             if (inputValue instanceof ConstantValue) {
                 return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
             } else {
@@ -94,6 +77,24 @@ public class SPIRVBinary {
                 ));
                 return load;
             }
+        }
+
+    }
+
+    public static class Expr extends BinaryConsumer {
+
+        public Expr(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+    }
+
+    /**
+     * Additions - based o the LIRKind (type), we will perform an addition.
+     */
+    public static class AddExpr extends BinaryConsumer {
+
+        public AddExpr(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
         }
 
         @Override
@@ -128,25 +129,6 @@ public class SPIRVBinary {
             super(opcode, lirKind, x, y);
         }
 
-        private SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
-            if (inputValue instanceof ConstantValue) {
-                return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
-            } else {
-                // We need to perform a load first
-                SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-                SPIRVId load = asm.module.getNextId();
-                asm.currentBlockScope.add(new SPIRVOpLoad(//
-                        typeOperation, //
-                        load, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-                return load;
-            }
-        }
-
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.trace("µInstr IntegerLessThan");
@@ -176,4 +158,31 @@ public class SPIRVBinary {
         }
     }
 
+    public static class ShiftLeft extends BinaryConsumer {
+
+        public ShiftLeft(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("µInstr ShiftLeft");
+
+            LIRKind lirKind = getLIRKind();
+            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
+            SPIRVId typeOperation = asm.primitives.getTypeInt(spirvKind);
+
+            SPIRVId a = getId(x, asm, typeOperation, spirvKind);
+            SPIRVId b = getId(y, asm, typeOperation, spirvKind);
+
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpShiftLeftLogical( //
+                    typeOperation, //
+                    result, //
+                    a, //
+                    b));
+
+            asm.registerLIRInstructionValue(this, result);
+        }
+    }
 }

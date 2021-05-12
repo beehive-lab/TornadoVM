@@ -236,6 +236,7 @@ public final class SPIRVAssembler extends Assembler {
     public static class SPIRVBinaryOp extends SPIRVOp {
 
         public static final SPIRVBinaryOp ADD = new SPIRVBinaryOp("+");
+        public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOp("<<");;
 
         protected SPIRVBinaryOp(String opcode) {
             super(opcode);
