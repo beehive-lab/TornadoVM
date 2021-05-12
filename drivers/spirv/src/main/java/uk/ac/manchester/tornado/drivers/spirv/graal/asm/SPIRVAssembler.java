@@ -93,9 +93,18 @@ public final class SPIRVAssembler extends Assembler {
         return functionPre;
     }
 
-    public void emitEntryPointMainKernel(String kernelName) {
+    public void emitEntryPointMainKernel(String kernelName, boolean isParallel) {
         mainFunctionID = module.getNextId();
-        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), new SPIRVMultipleOperands<>()));
+
+        SPIRVMultipleOperands operands;
+        if (isParallel) {
+            // FIXME - Pending this - We should query exactly the builtins the code enables.
+            operands = new SPIRVMultipleOperands(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID), builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_SIZE));
+        } else {
+            operands = new SPIRVMultipleOperands();
+        }
+
+        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
     }
 
     public SPIRVId getFunctionPredefinition() {

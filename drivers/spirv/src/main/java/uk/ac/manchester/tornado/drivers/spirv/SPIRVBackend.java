@@ -125,7 +125,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCallStack;
 import uk.ac.manchester.tornado.drivers.spirv.tests.TestLKBufferAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -344,8 +343,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // 1.2 Emit the logic for the Stack Frame access within TornadoVM
         emitPrologue(crb, asm, method, lir, asm.module);
 
-        // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
-        crb.emit(lir);
+        // // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
+        // crb.emit(lir);
 
         // 3. Close main kernel
         emitEpilogue(asm);
@@ -687,21 +686,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
+
         String methodName = crb.compilationResult.getName();
-        TornadoLogger.trace("[SPIR-V CodeGen] Generating code for method: %s \n", methodName);
+        SPIRVLogger.traceCodeGen("[SPIR-V CodeGen] Generating SPIRV-Header for %s \n", methodName);
         boolean isParallel = crb.isParallel();
-        if (crb.isKernel()) {
+        if (isParallel) {
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
             if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
-                asm.emitAttribute(crb); // value
+                asm.emitAttribute(crb);
             }
 
             emitSPIRVCapabilities(module);
             emitImportOpenCL(module);
             emitOpenCLAddressingMode(module);
             emitOpSourceForOpenCL(module, SPIRV_VERSION_FOR_OPENCL);
-
-            asm.emitEntryPointMainKernel(method.getName());
 
             // Generate this only if the kernel is parallel (it uses the get_global_id)
             if (isParallel) {
@@ -717,6 +715,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, idSPIRVBuiltin);
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, idSPIRVBuiltin_GlobalSize);
             }
+
+            asm.emitEntryPointMainKernel(method.getName(), isParallel);
 
             // Decorate for heap_base
             SPIRVId heapBaseAddrId = module.getNextId();
@@ -834,7 +834,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // emitTestLogic(module, frameId, ulong, ul0, ul1, ptrCrossWorkGroupUInt);
 
-            // blockScope.add(new SPIRVOpReturn());
+            blockScope.add(new SPIRVOpReturn());
         } else {
             // Inner function to be called within the main kernel
             throw new RuntimeException("Not supported");
