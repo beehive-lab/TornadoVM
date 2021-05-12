@@ -674,12 +674,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (Variable var : kindToVariable.get(type)) {
                 System.out.println("\tNAME: " + var);
 
-                SPIRVId ul0 = asm.module.getNextId();
-                asm.insertParameterId(0, ul0); // We need to generalize this call
-                asm.module.add(new SPIRVOpName(ul0, new SPIRVLiteralString(var.toString())));
-                asm.module.add(new SPIRVOpDecorate(ul0, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-                asm.registerLIRInstructionValue(var.toString(), ul0);
-                ids.add(ul0);
+                SPIRVId variable = asm.module.getNextId();
+                asm.insertParameterId(0, variable); // We need to generalize this call
+                asm.module.add(new SPIRVOpName(variable, new SPIRVLiteralString(var.toString())));
+                asm.module.add(new SPIRVOpDecorate(variable, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(type.getByteCount()))));
+                asm.registerLIRInstructionValue(var.toString(), variable);
+                ids.add(variable);
             }
         }
         return ids;
