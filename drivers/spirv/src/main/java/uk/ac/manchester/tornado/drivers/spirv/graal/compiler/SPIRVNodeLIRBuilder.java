@@ -342,7 +342,19 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(final LoopEndNode loopEnd) {
-        throw new RuntimeException("Not supported");
+        SPIRVLogger.traceBuildLIR("visiting LoopEndNode: %s", loopEnd);
+
+        final LoopBeginNode loopBegin = loopEnd.loopBegin();
+        final List<ValuePhiNode> phis = loopBegin.valuePhis().snapshot();
+        for (ValuePhiNode phi : phis) {
+            AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+            Value src = operand(phi.valueAt(loopEnd));
+
+            if (!dest.equals(src)) {
+                append(new SPIRVLIRStmt.AssignStmt(dest, src));
+            }
+        }
+        System.out.println("POssibly Emit JUMP here");
     }
 
     @Override
@@ -380,13 +392,19 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         label.clearIncomingValues();
     }
 
+    private void emitLoopExit(LoopExitNode node) {
+        if (gen.getCurrentBlock().getSuccessors().length != 0) {
+            throw new RuntimeException("EMIT LOOP BREAK PENDING");
+        }
+    }
+
     @Override
     protected void emitNode(final ValueNode node) {
         SPIRVLogger.traceBuildLIR("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
-            throw new RuntimeException("Unimplemented");
+            emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             throw new RuntimeException("Unimplemented");
         } else if (node instanceof PragmaUnrollNode || node instanceof ThreadConfigurationNode) {
