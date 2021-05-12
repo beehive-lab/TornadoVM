@@ -103,7 +103,7 @@ public class SPIRVBinary {
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
-            SPIRVId typeOperation = asm.primitives.getTypeInt(spirvKind);
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
             SPIRVId a = getId(x, asm, typeOperation, spirvKind);
             SPIRVId b = getId(y, asm, typeOperation, spirvKind);
@@ -135,12 +135,12 @@ public class SPIRVBinary {
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
-            SPIRVId typeOperation = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
             SPIRVId a = getId(x, asm, typeOperation, spirvKind);
             SPIRVId b = getId(y, asm, typeOperation, spirvKind);
 
-            SPIRVId typeBoolean = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_BOOL);
+            SPIRVId typeBoolean = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
 
             SPIRVId comparison = asm.module.getNextId();
             asm.currentBlockScope.add(new SPIRVOpSLessThan( //
@@ -166,7 +166,7 @@ public class SPIRVBinary {
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
-            SPIRVId typeOperation = asm.primitives.getTypeInt(spirvKind);
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
             SPIRVId a = getId(x, asm, typeOperation, spirvKind);
             SPIRVId b = getId(y, asm, typeOperation, spirvKind);

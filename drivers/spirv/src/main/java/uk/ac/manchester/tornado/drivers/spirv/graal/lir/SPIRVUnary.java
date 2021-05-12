@@ -194,7 +194,7 @@ public class SPIRVUnary {
             SPIRVId idLoad = asm.module.getNextId();
 
             // We force to load a pointer to long
-            SPIRVId typeLoad = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+            SPIRVId typeLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
 
@@ -244,7 +244,7 @@ public class SPIRVUnary {
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("µInstr ThreadID");
 
-            SPIRVId ulong = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 
             // All builtins have to be registered previous to this call
             SPIRVId idSPIRVBuiltin = asm.builtinTable.get(builtIn);
@@ -272,7 +272,7 @@ public class SPIRVUnary {
 
             SPIRVId conv = asm.module.getNextId();
             // FIXME check this
-            SPIRVId uint = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
             asm.currentBlockScope.add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
 
