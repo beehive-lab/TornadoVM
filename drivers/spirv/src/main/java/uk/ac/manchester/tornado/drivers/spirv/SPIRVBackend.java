@@ -346,7 +346,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitPrologue(crb, asm, method, lir, asm.module);
 
         // // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
-        // crb.emit(lir);
+        crb.emit(lir);
 
         // 3. Close main kernel
         emitEpilogue(asm);
@@ -713,8 +713,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         String methodName = crb.compilationResult.getName();
         SPIRVLogger.traceCodeGen("[SPIR-V CodeGen] Generating SPIRV-Header for %s \n", methodName);
-        boolean isParallel = crb.isParallel();
-        if (isParallel) {
+        if (crb.isKernel()) {
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
             if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
                 asm.emitAttribute(crb);
@@ -725,6 +724,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             emitOpenCLAddressingMode(module);
             emitOpSourceForOpenCL(module, SPIRV_VERSION_FOR_OPENCL);
 
+            boolean isParallel = crb.isParallel();
             // Generate this only if the kernel is parallel (it uses the get_global_id)
             if (isParallel) {
                 // Register Thread ID

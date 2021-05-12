@@ -32,7 +32,8 @@ public class SPIRVControlFlow {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            asm.emitBlockLabel(Integer.toString(blockId), asm.functionScope);
+            SPIRVLogger.traceCodeGen("LoopLabel Pending >>>>>>>>>>>> ");
+            // asm.emitBlockLabel(Integer.toString(blockId), asm.functionScope);
         }
     }
 
