@@ -55,6 +55,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVPrimitiveTypes primitives;
     public SPIRVId pointerToGlobalMemoryHeap;
     public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
+    public SPIRVId v3ulong;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);

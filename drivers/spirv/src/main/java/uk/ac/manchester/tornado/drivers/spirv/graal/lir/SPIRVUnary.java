@@ -11,7 +11,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
@@ -249,10 +248,7 @@ public class SPIRVUnary {
             // All builtins have to be registered previous to this call
             SPIRVId idSPIRVBuiltin = asm.builtinTable.get(builtIn);
 
-            SPIRVId v3long = asm.module.getNextId();
-            asm.module.add(new SPIRVOpTypeVector( //
-                    v3long, //
-                    ulong, new SPIRVLiteralInteger(3)));
+            SPIRVId v3long = asm.v3ulong;
 
             // Call Thread-ID getGlobalId(0)
             SPIRVId id19 = asm.module.getNextId();

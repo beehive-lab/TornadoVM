@@ -823,6 +823,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             SPIRVId ptrCrossWorkGroupUInt = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrCrossWorkGroupUInt, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32)));
 
+            SPIRVId v3ulong = module.getNextId();
+            module.add(new SPIRVOpTypeVector(v3ulong, ulong, new SPIRVLiteralInteger(3)));
+
+            SPIRVId ptrV3ulong = module.getNextId();
+            module.add(new SPIRVOpTypePointer(ptrV3ulong, SPIRVStorageClass.Input(), v3ulong));
+
+            asm.v3ulong = v3ulong;
+
+            if (isParallel) {
+                for (Map.Entry<SPIRVOCLBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
+                    asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
+                }
+            }
+
             // Main kernel Begins
             SPIRVInstScope functionScope = asm.emitOpFunction(asm.primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionPredefinition());
             //
