@@ -18,6 +18,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemoryBase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
@@ -217,20 +218,36 @@ public class SPIRVUnary {
 
     public static class OpenCLBuiltinCallForSPIRV extends UnaryConsumer {
 
+        protected SPIRVOCLBuiltIn builtIn;
         protected Value dimension;
 
-        public OpenCLBuiltinCallForSPIRV(LIRKind valueKind, Value dimension) {
+        public OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn builtIn, LIRKind valueKind, Value dimension) {
             super(null, valueKind, dimension);
             this.dimension = dimension;
+            this.builtIn = builtIn;
         }
 
+        /**
+         * Equivalent OpenCL Code:
+         *
+         * <code>
+         * int idx = get_global_id(dimensionIndex);
+         * </code>
+         *
+         * <code>
+         *        %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
+         *      %call = OpCompositeExtract %ulong %37 0
+         *      %conv = OpUConvert %uint %call
+         * </code>
+         */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("µInstr ThreadID");
 
             SPIRVId ulong = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
 
-            SPIRVId idSPIRVBuiltin = null;
+            // All builtins have to be registered previous to this call
+            SPIRVId idSPIRVBuiltin = asm.builtinTable.get(builtIn);
 
             SPIRVId v3long = asm.module.getNextId();
             asm.module.add(new SPIRVOpTypeVector( //

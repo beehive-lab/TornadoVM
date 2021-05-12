@@ -28,6 +28,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionContro
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
@@ -53,6 +54,7 @@ public final class SPIRVAssembler extends Assembler {
     public final Map<String, SPIRVId> lirTableName;
     public SPIRVPrimitiveTypes primitives;
     public SPIRVId pointerToGlobalMemoryHeap;
+    public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -62,6 +64,8 @@ public final class SPIRVAssembler extends Assembler {
         parametersId = new HashMap<>();
         lirTable = new HashMap<>();
         lirTableName = new HashMap<>();
+        builtinTable = new HashMap<>();
+
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {

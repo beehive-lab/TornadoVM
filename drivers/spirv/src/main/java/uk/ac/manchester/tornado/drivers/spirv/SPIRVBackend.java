@@ -82,7 +82,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVAddressingModel;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVBuiltIn;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
@@ -453,13 +452,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // @formatter:on
     }
 
-    private SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module) {
+    private SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module, SPIRVOCLBuiltIn builtIn) {
         SPIRVId idSPIRVBuiltin = module.getNextId();
-        // Add Decorators for the GetGlobalID intrinsics
-        module.add(new SPIRVOpName(idSPIRVBuiltin, new SPIRVLiteralString("spirv_BuiltInGlobalInvocationId")));
-        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(SPIRVBuiltIn.GlobalInvocationId())));
+        module.add(new SPIRVOpName(idSPIRVBuiltin, new SPIRVLiteralString(builtIn.name)));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(builtIn.builtIn)));
         module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.Constant()));
-        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString("spirv_BuiltInGlobalInvocationId"), SPIRVLinkageType.Import())));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(builtIn.name), SPIRVLinkageType.Import())));
         return idSPIRVBuiltin;
     }
 
@@ -472,8 +470,13 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // Generate this only if the kernel is parallel (it uses the get_global_id)
         if (isParallel) {
-            SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module);
-            SPIRVSymbolTable.put("idSPIRVBuiltin", idSPIRVBuiltin);
+            // Register Thread ID
+            SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
+
+            // Register Global Size
+            SPIRVId idSPIRVBuiltin_GlobalSize = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
         }
 
         // Decorate for heap_base
@@ -702,8 +705,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // Generate this only if the kernel is parallel (it uses the get_global_id)
             if (isParallel) {
-                SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module);
-                SPIRVSymbolTable.put("idSPIRVBuiltin", idSPIRVBuiltin);
+                // Register Thread ID
+                SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
+                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
+
+                // Register Global Size
+                SPIRVId idSPIRVBuiltin_GlobalSize = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
+                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
+
+                // Register builtins
+                asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, idSPIRVBuiltin);
+                asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, idSPIRVBuiltin_GlobalSize);
             }
 
             // Decorate for heap_base

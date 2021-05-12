@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -11,6 +12,10 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 @NodeInfo(shortName = "SPIRV-Thread-Size")
 public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
@@ -18,23 +23,20 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
     public static final NodeClass<GlobalThreadSizeNode> TYPE = NodeClass.create(GlobalThreadSizeNode.class);
 
     @Input
-    protected ConstantNode dimension;
+    protected ConstantNode dimensionIndex;
 
     public GlobalThreadSizeNode(ConstantNode dimension) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
-        this.dimension = dimension;
+        this.dimensionIndex = dimension;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-
-        // This is similar to the Get_GLOBAL_ID node
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-
-        // Complete operations here
-
+        Value valueDimension = generator.operand(dimensionIndex);
+        LIRKind lirKind = tool.getLIRKind(stamp);
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.GLOBAL_SIZE, lirKind, valueDimension)));
         generator.setResult(this, result);
-        System.out.println(">>>>>>>>>>>>> PENDING GENERATE FOR GLOBAL SIZE");
     }
 }

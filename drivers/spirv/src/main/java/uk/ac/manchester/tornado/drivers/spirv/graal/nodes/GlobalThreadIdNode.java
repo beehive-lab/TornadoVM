@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
@@ -31,30 +32,15 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
         this.dimensionIndex = dimensionIndex;
     }
 
-    /**
-     * Equivalent OpenCL Code:
-     *
-     * <code>
-     * int idx = get_global_id(dimensionIndex);
-     * </code>
-     *
-     * <code>
-     * %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
-     * %call = OpCompositeExtract %ulong %37 0
-     * %conv = OpUConvert %uint %call
-     * OpStore %idx %conv Aligned 4
-     * </code>
-     */
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-
         SPIRVLogger.trace("THREAD-ID FOR SPIRV: Operation not completed yet");
         // Complete operations here
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, lirKind, valueDimension)));
         generator.setResult(this, result);
 
     }
