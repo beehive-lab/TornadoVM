@@ -58,6 +58,7 @@ import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBitcast;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCapability;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
@@ -80,6 +81,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVAddressingModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVCapability;
@@ -339,7 +341,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // 1. Emit SPIR-V preamble, variable declaration, decorators, types and
         // constants.
-        // 1.1 Emit main function paramters and variables
+        // 1.1 Emit main function parameters and variables
         // 1.2 Emit the logic for the Stack Frame access within TornadoVM
         emitPrologue(crb, asm, method, lir, asm.module);
 
@@ -878,6 +880,34 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // Inner function to be called within the main kernel
             throw new RuntimeException("Not supported");
         }
+    }
+
+    // This method is for testing
+    private void emitTestThreadID(SPIRVAssembler asm, SPIRVOCLBuiltIn builtIn) {
+
+        SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+
+        // All builtins have to be registered previous to this call
+        SPIRVId idSPIRVBuiltin = asm.builtinTable.get(builtIn);
+
+        SPIRVId v3long = asm.v3ulong;
+
+        // Call Thread-ID getGlobalId(0)
+        SPIRVId id19 = asm.module.getNextId();
+        asm.currentBlockScope.add(new SPIRVOpLoad(v3long, id19, idSPIRVBuiltin, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(32)))));
+
+        // Intrinsic call
+        SPIRVId callIntrinsicId = asm.module.getNextId();
+
+        int dimensionValue = 0;
+
+        asm.currentBlockScope.add(new SPIRVOpCompositeExtract(ulong, callIntrinsicId, id19, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(dimensionValue))));
+
+        SPIRVId conv = asm.module.getNextId();
+        SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+
+        asm.currentBlockScope.add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
+
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
