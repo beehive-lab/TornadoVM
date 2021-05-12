@@ -328,9 +328,15 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
-        final boolean invertedLoop = isLoop && x.trueSuccessor() instanceof LoopExitNode;
+        final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        final Value condition = emitLogicNode(x.condition());
+        final Variable condition = emitLogicNode(x.condition());
+        if (isLoop) {
+            SPIRVLogger.traceBuildLIR("IF FOR Loop statement");
+            getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));
+        } else {
+            throw new RuntimeException("If statements for non-loops not supported yet");
+        }
 
     }
 

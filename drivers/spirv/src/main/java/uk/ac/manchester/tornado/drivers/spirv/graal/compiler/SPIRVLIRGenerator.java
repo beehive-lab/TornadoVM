@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVGenTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
@@ -319,4 +320,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return (SPIRVArithmeticTool) super.getArithmetic();
     }
 
+    public void emitConditionalBranch(Value condition, LabelRef trueBranch, LabelRef falseBranch) {
+        append(new SPIRVControlFlow.BranchConditional(condition, trueBranch, falseBranch));
+    }
 }

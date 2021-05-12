@@ -16,7 +16,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -415,8 +414,6 @@ public class SPIRVLIRStmt {
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("µInstr EmitStoreStmt");
             cast.emit(crb, asm);
-            // asm.emitValue(crb, index);
-            // asm.emitValueOrOp(crb, rhs);
 
             SPIRVId value;
             if (rhs instanceof ConstantValue) {
@@ -433,27 +430,24 @@ public class SPIRVLIRStmt {
                     value, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
                     )));
-
-            // asm.registerLIRInstructionValue(this, storeAddressID);
-
         }
     }
 
-    @Opcode("Pragma")
-    public static class PragmaExpr extends AbstractInstruction {
-
-        public static final LIRInstructionClass<PragmaExpr> TYPE = LIRInstructionClass.create(PragmaExpr.class);
+    @Opcode("CONDITIONAL_STMT")
+    public static class ConditionalStatement extends AbstractInstruction {
+        public static final LIRInstructionClass<ConditionalStatement> TYPE = LIRInstructionClass.create(ConditionalStatement.class);
 
         @Use
-        protected Value prg;
+        private final AbstractInstruction instruction;
 
-        public PragmaExpr(OCLLIROp prg) {
+        public ConditionalStatement(AbstractInstruction instr) {
             super(TYPE);
-            this.prg = prg;
+            this.instruction = instr;
         }
 
         @Override
-        public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            instruction.emitCode(crb);
 
         }
     }

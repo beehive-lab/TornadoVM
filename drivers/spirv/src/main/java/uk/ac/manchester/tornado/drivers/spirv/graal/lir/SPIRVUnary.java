@@ -1,14 +1,18 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -175,11 +179,11 @@ public class SPIRVUnary {
 
         /**
          * Generates the following SPIR-V code:
-         * 
+         *
          * <code>
-         *     %34 = OpConvertUToPtr %_ptr_CrossWorkgroup_uchar %32
+         * %34 = OpConvertUToPtr %_ptr_CrossWorkgroup_uchar %32
          * </code>
-         * 
+         *
          * @param crb
          * @param asm
          */
@@ -211,4 +215,53 @@ public class SPIRVUnary {
         }
     }
 
+    public static class OpenCLBuiltinCallForSPIRV extends UnaryConsumer {
+
+        protected Value dimension;
+
+        public OpenCLBuiltinCallForSPIRV(LIRKind valueKind, Value dimension) {
+            super(null, valueKind, dimension);
+            this.dimension = dimension;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("µInstr ThreadID");
+
+            SPIRVId ulong = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_64);
+
+            SPIRVId idSPIRVBuiltin = null;
+
+            SPIRVId v3long = asm.module.getNextId();
+            asm.module.add(new SPIRVOpTypeVector( //
+                    v3long, //
+                    ulong, new SPIRVLiteralInteger(3)));
+
+            // Call Thread-ID getGlobalId(0)
+            SPIRVId id19 = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpLoad(v3long, id19, idSPIRVBuiltin, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(32)))));
+
+            // Intrinsic call
+            SPIRVId callIntrinsicId = asm.module.getNextId();
+
+            int dimensionValue;
+            if (dimension instanceof ConstantValue) {
+                dimensionValue = Integer.parseInt(((ConstantValue) dimension).getConstant().toValueString());
+            } else {
+                throw new RuntimeException("Not supported");
+            }
+
+            asm.currentBlockScope.add(new SPIRVOpCompositeExtract(ulong, callIntrinsicId, id19, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(dimensionValue))));
+
+            SPIRVId conv = asm.module.getNextId();
+            // FIXME check this
+            SPIRVId uint = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_32);
+
+            asm.currentBlockScope.add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
+
+            // XXX: Store will be performed in the Assigment, if enabled.
+
+            asm.registerLIRInstructionValue(this, conv);
+        }
+    }
 }

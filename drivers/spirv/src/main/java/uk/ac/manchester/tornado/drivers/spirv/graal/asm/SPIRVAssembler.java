@@ -48,9 +48,6 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId frameId;
     public SPIRVId pointerToULongFunction;
 
-    // Ids for testing
-    public SPIRVId ulong;
-
     public final Map<String, SPIRVId> constants;
     public final Map<Value, SPIRVId> lirTable;
     public final Map<String, SPIRVId> lirTableName;

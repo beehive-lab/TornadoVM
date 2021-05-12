@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -11,7 +12,10 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
 
 @NodeInfo(shortName = "SPIRV-Thread-ID")
@@ -31,14 +35,14 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
      * Equivalent OpenCL Code:
      *
      * <code>
-     *     int idx = get_global_id(dimensionIndex);
+     * int idx = get_global_id(dimensionIndex);
      * </code>
      *
      * <code>
-     *          %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
-     *        %call = OpCompositeExtract %ulong %37 0
-     *        %conv = OpUConvert %uint %call
-     *                OpStore %idx %conv Aligned 4
+     * %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
+     * %call = OpCompositeExtract %ulong %37 0
+     * %conv = OpUConvert %uint %call
+     * OpStore %idx %conv Aligned 4
      * </code>
      */
     @Override
@@ -48,9 +52,9 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
         // Complete operations here
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        // tool.append(new OCLLIRStmt.AssignStmt(result, new
-        // OCLUnary.Intrinsic(OCLAssembler.OCLUnaryIntrinsic.GLOBAL_ID,
-        // tool.getLIRKind(stamp), gen.operand(index))));
+        Value valueDimension = generator.operand(dimensionIndex);
+        LIRKind lirKind = tool.getLIRKind(stamp);
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(lirKind, valueDimension)));
         generator.setResult(this, result);
 
     }
