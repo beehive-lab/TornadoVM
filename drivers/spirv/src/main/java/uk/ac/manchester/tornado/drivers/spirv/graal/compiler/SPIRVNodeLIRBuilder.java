@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,6 +21,8 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
@@ -32,6 +35,7 @@ import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
@@ -43,6 +47,7 @@ import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
@@ -57,15 +62,16 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNod
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
  * the SPIR-V backend.
- * 
+ * <p>
  * SPIR-V Visitor from HIR to LIR
- * 
  */
 public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -288,9 +294,43 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         return gen.getLIRKind(stamp);
     }
 
+    private Variable emitLogicNode(final LogicNode node) {
+
+        SPIRVLogger.traceBuildLIR("emitLogicNode: %s", node);
+        LIRKind boolLIRKind = LIRKind.value(SPIRVKind.OP_TYPE_BOOL);
+        Variable result = getGen().newVariable(LIRKind.value(SPIRVKind.OP_TYPE_BOOL));
+        if (node instanceof IntegerLessThanNode) {
+            SPIRVLogger.traceBuildLIR("IntegerLessThanNode: %s", node);
+            final IntegerLessThanNode condition = (IntegerLessThanNode) node;
+            final Value x = operand(condition.getX());
+            final Value y = operand(condition.getY());
+            // FIXME: I think we can refactor the comparisons to a unique class
+            append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVBinary.IntegerLessThan(null, boolLIRKind, x, y)));
+        } else {
+            throw new RuntimeException("Condition Not implemented yet");
+        }
+        setResult(node, result);
+        return result;
+    }
+
     @Override
     public void emitIf(final IfNode x) {
-        throw new RuntimeException("Not supported");
+        SPIRVLogger.traceBuildLIR("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
+
+        /*
+         * test to see if this is an exception check need to implement this properly? or
+         * omit!
+         */
+        final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
+        if (falseBranch.getTargetBlock().isExceptionEntry()) {
+            trace("emitExceptionEntry");
+            shouldNotReachHere("exceptions are unimplemented");
+        }
+
+        final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
+        final boolean invertedLoop = isLoop && x.trueSuccessor() instanceof LoopExitNode;
+
+        final Value condition = emitLogicNode(x.condition());
 
     }
 
@@ -309,11 +349,36 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         throw new RuntimeException("Not supported");
     }
 
+    private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
+        SPIRVLogger.traceBuildLIR("visiting emitLoopBegin %s", loopBeginNode);
+
+        final Block block = (Block) gen.getCurrentBlock();
+        final LIR lir = getGen().getResult().getLIR();
+        final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
+
+        List<ValuePhiNode> valuePhis = loopBeginNode.valuePhis().snapshot();
+        for (ValuePhiNode phi : valuePhis) {
+            final Value value = operand(phi.firstValue());
+            if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
+                /*
+                 * preserve loop-carried dependencies outside of loops
+                 */
+                setResult(phi, value);
+            } else {
+                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                append(new SPIRVLIRStmt.AssignStmt(result, value));
+            }
+        }
+
+        append(new SPIRVControlFlow.LoopLabel(block.getId()));
+        label.clearIncomingValues();
+    }
+
     @Override
     protected void emitNode(final ValueNode node) {
-        SPIRVLogger.trace("µIns emitNode: %s", node);
+        SPIRVLogger.traceBuildLIR("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
-            throw new RuntimeException("Unimplemented");
+            emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
             throw new RuntimeException("Unimplemented");
         } else if (node instanceof ShortCircuitOrNode) {

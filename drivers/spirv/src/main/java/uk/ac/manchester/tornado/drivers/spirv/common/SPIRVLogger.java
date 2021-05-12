@@ -22,4 +22,7 @@ public class SPIRVLogger {
         System.out.printf(CYAN + "[SPIRV-CodeGen] " + message + RESET + "\n", args);
     }
 
+    public static void traceBuildLIR(String message, final Object... args) {
+        System.out.printf(GREEN + "[SPIRV-BuildLIR] " + message + RESET + "\n", args);
+    }
 }

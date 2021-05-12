@@ -230,8 +230,12 @@ public enum SPIRVKind implements PlatformKind {
         }
     }
 
+    private boolean isIntType() {
+        return kind == OP_TYPE_INT_16 || kind == OP_TYPE_INT_32 || kind == OP_TYPE_INT_64;
+    }
+
     public boolean isInteger() {
-        return kind != ILLEGAL && !isFloating();
+        return ((kind != ILLEGAL) && isIntType());
     }
 
     public boolean isFloating() {

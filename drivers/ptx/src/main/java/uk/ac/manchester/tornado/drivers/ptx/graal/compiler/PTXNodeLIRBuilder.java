@@ -22,20 +22,13 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind.ILLEGAL;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.ExprStmt;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -86,14 +79,6 @@ import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
-
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
@@ -110,6 +95,20 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind.ILLEGAL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.ExprStmt;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     private final Map<String, Variable> builtInAllocations;
@@ -441,7 +440,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     public void emitIf(final IfNode x) {
         TornadoCodeGenerator.trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
-        /**
+        /*
          * test to see if this is an exception check need to implement this properly? or
          * omit!
          */

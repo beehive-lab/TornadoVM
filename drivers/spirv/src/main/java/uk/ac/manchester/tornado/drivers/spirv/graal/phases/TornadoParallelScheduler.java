@@ -9,8 +9,8 @@ import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AbstractParallelNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;

@@ -12,7 +12,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 
-@NodeInfo
+@NodeInfo(shortName = "SPIRV-Thread-Size")
 public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<GlobalThreadSizeNode> TYPE = NodeClass.create(GlobalThreadSizeNode.class);
@@ -35,6 +35,6 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
         // Complete operations here
 
         generator.setResult(this, result);
-        throw new RuntimeException("Operation not supported yet");
+        System.out.println(">>>>>>>>>>>>> PENDING GENERATE FOR GLOBAL SIZE");
     }
 }

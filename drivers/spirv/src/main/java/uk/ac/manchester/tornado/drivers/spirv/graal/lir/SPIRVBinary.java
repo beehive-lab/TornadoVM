@@ -8,6 +8,7 @@ import org.graalvm.compiler.lir.Opcode;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -118,6 +119,60 @@ public class SPIRVBinary {
             }
 
             asm.registerLIRInstructionValue(this, addId);
+        }
+    }
+
+    public static class IntegerLessThan extends BinaryConsumer {
+
+        public IntegerLessThan(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+
+        private SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
+            if (inputValue instanceof ConstantValue) {
+                return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
+            } else {
+                // We need to perform a load first
+                SPIRVId param = asm.lookUpLIRInstructions(inputValue);
+                SPIRVId load = asm.module.getNextId();
+                asm.currentBlockScope.add(new SPIRVOpLoad(//
+                        typeOperation, //
+                        load, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+                return load;
+            }
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.trace("µInstr IntegerLessThan");
+
+            LIRKind lirKind = getLIRKind();
+            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
+            SPIRVId typeOperation = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_INT_32);
+
+            SPIRVId a = getId(x, asm, typeOperation, spirvKind);
+            SPIRVId b = getId(y, asm, typeOperation, spirvKind);
+
+            SPIRVId typeBoolean = asm.primitives.getTypeInt(SPIRVKind.OP_TYPE_BOOL);
+
+            SPIRVId comparison = asm.module.getNextId();
+            if (spirvKind.isInteger()) {
+                asm.currentBlockScope.add(new SPIRVOpSLessThan( //
+                        typeBoolean, //
+                        comparison, //
+                        a, //
+                        b));
+            } else {
+                throw new RuntimeException("Comparison type not supported");
+            }
+
+            asm.registerLIRInstructionValue(this, comparison);
+
         }
     }
 

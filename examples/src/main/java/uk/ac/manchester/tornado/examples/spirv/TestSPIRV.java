@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+
+import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel and test the pre-compiled API with
@@ -49,5 +49,9 @@ public class TestSPIRV {
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
+        if (a[0] == 50) {
+            System.out.println("Result is CORRECT");
+        }
+
     }
 }

@@ -40,8 +40,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    protected boolean isNumericInteger(PlatformKind kind) {
-        return false;
+    protected boolean isNumericInteger(PlatformKind platformKind) {
+        if (!(platformKind instanceof SPIRVKind)) {
+            throw new RuntimeException("Invalid Platform Kind");
+        }
+        return ((SPIRVKind) platformKind).isInteger();
     }
 
     @Override
@@ -117,6 +120,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShl(Value a, Value b) {
+        System.out.println("[!] EMIT emitShl - Pending");
         return null;
     }
 
@@ -147,6 +151,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
+        System.out.println("[!] EMIT SIGNExtends - Pending");
         return null;
     }
 
