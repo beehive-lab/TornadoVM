@@ -645,11 +645,22 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
+    public static class Tuple2<T, K> {
+
+        public T first;
+        public K second;
+
+        public Tuple2(T first, K second) {
+            this.first = first;
+            this.second = second;
+        }
+    }
+
     private static class IDTable {
-        public List<SPIRVId> list;
+        public List<Tuple2<SPIRVId, SPIRVKind>> list;
         public Map<SPIRVKind, Set<Variable>> kindToVariable;
 
-        public IDTable(List<SPIRVId> list, Map<SPIRVKind, Set<Variable>> kindToVariable) {
+        public IDTable(List<Tuple2<SPIRVId, SPIRVKind>> list, Map<SPIRVKind, Set<Variable>> kindToVariable) {
             this.list = list;
             this.kindToVariable = kindToVariable;
         }
@@ -657,7 +668,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     private IDTable emitVariableDefs(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, LIR lir) {
         Map<SPIRVKind, Set<Variable>> kindToVariable = new HashMap<>();
-        List<SPIRVId> ids = new ArrayList<>();
+        List<Tuple2<SPIRVId, SPIRVKind>> ids = new ArrayList<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
@@ -679,18 +690,18 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         SPIRVLogger.trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
-        for (SPIRVKind type : kindToVariable.keySet()) {
+        for (SPIRVKind spirvKind : kindToVariable.keySet()) {
             System.out.println("VARIABLES -------------- ");
-            System.out.println("\tTYPE: " + type);
-            for (Variable var : kindToVariable.get(type)) {
+            System.out.println("\tTYPE: " + spirvKind);
+            for (Variable var : kindToVariable.get(spirvKind)) {
                 System.out.println("\tNAME: " + var);
 
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(0, variable); // We need to generalize this call
                 asm.module.add(new SPIRVOpName(variable, new SPIRVLiteralString(var.toString())));
-                asm.module.add(new SPIRVOpDecorate(variable, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(type.getByteCount()))));
+                asm.module.add(new SPIRVOpDecorate(variable, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(spirvKind.getByteCount()))));
                 asm.registerLIRInstructionValue(var.toString(), variable);
-                ids.add(variable);
+                ids.add(new Tuple2<>(variable, spirvKind));
             }
         }
         return new IDTable(ids, kindToVariable);
@@ -808,13 +819,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
             asm.emitOpTypeFunction(asm.primitives.getTypeVoid(), pointerToGlobalMemoryHeap, ulong);
 
-            // TODO: Create a class to handle OpPointers
             ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
-
-            pointerToULongFunction = module.getNextId();
-            module.add(new SPIRVOpTypePointer(pointerToULongFunction, SPIRVStorageClass.Function(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
-
+            pointerToULongFunction = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
             pointerToFrameAccess = module.getNextId();
             module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), pointerToULongFunction));
 
@@ -830,7 +837,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             module.add(new SPIRVOpTypePointer(ptrV3ulong, SPIRVStorageClass.Input(), v3ulong));
 
             asm.v3ulong = v3ulong;
-
             if (isParallel) {
                 for (Map.Entry<SPIRVOCLBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
                     asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
@@ -853,8 +859,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // All variable declaration + Lookup buffer access
             blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-            for (SPIRVId id : idTable.list) {
-                blockScope.add(new SPIRVOpVariable(pointerToULongFunction, id, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
+                SPIRVKind kind = id.second;
+                // we need a pointer to kind
+                SPIRVId resultType = asm.primitives.getPtrToTypePrimitive(kind, SPIRVStorageClass.Function());
+                blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
             blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             asm.frameId = frameId;

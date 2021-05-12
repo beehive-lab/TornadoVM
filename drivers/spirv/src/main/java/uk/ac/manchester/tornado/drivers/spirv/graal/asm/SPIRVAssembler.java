@@ -47,7 +47,6 @@ public final class SPIRVAssembler extends Assembler {
     public Map<Integer, SPIRVId> parametersId;
     public SPIRVId prevId;
     public SPIRVId frameId;
-    public SPIRVId pointerToULongFunction;
 
     public final Map<String, SPIRVId> constants;
     public final Map<Value, SPIRVId> lirTable;
@@ -56,6 +55,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId pointerToGlobalMemoryHeap;
     public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
     public SPIRVId v3ulong;
+    public SPIRVId pointerToULongFunction;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);

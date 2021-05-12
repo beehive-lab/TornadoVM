@@ -1,30 +1,33 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeBool;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFloat;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
-import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeBool;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFloat;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+
 public class SPIRVPrimitiveTypes {
 
-    private Map<SPIRVKind, SPIRVId> primitives;
+    final private Map<SPIRVKind, SPIRVId> primitives;
+
+    final private Map<SPIRVKind, SPIRVId> ptrToprimitives;
 
     private final uk.ac.manchester.spirvproto.lib.SPIRVModule module;
 
     public SPIRVPrimitiveTypes(uk.ac.manchester.spirvproto.lib.SPIRVModule module) {
         this.module = module;
         this.primitives = new HashMap<>();
+        this.ptrToprimitives = new HashMap<>();
     }
 
     public SPIRVId getTypePrimitive(SPIRVKind primitive) {
-        SPIRVLogger.traceCodeGen("Adding primitive: " + primitive);
         if (!primitives.containsKey(primitive)) {
             SPIRVId typeID = module.getNextId();
             int sizeInBytes = primitive.getSizeInBytes() * 8;
@@ -50,6 +53,20 @@ public class SPIRVPrimitiveTypes {
             primitives.put(primitive, typeID);
         }
         return primitives.get(primitive);
+    }
+
+    public SPIRVId getPtrToTypePrimitive(SPIRVKind primitive, SPIRVStorageClass storageClass) {
+        SPIRVId primitiveId = getTypePrimitive(primitive);
+        if (!ptrToprimitives.containsKey(primitive)) {
+            SPIRVId resultType = module.getNextId();
+            module.add(new SPIRVOpTypePointer(resultType, storageClass, primitiveId));
+            ptrToprimitives.put(primitive, resultType);
+        }
+        return ptrToprimitives.get(primitive);
+    }
+
+    public SPIRVId getPtrToTypePrimitive(SPIRVKind primitive) {
+        return getPtrToTypePrimitive(primitive, SPIRVStorageClass.Function());
     }
 
     public SPIRVId getTypeVoid() {

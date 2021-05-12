@@ -184,7 +184,9 @@ public class SPIRVLIRStmt {
 
             SPIRVId typeId = null;
             if (type == SPIRVKind.OP_TYPE_INT_64) {
-                typeId = asm.pointerToULongFunction;
+                typeId = asm.primitives.getPtrToTypePrimitive(type);
+            } else {
+                throw new RuntimeException("Not supported");
             }
             SPIRVId address = asm.frameId;
             int alignment = 8;
@@ -225,7 +227,9 @@ public class SPIRVLIRStmt {
 
             SPIRVId ptrFUnctionULong = null;
             if (type == SPIRVKind.OP_TYPE_INT_64) {
-                ptrFUnctionULong = asm.pointerToULongFunction;
+                ptrFUnctionULong = asm.primitives.getPtrToTypePrimitive(type);
+            } else {
+                throw new RuntimeException("Not supported");
             }
             SPIRVId address = asm.frameId;
             int alignment = 8;
