@@ -81,7 +81,7 @@ public class SPIRVLIRStmt {
                 }
 
                 storeAddressID = asm.lookUpLIRInstructions(lhs);
-                asm.currentBlockScope.add(new SPIRVOpStore( //
+                asm.currentBlockScope().add(new SPIRVOpStore( //
                         storeAddressID, //
                         value, //
                         new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
@@ -133,7 +133,7 @@ public class SPIRVLIRStmt {
 
             SPIRVId param = asm.lookUpLIRInstructions(rhs);
             SPIRVId loadId = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpLoad(//
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
                     uint, //
                     loadId, //
                     param, //
@@ -143,7 +143,7 @@ public class SPIRVLIRStmt {
             ));
 
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(lhs);
-            asm.currentBlockScope.add(new SPIRVOpStore( //
+            asm.currentBlockScope().add(new SPIRVOpStore( //
                     storeAddressID, //
                     loadId, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
@@ -211,7 +211,7 @@ public class SPIRVLIRStmt {
             // SPIRVId parameterID = asm.getParameterId(parameterIndex);
             SPIRVId parameterID = asm.lookUpLIRInstructions(lhs);
             SPIRVId idExpression = asm.lookUpLIRInstructions(rhs);
-            asm.currentBlockScope.add(new SPIRVOpStore( //
+            asm.currentBlockScope().add(new SPIRVOpStore( //
                     parameterID, //
                     idExpression, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
@@ -251,7 +251,7 @@ public class SPIRVLIRStmt {
             }
             SPIRVId address = asm.frameId;
             int alignment = 8;
-            asm.currentBlockScope.add(new SPIRVOpLoad( //
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
                     typeId, //
                     loadID, //
                     address, //
@@ -294,7 +294,7 @@ public class SPIRVLIRStmt {
             }
             SPIRVId address = asm.frameId;
             int alignment = 8;
-            asm.currentBlockScope.add(new SPIRVOpLoad( //
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrFUnctionULong, //
                     loadID, //
                     address, //
@@ -305,7 +305,7 @@ public class SPIRVLIRStmt {
             SPIRVId index = asm.constants.get(values);
             SPIRVId accessPTR = asm.module.getNextId();
 
-            asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
                     asm.pointerToULongFunction, //
                     accessPTR, //
                     loadID, //
@@ -314,7 +314,7 @@ public class SPIRVLIRStmt {
 
             // Load Address
             SPIRVId loadPtr = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpLoad( //
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrFUnctionULong, //
                     loadPtr, //
                     accessPTR, //
@@ -322,7 +322,7 @@ public class SPIRVLIRStmt {
             ));
 
             SPIRVId parameterID = asm.getParameterId(parameterIndex); /// WARNING -> THIS CALL SHOULD BE DEPRECATED
-            asm.currentBlockScope.add(new SPIRVOpStore( //
+            asm.currentBlockScope().add(new SPIRVOpStore( //
                     parameterID, //
                     accessPTR, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
@@ -360,7 +360,7 @@ public class SPIRVLIRStmt {
             String values = String.valueOf(value);
             SPIRVId index = asm.constants.get(values);
 
-            asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
                     asm.pointerToULongFunction, //
                     newID, //
                     prev, //
@@ -492,7 +492,7 @@ public class SPIRVLIRStmt {
 
             SPIRVLogger.traceCodeGen("emit StoreStmt in address: " + cast + " <- " + rhs);
 
-            asm.currentBlockScope.add(new SPIRVOpStore( //
+            asm.currentBlockScope().add(new SPIRVOpStore( //
                     storeAddressID, //
                     value, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //

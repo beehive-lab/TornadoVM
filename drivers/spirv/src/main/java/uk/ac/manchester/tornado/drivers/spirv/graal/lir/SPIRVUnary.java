@@ -89,7 +89,7 @@ public class SPIRVUnary {
             }
             SPIRVId address = asm.frameId;
             int alignment = 8;
-            asm.currentBlockScope.add(new SPIRVOpLoad( //
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrFUnctionULong, //
                     loadID, //
                     address, //
@@ -100,7 +100,7 @@ public class SPIRVUnary {
             SPIRVId index = asm.constants.get(values);
 
             SPIRVId accessPTR = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpInBoundsPtrAccessChain( //
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
                     asm.pointerToULongFunction, //
                     accessPTR, //
                     loadID, //
@@ -109,7 +109,7 @@ public class SPIRVUnary {
 
             // Load Address
             SPIRVId loadPtr = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpLoad( //
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrFUnctionULong, //
                     loadPtr, //
                     accessPTR, //
@@ -199,7 +199,7 @@ public class SPIRVUnary {
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
 
             if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                asm.currentBlockScope.add(new SPIRVOpLoad( //
+                asm.currentBlockScope().add(new SPIRVOpLoad( //
                         typeLoad, //
                         idLoad, //
                         addressToLoad, //
@@ -210,7 +210,7 @@ public class SPIRVUnary {
 
             SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
             SPIRVId storeAddressID = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
 
             asm.registerLIRInstructionValue(this, storeAddressID);
         }
@@ -253,7 +253,7 @@ public class SPIRVUnary {
 
             // Call Thread-ID getGlobalId(0)
             SPIRVId id19 = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpLoad(v3long, id19, idSPIRVBuiltin, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(32)))));
+            asm.currentBlockScope().add(new SPIRVOpLoad(v3long, id19, idSPIRVBuiltin, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(32)))));
 
             // Intrinsic call
             SPIRVId callIntrinsicId = asm.module.getNextId();
@@ -265,13 +265,13 @@ public class SPIRVUnary {
                 throw new RuntimeException("Not supported");
             }
 
-            asm.currentBlockScope.add(new SPIRVOpCompositeExtract(ulong, callIntrinsicId, id19, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(dimensionValue))));
+            asm.currentBlockScope().add(new SPIRVOpCompositeExtract(ulong, callIntrinsicId, id19, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(dimensionValue))));
 
             SPIRVId conv = asm.module.getNextId();
             // FIXME check this
             SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
-            asm.currentBlockScope.add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
+            asm.currentBlockScope().add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
 
             // XXX: Store will be performed in the Assigment, if enabled.
 
@@ -302,7 +302,7 @@ public class SPIRVUnary {
                 SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
                 SPIRVId param = asm.lookUpLIRInstructions(value);
 
-                asm.currentBlockScope.add(new SPIRVOpLoad(//
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
                         uint, //
                         loadConvert, //
                         param, //
@@ -313,7 +313,7 @@ public class SPIRVUnary {
 
                 SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
                 SPIRVId result = asm.module.getNextId();
-                asm.currentBlockScope.add(new SPIRVOpSConvert(ulong, result, loadConvert));
+                asm.currentBlockScope().add(new SPIRVOpSConvert(ulong, result, loadConvert));
 
                 asm.registerLIRInstructionValue(this, result);
 

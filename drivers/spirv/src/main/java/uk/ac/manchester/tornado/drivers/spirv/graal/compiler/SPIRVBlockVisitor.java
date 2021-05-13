@@ -18,11 +18,14 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
 
     @Override
     public Block enter(Block b) {
-        SPIRVLogger.trace("ENTERING BLOCK: " + b);
-        if (b.getPredecessorCount() != 0) {
+        SPIRVLogger.traceCodeGen("ENTERING BLOCK" + b);
+        if (!b.isLoopHeader() && b.getPredecessorCount() != 0) {
             // Do not generate a label for the first block. This was already generated in
             // the SPIR-V preamble because we need the declaration of all variables.
-            assembler.emitBlockLabel(b, assembler.functionScope);
+            assembler.emitBlockLabelIfNotPresent(b, assembler.functionScope);
+        }
+        if (!b.isLoopHeader()) {
+            // assembler.pushScope(assembler.blockTable.get(b.toString()));
         }
         crb.emitBlock(b);
         return null;
@@ -31,6 +34,6 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
     @Override
     public void exit(Block b, Block value) {
         SPIRVLogger.trace("EXIT BLOCK: " + b);
-        // empty implementation
+        // assembler.popScope();
     }
 }

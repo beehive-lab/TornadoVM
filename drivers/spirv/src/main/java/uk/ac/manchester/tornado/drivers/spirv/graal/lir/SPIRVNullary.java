@@ -37,9 +37,12 @@ public class SPIRVNullary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit SPIRVOpReturn");
+            SPIRVLogger.traceCodeGen("emit SPIRVOpReturn for block: " + currentBLock.toString());
             // Search the block
             SPIRVInstScope blockScope = asm.blockTable.get(currentBLock.toString());
+
+            // blockScope = asm.currentBlockScope();
+
             // Add Block Return
             blockScope.add(new SPIRVOpReturn());
         }

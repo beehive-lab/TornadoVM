@@ -5,9 +5,11 @@ import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranch;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranchConditional;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -17,21 +19,33 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationRes
  */
 public class SPIRVControlFlow {
 
-    public static class LoopLabel extends SPIRVLIRStmt.AbstractInstruction {
+    public static class LoopBeginLabel extends SPIRVLIRStmt.AbstractInstruction {
 
-        public static final LIRInstructionClass<LoopLabel> TYPE = LIRInstructionClass.create(LoopLabel.class);
+        public static final LIRInstructionClass<LoopBeginLabel> TYPE = LIRInstructionClass.create(LoopBeginLabel.class);
 
-        private final int blockId;
+        private final String blockId;
 
-        public LoopLabel(int blockId) {
+        public LoopBeginLabel(String blockName) {
             super(TYPE);
-            this.blockId = blockId;
+            this.blockId = blockName;
+        }
+
+        // We only declare the IDs
+        private SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
+            SPIRVId branch = asm.labelTable.get(blockName);
+            if (branch == null) {
+                branch = asm.emitBlockLabel(blockName);
+            }
+            return branch;
         }
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("LoopLabel Pending >>>>>>>>>>>> ");
-            // asm.emitBlockLabel(Integer.toString(blockId), asm.functionScope);
+            SPIRVLogger.traceCodeGen("LoopLabel Pending >>>>>>>>>>>> : blockID " + blockId);
+            SPIRVId branchId = getIfOfBranch(blockId, asm);
+            SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + blockId);
+            SPIRVInstScope newScope = asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
+            // asm.pushScope(newScope);
         }
     }
 
@@ -55,12 +69,10 @@ public class SPIRVControlFlow {
         // We only declare the IDs
         private SPIRVId getIfOfBranch(LabelRef ref, SPIRVAssembler asm) {
             AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
-            String id = targetBlock.toString();
-            SPIRVId branch = asm.labelTable.get(id);
+            String blockName = targetBlock.toString();
+            SPIRVId branch = asm.labelTable.get(blockName);
             if (branch == null) {
-                branch = asm.module.getNextId();
-                asm.currentBlockScope.add(new SPIRVOpName(branch, new SPIRVLiteralString(id)));
-                asm.labelTable.put(id, branch);
+                branch = asm.emitBlockLabel(blockName);
             }
             return branch;
         }
@@ -77,22 +89,65 @@ public class SPIRVControlFlow {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit SPIRVOpBranchConditional (pending)");
 
-            // SPIRVId conditionId = asm.lookUpLIRInstructions(condition);
-            //
-            // SPIRVId trueBranch = getIfOfBranch(lirTrueBlock, asm);
-            // SPIRVId falseBranch = getIfOfBranch(lirFalseBlock, asm);
-            //
-            // // FIXME: Lookup of the branch IDs
-            // asm.currentBlockScope.add(new SPIRVOpBranchConditional( //
-            // conditionId, //
-            // trueBranch, //
-            // falseBranch, //
-            // new SPIRVMultipleOperands<>()));
+            SPIRVId conditionId = asm.lookUpLIRInstructions(condition);
+
+            SPIRVId trueBranch = getIfOfBranch(lirTrueBlock, asm);
+            SPIRVId falseBranch = getIfOfBranch(lirFalseBlock, asm);
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpBranchConditional: " + condition + "? " + trueBranch + ":" + falseBranch);
+
+            // FIXME: Lookup of the branch IDs
+            asm.currentBlockScope().add(new SPIRVOpBranchConditional( //
+                    conditionId, //
+                    trueBranch, //
+                    falseBranch, //
+                    new SPIRVMultipleOperands<>()));
 
             // Note: we do not need to register a new ID, since this operation does not
             // generate one.
+
+        }
+    }
+
+    public static class Branch extends SPIRVLIRStmt.AbstractInstruction {
+
+        public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
+
+        @Use
+        private LabelRef branch;
+
+        public Branch(LabelRef branch) {
+            super(TYPE);
+            this.branch = branch;
+        }
+
+        // We only declare the IDs
+        private SPIRVId getIfOfBranch(LabelRef ref, SPIRVAssembler asm) {
+            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
+            String blockName = targetBlock.toString();
+            SPIRVId branch = asm.labelTable.get(blockName);
+            if (branch == null) {
+                branch = asm.emitBlockLabel(blockName);
+            }
+            return branch;
+        }
+
+        /**
+         * It emits the following pattern:
+         *
+         * <code>
+         *     OpBranchConditional %condition %trueBranch %falseBranch
+         * </code>
+         *
+         * @param crb
+         * @param asm
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVId branchId = getIfOfBranch(branch, asm);
+            SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + branch);
+            asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
 
         }
     }

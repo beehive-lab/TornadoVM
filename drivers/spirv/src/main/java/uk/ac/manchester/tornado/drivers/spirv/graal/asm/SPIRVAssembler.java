@@ -5,6 +5,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
@@ -39,7 +40,8 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVInstScope functionScope;
     public SPIRVId mainFunctionID;
     public SPIRVId functionPre;
-    public SPIRVInstScope currentBlockScope;
+
+    public final Stack<SPIRVInstScope> currentBlockScopeStack;
 
     // Table that stores the Block ID with its Label Reference ID
     public Map<String, SPIRVId> labelTable;
@@ -66,16 +68,47 @@ public final class SPIRVAssembler extends Assembler {
         lirTable = new HashMap<>();
         lirTableName = new HashMap<>();
         builtinTable = new HashMap<>();
+        currentBlockScopeStack = new Stack<>();
 
+    }
+
+    public SPIRVInstScope currentBlockScope() {
+        return currentBlockScopeStack.peek();
+    }
+
+    public void pushScope(SPIRVInstScope scope) {
+        currentBlockScopeStack.push(scope);
+    }
+
+    public SPIRVInstScope popScope() {
+        return currentBlockScopeStack.pop();
     }
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
         throw new RuntimeException("[Not supported for SPIR-V] FPGA ATTRIBUTES - Check with the OpenCL Backend");
     }
 
-    public SPIRVInstScope emitBlockLabel(Block b, SPIRVInstScope functionScope) {
+    public SPIRVId emitBlockLabel(String blockName) {
+        if (!labelTable.containsKey(blockName)) {
+            SPIRVId label = module.getNextId();
+            module.add(new SPIRVOpName(label, new SPIRVLiteralString(blockName)));
+            labelTable.put(blockName, label);
+        }
+        return labelTable.get(blockName);
+    }
+
+    public void emitBlockLabelIfNotPresent(Block b, SPIRVInstScope functionScope) {
+        System.out.println("NEW SCOPE: for block " + b.toString());
         String blockName = b.toString();
-        return emitBlockLabel(blockName, functionScope);
+        if (!labelTable.containsKey(blockName)) {
+            SPIRVId label = module.getNextId();
+            module.add(new SPIRVOpName(label, new SPIRVLiteralString(blockName)));
+            labelTable.put(blockName, label);
+        }
+        SPIRVId label = labelTable.get(blockName);
+        SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
+        blockTable.put(blockName, block);
+        // currentBlockScopeStack.push(block);
     }
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
@@ -84,7 +117,7 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
         labelTable.put(labelName, label);
         blockTable.put(labelName, block);
-        currentBlockScope = block;
+        currentBlockScopeStack.push(block);
         return block;
     }
 

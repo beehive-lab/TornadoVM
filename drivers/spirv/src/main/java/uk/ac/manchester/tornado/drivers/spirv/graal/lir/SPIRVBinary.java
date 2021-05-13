@@ -67,7 +67,7 @@ public class SPIRVBinary {
                 // We need to perform a load first
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 SPIRVId load = asm.module.getNextId();
-                asm.currentBlockScope.add(new SPIRVOpLoad(//
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
                         typeOperation, //
                         load, //
                         param, //
@@ -111,7 +111,7 @@ public class SPIRVBinary {
 
             SPIRVId addId = asm.module.getNextId();
             if (spirvKind.isInteger()) {
-                asm.currentBlockScope.add(new SPIRVOpIAdd( //
+                asm.currentBlockScope().add(new SPIRVOpIAdd( //
                         typeOperation, //
                         addId, //
                         a, //
@@ -145,7 +145,7 @@ public class SPIRVBinary {
             SPIRVId typeBoolean = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
 
             SPIRVId result = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpSLessThan( //
+            asm.currentBlockScope().add(new SPIRVOpSLessThan( //
                     typeBoolean, //
                     result, //
                     a, //
@@ -175,7 +175,7 @@ public class SPIRVBinary {
             SPIRVLogger.traceCodeGen("emit SPIRVOpShiftLeftLogical: " + x + " << " + y);
 
             SPIRVId result = asm.module.getNextId();
-            asm.currentBlockScope.add(new SPIRVOpShiftLeftLogical( //
+            asm.currentBlockScope().add(new SPIRVOpShiftLeftLogical( //
                     typeOperation, //
                     result, //
                     a, //

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -362,6 +363,11 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
+        if (isLoop) {
+            AbstractBlockBase<?> currentBlock = getGen().getCurrentBlock();
+            append(new SPIRVControlFlow.LoopBeginLabel(currentBlock.toString()));
+        }
+
         final Variable condition = emitLogicNode(x.condition());
         if (isLoop) {
             getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));
@@ -374,9 +380,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     public void visitLoopEnd(final LoopEndNode loopEnd) {
         SPIRVLogger.traceBuildLIR("visiting LoopEndNode: %s", loopEnd);
-
         final LoopBeginNode loopBegin = loopEnd.loopBegin();
         final List<ValuePhiNode> phis = loopBegin.valuePhis().snapshot();
+
         for (ValuePhiNode phi : phis) {
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
             Value src = operand(phi.valueAt(loopEnd));
@@ -385,7 +391,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
             }
         }
-        System.out.println(" >>>>>>>>>>> Possible Emit JUMP here");
+        getGen().emitJump(getLIRBlock(loopBegin), true);
     }
 
     @Override
@@ -419,7 +425,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
-        append(new SPIRVControlFlow.LoopLabel(block.getId()));
+        // append(new SPIRVControlFlow.LoopLabel(block.toString()));
         label.clearIncomingValues();
     }
 
