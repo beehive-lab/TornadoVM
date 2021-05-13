@@ -5,6 +5,7 @@ import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpReturn;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 
@@ -36,6 +37,7 @@ public class SPIRVNullary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit SPIRVOpReturn");
             // Search the block
             SPIRVInstScope blockScope = asm.blockTable.get(currentBLock.toString());
             // Add Block Return

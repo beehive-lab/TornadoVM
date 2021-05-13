@@ -1,25 +1,16 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -40,18 +31,6 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.spirvproto.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvproto.lib.SPIRVHeader;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
@@ -130,6 +109,26 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -309,7 +308,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
         out.order(ByteOrder.LITTLE_ENDIAN);
 
-        // Close SPIR-V module without validation
+        // Close SPIR-V module without validation while we develop the SPIR-V backend
         module.close().write(out);
         for (int i = 0; i < module.getByteCount(); i++) {
             asm.emitByte(out.get(i));
@@ -875,14 +874,14 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // emitTestLogic(module, frameId, ulong, ul0, ul1, ptrCrossWorkGroupUInt);
 
-            blockScope.add(new SPIRVOpReturn());
+            // blockScope.add(new SPIRVOpReturn());
         } else {
             // Inner function to be called within the main kernel
             throw new RuntimeException("Not supported");
         }
     }
 
-    // This method is for testing
+    // This method is only for testing of the Thread-ID OpenCL intrinsics
     private void emitTestThreadID(SPIRVAssembler asm, SPIRVOCLBuiltIn builtIn) {
 
         SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
@@ -907,10 +906,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
         asm.currentBlockScope.add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
-
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
+        SPIRVLogger.traceCodeGen("emit SPIRVOpFunctionEnd");
         asm.closeFunction(asm.functionScope);
     }
 }

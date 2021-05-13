@@ -296,7 +296,6 @@ public final class SPIRVAssembler extends Assembler {
 
     public void emitValue(SPIRVCompilationResultBuilder crb, Value value) {
         if (crb.getAssembler().lookUpLIRInstructions(value) == null) {
-            System.out.println(">>>>>>>>>>>>>>>>>>>> VAR NAME: " + value.toString());
             SPIRVId id = crb.getAssembler().lookUpLIRInstructionsName(value.toString());
             crb.getAssembler().registerLIRInstructionValue(value, id);
         }

@@ -56,14 +56,14 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVId result = asm.module.getNextId();
-            System.out.println("GENERTiNG A + B");
+
         }
 
         protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
             if (inputValue instanceof ConstantValue) {
                 return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
             } else {
+                SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
                 // We need to perform a load first
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 SPIRVId load = asm.module.getNextId();
@@ -99,7 +99,6 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.trace("µInstr AddExpr");
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
@@ -107,6 +106,8 @@ public class SPIRVBinary {
 
             SPIRVId a = getId(x, asm, typeOperation, spirvKind);
             SPIRVId b = getId(y, asm, typeOperation, spirvKind);
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpIAdd: " + x + " + " + y);
 
             SPIRVId addId = asm.module.getNextId();
             if (spirvKind.isInteger()) {
@@ -131,7 +132,6 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.trace("µInstr IntegerLessThan");
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
@@ -139,6 +139,8 @@ public class SPIRVBinary {
 
             SPIRVId a = getId(x, asm, typeOperation, spirvKind);
             SPIRVId b = getId(y, asm, typeOperation, spirvKind);
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpSLessThan: " + x + " < " + y);
 
             SPIRVId typeBoolean = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
 
@@ -162,7 +164,6 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µInstr ShiftLeft");
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
@@ -170,6 +171,8 @@ public class SPIRVBinary {
 
             SPIRVId a = getId(x, asm, typeOperation, spirvKind);
             SPIRVId b = getId(y, asm, typeOperation, spirvKind);
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpShiftLeftLogical: " + x + " << " + y);
 
             SPIRVId result = asm.module.getNextId();
             asm.currentBlockScope.add(new SPIRVOpShiftLeftLogical( //

@@ -70,8 +70,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
  * the SPIR-V backend.
- * <p>
- * SPIR-V Visitor from HIR to LIR
+ *
+ * SPIR-V Visitor from HIR to LIR.
+ * 
  */
 public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -175,13 +176,16 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             return;
         }
 
-        System.out.println(">>>>>>>>>>>>>>>>>> MISSING PLATFORM PATCH FOR RETURN STATEMENT WITH VALUE");
+        if (op instanceof SPIRVLIRStmt.ExprStmt) {
+            throw new RuntimeException(">>>>>>>>>>>>>>>>>> MISSING PLATFORM PATCH FOR RETURN STATEMENT WITH VALUE");
+        }
+
     }
 
     public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
         SPIRVLogger.trace("SPIR-V LIR Builder %s - block %s", graph.method().getName(), block);
         OptionValues options = graph.getOptions();
-        try (BlockScope blockScope = gen.getBlockScope(block)) {
+        try (BlockScope ignored = gen.getBlockScope(block)) {
 
             if (block == gen.getResult().getLIR().getControlFlowGraph().getStartBlock()) {
                 assert block.getPredecessorCount() == 0;
@@ -207,9 +211,8 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                         if (!peephole(valueNode)) {
                             try {
                                 doRoot(valueNode);
-                                platformPatch(isKernel);
+                                // platformPatch(isKernel);
                             } catch (final Throwable e) {
-                                System.out.println("e: " + e.toString());
                                 e.printStackTrace();
                                 throw new TornadoInternalError(e).addContext(valueNode.toString());
                             }
@@ -295,7 +298,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private Variable emitLogicNode(final LogicNode node) {
-
         SPIRVLogger.traceBuildLIR("emitLogicNode: %s", node);
         LIRKind boolLIRKind = LIRKind.value(SPIRVKind.OP_TYPE_BOOL);
         Variable result = getGen().newVariable(LIRKind.value(SPIRVKind.OP_TYPE_BOOL));
@@ -353,7 +355,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 append(new SPIRVLIRStmt.AssignStmt(dest, src));
             }
         }
-        System.out.println("POssibly Emit JUMP here");
+        System.out.println(" >>>>>>>>>>> Possible Emit JUMP here");
     }
 
     @Override
@@ -399,7 +401,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitNode(final ValueNode node) {
-        SPIRVLogger.traceBuildLIR("emitNode: %s", node);
+        SPIRVLogger.traceBuildLIR(" [emitNote] visiting: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {

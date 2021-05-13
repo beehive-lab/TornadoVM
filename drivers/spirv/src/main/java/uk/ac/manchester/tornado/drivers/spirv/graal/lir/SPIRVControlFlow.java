@@ -5,11 +5,9 @@ import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranchConditional;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -79,19 +77,19 @@ public class SPIRVControlFlow {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIntr emit SPIRVOpBranchConditional");
+            SPIRVLogger.traceCodeGen("emit SPIRVOpBranchConditional (pending)");
 
-            SPIRVId conditionId = asm.lookUpLIRInstructions(condition);
-
-            SPIRVId trueBranch = getIfOfBranch(lirTrueBlock, asm);
-            SPIRVId falseBranch = getIfOfBranch(lirFalseBlock, asm);
-
-            // FIXME: Lookup of the branch IDs
-            asm.currentBlockScope.add(new SPIRVOpBranchConditional( //
-                    conditionId, //
-                    trueBranch, //
-                    falseBranch, //
-                    new SPIRVMultipleOperands<>()));
+            // SPIRVId conditionId = asm.lookUpLIRInstructions(condition);
+            //
+            // SPIRVId trueBranch = getIfOfBranch(lirTrueBlock, asm);
+            // SPIRVId falseBranch = getIfOfBranch(lirFalseBlock, asm);
+            //
+            // // FIXME: Lookup of the branch IDs
+            // asm.currentBlockScope.add(new SPIRVOpBranchConditional( //
+            // conditionId, //
+            // trueBranch, //
+            // falseBranch, //
+            // new SPIRVMultipleOperands<>()));
 
             // Note: we do not need to register a new ID, since this operation does not
             // generate one.

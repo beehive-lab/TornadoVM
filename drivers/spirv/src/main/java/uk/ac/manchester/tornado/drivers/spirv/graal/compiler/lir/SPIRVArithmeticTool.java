@@ -192,7 +192,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
         System.out.println("[!] EMIT LOAD FOR SPIR-V - Pending");
-        return null;
+        throw new RuntimeException("[!] EMIT LOAD FOR SPIR-V - Pending");
     }
 
     @Override

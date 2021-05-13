@@ -139,12 +139,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-        SPIRVLogger.trace("emitReturn: input=%s", input);
+        SPIRVLogger.traceBuildLIR("emitReturn: input=%s", input);
         if (input != null) {
             throw new RuntimeException("Return with value expressions not supported yet");
         } else {
             AbstractBlockBase<?> currentBlock = getCurrentBlock();
-            System.out.println("Current Block: " + currentBlock);
             append(new SPIRVLIRStmt.ExprStmt(new SPIRVNullary.ReturnNoOperands(LIRKind.Illegal, currentBlock)));
         }
     }

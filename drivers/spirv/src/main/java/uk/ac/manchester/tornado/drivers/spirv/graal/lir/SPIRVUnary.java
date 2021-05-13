@@ -189,7 +189,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µInstr SPIRVAddressCast");
+            SPIRVLogger.traceCodeGen("emit SPIRVAddressCast");
             SPIRVId idLoad = asm.module.getNextId();
 
             // We force to load a pointer to long
@@ -241,7 +241,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µInstr ThreadID");
+            SPIRVLogger.traceCodeGen("emit OCL Intrinsic: " + builtIn);
 
             SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 

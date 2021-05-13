@@ -57,8 +57,6 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns Assignment");
-            // Code emission for assignment
 
             // This call will register the lhs id in case is not in the lookupTable yet.
             asm.emitValue(crb, lhs);
@@ -68,6 +66,8 @@ public class SPIRVLIRStmt {
             } else {
                 asm.emitValue(crb, rhs);
             }
+
+            SPIRVLogger.traceCodeGen("emit Assignment: " + lhs + " = " + rhs);
 
             SPIRVId storeAddressID;
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
@@ -416,7 +416,7 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µInstr EmitStoreStmt");
+
             cast.emit(crb, asm);
 
             SPIRVId value;
@@ -427,8 +427,10 @@ public class SPIRVLIRStmt {
             }
 
             SPIRVKind spirvKind = (SPIRVKind) cast.getLIRKind().getPlatformKind();
-
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(cast);
+
+            SPIRVLogger.traceCodeGen("emit StoreStmt in address: " + cast + " <- " + rhs);
+
             asm.currentBlockScope.add(new SPIRVOpStore( //
                     storeAddressID, //
                     value, //
