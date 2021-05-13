@@ -129,7 +129,7 @@ public class SPIRVLIRStmt {
 
             SPIRVLogger.traceCodeGen("emit ASSIGNWithLoad: " + lhs + " = " + rhs);
 
-            SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_FLOAT_32);
+            SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
             SPIRVId param = asm.lookUpLIRInstructions(rhs);
             SPIRVId loadId = asm.module.getNextId();

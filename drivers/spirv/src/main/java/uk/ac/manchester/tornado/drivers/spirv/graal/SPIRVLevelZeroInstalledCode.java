@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
@@ -14,8 +16,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.Arrays;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
@@ -61,6 +61,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         Arrays.fill(globalWork, 1);
         int dims = meta.getDims();
         System.arraycopy(meta.getGlobalWork(), 0, globalWork, 0, dims);
+
+        if (globalWork[0] == 0) {
+            globalWork[0] = 256;
+        }
         System.out.println(Arrays.toString(globalWork));
 
         // Statically decide a block size of 32

@@ -9,8 +9,12 @@ import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranch;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranchConditional;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -105,9 +109,17 @@ public class SPIRVControlFlow {
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpBranchConditional: " + condition + "? " + trueBranch + ":" + falseBranch);
 
-            // FIXME: Lookup of the branch IDs
-            asm.currentBlockScope().add(new SPIRVOpBranchConditional( //
+            SPIRVId bool = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
+            SPIRVId resultLoad = asm.module.getNextId();
+
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    bool, //
+                    resultLoad, //
                     conditionId, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+            asm.currentBlockScope().add(new SPIRVOpBranchConditional( //
+                    resultLoad, //
                     trueBranch, //
                     falseBranch, //
                     new SPIRVMultipleOperands<>()));
