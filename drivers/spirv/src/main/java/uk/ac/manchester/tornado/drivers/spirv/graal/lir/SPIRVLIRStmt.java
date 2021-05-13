@@ -99,6 +99,67 @@ public class SPIRVLIRStmt {
 
     }
 
+    @Opcode("ASSIGNWithLoad")
+    public static class AssignStmtWithLoad extends AbstractInstruction {
+
+        public static final LIRInstructionClass<AssignStmtWithLoad> TYPE = LIRInstructionClass.create(AssignStmtWithLoad.class);
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected Value rhs;
+
+        public AssignStmtWithLoad(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            SPIRVLogger.traceCodeGen("emit ASSIGNWithLoad: " + lhs + " = " + rhs);
+
+            SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_FLOAT_32);
+
+            SPIRVId param = asm.lookUpLIRInstructions(rhs);
+            SPIRVId loadId = asm.module.getNextId();
+            asm.currentBlockScope.add(new SPIRVOpLoad(//
+                    uint, //
+                    loadId, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(4)))//
+            ));
+
+            SPIRVId storeAddressID = asm.lookUpLIRInstructions(lhs);
+            asm.currentBlockScope.add(new SPIRVOpStore( //
+                    storeAddressID, //
+                    loadId, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
+                    )));
+
+            // We can do this because the prev expression (right-hand side), register the
+            // stores.
+            asm.registerLIRInstructionValue(lhs, storeAddressID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+    }
+
     @Opcode("ASSIGNParameter")
     public static class ASSIGNParameter extends AbstractInstruction {
 
@@ -454,7 +515,6 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             instruction.emitCode(crb);
-
         }
     }
 

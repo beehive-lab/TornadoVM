@@ -144,14 +144,14 @@ public class SPIRVBinary {
 
             SPIRVId typeBoolean = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
 
-            SPIRVId comparison = asm.module.getNextId();
+            SPIRVId result = asm.module.getNextId();
             asm.currentBlockScope.add(new SPIRVOpSLessThan( //
                     typeBoolean, //
-                    comparison, //
+                    result, //
                     a, //
                     b));
 
-            asm.registerLIRInstructionValue(this, comparison);
+            asm.registerLIRInstructionValue(this, result);
 
         }
     }

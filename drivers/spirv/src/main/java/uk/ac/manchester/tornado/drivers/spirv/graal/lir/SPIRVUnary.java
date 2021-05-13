@@ -11,6 +11,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
@@ -275,6 +276,51 @@ public class SPIRVUnary {
             // XXX: Store will be performed in the Assigment, if enabled.
 
             asm.registerLIRInstructionValue(this, conv);
+        }
+    }
+
+    public static class SignExtend extends UnaryConsumer {
+
+        int fromBits;
+        int toBits;
+
+        public SignExtend(LIRKind lirKind, Value inputVal, int fromBits, int toBits) {
+            super(null, lirKind, inputVal);
+            this.fromBits = fromBits;
+            this.toBits = toBits;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : " + fromBits + " -> " + toBits);
+
+            if (fromBits == 32 && toBits == 64) {
+                // OpSConvert
+                SPIRVId loadConvert = asm.module.getNextId();
+
+                SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+                SPIRVId param = asm.lookUpLIRInstructions(value);
+
+                asm.currentBlockScope.add(new SPIRVOpLoad(//
+                        uint, //
+                        loadConvert, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(4)))//
+                ));
+
+                SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                SPIRVId result = asm.module.getNextId();
+                asm.currentBlockScope.add(new SPIRVOpSConvert(ulong, result, loadConvert));
+
+                asm.registerLIRInstructionValue(this, result);
+
+            } else {
+                throw new RuntimeException("Conversion not supported");
+            }
+
         }
     }
 }

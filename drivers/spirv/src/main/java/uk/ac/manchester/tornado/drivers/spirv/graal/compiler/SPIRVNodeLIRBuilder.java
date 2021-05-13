@@ -29,6 +29,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
@@ -39,6 +40,7 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
@@ -49,6 +51,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -255,6 +258,15 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
+    private void emitBranch(IfNode dominator) {
+        SPIRVLogger.trace("µInst emitBranch: " + dominator);
+        boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
+
+        if (hasElse) {
+            throw new RuntimeException("Else not supported");
+        }
+    }
+
     @Override
     public void visitEndNode(final AbstractEndNode end) {
         SPIRVLogger.trace("µInst visitEnd: " + end);
@@ -268,8 +280,26 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new SPIRVLIRStmt.AssignStmt(result, operand(value)));
+                append(new SPIRVLIRStmt.AssignStmtWithLoad(result, operand(value)));
             }
+        }
+
+        Node beginNode = end.predecessor();
+        while (beginNode != null && beginNode.predecessor() != null && !(beginNode instanceof BeginNode)) {
+            beginNode = beginNode.predecessor();
+        }
+        assert beginNode != null;
+        Node dominator = beginNode.predecessor();
+
+        if (dominator != null) {
+            if (dominator instanceof IfNode) {
+                emitBranch((IfNode) dominator);
+            }
+            if (dominator instanceof IntegerSwitchNode) {
+                throw new RuntimeException("SWITCH CASE not supported");
+            }
+        } else if (beginNode instanceof MergeNode) {
+            throw new RuntimeException("Merge within an endNode not supported");
         }
     }
 
@@ -352,7 +382,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             Value src = operand(phi.valueAt(loopEnd));
 
             if (!dest.equals(src)) {
-                append(new SPIRVLIRStmt.AssignStmt(dest, src));
+                append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
             }
         }
         System.out.println(" >>>>>>>>>>> Possible Emit JUMP here");
@@ -385,7 +415,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(phi, value);
             } else {
                 final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
-                append(new SPIRVLIRStmt.AssignStmt(result, value));
+                append(new SPIRVLIRStmt.AssignStmtWithLoad(result, value));
             }
         }
 

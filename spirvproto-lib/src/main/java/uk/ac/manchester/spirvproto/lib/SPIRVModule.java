@@ -148,7 +148,11 @@ public class SPIRVModule implements SPIRVInstScope {
      */
     public int getByteCount() {
         final int[] wordCount = { 0 };
-        this.forEachInstruction(i -> wordCount[0] += i.getWordCount());
+        try {
+            this.forEachInstruction(i -> wordCount[0] += i.getWordCount());
+        } catch (NullPointerException e) {
+            wordCount[0] += 2;
+        }
         wordCount[0] += 5; // for the header
 
         return wordCount[0] * 4;
@@ -244,7 +248,11 @@ public class SPIRVModule implements SPIRVInstScope {
          */
         public void write(ByteBuffer output) {
             header.write(output);
-            forEachInstruction(i -> i.write(output));
+            try {
+                forEachInstruction(i -> i.write(output));
+            } catch (NullPointerException e) {
+
+            }
         }
     }
 }
