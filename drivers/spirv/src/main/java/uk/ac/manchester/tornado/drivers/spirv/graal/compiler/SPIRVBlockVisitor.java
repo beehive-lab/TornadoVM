@@ -25,7 +25,7 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
             assembler.emitBlockLabelIfNotPresent(b, assembler.functionScope);
         }
         if (!b.isLoopHeader()) {
-            // assembler.pushScope(assembler.blockTable.get(b.toString()));
+            assembler.pushScope(assembler.blockTable.get(b.toString()));
         }
         crb.emitBlock(b);
         return null;
@@ -34,6 +34,6 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
     @Override
     public void exit(Block b, Block value) {
         SPIRVLogger.trace("EXIT BLOCK: " + b);
-        // assembler.popScope();
+        assembler.popScope();
     }
 }
