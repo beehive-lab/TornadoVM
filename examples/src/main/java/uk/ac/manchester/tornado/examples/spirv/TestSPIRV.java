@@ -39,7 +39,7 @@ public class TestSPIRV {
         }
     }
 
-    public static void testSimple01() {
+    public static void testSimple00() {
 
         final int numElements = 256;
         int[] a = new int[numElements];
@@ -56,7 +56,7 @@ public class TestSPIRV {
         }
     }
 
-    public static void testSimple02() {
+    public static void testSimple01() {
 
         final int numElements = 256;
         int[] a = new int[numElements];
@@ -73,7 +73,7 @@ public class TestSPIRV {
         }
     }
 
-    public static void testSimple03() {
+    public static void testSimple02() {
 
         final int numElements = 256;
         int[] a = new int[numElements];
@@ -97,7 +97,29 @@ public class TestSPIRV {
     }
 
     public static void main(String[] args) {
-        // testSimple01();
-        testSimple02();
+
+        int test = 0;
+        if (args.length > 0) {
+            try {
+                test = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+
+            }
+        }
+
+        switch (test) {
+            case 0:
+                testSimple00();
+                break;
+            case 1:
+                testSimple01();
+                break;
+            case 2:
+                testSimple02();
+                break;
+            default:
+                testSimple00();
+                break;
+        }
     }
 }
