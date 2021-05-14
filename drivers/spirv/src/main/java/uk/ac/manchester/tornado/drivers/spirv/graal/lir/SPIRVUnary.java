@@ -96,7 +96,7 @@ public class SPIRVUnary {
             ));
 
             String values = String.valueOf(indexFromStackFrame);
-            SPIRVId index = asm.constants.get(values);
+            SPIRVId index = asm.lookUpConstant(values);
 
             SPIRVId accessPTR = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //

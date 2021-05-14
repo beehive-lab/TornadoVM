@@ -189,6 +189,16 @@ public final class SPIRVAssembler extends Assembler {
         return lirTableName.get(valueLIRInstruction);
     }
 
+    public SPIRVId lookUpConstant(String valueConstant) {
+        if (constants.containsKey(valueConstant)) {
+            return constants.get(valueConstant);
+        } else {
+            SPIRVId newConstantId = this.module.getNextId();
+            constants.put(valueConstant, newConstantId);
+            return newConstantId;
+        }
+    }
+
     /**
      * Base class for SPIR-V opcodes.
      */
