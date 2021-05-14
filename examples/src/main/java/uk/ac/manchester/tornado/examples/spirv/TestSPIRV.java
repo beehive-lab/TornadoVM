@@ -39,7 +39,41 @@ public class TestSPIRV {
         }
     }
 
-    public static void main(String[] args) {
+    public static void testSimple01() {
+
+        final int numElements = 256;
+        int[] a = new int[numElements];
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::copyTestZero, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        if (a[0] == 50) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testSimple02() {
+
+        final int numElements = 256;
+        int[] a = new int[numElements];
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::copyTest, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("b: " + Arrays.toString(a));
+
+        if (a[0] == 50) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testSimple03() {
 
         final int numElements = 256;
         int[] a = new int[numElements];
@@ -60,5 +94,10 @@ public class TestSPIRV {
             System.out.println("Result is CORRECT");
         }
 
+    }
+
+    public static void main(String[] args) {
+        // testSimple01();
+        testSimple02();
     }
 }
