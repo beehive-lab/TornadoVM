@@ -53,33 +53,28 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
     @Input
     protected ConstantNode length;
 
-    protected OCLKind elementKind;
+    private OCLKind kind;
     protected OCLArchitecture.OCLMemoryBase memoryRegister;
-    protected ResolvedJavaType elementType;
     protected OCLAssembler.OCLBinaryTemplate arrayTemplate;
 
     public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.elementType = elementType;
-        this.elementKind = OCLKind.fromResolvedJavaType(elementType);
+        this.kind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
     }
 
-    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementType, ConstantNode length) {
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementKind, ConstantNode length) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
+        this.kind = OCLKind.fromResolvedJavaKind(elementKind);
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementKind);
     }
 
     public OCLArchitecture.OCLMemoryBase getMemoryRegister() {
         return memoryRegister;
-    }
-
-    public ResolvedJavaType getElementType() {
-        return elementType;
     }
 
     public ConstantNode getLength() {
@@ -90,7 +85,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
     public void generate(NodeLIRBuilderTool gen) {
         final Value lengthValue = gen.operand(length);
 
-        LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
+        LIRKind lirKind = LIRKind.value(kind);
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
         final OCLBinary.Expr declaration = new OCLBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
