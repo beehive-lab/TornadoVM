@@ -247,10 +247,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return useThreadCoarsener;
     }
 
-    public boolean enableAutoParallelisation() {
-        return enableAutoParallelisation;
-    }
-
     public boolean shouldUseVMDeps() {
         return vmUseDeps;
     }
@@ -294,7 +290,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean dumpTaskSchedule;
     private final boolean vmUseDeps;
     private final boolean coarsenWithCpuConfig;
-    private final boolean enableAutoParallelisation;
     private final boolean isEnableParallelizationDefined;
 
     private final boolean isCpuConfigDefined;
@@ -472,7 +467,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         cpuConfig = getDefault("cpu.config", id, null);
         isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
         useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
-        enableAutoParallelisation = Boolean.parseBoolean(getDefault("parallelise.auto", id, "False"));
         vmUseDeps = Boolean.parseBoolean(getDefault("vm.deps", id, "False"));
     }
 

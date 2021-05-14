@@ -192,19 +192,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      *            Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
-        executionContext = new TornadoExecutionContext(taskScheduleName);
+        if (TornadoOptions.isProfilerEnabled()) {
+            this.timeProfiler = new TimeProfiler();
+        } else {
+            this.timeProfiler = new EmptyProfiler();
+        }
+
+        executionContext = new TornadoExecutionContext(taskScheduleName, timeProfiler);
         hlBuffer = ByteBuffer.wrap(highLevelCode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
         result = null;
         event = null;
         this.taskScheduleName = taskScheduleName;
-
-        if (TornadoOptions.isProfilerEnabled()) {
-            this.timeProfiler = new TimeProfiler();
-        } else {
-            this.timeProfiler = new EmptyProfiler();
-        }
     }
 
     @Override
@@ -230,10 +230,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // 2. Update from the stream out list of objects
         updateReference(oldRef, newRef, streamOutObjects);
 
-        // 3. Update from graphContext
-        updateReference(oldRef, newRef, executionContext.getObjects());
+        // 3. Update from graphContext and replace the object state.
+        // Otherwise, if the object is copied in (via COPY_IN), we might think the object is already on the device heap.
+        executionContext.replaceObjectState(oldRef, newRef);
 
-        // 4. Update task-parameters
+        // 4. Update the global states array in the vm.
+        if (vm != null) {
+            vm.fetchGlobalStates();
+        }
+
+        // 5. Set the update data flag to true in order to create a new call stack on the device.
+        updateData = true;
+
+        // 6. Update task-parameters
         // Force to recompile the task-sketcher
         for (TaskPackage tp : taskPackages) {
             Object[] params = tp.getTaskParameters();
@@ -285,7 +294,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         // 2. Clear the code cache of the TornadoVM instance
-        updateData = true;
         if (vm != null) {
             vm.clearInstalledCode();
             vm.setCompileUpdate();
@@ -338,7 +346,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
-            new SketchRequest(taskMetaData, resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
+            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
             this.graph = lookup.getGraph();
@@ -360,7 +368,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
-            new SketchRequest(taskMetaData, resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
+            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
             this.graph = lookup.getGraph();
@@ -444,7 +452,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // TornadoVM byte-code generation
         result = TornadoVMGraphCompiler.compile(graph, executionContext, batchSizeBytes);
 
-        vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler, gridTask);
+        vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
 
         if (meta().shouldDumpSchedule()) {
             executionContext.print();
@@ -493,7 +501,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
             return COMPILE_AND_UPDATE;
         } else if (updateData) {
-            return COMPILE_ONLY;
+            if (gridTask == null) {
+                return COMPILE_ONLY;
+            }
+            /* TornadoVM should not recompile if there is a worker grid for each task. Otherwise, there is a combination of the
+               @Parallel API and the Grid Task. The @Parallel task might need the loop bound updated.
+               TODO This check will no longer be needed once we pass the loop bounds via the call stack instead of constant folding.
+            */
+            for (TaskPackage taskPackage : taskPackages) {
+                if (!gridTask.contains(taskScheduleName, taskPackage.getId())) {
+                    return COMPILE_ONLY;
+                }
+            }
         }
         return NOT_COMPILE_UPDATE;
     }
@@ -507,6 +526,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
         executionContext.addLastDevice(meta().getLogicDevice());
+
+        /* Set the grid task outside the constructor of the {@link uk.ac.manchester.tornado.runtime.TornadoVM}
+           object. The same TornadoVM object will be used for different grid task objects, if the 
+           TornadoTaskSchedule::compile method is not called in different runs of the same TaskSchedule.
+        */
+        vm.setGridTask(gridTask);
 
         if (updateData) {
             executionContext.newStack(true);
@@ -543,6 +568,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void updateProfiler() {
+        if (!TornadoOptions.isProfilerEnabled()) {
+            return;
+        }
+
         if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());
         } else {
@@ -725,14 +754,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (vm == null) {
             return;
         }
+        /* Clean the profiler -- avoids the possibility of reporting the execute() profiling information twice. */
+        timeProfiler.clean();
+
         executionContext.sync();
+        updateProfiler();
     }
 
     private Event syncObjectInner(Object object) {
         final LocalObjectState localState = executionContext.getObjectState(object);
         final GlobalObjectState globalState = localState.getGlobalState();
-        final DeviceObjectState deviceState = globalState.getDeviceState();
-        final TornadoAcceleratorDevice device = globalState.getOwner();
+        final TornadoAcceleratorDevice device = meta().getLogicDevice();
+        final DeviceObjectState deviceState = globalState.getDeviceState(device);
         return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
     }
 
@@ -741,7 +774,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (vm == null) {
             return;
         }
+        /* Clean the profiler -- avoids the possibility of reporting the execute() profiling information twice */
+        timeProfiler.clean();
+
         executionContext.sync();
+        updateProfiler();
     }
 
     @Override
@@ -758,6 +795,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         for (Event event : events) {
             event.waitOn();
+        }
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            /* Clean the profiler -- avoids the possibility of reporting the execute() profiling information twice */
+            timeProfiler.clean();
+            for (int i = 0; i < events.length; i++) {
+                long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
+                value += events[i].getExecutionTime();
+                timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
+                LocalObjectState localState = executionContext.getObjectState(objects[i]);
+                DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getBuffer().size());
+            }
+            updateProfiler();
         }
     }
 
@@ -1951,8 +2002,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public long getDispatchTime() {
-        return timeProfiler.getTimer(ProfilerType.DISPATCH_TIME);
+    public long getDataTransferDispatchTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+    }
+
+    @Override
+    public long getKernelDispatchTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
     }
 
     @Override

@@ -54,7 +54,7 @@ public class CompilableTask implements SchedulableTask {
         this.args = args;
         this.shouldCompile = true;
         this.resolvedArgs = args;
-        this.meta = TaskMetaData.create(meta, id, method, false);
+        this.meta = TaskMetaData.create(meta, id, method);
     }
 
     @Override

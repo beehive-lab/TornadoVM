@@ -28,9 +28,8 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class LocalObjectState {
 
@@ -39,11 +38,9 @@ public class LocalObjectState {
     private boolean streamOut;
 
     private GlobalObjectState global;
-    private DeviceObjectState device;
 
     public LocalObjectState(Object object) {
         global = getTornadoRuntime().resolveObject(object);
-        device = null;
         streamIn = false;
         streamOut = false;
     }
@@ -52,11 +49,11 @@ public class LocalObjectState {
         return streamIn;
     }
 
-    void setStreamIn(boolean streamIn) {
+    public void setStreamIn(boolean streamIn) {
         this.streamIn = streamIn;
     }
 
-    void setForceStreamIn(boolean streamIn) {
+    public void setForceStreamIn(boolean streamIn) {
         this.forceStreamIn = streamIn;
     }
 
@@ -72,64 +69,37 @@ public class LocalObjectState {
         this.streamOut = streamOut;
     }
 
-    public boolean isModified() {
-        return global.getDeviceState(getOwner()).isModified();
+    public boolean isModified(TornadoDevice device) {
+        return global.getDeviceState(device).isModified();
     }
 
-    public void setModified(boolean modified) {
-        global.getDeviceState(getOwner()).setModified(modified);
+    public void setModified(boolean modified, TornadoDevice device) {
+        global.getDeviceState(device).setModified(modified);
     }
 
     public boolean isShared() {
         return global.isShared();
     }
 
-    public boolean isValid() {
-        return (device != null) && device.isValid();
-    }
-
-    public void setValid(boolean valid) {
-        device.setValid(valid);
-    }
-
     public boolean isExclusive() {
         return global.isExclusive();
-    }
-
-    public TornadoAcceleratorDevice getOwner() {
-        return global.getOwner();
     }
 
     public GlobalObjectState getGlobalState() {
         return global;
     }
 
-    public void setOwner(TornadoAcceleratorDevice owner) {
-        global.setOwner(owner);
-    }
-
-    public Event sync(Object object) {
-        if (isModified()) {
-            TornadoAcceleratorDevice owner = getOwner();
-            int eventId = owner.streamOutBlocking(object, 0, global.getDeviceState(owner), null);
-            setModified(false);
-            return owner.resolveEvent(eventId);
+    public Event sync(Object object, TornadoDevice device) {
+        if (isModified(device)) {
+            int eventId = device.streamOutBlocking(object, 0, global.getDeviceState(device), null);
+            setModified(false, device);
+            return device.resolveEvent(eventId);
         }
         return new EmptyEvent();
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(streamIn ? "SI" : "--");
-        sb.append(streamOut ? "SO" : "--");
-        sb.append(" ");
-
-        if (device != null) {
-            sb.append(device.toString()).append(" ");
-        }
-        sb.append(global.toString()).append(" ");
-        return sb.toString();
+        return (streamIn ? "SI" : "--") + (streamOut ? "SO" : "--") + " " + global.toString() + " ";
     }
 }

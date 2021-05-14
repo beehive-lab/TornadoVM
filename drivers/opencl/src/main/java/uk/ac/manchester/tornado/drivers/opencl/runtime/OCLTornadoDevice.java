@@ -232,7 +232,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-        final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
         if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
@@ -241,7 +240,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         // copy meta data into task
         final TaskMetaData taskMeta = executable.meta();
-        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 

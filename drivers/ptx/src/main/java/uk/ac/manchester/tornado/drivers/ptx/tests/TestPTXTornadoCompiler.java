@@ -86,14 +86,11 @@ public class TestPTXTornadoCompiler {
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
         PTXBackend backend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
-        ScheduleMetaData scheduleMeta = new ScheduleMetaData("ptxBackend");
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, "add");
-        meta.setDevice(PTX.defaultDevice());
-        new PTXCompilationResult("add", meta);
+        new PTXCompilationResult("add");
 
         byte[] source = PTX_KERNEL.getBytes();
         source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, backend);
-        PTXInstalledCode code = codeCache.installSource("add", source, meta, "add");
+        PTXInstalledCode code = codeCache.installSource("add", source, "add");
 
         String generatedSourceCode = code.getGeneratedSourceCode();
         if (PRINT_KERNEL) {

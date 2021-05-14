@@ -58,12 +58,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        if (!context.hasMeta()) {
-            return;
-        }
-
-        TaskMetaData meta = context.getMeta();
-        Access[] accesses = meta.getArgumentsAccess();
+        Access[] accesses = context.getAccesses();
 
         for (int i = 0; i < accesses.length; i++) {
             accesses[i] = Access.NONE;
@@ -193,7 +188,6 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
         boolean isWrittenTrueCondition = false;
         boolean isWrittenFalseCondition = false;
-        boolean isStored = false;
         IfNode fatherNodeStore = null;
 
         while (!nf.isEmpty()) {
@@ -208,7 +202,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 fatherNodeStore = meta.getFatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
-                isStored = true;
+                isWritten = true;
             } else if (currentNode instanceof LoadFieldNode) {
                 LoadFieldNode loadField = (LoadFieldNode) currentNode;
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
@@ -220,18 +214,14 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 fatherNodeStore = meta.getFatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
-                isStored = true;
+                isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
                 // All objects are passed by reference -> R/W
                 isRead = true;
-                isStored = true;
+                isWritten = true;
             } else if (currentNode instanceof PiNode) {
                 currentNode.usages().forEach(nf::add);
             }
-        }
-
-        if (isStored) {
-            isWritten = true;
         }
 
         if (isWrittenTrueCondition ^ isWrittenFalseCondition) {

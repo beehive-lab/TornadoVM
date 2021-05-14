@@ -33,14 +33,18 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.nodes.CallTargetNode;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.StructuredGraph.Builder;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -49,7 +53,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -178,7 +181,7 @@ public class TornadoSketcher {
         @Override
         public Sketch call() throws Exception {
             try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
-                return buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
+                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
@@ -194,7 +197,7 @@ public class TornadoSketcher {
         sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
     }
 
-    private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
+    private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
@@ -209,7 +212,7 @@ public class TornadoSketcher {
         }
 
         try (DebugContext.Scope ignored = getDebugContext().scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(getDebugContext())) {
-            final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
+            final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
@@ -227,11 +230,18 @@ public class TornadoSketcher {
                             throw new TornadoRuntimeException(
                                     "[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
                         }
-                        SketchRequest newRequest = new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, driverIndex, deviceIndex);
+                        SketchRequest newRequest = new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier, driverIndex, deviceIndex);
                         buildSketch(newRequest);
                     });
 
-            return new Sketch(CachedGraph.fromReadonlyCopy(graph), meta);
+            Access[] methodAccesses = highTierContext.getAccesses();
+            graph.getInvokes().forEach(invoke -> {
+                // Merge the accesses of the caller with the accesses of the callee
+                Sketch sketch = lookup(invoke.callTarget().targetMethod(), driverIndex, deviceIndex);
+                mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
+            });
+
+            return new Sketch(CachedGraph.fromReadonlyCopy(graph), methodAccesses);
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
@@ -239,6 +249,36 @@ public class TornadoSketcher {
                 e.printStackTrace();
             }
             throw new TornadoBailoutRuntimeException("Unable to build sketch for method: " + resolvedMethod.getName() + "(" + e.getMessage() + ")");
+        }
+    }
+
+    /**
+     * Merges the {@param calleeAccesses} into the {@param callerAccesses}. For example, given the two {@link Access} arrays below, a merge will look like:
+     *
+     * Caller accesses:         NONE, READ,       WRITE, NONE,       READ_WRITE
+     * Callee accesses:         READ, WRITE,      NONE,  READ_WRITE, NONE
+     *
+     * Updated caller accesses: READ, READ_WRITE, WRITE, READ_WRITE, READ_WRITE
+     *
+     * This is needed since caller parameters can have different accesses in a callee.
+     */
+    private static void mergeAccesses(Access[] callerAccesses, CallTargetNode callTarget, Access[] calleeAccesses) {
+        List<ValueNode> callArgs = callTarget.arguments().snapshot();
+
+        int index = callTarget.targetMethod().isStatic() ? 0 : 1;
+
+        for (; index < callArgs.size(); index++) {
+            ValueNode callArg = callArgs.get(index);
+            if (!(callArg instanceof ParameterNode)) {
+                continue;
+            }
+            ParameterNode param = (ParameterNode) callArg;
+            int paramIndex =  param.index();
+
+            Access calleeAcc = calleeAccesses[index];
+            Access callerAcc = callerAccesses[paramIndex];
+
+            callerAccesses[paramIndex] = Access.values()[callerAcc.position | calleeAcc.position];
         }
     }
 }

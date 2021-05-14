@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCallStack;
@@ -107,11 +107,11 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result, String resolvedMethodName) {
-        return codeCache.installSource(result.getName(), result.getTargetCode(), result.getTaskMeta(), resolvedMethodName);
+        return codeCache.installSource(result.getName(), result.getTargetCode(), resolvedMethodName);
     }
 
-    public TornadoInstalledCode installCode(String name, byte[] code, TaskMetaData taskMeta, String resolvedMethodName) {
-        return codeCache.installSource(name, code, taskMeta, resolvedMethodName);
+    public TornadoInstalledCode installCode(String name, byte[] code, String resolvedMethodName) {
+        return codeCache.installSource(name, code, resolvedMethodName);
     }
 
     public TornadoInstalledCode getInstalledCode(String name) {
@@ -194,11 +194,11 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(PTXModule module, CallStack stack, long batchThreads) {
+    public int enqueueKernelLaunch(PTXModule module, CallStack stack, TaskMetaData taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
-        if (module.metaData.isWorkerGridAvailable()) {
-            WorkerGrid grid = module.metaData.getWorkerGrid(module.metaData.getId());
+        if (taskMeta.isWorkerGridAvailable()) {
+            WorkerGrid grid = taskMeta.getWorkerGrid(taskMeta.getId());
             int[] global = Arrays.stream(grid.getGlobalWork()).mapToInt(l -> (int) l).toArray();
 
             if (grid.getLocalWork() != null) {
@@ -214,28 +214,45 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
                 System.out.println("Warning: TornadoVM changed the user-defined local size to the following: [" + blockDimension[0] + ", " + blockDimension[1] + ", " + blockDimension[2] + "].");
             }
             gridDimension = scheduler.calculateGridDimension(module.javaName, grid.dimension(), global, blockDimension);
-        } else if (module.metaData.isParallel()) {
-            scheduler.calculateGlobalWork(module.metaData, batchThreads);
-            blockDimension = scheduler.calculateBlockDimension(module);
-            gridDimension = scheduler.calculateGridDimension(module, blockDimension);
+        } else if (taskMeta.isParallel()) {
+            scheduler.calculateGlobalWork(taskMeta, batchThreads);
+            blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
+            gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, writePTXStackOnDevice((PTXCallStack) stack), gridDimension, blockDimension);
-        updateProfiler(kernelLaunchEvent, module.metaData);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXStackOnDevice((PTXCallStack) stack, taskMeta), gridDimension, blockDimension);
+        updateProfiler(kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXStackOnDevice(PTXCallStack stack) {
+    private byte[] writePTXStackOnDevice(PTXCallStack stack, TaskMetaData meta) {
         ByteBuffer args = ByteBuffer.allocate(8);
         args.order(getByteOrder());
 
         // Stack pointer
         if (!stack.isOnDevice()) {
-            stack.write();
+            int stackWriteEventId = stack.enqueueWrite();
+            updateProfilerStackWrite(stackWriteEventId, meta, stack);
         }
         long address = stack.getAddress();
         args.putLong(address);
 
         return args.array();
+    }
+
+    private void updateProfilerStackWrite(int stackWriteEventId, TaskMetaData meta, PTXCallStack stack) {
+        if (TornadoOptions.isProfilerEnabled()) {
+            TornadoProfiler profiler = meta.getProfiler();
+            Event event = resolveEvent(stackWriteEventId);
+            event.waitForEvents();
+            long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
+            copyInTimer += event.getExecutionTime();
+            profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+            profiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, meta.getId(), stack.getSize());
+
+            long dispatchValue = profiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+            dispatchValue += event.getDriverDispatchTime();
+            profiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+        }
     }
 
     private void updateProfiler(final int taskEvent, final TaskMetaData meta) {
@@ -247,6 +264,10 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
             // Register the time for the task
             meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
         }
     }
 

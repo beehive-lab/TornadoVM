@@ -172,9 +172,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
 
         // copy meta data into task
-        final TaskMetaData sketchMeta = sketch.getMeta();
         final TaskMetaData taskMeta = executable.meta();
-        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
@@ -190,7 +189,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
             } else {
-                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable), taskMeta);
+                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable));
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -219,7 +218,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         try {
             byte[] source = Files.readAllBytes(path);
             source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, getBackend());
-            return deviceContext.installCode(functionName, source, executable.meta(), executable.getEntryPoint());
+            return deviceContext.installCode(functionName, source, executable.getEntryPoint());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -262,10 +261,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
-        if (!state.hasBuffer()) {
-            reserveMemory(object, batchSize, state);
-        }
-
         if (!state.hasBuffer()) {
             reserveMemory(object, batchSize, state);
         } else {

@@ -49,6 +49,7 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
@@ -57,7 +58,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        if (!context.hasMeta() || !context.meta.enableAutoParallelisation() || graph.getNodes().filter(ParallelRangeNode.class).isNotEmpty()) {
+        if (!TornadoOptions.AUTO_PARALLELISATION || graph.getNodes().filter(ParallelRangeNode.class).isNotEmpty()) {
             info("auto parallelisation disabled");
             return;
         }

@@ -53,11 +53,11 @@ public class PTXScheduler {
         }
     }
 
-    public int[] calculateBlockDimension(PTXModule module) {
-        if (module.metaData.isLocalWorkDefined()) {
-            return Arrays.stream(module.metaData.getLocalWork()).mapToInt(l -> (int) l).toArray();
+    public int[] calculateBlockDimension(PTXModule module, TaskMetaData taskMeta) {
+        if (taskMeta.isLocalWorkDefined()) {
+            return Arrays.stream(taskMeta.getLocalWork()).mapToInt(l -> (int) l).toArray();
         }
-        return calculateBlockDimension(module.metaData.getGlobalWork(), module.getMaxThreadBlocks(), module.metaData.getDims(), module.javaName);
+        return calculateBlockDimension(taskMeta.getGlobalWork(), module.getMaxThreadBlocks(), taskMeta.getDims(), module.javaName);
     }
 
     public int[] calculateBlockDimension(long[] globalWork, int maxThreadBlocks, int dimension, String javaName) {
@@ -100,9 +100,9 @@ public class PTXScheduler {
         return value;
     }
 
-    public int[] calculateGridDimension(PTXModule module, int[] blockDimension) {
-        int[] globalWork = Arrays.stream(module.metaData.getGlobalWork()).mapToInt(l -> (int) l).toArray();
-        return calculateGridDimension(module.javaName, module.metaData.getDims(), globalWork, blockDimension);
+    public int[] calculateGridDimension(PTXModule module, TaskMetaData taskMeta, int[] blockDimension) {
+        int[] globalWork = Arrays.stream(taskMeta.getGlobalWork()).mapToInt(l -> (int) l).toArray();
+        return calculateGridDimension(module.javaName, taskMeta.getDims(), globalWork, blockDimension);
     }
 
     public int[] calculateGridDimension(String javaName, int dimension, int[] globalWork, int[] blockDimension) {

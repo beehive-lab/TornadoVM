@@ -27,7 +27,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
-import uk.ac.manchester.tornado.unittests.common.PTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestProfiler extends TornadoTestBase {
@@ -68,7 +67,8 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(ts.getWriteTime() >= 0);
         // We do not support dispatch time on the PTX backend
         if (!"PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
-            assertTrue(ts.getDispatchTime() > 0);
+            assertTrue(ts.getDataTransferDispatchTime() > 0);
+            assertTrue(ts.getKernelDispatchTime() > 0);
         }
         assertTrue(ts.getDeviceReadTime() >= 0);
         assertTrue(ts.getDeviceWriteTime() >= 0);
@@ -76,6 +76,9 @@ public class TestProfiler extends TornadoTestBase {
 
         assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());
         assertEquals(ts.getTornadoCompilerTime() + ts.getDriverInstallTime(), ts.getCompileTime());
+
+        // Will dump profile information about the sync stream outs.
+        ts.syncObjects(c);
 
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
@@ -108,7 +111,8 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(ts.getDataTransfersTime(), 0);
         assertEquals(ts.getReadTime(), 0);
         assertEquals(ts.getWriteTime(), 0);
-        assertEquals(ts.getDispatchTime(), 0);
+        assertEquals(ts.getDataTransferDispatchTime(), 0);
+        assertEquals(ts.getKernelDispatchTime(), 0);
         assertEquals(ts.getDeviceReadTime(), 0);
         assertEquals(ts.getDeviceWriteTime(), 0);
         assertEquals(ts.getDeviceKernelTime(), 0);

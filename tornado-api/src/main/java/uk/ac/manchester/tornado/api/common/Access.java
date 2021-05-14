@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,13 +41,23 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+/**
+ * Enum used to specify the accesses of parameters passed on {@link uk.ac.manchester.tornado.api.common.TornadoFunctions.Task}.
+ * Note that we use the {@link #position} field in the {@link uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher#mergeAccesses}
+ * method to combine different accesses.
+ */
 public enum Access {
     // @formatter:off
-    READ,        // Read only
-    WRITE,       // Write only
-    READ_WRITE,  // Read-write
-    UNKNOWN,     // Undefined
-    NONE;        // Undefined
+    NONE((byte) 0b00),        // Undefined
+    READ((byte) 0b01),        // Read only
+    WRITE((byte) 0b10),       // Write only
+    READ_WRITE((byte) 0b11);  // Read-write
     // @formatter:on
+
+    public final byte position;
+
+    Access(byte position) {
+        this.position = position;
+    }
 
 }

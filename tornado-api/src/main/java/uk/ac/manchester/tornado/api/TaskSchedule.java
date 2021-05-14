@@ -386,8 +386,13 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public long getDispatchTime() {
-        return taskScheduleImpl.getDispatchTime();
+    public long getDataTransferDispatchTime() {
+        return taskScheduleImpl.getDataTransferDispatchTime();
+    }
+
+    @Override
+    public long getKernelDispatchTime() {
+        return taskScheduleImpl.getKernelDispatchTime();
     }
 
     @Override
