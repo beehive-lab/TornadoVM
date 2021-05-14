@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 import java.util.HashMap;
@@ -194,37 +193,12 @@ public final class SPIRVAssembler extends Assembler {
      */
     public static class SPIRVOp {
 
-        protected final String opcode;
-
-        protected SPIRVOp(String opcode) {
-            this.opcode = opcode;
-        }
-
-        protected final void emitOpcode(SPIRVAssembler asm) {
-            asm.emit(opcode);
-        }
-
-        public boolean equals(SPIRVOp other) {
-            return opcode.equals(other.opcode);
-        }
-
-        @Override
-        public String toString() {
-            return opcode;
-        }
     }
 
     public static class SPIRVUnaryOp extends SPIRVOp {
 
-        private final boolean prefix;
+        protected SPIRVUnaryOp() {
 
-        protected SPIRVUnaryOp(String opcode) {
-            this(opcode, false);
-        }
-
-        protected SPIRVUnaryOp(String opcode, boolean prefix) {
-            super(opcode);
-            this.prefix = prefix;
         }
 
         public static SPIRVUnaryOp CAST_TO_DOUBLE() {
@@ -237,14 +211,7 @@ public final class SPIRVAssembler extends Assembler {
         }
 
         public void emit(SPIRVCompilationResultBuilder crb, Value x) {
-            final SPIRVAssembler asm = crb.getAssembler();
-            if (prefix) {
-                emitOpcode(asm);
-                asm.emitValueOrOp(crb, x);
-            } else {
-                asm.emitValueOrOp(crb, x);
-                emitOpcode(asm);
-            }
+
         }
     }
 
@@ -258,7 +225,6 @@ public final class SPIRVAssembler extends Assembler {
         private final String template;
 
         protected SPIRVUnaryTemplate(String opcode, String template) {
-            super(opcode);
             this.template = template;
         }
 
@@ -282,18 +248,7 @@ public final class SPIRVAssembler extends Assembler {
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOp("<<");;
 
         protected SPIRVBinaryOp(String opcode) {
-            super(opcode);
-        }
-    }
 
-    public void emit(String str) {
-        emitSubString(str);
-    }
-
-    public void emitSubString(String str) {
-        guarantee(str != null, "emitting null string");
-        for (byte b : str.getBytes()) {
-            emitByte(b);
         }
     }
 

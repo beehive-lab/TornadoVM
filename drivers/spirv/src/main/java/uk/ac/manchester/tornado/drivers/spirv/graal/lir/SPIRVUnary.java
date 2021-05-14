@@ -50,7 +50,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            opcode.emit(crb, value);
+
         }
 
     }
@@ -118,19 +118,6 @@ public class SPIRVUnary {
             // The final store is emitted in the assignParameter
             asm.registerLIRInstructionValue(this, loadPtr);
         }
-    }
-
-    public static class Intrinsic extends UnaryConsumer {
-
-        public Intrinsic(SPIRVUnaryOp opcode, LIRKind lirKind, Value value) {
-            super(opcode, lirKind, value);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s(%s)", opcode.toString(), value);
-        }
-
     }
 
     public static class MemoryAccess extends UnaryConsumer {
@@ -279,8 +266,8 @@ public class SPIRVUnary {
 
     public static class SignExtend extends UnaryConsumer {
 
-        int fromBits;
-        int toBits;
+        private int fromBits;
+        private int toBits;
 
         public SignExtend(LIRKind lirKind, Value inputVal, int fromBits, int toBits) {
             super(null, lirKind, inputVal);
