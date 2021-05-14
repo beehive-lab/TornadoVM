@@ -26,7 +26,7 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
   // BLOCK 0
   ul_0  =  (ulong) _frame[3];
   ul_1  =  (ulong) _frame[4];
-  __local float ul_2[1024];
+  __local float f_2[1024];
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
@@ -39,7 +39,7 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
     l_9  =  l_8 + 24L;
     ul_10  =  ul_0 + l_9;
     f_11  =  *((__global float *) ul_10);
-    ul_2[i_5]  =  f_11;
+    f_2[i_5]  =  f_11;
     i_12  =  i_6 >> 31;
     i_13  =  i_12 + i_6;
     i_14  =  i_13 >> 1;
@@ -53,11 +53,11 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
       if(z_17)
       {
         // BLOCK 9
-        f_18  =  ul_2[i_5];
+        f_18  =  f_2[i_5];
         i_19  =  i_15 + i_5;
-        f_20  =  ul_2[i_19];
+        f_20  =  f_2[i_19];
         f_21  =  fmax(f_18, f_20);
-        ul_2[i_5]  =  f_21;
+        f_2[i_5]  =  f_21;
         f_18  =  f_21;
       }  // B9
       else
@@ -76,7 +76,7 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
     if(z_25)
     {
       // BLOCK 5
-      f_26  =  ul_2[0];
+      f_26  =  f_2[0];
       i_27  =  get_group_id(0);
       i_28  =  i_27 + 1;
       l_29  =  (long) i_28;

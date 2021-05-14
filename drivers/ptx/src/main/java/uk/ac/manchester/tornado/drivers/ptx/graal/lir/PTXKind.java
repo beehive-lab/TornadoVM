@@ -142,6 +142,15 @@ public enum PTXKind implements PlatformKind {
         return ILLEGAL;
     }
 
+    public static PTXKind fromResolvedJavaKind(JavaKind javaKind) {
+        for (PTXKind k : PTXKind.values()) {
+            if (k.javaClass != null && k.javaClass.getSimpleName().equalsIgnoreCase(javaKind.name())) {
+                return k;
+            }
+        }
+        return ILLEGAL;
+    }
+
     public static PTXAssembler.PTXBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
         return resolveTemplateType(type.getJavaKind());
     }

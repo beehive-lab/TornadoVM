@@ -114,9 +114,18 @@ public enum OCLKind implements PlatformKind {
     public static OCLKind fromResolvedJavaType(ResolvedJavaType type) {
         if (!type.isArray()) {
             for (OCLKind k : OCLKind.values()) {
-                if (k.javaClass != null && k.javaClass.getSimpleName().equals(type.getUnqualifiedName())) {
+                if (k.javaClass != null && (k.javaClass.getSimpleName().equalsIgnoreCase(type.getJavaKind().name()) || k.javaClass.getSimpleName().equals(type.getUnqualifiedName()))) {
                     return k;
                 }
+            }
+        }
+        return ILLEGAL;
+    }
+
+    public static OCLKind fromResolvedJavaKind(JavaKind javaKind) {
+        for (OCLKind k : OCLKind.values()) {
+            if (k.javaClass != null && k.javaClass.getSimpleName().equalsIgnoreCase(javaKind.name())) {
+                return k;
             }
         }
         return ILLEGAL;
