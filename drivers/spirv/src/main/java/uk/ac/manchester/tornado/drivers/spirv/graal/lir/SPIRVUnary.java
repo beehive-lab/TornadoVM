@@ -133,22 +133,23 @@ public class SPIRVUnary {
 
     public static class MemoryAccess extends UnaryConsumer {
 
-        private final SPIRVMemoryBase base;
+        private final SPIRVMemoryBase memoryRegion;
+
         private Value index;
 
         MemoryAccess(SPIRVMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
-            this.base = base;
+            this.memoryRegion = base;
         }
 
         MemoryAccess(SPIRVMemoryBase base, Value value, Value index) {
             super(null, LIRKind.Illegal, value);
-            this.base = base;
+            this.memoryRegion = base;
             this.index = index;
         }
 
-        public SPIRVMemoryBase getBase() {
-            return base;
+        public SPIRVMemoryBase getMemoryRegion() {
+            return memoryRegion;
         }
 
         @Override
@@ -231,9 +232,9 @@ public class SPIRVUnary {
          * </code>
          *
          * <code>
-         *        %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
-         *      %call = OpCompositeExtract %ulong %37 0
-         *      %conv = OpUConvert %uint %call
+         * %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
+         * %call = OpCompositeExtract %ulong %37 0
+         * %conv = OpUConvert %uint %call
          * </code>
          */
         @Override

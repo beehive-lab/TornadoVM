@@ -338,7 +338,9 @@ public final class SPIRVAssembler extends Assembler {
 
     public void emitValue(SPIRVCompilationResultBuilder crb, Value value) {
         if (crb.getAssembler().lookUpLIRInstructions(value) == null) {
+            System.out.println("VALUE NOT FOUND: " + value);
             SPIRVId id = crb.getAssembler().lookUpLIRInstructionsName(value.toString());
+            System.out.println("\tInserting id = " + id);
             crb.getAssembler().registerLIRInstructionValue(value, id);
         }
     }

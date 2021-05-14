@@ -8,6 +8,7 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
@@ -437,33 +438,61 @@ public class SPIRVLIRStmt {
         protected AllocatableValue result;
 
         @Use
-        protected Value address;
+        protected SPIRVAddressCast cast;
 
         @Use
-        protected Value base;
+        protected MemoryAccess base;
 
-        public LoadStmt(AllocatableValue result, Value address, Value base) {
+        public LoadStmt(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess memoryRegion) {
             super(TYPE);
             this.result = result;
-            this.address = address;
-            this.base = base;
+            this.cast = cast;
+            this.base = memoryRegion;
         }
 
         @Override
         public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            // FIXME: Get the LIRKind
+            // They key is in the cast.
+            asm.emitValue(crb, cast);
+            asm.emitValue(crb, base.value);
+            asm.emitValue(crb, result);
+
+            SPIRVId addressToLoad = asm.lookUpLIRInstructions(base.value);
+            SPIRVId idLoad = asm.module.getNextId();
+            SPIRVId idKindLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    idKindLoad, //
+                    idLoad, //
+                    addressToLoad, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
+
+            SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
+            SPIRVId storeAddressID = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
+
+            SPIRVId idKind = asm.primitives.getTypePrimitive(cast.getSPIRVPlatformKind());
 
             SPIRVId loadID = asm.module.getNextId();
-            SPIRVId baseId = asm.lookUpLIRInstructions(base);
-            SPIRVId addressId = asm.lookUpLIRInstructions(address);
-            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
-                    asm.pointerToULongFunction, //
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    idKind, //
                     loadID, //
-                    addressId, //
-                    baseId, //
-                    new SPIRVMultipleOperands<>()));
-            asm.registerLIRInstructionValue(result, loadID);
+                    storeAddressID, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(cast.getPlatformKind().getSizeInBytes()))) //
+            ));
+
+            SPIRVId resultID = asm.lookUpLIRInstructions(result);
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    resultID, //
+                    loadID, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getByteCount())) //
+                    )));
+
+            // asm.registerLIRInstructionValue(result, loadID);
         }
 
     }

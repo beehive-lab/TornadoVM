@@ -208,7 +208,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
-        SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getBase();
+        SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
 
         if (spirvKind.isVector()) {
             throw new RuntimeException("Vector Load not supported");
@@ -245,7 +245,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             if (memAccess != null) {
                 System.out.println("IMPLEMENT SPIRVAddressCastNode ");
-                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getBase(), LIRKind.value(spirvKind));
+                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
                 if (memAccess.getIndex() == null) {
                     getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
                 }
