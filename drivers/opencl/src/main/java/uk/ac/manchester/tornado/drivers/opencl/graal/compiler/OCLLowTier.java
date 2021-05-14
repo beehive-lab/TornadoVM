@@ -73,7 +73,10 @@ public class OCLLowTier extends TornadoLowTier {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
 
-        appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
+        // TODO Investigate why FixReads break kfusion on Nvidia GPUs
+        if (TornadoOptions.ENABLE_FIX_READS) {
+            appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
+        }
 
         appendPhase(new AddressLoweringPhase(addressLowering));
 

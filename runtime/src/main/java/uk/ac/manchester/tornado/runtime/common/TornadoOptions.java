@@ -73,6 +73,11 @@ public class TornadoOptions {
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
 
     /**
+     * Enable/Disable Fix Reads Optimization. True by default.
+     */
+    public static final boolean ENABLE_FIX_READS = getBooleanValue("tornado.enable.fix.reads", "True");
+
+    /**
      * Enable/Disable events dumping on program finish. False by default.
      */
     public final static boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", "False"));
