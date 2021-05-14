@@ -95,8 +95,8 @@ public class SPIRVUnary {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
 
-            String values = String.valueOf(indexFromStackFrame);
-            SPIRVId index = asm.lookUpConstant(values);
+            String constantValue = String.valueOf(indexFromStackFrame);
+            SPIRVId index = asm.lookUpConstant(constantValue);
 
             SPIRVId accessPTR = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
