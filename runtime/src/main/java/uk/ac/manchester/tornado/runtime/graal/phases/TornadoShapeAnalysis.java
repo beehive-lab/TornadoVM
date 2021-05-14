@@ -99,9 +99,16 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
 
         if (valid) {
-            Tornado.trace("loop nest depth = %d", domainTree.getDepth());
-            Tornado.debug("discovered parallel domain: %s", domainTree);
+            System.out.println("SET DOMAIN TREE???? ");
+            Tornado.trace("loop nest depth = %d\n", domainTree.getDepth());
+            Tornado.debug("discovered parallel domain: %s\n", domainTree);
+
+            System.out.printf("loop nest depth = %d\n", domainTree.getDepth());
+            System.out.printf("discovered parallel domain: %s\n", domainTree);
+
             context.getMeta().setDomain(domainTree);
+        } else {
+            System.out.println("DOMAIN TREE NOT VALID ");
         }
     }
 
@@ -112,12 +119,16 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         /*
-         An instance of {@link uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData} is assigned per task. If there is a callee that does not get inlined
-         then we might overwrite the domain for the task method (set in a previous run of this phase) with the domain of the callee.
-         We don't care about the domains of callees at the moment, since we support {@link uk.ac.manchester.tornado.api.annotations.Parallel} annotations
-         only on the root task method.
-         To circumvent the overwriting, we have the null check in the shouldPerformShapeAnalysis method.
-        */
+         * An instance of {@link
+         * uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData} is assigned per
+         * task. If there is a callee that does not get inlined then we might overwrite
+         * the domain for the task method (set in a previous run of this phase) with the
+         * domain of the callee. We don't care about the domains of callees at the
+         * moment, since we support {@link
+         * uk.ac.manchester.tornado.api.annotations.Parallel} annotations only on the
+         * root task method. To circumvent the overwriting, we have the null check in
+         * the shouldPerformShapeAnalysis method.
+         */
         if (!shouldPerformShapeAnalysis(context)) {
             return;
         }

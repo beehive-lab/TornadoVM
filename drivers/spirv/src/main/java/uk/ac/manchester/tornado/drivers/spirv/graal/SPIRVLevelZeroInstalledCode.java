@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
@@ -18,6 +19,11 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
+
+    public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
+
+    private static final int WARP_SIZE = 32;
+    private boolean ADJUST_IRREGULAR = false;
 
     public SPIRVLevelZeroInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name, spirvModule, deviceContext);
@@ -58,14 +64,30 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         setKernelArgs((SPIRVByteBuffer) stack, null, meta);
 
         long[] globalWork = new long[3];
+        long[] localWork = new long[3];
         Arrays.fill(globalWork, 1);
+        Arrays.fill(localWork, 1);
         int dims = meta.getDims();
-        System.arraycopy(meta.getGlobalWork(), 0, globalWork, 0, dims);
 
-        if (globalWork[0] == 0) {
-            globalWork[0] = 256;
+        if (!meta.isGridSchedulerEnabled()) {
+            if (!meta.isGlobalWorkDefined()) {
+                calculateGlobalWork(meta, batchThreads);
+            }
+            if (!meta.isLocalWorkDefined()) {
+                calculateLocalWork(meta);
+            }
+            System.arraycopy(meta.getGlobalWork(), 0, globalWork, 0, dims);
+            System.arraycopy(meta.getLocalWork(), 0, localWork, 0, dims);
+        } else {
+            checkLocalWorkGroupFitsOnDevice(meta);
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            System.arraycopy(grid.getGlobalWork(), 0, globalWork, 0, dims);
+            System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
         }
-        System.out.println(Arrays.toString(globalWork));
+
+        if (meta.isDebug()) {
+            meta.printThreadDims();
+        }
 
         // Statically decide a block size of 32
         int groupSize = 32;
@@ -85,9 +107,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(globalWork[0] / groupSize);
-        dispatch.setGroupCountY(1);
-        dispatch.setGroupCountZ(1);
+        dispatch.setGroupCountX(globalWork[0] / localWork[0]);
+        dispatch.setGroupCountY(globalWork[1] / localWork[1]);
+        dispatch.setGroupCountZ(globalWork[2] / localWork[2]);
 
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(0);
         LevelZeroCommandList commandList = commandQueue.getCommandList();
@@ -100,5 +122,92 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         return 0;
+    }
+
+    private void calculateLocalWork(TaskMetaData meta) {
+        final long[] localWork = meta.initLocalWork();
+
+        switch (meta.getDims()) {
+            case 3:
+                localWork[2] = 1;
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
+            case 2:
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
+            case 1:
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
+        if (value == 0) {
+            return 1;
+        }
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        return value;
+    }
+
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
+        long[] intermediates = new long[] { 1, 1, 1 };
+
+        long[] maxWorkItemSizes = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
+
+        switch (metaData.getDims()) {
+            case 3:
+                intermediates[2] = (long) Math.sqrt(maxWorkItemSizes[2]);
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 2:
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 1:
+                intermediates[0] = maxWorkItemSizes[0];
+                break;
+            default:
+                break;
+
+        }
+        return intermediates;
+    }
+
+    private void calculateGlobalWork(TaskMetaData meta, long batchThreads) {
+        final long[] globalWork = meta.getGlobalWork();
+
+        for (int i = 0; i < meta.getDims(); i++) {
+            long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
+            if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
+                value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
+            }
+            globalWork[i] = value;
+        }
+    }
+
+    private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
+        WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+        long[] local = grid.getLocalWork();
+        if (local != null) {
+            LevelZeroGridInfo gridInfo = new LevelZeroGridInfo(deviceContext, local);
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                System.out.println(WARNING_THREAD_LOCAL);
+                grid.setLocalWorkToNull();
+                grid.setNumberOfWorkgroupsToNull();
+            }
+        }
     }
 }
