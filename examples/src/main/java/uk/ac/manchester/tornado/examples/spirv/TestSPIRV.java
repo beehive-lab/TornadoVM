@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel and test the pre-compiled API with
@@ -20,6 +20,12 @@ public class TestSPIRV {
     public static void copyTest(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = 50;
+        }
+    }
+
+    public static void copyTest2(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i];
         }
     }
 
@@ -44,12 +50,13 @@ public class TestSPIRV {
         Arrays.fill(c, 150);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::copyTest, a) //
+                .task("t0", TestSPIRV::copyTest2, a, b) //
                 .streamOut(a) //
                 .execute(); //
 
-        System.out.println("a: " + Arrays.toString(a));
-        if (a[0] == 50) {
+        System.out.println("b: " + Arrays.toString(b));
+
+        if (a[0] == 100) {
             System.out.println("Result is CORRECT");
         }
 

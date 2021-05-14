@@ -434,19 +434,36 @@ public class SPIRVLIRStmt {
         public static final LIRInstructionClass<LoadStmt> TYPE = LIRInstructionClass.create(LoadStmt.class);
 
         @Def
-        protected AllocatableValue lhs;
+        protected AllocatableValue result;
 
         @Use
-        protected Value index;
+        protected Value address;
 
-        public LoadStmt(AllocatableValue lhs) {
+        @Use
+        protected Value base;
+
+        public LoadStmt(AllocatableValue result, Value address, Value base) {
             super(TYPE);
-            this.lhs = lhs;
+            this.result = result;
+            this.address = address;
+            this.base = base;
         }
 
         @Override
         public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
+            // FIXME: Get the LIRKind
+
+            SPIRVId loadID = asm.module.getNextId();
+            SPIRVId baseId = asm.lookUpLIRInstructions(base);
+            SPIRVId addressId = asm.lookUpLIRInstructions(address);
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
+                    asm.pointerToULongFunction, //
+                    loadID, //
+                    addressId, //
+                    baseId, //
+                    new SPIRVMultipleOperands<>()));
+            asm.registerLIRInstructionValue(result, loadID);
         }
 
     }

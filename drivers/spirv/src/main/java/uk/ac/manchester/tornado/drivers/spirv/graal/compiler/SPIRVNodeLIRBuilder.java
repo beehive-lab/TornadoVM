@@ -85,7 +85,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     public SPIRVNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
         super(graph, gen, nodeMatchRules);
         this.builtInAllocations = new HashMap<>();
-        System.out.println("!!!!!!!!!!!!!!! Functionality pending - SPIRVNodeLIRBuilder ");
     }
 
     @Override

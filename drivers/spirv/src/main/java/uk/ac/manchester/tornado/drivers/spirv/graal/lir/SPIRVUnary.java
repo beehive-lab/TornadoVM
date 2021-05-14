@@ -5,7 +5,6 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
-import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
@@ -138,11 +137,16 @@ public class SPIRVUnary {
 
         private final SPIRVMemoryBase base;
         private Value index;
-        private AllocatableValue assignedTo;
 
         MemoryAccess(SPIRVMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
+        }
+
+        MemoryAccess(SPIRVMemoryBase base, Value value, Value index) {
+            super(null, LIRKind.Illegal, value);
+            this.base = base;
+            this.index = index;
         }
 
         public SPIRVMemoryBase getBase() {
@@ -158,9 +162,6 @@ public class SPIRVUnary {
             return index;
         }
 
-        public AllocatableValue assignedTo() {
-            return assignedTo;
-        }
     }
 
     public static class SPIRVAddressCast extends UnaryConsumer {
@@ -169,13 +170,10 @@ public class SPIRVUnary {
 
         private final Value address;
 
-        private final Value valueToStore;
-
-        public SPIRVAddressCast(Value address, SPIRVMemoryBase base, LIRKind valueKind, Value valueToStore) {
+        public SPIRVAddressCast(Value address, SPIRVMemoryBase base, LIRKind valueKind) {
             super(null, valueKind, address);
             this.base = base;
             this.address = address;
-            this.valueToStore = valueToStore;
         }
 
         /**

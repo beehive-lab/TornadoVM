@@ -99,16 +99,9 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
 
         if (valid) {
-            System.out.println("SET DOMAIN TREE???? ");
             Tornado.trace("loop nest depth = %d\n", domainTree.getDepth());
             Tornado.debug("discovered parallel domain: %s\n", domainTree);
-
-            System.out.printf("loop nest depth = %d\n", domainTree.getDepth());
-            System.out.printf("discovered parallel domain: %s\n", domainTree);
-
             context.getMeta().setDomain(domainTree);
-        } else {
-            System.out.println("DOMAIN TREE NOT VALID ");
         }
     }
 

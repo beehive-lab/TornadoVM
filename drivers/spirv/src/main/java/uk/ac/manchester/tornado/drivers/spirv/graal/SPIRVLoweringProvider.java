@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
+import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -52,6 +53,7 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -95,6 +97,8 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             /*
              * No lowering, we currently generate LIR directly for these nodes.
              */
+        } else if (node instanceof LoadIndexedNode) {
+            lowerLoadIndexedNode((LoadIndexedNode) node, tool);
         } else if (node instanceof InstanceOfNode) {
             // ignore
         } else if (node instanceof StoreIndexedNode) {
@@ -216,9 +220,27 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     }
 
+    private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
+        AddressNode address;
+        System.out.println("Pending Local Memory");
+        address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        return address;
+    }
+
     @Override
     protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
+        StructuredGraph graph = loadIndexed.graph();
+        JavaKind elementKind = loadIndexed.elementKind();
+        AddressNode address;
 
+        Stamp loadStamp = loadIndexed.stamp(NodeView.DEFAULT);
+        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof OCLStamp)) {
+            loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
+        }
+        address = createArrayAccess(graph, loadIndexed, elementKind);
+        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, OnHeapMemoryAccess.BarrierType.NONE));
+        loadIndexed.replaceAtUsages(memoryRead);
+        graph.replaceFixed(loadIndexed, memoryRead);
     }
 
     private AbstractWriteNode createMemWriteNode(JavaKind elementKind, ValueNode value, ValueNode array, AddressNode address, StructuredGraph graph, StoreIndexedNode storeIndexed) {

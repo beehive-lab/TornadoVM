@@ -1,16 +1,19 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
+
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
@@ -20,8 +23,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -193,10 +194,30 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return null;
     }
 
+    private void emitLoad(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
+        SPIRVLogger.traceBuildLIR("emitLoad STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        getGen().append(new SPIRVLIRStmt.LoadStmt(result, cast, address));
+    }
+
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
-        System.out.println("[!] EMIT LOAD FOR SPIR-V - Pending");
-        throw new RuntimeException("[!] EMIT LOAD FOR SPIR-V - Pending");
+        SPIRVLogger.traceBuildLIR("emitLoad: %s <- %s with state:%s", kind, address, state);
+        final Variable result = getGen().newVariable(kind);
+        if (!(kind.getPlatformKind() instanceof SPIRVKind)) {
+            throw new RuntimeException("invalid LIRKind");
+        }
+
+        SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
+        SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getBase();
+
+        if (spirvKind.isVector()) {
+            throw new RuntimeException("Vector Load not supported");
+        } else {
+            SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
+            emitLoad(result, cast, (MemoryAccess) address);
+        }
+
+        return result;
     }
 
     @Override
@@ -224,15 +245,15 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             if (memAccess != null) {
                 System.out.println("IMPLEMENT SPIRVAddressCastNode ");
-                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getBase(), LIRKind.value(spirvKind), input);
+                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getBase(), LIRKind.value(spirvKind));
                 if (memAccess.getIndex() == null) {
                     getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
                 }
 
-                AllocatableValue valueHolder = memAccess.assignedTo();
-                if (valueHolder != null) {
-                    getGen().append(new OCLLIRStmt.AssignStmt(valueHolder, input));
-                }
+                // AllocatableValue valueHolder = memAccess.assignedTo();
+                // if (valueHolder != null) {
+                // getGen().append(new OCLLIRStmt.AssignStmt(valueHolder, input));
+                // }
             }
         }
     }
