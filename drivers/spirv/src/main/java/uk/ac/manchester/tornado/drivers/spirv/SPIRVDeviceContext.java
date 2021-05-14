@@ -14,8 +14,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
- * Class to map an SPIRV device (Device represented either in Level Zero or an
- * OpenCL device) with an SPIRV Context.
+ * Class to map a SPIR-V device (Device represented either in LevelZero or an
+ * OpenCL device) with an SPIR-V Context.
  */
 public abstract class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
 
