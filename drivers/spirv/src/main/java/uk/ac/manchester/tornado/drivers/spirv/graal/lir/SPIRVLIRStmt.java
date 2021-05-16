@@ -85,7 +85,7 @@ public class SPIRVLIRStmt {
                 asm.currentBlockScope().add(new SPIRVOpStore( //
                         storeAddressID, //
                         value, //
-                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(lhs.getPlatformKind().getSizeInBytes())) //
                         )));
             }
 
@@ -530,7 +530,17 @@ public class SPIRVLIRStmt {
             if (rhs instanceof ConstantValue) {
                 value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
             } else {
+                System.out.println("!!!!!!!!!!!!!!!! LOAD BEFORE STORE: ");
                 value = asm.lookUpLIRInstructions(rhs);
+                SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());
+                SPIRVId loadID = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad( //
+                        resultType, // type of load
+                        loadID, // new id
+                        value, // pointer
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(rhs.getPlatformKind().getSizeInBytes()))) //
+                ));
+                value = loadID;
             }
 
             SPIRVKind spirvKind = (SPIRVKind) cast.getLIRKind().getPlatformKind();

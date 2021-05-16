@@ -116,7 +116,7 @@ public class SPIRVControlFlow {
                     bool, //
                     resultLoad, //
                     conditionId, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(condition.getPlatformKind().getSizeInBytes())))));
 
             asm.currentBlockScope().add(new SPIRVOpBranchConditional( //
                     resultLoad, //

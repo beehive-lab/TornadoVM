@@ -209,7 +209,15 @@ public class SPIRVUnary {
             SPIRVId storeAddressID = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
 
-            asm.registerLIRInstructionValue(this, storeAddressID);
+            SPIRVId load2ID = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    typeLoad, // type of load
+                    load2ID, // new id
+                    storeAddressID, // pointer
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_32.getByteCount())))//
+            ));
+
+            asm.registerLIRInstructionValue(this, load2ID);
         }
     }
 
