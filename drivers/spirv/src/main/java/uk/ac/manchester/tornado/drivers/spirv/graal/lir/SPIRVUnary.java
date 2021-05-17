@@ -142,17 +142,6 @@ public class SPIRVUnary {
         }
     }
 
-    public static class Intrinsic extends UnaryConsumer {
-        public Intrinsic(SPIRVUnaryOp opcode, LIRKind lirKind, Value value) {
-            super(opcode, lirKind, value);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s(%s)", opcode.toString(), value);
-        }
-    }
-
     public static class MemoryAccess extends UnaryConsumer {
 
         private final SPIRVMemoryBase memoryRegion;
