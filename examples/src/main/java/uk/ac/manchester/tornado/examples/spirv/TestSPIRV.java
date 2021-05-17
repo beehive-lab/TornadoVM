@@ -65,6 +65,12 @@ public class TestSPIRV {
         }
     }
 
+    public static void saxpy(int[] a, int[] b, int[] c, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = alpha * b[i] + c[i];
+        }
+    }
+
     public static void copyTestZero(int[] a) {
         a[0] = 50;
     }
@@ -325,6 +331,38 @@ public class TestSPIRV {
         }
     }
 
+    public static void saxpy() {
+
+        final int numElements = 512;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        for (int i = 0; i < a.length; i++) {
+            b[i] = i;
+            c[i] = i;
+        }
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::saxpy, a, b, c, 2) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != ((2 * b[i]) + c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -363,6 +401,9 @@ public class TestSPIRV {
                 break;
             case 8:
                 square();
+                break;
+            case 9:
+                saxpy();
                 break;
             default:
                 testSimple00();
