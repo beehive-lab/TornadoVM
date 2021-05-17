@@ -59,6 +59,12 @@ public class TestSPIRV {
         }
     }
 
+    public static void vectorSquare(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] * b[i];
+        }
+    }
+
     public static void copyTestZero(int[] a) {
         a[0] = 50;
     }
@@ -288,6 +294,37 @@ public class TestSPIRV {
         }
     }
 
+    public static void square() {
+
+        final int numElements = 32;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        for (int i = 0; i < a.length; i++) {
+            b[i] = i;
+        }
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorSquare, a, b) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] * b[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -323,6 +360,9 @@ public class TestSPIRV {
                 break;
             case 7:
                 vectorDiv();
+                break;
+            case 8:
+                square();
                 break;
             default:
                 testSimple00();
