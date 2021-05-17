@@ -26,6 +26,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIMul;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpISub;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
@@ -328,6 +329,7 @@ public final class SPIRVAssembler extends Assembler {
     public abstract static class SPIRVBinaryOp extends SPIRVOp {
 
         public static final SPIRVBinaryOp ADD_INTEGER = new SPIRVBinaryOpIAdd("+", "SPIRVOpIAdd");
+        public static final SPIRVBinaryOp SUB_INTEGER = new SPIRVBinaryOpISub("-", "SPIRVOpISub");
         public static final SPIRVBinaryOp MULT_INTEGER = new SPIRVBinaryOpIMul("*", "SPIRVOpIMul");
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
         public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<", "SPIRVOpSLessThan");
@@ -345,7 +347,7 @@ public final class SPIRVAssembler extends Assembler {
 
         /**
          * Instruction used for debugging
-         * 
+         *
          * @return String
          */
         public String getInstruction() {
@@ -365,6 +367,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpIAdd(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpISub extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpISub(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpISub(idResultType, idResult, operand1, operand2);
         }
     }
 

@@ -66,7 +66,18 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitSub(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        return null;
+        SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s - %s", a, b);
+        SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
+        SPIRVBinaryOp binaryOp;
+        switch (kind) {
+            case OP_TYPE_INT_64:
+            case OP_TYPE_INT_32:
+                binaryOp = SPIRVBinaryOp.SUB_INTEGER;
+                break;
+            default:
+                throw new RuntimeException("Type not supported: " + resultKind);
+        }
+        return emitBinaryAssign(binaryOp, resultKind, a, b);
     }
 
     @Override

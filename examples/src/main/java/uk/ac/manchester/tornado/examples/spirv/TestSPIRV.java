@@ -41,9 +41,15 @@ public class TestSPIRV {
         }
     }
 
-    public static void vectorAddMul(int[] a, int[] b, int[] c) {
+    public static void vectorMul(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] * c[i];
+        }
+    }
+
+    public static void vectorSub(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] - c[i];
         }
     }
 
@@ -197,7 +203,7 @@ public class TestSPIRV {
         Arrays.fill(c, 5);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorAddMul, a, b, c) //
+                .task("t0", TestSPIRV::vectorMul, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -214,7 +220,36 @@ public class TestSPIRV {
         if (correct) {
             System.out.println("Result is CORRECT");
         }
+    }
 
+    public static void vectorSub() {
+
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Arrays.fill(b, 100);
+        Arrays.fill(c, 75);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorSub, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] - c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
     }
 
     public static void main(String[] args) {
@@ -246,6 +281,9 @@ public class TestSPIRV {
                 break;
             case 5:
                 vectorMul();
+                break;
+            case 6:
+                vectorSub();
                 break;
             default:
                 testSimple00();
