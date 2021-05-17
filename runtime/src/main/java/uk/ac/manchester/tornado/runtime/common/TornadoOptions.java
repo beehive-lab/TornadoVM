@@ -219,4 +219,14 @@ public class TornadoOptions {
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", "False");
 
+    /**
+     * Trace code generation
+     */
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "True");
+
+    /**
+     * Trace code generation
+     */
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "True");
+
 }
