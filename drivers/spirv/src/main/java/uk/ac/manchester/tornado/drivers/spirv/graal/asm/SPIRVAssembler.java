@@ -25,6 +25,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIMul;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
@@ -322,37 +323,43 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     /**
-     * Binary opcodes
+     * Binary operations
      */
     public abstract static class SPIRVBinaryOp extends SPIRVOp {
 
-        public static final SPIRVBinaryOp ADD_INTEGER = new SPIRVBinaryOpAdd("+");
-        public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<");
-        public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<");
+        public static final SPIRVBinaryOp ADD_INTEGER = new SPIRVBinaryOpIAdd("+", "SPIRVOpIAdd");
+        public static final SPIRVBinaryOp MULT_INTEGER = new SPIRVBinaryOpIMul("*", "SPIRVOpIMul");
+        public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
+        public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<", "SPIRVOpSLessThan");
 
-        protected SPIRVBinaryOp(String opcode) {
+        protected String spirvInstruction;
+
+        protected SPIRVBinaryOp(String opcode, String spirvInstruction) {
             super(opcode);
+            this.spirvInstruction = spirvInstruction;
         }
 
         public String getOpcode() {
             return this.opcode;
         }
 
-        public abstract String getInstruction();
+        /**
+         * Instruction used for debugging
+         * 
+         * @return String
+         */
+        public String getInstruction() {
+            return spirvInstruction;
+        }
 
         public abstract SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2);
 
     }
 
-    public static class SPIRVBinaryOpAdd extends SPIRVBinaryOp {
+    public static class SPIRVBinaryOpIAdd extends SPIRVBinaryOp {
 
-        protected SPIRVBinaryOpAdd(String opcode) {
-            super(opcode);
-        }
-
-        @Override
-        public String getInstruction() {
-            return "SPIRVOpIAdd";
+        protected SPIRVBinaryOpIAdd(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
         }
 
         @Override
@@ -361,15 +368,22 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
-    public static class SPIRVBinaryOpLeftShift extends SPIRVBinaryOp {
+    public static class SPIRVBinaryOpIMul extends SPIRVBinaryOp {
 
-        protected SPIRVBinaryOpLeftShift(String opcode) {
-            super(opcode);
+        protected SPIRVBinaryOpIMul(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
         }
 
         @Override
-        public String getInstruction() {
-            return "SPIRVOpShiftLeftLogical";
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpIMul(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpLeftShift extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpLeftShift(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
         }
 
         @Override
@@ -380,13 +394,8 @@ public final class SPIRVAssembler extends Assembler {
 
     public static class SPIRVBinaryOpSLessThan extends SPIRVBinaryOp {
 
-        protected SPIRVBinaryOpSLessThan(String opcode) {
-            super(opcode);
-        }
-
-        @Override
-        public String getInstruction() {
-            return "SPIRVOpSLessThan";
+        protected SPIRVBinaryOpSLessThan(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
         }
 
         @Override
