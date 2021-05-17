@@ -95,6 +95,8 @@ public abstract class TornadoTestBase {
                     throw new TornadoVMPTXNotSupported("Test not supported for the PTX backend");
                 case OpenCL:
                     throw new TornadoVMOpenCLNotSupported("Test not supported for the OpenCL backend");
+                case SPIRV:
+                    throw new TornadoVMSPIRVNotSupported("Test not supported for the SPIR-V backend");
             }
         }
     }
