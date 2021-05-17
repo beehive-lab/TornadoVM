@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+
+import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel and test the pre-compiled API with
@@ -52,7 +52,6 @@ public class TestSPIRV {
     }
 
     public static void testSimple00() {
-
         final int numElements = 256;
         int[] a = new int[numElements];
 
@@ -180,7 +179,7 @@ public class TestSPIRV {
             try {
                 test = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-
+                test = 0;
             }
         }
 

@@ -30,7 +30,7 @@ public class Vectors extends TornadoTestBase {
         a[0] = 50;
     }
 
-    private static void sum(int[] a, int[] b, int[] c) {
+    private static void vectorAddCompute(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] + c[i];
         }
