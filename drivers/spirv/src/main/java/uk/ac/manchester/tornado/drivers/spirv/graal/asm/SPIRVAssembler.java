@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -17,6 +18,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
@@ -24,6 +26,10 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentInt;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
@@ -32,6 +38,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperan
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
@@ -58,6 +65,8 @@ public final class SPIRVAssembler extends Assembler {
     public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
     public SPIRVId v3ulong;
     public SPIRVId pointerToULongFunction;
+    public SPIRVId ptrCrossWorkULong;
+    public SPIRVId ptrCrossWorkUInt;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -189,11 +198,33 @@ public final class SPIRVAssembler extends Assembler {
         return lirTableName.get(valueLIRInstruction);
     }
 
-    public SPIRVId lookUpConstant(String valueConstant) {
+    public SPIRVId emitConstantValue(SPIRVKind type, String valueConstant) {
+        SPIRVId newConstantId = module.getNextId();
+        SPIRVId typeID = primitives.getTypePrimitive(type);
+        switch (type) {
+            case OP_TYPE_INT_32:
+                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
+                break;
+            case OP_TYPE_INT_64:
+                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentLong(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
+                break;
+            case OP_TYPE_FLOAT_32:
+                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
+                break;
+            case OP_TYPE_FLOAT_64:
+                module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentDouble(Double.parseDouble(valueConstant))));
+                break;
+            default:
+                throw new RuntimeException("Data type not supported yet: " + type);
+        }
+        return newConstantId;
+    }
+
+    public SPIRVId lookUpConstant(String valueConstant, SPIRVKind type) {
         if (constants.containsKey(valueConstant)) {
             return constants.get(valueConstant);
         } else {
-            SPIRVId newConstantId = this.module.getNextId();
+            SPIRVId newConstantId = emitConstantValue(type, valueConstant);
             constants.put(valueConstant, newConstantId);
             return newConstantId;
         }

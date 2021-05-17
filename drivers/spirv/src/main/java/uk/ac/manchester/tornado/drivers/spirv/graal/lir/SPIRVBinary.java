@@ -137,8 +137,8 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
-            SPIRVId a = getId(x, asm, typeOperation, spirvKind);
-            SPIRVId b = getId(y, asm, typeOperation, spirvKind);
+            SPIRVId a = getId(x, asm, typeOperation, (SPIRVKind) x.getPlatformKind());
+            SPIRVId b = getId(y, asm, typeOperation, (SPIRVKind) y.getPlatformKind());
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpSLessThan: " + x + " < " + y);
 

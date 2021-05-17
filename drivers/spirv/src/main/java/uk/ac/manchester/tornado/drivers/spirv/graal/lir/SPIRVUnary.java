@@ -77,39 +77,61 @@ public class SPIRVUnary {
             this.parameterIndex = parameterIndex;
         }
 
+        /**
+         * This represents a load from a parameter from the stack-frame.
+         *
+         * The equivalent in OpenCL is as follows:
+         *
+         * <code>
+         *      ulong_0 = (ulong) _frame[STACK_INDEX];
+         * </code>
+         *
+         *
+         * This an example of the target code to generate in SPIR-V:
+         *
+         * <code>         
+         *          %24 = OpLoad %_ptr_CrossWorkgroup_ulong %_frame Aligned 8
+         *     %ptridx1 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_ulong %24 STACK_INDEX
+         *          %27 = OpLoad %ulong %ptridx1 Aligned 8
+         *                OpStore %ul_0 %27 Aligned 8
+         * </code>
+         *
+         */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.trace("µIns LoadFromStackFrame ");
             SPIRVId loadID = asm.module.getNextId();
 
-            SPIRVId ptrFUnctionULong = null;
+            SPIRVId ptrCrossWorkGroupULong = null;
             if (type == SPIRVKind.OP_TYPE_INT_64) {
-                ptrFUnctionULong = asm.pointerToULongFunction;
+                ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
             }
             SPIRVId address = asm.frameId;
             int alignment = 8;
             asm.currentBlockScope().add(new SPIRVOpLoad( //
-                    ptrFUnctionULong, //
+                    ptrCrossWorkGroupULong, //
                     loadID, //
                     address, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
 
             String constantValue = String.valueOf(indexFromStackFrame);
-            SPIRVId index = asm.lookUpConstant(constantValue);
+            SPIRVId index = asm.lookUpConstant(constantValue, SPIRVKind.OP_TYPE_INT_32);
 
             SPIRVId accessPTR = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
-                    asm.pointerToULongFunction, //
+                    ptrCrossWorkGroupULong, //
                     accessPTR, //
                     loadID, //
                     index, //
                     new SPIRVMultipleOperands<>()));
 
+            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+
             // Load Address
             SPIRVId loadPtr = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpLoad( //
-                    ptrFUnctionULong, //
+                    ulong, //
                     loadPtr, //
                     accessPTR, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
@@ -205,19 +227,11 @@ public class SPIRVUnary {
                 idLoad = addressToLoad;
             }
 
-            SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
+            SPIRVId ptrCrossWorkGroupUInt = asm.ptrCrossWorkUInt;
             SPIRVId storeAddressID = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
 
-            SPIRVId load2ID = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpLoad( //
-                    typeLoad, // type of load
-                    load2ID, // new id
-                    storeAddressID, // pointer
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_32.getByteCount())))//
-            ));
-
-            asm.registerLIRInstructionValue(this, load2ID);
+            asm.registerLIRInstructionValue(this, storeAddressID);
         }
     }
 

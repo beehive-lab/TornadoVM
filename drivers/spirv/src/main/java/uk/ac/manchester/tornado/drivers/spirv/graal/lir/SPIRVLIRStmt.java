@@ -468,7 +468,7 @@ public class SPIRVLIRStmt {
                     addressToLoad, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
 
-            SPIRVId ptrCrossWorkGroupUInt = asm.pointerToGlobalMemoryHeap;
+            SPIRVId ptrCrossWorkGroupUInt = asm.ptrCrossWorkUInt;
             SPIRVId storeAddressID = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
 

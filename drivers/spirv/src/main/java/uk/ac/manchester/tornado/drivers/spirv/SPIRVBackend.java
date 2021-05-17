@@ -823,6 +823,13 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
+
+            asm.ptrCrossWorkUInt = module.getNextId();
+            module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkUInt, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32)));
+
+            asm.ptrCrossWorkULong = module.getNextId();
+            module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkULong, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
+
             pointerToULongFunction = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
             pointerToFrameAccess = module.getNextId();
             module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), pointerToULongFunction));

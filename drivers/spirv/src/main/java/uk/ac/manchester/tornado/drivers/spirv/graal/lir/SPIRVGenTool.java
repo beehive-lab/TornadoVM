@@ -19,6 +19,10 @@ import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVUnaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 
+/**
+ * This class specifies how to load a parameter to the kernel from the TornadoVM
+ * Stack-Frame.
+ */
 public class SPIRVGenTool {
 
     protected SPIRVLIRGenerator generator;
