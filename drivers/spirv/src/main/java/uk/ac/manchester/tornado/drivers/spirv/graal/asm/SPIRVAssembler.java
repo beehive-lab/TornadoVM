@@ -29,6 +29,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIMul;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpISub;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSDiv;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftLeftLogical;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
@@ -331,6 +332,7 @@ public final class SPIRVAssembler extends Assembler {
         public static final SPIRVBinaryOp ADD_INTEGER = new SPIRVBinaryOpIAdd("+", "SPIRVOpIAdd");
         public static final SPIRVBinaryOp SUB_INTEGER = new SPIRVBinaryOpISub("-", "SPIRVOpISub");
         public static final SPIRVBinaryOp MULT_INTEGER = new SPIRVBinaryOpIMul("*", "SPIRVOpIMul");
+        public static final SPIRVBinaryOp DIV_INTEGER = new SPIRVBinaryOpIDiv("/", "SPIRVOpSDiv");
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
         public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<", "SPIRVOpSLessThan");
 
@@ -391,6 +393,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpIMul(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpIDiv extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpIDiv(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpSDiv(idResultType, idResult, operand1, operand2);
         }
     }
 

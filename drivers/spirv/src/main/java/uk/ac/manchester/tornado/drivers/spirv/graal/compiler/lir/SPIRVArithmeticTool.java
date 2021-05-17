@@ -66,7 +66,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitSub(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s - %s", a, b);
+        SPIRVLogger.traceBuildLIR("[µInstructions] emitSub: %s - %s", a, b);
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
@@ -113,7 +113,18 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
-        return null;
+        SPIRVLogger.traceBuildLIR("[µInstructions] emitDiv: %s / %s", a, b);
+        SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
+        SPIRVBinaryOp binaryOp;
+        switch (kind) {
+            case OP_TYPE_INT_64:
+            case OP_TYPE_INT_32:
+                binaryOp = SPIRVBinaryOp.DIV_INTEGER;
+                break;
+            default:
+                throw new RuntimeException("Type not supported: " + kind);
+        }
+        return emitBinaryAssign(binaryOp, LIRKind.combine(a, b), a, b);
     }
 
     @Override

@@ -53,6 +53,12 @@ public class TestSPIRV {
         }
     }
 
+    public static void vectorDiv(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] / c[i];
+        }
+    }
+
     public static void copyTestZero(int[] a) {
         a[0] = 50;
     }
@@ -252,6 +258,36 @@ public class TestSPIRV {
         }
     }
 
+    public static void vectorDiv() {
+
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Arrays.fill(b, 512);
+        Arrays.fill(c, 2);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorDiv, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] / c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -284,6 +320,9 @@ public class TestSPIRV {
                 break;
             case 6:
                 vectorSub();
+                break;
+            case 7:
+                vectorDiv();
                 break;
             default:
                 testSimple00();
