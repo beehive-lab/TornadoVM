@@ -1,13 +1,13 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-import java.util.Arrays;
-
 /**
- * Test used for generating OpenCL kernel and test the pre-compiled API with
- * SPIRV.
+ * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
+ * is pre-compiled.
  * 
  * How to run?
  * 
