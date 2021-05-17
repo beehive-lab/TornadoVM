@@ -66,6 +66,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNod
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -336,10 +337,12 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final IntegerLessThanNode condition = (IntegerLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            // FIXME: I think we can refactor the comparisons to a unique class
-            append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVBinary.IntegerLessThan(null, boolLIRKind, x, y)));
+            SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_LESS_THAN;
+            append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            // append(new SPIRVLIRStmt.AssignStmt(result, new
+            // SPIRVBinary.IntegerLessThan(null, boolLIRKind, x, y)));
         } else {
-            throw new RuntimeException("Condition Not implemented yet");
+            throw new RuntimeException("Condition Not implemented yet: " + node.getClass());
         }
         setResult(node, result);
         return result;

@@ -70,8 +70,8 @@ public class SPIRVUnary {
         protected int indexFromStackFrame;
         protected int parameterIndex;
 
-        public LoadFromStackFrameExpr(SPIRVUnaryOp opcode, LIRKind lirKind, Value value, SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
-            super(opcode, lirKind, value);
+        public LoadFromStackFrameExpr(LIRKind lirKind, SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
+            super(null, lirKind, null);
             this.type = type;
             this.indexFromStackFrame = indexFromStackFrame;
             this.parameterIndex = parameterIndex;

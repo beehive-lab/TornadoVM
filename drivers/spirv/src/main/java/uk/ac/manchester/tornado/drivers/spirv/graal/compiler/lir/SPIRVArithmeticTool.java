@@ -31,7 +31,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public SPIRVLIROp genBinaryExpr(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
-        return new SPIRVBinary.AddExpr(op, lirKind, x, y);
+        return new SPIRVBinary.Expr(op, lirKind, x, y);
     }
 
     public Variable emitBinaryAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
@@ -51,7 +51,17 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
         SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s + %s", a, b);
-        return emitBinaryAssign(SPIRVBinaryOp.ADD, resultKind, a, b);
+        SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
+        SPIRVBinaryOp binaryOp;
+        switch (kind) {
+            case OP_TYPE_INT_64:
+            case OP_TYPE_INT_32:
+                binaryOp = SPIRVBinaryOp.ADD_INTEGER;
+                break;
+            default:
+                throw new RuntimeException("Type not supported: " + resultKind);
+        }
+        return emitBinaryAssign(binaryOp, resultKind, a, b);
     }
 
     @Override
@@ -124,8 +134,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVLogger.traceBuildLIR("emitShl: %s << %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVBinary.ShiftLeft shiftLeft = new SPIRVBinary.ShiftLeft(SPIRVBinaryOp.BITWISE_LEFT_SHIFT, lirKind, a, b);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, shiftLeft));
+        SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_LEFT_SHIFT;
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
         return result;
     }
 

@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -11,9 +11,9 @@ import java.util.Arrays;
  * 
  * How to run?
  * 
- * <p>
- * tornado --igv --debug uk.ac.manchester.tornado.examples.spirv.TestSPIRV
- * </p>
+ * <code>
+ *    tornado --debug -Dtornado.recover.bailout=False -Dtornado.fullDebug=False -Ds0.t0.device=0:0 --printKernel uk.ac.manchester.tornado.examples.spirv.TestSPIRV 4
+ * </code>
  */
 public class TestSPIRV {
 
@@ -77,9 +77,17 @@ public class TestSPIRV {
                 .streamOut(a) //
                 .execute(); //
 
-        System.out.println("b: " + Arrays.toString(a));
+        System.out.println("a: " + Arrays.toString(a));
 
-        if (a[0] == 50) {
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != 50) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
             System.out.println("Result is CORRECT");
         }
     }
