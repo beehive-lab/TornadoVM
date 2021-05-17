@@ -29,6 +29,18 @@ public class TestSPIRV {
         }
     }
 
+    public static void compute(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] + 50;
+        }
+    }
+
+    public static void vectorAddCompute(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] + c[i];
+        }
+    }
+
     public static void copyTestZero(int[] a) {
         a[0] = 50;
     }
@@ -78,19 +90,84 @@ public class TestSPIRV {
         final int numElements = 256;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
-        int[] c = new int[numElements];
 
         Arrays.fill(b, 100);
-        Arrays.fill(c, 150);
 
         new TaskSchedule("s0") //
                 .task("t0", TestSPIRV::copyTest2, a, b) //
                 .streamOut(a) //
                 .execute(); //
 
-        System.out.println("b: " + Arrays.toString(b));
+        System.out.println("a: " + Arrays.toString(a));
 
-        if (a[0] == 100) {
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != 100) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+
+    }
+
+    public static void testSimple03() {
+
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Arrays.fill(b, 100);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::compute, a, b) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != 100) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void vectorAdd() {
+
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Arrays.fill(b, 100);
+        Arrays.fill(c, 200);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorAddCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] + c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
             System.out.println("Result is CORRECT");
         }
 
@@ -116,6 +193,12 @@ public class TestSPIRV {
                 break;
             case 2:
                 testSimple02();
+                break;
+            case 3:
+                testSimple03();
+                break;
+            case 4:
+                vectorAdd();
                 break;
             default:
                 testSimple00();
