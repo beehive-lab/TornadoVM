@@ -45,12 +45,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
         int index = 0;
-        // heap (global memory)
+        // device's heap (on the device global's memory)
         int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), stack.toBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
 
-        // stack pointer
+        // index of the stack pointer (it is usually zero)
         result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), stack.toRelativeAddress());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
         index++;
