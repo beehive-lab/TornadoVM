@@ -33,11 +33,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
     @Override
     public int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
-        return 0;
+        throw new RuntimeException("Unimplemented");
     }
 
     private void setKernelArgs(final SPIRVByteBuffer stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
-
         // Enqueue write
         stack.enqueueWrite(null);
 
@@ -65,8 +64,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         setKernelArgs((SPIRVByteBuffer) stack, null, meta);
 
-        long[] globalWork = new long[3];
-        long[] localWork = new long[3];
+        final long[] globalWork = new long[3];
+        final long[] localWork = new long[3];
         Arrays.fill(globalWork, 1);
         Arrays.fill(localWork, 1);
         int dims = meta.getDims();
@@ -113,7 +112,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         dispatch.setGroupCountY(globalWork[1] / localWork[1]);
         dispatch.setGroupCountZ(globalWork[2] / localWork[2]);
 
-        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(0);
+        SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();
 
         // Launch the kernel on the Intel Integrated GPU
