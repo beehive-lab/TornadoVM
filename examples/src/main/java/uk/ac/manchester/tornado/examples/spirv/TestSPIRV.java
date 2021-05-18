@@ -12,7 +12,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * How to run?
  * 
  * <code>
- *    tornado --debug -Dtornado.recover.bailout=False -Dtornado.fullDebug=False -Ds0.t0.device=0:0 --printKernel uk.ac.manchester.tornado.examples.spirv.TestSPIRV 4
+ *    tornado --debug -Dtornado.recover.bailout=False -Ds0.t0.device=0:0 --printKernel uk.ac.manchester.tornado.examples.spirv.TestSPIRV 4
  * </code>
  */
 public class TestSPIRV {
