@@ -20,7 +20,7 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
         buffer.order(deviceContext.getDevice().getByteOrder());
     }
 
-    public SPIRVModule getSpirvModule() {
+    public SPIRVModule getSPIRVModule() {
         return this.spirvModule;
     }
 

@@ -23,10 +23,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
     private static final int WARP_SIZE = 32;
+    private boolean valid;
     private boolean ADJUST_IRREGULAR = false;
 
     public SPIRVLevelZeroInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name, spirvModule, deviceContext);
+        this.valid = true;
     }
 
     @Override
@@ -209,5 +211,15 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
                 grid.setNumberOfWorkgroupsToNull();
             }
         }
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
+    }
+
+    @Override
+    public void invalidate() {
+        valid = false;
     }
 }
