@@ -270,7 +270,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        SPIRVLogger.trace("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
+        SPIRVLogger.traceBuildLIR("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         guarantee(kind.getPlatformKind() instanceof SPIRVKind, "invalid LIRKind: %s", kind);
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
 
@@ -287,7 +287,6 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             throw new RuntimeException("Vector types not supported yet");
         } else {
             if (memAccess != null) {
-                System.out.println("IMPLEMENT SPIRVAddressCastNode ");
                 SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
                 if (memAccess.getIndex() == null) {
                     getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));

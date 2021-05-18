@@ -33,7 +33,7 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
 
     @Override
     public void exit(Block b, Block value) {
-        SPIRVLogger.trace("EXIT BLOCK: " + b);
+        SPIRVLogger.traceCodeGen("EXIT BLOCK: " + b);
         assembler.popScope();
     }
 }

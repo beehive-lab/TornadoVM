@@ -46,18 +46,12 @@ public class SPIRVControlFlow {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("\tVAlid before branch??? BLOCK: " + asm.currentBlockScope());
-            SPIRVLogger.traceCodeGen("LoopLabel Pending >>>>>>>>>>>> : blockID " + blockId);
+            SPIRVLogger.traceCodeGen("LoopLabel : blockID " + blockId);
             SPIRVId branchId = getIfOfBranch(blockId, asm);
-            SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + blockId);
             SPIRVInstScope newScope = asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
             asm.pushScope(newScope);
-            System.out.println("\tJUST PUSHED BLOCK: " + newScope);
-            System.out.println("\tVALID BLOCK: " + asm.currentBlockScope());
-
             SPIRVInstScope newScope2 = newScope.add(new SPIRVOpLabel(branchId));
             asm.pushScope(newScope2);
-            System.out.println("\tVALID BLOCK: " + asm.currentBlockScope());
         }
     }
 

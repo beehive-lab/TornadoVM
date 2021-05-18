@@ -85,11 +85,11 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         frameContext.enter(this);
 
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-        SPIRVLogger.trace("Traversing CFG: ", cfg.graph.name);
+        SPIRVLogger.traceCodeGen("Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
         traverseControlFlowGraph(cfg, new SPIRVBlockVisitor(this));
 
-        SPIRVLogger.trace("Finished traversing CFG");
+        SPIRVLogger.traceCodeGen("Finished traversing CFG");
         this.lir = null;
         this.currentBlockIndex = 0;
 
@@ -222,7 +222,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
             return;
         }
 
-        SPIRVLogger.trace("block: %d", block.getId());
+        SPIRVLogger.traceCodeGen("block: %d", block.getId());
 
         LIRInstruction breakInst = null;
 

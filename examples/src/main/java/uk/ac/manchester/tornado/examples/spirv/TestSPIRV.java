@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+
+import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -20,6 +20,12 @@ public class TestSPIRV {
     public static void copyTest(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = 50;
+        }
+    }
+
+    public static void addValue(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] += 50;
         }
     }
 
@@ -344,15 +350,44 @@ public class TestSPIRV {
         }
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::saxpy, a, b, c, 2) //
-                .streamOut(a) //
+                .task("t0", TestSPIRV::saxpy, c, a, b, 2) //
+                .streamOut(c) //
                 .execute(); //
+
+        System.out.println("c: " + Arrays.toString(c));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (c[i] != ((2 * a[i]) + b[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void multipleRuns() {
+
+        final int numElements = 512;
+        int[] a = new int[numElements];
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(a) //
+                .task("t0", TestSPIRV::addValue, a) //
+                .streamOut(a); //
+
+        for (int i = 0; i < 10; i++) {
+            ts.execute();
+        }
 
         System.out.println("a: " + Arrays.toString(a));
 
         boolean correct = true;
         for (int i = 0; i < a.length; i++) {
-            if (a[i] != ((2 * b[i]) + c[i])) {
+            if (a[i] != (10 * 50)) {
                 correct = false;
                 break;
             }
@@ -404,6 +439,9 @@ public class TestSPIRV {
                 break;
             case 9:
                 saxpy();
+                break;
+            case 10:
+                multipleRuns();
                 break;
             default:
                 testSimple00();

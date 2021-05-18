@@ -1,21 +1,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
-
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.nodes.cfg.Block;
-
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
@@ -47,6 +38,13 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
+
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
+
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 public final class SPIRVAssembler extends Assembler {
 
@@ -437,7 +435,6 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitSubString(String str) {
-        guarantee(str != null, "emitting null string");
         for (byte b : str.getBytes()) {
             emitByte(b);
         }
@@ -475,9 +472,7 @@ public final class SPIRVAssembler extends Assembler {
 
     public void emitValue(SPIRVCompilationResultBuilder crb, Value value) {
         if (crb.getAssembler().lookUpLIRInstructions(value) == null) {
-            System.out.println("VALUE NOT FOUND: " + value);
             SPIRVId id = crb.getAssembler().lookUpLIRInstructionsName(value.toString());
-            System.out.println("\tInserting id = " + id);
             crb.getAssembler().registerLIRInstructionValue(value, id);
         }
     }

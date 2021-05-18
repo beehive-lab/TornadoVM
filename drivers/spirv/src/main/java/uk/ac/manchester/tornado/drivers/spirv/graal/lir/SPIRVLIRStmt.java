@@ -241,7 +241,7 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns LoadStmt ");
+            SPIRVLogger.traceCodeGen("µIns LoadStmt ");
             SPIRVId loadID = asm.module.getNextId();
 
             SPIRVId typeId = null;
@@ -284,7 +284,7 @@ public class SPIRVLIRStmt {
         @Deprecated
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.trace("µIns LoadFromStackFrame ");
+            SPIRVLogger.traceCodeGen("µIns LoadFromStackFrame ");
             SPIRVId loadID = asm.module.getNextId();
 
             SPIRVId ptrFUnctionULong = null;
@@ -335,11 +335,6 @@ public class SPIRVLIRStmt {
     @Opcode("AccessPointerChain")
     public static class AccessPointerChain extends AbstractInstruction {
 
-        // IDEA:
-        // Include a hashTable in the ASM that maps LIRInstructions with SPIRVId
-        // SO each microInstruction receives the LIRInstructions to play with, and then
-        // we can lookup the corresponding IDs in the hash table.
-
         public static final LIRInstructionClass<AccessPointerChain> TYPE = LIRInstructionClass.create(AccessPointerChain.class);
 
         int value;
@@ -352,7 +347,7 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns AccessPointerChain ");
+            SPIRVLogger.traceCodeGen("µIns AccessPointerChain ");
             SPIRVId newID = asm.module.getNextId();
 
             // Note, it does not have to be necessary the prev. operation.
@@ -386,7 +381,7 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            System.out.println("µIns EXPR emitCode generation ---?? ");
+            SPIRVLogger.traceCodeGen("µIns EXPR emitCode generation ");
             if (expr instanceof SPIRVLIROp) {
                 ((SPIRVLIROp) expr).emit(crb, asm);
             } else {
@@ -553,24 +548,6 @@ public class SPIRVLIRStmt {
                     value, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
                     )));
-        }
-    }
-
-    @Opcode("CONDITIONAL_STMT")
-    public static class ConditionalStatement extends AbstractInstruction {
-        public static final LIRInstructionClass<ConditionalStatement> TYPE = LIRInstructionClass.create(ConditionalStatement.class);
-
-        @Use
-        private final AbstractInstruction instruction;
-
-        public ConditionalStatement(AbstractInstruction instr) {
-            super(TYPE);
-            this.instruction = instr;
-        }
-
-        @Override
-        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            instruction.emitCode(crb);
         }
     }
 
