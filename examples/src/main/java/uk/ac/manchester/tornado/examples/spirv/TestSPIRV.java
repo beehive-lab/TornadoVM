@@ -398,6 +398,28 @@ public class TestSPIRV {
         }
     }
 
+    private static void testFloatCopy(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 50.0f;
+        }
+    }
+
+    private static void testFloatsCopy() {
+        final int numElements = 256;
+        float[] a = new float[numElements];
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::testFloatCopy, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        if (a[0] == 50.0f) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -443,9 +465,13 @@ public class TestSPIRV {
             case 10:
                 multipleRuns();
                 break;
+            case 11:
+                testFloatsCopy();
+                break;
             default:
                 testSimple00();
                 break;
         }
     }
+
 }

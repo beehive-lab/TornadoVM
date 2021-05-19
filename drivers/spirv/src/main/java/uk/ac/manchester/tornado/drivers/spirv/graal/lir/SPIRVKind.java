@@ -238,8 +238,7 @@ public enum SPIRVKind implements PlatformKind {
         return ((kind != ILLEGAL) && isIntType());
     }
 
-    public boolean isFloating() {
-        // TODO are vectors integers?
+    public boolean isFloatingPoint() {
         return kind == OP_TYPE_FLOAT_32 || kind == OP_TYPE_FLOAT_64;
     }
 

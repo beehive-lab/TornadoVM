@@ -782,7 +782,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
                 SPIRVKind kind = SPIRVKind.fromJavaKind(stackKind);
                 SPIRVId typeId;
-                if (kind.isInteger()) {
+                if (kind.isPrimitive()) {
                     typeId = asm.primitives.getTypePrimitive(kind);
                 } else {
                     throw new RuntimeException("Type not supported");

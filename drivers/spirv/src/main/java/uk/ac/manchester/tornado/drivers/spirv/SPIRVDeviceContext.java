@@ -156,7 +156,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        return 0;
+        return spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
@@ -176,31 +176,31 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-
+        throw new RuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
@@ -240,7 +240,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        return 0;
+        return spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {

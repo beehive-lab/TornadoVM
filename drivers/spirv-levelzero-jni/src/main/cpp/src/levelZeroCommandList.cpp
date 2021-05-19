@@ -50,21 +50,27 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     return result;
 }
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
- * Method:    zeCommandListAppendMemoryCopy_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[BJJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+/**
+ * Perform a copy from Host to Device
+ * @param env
+ * @param javaCommandListHandler
+ * @param javaLevelZeroBuffer
+ * @param sourceBuffer
+ * @param size
+ * @param dstOffset
+ * @param srcOffset
+ * @param javaEvenHandle
+ * @param numWaitEvents
+ * @param javaWaitEvents
+ * @return
  */
-JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1native
-        (JNIEnv * env, jobject, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jbyteArray array, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
-
+ze_result_t copyFromHostToDevice(JNIEnv * env, jobject, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jbyte *sourceBuffer, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
     ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
 
     jclass klass = env->GetObjectClass(javaLevelZeroBuffer);
     jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
     jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
 
-    jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
     jbyte *dstBuffer = reinterpret_cast<jbyte *>(ptr);
 
     ze_event_handle_t hSignalEvent = nullptr;
@@ -84,9 +90,20 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     }
 
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
-    LOG_ZE_JNI("zeCommandListAppendMemoryCopy", result);
-    env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
+    LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[FLOAT]", result);
+    return result;
+}
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemoryCopy_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[BJJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1native
+        (JNIEnv * env, jobject object, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jbyteArray array, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
+    jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    ze_result_t result = copyFromHostToDevice(env, object, javaCommandListHandler, javaLevelZeroBuffer, sourceBuffer, size, dstOffset, srcOffset, javaEvenHandle, numWaitEvents, javaWaitEvents);
+    env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
     return result;
 }
 
@@ -96,34 +113,22 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[IJJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeInt
-        (JNIEnv * env, jobject, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jintArray array, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
-    ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
-
-    jclass klass = env->GetObjectClass(javaLevelZeroBuffer);
-    jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
-    jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
-
+        (JNIEnv * env, jobject object, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jintArray array, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
     jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
-    jbyte *dstBuffer = reinterpret_cast<jbyte *>(ptr);
+    ze_result_t result = copyFromHostToDevice(env, object, javaCommandListHandler, javaLevelZeroBuffer, sourceBuffer, size, dstOffset, srcOffset, javaEvenHandle, numWaitEvents, javaWaitEvents);
+    env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
+    return result;
+}
 
-    ze_event_handle_t hSignalEvent = nullptr;
-    if (javaEvenHandle != nullptr) {
-        jclass klassEvent = env->GetObjectClass(javaEvenHandle);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
-        jlong ptrHSignalEvent = env->GetLongField(javaEvenHandle, fieldPointer);
-        hSignalEvent = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
-    }
-
-    ze_event_handle_t phWaitEvents = nullptr;
-    if (javaWaitEvents != nullptr) {
-        jclass klassEvent = env->GetObjectClass(javaWaitEvents);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
-        jlong ptrHSignalEvent = env->GetLongField(javaWaitEvents, fieldPointer);
-        phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
-    }
-
-    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
-    LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[INTEGER]", result);
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemoryCopy_nativeFloat
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[FJJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeFloat
+        (JNIEnv * env, jobject object, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jfloatArray array, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
+    jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    ze_result_t result = copyFromHostToDevice(env, object, javaCommandListHandler, javaLevelZeroBuffer, sourceBuffer, size, dstOffset, srcOffset, javaEvenHandle, numWaitEvents, javaWaitEvents);
     env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
     return result;
 }
@@ -135,36 +140,9 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeLong
         (JNIEnv *env, jobject object, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jlongArray array, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
-
-    ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
-
-    jclass klass = env->GetObjectClass(javaLevelZeroBuffer);
-    jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
-    jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
-
     jbyte *sourceBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
-    jbyte *dstBuffer = reinterpret_cast<jbyte *>(ptr);
-
-    ze_event_handle_t hSignalEvent = nullptr;
-    if (javaEvenHandle != nullptr) {
-        jclass klassEvent = env->GetObjectClass(javaEvenHandle);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
-        jlong ptrHSignalEvent = env->GetLongField(javaEvenHandle, fieldPointer);
-        hSignalEvent = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
-    }
-
-    ze_event_handle_t phWaitEvents = nullptr;
-    if (javaWaitEvents != nullptr) {
-        jclass klassEvent = env->GetObjectClass(javaWaitEvents);
-        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
-        jlong ptrHSignalEvent = env->GetLongField(javaWaitEvents, fieldPointer);
-        phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
-    }
-
-    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
-    LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[INTEGER]", result);
+    ze_result_t result = copyFromHostToDevice(env, object, javaCommandListHandler, javaLevelZeroBuffer, sourceBuffer, size, dstOffset, srcOffset, javaEvenHandle, numWaitEvents, javaWaitEvents);
     env->ReleasePrimitiveArrayCritical(array, sourceBuffer, JNI_ABORT);
-    return result;
 }
 
 /*
@@ -246,6 +224,49 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     }
     ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
     LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[INTEGER]", result);
+
+    env->ReleasePrimitiveArrayCritical(array, dstBuffer, JNI_ABORT);
+    return result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemoryCopy_nativeBackFloat
+ * Signature: (J[FLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeBackFloat
+        (JNIEnv *env, jobject , jlong javaCommandListHandler, jfloatArray array, jobject javaLevelZeroBuffer, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
+    ze_command_list_handle_t cmdList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandler);
+
+    jclass klass = env->GetObjectClass(javaLevelZeroBuffer);
+    jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
+    jlong ptr = env->GetLongField(javaLevelZeroBuffer, fieldPointer);
+
+    jbyte *dstBuffer = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array, NULL));
+    jbyte *sourceBuffer = reinterpret_cast<jbyte *>(ptr);
+
+    ze_event_handle_t hSignalEvent = nullptr;
+    if (javaEvenHandle != nullptr) {
+        jclass klassEvent = env->GetObjectClass(javaEvenHandle);
+        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
+        jlong ptrHSignalEvent = env->GetLongField(javaEvenHandle, fieldPointer);
+        hSignalEvent = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
+    }
+
+    ze_event_handle_t phWaitEvents = nullptr;
+    if (javaWaitEvents != nullptr) {
+        jclass klassEvent = env->GetObjectClass(javaWaitEvents);
+        fieldPointer = env->GetFieldID(klassEvent, "ptrZeEventHandle", "J");
+        jlong ptrHSignalEvent = env->GetLongField(javaWaitEvents, fieldPointer);
+        phWaitEvents = reinterpret_cast<ze_event_handle_t>(ptrHSignalEvent);
+    }
+
+    if (LOG_JNI) {
+        std::cout << "DEST offset: " << dstOffset << std::endl;
+        std::cout << "SOURCE offset: " << srcOffset << std::endl;
+    }
+    ze_result_t result = zeCommandListAppendMemoryCopy(cmdList, &dstBuffer[dstOffset], &sourceBuffer[srcOffset], size, hSignalEvent, numWaitEvents, &phWaitEvents);
+    LOG_ZE_JNI("zeCommandListAppendMemoryCopy-[FLOAT]", result);
 
     env->ReleasePrimitiveArrayCritical(array, dstBuffer, JNI_ABORT);
     return result;
