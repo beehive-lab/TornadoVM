@@ -424,15 +424,18 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         writeBufferToFile(out, filepath);
     }
 
+    private void emitFP64Capability(SPIRVModule module) {
+        module.add(new SPIRVOpCapability(SPIRVCapability.Float64())); // To use doubles
+        fp64Capability = true;
+    }
+
     private void emitSPIRVCapabilities(SPIRVModule module) {
         // Emit Capabilities
         module.add(new SPIRVOpCapability(SPIRVCapability.Addresses())); // Uses physical addressing, non-logical addressing modes.
         module.add(new SPIRVOpCapability(SPIRVCapability.Linkage())); // Uses partially linked modules and libraries. (e.g., OpenCL)
         module.add(new SPIRVOpCapability(SPIRVCapability.Kernel())); // Uses the Kernel Execution Model.
-        module.add(new SPIRVOpCapability(SPIRVCapability.Float64())); // To use doubles
         module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
         module.add(new SPIRVOpCapability(SPIRVCapability.Int8()));
-        fp64Capability = true;
     }
 
     private void emitImportOpenCL(SPIRVModule module) {
@@ -743,8 +746,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, idSPIRVBuiltin_GlobalSize);
             }
 
-            asm.emitEntryPointMainKernel(method.getName(), isParallel, fp64Capability);
-
             // Decorate for heap_base
             SPIRVId heapBaseAddrId = module.getNextId();
             module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
@@ -761,6 +762,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             SPIRVSymbolTable.put("frameId", frameId);
 
             IDTable idTable = emitVariableDefs(crb, asm, lir);
+
+            if (idTable.kindToVariable.containsKey(SPIRVKind.OP_TYPE_FLOAT_64)) {
+                emitFP64Capability(module);
+            }
+            asm.emitEntryPointMainKernel(method.getName(), isParallel, fp64Capability);
 
             module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));
             module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
