@@ -448,7 +448,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-
+        getBackend().reset();
     }
 
     @Override

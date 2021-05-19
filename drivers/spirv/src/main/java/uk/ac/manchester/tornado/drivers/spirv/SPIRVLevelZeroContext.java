@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -23,9 +26,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SPIRVLevelZeroContext extends SPIRVContext {
 
@@ -147,7 +147,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         deviceBuffer = new LevelZeroByteBuffer();
         LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
         ZeDeviceMemAllocDesc deviceMemAllocDesc = createDeviceDescription();
-        if (TornadoOptions.L0_SHARED_MEMORY_ALLOCATOR) {
+        if (TornadoOptions.LEVEL_ZERO_SHARED_MEMORY) {
             ZeHostMemAllocDesc hostMemAllocDesc = createHostMemDescription();
             int result = levelZeroContext.zeMemAllocShared(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(),
                     deviceBuffer);

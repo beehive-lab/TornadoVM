@@ -25,6 +25,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     protected SPIRVTornadoDevice tornadoDevice;
     protected SPIRVMemoryManager memoryManager;
     protected SPIRVCodeCache codeCache;
+    protected boolean wasReset;
 
     private void init(SPIRVDevice device, SPIRVCommandQueue queue) {
         this.device = device;
@@ -69,12 +70,12 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
 
     @Override
     public boolean wasReset() {
-        return false;
+        return wasReset;
     }
 
     @Override
     public void setResetToFalse() {
-
+        wasReset = false;
     }
 
     @Override
@@ -140,7 +141,10 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public void reset() {
-        throw new RuntimeException("Unimplemented");
+        System.out.println("RESET IMPL PENDING");
+        // memoryManager.reset();
+        // codeCache.reset();
+        // wasReset = true;
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
@@ -228,13 +232,11 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
-        int result = spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
-        return result;
+        return spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
-        int result = spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
-        return result;
+        return spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
