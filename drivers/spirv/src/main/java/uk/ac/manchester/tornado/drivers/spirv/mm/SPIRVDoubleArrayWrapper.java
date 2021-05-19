@@ -1,9 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVArrayWrapper;
 
 public class SPIRVDoubleArrayWrapper extends SPIRVArrayWrapper<double[]> {
 
@@ -13,6 +11,7 @@ public class SPIRVDoubleArrayWrapper extends SPIRVArrayWrapper<double[]> {
 
     public SPIRVDoubleArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long size) {
         super(device, JavaKind.Double, isFinal, size);
+        System.out.println("CREATING A DOUBLE BUFFER of BATCH-SIZE");
     }
 
     @Override

@@ -93,6 +93,12 @@ public class TestSPIRV {
         }
     }
 
+    public static void vectorAddDoubleCompute(double[] a, double[] b, double[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] + c[i];
+        }
+    }
+
     public static void vectorSubFloatCompute(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] - c[i];
@@ -428,6 +434,12 @@ public class TestSPIRV {
         }
     }
 
+    private static void testDoublesCopy(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 50;
+        }
+    }
+
     private static void testFloatsCopy() {
         final int numElements = 256;
         float[] a = new float[numElements];
@@ -456,6 +468,36 @@ public class TestSPIRV {
 
         new TaskSchedule("s0") //
                 .task("t0", TestSPIRV::vectorAddFloatCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] + c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testDoublesAdd() {
+
+        final int numElements = 256;
+        double[] a = new double[numElements];
+        double[] b = new double[numElements];
+        double[] c = new double[numElements];
+
+        Arrays.fill(b, 100);
+        Arrays.fill(c, 200);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorAddDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -564,6 +606,22 @@ public class TestSPIRV {
         }
     }
 
+    private static void testDoublesCopy() {
+        final int numElements = 256;
+        double[] a = new double[numElements];
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::testDoublesCopy, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        if (a[0] == 50.0f) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -623,6 +681,12 @@ public class TestSPIRV {
                 break;
             case 15:
                 testVectorFloatDiv();
+                break;
+            case 17:
+                testDoublesCopy();
+                break;
+            case 18:
+                testDoublesAdd();
                 break;
             default:
                 testSimple00();

@@ -62,6 +62,9 @@ public class LevelZeroCommandList {
     private native int zeCommandListAppendMemoryCopy_nativeFloat(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, float[] heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
+    private native int zeCommandListAppendMemoryCopy_nativeDouble(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, double[] heapBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
+
     private native int zeCommandListAppendMemoryCopy_nativeLong(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, long[] heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
@@ -205,6 +208,11 @@ public class LevelZeroCommandList {
         return zeCommandListAppendMemoryCopy_nativeFloat(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
+    public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, double[] srcBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
+        return zeCommandListAppendMemoryCopy_nativeDouble(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
+    }
+
     public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, long[] srcBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_nativeLong(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
@@ -220,6 +228,11 @@ public class LevelZeroCommandList {
         return zeCommandListAppendMemoryCopy_nativeBackFloat(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
+    public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, double[] dstBuffer, LevelZeroByteBuffer srcBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
+        return zeCommandListAppendMemoryCopy_nativeBackDouble(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
+    }
+
     public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, long[] dstBuffer, LevelZeroByteBuffer srcBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_nativeBackLong(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
@@ -232,6 +245,9 @@ public class LevelZeroCommandList {
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
     private native int zeCommandListAppendMemoryCopy_nativeBackFloat(long commandListHandlerPtr, float[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
+
+    private native int zeCommandListAppendMemoryCopy_nativeBackDouble(long commandListHandlerPtr, double[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
     private native int zeCommandListAppendMemoryCopy_nativeBackLong(long commandListHandlerPtr, long[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,

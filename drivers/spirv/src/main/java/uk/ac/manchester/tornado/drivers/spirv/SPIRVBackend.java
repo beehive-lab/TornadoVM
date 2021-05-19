@@ -429,6 +429,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         module.add(new SPIRVOpCapability(SPIRVCapability.Linkage())); // Uses partially linked modules and libraries. (e.g., OpenCL)
         module.add(new SPIRVOpCapability(SPIRVCapability.Kernel())); // Uses the Kernel Execution Model.
         module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
+        module.add(new SPIRVOpCapability(SPIRVCapability.Float64())); // To use doubles
         module.add(new SPIRVOpCapability(SPIRVCapability.Int8()));
     }
 
