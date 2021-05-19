@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -84,6 +84,30 @@ public class TestSPIRV {
     public static void sum(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] + c[i];
+        }
+    }
+
+    public static void vectorAddFloatCompute(float[] a, float[] b, float[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] + c[i];
+        }
+    }
+
+    public static void vectorSubFloatCompute(float[] a, float[] b, float[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] - c[i];
+        }
+    }
+
+    public static void vectorMulFloatCompute(float[] a, float[] b, float[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] * c[i];
+        }
+    }
+
+    public static void vectorDivFloatCompute(float[] a, float[] b, float[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] / c[i];
         }
     }
 
@@ -420,6 +444,126 @@ public class TestSPIRV {
         }
     }
 
+    public static void testVectorFloatAdd() {
+
+        final int numElements = 256;
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
+
+        Arrays.fill(b, 100);
+        Arrays.fill(c, 200);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorAddFloatCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] + c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testVectorFloatSub() {
+
+        final int numElements = 256;
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
+
+        Arrays.fill(b, 200);
+        Arrays.fill(c, 100);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorSubFloatCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] - c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testVectorFloatMul() {
+
+        final int numElements = 256;
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
+
+        Arrays.fill(b, 100.0f);
+        Arrays.fill(c, 5.0f);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorMulFloatCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] * c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testVectorFloatDiv() {
+
+        final int numElements = 256;
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
+
+        Arrays.fill(b, 100.0f);
+        Arrays.fill(c, 5.0f);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestSPIRV::vectorDivFloatCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] / c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -467,6 +611,18 @@ public class TestSPIRV {
                 break;
             case 11:
                 testFloatsCopy();
+                break;
+            case 12:
+                testVectorFloatAdd();
+                break;
+            case 13:
+                testVectorFloatSub();
+                break;
+            case 14:
+                testVectorFloatMul();
+                break;
+            case 15:
+                testVectorFloatDiv();
                 break;
             default:
                 testSimple00();

@@ -58,6 +58,10 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.ADD_INTEGER;
                 break;
+            case OP_TYPE_FLOAT_32:
+            case OP_TYPE_FLOAT_64:
+                binaryOp = SPIRVBinaryOp.ADD_FLOAT;
+                break;
             default:
                 throw new RuntimeException("Type not supported: " + resultKind);
         }
@@ -73,6 +77,10 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.SUB_INTEGER;
+                break;
+            case OP_TYPE_FLOAT_64:
+            case OP_TYPE_FLOAT_32:
+                binaryOp = SPIRVBinaryOp.SUB_FLOAT;
                 break;
             default:
                 throw new RuntimeException("Type not supported: " + resultKind);
@@ -94,6 +102,10 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.MULT_INTEGER;
+                break;
+            case OP_TYPE_FLOAT_64:
+            case OP_TYPE_FLOAT_32:
+                binaryOp = SPIRVBinaryOp.MULT_FLOAT;
                 break;
             default:
                 throw new RuntimeException("Type not supported: " + kind);
@@ -120,6 +132,10 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.DIV_INTEGER;
+                break;
+            case OP_TYPE_FLOAT_64:
+            case OP_TYPE_FLOAT_32:
+                binaryOp = SPIRVBinaryOp.DIV_FLOAT;
                 break;
             default:
                 throw new RuntimeException("Type not supported: " + kind);

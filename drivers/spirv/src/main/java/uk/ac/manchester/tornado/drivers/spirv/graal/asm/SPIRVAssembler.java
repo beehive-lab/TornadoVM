@@ -1,17 +1,29 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
+
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.nodes.cfg.Block;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFAdd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFDiv;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFMul;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFSub;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
@@ -38,13 +50,6 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
-
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 public final class SPIRVAssembler extends Assembler {
 
@@ -328,9 +333,13 @@ public final class SPIRVAssembler extends Assembler {
     public abstract static class SPIRVBinaryOp extends SPIRVOp {
 
         public static final SPIRVBinaryOp ADD_INTEGER = new SPIRVBinaryOpIAdd("+", "SPIRVOpIAdd");
+        public static final SPIRVBinaryOp ADD_FLOAT = new SPIRVBinaryOpFAdd("+", "SPIRVOpFAdd");
         public static final SPIRVBinaryOp SUB_INTEGER = new SPIRVBinaryOpISub("-", "SPIRVOpISub");
+        public static final SPIRVBinaryOp SUB_FLOAT = new SPIRVBinaryOpFSub("-", "SPIRVOpFSub");
         public static final SPIRVBinaryOp MULT_INTEGER = new SPIRVBinaryOpIMul("*", "SPIRVOpIMul");
+        public static final SPIRVBinaryOp MULT_FLOAT = new SPIRVBinaryOpFMul("*", "SPIRVOpFMul");
         public static final SPIRVBinaryOp DIV_INTEGER = new SPIRVBinaryOpIDiv("/", "SPIRVOpSDiv");
+        public static final SPIRVBinaryOp DIV_FLOAT = new SPIRVBinaryOpFDiv("/", "SPIRVOpFDiv");
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
         public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<", "SPIRVOpSLessThan");
 
@@ -370,6 +379,18 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
+    public static class SPIRVBinaryOpFAdd extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpFAdd(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpFAdd(idResultType, idResult, operand1, operand2);
+        }
+    }
+
     public static class SPIRVBinaryOpISub extends SPIRVBinaryOp {
 
         protected SPIRVBinaryOpISub(String opcode, String spirvInstruction) {
@@ -379,6 +400,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpISub(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpFSub extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpFSub(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpFSub(idResultType, idResult, operand1, operand2);
         }
     }
 
@@ -394,6 +427,18 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
+    public static class SPIRVBinaryOpFMul extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpFMul(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpFMul(idResultType, idResult, operand1, operand2);
+        }
+    }
+
     public static class SPIRVBinaryOpIDiv extends SPIRVBinaryOp {
 
         protected SPIRVBinaryOpIDiv(String opcode, String spirvInstruction) {
@@ -403,6 +448,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpSDiv(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpFDiv extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpFDiv(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpFDiv(idResultType, idResult, operand1, operand2);
         }
     }
 
