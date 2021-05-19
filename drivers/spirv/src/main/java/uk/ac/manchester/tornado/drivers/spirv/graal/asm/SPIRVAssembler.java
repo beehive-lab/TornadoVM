@@ -20,6 +20,7 @@ import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExecutionMode;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFAdd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFDiv;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFMul;
@@ -40,6 +41,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDepende
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentInt;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentLong;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionMode;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
@@ -146,7 +148,7 @@ public final class SPIRVAssembler extends Assembler {
         return functionPre;
     }
 
-    public void emitEntryPointMainKernel(String kernelName, boolean isParallel) {
+    public void emitEntryPointMainKernel(String kernelName, boolean isParallel, boolean fp64Capability) {
         mainFunctionID = module.getNextId();
 
         SPIRVMultipleOperands operands;
@@ -158,6 +160,11 @@ public final class SPIRVAssembler extends Assembler {
         }
 
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
+
+        if (fp64Capability) {
+            module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
+        }
+
     }
 
     public SPIRVId getFunctionPredefinition() {

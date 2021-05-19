@@ -505,7 +505,7 @@ public class TestSPIRV {
 
         boolean correct = true;
         for (int i = 0; i < a.length; i++) {
-            if (a[i] != (b[i] + c[i])) {
+            if ((Math.abs(a[i] - (b[i] + c[i])) > 0.1)) {
                 correct = false;
                 break;
             }

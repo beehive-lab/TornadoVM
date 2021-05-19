@@ -157,6 +157,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private SPIRVInstScope blockScope;
     private SPIRVId pointerToFrameAccess;
     private SPIRVId ptrFunctionPTRCrossWorkGroupUChar;
+    private boolean fp64Capability;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -428,9 +429,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         module.add(new SPIRVOpCapability(SPIRVCapability.Addresses())); // Uses physical addressing, non-logical addressing modes.
         module.add(new SPIRVOpCapability(SPIRVCapability.Linkage())); // Uses partially linked modules and libraries. (e.g., OpenCL)
         module.add(new SPIRVOpCapability(SPIRVCapability.Kernel())); // Uses the Kernel Execution Model.
-        module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
         module.add(new SPIRVOpCapability(SPIRVCapability.Float64())); // To use doubles
+        module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
         module.add(new SPIRVOpCapability(SPIRVCapability.Int8()));
+        fp64Capability = true;
     }
 
     private void emitImportOpenCL(SPIRVModule module) {
@@ -741,7 +743,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, idSPIRVBuiltin_GlobalSize);
             }
 
-            asm.emitEntryPointMainKernel(method.getName(), isParallel);
+            asm.emitEntryPointMainKernel(method.getName(), isParallel, fp64Capability);
 
             // Decorate for heap_base
             SPIRVId heapBaseAddrId = module.getNextId();
@@ -833,7 +835,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             pointerToULongFunction = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
             pointerToFrameAccess = module.getNextId();
-            module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), pointerToULongFunction));
+            module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), asm.ptrCrossWorkULong));
 
             // FIXME: Here we will have a ptr to each type of the kernel - Since this kernel
             // stores in Int*, we need a Pointer to INT in CROSS-Work-GROUP

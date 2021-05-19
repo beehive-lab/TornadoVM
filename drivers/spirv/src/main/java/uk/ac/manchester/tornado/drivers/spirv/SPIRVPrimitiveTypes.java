@@ -17,14 +17,17 @@ public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, SPIRVId> primitives;
 
-    final private Map<SPIRVKind, SPIRVId> ptrToprimitives;
+    final private Map<SPIRVKind, SPIRVId> ptrToPrimitives;
+
+    final private Map<SPIRVKind, SPIRVId> crossGroupToPrimitives;
 
     private final uk.ac.manchester.spirvproto.lib.SPIRVModule module;
 
     public SPIRVPrimitiveTypes(uk.ac.manchester.spirvproto.lib.SPIRVModule module) {
         this.module = module;
         this.primitives = new HashMap<>();
-        this.ptrToprimitives = new HashMap<>();
+        this.ptrToPrimitives = new HashMap<>();
+        this.crossGroupToPrimitives = new HashMap<>();
     }
 
     public SPIRVId getTypePrimitive(SPIRVKind primitive) {
@@ -57,12 +60,22 @@ public class SPIRVPrimitiveTypes {
 
     public SPIRVId getPtrToTypePrimitive(SPIRVKind primitive, SPIRVStorageClass storageClass) {
         SPIRVId primitiveId = getTypePrimitive(primitive);
-        if (!ptrToprimitives.containsKey(primitive)) {
+        if (!ptrToPrimitives.containsKey(primitive)) {
             SPIRVId resultType = module.getNextId();
             module.add(new SPIRVOpTypePointer(resultType, storageClass, primitiveId));
-            ptrToprimitives.put(primitive, resultType);
+            ptrToPrimitives.put(primitive, resultType);
         }
-        return ptrToprimitives.get(primitive);
+        return ptrToPrimitives.get(primitive);
+    }
+
+    public SPIRVId getPtrToCrossGroupPrimitive(SPIRVKind primitive) {
+        SPIRVId primitiveId = getTypePrimitive(primitive);
+        if (!crossGroupToPrimitives.containsKey(primitive)) {
+            SPIRVId resultType = module.getNextId();
+            module.add(new SPIRVOpTypePointer(resultType, SPIRVStorageClass.CrossWorkgroup(), primitiveId));
+            crossGroupToPrimitives.put(primitive, resultType);
+        }
+        return crossGroupToPrimitives.get(primitive);
     }
 
     public SPIRVId getPtrToTypePrimitive(SPIRVKind primitive) {

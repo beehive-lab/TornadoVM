@@ -198,7 +198,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit SPIRVAddressCast");
+            SPIRVLogger.traceCodeGen("emit SPIRVAddressCast with LIRKIND: " + getLIRKind().getPlatformKind());
             SPIRVId idLoad = asm.module.getNextId();
 
             // We force to load a pointer to long
@@ -216,9 +216,11 @@ public class SPIRVUnary {
                 idLoad = addressToLoad;
             }
 
-            SPIRVId ptrCrossWorkGroupUInt = asm.ptrCrossWorkUInt;
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
+
+            // SPIRVId ptrCrossWorkGroupUInt = asm.ptrCrossWorkUInt;
             SPIRVId storeAddressID = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, storeAddressID, idLoad));
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, storeAddressID, idLoad));
 
             asm.registerLIRInstructionValue(this, storeAddressID);
         }
