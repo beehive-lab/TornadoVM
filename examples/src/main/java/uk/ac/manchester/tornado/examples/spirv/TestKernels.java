@@ -139,4 +139,10 @@ public class TestKernels {
         }
     }
 
+    public static void vectorSumLongCompute(long[] a, long[] b, long[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] + c[i];
+        }
+    }
+
 }

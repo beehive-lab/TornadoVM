@@ -510,7 +510,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeModuleCreate_1nativeWithPath
         (JNIEnv *env, jobject object, jlong javaContextPtr, jlong javaDeviceHandler, jobject javaModuleDesc, jobject javaModuleHandle, jobject javaBuildLog, jstring pathToBinary) {
-
+    
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
 

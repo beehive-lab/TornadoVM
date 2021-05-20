@@ -1,8 +1,8 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import java.util.Arrays;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -610,7 +610,43 @@ public class TestSPIRV {
 
         System.out.println("a: " + Arrays.toString(a));
 
-        if (a[0] == 50) {
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != 50) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    private static void testLongsAdd() {
+        final int numElements = 256;
+        long[] a = new long[numElements];
+        long[] b = new long[numElements];
+        long[] c = new long[numElements];
+
+        Arrays.fill(b, Integer.MAX_VALUE);
+        Arrays.fill(c, 1);
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] + c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
             System.out.println("Result is CORRECT");
         }
     }
@@ -692,6 +728,9 @@ public class TestSPIRV {
                 break;
             case 22:
                 testLongsCopy();
+                break;
+            case 23:
+                testLongsAdd();
                 break;
             default:
                 testSimple00();
