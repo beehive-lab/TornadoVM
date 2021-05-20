@@ -133,4 +133,10 @@ public class TestKernels {
         }
     }
 
+    public static void testLongsCopy(long[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 50;
+        }
+    }
+
 }

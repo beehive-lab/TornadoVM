@@ -599,6 +599,22 @@ public class TestSPIRV {
         }
     }
 
+    private static void testLongsCopy() {
+        final int numElements = 256;
+        long[] a = new long[numElements];
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::testLongsCopy, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        if (a[0] == 50) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -673,6 +689,9 @@ public class TestSPIRV {
                 break;
             case 21:
                 testDoublesDiv();
+                break;
+            case 22:
+                testLongsCopy();
                 break;
             default:
                 testSimple00();

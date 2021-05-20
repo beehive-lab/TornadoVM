@@ -11,7 +11,6 @@ public class SPIRVDoubleArrayWrapper extends SPIRVArrayWrapper<double[]> {
 
     public SPIRVDoubleArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long size) {
         super(device, JavaKind.Double, isFinal, size);
-        System.out.println("CREATING A DOUBLE BUFFER of BATCH-SIZE");
     }
 
     @Override
