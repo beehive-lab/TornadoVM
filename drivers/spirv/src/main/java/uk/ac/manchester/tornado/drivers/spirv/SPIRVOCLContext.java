@@ -1,10 +1,10 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SPIRVOCLContext extends SPIRVContext {
 
@@ -51,6 +51,21 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
     public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
@@ -72,6 +87,16 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
