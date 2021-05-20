@@ -204,7 +204,7 @@ public class TestSPIRV {
 
         boolean correct = true;
         for (int i = 0; i < a.length; i++) {
-            if (a[i] != 100) {
+            if (a[i] != 150) {
                 correct = false;
                 break;
             }

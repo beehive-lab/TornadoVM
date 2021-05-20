@@ -761,18 +761,25 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
             SPIRVSymbolTable.put("frameId", frameId);
 
+            // ----------------------------------
+            // Emit all variables (types and initial values)
+            // ----------------------------------
             IDTable idTable = emitVariableDefs(crb, asm, lir);
-
             if (idTable.kindToVariable.containsKey(SPIRVKind.OP_TYPE_FLOAT_64)) {
                 emitFP64Capability(module);
             }
+
+            // ----------------------------------
+            // Emit Entry Kernel
+            // ----------------------------------
             asm.emitEntryPointMainKernel(method.getName(), isParallel, fp64Capability);
 
+            // ----------------------------------
+            // OpNames for the heap and frame
+            // ----------------------------------
             module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));
             module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
             module.add(new SPIRVOpName(frameId, new SPIRVLiteralString("frame")));
-
-            Stack<TypeConstant> stack = new Stack<>();
 
             // We add the type for char
             asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_8);
@@ -782,7 +789,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 asm.primitives.getTypePrimitive(kind);
             }
 
+            // ----------------------------------
             // Emit Constants
+            // ----------------------------------
+            // Stack used for declaring all constants
+            Stack<TypeConstant> stack = new Stack<>();
             StructuredGraph graph = cfg.graph;
             for (ConstantNode constantNode : graph.getNodes().filter(ConstantNode.class)) {
                 // Insert all constants
@@ -805,9 +816,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             // Add constant 3 --> Frame Access
             int reservedSlots = SPIRVCallStack.RESERVED_SLOTS;
-            SPIRVId idConstant3 = module.getNextId();
-            module.add(new SPIRVOpConstant(asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64), idConstant3, new SPIRVContextDependentLong(BigInteger.valueOf(reservedSlots))));
-            constants.put(Integer.toString(reservedSlots), idConstant3);
+            asm.lookUpConstant(Integer.toString(reservedSlots), SPIRVKind.OP_TYPE_INT_32);
 
             // And the reminder of the constants
             while (!stack.isEmpty()) {
@@ -833,9 +842,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
 
-            asm.ptrCrossWorkUInt = module.getNextId();
-            module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkUInt, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32)));
-
             asm.ptrCrossWorkULong = module.getNextId();
             module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkULong, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
 
@@ -843,38 +849,43 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             pointerToFrameAccess = module.getNextId();
             module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), asm.ptrCrossWorkULong));
 
-            // FIXME: Here we will have a ptr to each type of the kernel - Since this kernel
-            // stores in Int*, we need a Pointer to INT in CROSS-Work-GROUP
-            SPIRVId ptrCrossWorkGroupUInt = module.getNextId();
-            module.add(new SPIRVOpTypePointer(ptrCrossWorkGroupUInt, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32)));
-
-            SPIRVId v3ulong = module.getNextId();
-            module.add(new SPIRVOpTypeVector(v3ulong, ulong, new SPIRVLiteralInteger(3)));
-
-            SPIRVId ptrV3ulong = module.getNextId();
-            module.add(new SPIRVOpTypePointer(ptrV3ulong, SPIRVStorageClass.Input(), v3ulong));
-
-            asm.v3ulong = v3ulong;
             if (isParallel) {
+                // If the kernel is parallel, we need to declare a vector 3 (ThreadID-0,
+                // ThreadID-1, ThreadID-2) that will be used in the OCL builtins for thread id
+                // and global sizes.
+                SPIRVId v3ulong = module.getNextId();
+                module.add(new SPIRVOpTypeVector(v3ulong, ulong, new SPIRVLiteralInteger(3)));
+
+                SPIRVId ptrV3ulong = module.getNextId();
+                module.add(new SPIRVOpTypePointer(ptrV3ulong, SPIRVStorageClass.Input(), v3ulong));
+
+                asm.v3ulong = v3ulong;
                 for (Map.Entry<SPIRVOCLBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
                     asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
                 }
             }
 
+            // --------------------------------------
             // Main kernel Begins
+            // --------------------------------------
             SPIRVInstScope functionScope = asm.emitOpFunction(asm.primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionPredefinition());
-            //
-            // Main kernel parameters
-            SPIRVId heap_base = module.getNextId();
-            asm.emitParameterFunction(pointerToGlobalMemoryHeap, heap_base, functionScope);
 
+            // --------------------------------------
+            // Main kernel parameters
+            // --------------------------------------
+            SPIRVId heap_base = module.getNextId();
             SPIRVId frame_base = module.getNextId();
+            asm.emitParameterFunction(pointerToGlobalMemoryHeap, heap_base, functionScope);
             asm.emitParameterFunction(asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64), frame_base, functionScope);
 
+            // --------------------------------------
             // Label Entry
+            // --------------------------------------
             blockScope = asm.emitBlockLabel("B0", functionScope);
 
+            // --------------------------------------
             // All variable declaration + Lookup buffer access
+            // --------------------------------------
             blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
@@ -887,9 +898,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             asm.frameId = frameId;
             asm.pointerToULongFunction = pointerToULongFunction;
 
+            // --------------------------------------
+            // Emit Lookup buffer access
+            // --------------------------------------
             emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base, asm);
-
-            // emitTestLogic(module, frameId, ulong, ul0, ul1, ptrCrossWorkGroupUInt);
 
             // blockScope.add(new SPIRVOpReturn());
         } else {
