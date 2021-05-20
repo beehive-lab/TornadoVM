@@ -509,6 +509,96 @@ public class TestSPIRV {
         }
     }
 
+    public static void testDoublesSub() {
+
+        final int numElements = 256;
+        double[] a = new double[numElements];
+        double[] b = new double[numElements];
+        double[] c = new double[numElements];
+
+        Arrays.fill(b, 2.2);
+        Arrays.fill(c, 3.5);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if ((Math.abs(a[i] - (b[i] - c[i])) > 0.1)) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testDoublesMul() {
+
+        final int numElements = 256;
+        double[] a = new double[numElements];
+        double[] b = new double[numElements];
+        double[] c = new double[numElements];
+
+        Arrays.fill(b, 2.2);
+        Arrays.fill(c, 3.5);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if ((Math.abs(a[i] - (b[i] * c[i])) > 0.1)) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
+    public static void testDoublesDiv() {
+
+        final int numElements = 256;
+        double[] a = new double[numElements];
+        double[] b = new double[numElements];
+        double[] c = new double[numElements];
+
+        Arrays.fill(b, 10.2);
+        Arrays.fill(c, 2.0);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if ((Math.abs(a[i] - (b[i] / c[i])) > 0.1)) {
+                correct = false;
+                break;
+            }
+        }
+
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -574,6 +664,15 @@ public class TestSPIRV {
                 break;
             case 18:
                 testDoublesAdd();
+                break;
+            case 19:
+                testDoublesSub();
+                break;
+            case 20:
+                testDoublesMul();
+                break;
+            case 21:
+                testDoublesDiv();
                 break;
             default:
                 testSimple00();

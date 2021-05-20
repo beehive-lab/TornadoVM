@@ -85,6 +85,24 @@ public class TestKernels {
         }
     }
 
+    public static void vectorMulDoubleCompute(double[] a, double[] b, double[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] * c[i];
+        }
+    }
+
+    public static void vectorSubDoubleCompute(double[] a, double[] b, double[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] - c[i];
+        }
+    }
+
+    public static void vectorDivDoubleCompute(double[] a, double[] b, double[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] / c[i];
+        }
+    }
+
     public static void vectorSubFloatCompute(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] - c[i];
