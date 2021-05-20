@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.examples.spirv;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -17,112 +16,12 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  */
 public class TestSPIRV {
 
-    public static void copyTest(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 50;
-        }
-    }
-
-    public static void addValue(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] += 50;
-        }
-    }
-
-    public static void copyTest2(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i];
-        }
-    }
-
-    public static void compute(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] + 50;
-        }
-    }
-
-    public static void vectorAddCompute(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] + c[i];
-        }
-    }
-
-    public static void vectorMul(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] * c[i];
-        }
-    }
-
-    public static void vectorSub(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] - c[i];
-        }
-    }
-
-    public static void vectorDiv(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] / c[i];
-        }
-    }
-
-    public static void vectorSquare(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] * b[i];
-        }
-    }
-
-    public static void saxpy(int[] a, int[] b, int[] c, int alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = alpha * b[i] + c[i];
-        }
-    }
-
-    public static void copyTestZero(int[] a) {
-        a[0] = 50;
-    }
-
-    public static void sum(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] + c[i];
-        }
-    }
-
-    public static void vectorAddFloatCompute(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] + c[i];
-        }
-    }
-
-    public static void vectorAddDoubleCompute(double[] a, double[] b, double[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] + c[i];
-        }
-    }
-
-    public static void vectorSubFloatCompute(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] - c[i];
-        }
-    }
-
-    public static void vectorMulFloatCompute(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] * c[i];
-        }
-    }
-
-    public static void vectorDivFloatCompute(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = b[i] / c[i];
-        }
-    }
-
     public static void testSimple00() {
         final int numElements = 256;
         int[] a = new int[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::copyTestZero, a) //
+                .task("t0", TestKernels::copyTestZero, a) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -139,7 +38,7 @@ public class TestSPIRV {
         int[] a = new int[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::copyTest, a) //
+                .task("t0", TestKernels::copyTest, a) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -167,7 +66,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::copyTest2, a, b) //
+                .task("t0", TestKernels::copyTest2, a, b) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -196,7 +95,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::compute, a, b) //
+                .task("t0", TestKernels::compute, a, b) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -204,7 +103,7 @@ public class TestSPIRV {
 
         boolean correct = true;
         for (int i = 0; i < a.length; i++) {
-            if (a[i] != 150) {
+            if (a[i] != (b[i] + 50)) {
                 correct = false;
                 break;
             }
@@ -226,7 +125,7 @@ public class TestSPIRV {
         Arrays.fill(c, 200);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorAddCompute, a, b, c) //
+                .task("t0", TestKernels::vectorAddCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -257,7 +156,7 @@ public class TestSPIRV {
         Arrays.fill(c, 5);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorMul, a, b, c) //
+                .task("t0", TestKernels::vectorMul, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -287,7 +186,7 @@ public class TestSPIRV {
         Arrays.fill(c, 75);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorSub, a, b, c) //
+                .task("t0", TestKernels::vectorSub, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -317,7 +216,7 @@ public class TestSPIRV {
         Arrays.fill(c, 2);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorDiv, a, b, c) //
+                .task("t0", TestKernels::vectorDiv, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -348,7 +247,7 @@ public class TestSPIRV {
         }
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorSquare, a, b) //
+                .task("t0", TestKernels::vectorSquare, a, b) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -380,7 +279,7 @@ public class TestSPIRV {
         }
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::saxpy, c, a, b, 2) //
+                .task("t0", TestKernels::saxpy, c, a, b, 2) //
                 .streamOut(c) //
                 .execute(); //
 
@@ -406,7 +305,7 @@ public class TestSPIRV {
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .streamIn(a) //
-                .task("t0", TestSPIRV::addValue, a) //
+                .task("t0", TestKernels::addValue, a) //
                 .streamOut(a); //
 
         for (int i = 0; i < 10; i++) {
@@ -428,24 +327,12 @@ public class TestSPIRV {
         }
     }
 
-    private static void testFloatCopy(float[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 50.0f;
-        }
-    }
-
-    private static void testDoublesCopy(double[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 50;
-        }
-    }
-
     private static void testFloatsCopy() {
         final int numElements = 256;
         float[] a = new float[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::testFloatCopy, a) //
+                .task("t0", TestKernels::testFloatCopy, a) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -467,7 +354,7 @@ public class TestSPIRV {
         Arrays.fill(c, 200);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorAddFloatCompute, a, b, c) //
+                .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -497,7 +384,7 @@ public class TestSPIRV {
         Arrays.fill(c, 200);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorAddDoubleCompute, a, b, c) //
+                .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -527,7 +414,7 @@ public class TestSPIRV {
         Arrays.fill(c, 100);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorSubFloatCompute, a, b, c) //
+                .task("t0", TestKernels::vectorSubFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -557,7 +444,7 @@ public class TestSPIRV {
         Arrays.fill(c, 5.0f);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorMulFloatCompute, a, b, c) //
+                .task("t0", TestKernels::vectorMulFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -587,7 +474,7 @@ public class TestSPIRV {
         Arrays.fill(c, 5.0f);
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::vectorDivFloatCompute, a, b, c) //
+                .task("t0", TestKernels::vectorDivFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
 
@@ -611,7 +498,7 @@ public class TestSPIRV {
         double[] a = new double[numElements];
 
         new TaskSchedule("s0") //
-                .task("t0", TestSPIRV::testDoublesCopy, a) //
+                .task("t0", TestKernels::testDoublesCopy, a) //
                 .streamOut(a) //
                 .execute(); //
 
