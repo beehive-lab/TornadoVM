@@ -1,11 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,18 +34,21 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
     private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
         buffer.flip();
-        File out = new File(filepath);
-        try {
-            FileChannel channel = new FileOutputStream(out, false).getChannel();
-            channel.write(buffer);
-            channel.close();
-        } catch (IOException e) {
-            System.err.println("IO exception: " + e.getMessage());
+        try (FileOutputStream fos = new FileOutputStream(filepath)) {
+            fos.write(buffer.array());
+        } catch (Exception e) {
+            throw new RuntimeException("[ERROR] Store of the SPIR-V File failed.");
+        } finally {
+            buffer.clear();
         }
     }
 
     @Override
     public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+
+        if (code == null || code.length == 0) {
+            throw new RuntimeException("[ERROR] Binary SPIR-V Module is Empty");
+        }
         ByteBuffer buffer = ByteBuffer.allocate(code.length);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.put(code);

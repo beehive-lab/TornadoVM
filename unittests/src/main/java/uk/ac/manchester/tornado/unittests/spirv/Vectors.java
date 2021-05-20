@@ -59,8 +59,8 @@ public class Vectors extends TornadoTestBase {
 
         Arrays.fill(expectedResult, 50);
 
-        new TaskSchedule("s0") //
-                .task("t0", Vectors::copyTest, a) //
+        new TaskSchedule("s1") //
+                .task("t1", Vectors::copyTest, a) //
                 .streamOut(a) //
                 .execute(); //
 

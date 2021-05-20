@@ -13,6 +13,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVHotSpotBackendFactory;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -127,11 +128,11 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
     }
 
     @Override
-    public TornadoDevice getDevice(int index) {
+    public TornadoAcceleratorDevice getDevice(int index) {
         if (index < flatBackends.length) {
             return flatBackends[index].getDeviceContext().asMapping();
         } else {
-            throw new TornadoRuntimeException("[ERROR]-[PTX-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
+            throw new TornadoRuntimeException("[ERROR]-[SPIRV-DRIVER] Device required not found: " + index + " - Max: " + backends.length);
         }
     }
 

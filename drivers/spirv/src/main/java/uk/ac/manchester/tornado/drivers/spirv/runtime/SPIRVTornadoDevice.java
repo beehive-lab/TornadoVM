@@ -132,7 +132,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     public static SPIRVDriver findDriver() {
         if (driver == null) {
             driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class);
-            TornadoInternalError.guarantee(driver != null, "unable to find CUDA driver");
+            TornadoInternalError.guarantee(driver != null, "unable to find the SPIR-V driver");
         }
         return driver;
     }
@@ -448,7 +448,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-        getBackend().reset();
+        device.getDeviceContext().reset();
+        // getBackend().reset();
     }
 
     @Override

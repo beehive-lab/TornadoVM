@@ -25,7 +25,7 @@ public class SPIRVOCLContext extends SPIRVContext {
             // We do not need command queue from this class, it was already created in the
             // constructor
             SPIRVOCLDeviceContext deviceContext = new SPIRVOCLDeviceContext(device, null, context);
-            device.setDeviContext(deviceContext);
+            device.setDeviceContext(deviceContext);
             spirvoclDeviceContext.add(deviceContext);
         }
     }

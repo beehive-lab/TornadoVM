@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.nio.ByteOrder;
+
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-
-import java.nio.ByteOrder;
 
 public abstract class SPIRVDevice implements TornadoTargetDevice {
 
@@ -16,7 +16,7 @@ public abstract class SPIRVDevice implements TornadoTargetDevice {
         this.deviceIndex = deviceIndex;
     }
 
-    public void setDeviContext(SPIRVDeviceContext deviceContext) {
+    public void setDeviceContext(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
     }
 
