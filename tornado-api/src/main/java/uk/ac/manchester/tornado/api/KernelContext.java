@@ -68,8 +68,31 @@ import uk.ac.manchester.tornado.api.annotations.TornadoVMIntrinsic;
  */
 public class KernelContext implements ExecutionContext {
 
+    /**
+     * It returns the thread identifier for the first dimension.
+     * <p>
+     * OpenCL equivalent: get_global_id(0);
+     * <p>
+     * PTX equivalent: blockIdx.x * blockDim.x + threadIdx.x
+     */
     public final Integer globalIdx = 0;
+
+    /**
+     * It returns the thread identifier for the second dimension.
+     * <p>
+     * OpenCL equivalent: get_global_id(1);
+     * <p>
+     * PTX equivalent: blockIdx.y * blockDim.y + threadIdx.y
+     */
     public final Integer globalIdy = 0;
+
+    /**
+     * It returns the thread identifier for the third dimension.
+     * <p>
+     * OpenCL equivalent: get_global_id(2);
+     * <p>
+     * PTX equivalent: blockIdx.z * blockDim.z + threadIdx.z
+     */
     public final Integer globalIdz = 0;
     public final Integer groupIdx = 0;
     public final Integer groupIdy = 0;
@@ -161,39 +184,6 @@ public class KernelContext implements ExecutionContext {
     @Override
     public double[] allocateDoubleLocalArray(int size) {
         return new double[size];
-    }
-
-    /**
-     * It returns the thread identifier for the first dimension.
-     * <p>
-     * OpenCL equivalent: get_global_id(0);
-     * <p>
-     * PTX equivalent: blockIdx * blockDim + threadIdx
-     */
-    public int getX() {
-        return globalIdx;
-    }
-
-    /**
-     * It returns the thread identifier for the second dimension.
-     * <p>
-     * OpenCL equivalent: get_global_id(1);
-     * <p>
-     * PTX equivalent: blockIdy * blockDim + threadIdy
-     */
-    public int getY() {
-        return globalIdy;
-    }
-
-    /**
-     * It returns the thread identifier for the third dimension.
-     * <p>
-     * OpenCL equivalent: get_global_id(2);
-     * <p>
-     * PTX equivalent: blockIdz * blockDim + threadIdz
-     */
-    public int getZ() {
-        return globalIdz;
     }
 
     /**
