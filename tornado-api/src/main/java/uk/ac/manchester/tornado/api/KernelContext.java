@@ -46,31 +46,31 @@ import uk.ac.manchester.tornado.api.annotations.TornadoVMIntrinsic;
 /**
  * Context of TornadoVM execution to exploit kernel-parallel applications, in
  * which the parallelism is implicit.
- * 
+ * <p>
  * The application can access thread-id for 1D, 2D and 3D dimensions.
  * Additionally, the application can access local memory (OpenCL terminology),
  * or shared memory (CUDA terminology) as well as synchronization primitives
  * such as barriers.
- * 
+ *
  * <p>
  * <ul>
- * <li>{@link TornadoVMContext} is an object exposed by the TornadoVM API in
- * order to leverage low-level programming features provided by heterogeneous
+ * <li>{@link KernelContext} is an object exposed by the TornadoVM API in order
+ * to leverage low-level programming features provided by heterogeneous
  * frameworks (e.g. OpenCL, CUDA) to the developers, such as thread-id, access
  * to local/shared memory and barriers.</li>
- * <li>{@link TornadoVMContext} provides a Java API that is transparently
+ * <li>{@link KernelContext} provides a Java API that is transparently
  * translated to both OpenCL and PTX by the TornadoVM JIT compiler. The main
  * difference with the {@link TaskSchedule} API is that the tasks within a
- * {@link TaskSchedule} that use {@link TornadoVMContext} must be
+ * {@link TaskSchedule} that use {@link KernelContext} must be
  * {@link GridTask}.</li>
  * </ul>
  * </p>
  */
-public class TornadoVMContext implements ExecutionContext {
+public class KernelContext implements ExecutionContext {
 
-    public final Integer threadIdx = 0;
-    public final Integer threadIdy = 0;
-    public final Integer threadIdz = 0;
+    public final Integer globalIdx = 0;
+    public final Integer globalIdy = 0;
+    public final Integer globalIdz = 0;
     public final Integer groupIdx = 0;
     public final Integer groupIdy = 0;
     public final Integer groupIdz = 0;
@@ -82,16 +82,16 @@ public class TornadoVMContext implements ExecutionContext {
     /**
      * Class constructor specifying a particular {@link WorkerGrid} object.
      */
-    public TornadoVMContext() {
+    public KernelContext() {
 
     }
 
     /**
      * Method used as a barrier to synchronize the order of memory operations to the
      * local memory (known as shared memory in PTX).
-     * 
+     * <p>
      * OpenCL equivalent: barrier(CLK_LOCAL_MEM_FENCE);
-     * 
+     * <p>
      * PTX equivalent: barrier.sync;
      */
     @Override
@@ -101,9 +101,9 @@ public class TornadoVMContext implements ExecutionContext {
     /**
      * Method used as a barrier to synchronize the order of memory operations to the
      * global memory.
-     * 
+     * <p>
      * OpenCL equivalent: barrier(CLK_GLOBAL_MEM_FENCE);
-     *
+     * <p>
      * PTX equivalent: barrier.sync;
      */
     @Override
@@ -165,48 +165,44 @@ public class TornadoVMContext implements ExecutionContext {
 
     /**
      * It returns the thread identifier for the first dimension.
-     * 
+     * <p>
      * OpenCL equivalent: get_global_id(0);
-     * 
+     * <p>
      * PTX equivalent: blockIdx * blockDim + threadIdx
-     * 
      */
     public int getX() {
-        return threadIdx;
+        return globalIdx;
     }
 
     /**
      * It returns the thread identifier for the second dimension.
-     * 
+     * <p>
      * OpenCL equivalent: get_global_id(1);
-     *
+     * <p>
      * PTX equivalent: blockIdy * blockDim + threadIdy
-     *
      */
     public int getY() {
-        return threadIdy;
+        return globalIdy;
     }
 
     /**
      * It returns the thread identifier for the third dimension.
-     * 
+     * <p>
      * OpenCL equivalent: get_global_id(2);
-     *
+     * <p>
      * PTX equivalent: blockIdz * blockDim + threadIdz
-     *
      */
     public int getZ() {
-        return threadIdz;
+        return globalIdz;
     }
 
     /**
      * It returns the local group size of the associated WorkerGrid for a particular
      * dimension.
-     * 
+     * <p>
      * OpenCL equivalent: get_local_size();
-     *
+     * <p>
      * PTX equivalent: blockDim
-     * 
      */
     @TornadoVMIntrinsic
     public int getLocalGroupSize(int dim) {
@@ -216,11 +212,10 @@ public class TornadoVMContext implements ExecutionContext {
     /**
      * It returns the global group size of the associated WorkerGrid for a
      * particular dimension.
-     * 
+     * <p>
      * OpenCL equivalent: get_global_size();
-     *
+     * <p>
      * PTX equivalent: gridDim * blockDim
-     * 
      */
     @TornadoVMIntrinsic
     public int getGlobalGroupSize(int dim) {

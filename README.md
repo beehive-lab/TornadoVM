@@ -92,7 +92,7 @@ public class Compute {
 #### b) Kernel Parallelism
 
 Another way to express compute-kernels in TornadoVM is via the kernel-parallel API. To do so, TornadoVM exposes
-a `TornadoVMContext` with which the application can directly access the thread-id, allocate memory in local memory
+a `KernelContext` with which the application can directly access the thread-id, allocate memory in local memory
 (shared memory on NVIDIA devices), and insert barriers. This model is similar to programming compute-kernels in OpenCL
 and CUDA. Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port
 existing CUDA/OpenCL compute kernels into TornadoVM.
@@ -101,7 +101,7 @@ The following code-snippet shows the Matrix Multiplication example using the ker
 
 ```java
 public class Compute {
-    private static void mxmKernel(TornadoVMContext context, Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
+    private static void mxmKernel(KernelContext context, Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         int idx = context.threadIdx;
         int jdx = context.threadIdy;
         float sum = 0;
@@ -116,7 +116,7 @@ public class Compute {
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create a 2D Worker
         GridTask gridTask = new GridTask("s0.t0", workerGrid);   // Attach the worker to the Grid
-        TornadoVMContext context = new TornadoVMContext();       // Create a context
+        KernelContext context = new KernelContext();             // Create a context
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
 
         TaskSchedule ts = new TaskSchedule("s0")

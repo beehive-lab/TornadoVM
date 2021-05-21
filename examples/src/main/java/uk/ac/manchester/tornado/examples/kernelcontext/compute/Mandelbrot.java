@@ -16,11 +16,9 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -28,13 +26,13 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
+import javax.swing.*;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.GridTask;
 
 public class Mandelbrot {
 
@@ -83,12 +81,12 @@ public class Mandelbrot {
             return result;
         }
 
-        private static void mandelbrotTornado(TornadoVMContext context, int size, short[] output) {
+        private static void mandelbrotTornado(KernelContext context, int size, short[] output) {
             final int iterations = 10000;
             float space = 2.0f / size;
 
-            int i = context.threadIdx;
-            int j = context.threadIdy;
+            int i = context.globalIdx;
+            int j = context.globalIdy;
 
             float Zr = 0.0f;
             float Zi = 0.0f;
@@ -142,7 +140,7 @@ public class Mandelbrot {
 
                 WorkerGrid workerGrid = new WorkerGrid2D(SIZE, SIZE);
                 GridTask gridTask = new GridTask("s0.t0", workerGrid);
-                TornadoVMContext context = new TornadoVMContext();
+                KernelContext context = new KernelContext();
                 // [Optional] Set the global work group
                 workerGrid.setGlobalWork(SIZE, SIZE, 1);
                 // [Optional] Set the local work group

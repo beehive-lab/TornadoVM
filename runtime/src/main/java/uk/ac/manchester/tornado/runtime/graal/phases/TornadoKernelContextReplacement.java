@@ -21,28 +21,30 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.ArrayList;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.phases.BasePhase;
+
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
-
-import java.util.ArrayList;
 
 /**
- * The {@link TornadoVMContextReplacement} phase is performed during
+ * The {@link TornadoKernelContextReplacement} phase is performed during
  * {@link uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier}.
- * The objective is to replace all the FieldNodes of the TornadoVMContext fields
- * with FloatingNodes that can be lowered to TornadoVM nodes for OpenCL and PTX
- * code emission.
+ * The objective is to replace all the FieldNodes of the {@link KernelContext}
+ * fields with FloatingNodes that can be lowered to TornadoVM nodes for OpenCL
+ * and PTX code emission.
  */
-public class TornadoVMContextReplacement extends BasePhase<TornadoSketchTierContext> {
+public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
 
-    private void replaceTornadoVMContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, Node node, Node newNode) {
+    private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, Node node, Node newNode) {
         for (Node n : node.successors()) {
             for (Node input : n.inputs()) { // This should be NullNode
                 input.safeDelete();
@@ -68,25 +70,25 @@ public class TornadoVMContextReplacement extends BasePhase<TornadoSketchTierCont
         nodesToBeRemoved.add(node);
     }
 
-    private void introduceTornadoVMContext(StructuredGraph graph) {
+    private void introduceKernelContext(StructuredGraph graph) {
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
         graph.getNodes().filter(LoadFieldNode.class).forEach((node) -> {
             if (node instanceof LoadFieldNode) {
                 String field = node.field().format("%H.%n");
-                if (field.contains("TornadoVMContext.threadId")) {
+                if (field.contains("KernelContext.globalId")) {
                     ThreadIdFixedWithNextNode threadIdNode;
-                    if (field.contains("threadIdx")) {
+                    if (field.contains("globalIdx")) {
                         threadIdNode = new ThreadIdFixedWithNextNode(node.getValue(), 0);
-                    } else if (field.contains("threadIdy")) {
+                    } else if (field.contains("globalIdy")) {
                         threadIdNode = new ThreadIdFixedWithNextNode(node.getValue(), 1);
-                    } else if (field.contains("threadIdz")) {
+                    } else if (field.contains("globalIdz")) {
                         threadIdNode = new ThreadIdFixedWithNextNode(node.getValue(), 2);
                     } else {
                         throw new TornadoRuntimeException("Unrecognized dimension");
                     }
 
-                    replaceTornadoVMContextNode(graph, nodesToBeRemoved, node, threadIdNode);
-                } else if (field.contains("TornadoVMContext.localId")) {
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, threadIdNode);
+                } else if (field.contains("KernelContext.localId")) {
                     ThreadLocalIdFixedWithNextNode threadLocalIdNode;
                     if (field.contains("localIdx")) {
                         threadLocalIdNode = new ThreadLocalIdFixedWithNextNode(node.getValue(), 0);
@@ -98,8 +100,8 @@ public class TornadoVMContextReplacement extends BasePhase<TornadoSketchTierCont
                         throw new TornadoRuntimeException("Unrecognized dimension");
                     }
 
-                    replaceTornadoVMContextNode(graph, nodesToBeRemoved, node, threadLocalIdNode);
-                } else if (field.contains("TornadoVMContext.groupId")) {
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, threadLocalIdNode);
+                } else if (field.contains("KernelContext.groupId")) {
                     GetGroupIdFixedWithNextNode groupIdNode;
                     if (field.contains("groupIdx")) {
                         groupIdNode = new GetGroupIdFixedWithNextNode(node.getValue(), 0);
@@ -111,7 +113,7 @@ public class TornadoVMContextReplacement extends BasePhase<TornadoSketchTierCont
                         throw new TornadoRuntimeException("Unrecognized dimension");
                     }
 
-                    replaceTornadoVMContextNode(graph, nodesToBeRemoved, node, groupIdNode);
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, groupIdNode);
                 } else {
                     return;
                 }
@@ -132,6 +134,6 @@ public class TornadoVMContextReplacement extends BasePhase<TornadoSketchTierCont
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        introduceTornadoVMContext(graph);
+        introduceKernelContext(graph);
     }
 }

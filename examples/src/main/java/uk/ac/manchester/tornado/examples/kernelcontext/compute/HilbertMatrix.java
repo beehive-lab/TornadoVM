@@ -16,13 +16,13 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.GridTask;
 
 public class HilbertMatrix {
 
@@ -30,9 +30,9 @@ public class HilbertMatrix {
     private static int NROWS = 1024;
     private static int NCOLS = 1024;
 
-    public static void hilberComputation(TornadoVMContext context, float[] output, int rows, int cols) {
-        int i = context.threadIdx;
-        int j = context.threadIdy;
+    public static void hilberComputation(KernelContext context, float[] output, int rows, int cols) {
+        int i = context.globalIdx;
+        int j = context.globalIdy;
 
         output[j * rows + i] = (float) 1 / ((i + 1) + (j + 1) - 1);
     }
@@ -50,7 +50,7 @@ public class HilbertMatrix {
 
         WorkerGrid workerGrid = new WorkerGrid2D(NROWS, NCOLS);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(NROWS, NCOLS, 1);
         // [Optional] Set the local work group
