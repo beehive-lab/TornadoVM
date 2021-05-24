@@ -54,6 +54,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_INT_16:
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.ADD_INTEGER;
@@ -210,7 +211,12 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNarrow(Value inputVal, int bits) {
-        return null;
+        SPIRVLogger.traceBuildLIR("emitNarrow: %s, %d", inputVal, bits);
+        LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(bits);
+        final Variable result = getGen().newVariable(lirKind);
+        SPIRVUnary.SignNarrowValue signExtend = new SPIRVUnary.SignNarrowValue(lirKind, inputVal, bits);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
+        return result;
     }
 
     @Override

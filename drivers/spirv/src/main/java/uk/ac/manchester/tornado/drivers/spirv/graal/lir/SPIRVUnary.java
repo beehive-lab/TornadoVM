@@ -79,23 +79,22 @@ public class SPIRVUnary {
 
         /**
          * This represents a load from a parameter from the stack-frame.
-         *
+         * <p>
          * The equivalent in OpenCL is as follows:
          *
          * <code>
-         *      ulong_0 = (ulong) _frame[STACK_INDEX];
+         * ulong_0 = (ulong) _frame[STACK_INDEX];
          * </code>
-         *
-         *
+         * <p>
+         * <p>
          * This an example of the target code to generate in SPIR-V:
          *
-         * <code>         
-         *          %24 = OpLoad %_ptr_CrossWorkgroup_ulong %_frame Aligned 8
-         *     %ptridx1 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_ulong %24 STACK_INDEX
-         *          %27 = OpLoad %ulong %ptridx1 Aligned 8
-         *                OpStore %ul_0 %27 Aligned 8
+         * <code>
+         * %24 = OpLoad %_ptr_CrossWorkgroup_ulong %_frame Aligned 8
+         * %ptridx1 = OpInBoundsPtrAccessChain %_ptr_CrossWorkgroup_ulong %24 STACK_INDEX
+         * %27 = OpLoad %ulong %ptridx1 Aligned 8
+         * OpStore %ul_0 %27 Aligned 8
          * </code>
-         *
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -322,6 +321,51 @@ public class SPIRVUnary {
                 ));
 
                 SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                SPIRVId result = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpSConvert(ulong, result, loadConvert));
+
+                asm.registerLIRInstructionValue(this, result);
+
+            } else {
+                throw new RuntimeException("Conversion not supported");
+            }
+
+        }
+    }
+
+    public static class SignNarrowValue extends UnaryConsumer {
+
+        private int toBits;
+
+        public SignNarrowValue(LIRKind lirKind, Value inputVal, int toBits) {
+            super(null, lirKind, inputVal);
+            this.toBits = toBits;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : -> " + toBits);
+
+            if (toBits == 16) {
+                // OpSConvert
+
+                SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+
+                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                SPIRVId param = asm.lookUpLIRInstructions(value);
+
+                SPIRVId loadConvert = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        type, //
+                        loadConvert, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+
+                SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_16);
                 SPIRVId result = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpSConvert(ulong, result, loadConvert));
 

@@ -271,6 +271,9 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
+    /**
+     * Unary operations
+     */
     public static class SPIRVUnaryOp extends SPIRVOp {
 
         private final boolean prefix;

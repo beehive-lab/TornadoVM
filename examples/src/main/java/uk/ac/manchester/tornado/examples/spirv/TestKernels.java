@@ -145,4 +145,10 @@ public class TestKernels {
         }
     }
 
+    public static void vectorSumShortCompute(short[] a, short[] b, short[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (short) (b[i] + c[i]);
+        }
+    }
+
 }

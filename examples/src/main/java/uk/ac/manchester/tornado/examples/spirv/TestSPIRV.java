@@ -1,8 +1,8 @@
 package uk.ac.manchester.tornado.examples.spirv;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
-
 import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -651,6 +651,35 @@ public class TestSPIRV {
         }
     }
 
+    private static void testShortAdd() {
+        final int numElements = 256;
+        short[] a = new short[numElements];
+        short[] b = new short[numElements];
+        short[] c = new short[numElements];
+
+        Arrays.fill(b, (short) 1);
+        Arrays.fill(c, (short) 3);
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
+
+        System.out.println("a: " + Arrays.toString(a));
+
+        boolean correct = true;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != (b[i] + c[i])) {
+                correct = false;
+                break;
+            }
+        }
+
+        System.out.println("Test short add");
+        if (correct) {
+            System.out.println("Result is CORRECT");
+        }
+    }
+
     public static void main(String[] args) {
 
         int test = 0;
@@ -731,6 +760,9 @@ public class TestSPIRV {
                 break;
             case 23:
                 testLongsAdd();
+                break;
+            case 24:
+                testShortAdd();
                 break;
             default:
                 testSimple00();

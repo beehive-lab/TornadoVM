@@ -561,6 +561,7 @@ public class SPIRVLIRStmt {
             } else {
                 System.out.println("!!!!!!!!!!!!!!!! LOAD BEFORE STORE: ");
                 value = asm.lookUpLIRInstructions(rhs);
+                System.out.println("RHS: " + rhs);
                 SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());
                 SPIRVId loadID = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpLoad( //

@@ -42,6 +42,7 @@ public class SPIRVPrimitiveTypes {
                     module.add(new SPIRVOpTypeBool(typeID));
                     break;
                 case OP_TYPE_INT_8:
+                case OP_TYPE_INT_16:
                 case OP_TYPE_INT_64:
                 case OP_TYPE_INT_32:
                     module.add(new SPIRVOpTypeInt(typeID, new SPIRVLiteralInteger(sizeInBytes), new SPIRVLiteralInteger(0)));
