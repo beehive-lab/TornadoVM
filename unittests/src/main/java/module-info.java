@@ -16,6 +16,9 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.flatmap;
     exports uk.ac.manchester.tornado.unittests.functional;
     exports uk.ac.manchester.tornado.unittests.images;
+    exports uk.ac.manchester.tornado.unittests.kernelcontext.api;
+    exports uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
+    exports uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
     exports uk.ac.manchester.tornado.unittests.instances;
     exports uk.ac.manchester.tornado.unittests.lambdas;
     exports uk.ac.manchester.tornado.unittests.logic;

@@ -15,24 +15,25 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.tornadovmcontext.api;
+package uk.ac.manchester.tornado.unittests.kernelcontext.api;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.stream.IntStream;
 
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-
 /**
  * The unit-tests in this class check that TornadoVM TaskSchedule API can
- * combine multiple tasks, which can either exploit the {@link TornadoVMContext}
+ * combine multiple tasks, which can either exploit the {@link KernelContext}
  * features or adhere to the original TornadoVM annotations
  * {@link uk.ac.manchester.tornado.api.annotations.Parallel} or
  * {@link uk.ac.manchester.tornado.api.annotations.Reduce}.
@@ -63,7 +64,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * Method that performs the vector addition of two arrays and stores the result
-     * in a third array. This method uses the {@link TornadoVMContext} thread
+     * in a third array. This method uses the {@link KernelContext} thread
      * identifier.
      *
      * @param a
@@ -73,8 +74,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorAddV2(TornadoVMContext context, int[] a, int[] b, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    public static void vectorAddV2(KernelContext context, int[] a, int[] b, int[] c) {
+        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
     }
 
     /**
@@ -97,7 +98,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * Method that performs the vector multiplication of two arrays and stores the
-     * result in a third array. This method uses the {@link TornadoVMContext} thread
+     * result in a third array. This method uses the {@link KernelContext} thread
      * identifier.
      *
      * @param a
@@ -107,8 +108,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorMulV2(TornadoVMContext context, int[] a, int[] b, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] * b[context.threadIdx];
+    public static void vectorMulV2(KernelContext context, int[] a, int[] b, int[] c) {
+        c[context.globalIdx] = a[context.globalIdx] * b[context.globalIdx];
     }
 
     /**
@@ -131,7 +132,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * Method that performs the vector subtraction of two arrays and stores the
-     * result in a third array. This method uses the {@link TornadoVMContext} thread
+     * result in a third array. This method uses the {@link KernelContext} thread
      * identifier.
      *
      * @param a
@@ -141,8 +142,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorSubV2(TornadoVMContext context, int[] a, int[] b, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] - b[context.threadIdx];
+    public static void vectorSubV2(KernelContext context, int[] a, int[] b, int[] c) {
+        c[context.globalIdx] = a[context.globalIdx] - b[context.globalIdx];
     }
 
     /**
@@ -185,9 +186,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
     }
 
     /**
-     * In this test, all tasks use the {@link TornadoVMContext} within the
-     * TaskSchedule API, and all tasks share the same {@link GridTask} and
-     * {@link WorkerGrid} to deploy a specific number of threads.
+     * In this test, all tasks use the {@link KernelContext} within the TaskSchedule
+     * API, and all tasks share the same {@link GridTask} and {@link WorkerGrid} to
+     * deploy a specific number of threads.
      */
     @Test
     public void combinedAPI02() {
@@ -205,7 +206,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         gridTask.setWorkerGrid("s02.t0", worker);
         gridTask.setWorkerGrid("s02.t1", worker);
         gridTask.setWorkerGrid("s02.t2", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s02 = new TaskSchedule("s02") //
                 .streamIn(a, b) //
@@ -225,8 +226,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
     }
 
     /**
-     * In this test, all tasks use the {@link TornadoVMContext} within the
-     * TaskSchedule API, and tasks t1 and t2 share the same {@link GridTask} and
+     * In this test, all tasks use the {@link KernelContext} within the TaskSchedule
+     * API, and tasks t1 and t2 share the same {@link GridTask} and
      * {@link WorkerGrid} to deploy a specific number of threads.
      */
     @Test
@@ -244,7 +245,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s03.t1", worker);
         gridTask.setWorkerGrid("s03.t2", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s03 = new TaskSchedule("s03") //
                 .streamIn(a, b) //
@@ -264,9 +265,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
     }
 
     /**
-     * In this test, t0 and t1 use the {@link TornadoVMContext} within the
-     * TaskSchedule API, and share the same {@link GridTask} and {@link WorkerGrid}
-     * to deploy a specific number of threads. While, t2 uses the TaskSchedule API.
+     * In this test, t0 and t1 use the {@link KernelContext} within the TaskSchedule
+     * API, and share the same {@link GridTask} and {@link WorkerGrid} to deploy a
+     * specific number of threads. While, t2 uses the TaskSchedule API.
      */
     @Test
     public void combinedAPI04() {
@@ -283,7 +284,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s04.t0", worker);
         gridTask.setWorkerGrid("s04.t1", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s04 = new TaskSchedule("s04") //
                 .streamIn(a, b) //
@@ -303,9 +304,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
     }
 
     /**
-     * In this test, t0 and t1 use the {@link TornadoVMContext} within the
-     * TaskSchedule API, and use separate {@link GridTask} and {@link WorkerGrid} to
-     * deploy different number of threads. While, t2 uses the TaskSchedule API.
+     * In this test, t0 and t1 use the {@link KernelContext} within the TaskSchedule
+     * API, and use separate {@link GridTask} and {@link WorkerGrid} to deploy
+     * different number of threads. While, t2 uses the TaskSchedule API.
      */
     @Test
     public void combinedAPI05() {
@@ -323,7 +324,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s05.t0", workerT0);
         gridTask.setWorkerGrid("s05.t1", workerT1);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s05 = new TaskSchedule("s05") //
                 .streamIn(a, b) //

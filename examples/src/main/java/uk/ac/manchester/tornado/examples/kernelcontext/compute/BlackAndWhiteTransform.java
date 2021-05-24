@@ -16,11 +16,9 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -28,13 +26,13 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
+import javax.swing.*;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.GridTask;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
@@ -46,7 +44,7 @@ import uk.ac.manchester.tornado.api.GridTask;
  * How to run?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.tornadovmcontext.compute.BlackAndWhiteTransform 
+ * $ tornado uk.ac.manchester.tornado.examples.kernelcontext.compute.BlackAndWhiteTransform 
  * </code>
  *
  *
@@ -77,9 +75,9 @@ public class BlackAndWhiteTransform {
             }
         }
 
-        private static void compute2D(TornadoVMContext context, int[] image, final int w, final int s) {
-            int idx = context.threadIdy;
-            int jdx = context.threadIdx;
+        private static void compute2D(KernelContext context, int[] image, final int w, final int s) {
+            int idx = context.globalIdy;
+            int jdx = context.globalIdx;
 
             int rgb = image[idx * s + jdx];
             int alpha = (rgb >> 24) & 0xff;
@@ -94,8 +92,8 @@ public class BlackAndWhiteTransform {
 
         }
 
-        private static void compute1D(TornadoVMContext context, int[] image, final int w, final int s) {
-            int idx = context.threadIdx;
+        private static void compute1D(KernelContext context, int[] image, final int w, final int s) {
+            int idx = context.globalIdx;
 
             int rgb = image[idx];
             int alpha = (rgb >> 24) & 0xff;
@@ -139,7 +137,7 @@ public class BlackAndWhiteTransform {
                 if (tornadoTask == null) {
                     workerGrid = new WorkerGrid2D(w, s);
                     gridTask = new GridTask("s0.t0", workerGrid);
-                    TornadoVMContext context = new TornadoVMContext();
+                    KernelContext context = new KernelContext();
 
                     tornadoTask = new TaskSchedule("s0");
                     tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute2D, context, imageRGB, w, s).streamOut(imageRGB);

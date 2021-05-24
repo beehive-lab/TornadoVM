@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.tornadovmcontext.reductions;
+package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,8 +24,8 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -34,11 +34,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * The unit-tests in this class implement some Reduction operations (add, max,
  * min) for {@link Integer} type. These unit-tests check the functional
- * operation of some {@link TornadoVMContext} features, such as global thread
+ * operation of some {@link KernelContext} features, such as global thread
  * identifiers, local thread identifiers, the local group size of the associated
  * WorkerGrid, barriers and allocation of local memory.
  */
-public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
+public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
     public static int computeAddSequential(int[] input) {
         int acc = 0;
@@ -48,7 +48,7 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
         return acc;
     }
 
-    public static void intReductionAddGlobalMemory(TornadoVMContext context, int[] a, int[] b) {
+    public static void intReductionAddGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -76,11 +76,11 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
-                .task("t0", TestReductionsIntegersTornadoVMContext::intReductionAddGlobalMemory, context, input, reduce) //
+                .task("t0", TestReductionsIntegersKernelContext::intReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -96,8 +96,8 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void intReductionAddLocalMemory(TornadoVMContext context, int[] a, int[] b) {
-        int globalIdx = context.threadIdx;
+    public static void intReductionAddLocalMemory(KernelContext context, int[] a, int[] b) {
+        int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -126,11 +126,11 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
-                .task("t0", TestReductionsIntegersTornadoVMContext::intReductionAddLocalMemory, context, input, reduce) //
+                .task("t0", TestReductionsIntegersKernelContext::intReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -154,7 +154,7 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
         return acc;
     }
 
-    private static void intReductionMaxGlobalMemory(TornadoVMContext context, int[] a, int[] b) {
+    private static void intReductionMaxGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -182,11 +182,11 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
-                .task("t0", TestReductionsIntegersTornadoVMContext::intReductionMaxGlobalMemory, context, input, reduce) //
+                .task("t0", TestReductionsIntegersKernelContext::intReductionMaxGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -202,8 +202,8 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void intReductionMaxLocalMemory(TornadoVMContext context, int[] a, int[] b) {
-        int globalIdx = context.threadIdx;
+    public static void intReductionMaxLocalMemory(KernelContext context, int[] a, int[] b) {
+        int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -232,11 +232,11 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
-                .task("t0", TestReductionsIntegersTornadoVMContext::intReductionMaxLocalMemory, context, input, reduce) //
+                .task("t0", TestReductionsIntegersKernelContext::intReductionMaxLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -260,7 +260,7 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
         return acc;
     }
 
-    private static void intReductionMinGlobalMemory(TornadoVMContext context, int[] a, int[] b) {
+    private static void intReductionMinGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -288,11 +288,11 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
-                .task("t0", TestReductionsIntegersTornadoVMContext::intReductionMinGlobalMemory, context, input, reduce) //
+                .task("t0", TestReductionsIntegersKernelContext::intReductionMinGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -308,8 +308,8 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static void intReductionMinLocalMemory(TornadoVMContext context, int[] a, int[] b) {
-        int globalIdx = context.threadIdx;
+    public static void intReductionMinLocalMemory(KernelContext context, int[] a, int[] b) {
+        int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -338,11 +338,11 @@ public class TestReductionsIntegersTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(input, localSize) //
-                .task("t0", TestReductionsIntegersTornadoVMContext::intReductionMinLocalMemory, context, input, reduce) //
+                .task("t0", TestReductionsIntegersKernelContext::intReductionMinLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);

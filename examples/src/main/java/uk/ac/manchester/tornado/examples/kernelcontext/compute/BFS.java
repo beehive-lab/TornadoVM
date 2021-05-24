@@ -16,7 +16,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,8 +24,8 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -120,9 +120,9 @@ public class BFS {
         }
     }
 
-    private static void runBFS(TornadoVMContext context, int[] vertices, int[] adjacencyMatrix, int numNodes, int[] h_true, int[] currentDepth) {
-        int from = context.threadIdx;
-        int to = context.threadIdy;
+    private static void runBFS(KernelContext context, int[] vertices, int[] adjacencyMatrix, int numNodes, int[] h_true, int[] currentDepth) {
+        int from = context.globalIdx;
+        int to = context.globalIdy;
         int elementAccess = from * numNodes + to;
 
         if (adjacencyMatrix[elementAccess] == 1) {
@@ -218,7 +218,7 @@ public class BFS {
 
         WorkerGrid workerGrid = new WorkerGrid2D(numNodes, numNodes);
         GridTask gridTask = new GridTask("s1.t1", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(numNodes, numNodes, 1);
 

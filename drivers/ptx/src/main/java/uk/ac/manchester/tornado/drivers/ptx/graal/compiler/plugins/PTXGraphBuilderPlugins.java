@@ -49,12 +49,12 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -80,7 +80,7 @@ public class PTXGraphBuilderPlugins {
         PTXMathPlugins.registerTornadoMathPlugins(plugins);
         PTXVectorPlugins.registerPlugins(ps, plugins);
 
-        registerTornadoVMContextPlugins(plugins);
+        registerKernelContextPlugins(plugins);
     }
 
     private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -273,8 +273,8 @@ public class PTXGraphBuilderPlugins {
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
     }
 
-    private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, TornadoVMContext.class);
+    private static void registerKernelContextPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, KernelContext.class);
 
         registerLocalBarrier(r);
         registerGlobalBarrier(r);

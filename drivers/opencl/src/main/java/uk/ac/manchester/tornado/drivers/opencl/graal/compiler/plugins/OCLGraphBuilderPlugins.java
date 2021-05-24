@@ -54,11 +54,12 @@ import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -77,7 +78,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
@@ -94,8 +94,8 @@ public class OCLGraphBuilderPlugins {
 
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
-        // Register TornadoVMContext Plugins
-        registerTornadoVMContextPlugins(plugins);
+        // Register KernelContext Plugins
+        registerKernelContextPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
@@ -303,8 +303,8 @@ public class OCLGraphBuilderPlugins {
         registerDoubleLocalArray(r, returnedJavaKind, elementType);
     }
 
-    private static void registerTornadoVMContextPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, TornadoVMContext.class);
+    private static void registerKernelContextPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, KernelContext.class);
 
         registerLocalBarrier(r);
         registerGlobalBarrier(r);

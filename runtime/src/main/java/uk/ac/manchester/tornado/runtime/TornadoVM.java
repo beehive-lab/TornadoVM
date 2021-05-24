@@ -41,12 +41,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridTask;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -186,7 +185,6 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
-
     private GlobalObjectState resolveGlobalObjectState(int index) {
         return globalStates[index];
     }
@@ -251,15 +249,15 @@ public class TornadoVM extends TornadoLogger {
         return object instanceof AtomicInteger;
     }
 
-    private boolean isObjectTornadoVMContext(Object object) {
-        return object instanceof TornadoVMContext;
+    private boolean isObjectKernelContext(Object object) {
+        return object instanceof KernelContext;
     }
 
     private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
-        if (isObjectTornadoVMContext(object)) {
+        if (isObjectKernelContext(object)) {
             return 0;
         }
 
@@ -303,7 +301,7 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
-        if (isObjectTornadoVMContext(object)) {
+        if (isObjectKernelContext(object)) {
             return 0;
         }
 
@@ -339,7 +337,7 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
-        if (isObjectTornadoVMContext(object)) {
+        if (isObjectKernelContext(object)) {
             return 0;
         }
 
@@ -374,7 +372,7 @@ public class TornadoVM extends TornadoLogger {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
 
-        if (isObjectTornadoVMContext(object)) {
+        if (isObjectKernelContext(object)) {
             return;
         }
 
@@ -544,7 +542,7 @@ public class TornadoVM extends TornadoLogger {
             if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
                 stack.push(constants.get(argIndex));
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
-                if (isObjectTornadoVMContext(objects.get(argIndex))) {
+                if (isObjectKernelContext(objects.get(argIndex))) {
                     stack.push(null);
                     continue;
                 }
