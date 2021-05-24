@@ -29,10 +29,12 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
+import uk.ac.manchester.tornado.api.KernelContext;
+
 /**
  * The {@link ThreadLocalIdFixedWithNextNode} is used to replace the FieldNodes
- * that correspond to the {@link uk.ac.manchester.tornado.api.TornadoVMContext}.
- * In essence, these fields are: localIdx, localIdy and localIdz.
+ * that correspond to the {@link KernelContext}. In essence, these fields are:
+ * localIdx, localIdy and localIdz.
  *
  * During lowering, this node is replaced with a FloatingNode that corresponds
  * to a TornadoVM backend (OpenCL, PTX). That replacement is performed in

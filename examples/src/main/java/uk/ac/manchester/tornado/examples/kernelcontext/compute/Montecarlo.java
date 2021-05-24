@@ -16,13 +16,13 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.GridTask;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
@@ -31,8 +31,8 @@ import uk.ac.manchester.tornado.api.GridTask;
  */
 public class Montecarlo {
 
-    private static void computeMontecarlo(TornadoVMContext context, float[] output, final int iterations) {
-        int j = context.threadIdx;
+    private static void computeMontecarlo(KernelContext context, float[] output, final int iterations) {
+        int j = context.globalIdx;
 
         long seed = j;
         // generate a pseudo random number (you do need it twice)
@@ -85,7 +85,7 @@ public class Montecarlo {
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
         // [Optional] Set the global work size
         workerGrid.setGlobalWork(size, 1, 1);
         // [Optional] Set the local work group to be 1024, 1, 1

@@ -15,22 +15,21 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.tornadovmcontext.reductions;
+package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridTask;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
-
 public class ReductionsLocalMemory {
 
-    // Reduction in Local memory using TornadoVMContext
-    public static void reductionLocal(float[] a, float[] b, int localSize, TornadoVMContext context) {
-        int globalIdx = context.threadIdx;
+    // Reduction in Local memory using KernelContext
+    public static void reductionLocal(float[] a, float[] b, int localSize, KernelContext context) {
+        int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
@@ -75,7 +74,7 @@ public class ReductionsLocalMemory {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
                 .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)).streamOut(reduce);

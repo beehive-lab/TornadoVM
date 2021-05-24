@@ -15,16 +15,16 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import java.util.ArrayList;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
@@ -68,9 +68,9 @@ public class RenderTrack {
         }
     }
 
-    public static void renderTrack(TornadoVMContext context, ImageByte3 output, ImageFloat3 input) {
-        int x = context.threadIdx;
-        int y = context.threadIdy;
+    public static void renderTrack(KernelContext context, ImageByte3 output, ImageFloat3 input) {
+        int x = context.globalIdx;
+        int y = context.globalIdy;
 
         Byte3 pixel = null;
         final int result = (int) input.get(x, y).getS2();
@@ -123,7 +123,7 @@ public class RenderTrack {
 
         WorkerGrid workerGrid = new WorkerGrid2D(n, m);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(n, m, 1);
         // [Optional] Set the local work group

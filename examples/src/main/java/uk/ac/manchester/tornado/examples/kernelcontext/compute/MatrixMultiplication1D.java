@@ -15,69 +15,31 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
+import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
-/**
- * Example of Matrix Multiplication for square matrices written in Java. This
- * implementation follows the OpenCL implementation description provided in
- * https://github.com/cnugteren/myGEMM.
- *
- * In detail, it applies the following optimizations: (i) Thread attributes to
- * utilize two dimensions, and (ii) Local memory & Loop tiling.
- *
- * How to run:
- *
- * <code>
- *     $ tornado --debug uk.ac.manchester.tornado.examples.tornadovmcontext.compute.MatrixMultiplication2DV2
- * </code>
- */
-public class MatrixMultiplication2DV2 {
+public class MatrixMultiplication1D {
 
     private static final int WARMING_UP_ITERATIONS = 15;
-    private static final int TS = 32;
 
-    public static void matrixMultiplication(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
-        int row = context.localIdx;
-        int col = context.localIdy;
-        int globalRow = TS * context.groupIdx + row;
-        int globalCol = TS * context.groupIdy + col;
+    public static void matrixMultiplication(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
+        int idx = context.globalIdx;
 
-        float[] aSub = context.allocateFloatLocalArray(TS * TS);
-        float[] bSub = context.allocateFloatLocalArray(TS * TS);
-
-        float sum = 0;
-
-        // Loop over all tiles
-        int numTiles = size / TS;
-        for (int t = 0; t < numTiles; t++) {
-
-            // Load one tile of A and B into local memory
-            int tiledRow = TS * t + row;
-            int tiledCol = TS * t + col;
-            aSub[col * TS + row] = A[tiledCol * size + globalRow];
-            bSub[col * TS + row] = B[globalCol * size + tiledRow];
-
-            // Synchronise to make sure the tile is loaded
-            context.localBarrier();
-
-            // Perform the computation for a single tile
-            for (int k = 0; k < TS; k++) {
-                sum += aSub[k * TS + row] * bSub[col * TS + k];
+        for (int jdx = 0; jdx < size; jdx++) {
+            float sum = 0;
+            for (int k = 0; k < size; k++) {
+                sum += A[(idx * size) + k] * B[(k * size) + jdx];
             }
-            // Synchronise before loading the next tile
-            context.globalBarrier();
+            C[(idx * size) + jdx] = sum;
         }
-
-        // Store the final result in C
-        C[(globalCol * size) + globalRow] = sum;
     }
 
     private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
@@ -109,20 +71,23 @@ public class MatrixMultiplication2DV2 {
         float[] matrixC = new float[size * size];
         float[] resultSeq = new float[size * size];
 
+        Random r = new Random();
         IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;
-            matrixB[idx] = 3.5f;
+            matrixA[idx] = r.nextFloat();
+            matrixB[idx] = r.nextFloat();
         });
 
-        WorkerGrid workerGrid = new WorkerGrid2D(size, size);
+        WorkerGrid workerGrid = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
-        // The local work group is configured to be TSxTS, to match the Tile Size (TS)
-        workerGrid.setLocalWork(TS, TS, 1);
+        KernelContext context = new KernelContext();
+        // [Optional] Set the global work size
+        workerGrid.setGlobalWork(size, 1, 1);
+        // [Optional] Set the local work group
+        workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
 
-        //@formatter:off        
+        //@formatter:off
         TaskSchedule t = new TaskSchedule("s0") //
-                .task("t0", MatrixMultiplication2DV2::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
+                .task("t0", MatrixMultiplication1D::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC);
         //@formatter:on
 
@@ -159,17 +124,20 @@ public class MatrixMultiplication2DV2 {
         String formatSequentialGFlops = String.format("%.2f", sequentialGigaFlops);
 
         System.out.println("\tSequential Execution: " + formatSequentialGFlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
-        System.out.println("\tTornadoVM Execution with Local Memory and Loop Tiling: " + formatTornadoVMGFlops + " GFlops, Total Time = " + (end - start) + " ms");
+        System.out.println("\tTornadoVM Execution: " + formatTornadoVMGFlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");
         System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }
 
     private static boolean verify(float[] par, float[] seq, int size) {
         boolean check = true;
-        for (int i = 0; i < size * size; i++) {
-            if (Math.abs(par[i] - seq[i]) > 0.01f) {
-                check = false;
-                break;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+
+                if (Math.abs(par[i * size + j] - seq[i * size + j]) > 0.1f) {
+                    check = false;
+                    break;
+                }
             }
         }
         return check;

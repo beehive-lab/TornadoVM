@@ -16,15 +16,15 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.profiler.ChromeEventTracer;
 
 public class NBody {
@@ -33,8 +33,8 @@ public class NBody {
     private static float DELT = 0.005f;
     private static float ESP_SQR = 500.0f;
 
-    private static void nBody(TornadoVMContext context, int numBodies, float[] refPos, float[] refVel) {
-        int i = context.threadIdx;
+    private static void nBody(KernelContext context, int numBodies, float[] refPos, float[] refVel) {
+        int i = context.globalIdx;
         int body = 4 * i;
 
         float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
@@ -164,7 +164,7 @@ public class NBody {
 
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridTask gridTask = new GridTask("s0.t0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(numBodies, 1, 1);
         // [Optional] Set the local work group
