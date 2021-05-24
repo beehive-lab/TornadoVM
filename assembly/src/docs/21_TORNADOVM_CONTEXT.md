@@ -35,11 +35,8 @@ CUDA PTX terminology.
 
 ## Examples
 
-The
-following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/kernelContext/compute/MatrixMultiplication2DV2.java)
-is the Matrix Multiplication implementation using the `KernelContext` object for indexing threads and access to local
-memory. The following example also makes use of loop tiling. There are three main steps to leverage the features of
-KernelContext:
+The following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/kernelContext/compute/MatrixMultiplication2DV2.java) is the Matrix Multiplication implementation using the `KernelContext` object for indexing threads and access to local memory. The following example also makes use of loop tiling. 
+There are three main steps to leverage the features of the `KernelContext`:
 
 1. The `KernelContext` object is passed as an argument in the method that will be accelerated. This implementation
    follows the OpenCL implementation description provided
