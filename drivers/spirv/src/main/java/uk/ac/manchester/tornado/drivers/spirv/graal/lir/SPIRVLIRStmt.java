@@ -97,6 +97,40 @@ public class SPIRVLIRStmt {
         public AllocatableValue getResult() {
             return lhs;
         }
+    }
+
+    @Opcode("IGNORABLE-ASSIGN")
+    public static class IgnorableAssignStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<IgnorableAssignStmt> TYPE = LIRInstructionClass.create(IgnorableAssignStmt.class);
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected Value rhs;
+
+        public IgnorableAssignStmt(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            asm.emitValue(crb, lhs);
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+            SPIRVLogger.traceCodeGen("emit IgnorableAssignment: " + lhs + " = " + rhs);
+            SPIRVId storeAddressID = asm.lookUpLIRInstructions(rhs);
+            asm.registerLIRInstructionValue(lhs, storeAddressID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
 
     }
 

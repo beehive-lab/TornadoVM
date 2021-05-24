@@ -338,9 +338,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_LESS_THAN;
-            append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
-            // append(new SPIRVLIRStmt.AssignStmt(result, new
-            // SPIRVBinary.IntegerLessThan(null, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else {
             throw new RuntimeException("Condition Not implemented yet: " + node.getClass());
         }
