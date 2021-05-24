@@ -16,6 +16,7 @@ import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVBinary {
 
@@ -45,19 +46,23 @@ public class SPIRVBinary {
             if (inputValue instanceof ConstantValue) {
                 return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
             } else {
-                SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
-                // We need to perform a load first
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-                SPIRVId load = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        typeOperation, //
-                        load, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-                return load;
+                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    // We need to perform a load first
+                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                    SPIRVId load = asm.module.getNextId();
+                    asm.currentBlockScope().add(new SPIRVOpLoad(//
+                            typeOperation, //
+                            load, //
+                            param, //
+                            new SPIRVOptionalOperand<>( //
+                                    SPIRVMemoryAccess.Aligned( //
+                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                    ));
+                    return load;
+                } else {
+                    return param;
+                }
             }
         }
 
