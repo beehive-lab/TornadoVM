@@ -288,6 +288,10 @@ public class SPIRVUnary {
         }
     }
 
+    /*
+     * FIXME: Possible refactor to merge this class with SIGNNarrowValue. Note that
+     * SConvert in SPIRV works for Sign Extend as well as truncate.
+     */
     public static class SignExtend extends UnaryConsumer {
 
         private int fromBits;
