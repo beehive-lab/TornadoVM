@@ -54,7 +54,7 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
 
     boolean isLittleEndian();
 
-    OCLDeviceContext getDeviceContext();
+    OCLDeviceContextInterface getDeviceContext();
 
-    void setDeviceContext(OCLDeviceContext deviceContext);
+    void setDeviceContext(OCLDeviceContextInterface deviceContext);
 }

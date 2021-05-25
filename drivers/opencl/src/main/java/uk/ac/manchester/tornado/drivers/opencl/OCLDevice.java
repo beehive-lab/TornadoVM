@@ -75,7 +75,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
     private int deviceAddressBits;
     private OCLLocalMemType localMemoryType;
     private int deviceVendorID;
-    private OCLDeviceContext deviceContex;
+    private OCLDeviceContextInterface deviceContex;
 
     public OCLDevice(int index, long id) {
         this.index = index;
@@ -420,12 +420,12 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
     }
 
     @Override
-    public OCLDeviceContext getDeviceContext() {
+    public OCLDeviceContextInterface getDeviceContext() {
         return this.deviceContex;
     }
 
     @Override
-    public void setDeviceContext(OCLDeviceContext deviceContext) {
+    public void setDeviceContext(OCLDeviceContextInterface deviceContext) {
         this.deviceContex = deviceContext;
     }
 

@@ -537,7 +537,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-        // getDeviceContext().reset();
         device.getPTXContext().getDeviceContext().reset();
     }
 

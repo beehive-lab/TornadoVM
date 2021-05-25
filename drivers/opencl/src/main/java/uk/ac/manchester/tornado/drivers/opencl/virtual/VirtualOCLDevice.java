@@ -28,7 +28,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import java.nio.ByteOrder;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -55,7 +55,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     private final int availableProcessors;
 
     private static final int INIT_VALUE = -1;
-    private OCLDeviceContext deviceContex;
+    private OCLDeviceContextInterface deviceContex;
 
     public VirtualOCLDevice(VirtualDeviceDescriptor info) {
         this.name = info.getDeviceName();
@@ -184,12 +184,12 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     }
 
     @Override
-    public OCLDeviceContext getDeviceContext() {
+    public OCLDeviceContextInterface getDeviceContext() {
         return this.deviceContex;
     }
 
     @Override
-    public void setDeviceContext(OCLDeviceContext deviceContext) {
+    public void setDeviceContext(OCLDeviceContextInterface deviceContext) {
         this.deviceContex = deviceContext;
     }
 

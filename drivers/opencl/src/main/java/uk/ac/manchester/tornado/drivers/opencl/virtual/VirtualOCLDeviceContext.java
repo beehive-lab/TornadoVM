@@ -57,6 +57,7 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
         this.codeCache = new OCLCodeCache(this);
 
         setRelativeAddressesFlag();
+        device.setDeviceContext(this);
     }
 
     private void setRelativeAddressesFlag() {
@@ -111,7 +112,8 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
-    public void sync() {}
+    public void sync() {
+    }
 
     @Override
     public int enqueueBarrier() {
@@ -139,7 +141,8 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
-    public void flushEvents() {}
+    public void flushEvents() {
+    }
 
     @Override
     public boolean isInitialised() {
@@ -158,10 +161,12 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
         return String.format("opencl-%d-%d", context.getPlatformIndex(), device.getIndex());
     }
 
-    public void dumpEvents() {}
+    public void dumpEvents() {
+    }
 
     @Override
-    public void flush() {}
+    public void flush() {
+    }
 
     @Override
     public boolean needsBump() {
