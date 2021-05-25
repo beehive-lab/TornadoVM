@@ -166,7 +166,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-        getDeviceContext().reset();
+        // getDeviceContext().reset();
     }
 
     @Override

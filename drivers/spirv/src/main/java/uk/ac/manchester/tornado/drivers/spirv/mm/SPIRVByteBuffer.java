@@ -53,8 +53,9 @@ public class SPIRVByteBuffer {
     }
 
     public void write(int[] events) {
-        // deviceContext.writeBuffer(heapPointer() + offset, numBytes, buffer.array(),
-        // 0, events);
+        deviceContext.enqueueWriteBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
+        // deviceContext.enqueueWriteBuffer(heapPointer() + offset, numBytes,
+        // buffer.array(), 0, events);
     }
 
     // FIXME <PENDING> enqueueWrite

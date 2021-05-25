@@ -33,6 +33,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         this.deviceContext = deviceContext;
         this.scheduleMetadata = new ScheduleMetaData("mm-" + deviceContext.getDevice().getDeviceIndex());
         callStackLimit = TornadoOptions.SPIRV_CALL_STACK_LIMIT;
+        this.initialized = false;
         reset();
     }
 
@@ -129,7 +130,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         return headerStart;
     }
 
-    // FIXME <REFACTOR> same as OCL and SPIRV backends
+    // FIXME <REFACTOR> same as OCL and SPIR-V backends
     public void init(SPIRVBackend spirvBackend, long baseHeapAddress) {
         this.deviceBufferAddress = baseHeapAddress;
         this.initialized = true;

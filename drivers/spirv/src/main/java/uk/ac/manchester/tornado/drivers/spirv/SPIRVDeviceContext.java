@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
@@ -37,6 +38,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         } else {
             this.codeCache = new SPIRVOCLCodeCache(this);
         }
+        this.wasReset = false;
 
     }
 
@@ -55,7 +57,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
 
     @Override
     public boolean isInitialised() {
-        return false;
+        return memoryManager.isInitialised();
     }
 
     @Override
@@ -123,17 +125,17 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
 
     @Override
     public int getDevicePlatform() {
-        return 0;
+        return device.getPlatformIndex();
     }
 
     @Override
     public String getDeviceName() {
-        return null;
+        return device.getDeviceName();
     }
 
     @Override
     public int getDriverIndex() {
-        return 0;
+        return TornadoRuntime.getTornadoRuntime().getDriverIndex(SPIRVDriver.class);
     }
 
     public SPIRVTornadoDevice asMapping() {
@@ -141,10 +143,9 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public void reset() {
-        System.out.println("RESET IMPL PENDING");
-        // memoryManager.reset();
-        // codeCache.reset();
-        // wasReset = true;
+        memoryManager.reset();
+        codeCache.reset();
+        wasReset = true;
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {

@@ -12,7 +12,6 @@ public abstract class SPIRVContext {
     public SPIRVContext(SPIRVPlatform platform, List<SPIRVDevice> devices) {
         this.platform = platform;
         this.devices = devices;
-
     }
 
     public abstract SPIRVDeviceContext getDeviceContext(int deviceIndex);

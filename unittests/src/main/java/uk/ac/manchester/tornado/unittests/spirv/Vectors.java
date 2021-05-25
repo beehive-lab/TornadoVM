@@ -46,13 +46,12 @@ public class Vectors extends TornadoTestBase {
                 .streamOut(a) //
                 .execute(); //
 
-        System.out.println("a: " + Arrays.toString(a));
         assertEquals(a[0], 50);
     }
 
     @Test
     public void test02() {
-        final int numElements = 256;
+        final int numElements = 512;
         int[] a = new int[numElements];
 
         int[] expectedResult = new int[numElements];
@@ -60,6 +59,7 @@ public class Vectors extends TornadoTestBase {
         Arrays.fill(expectedResult, 50);
 
         new TaskSchedule("s1") //
+                .streamIn(a) //
                 .task("t1", Vectors::copyTest, a) //
                 .streamOut(a) //
                 .execute(); //

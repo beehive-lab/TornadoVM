@@ -327,6 +327,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
 
+        // Reset for the rest of executions
+        result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
+        LevelZeroUtils.errorLog("zeCommandListReset", result);
+
     }
 
     @Override

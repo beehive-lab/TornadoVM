@@ -62,7 +62,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        setKernelArgs((SPIRVByteBuffer) stack, null, meta);
+        if (!stack.isOnDevice()) {
+            setKernelArgs((SPIRVByteBuffer) stack, null, meta);
+        }
 
         final long[] globalWork = new long[3];
         final long[] localWork = new long[3];
