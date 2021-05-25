@@ -342,39 +342,51 @@ public class SPIRVUnary {
             this.toBits = toBits;
         }
 
+        /**
+         * Following this:
+         * {@url https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpSConvert}
+         * 
+         * <code>
+         *     Convert signed width. This is either a truncate or a sign extend.
+         * </code>
+         * 
+         * OpSConvert can be used for sign extend as well as truncate. The "S" symbol
+         * represents signed format.
+         * 
+         * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
+         * @param asm
+         *            {@link SPIRVAssembler}
+         */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : -> " + toBits);
 
-            if (toBits == 16) {
-                // OpSConvert
-
-                SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
-
-                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-
-                SPIRVId loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        type, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-
-                SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_16);
-                SPIRVId result = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpSConvert(ulong, result, loadConvert));
-
-                asm.registerLIRInstructionValue(this, result);
-
-            } else {
-                throw new RuntimeException("Conversion not supported");
+            // We will keep this check until we guarantee all unittests can pass
+            if (toBits != 16) {
+                throw new RuntimeException("Not supported yet: " + toBits);
             }
 
+            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId param = asm.lookUpLIRInstructions(value);
+
+            SPIRVId loadConvert = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadConvert, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            // OpSConvert
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpSConvert(type, result, loadConvert));
+
+            asm.registerLIRInstructionValue(this, result);
         }
     }
 }
