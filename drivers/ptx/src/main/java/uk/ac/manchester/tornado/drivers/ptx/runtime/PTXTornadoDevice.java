@@ -92,17 +92,12 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     private static PTXDriver driver = null;
     private final int deviceIndex;
 
-    public static PTXDriver findDriver() {
-        if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(PTXDriver.class);
-            TornadoInternalError.guarantee(driver != null, "unable to find CUDA driver");
-        }
-        return driver;
-    }
-
     public PTXTornadoDevice(final int deviceIndex) {
         this.deviceIndex = deviceIndex;
-
+        driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(PTXDriver.class);
+        if (driver == null) {
+            throw new RuntimeException("TornadoVM PTX Driver not found");
+        }
         device = PTX.getPlatform().getDevice(deviceIndex);
     }
 
@@ -579,7 +574,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     public PTXBackend getBackend() {
-        return findDriver().getBackend(device.getDeviceIndex());
+        return driver.getBackend(device.getDeviceIndex());
     }
 
     @Override

@@ -160,13 +160,14 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
         List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().collect(Collectors.toList());
-        drivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
+        TornadoAcceleratorDriver[] drivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
-                drivers[index] = provider.createDriver(options, vmRuntime, vmConfig);
-                if (drivers[index] != null) {
+                TornadoAcceleratorDriver driver = provider.createDriver(options, vmRuntime, vmConfig);
+                if (driver != null) {
+                    drivers[index] = driver;
                     index++;
                 }
             }
@@ -190,7 +191,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     @Override
     public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {
         for (int driverIndex = 0; driverIndex < drivers.length; driverIndex++) {
-            if (drivers[driverIndex].getClass() == driverClass) {
+            if (drivers[driverIndex] != null && drivers[driverIndex].getClass() == driverClass) {
                 return driverIndex;
             }
         }
