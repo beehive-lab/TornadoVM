@@ -27,20 +27,20 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.CL_TRUE;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.CL_TRUE;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
 
@@ -75,6 +75,7 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
     private int deviceAddressBits;
     private OCLLocalMemType localMemoryType;
     private int deviceVendorID;
+    private OCLDeviceContext deviceContex;
 
     public OCLDevice(int index, long id) {
         this.index = index;
@@ -416,6 +417,16 @@ public class OCLDevice extends TornadoLogger implements OCLTargetDevice {
         }
         getDeviceEndianLittle();
         return deviceEndianLittle == CL_TRUE;
+    }
+
+    @Override
+    public OCLDeviceContext getDeviceContext() {
+        return this.deviceContex;
+    }
+
+    @Override
+    public void setDeviceContext(OCLDeviceContext deviceContext) {
+        this.deviceContex = deviceContext;
     }
 
     public int getWordSize() {
