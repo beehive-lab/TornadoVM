@@ -1,5 +1,5 @@
 // kernel function
-.visible .entry add_int8_int8_int8(.param .u64 stack_pointer) {
+.visible .entry s0_t0_add_int8_int8_int8(.param .u64 stack_pointer) {
     // register declaration
 	.reg .u64 rud<9>;
 	.reg .s64 rsd<4>;
