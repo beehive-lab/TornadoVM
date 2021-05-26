@@ -49,6 +49,7 @@ bin/sdk
 .idea/*
 *.factorypath
 .unittestingStatus
+spirvproto-lib/target/*
 *dependency-reduced-pom.xml
 graalJars/
 drivers/opencl-jni/src/main/cpp/.idea/
