@@ -104,20 +104,17 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
-    private static OCLDriver findDriver() {
-        if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
-            TornadoInternalError.guarantee(driver != null, "unable to find OpenCL driver");
-        }
-        return driver;
-    }
-
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
+        driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
 
-        platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
-        device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
+        if (driver == null) {
+            throw new RuntimeException("TornadoVM OpenCL Driver not found");
+        }
+
+        platformName = driver.getPlatformContext(platformIndex).getPlatform().getName();
+        device = driver.getPlatformContext(platformIndex).devices().get(deviceIndex);
         mappingAtomics = new ConcurrentHashMap<>();
     }
 
@@ -161,12 +158,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     public OCLBackend getBackend() {
-        return findDriver().getBackend(platformIndex, deviceIndex);
+        return driver.getBackend(platformIndex, deviceIndex);
     }
 
     @Override
     public void reset() {
-        // getDeviceContext().reset();
+        device.getDeviceContext().reset();
     }
 
     @Override

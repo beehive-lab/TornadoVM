@@ -110,6 +110,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         } else {
             bumpBuffer = -1;
         }
+        this.device.setDeviceContext(this);
     }
 
     private void setRelativeAddressesFlag() {

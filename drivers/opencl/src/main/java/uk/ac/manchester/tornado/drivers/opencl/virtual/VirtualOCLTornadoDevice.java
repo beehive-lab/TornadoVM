@@ -89,7 +89,6 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
         platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
         device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
-
     }
 
     @Override
@@ -129,7 +128,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-        getBackend().reset();
+        device.getDeviceContext().reset();
     }
 
     @Override

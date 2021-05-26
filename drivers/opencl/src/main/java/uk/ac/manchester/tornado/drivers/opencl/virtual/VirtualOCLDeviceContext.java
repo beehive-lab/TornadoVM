@@ -57,6 +57,7 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
         this.codeCache = new OCLCodeCache(this);
 
         setRelativeAddressesFlag();
+        device.setDeviceContext(this);
     }
 
     private void setRelativeAddressesFlag() {
