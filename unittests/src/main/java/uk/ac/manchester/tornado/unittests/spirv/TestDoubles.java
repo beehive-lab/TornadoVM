@@ -1,14 +1,12 @@
 package uk.ac.manchester.tornado.unittests.spirv;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Arrays;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 public class TestDoubles extends TornadoTestBase {
 
@@ -51,7 +49,7 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Test
     public void testDoublesSub() {
 
         final int numElements = 256;
@@ -77,7 +75,7 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Test
     public void testDoublesMul() {
 
         final int numElements = 256;
@@ -102,7 +100,7 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Test
     public void testDoublesDiv() {
 
         final int numElements = 256;

@@ -16,7 +16,7 @@ public class TestLong extends TornadoTestBase {
         final int numElements = 256;
         long[] a = new long[numElements];
 
-        float[] expected = new float[numElements];
+        long[] expected = new long[numElements];
         for (int i = 0; i < numElements; i++) {
             expected[i] = 50;
         }
@@ -26,7 +26,9 @@ public class TestLong extends TornadoTestBase {
                 .streamOut(a) //
                 .execute(); //
 
-        assertEquals(expected, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expected[i], a[i]);
+        }
     }
 
     @Test
@@ -39,9 +41,9 @@ public class TestLong extends TornadoTestBase {
         Arrays.fill(b, Integer.MAX_VALUE);
         Arrays.fill(c, 1);
 
-        float[] expected = new float[numElements];
+        long[] expected = new long[numElements];
         for (int i = 0; i < numElements; i++) {
-            expected[i] = a[i] + b[i];
+            expected[i] = b[i] + c[i];
         }
 
         new TaskSchedule("s0") //
@@ -49,8 +51,9 @@ public class TestLong extends TornadoTestBase {
                 .streamOut(a) //
                 .execute(); //
 
-        assertEquals(expected, a);
-
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expected[i], a[i]);
+        }
     }
 
 }
