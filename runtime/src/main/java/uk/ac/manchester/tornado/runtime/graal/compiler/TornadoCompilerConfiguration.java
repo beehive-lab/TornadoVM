@@ -40,18 +40,18 @@ import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
 
 public interface TornadoCompilerConfiguration {
 
-    public TornadoAllocationStage createAllocationStage(OptionValues options);
+    TornadoAllocationStage createAllocationStage(OptionValues options);
 
-    public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer);
+    TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification canonicalizer);
 
-    public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider);
+    TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider);
 
-    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLowering addressLowering);
+    TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLowering addressLowering);
 
-    public TornadoMidTier createMidTier(OptionValues options);
+    TornadoMidTier createMidTier(OptionValues options);
 
-    public LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options);
+    LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options);
 
-    public LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options);
+    LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options);
 
 }

@@ -63,17 +63,17 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class PTXHighTier extends TornadoHighTier {
 
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 
-    public PTXHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+    public PTXHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);

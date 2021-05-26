@@ -20,12 +20,14 @@
  */
 package uk.ac.manchester.tornado.drivers.graal;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class TornadoMetaAccessExtensionProvider implements MetaAccessExtensionProvider {
 
@@ -37,6 +39,11 @@ public class TornadoMetaAccessExtensionProvider implements MetaAccessExtensionPr
     @Override
     public boolean canConstantFoldDynamicAllocation(ResolvedJavaType type) {
         unimplemented();
+        return false;
+    }
+
+    @Override
+    public boolean isGuaranteedSafepoint(ResolvedJavaMethod method, boolean isDirect) {
         return false;
     }
 }

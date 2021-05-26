@@ -43,7 +43,7 @@ public class OCLStamp extends ObjectStamp {
     private OCLKind oclKind;
 
     public OCLStamp(OCLKind lirKind) {
-        super(null, true, true, false);
+        super(null, true, true, false, false);
         this.oclKind = lirKind;
     }
 
@@ -165,8 +165,4 @@ public class OCLStamp extends ObjectStamp {
         return this;
     }
 
-    @Override
-    protected ObjectStamp copyWith(ResolvedJavaType rjt, boolean bln, boolean bln1, boolean bln2) {
-        return this;
-    }
 }
