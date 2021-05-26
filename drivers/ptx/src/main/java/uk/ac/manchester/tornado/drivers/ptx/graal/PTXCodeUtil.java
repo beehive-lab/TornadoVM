@@ -89,7 +89,8 @@ public class PTXCodeUtil {
     }
 
     public static String buildKernelName(String methodName, SchedulableTask task) {
-        StringBuilder sb = new StringBuilder(methodName);
+        StringBuilder sb = new StringBuilder(task.getId().replaceAll("[.\\-]", "_"));
+        sb.append('_').append(methodName);
 
         for (Object arg : task.getArguments()) {
             // Object is either array or primitive
