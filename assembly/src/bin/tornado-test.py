@@ -52,7 +52,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestShorts"),
 
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
     # TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
     # TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
