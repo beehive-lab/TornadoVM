@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import java.nio.ByteOrder;
+
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-
-import java.nio.ByteOrder;
 
 public interface OCLTargetDevice extends TornadoTargetDevice {
 
@@ -53,4 +53,8 @@ public interface OCLTargetDevice extends TornadoTargetDevice {
     String getDeviceOpenCLCVersion();
 
     boolean isLittleEndian();
+
+    OCLDeviceContextInterface getDeviceContext();
+
+    void setDeviceContext(OCLDeviceContextInterface deviceContext);
 }
