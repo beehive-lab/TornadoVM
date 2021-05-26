@@ -164,7 +164,7 @@ public class OCLCodeCache {
                             fpgaCompiler = tokenizer.nextToken(" =");
                             break;
                         case "DIRECTORY_BITSTREAM":
-                            directoryBitstream = resolveAbsoluteBitstreamDirectory(tokenizer.nextToken(" ="));
+                            directoryBitstream = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
                             fpgaBinLocation = directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
                             fpgaSourceDir = directoryBitstream;
                             break;
@@ -178,9 +178,12 @@ public class OCLCodeCache {
                                     break;
                                 } else if (flag.contains("-")) {
                                     if (compilationFlags == null) {
-                                        compilationFlags = flag;
+                                        compilationFlags = resolveCompilationFlags(tokenizer, buildFlags, flag);
                                     } else {
-                                        compilationFlags = buildFlags.append(compilationFlags).append(" ").append(flag).toString();
+                                        if (buildFlags.toString().isEmpty()) {
+                                            buildFlags.append(compilationFlags);
+                                        }
+                                        compilationFlags = resolveCompilationFlags(tokenizer, buildFlags.append(" "), flag);
                                     }
                                 }
                             }
@@ -195,6 +198,17 @@ public class OCLCodeCache {
             System.out.println("Wrong configuration file or invalid settings. Please ensure that you have configured the configuration file with valid options!");
             System.exit(1);
         }
+    }
+
+    private String resolveCompilationFlags(StringTokenizer tokenizer, StringBuilder buildFlags, String flag) {
+        String resolvedFlags;
+        if (flag.contains("--")) {
+            String fileString = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
+            resolvedFlags = buildFlags.append(flag).append(" ").append(fileString).toString();
+        } else {
+            resolvedFlags = buildFlags.append(flag).toString();
+        }
+        return resolvedFlags;
     }
 
     private void processPrecompiledBinaries() {
@@ -261,9 +275,16 @@ public class OCLCodeCache {
         }
     }
 
-    private String resolveAbsoluteBitstreamDirectory(String dir) {
+    private String resolveAbsoluteDirectory(String dir) {
         final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
-        return Paths.get(dir).isAbsolute() ? dir : (tornadoRoot + "/" + dir);
+        if (Paths.get(dir).isAbsolute()) {
+            if (!Files.exists(Paths.get(dir))) {
+                throw new TornadoRuntimeException("invalid directory: " + dir.toString());
+            }
+            return dir;
+        } else {
+            return (tornadoRoot + "/" + dir);
+        }
     }
 
     private void createOrReuseDirectory(Path dir) {
