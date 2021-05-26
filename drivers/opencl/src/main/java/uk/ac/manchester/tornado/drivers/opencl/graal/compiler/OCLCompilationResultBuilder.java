@@ -179,6 +179,30 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
+    /**
+     * Checks if there are any LIR instructions between the loop condition and the {@link LoopInitOp} and {@link LoopPostOp}.
+     * If there are no instructions, it is possible to move the loop condition to the loop header.
+     * @return true if there are no instructions.
+     */
+    private static boolean shouldFormatLoopHeader(List<LIRInstruction> instructions) {
+        int loopInitOpIndex = -1, loopPostOpIndex = -1, loopConditionOpIndex = -1;
+
+        for (int index = 0, instructionsSize = instructions.size(); index < instructionsSize; index++) {
+            LIRInstruction instruction = instructions.get(index);
+            if (instruction instanceof LoopInitOp) {
+                loopInitOpIndex = index;
+            }
+            if (instruction instanceof LoopPostOp) {
+                loopPostOpIndex = index;
+            }
+            if (instruction instanceof LoopConditionOp) {
+                loopConditionOpIndex = index;
+            }
+        }
+
+        return (loopConditionOpIndex - 1 == loopPostOpIndex) && (loopConditionOpIndex - 2 == loopInitOpIndex);
+    }
+
     private static void formatLoopHeader(List<LIRInstruction> instructions) {
         int index = instructions.size() - 1;
 
@@ -187,6 +211,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             index--;
             condition = instructions.get(index);
         }
+        ((LoopConditionOp) condition).generateIfBreakStatement(false);
 
         instructions.remove(index);
 
@@ -221,9 +246,11 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    void emitLoopHeader(Block block) {
+    void emitLoopBlock(Block block) {
         final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
-        formatLoopHeader(headerInstructions);
+        if (shouldFormatLoopHeader(headerInstructions)) {
+            formatLoopHeader(headerInstructions);
+        }
         emitBlock(block);
     }
 
@@ -236,23 +263,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         printBasicBlockTrace(block);
 
         LIRInstruction breakInst = null;
-        LIRInstruction opPreEmit = null;
-
-        // SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS in the latest Graal
-        // reschedule unreachable within the loop instruction to the previous basic
-        // block (i.e. the one that the loop begin exists). This patch solves the issue
-        // of Loop header BBs that contain additional ops
-        for (int i = 0; i < lir.getLIRforBlock(block).size(); i++) {
-            if (isLoopDependencyNode(lir.getLIRforBlock(block).get(i))) {
-                for (int j = i; j < lir.getLIRforBlock(block).size(); j++) {
-                    if (!isLoopDependencyNode(lir.getLIRforBlock(block).get(j))) {
-                        emitOp(this, lir.getLIRforBlock(block).get(j));
-                        opPreEmit = lir.getLIRforBlock(block).get(j);
-                    }
-                }
-                break;
-            }
-        }
 
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
             if (op == null) {
@@ -268,11 +278,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
-            }
-
-            // Skips op emition for already emitted op
-            if (op == opPreEmit) {
-                continue;
             }
 
             try {

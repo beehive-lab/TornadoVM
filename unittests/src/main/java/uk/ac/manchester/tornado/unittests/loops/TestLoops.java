@@ -852,13 +852,9 @@ public class TestLoops extends TornadoTestBase {
     /**
      * Make sure that at the last iteration of the loop, the address computed in {@link #getNumber} has been updated
      * with the latest value of the induction variable, in order to be used in the if condition.
-     *
-     * TODO this test currently fails on the OpenCL backend because TornadoVM does not support complex data flow attached to the loop begin.
      */
     @Test
     public void testSingleThreadLoopCondition() {
-        assertNotBackend(TornadoVMBackend.OpenCL);
-
         int size = 1024;
 
         int[] inTor = new int[size];
