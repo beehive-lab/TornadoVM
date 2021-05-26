@@ -34,9 +34,10 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
+import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 public class TornadoHelper {
@@ -88,6 +89,9 @@ public class TornadoHelper {
                 } else if (a instanceof org.junit.Test) {
                     testEnabled = true;
                 } else if (a instanceof TornadoNotSupported) {
+                    testEnabled = true;
+                    unsupportedMethods.add(m);
+                } else if (a instanceof SPIRVNotSupported) {
                     testEnabled = true;
                     unsupportedMethods.add(m);
                 }

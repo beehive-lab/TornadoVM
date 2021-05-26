@@ -42,7 +42,7 @@ class TestEntry:
 ## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
 
-    ## SPIR-V 
+    ## SPIR-V foundation tests
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestDoubles"),
@@ -51,7 +51,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLong"),
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestShorts"),
 
-    # TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
+    TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
     # TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
