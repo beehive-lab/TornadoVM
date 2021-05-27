@@ -60,23 +60,6 @@ public class PTXProviders extends Providers {
         this.suites = suitesProvider;
     }
 
-    // public PTXProviders(MetaAccessProvider metaAccess, CodeCacheProvider
-    // codeCache, ConstantReflectionProvider constantReflection,
-    // ConstantFieldProvider constantFieldProvider,
-    // ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements
-    // replacements, StampProvider stampProvider, TornadoSuitesProvider suites,
-    // SnippetReflectionProvider snippetReflectionProvider,
-    // PlatformConfigurationProvider platformConfigurationProvider,
-    // MetaAccessExtensionProvider metaAccessExtensionProvider,
-    // WordTypes wordTypes) {
-    // super(metaAccess, codeCache, constantReflection, constantFieldProvider,
-    // foreignCalls, lowerer, replacements, stampProvider,
-    // platformConfigurationProvider, metaAccessExtensionProvider,
-    // snippetReflectionProvider, wordTypes);
-    //
-    // this.suites = suites;
-    // }
-
     public TornadoSuitesProvider getSuitesProvider() {
         return suites;
     }

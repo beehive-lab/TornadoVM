@@ -101,11 +101,6 @@ public class PTXHotSpotBackendFactory {
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
                     platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
 
-            // Providers p = new Providers(metaAccess, codeCache, constantReflection,
-            // constantFieldProvider, foreignCalls, lowerer, null, stampProvider,
-            // platformConfigurationProvider,
-            // metaAccessExtensionProvider, snippetReflection, wordTypes);
-
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
@@ -117,11 +112,6 @@ public class PTXHotSpotBackendFactory {
 
             providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
-
-            // providers = new PTXProviders(metaAccess, codeCache, constantReflection,
-            // constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider,
-            // suites, snippetReflection,
-            // platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
 
@@ -140,8 +130,6 @@ public class PTXHotSpotBackendFactory {
         PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
         PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        // StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess,
-        // snippetReflection, invocationPlugins, replacements, false, false, false);
         StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflectionProvider, invocationPlugins, replacements, false, false, false, loweringProvider);
         PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;

@@ -54,9 +54,7 @@ public class OCLCanonicalizer implements CanonicalizerPhase.CustomSimplification
 
     @Override
     public void simplify(Node node, SimplifierTool tool) {
-        // if (node instanceof VectorElementOpNode) {
-        // canonicalizeVectorElementOp((VectorElementOpNode) node);
-        // }
+
     }
 
     public enum VectorOp {
