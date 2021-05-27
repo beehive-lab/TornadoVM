@@ -21,6 +21,7 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.runtime
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.runtime
@@ -63,7 +64,7 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.runtime
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.loop=tornado.runtime
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.info=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.policy=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.walker=tornado.runtime
