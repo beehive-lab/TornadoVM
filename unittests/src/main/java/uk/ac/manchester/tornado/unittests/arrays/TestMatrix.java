@@ -56,7 +56,7 @@ public class TestMatrix extends TornadoTestBase {
 
     public static void testAddMultiple(float[][] first, float[][] second) {
         for (@Parallel int i = 0; i < first.length; i++) {
-            for (int j = 0; j < first[i].length; j++) {
+            for (@Parallel int j = 0; j < first.length; j++) {
                 first[i][j] = first[i][j] + second[i][j];
             }
         }
@@ -68,18 +68,15 @@ public class TestMatrix extends TornadoTestBase {
 
         int N = 128;
         Random random = new Random();
-        int[] secondDimSizes = new int[] { 10, 400, 7, 29, 44, 1001 };
         float[][] firstMatrix = new float[N][];
         float[][] secondMatrix = new float[N][];
         float[][] firstMatrixSeq = new float[N][];
         float[][] secondMatrixSeq = new float[N][];
-        int counter = 0;
         for (int i = 0; i < firstMatrix.length; i++) {
-            firstMatrix[i] = new float[secondDimSizes[counter % secondDimSizes.length]];
-            secondMatrix[i] = new float[secondDimSizes[counter % secondDimSizes.length]];
-            firstMatrixSeq[i] = new float[secondDimSizes[counter % secondDimSizes.length]];
-            secondMatrixSeq[i] = new float[secondDimSizes[counter % secondDimSizes.length]];
-            counter++;
+            firstMatrix[i] = new float[N];
+            secondMatrix[i] = new float[N];
+            firstMatrixSeq[i] = new float[N];
+            secondMatrixSeq[i] = new float[N];
 
             for (int j = 0; j < firstMatrix[i].length; j++) {
                 float someNumber = random.nextFloat() * 10;
