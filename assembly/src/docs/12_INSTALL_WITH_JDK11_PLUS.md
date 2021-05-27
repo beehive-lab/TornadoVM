@@ -14,22 +14,21 @@
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
   ###### DISCLAIMER:
-  TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs.
-  Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
+  
+  TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```
-  Red Hat Mandrel 11.0.9 (Mandrel 20.2.0 Final)
+  Red Hat Mandrel 11.0.9 (Mandrel 21.1.0 Final) 
   Amazon Corretto 11.0.9
-  GraalVM LabsJDK 11.0.8 (GraalVM 20.2.0)
-  OpenJDK 11.0.8
-  OpenJDK 12.0.2
-  OpenJDK 13.0.2
-  OpenJDK 14.0.2
+  GraalVM LabsJDK 11.0.8 (GraalVM 21.1.0)
+  OpenJDK 11.0.11+9
+  OpenJDK 16.0.1
   Microsoft Build of OpenJDK (OpenJDK 11.0.10+9)
   ```
 
 
 ### 1. Download a JDK 11+ distribution
+
 OpenJDK distributions are available to download at [https://adoptopenjdk.net/releases.html](https://adoptopenjdk.net/releases.html).<br/>
 Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
 Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).
