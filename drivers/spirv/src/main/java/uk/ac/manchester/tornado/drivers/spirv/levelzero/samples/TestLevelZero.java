@@ -1,7 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
-import java.io.IOException;
-
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroBufferInteger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -46,6 +44,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
+import java.io.IOException;
+
 /**
  * Kernel to test:
  * 
@@ -62,7 +62,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * <code>
  *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
  *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
- *     $ mv opencl-copy.spv /tmp/example.spv
+ *     $ mv opencl-copy.spv /tmp
  * </code>
  * 
  * How to run?
@@ -250,13 +250,19 @@ public class TestLevelZero {
         ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
+        System.gc();
+
         LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
         result = context.zeMemAllocShared(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferA);
         LevelZeroUtils.errorLog("zeMemAllocShared", result);
 
+        System.gc();
+
         LevelZeroBufferInteger bufferB = new LevelZeroBufferInteger();
         result = context.zeMemAllocShared(context.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
         LevelZeroUtils.errorLog("zeMemAllocShared", result);
+
+        System.gc();
 
         bufferA.memset(100, elements);
         bufferB.memset(0, elements);
@@ -267,8 +273,13 @@ public class TestLevelZero {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
+        /////// ----------------------- BROKEN 01
+        System.gc();
+
         result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, "/tmp/opencl-copy.spv");
         LevelZeroUtils.errorLog("zeModuleCreate", result);
+
+        System.gc();
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             // Print Logs
@@ -279,6 +290,8 @@ public class TestLevelZero {
             LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
         }
 
+        System.gc();
+
         // Create Module Object
         LevelZeroModule levelZeroModule = new LevelZeroModule(module, moduleDesc, buildLog);
 
@@ -286,11 +299,15 @@ public class TestLevelZero {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
+        System.gc();
+
         ZeKernelDesc kernelDesc = new ZeKernelDesc();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName("copydata");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
         LevelZeroUtils.errorLog("zeKernelCreate", result);
+
+        System.gc();
 
         // We create a kernel Object
         LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel, levelZeroModule);
@@ -328,6 +345,8 @@ public class TestLevelZero {
 
         result = commandQueue.zeCommandQueueSynchronize(commandQueueHandle.getCommandQueueHandlerPointer(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
+
+        System.gc();
 
         boolean isEqual = bufferA.isEqual(bufferB, elements);
         if (isEqual) {

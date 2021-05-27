@@ -26,12 +26,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDriver_zeDriverGet_1native
     (JNIEnv *env, jobject, jintArray numDrivers, jlongArray zeDriverHandler) {
 
-    ze_driver_handle_t driverHandle;
+    ze_driver_handle_t driverHandle = nullptr;
     bool setDeviceNum = false;
     jlong *driverArray;
 
     if (zeDriverHandler == nullptr) {
-        driverHandle = nullptr;
         setDeviceNum = true;
     }
 
@@ -99,7 +98,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     if (javaDeviceHandler == nullptr) {
         // update the array that contains the number of devices
         numDevices[0] = deviceCountNumber;
-        env->ReleaseIntArrayElements(deviceCountArray, numDevices, 0);
     } else {
         // Update object javaDeviceHandler
         for (int i = 0; i < deviceCountNumber; i++) {
@@ -109,6 +107,9 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         env->ReleaseLongArrayElements(longArray, deviceHandlerArray, 0);
         env->SetObjectField(javaDeviceHandler, fieldArrayPointers, longArray);
     }
+
+    env->ReleaseIntArrayElements(deviceCountArray, numDevices, 0);
+
     return result;
 }
 

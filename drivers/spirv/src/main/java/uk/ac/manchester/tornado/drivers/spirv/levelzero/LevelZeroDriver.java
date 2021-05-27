@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class LevelZeroDriver {
@@ -44,8 +43,8 @@ public class LevelZeroDriver {
      *           </code>
      * 
      * @param init
-     *            Flag
-     * @return
+     *            Flag: {@link ZeInitFlag}
+     * @return error code
      */
     public native int zeInit(int init);
 
