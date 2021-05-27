@@ -12,7 +12,7 @@
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDriver_zeInit
-    (JNIEnv *env, jobject object, jint flags) {
+    (JNIEnv *, jobject , jint flags) {
 	ze_result_t result = zeInit(flags);
     LOG_ZE_JNI("zeInit", result);
 	return result;
@@ -24,7 +24,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  * Signature: ([I[J)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDriver_zeDriverGet_1native
-    (JNIEnv *env, jobject object, jintArray numDrivers, jlongArray zeDriverHandler) {
+    (JNIEnv *env, jobject, jintArray numDrivers, jlongArray zeDriverHandler) {
 
     ze_driver_handle_t driverHandle;
     bool setDeviceNum = false;
@@ -36,7 +36,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     }
 
     jint *arrayContent = static_cast<jint *>(env->GetIntArrayElements(numDrivers, 0));
-    uint32_t driversCount = (uint32_t) arrayContent[0];
+    auto driversCount = (uint32_t) arrayContent[0];
 
     if (!setDeviceNum) {
         driverArray = static_cast<jlong *>(env->GetLongArrayElements(zeDriverHandler, 0));
@@ -91,7 +91,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         deviceHandler = reinterpret_cast<ze_device_handle_t>(deviceHandlerArray);
     }
 
-    ze_driver_handle_t driver = reinterpret_cast<ze_driver_handle_t>(driverHandler);
+    auto driver = reinterpret_cast<ze_driver_handle_t>(driverHandler);
 
     ze_result_t result = zeDeviceGet(driver, &deviceCountNumber, &deviceHandler);
     LOG_ZE_JNI("zeDeviceGet", result);
@@ -125,7 +125,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     long valuePointerDescription = env->GetLongField(javaDriverProperties, fieldDescriptionPointer);
 
     jfieldID fieldDescriptionType = env->GetFieldID(descriptionClass, "type", "I");
-    ze_structure_type_t type = static_cast<ze_structure_type_t>(env->GetIntField(javaDriverProperties, fieldDescriptionType));
+    auto type = static_cast<ze_structure_type_t>(env->GetIntField(javaDriverProperties, fieldDescriptionType));
 
     ze_driver_properties_t driverProperties = {};
     ze_driver_properties_t *driverPropertiesPtr;
@@ -135,7 +135,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     }
 
     driverProperties.stype = type;
-    ze_driver_handle_t driver = reinterpret_cast<ze_driver_handle_t>(javaDriverHandler);
+    auto driver = reinterpret_cast<ze_driver_handle_t>(javaDriverHandler);
     ze_result_t  result = zeDriverGetProperties(driver, &driverProperties);
     LOG_ZE_JNI("zeDriverGetProperties", result);
 
@@ -161,7 +161,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID fieldAPIVersionString = env->GetFieldID(descriptionClass, "version", "Ljava/lang/String;");
     long valueAPIVersion;
 
-    ze_driver_handle_t driver = reinterpret_cast<ze_driver_handle_t>(javaDriverHandler);
+    auto driver = reinterpret_cast<ze_driver_handle_t>(javaDriverHandler);
 
     ze_api_version_t version = {};
     ze_result_t result = zeDriverGetApiVersion(driver, &version);
@@ -185,7 +185,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDriver_zeContextDestroy
         (JNIEnv *env, jobject object, jlong javaContextHandler) {
-    ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextHandler);
+    auto context = reinterpret_cast<ze_context_handle_t>(javaContextHandler);
     ze_result_t result = zeContextDestroy(context);
     LOG_ZE_JNI("zeContextDestroy", result);
     return result;
