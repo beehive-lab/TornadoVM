@@ -77,10 +77,12 @@ public class OCLCodeCache {
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
+    private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
     private String fpgaName;
     private String fpgaCompiler;
     private String compilationFlags;
     private String directoryBitstream;
+    private boolean isFPGAInAWS;
     public static String fpgaBinLocation;
     private String fpgaSourceDir;
 
@@ -140,12 +142,16 @@ public class OCLCodeCache {
         return token.startsWith("#");
     }
 
+    private String resolveFPGAConfigurationFileName() {
+        return (FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
+                : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
+    }
+
     private void parseFPGAConfigurationFile() {
         FileReader fileReader;
         BufferedReader bufferedReader;
         try {
-            fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
-                    : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
+            fileReader = new FileReader(resolveFPGAConfigurationFileName());
             bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
@@ -187,6 +193,9 @@ public class OCLCodeCache {
                                     }
                                 }
                             }
+                            break;
+                        case "AWS_ENV":
+                            isFPGAInAWS = tokenizer.nextToken(" =").toLowerCase().equals("yes");
                             break;
                         default:
                             break;
@@ -487,6 +496,10 @@ public class OCLCodeCache {
                 invokeShellCommand(compilationCommand);
                 invokeShellCommand(commandRename);
                 invokeShellCommand(linkCommand);
+                if (isFPGAInAWS) {
+                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName() };
+                    invokeShellCommand(afiAWSCommand);
+                }
             }
             return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
         } else {
