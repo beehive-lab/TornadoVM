@@ -15,21 +15,21 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.tornadovmcontext.matrices;
+package uk.ac.manchester.tornado.examples.kernelcontext.matrices;
 
+import java.util.Arrays;
+import java.util.OptionalDouble;
+import java.util.stream.IntStream;
+
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
-import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-
-import java.util.Arrays;
-import java.util.OptionalDouble;
-import java.util.stream.IntStream;
 
 /**
  * Example of Matrix Multiplication of two dimensional arrays using Local Memory
@@ -41,14 +41,14 @@ import java.util.stream.IntStream;
  * a) CUDA/OpenCL Old API: using the TaskSchedule API and the @Parallel
  * annotations to express loop parallelism.
  * 
- * b) CUDA/OpenCL Advanced API: using TornadoVMContext to express Threading
- * Attributes, Local Memory Allocation and Loop Tiling.
+ * b) CUDA/OpenCL Advanced API: using a {@link KernelContext} to express
+ * Threading Attributes, Local Memory Allocation and Loop Tiling.
  *
  * How to run:
  *
  * <code>
  *     $ make BACKEND=opencl,ptx
- *     $ tornado --debug uk.ac.manchester.tornado.examples.tornadovmcontext.matrices.MatrixMul2DLocalMemory
+ *     $ tornado --debug uk.ac.manchester.tornado.examples.kernelcontext.matrices.MatrixMul2DLocalMemory
  * </code>
  *
  */
@@ -80,7 +80,7 @@ public class MatrixMul2DLocalMemory {
      * https://github.com/cnugteren/myGEMM.
      *
      */
-    public static void matrixMultiplicationLocalMemory(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplicationLocalMemory(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
         // Thread identifiers
         int row = context.localIdx; // Local row ID (max: TS)
         int col = context.localIdy; // Local col ID (max: TS)
@@ -221,7 +221,7 @@ public class MatrixMul2DLocalMemory {
         // Time New API OpenCL
         WorkerGrid workerOpenCLNew = new WorkerGrid2D(N, N);
         GridTask gridTaskOpenCLNew = new GridTask("ocl_advanced_api.t0", workerOpenCLNew);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule oclNewApiTask = new TaskSchedule("ocl_advanced_api") //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
@@ -256,7 +256,7 @@ public class MatrixMul2DLocalMemory {
         // Time New API CUDA
         WorkerGrid workerCudaNew = new WorkerGrid2D(N, N);
         GridTask gridTaskCudaNew = new GridTask("cuda_advanced_api.t0", workerCudaNew);
-        TornadoVMContext contextCUDA = new TornadoVMContext();
+        KernelContext contextCUDA = new KernelContext();
 
         TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_advanced_api") //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //

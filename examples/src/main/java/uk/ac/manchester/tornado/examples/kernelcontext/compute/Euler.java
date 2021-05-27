@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.tornadovmcontext.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.GridTask;
 
 /**
  * Original version from Introduction to Computer Science by Princeton
@@ -104,7 +104,7 @@ public class Euler {
      * supporting break statements within loops.
      *
      * @param context
-     *            input TornadoVMContext
+     *            input KernelContext
      * @param size
      *            input size
      * @param five
@@ -120,9 +120,9 @@ public class Euler {
      * @param outputE
      *            output for E
      */
-    private static void solveTornadoVM(TornadoVMContext context, int size, long[] five, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
-        int e = context.threadIdx;
-        int a = context.threadIdy;
+    private static void solveTornadoVM(KernelContext context, int size, long[] five, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
+        int e = context.globalIdx;
+        int a = context.globalIdy;
 
         if (e == 0 || a == 0) {
             return;
@@ -186,7 +186,7 @@ public class Euler {
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask("s0.s0", workerGrid);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(size, size, 1);
 

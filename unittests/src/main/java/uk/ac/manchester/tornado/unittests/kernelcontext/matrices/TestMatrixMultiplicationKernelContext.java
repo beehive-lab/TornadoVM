@@ -15,29 +15,29 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.tornadovmcontext.matrices;
-
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.GridTask;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.WorkerGrid2D;
-
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
+package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
 /**
  * The unit-tests in this class implement the Matrix Multiplication to check the
- * functional operation of some {@link TornadoVMContext} features, such as
- * global thread identifiers, local thread identifiers, barriers and allocation
- * of local memory.
+ * functional operation of some {@link KernelContext} features, such as global
+ * thread identifiers, local thread identifiers, barriers and allocation of
+ * local memory.
  */
-public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
+public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
     private static final int TS = 4;
 
@@ -53,8 +53,8 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
         }
     }
 
-    public static void matrixMultiplication1D(TornadoVMContext context, float[] a, float[] b, float[] c, int size) {
-        int idx = context.threadIdx;
+    public static void matrixMultiplication1D(KernelContext context, float[] a, float[] b, float[] c, int size) {
+        int idx = context.globalIdx;
 
         for (int jdx = 0; jdx < size; jdx++) {
             float sum = 0;
@@ -66,7 +66,7 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
     }
 
     @Test
-    public void mxm1DTornadoVMContext() {
+    public void mxm1DKernelContext() {
         final int size = 16;
         float[] a = new float[size * size];
         float[] b = new float[size * size];
@@ -78,11 +78,11 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication1D, context, a, b, cTornado, size) //
+                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         s0.execute(gridTask);
 
@@ -93,9 +93,9 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
         }
     }
 
-    public static void matrixMultiplication2D01(TornadoVMContext context, float[] a, float[] b, float[] c, int size) {
-        int idx = context.threadIdx;
-        int jdx = context.threadIdy;
+    public static void matrixMultiplication2D01(KernelContext context, float[] a, float[] b, float[] c, int size) {
+        int idx = context.globalIdx;
+        int jdx = context.globalIdy;
         float sum = 0;
 
         for (int k = 0; k < size; k++) {
@@ -105,7 +105,7 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
     }
 
     @Test
-    public void mxm2DTornadoVMContext01() {
+    public void mxm2DKernelContext01() {
         final int size = 16;
         float[] a = new float[size * size];
         float[] b = new float[size * size];
@@ -118,11 +118,11 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
+                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         s0.execute(gridTask);
 
@@ -133,7 +133,7 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
         }
     }
 
-    public static void matrixMultiplication2D02(TornadoVMContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplication2D02(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
         int row = context.localIdx;
         int col = context.localIdy;
         int globalRow = TS * context.groupIdx + row;
@@ -170,7 +170,7 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
     }
 
     @Test
-    public void mxm2DTornadoVMContext02() {
+    public void mxm2DKernelContext02() {
         final int size = 16;
         float[] a = new float[size * size];
         float[] b = new float[size * size];
@@ -183,11 +183,11 @@ public class TestMatrixMultiplicationTornadoVMContext extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestMatrixMultiplicationTornadoVMContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
+                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, size, 1);

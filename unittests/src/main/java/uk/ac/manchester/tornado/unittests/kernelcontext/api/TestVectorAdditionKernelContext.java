@@ -15,37 +15,38 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.tornadovmcontext.api;
+package uk.ac.manchester.tornado.unittests.kernelcontext.api;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
 
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoVMContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-
 /**
- * The unit-tests in this class check that the {@link TornadoVMContext}
- * parameter can be passed in any sequence.
+ * The unit-tests in this class check that the {@link KernelContext} parameter
+ * can be passed in any sequence.
  */
-public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
+public class TestVectorAdditionKernelContext extends TornadoTestBase {
     public static void vectorAddJava(int[] a, int[] b, int[] c) {
         for (int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }
 
-    public static void vectorAdd(TornadoVMContext context, int[] a, int[] b, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    public static void vectorAdd(KernelContext context, int[] a, int[] b, int[] c) {
+        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContext01() {
+    public void vectorAddKernelContext01() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -57,11 +58,11 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, context, a, b, cTornado) //
+                .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
                 .streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -75,12 +76,12 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
         }
     }
 
-    public static void vectorAdd(int[] a, TornadoVMContext context, int[] b, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    public static void vectorAdd(int[] a, KernelContext context, int[] b, int[] c) {
+        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContext02() {
+    public void vectorAddKernelContext02() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -93,11 +94,11 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, a, context, b, cTornado) //
+                .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, context, b, cTornado) //
                 .streamOut(cTornado);
         s0.execute(gridTask);
 
@@ -108,12 +109,12 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
         }
     }
 
-    public static void vectorAdd(int[] a, int[] b, TornadoVMContext context, int[] c) {
-        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    public static void vectorAdd(int[] a, int[] b, KernelContext context, int[] c) {
+        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContext03() {
+    public void vectorAddKernelContext03() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -126,11 +127,11 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, a, b, context, cTornado) //
+                .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, context, cTornado) //
                 .streamOut(cTornado);
         s0.execute(gridTask);
 
@@ -141,12 +142,12 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
         }
     }
 
-    public static void vectorAdd(int[] a, int[] b, int[] c, TornadoVMContext context) {
-        c[context.threadIdx] = a[context.threadIdx] + b[context.threadIdx];
+    public static void vectorAdd(int[] a, int[] b, int[] c, KernelContext context) {
+        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
     }
 
     @Test
-    public void vectorAddTornadoVMContext04() {
+    public void vectorAddKernelContext04() {
         final int size = 16;
         int[] a = new int[size];
         int[] b = new int[size];
@@ -159,11 +160,11 @@ public class TestVectorAdditionTornadoVMContext extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridTask gridTask = new GridTask();
         gridTask.setWorkerGrid("s0.t0", worker);
-        TornadoVMContext context = new TornadoVMContext();
+        KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
-                .task("t0", TestVectorAdditionTornadoVMContext::vectorAdd, a, b, cTornado, context) //
+                .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, cTornado, context) //
                 .streamOut(cTornado);
         s0.execute(gridTask);
 
