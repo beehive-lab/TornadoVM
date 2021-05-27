@@ -13,7 +13,7 @@ jdk-11-plus:
 graal-jdk-8:
 	./bin/compile.sh graal-jdk-8 $(BACKEND)
 
-graal-jdk-11:
+graal-jdk-11-plus:
 	./bin/compile.sh graal-jdk-11 $(BACKEND)
 
 ptx:
