@@ -57,34 +57,12 @@ public class OCLProviders extends Providers {
             MetaAccessExtensionProvider metaAccessExtensionProvider, //
             SnippetReflectionProvider snippetReflection, //
             WordTypes wordTypes, //
-            LoopsDataProvider loopsDataProvider, // // >>>>>>>>>>>>>>>>
+            LoopsDataProvider loopsDataProvider, //
             OCLSuitesProvider suitesProvider) {
         super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider,
                 snippetReflection, wordTypes, loopsDataProvider);
         this.suites = suitesProvider;
     }
-
-    // public OCLProviders(MetaAccessProvider metaAccess, //
-    // CodeCacheProvider codeCache, //
-    // ConstantReflectionProvider constantReflection, //
-    // SnippetReflectionProvider snippetReflection, //
-    // ConstantFieldProvider constantFieldProvider, //
-    // ForeignCallsProvider foreignCalls, //
-    // LoweringProvider lowerer, //
-    // Replacements replacements, //
-    // StampProvider stampProvider, //
-    // Plugins plugins, //
-    // OCLSuitesProvider suitesProvider, //
-    // PlatformConfigurationProvider platformConfigurationProvider, //
-    // MetaAccessExtensionProvider metaAccessExtensionProvider, //
-    // WordTypes wordTypes) {
-    // super(metaAccess, codeCache, constantReflection, constantFieldProvider,
-    // foreignCalls, lowerer, replacements, stampProvider,
-    // platformConfigurationProvider, metaAccessExtensionProvider,
-    // snippetReflection, wordTypes);
-    // this.suites = suitesProvider;
-    // this.graphBuilderPlugins = plugins;
-    // }
 
     public OCLSuitesProvider getSuitesProvider() {
         return suites;

@@ -89,15 +89,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         nonInlinedMethods = new HashSet<>();
     }
 
-    // public OCLCompilationResultBuilder(CodeCacheProvider codeCache,
-    // ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm,
-    // DataBuilder dataBuilder, FrameContext frameContext,
-    // OCLCompilationResult compilationResult, OptionValues options) {
-    // super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
-    // options, getDebugContext(), compilationResult, Register.None);
-    // nonInlinedMethods = new HashSet<>();
-    // }
-
     public boolean isParallel() {
         return isParallel;
     }

@@ -112,10 +112,6 @@ public class OCLHotSpotBackendFactory {
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, config, target);
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, wordKind.asJavaKind());
-            // Providers p = new Providers(metaAccess, codeCache, constantReflection,
-            // constantFieldProvider, foreignCalls, lowerer, null, stampProvider,
-            // platformConfigurationProvider,
-            // metaAccessExtensionProvider, snippetReflection, wordTypes);
 
             LoopsDataProvider lpd = new LoopsDataProviderImpl();
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
@@ -129,10 +125,6 @@ public class OCLHotSpotBackendFactory {
 
             suites = new OCLSuitesProvider(options, oclDeviceContextImpl, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            // providers = new OCLProviders(metaAccess, codeCache, constantReflection,
-            // snippetReflection, constantFieldProvider, foreignCalls, lowerer,
-            // replacements, stampProvider, plugins, suites, platformConfigurationProvider,
-            // metaAccessExtensionProvider, wordTypes);
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
