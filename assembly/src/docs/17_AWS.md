@@ -44,7 +44,7 @@ $ source $AWS_FPGA_REPO_DIR/vitis_setup.sh
 c. Load the environment variables of TornadoVM for root.
 
 ```bash
-$ cd /home/centos/repositories/TornadoVM
+$ cd /home/centos/TornadoVM
 $ source etc/sources.env
 
 $ tornado --devices
@@ -68,7 +68,7 @@ FLAGS = -O3 -j12 # Configure the compilation flags. You can also pass the HLS co
 DIRECTORY_BITSTREAM = fpga-source-comp/
 # If the FPGA is in AWS EC2 F1 Instance
 AWS_ENV = yes
-# [AWS S3 configuration]
+[AWS S3 configuration]
 AWS_S3_BUCKET = tornadovm-fpga-bucket
 AWS_S3_DCP_KEY = outputfolder
 AWS_S3_LOGS_KEY = logfolder
