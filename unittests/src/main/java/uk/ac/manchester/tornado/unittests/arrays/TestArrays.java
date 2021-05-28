@@ -94,7 +94,6 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testWarmUp() {
 
         final int N = 128;
