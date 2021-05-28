@@ -497,7 +497,7 @@ public class OCLCodeCache {
                 invokeShellCommand(commandRename);
                 invokeShellCommand(linkCommand);
                 if (isFPGAInAWS) {
-                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName() };
+                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream };
                     invokeShellCommand(afiAWSCommand);
                 }
             }
