@@ -31,15 +31,16 @@
 
 OpenJDK distributions are available to download at [https://adoptopenjdk.net/releases.html](https://adoptopenjdk.net/releases.html).<br/>
 Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
-Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).
+Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).<br/>
+Microsoft OpenJDK releases are available at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download).
 
-After downloading and extracting the JDK distribution, point your JAVA_HOME variable to the JDK root.
+After downloading and extracting the JDK distribution, point your `JAVA_HOME` variable to the JDK root.
 
 Example:
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
- $ export JAVA_HOME=$PWD/amazon-corretto-11.0.9.11.1-linux-x64
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.11.9.1-linux-x64
 ```
 
 ### 2. Download TornadoVM
