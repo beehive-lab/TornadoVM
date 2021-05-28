@@ -140,7 +140,7 @@ If you have logged out, ensure that you run (Steps 2 and 4).
 $ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
 ```
 
-The results is the following:
+The result is the following:
 
 ```OpenCL
 __kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
