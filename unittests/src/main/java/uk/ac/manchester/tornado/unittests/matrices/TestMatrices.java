@@ -24,11 +24,13 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrices extends TornadoTestBase {
@@ -122,16 +124,17 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
-    @Ignore
     @Test
     public void testFillMatrix2() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
         final int numElements = 16;
         int[][] a = new int[numElements][numElements];
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
 		        .task("t0", TestMatrices::fillMatrix2, a)
-		        .streamOut(new Object[]{a});
+		        .streamOut(new int[][][]{ a });
 	    //@formatter:on
 
         t.warmup();
@@ -144,16 +147,17 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
-    @Ignore
     @Test
     public void testFillMatrix3() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
         final int numElements = 16;
         int[][] a = new int[numElements][numElements];
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
 		        .task("t0", TestMatrices::fillMatrix3, a)
-		        .streamOut(new Object[]{a});
+		        .streamOut(new int[][][]{ a });
 		//@formatter:on
 
         t.warmup();
@@ -205,8 +209,9 @@ public class TestMatrices extends TornadoTestBase {
     }
 
     @Test
-    @Ignore
     public void testCopyMatrix2D() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
         final int N = 32;
         float[][] matrixA = new float[N][N];
         float[][] matrixB = new float[N][N];
@@ -218,7 +223,7 @@ public class TestMatrices extends TornadoTestBase {
             }
         }
 
-        TaskSchedule ts = new TaskSchedule("s0").task("s0", TestMatrices::copyMatrix2D, matrixA, matrixB).streamOut(matrixB);
+        TaskSchedule ts = new TaskSchedule("s0").task("s0", TestMatrices::copyMatrix2D, matrixA, matrixB).streamOut(new float[][][] { matrixB });
         ts.execute();
 
         for (int i = 0; i < N; i++) {
@@ -323,6 +328,97 @@ public class TestMatrices extends TornadoTestBase {
             for (int j = 0; j < N; j++) {
                 assertEquals(resultSeq[i * N + j], matrixC[i * N + j], 0.1f);
             }
+        }
+    }
+
+    public static void testAdd(long[][] matrix) {
+        for (@Parallel int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                matrix[i][j] = matrix[i][j] + i;
+            }
+        }
+    }
+
+    @Test
+    public void testAddMatrix() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
+        int N = 128;
+        Random random = new Random();
+        int[] secondDimSizes = new int[] { 10, 400, 7, 29, 44, 1001 };
+        long[][] matrix = new long[N][];
+        long[][] matrixSeq = new long[N][];
+        int counter = 0;
+        for (int i = 0; i < matrix.length; i++) {
+            matrix[i] = new long[secondDimSizes[counter % secondDimSizes.length]];
+            matrixSeq[i] = new long[secondDimSizes[counter % secondDimSizes.length]];
+            counter++;
+
+            for (int j = 0; j < matrix[i].length; j++) {
+                int someNumber = random.nextInt();
+                matrix[i][j] = someNumber;
+                matrixSeq[i][j] = someNumber;
+            }
+        }
+
+        testAdd(matrixSeq);
+
+        TaskSchedule ts = new TaskSchedule("s0")
+                .task("t0", TestMatrices::testAdd, matrix)
+                // Wrap the matrix in a 1D array because the streamOut varargs will automatically unwrap it.
+                .streamOut(new long[][][] { matrix });
+        ts.execute();
+
+        for (int i = 0; i < matrix.length; i++) {
+            Assert.assertArrayEquals(matrixSeq[i], matrix[i]);
+        }
+    }
+
+    public static void testAddMultiple(float[][] first, float[][] second) {
+        for (@Parallel int i = 0; i < first.length; i++) {
+            for (@Parallel int j = 0; j < first.length; j++) {
+                first[i][j] = first[i][j] + second[i][j];
+            }
+        }
+    }
+
+    @Test
+    public void testAddMatrixMultiple() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
+        int N = 128;
+        Random random = new Random();
+        float[][] firstMatrix = new float[N][];
+        float[][] secondMatrix = new float[N][];
+        float[][] firstMatrixSeq = new float[N][];
+        float[][] secondMatrixSeq = new float[N][];
+        for (int i = 0; i < firstMatrix.length; i++) {
+            firstMatrix[i] = new float[N];
+            secondMatrix[i] = new float[N];
+            firstMatrixSeq[i] = new float[N];
+            secondMatrixSeq[i] = new float[N];
+
+            for (int j = 0; j < firstMatrix[i].length; j++) {
+                float someNumber = random.nextFloat() * 10;
+                firstMatrix[i][j] = someNumber;
+                firstMatrixSeq[i][j] = someNumber;
+
+                someNumber = random.nextFloat() * 100;
+                secondMatrix[i][j] = someNumber;
+                secondMatrixSeq[i][j] = someNumber;
+            }
+        }
+
+        testAddMultiple(firstMatrixSeq, secondMatrixSeq);
+
+        TaskSchedule ts = new TaskSchedule("s0")
+                .task("t0", TestMatrices::testAddMultiple, firstMatrix, secondMatrix)
+                // Wrap the matrix in a 1D array because the streamOut varargs will automatically unwrap it.
+                .streamOut(new float[][][] { firstMatrix });
+        ts.execute();
+
+        for (int i = 0; i < firstMatrix.length; i++) {
+            Assert.assertArrayEquals(firstMatrixSeq[i], firstMatrix[i], 0.01f);
         }
     }
 
