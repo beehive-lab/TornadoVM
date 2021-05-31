@@ -49,7 +49,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolic
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoVMContextReplacement;
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
