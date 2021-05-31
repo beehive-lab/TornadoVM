@@ -14,7 +14,7 @@ graal-jdk-8:
 	./bin/compile.sh graal-jdk-8 $(BACKEND)
 
 graal-jdk-11-plus:
-	./bin/compile.sh graal-jdk-11 $(BACKEND)
+	./bin/compile.sh graal-jdk-11-plus $(BACKEND)
 
 ptx:
 	./bin/compile.sh jdk-8 BACKEND=ptx,opencl

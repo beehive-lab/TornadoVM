@@ -310,7 +310,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-11</id>
+            <id>graal-jdk-11-plus</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
