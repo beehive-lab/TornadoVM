@@ -70,4 +70,55 @@ public class TestIf extends TornadoTestBase {
         assertArrayEquals(expectedResult, a);
     }
 
+    @Test
+    public void test04() {
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] expectedResult = new int[numElements];
+
+        Arrays.fill(a, -1);
+        Arrays.fill(expectedResult, 100);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::testIfInt4, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        assertArrayEquals(expectedResult, a);
+    }
+
+    @Test
+    public void test05() {
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] expectedResult = new int[numElements];
+
+        Arrays.fill(a, 0);
+        Arrays.fill(expectedResult, 50);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::testIfInt5, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        assertArrayEquals(expectedResult, a);
+    }
+
+    @Test
+    public void test06() {
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] expectedResult = new int[numElements];
+
+        Arrays.fill(a, 0);
+        Arrays.fill(expectedResult, 100);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::testIfInt6, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        assertArrayEquals(expectedResult, a);
+    }
+
 }

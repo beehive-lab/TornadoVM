@@ -175,4 +175,34 @@ public class TestKernels {
         }
     }
 
+    public static void testIfInt4(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] > 0) {
+                a[i] = 50;
+            } else {
+                a[i] = 100;
+            }
+        }
+    }
+
+    public static void testIfInt5(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] >= 0) {
+                a[i] = 50;
+            } else {
+                a[i] = 100;
+            }
+        }
+    }
+
+    public static void testIfInt6(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] >= 0 && a[i] <= 1) { // Note : there is a bug with multiple conditions, && is not generated
+                a[i] = 100;
+            } else {
+                a[i] = 200;
+            }
+        }
+    }
+
 }
