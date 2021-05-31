@@ -53,7 +53,7 @@ public class TornadoSuites {
     private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
     public TornadoSuites(OptionValues options, TornadoDeviceContext deviceContext, TornadoCompilerConfiguration config, MetaAccessProvider metaAccessProvider,
-            CanonicalizerPhase.CustomCanonicalization canonicalizer, AddressLowering addressLowering) {
+            CanonicalizerPhase.CustomSimplification canonicalizer, AddressLowering addressLowering) {
         sketchTier = config.createSketchTier(options, canonicalizer);
         highTier = config.createHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
         midTier = config.createMidTier(options);

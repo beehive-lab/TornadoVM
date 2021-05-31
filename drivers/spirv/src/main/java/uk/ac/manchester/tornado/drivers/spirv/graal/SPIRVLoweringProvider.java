@@ -216,6 +216,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
+    public boolean supportsRounding() {
+        return false;
+    }
+
+    @Override
     protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool) {
 
     }
@@ -228,7 +233,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
+    public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
         JavaKind elementKind = loadIndexed.elementKind();
         AddressNode address;
@@ -250,7 +255,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
+    public void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode valueToStore = storeIndexed.value();

@@ -25,6 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -32,6 +37,7 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
+
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
@@ -44,27 +50,22 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
-import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
-    protected final CanonicalizerPhase.CustomCanonicalization customCanonicalizer;
+    protected final CanonicalizerPhase.CustomSimplification customSimplification;
 
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 
-    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
-        this.customCanonicalizer = customCanonicalizer;
+    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
+        this.customSimplification = customCanonicalizer;
 
         appendPhase(new TornadoNumericPromotionPhase());
 

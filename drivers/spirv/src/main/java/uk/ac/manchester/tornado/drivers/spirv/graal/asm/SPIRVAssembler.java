@@ -523,7 +523,7 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     @Override
-    public AbstractAddress makeAddress(Register base, int displacement) {
+    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
         return null;
     }
 

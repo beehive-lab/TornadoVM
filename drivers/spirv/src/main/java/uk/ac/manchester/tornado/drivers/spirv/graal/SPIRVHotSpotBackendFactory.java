@@ -5,9 +5,13 @@ import static org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfigurat
 
 import java.util.Collections;
 
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.loop.LoopsDataProviderImpl;
+import org.graalvm.compiler.nodes.spi.LoopsDataProvider;
+import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
@@ -76,20 +80,22 @@ public class SPIRVHotSpotBackendFactory {
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new SPIRVLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, vmConfig, targetDescription, false);
             WordTypes wordTypes = new TornadoWordTypes(metaAccess, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
-            Providers p = new Providers(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, platformConfigurationProvider,
-                    metaAccessExtensionProvider, snippetReflection, wordTypes);
+
+            LoopsDataProvider lpd = new LoopsDataProviderImpl();
+            Providers p = new Providers(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, lowerer.getReplacements(), stampProvider,
+                    platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes, lpd);
+
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, targetDescription);
-            plugins = createGraphPlugins(metaAccess, replacements);
+            plugins = createGraphPlugins(metaAccess, replacements, snippetReflection, lowerer);
 
             replacements.setGraphBuilderPlugins(plugins);
 
             suites = new SPIRVSuitesProvider(options, deviceContext, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, snippetReflection, constantFieldProvider, //
-                    foreignCalls, lowerer, replacements, stampProvider, plugins, suites, //
-                    platformConfigurationProvider, metaAccessExtensionProvider, wordTypes);
+            providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
+                    metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
@@ -108,14 +114,15 @@ public class SPIRVHotSpotBackendFactory {
      *            {@link TornadoReplacements}
      * @return Plugins for SPIRV
      */
-    private static Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements) {
+    private static Plugins createGraphPlugins(HotSpotMetaAccessProvider metaAccess, TornadoReplacements replacements, SnippetReflectionProvider snippetReflectionProvider,
+            LoweringProvider loweringProvider) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 
         SPIRVGraphBuilderPlugins.registerParametersPlugins(plugins);
         SPIRVGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, false, false, false);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflectionProvider, invocationPlugins, replacements, false, false, false, loweringProvider);
         SPIRVGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
 
         return plugins;

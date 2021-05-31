@@ -4,14 +4,14 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Hardware                                                              |
-| -------------------------- | --------------------------------------------------------------------- |
-| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Windows 10		     | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| OS                         | Status       | Hardware                                                                          |
+| -------------------------- | -------------|---------------------------------------------------------------------------------- |
+| CentOS >= 7.3              | Supported    | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
+| Fedora >= 21               | Supported    | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
+| Ubuntu >= 16.04            | Supported    | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
+| Mac OS X Mojave 10.14.6    | Experimental | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                  |
+| Mac OS X Catalina 10.15.3  | Experimental | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                  |
+| Windows 10                 | Experimental | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
 
 
 ## 1. Installation

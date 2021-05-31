@@ -27,19 +27,20 @@ import java.util.Collections;
 import java.util.List;
 
 import org.graalvm.compiler.graph.NodeBitMap;
-import org.graalvm.compiler.loop.LoopEx;
-import org.graalvm.compiler.loop.LoopFragmentInside;
-import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
+import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 /**
  * It analyses the loop index space and determines the correct indices using
@@ -60,7 +61,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         int dimensions = 1;
 
         if (graph.hasLoops()) {
-            final LoopsData data = new LoopsData(graph);
+            final LoopsData data = new TornadoLoopsData(graph);
             data.detectedCountedLoops();
 
             final List<LoopEx> loops = data.outerFirst();

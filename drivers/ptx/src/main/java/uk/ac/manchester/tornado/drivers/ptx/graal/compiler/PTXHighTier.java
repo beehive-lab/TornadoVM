@@ -31,10 +31,10 @@ import static org.graalvm.compiler.core.common.GraalOptions.PartialEscapeAnalysi
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
-import org.graalvm.compiler.loop.DefaultLoopPolicies;
-import org.graalvm.compiler.loop.LoopPolicies;
 import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
+import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
+import org.graalvm.compiler.nodes.loop.LoopPolicies;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -63,17 +63,17 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class PTXHighTier extends TornadoHighTier {
 
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 
-    public PTXHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+    public PTXHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);

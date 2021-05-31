@@ -1,18 +1,20 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Stack;
 
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.asm.Assembler;
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.common.spi.CodeGenProviders;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
+import org.graalvm.compiler.lir.asm.FrameContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -28,8 +30,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
@@ -42,9 +42,11 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     HashSet<Block> rescheduledBasicBlocks;
 
-    public SPIRVCompilationResultBuilder(SPIRVCodeProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, SPIRVAssembler asm, DataBuilder dataBuilder, SPIRVFrameContext frameContext,
-            OptionValues options, SPIRVCompilationResult compilationResult) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, Register.None);
+    public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+            CompilationResult compilationResult) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
+        // super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
+        // options, getDebugContext(), compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
 

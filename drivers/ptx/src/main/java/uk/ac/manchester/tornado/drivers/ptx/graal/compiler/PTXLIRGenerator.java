@@ -33,6 +33,7 @@ import java.util.Map;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -176,13 +177,13 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
         unimplemented();
         return null;
     }
 
     @Override
-    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
         unimplemented();
         return null;
     }
@@ -310,7 +311,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
+    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
         unimplemented();
     }
 
@@ -329,12 +330,6 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitByteSwap(Value operand) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
         unimplemented();
         return null;
     }

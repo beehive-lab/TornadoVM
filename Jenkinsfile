@@ -11,10 +11,11 @@ pipeline {
     }
 
     environment {
-        JDK_8_JAVA_HOME="/opt/jenkins/openjdk1.8.0_262-jvmci-20.2-b03"
-        CORRETTO_11_JAVA_HOME="/opt/jenkins/amazon-corretto-11.0.9.11.1-linux-x64"
-        GRAALVM_8_JAVA_HOME="/opt/jenkins/graalvm-ce-java8-20.2.0"
-        GRAALVM_11_JAVA_HOME="/opt/jenkins/graalvm-ce-java11-20.2.0"
+        JDK_8_JAVA_HOME="/opt/jenkins/openjdk1.8.0_292-jvmci-21.1-b05"
+        CORRETTO_11_JAVA_HOME="/opt/jenkins/amazon-corretto-11.0.11.9.1-linux-x64"
+        GRAALVM_8_JAVA_HOME="/opt/jenkins/graalvm-ce-java8-21.1.0"
+        GRAALVM_11_JAVA_HOME="/opt/jenkins/graalvm-ce-java11-21.1.0"
+        GRAALVM_16_JAVA_HOME="/opt/jenkins/graalvm-ce-java16-21.1.0"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
@@ -37,9 +38,10 @@ pipeline {
                         runCorrettoJDK11()
                         runGraalVM8()
                         runGraalVM11()
+                        runGraalVM16()
                     } else {
                         Random rnd = new Random()
-                        int NO_OF_JDKS = 4
+                        int NO_OF_JDKS = 5
                         switch (rnd.nextInt(NO_OF_JDKS)) {
                             case 0:
                                 runJDK8()
@@ -52,6 +54,9 @@ pipeline {
                                 break
                             case 3:
                                 runGraalVM11()
+                                break
+                            case 4:
+                                runGraalVM16()
                                 break
                         }
                     }
@@ -98,7 +103,15 @@ void runGraalVM8() {
 void runGraalVM11() {
     stage('GraalVM 11') {
         withEnv(["JAVA_HOME=${GRAALVM_11_JAVA_HOME}"]) {
-            buildAndTest("GraalVM JDK 11", "graal-jdk-11")
+            buildAndTest("GraalVM JDK 11", "graal-jdk-11-plus")
+        }
+    }
+}
+
+void runGraalVM16() {
+    stage('GraalVM 16') {
+        withEnv(["JAVA_HOME=${GRAALVM_16_JAVA_HOME}"]) {
+            buildAndTest("GraalVM JDK 16", "graal-jdk-11-plus")
         }
     }
 }

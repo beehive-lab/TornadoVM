@@ -42,9 +42,9 @@ public interface TornadoCompilerConfiguration {
 
     TornadoAllocationStage createAllocationStage(OptionValues options);
 
-    TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer);
+    TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification canonicalizer);
 
-    TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider);
+    TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider);
 
     TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLowering addressLowering);
 

@@ -24,7 +24,11 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
+import static org.graalvm.compiler.core.common.GraalOptions.ReassociateExpressions;
+
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -33,17 +37,14 @@ import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.ReassociationPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
+
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
-
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
-import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
-import static org.graalvm.compiler.core.common.GraalOptions.ReassociateInvariants;
 
 public class PTXMidTier extends TornadoMidTier {
     public PTXMidTier(OptionValues options) {
@@ -82,8 +83,8 @@ public class PTXMidTier extends TornadoMidTier {
 
         appendPhase(new FrameStateAssignmentPhase());
 
-        if (ReassociateInvariants.getValue(options)) {
-            appendPhase(new ReassociateInvariantPhase());
+        if (ReassociateExpressions.getValue(options)) {
+            appendPhase(new ReassociationPhase(canonicalizer));
         }
 
         appendPhase(canonicalizer);

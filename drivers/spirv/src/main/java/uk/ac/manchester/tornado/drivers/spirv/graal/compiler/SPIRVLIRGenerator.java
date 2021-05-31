@@ -8,6 +8,7 @@ import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -76,8 +77,13 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
-        throw new RuntimeException("Unimplemented");
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
+        return null;
+    }
+
+    @Override
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
+        return null;
     }
 
     @Override
@@ -110,11 +116,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public Value emitReadReturnAddress(Stamp wordStamp, int returnAddressSize) {
         unimplemented();
-        return null;
-    }
-
-    @Override
-    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
         return null;
     }
 
@@ -181,6 +182,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
+
+    }
+
+    @Override
     public Variable emitByteSwap(Value operand) {
         return null;
     }
@@ -210,17 +216,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public void emitSpeculationFence() {
 
-    }
-
-    @Override
-    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
-
-    }
-
-    @Override
-    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
-        unimplemented();
-        return null;
     }
 
     @Override
@@ -279,24 +274,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     public SPIRVGenTool getSPIRVGenTool() {
         return spirvGenTool;
-    }
-
-    @Override
-    public Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, boolean directPointers) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitArrayIndexOf(JavaKind arrayKind, JavaKind valueKind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value fromIndex, Value... searchValues) {
-        unimplemented();
-        return null;
     }
 
     @Override

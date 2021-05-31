@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
@@ -576,13 +577,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
 
-    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel, boolean isParallel) {
+    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel,
+            boolean isParallel) {
 
         OCLAssembler asm = createAssembler();
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
-        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult, options);
+        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);

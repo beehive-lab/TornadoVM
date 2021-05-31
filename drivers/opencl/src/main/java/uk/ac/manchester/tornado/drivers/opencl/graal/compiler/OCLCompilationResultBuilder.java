@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -38,7 +37,9 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.common.spi.CodeGenProviders;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -59,7 +60,6 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
 
-import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
@@ -83,9 +83,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private OCLDeviceContextInterface deviceContext;
     HashSet<Block> rescheduledBasicBlocks;
 
-    public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-            OCLCompilationResult compilationResult, OptionValues options) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, Register.None);
+    public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+            CompilationResult compilationResult) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
 

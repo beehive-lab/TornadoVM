@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 import java.io.File;
@@ -295,7 +296,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVAssembler asm = createAssembler();
         SPIRVFrameContext frameContext = new SPIRVFrameContext();
         DataBuilder dataBuilder = new SPIRVDataBuilder();
-        SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, options, compilationResult);
+        SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
+        // SPIRVCompilationResultBuilder crb = new
+        // SPIRVCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm,
+        // dataBuilder, frameContext, options, compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);

@@ -248,7 +248,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
         if (createFloatingReads) {
-            graph.setAfterFloatingReadPhase(true);
+            graph.setAfterFloatingReadPhase();
         }
     }
 
@@ -320,9 +320,8 @@ public class TornadoFloatingReadReplacement extends Phase {
                 final LoopExitNode loopExitNode = (LoopExitNode) node;
                 final EconomicSet<LocationIdentity> modifiedInLoop = modifiedInLoops.get(loopExitNode.loopBegin());
                 final boolean anyModified = modifiedInLoop.contains(LocationIdentity.any());
-                state.getMap().replaceAll((locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity))
-                        ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity)
-                        : memoryNode);
+                state.getMap().replaceAll(
+                        (locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity)) ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity) : memoryNode);
             }
 
             if (node instanceof MemoryAnchorNode) {
@@ -437,11 +436,12 @@ public class TornadoFloatingReadReplacement extends Phase {
             TornadoFloatingReadReplacement.MemoryMapImpl result = new TornadoFloatingReadReplacement.MemoryMapImpl(oldState);
             if (node.predecessor() instanceof WithExceptionNode && node.predecessor() instanceof MemoryKill) {
                 /*
-                 * This WithExceptionNode cannot be the lastLocationAccess for a FloatingReadNode.
-                 * Since it is both a memory kill and a control flow split, the scheduler cannot
-                 * schedule anything immediately after the kill. It can only schedule in the normal
-                 * or exceptional successor - and we have to tell the scheduler here which side it
-                 * needs to choose by putting in the location identity on both successors.
+                 * This WithExceptionNode cannot be the lastLocationAccess for a
+                 * FloatingReadNode. Since it is both a memory kill and a control flow split,
+                 * the scheduler cannot schedule anything immediately after the kill. It can
+                 * only schedule in the normal or exceptional successor - and we have to tell
+                 * the scheduler here which side it needs to choose by putting in the location
+                 * identity on both successors.
                  */
                 LocationIdentity killedLocationIdentity = node.predecessor() instanceof SingleMemoryKill ? ((SingleMemoryKill) node.predecessor()).getKilledLocationIdentity() : LocationIdentity.any();
                 result.getMap().put(killedLocationIdentity, (MemoryKill) node);
@@ -479,7 +479,8 @@ public class TornadoFloatingReadReplacement extends Phase {
             return loopInfo.exitStates;
         }
 
-        private static void createMemoryPhi(LoopBeginNode loop, TornadoFloatingReadReplacement.MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis, LocationIdentity location) {
+        private static void createMemoryPhi(LoopBeginNode loop, TornadoFloatingReadReplacement.MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis,
+                LocationIdentity location) {
             MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
             phi.addInput(ValueNodeUtil.asNode(initialState.getLastLocationAccess(location)));
             phis.put(location, phi);

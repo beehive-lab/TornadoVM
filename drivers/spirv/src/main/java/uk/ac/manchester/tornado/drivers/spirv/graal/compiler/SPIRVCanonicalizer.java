@@ -1,13 +1,15 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorElementOpNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class SPIRVCanonicalizer implements CanonicalizerPhase.CustomCanonicalization {
+public class SPIRVCanonicalizer implements CanonicalizerPhase.CustomSimplification {
 
     protected MetaAccessProvider metaAccess;
     protected ResolvedJavaMethod method;
@@ -21,19 +23,17 @@ public class SPIRVCanonicalizer implements CanonicalizerPhase.CustomCanonicaliza
         this.args = args;
     }
 
-    @Override
-    public Node canonicalize(Node node) {
-        if (node instanceof VectorElementOpNode) {
-            return canonicalizeVectorElementOp((VectorElementOpNode) node);
-        }
+    private Node canonicalizeVectorElementOp(VectorElementOpNode node) {
         return node;
     }
 
-    private Node canonicalizeVectorElementOp(VectorElementOpNode node) {
-        return node;
+    @Override
+    public void simplify(Node node, SimplifierTool tool) {
+
     }
 
     public enum VectorOp {
         MULT, ADD, SUB, DIV, ILLEGAL
     };
+
 }

@@ -26,12 +26,12 @@ public class SPIRVCompilerConfiguration implements TornadoCompilerConfiguration 
     }
 
     @Override
-    public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer) {
+    public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification canonicalizer) {
         return new TornadoSketchTier(options, canonicalizer);
     }
 
     @Override
-    public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider) {
+    public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider) {
         return new SPIRVHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
     }
 
