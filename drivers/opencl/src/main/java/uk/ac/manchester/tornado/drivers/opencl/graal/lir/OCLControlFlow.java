@@ -163,7 +163,7 @@ public class OCLControlFlow {
             this.condition = condition;
         }
 
-        public void generateIfBreakStatement(boolean value) {
+        public void setGenerateIfBreakStatement(boolean value) {
             this.generateIfBreakStatement = value;
         }
 

@@ -64,7 +64,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
@@ -211,7 +210,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             index--;
             condition = instructions.get(index);
         }
-        ((LoopConditionOp) condition).generateIfBreakStatement(false);
+        ((LoopConditionOp) condition).setGenerateIfBreakStatement(false);
 
         instructions.remove(index);
 

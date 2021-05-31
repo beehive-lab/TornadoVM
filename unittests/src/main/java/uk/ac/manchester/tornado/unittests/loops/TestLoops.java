@@ -879,4 +879,48 @@ public class TestLoops extends TornadoTestBase {
 
         Assert.assertArrayEquals(outSeq, outTor);
     }
+
+    private static void testMultipleThreadLoopCond(int[] in, int[] out) {
+        int otherCompVal = in[0];
+
+        @Parallel
+        int i = 0;
+        for (; i < in.length / 4 - 1; i++) {
+            int someNumber = getNumber(in, i, i % 4, 4);
+            in[i] = someNumber + i;
+        }
+
+        if (i == otherCompVal) {
+            int someNumber = getNumber(in, i, i % 4, 4) + 1000;
+            out[i] = someNumber;
+        }
+    }
+
+    @Test
+    public void testMultipleThreadLoopCondition() {
+        // Same test as testSingleThreadLoopCondition, but in parallel.
+        int size = 1024;
+
+        int[] inTor = new int[size];
+        int[] outTor = new int[size];
+        for (int i = 0; i < size; i++) {
+            inTor[i] = i;
+            outTor[i] = i;
+        }
+
+        int[] inSeq = inTor.clone();
+        int[] outSeq = outTor.clone();
+
+        inTor[0] = inSeq[0] = size / 4 - 1;
+
+        TaskSchedule ts = new TaskSchedule("s0")
+                .task("t0", TestLoops::testMultipleThreadLoopCond, inTor, outTor)
+                .streamOut(inTor, outTor);
+
+        ts.execute();
+
+        testSingleThreadLoopCond(inSeq, outSeq);
+
+        Assert.assertArrayEquals(outSeq, outTor);
+    }
 }
