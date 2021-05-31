@@ -165,4 +165,14 @@ public class TestKernels {
         }
     }
 
+    public static void testIfInt3(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] == 0) {
+                a[i] = 50;
+            } else {
+                a[i] = 100;
+            }
+        }
+    }
+
 }

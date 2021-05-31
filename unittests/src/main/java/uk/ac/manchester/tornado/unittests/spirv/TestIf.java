@@ -53,4 +53,21 @@ public class TestIf extends TornadoTestBase {
         assertArrayEquals(expectedResult, a);
     }
 
+    @Test
+    public void test03() {
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] expectedResult = new int[numElements];
+
+        Arrays.fill(a, -1);
+        Arrays.fill(expectedResult, 100);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::testIfInt3, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        assertArrayEquals(expectedResult, a);
+    }
+
 }
