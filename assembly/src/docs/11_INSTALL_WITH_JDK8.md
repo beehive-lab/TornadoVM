@@ -14,11 +14,11 @@
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
 ### 1. Download or build JDK 8 with JVMCI support
-TornadoVM is built by using a JDK 1.8 version with JVMCI support. The directory which contains the JDK installation is used as both the JAVA_HOME (Step 2).
+TornadoVM is built by using a JDK 1.8 version with JVMCI support. The directory which contains the JDK installation is used as the `JAVA_HOME` (Step 2).
 
 Prebuilt versions of the required JDK are available to download at https://github.com/graalvm/graal-jvmci-8/releases/tag/jvmci-21.1-b05.
 
-Example of download for Linux:
+Example for Linux:
 
 ```bash
  $ wget https://github.com/graalvm/graal-jvmci-8/releases/download/jvmci-21.1-b05/openjdk-8u292+09-jvmci-21.1-b05-linux-amd64.tar.gz
@@ -26,10 +26,6 @@ Example of download for Linux:
 ```
 The JDK installation will be found in the `openjdk1.8.0_292-jvmci-21.1-b05` directory. This directory is used as the JAVA_HOME.
 
-
-These steps will generate on Linux a new Java binary into `jdk1.8.0_<your_version>/<os-architecture>/product`.
-
-E.g: `jdk1.8.0_141/product`. This directory is used as the JAVA_HOME (Step 2).
 
 ### 2. Download TornadoVM
 
