@@ -205,7 +205,7 @@ public class SPIRVControlFlow {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVId branchId = getIfOfBranch(branch, asm);
-            SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + branch);
+            SPIRVLogger.traceCodeGen("emit IF_CASE SPIRVOpBranch: " + branch);
             asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
 
         }

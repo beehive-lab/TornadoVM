@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
@@ -264,6 +265,16 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
 
         if (hasElse) {
+
+            // -----------------------------------------------------------------------------
+            // FIXME: We could apply an optimization here.
+            // If the else-block statement is empty, then we could potentially ignore this
+            // block. However, in the branch conditional (previously generated at this point
+            // of execution), need to be update with the label indicated here:
+            // LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0),
+            // instead of the current block
+            // -----------------------------------------------------------------------------
+
             append(new SPIRVControlFlow.BranchIf(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
@@ -381,7 +392,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));
         }
-
     }
 
     @Override
@@ -403,8 +413,28 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
+        SPIRVLogger.traceBuildLIR("visitMerge %s", mergeNode);
 
-        System.out.println("MERGE NOT SUPPORTED>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        boolean loopExitMerge = true;
+        for (EndNode end : mergeNode.forwardEnds()) {
+            loopExitMerge &= end.predecessor() instanceof LoopExitNode;
+        }
+
+        for (ValuePhiNode phi : mergeNode.valuePhis()) {
+            final ValueNode valuePhi = phi.singleValueOrThis();
+            if (valuePhi != phi) {
+                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+                Value src = operand(valuePhi);
+
+                if (!dest.equals(src)) {
+                    append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+                }
+            } else if (loopExitMerge) {
+                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+                Value src = operand(phi.valueAt(1));
+                append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+            }
+        }
     }
 
     @Override

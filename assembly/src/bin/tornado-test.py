@@ -324,6 +324,7 @@ def runTests(args):
         command = appendTestRunnerClassToCmd(cmd, args)
         if (args.fast):
             command = command + " " + args.testClass
+            print command
             os.system(command)
         else:
             runSingleCommand(command, args)
