@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.unittests.spirv;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
@@ -32,7 +33,24 @@ public class TestIf extends TornadoTestBase {
                 .streamOut(a) //
                 .execute(); //
 
-        assertArrayEquals(expectedResult, a);
-
+        assertEquals(50, a[0]);
     }
+
+    @Test
+    public void test02() {
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] expectedResult = new int[numElements];
+
+        Arrays.fill(a, 0);
+        Arrays.fill(expectedResult, 50);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::testIfInt2, a) //
+                .streamOut(a) //
+                .execute(); //
+
+        assertArrayEquals(expectedResult, a);
+    }
+
 }

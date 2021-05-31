@@ -150,7 +150,53 @@ public class SPIRVControlFlow {
          * It emits the following pattern:
          *
          * <code>
-         *     OpBranchConditional %condition %trueBranch %falseBranch
+         *     SPIRVOpBranch %branch
+         * </code>
+         *
+         * @param crb
+         * @param asm
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVId branchId = getIfOfBranch(branch, asm);
+            SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + branch);
+            asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
+
+        }
+    }
+
+    public static class BranchIf extends SPIRVLIRStmt.AbstractInstruction {
+
+        public static final LIRInstructionClass<BranchIf> TYPE = LIRInstructionClass.create(BranchIf.class);
+
+        @Use
+        private LabelRef branch;
+        private final boolean isConditional;
+        private final boolean isLoopEdgeBack;
+
+        public BranchIf(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
+            super(TYPE);
+            this.branch = branch;
+            this.isConditional = isConditional;
+            this.isLoopEdgeBack = isLoopEdgeBack;
+        }
+
+        // We only declare the IDs
+        private SPIRVId getIfOfBranch(LabelRef ref, SPIRVAssembler asm) {
+            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
+            String blockName = targetBlock.toString();
+            SPIRVId branch = asm.labelTable.get(blockName);
+            if (branch == null) {
+                branch = asm.emitBlockLabel(blockName);
+            }
+            return branch;
+        }
+
+        /**
+         * It emits the following pattern:
+         *
+         * <code>
+         *     SPIRVOpBranch %branch
          * </code>
          *
          * @param crb

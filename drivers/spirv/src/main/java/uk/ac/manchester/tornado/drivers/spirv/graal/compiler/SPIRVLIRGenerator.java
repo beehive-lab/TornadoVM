@@ -152,7 +152,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitJump(LabelRef label) {
-
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
@@ -168,7 +168,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitIntegerTestBranch(Value left, Value right, LabelRef trueDestination, LabelRef falseDestination, double trueSuccessorProbability) {
-
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override

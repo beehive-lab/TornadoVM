@@ -152,6 +152,12 @@ public class TestKernels {
     }
 
     public static void testIfInt(int[] a) {
+        if (a[0] == 0) {
+            a[0] = 50;
+        }
+    }
+
+    public static void testIfInt2(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             if (a[i] == 0) {
                 a[i] = 50;
