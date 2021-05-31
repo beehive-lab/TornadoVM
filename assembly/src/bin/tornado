@@ -251,7 +251,12 @@ else
   PTX_MODULE="tornado.drivers.ptx"
   OPENCL_MODULE="tornado.drivers.opencl"
 
-  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking @${COMMON_EXPORTS} "
+  if [ "$JAVA_VERSION" = "16.0" ]; then
+  	JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelGC @${COMMON_EXPORTS} "
+  else
+  	JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking @${COMMON_EXPORTS} "
+  fi
+
   # If the current Java build is not a GraalVM build, then we need to patch the module path for the compiler
   if [[ ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
     JAVA_FLAGS="${JAVA_FLAGS} ${UPGRADE_MODULE_PATH} "

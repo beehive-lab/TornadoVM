@@ -21,30 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.asm;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.cfg.Block;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -63,6 +39,31 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NORMAL;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NUMBER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_SUBNORMAL;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.graalvm.compiler.asm.AbstractAddress;
+import org.graalvm.compiler.asm.Assembler;
+import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.cfg.Block;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.hotspot.HotSpotObjectConstant;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 
 public class PTXAssembler extends Assembler {
     private boolean pushToStack;
@@ -192,7 +193,7 @@ public class PTXAssembler extends Assembler {
     }
 
     @Override
-    public AbstractAddress makeAddress(Register base, int displacement) {
+    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
         unimplemented();
         return null;
     }

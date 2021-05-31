@@ -34,14 +34,15 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.loop.BasicInductionVariable;
-import org.graalvm.compiler.loop.LoopEx;
-import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.loop.BasicInductionVariable;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopsData;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -224,7 +225,7 @@ public class TornadoVMGraphCompiler {
     }
 
     private static void printIvs(StructuredGraph graph) {
-        final LoopsData data = new LoopsData(graph);
+        final LoopsData data = new TornadoLoopsData(graph);
         data.detectedCountedLoops();
 
         final List<LoopEx> loops = data.outerFirst();

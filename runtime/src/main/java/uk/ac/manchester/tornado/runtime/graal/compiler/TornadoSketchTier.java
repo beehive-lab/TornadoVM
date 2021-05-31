@@ -49,23 +49,24 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolic
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoVMContextReplacement;
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
-    protected final CanonicalizerPhase.CustomCanonicalization customCanonicalizer;
+    protected final CanonicalizerPhase.CustomSimplification customSimplification;
 
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
         CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
-        return canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 
-    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
-        this.customCanonicalizer = customCanonicalizer;
+    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
+        this.customSimplification = customCanonicalizer;
 
         appendPhase(new TornadoNumericPromotionPhase());
 

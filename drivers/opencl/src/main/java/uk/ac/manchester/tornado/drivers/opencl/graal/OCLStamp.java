@@ -42,8 +42,14 @@ public class OCLStamp extends ObjectStamp {
 
     private OCLKind oclKind;
 
+    private static final ResolvedJavaType STAMP_TYPE = null;
+    private static final boolean EXACT_TYPE = true;
+    private static final boolean NON_NULL = true;
+    private static final boolean ALWAYS_NULL = false;
+    private static final boolean ALWAYS_ARRAY = false;
+
     public OCLStamp(OCLKind lirKind) {
-        super(null, true, true, false);
+        super(STAMP_TYPE, EXACT_TYPE, NON_NULL, ALWAYS_NULL, ALWAYS_ARRAY);
         this.oclKind = lirKind;
     }
 
@@ -165,8 +171,4 @@ public class OCLStamp extends ObjectStamp {
         return this;
     }
 
-    @Override
-    protected ObjectStamp copyWith(ResolvedJavaType rjt, boolean bln, boolean bln1, boolean bln2) {
-        return this;
-    }
 }

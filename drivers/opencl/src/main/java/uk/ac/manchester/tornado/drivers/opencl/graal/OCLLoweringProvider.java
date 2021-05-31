@@ -111,6 +111,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadR
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
@@ -119,7 +120,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
@@ -208,6 +208,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public boolean supportsBulkZeroing() {
         unimplemented("OCLLoweringProvider::supportsBulkZeroing unimplemented");
+        return false;
+    }
+
+    @Override
+    public boolean supportsRounding() {
         return false;
     }
 
@@ -317,7 +322,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
+    public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
         JavaKind elementKind = loadIndexed.elementKind();
         AddressNode address;
@@ -362,7 +367,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
+    public void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode value = storeIndexed.value();

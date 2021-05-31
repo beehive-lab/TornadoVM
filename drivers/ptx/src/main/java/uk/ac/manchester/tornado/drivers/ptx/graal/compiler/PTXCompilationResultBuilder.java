@@ -22,12 +22,18 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.Stack;
+
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.core.common.spi.CodeGenProviders;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -42,20 +48,13 @@ import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.Stack;
-
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     private boolean isKernel;
@@ -66,10 +65,9 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     HashSet<Block> rescheduledBasicBlocks;
     private boolean includePrintf;
 
-    public PTXCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-            OptionValues options, CompilationResult compilationResult) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, Register.None);
-
+    public PTXCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
+            CompilationResult compilationResult) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
         this.asm = (PTXAssembler) asm;
     }

@@ -29,36 +29,43 @@ import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.spi.LoopsDataProvider;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.word.WordTypes;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import org.graalvm.compiler.word.WordTypes;
 
 public class OCLProviders extends Providers {
 
     private final OCLSuitesProvider suites;
-    private final Plugins graphBuilderPlugins;
 
-    public OCLProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection,
-                        ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, Plugins plugins,
-                        OCLSuitesProvider suitesProvider, PlatformConfigurationProvider platformConfigurationProvider, MetaAccessExtensionProvider metaAccessExtensionProvider, WordTypes wordTypes) {
-        super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider, snippetReflection, wordTypes);
+    public OCLProviders(MetaAccessProvider metaAccess, //
+            CodeCacheProvider codeCache, //
+            ConstantReflectionProvider constantReflection, //
+            ConstantFieldProvider constantFieldProvider, //
+            ForeignCallsProvider foreignCalls, //
+            LoweringProvider lowerer, //
+            Replacements replacements, //
+            StampProvider stampProvider, //
+            PlatformConfigurationProvider platformConfigurationProvider, //
+            MetaAccessExtensionProvider metaAccessExtensionProvider, //
+            SnippetReflectionProvider snippetReflection, //
+            WordTypes wordTypes, //
+            LoopsDataProvider loopsDataProvider, //
+            OCLSuitesProvider suitesProvider) {
+        super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider, metaAccessExtensionProvider,
+                snippetReflection, wordTypes, loopsDataProvider);
         this.suites = suitesProvider;
-        this.graphBuilderPlugins = plugins;
     }
 
     public OCLSuitesProvider getSuitesProvider() {
         return suites;
     }
 
-    public Plugins getGraphBuilderPlugins() {
-        return graphBuilderPlugins;
-    }
 }
