@@ -1,14 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -32,7 +26,6 @@ import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
@@ -50,15 +43,12 @@ import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
-
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
@@ -71,6 +61,15 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
@@ -339,6 +338,13 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_LESS_THAN;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+        } else if (node instanceof IntegerEqualsNode) {
+            SPIRVLogger.traceBuildLIR("IntegerEqualsNode: %s", node);
+            final IntegerEqualsNode condition = (IntegerEqualsNode) node;
+            final Value x = operand(condition.getX());
+            final Value y = operand(condition.getY());
+            SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else {
             throw new RuntimeException("Condition Not implemented yet: " + node.getClass());
         }
@@ -447,9 +453,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof PragmaUnrollNode || node instanceof ThreadConfigurationNode) {
             // ignore emit-action
         } else {
-            if (node instanceof ConstantNode) {
-                // Annotate the constant
-            }
             super.emitNode(node);
         }
     }

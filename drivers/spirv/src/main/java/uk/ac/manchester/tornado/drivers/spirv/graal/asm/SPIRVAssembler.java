@@ -29,6 +29,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionEnd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIAdd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIEqual;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIMul;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpISub;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
@@ -352,6 +353,7 @@ public final class SPIRVAssembler extends Assembler {
         public static final SPIRVBinaryOp DIV_FLOAT = new SPIRVBinaryOpFDiv("/", "SPIRVOpFDiv");
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
         public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<", "SPIRVOpSLessThan");
+        public static final SPIRVBinaryOp INTEGER_EQUALS = new SPIRVBinaryOpIEqual("<", "SPIRVBinaryOpIEqual");
 
         protected String spirvInstruction;
 
@@ -494,6 +496,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpSLessThan(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpIEqual extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpIEqual(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpIEqual(idResultType, idResult, operand1, operand2);
         }
     }
 
