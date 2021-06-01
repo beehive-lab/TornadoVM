@@ -179,6 +179,17 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
+     * Checks if the {@link OCLNodeLIRBuilder#emitLoopBegin} has been called right before
+     * {@link OCLNodeLIRBuilder#emitIf}. In other words, that there is no data flow/control flow
+     * between the {@link LoopBeginNode} and the corresponding {@link IfNode} loop condition.
+     * @return true if the {@param loopCondIndex} is right after the LIR instructions of a loop header
+     * ({@param loopPostOpIndex} and {@param loopInitOpIndex}).
+     */
+    private static boolean isLoopConditionRightAfterHeader(int loopCondIndex, int loopPostOpIndex, int loopInitOpIndex) {
+        return (loopCondIndex - 1 == loopPostOpIndex) && (loopCondIndex - 2 == loopInitOpIndex);
+    }
+
+    /**
      * Checks if there are any LIR instructions between the loop condition and the {@link LoopInitOp} and {@link LoopPostOp}.
      * If there are no instructions, it is possible to move the loop condition to the loop header.
      * @return true if there are no instructions.
@@ -199,7 +210,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
 
-        return (loopConditionOpIndex - 1 == loopPostOpIndex) && (loopConditionOpIndex - 2 == loopInitOpIndex);
+        return isLoopConditionRightAfterHeader(loopConditionOpIndex, loopPostOpIndex, loopInitOpIndex);
     }
 
     private static void formatLoopHeader(List<LIRInstruction> instructions) {
