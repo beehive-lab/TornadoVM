@@ -1032,6 +1032,11 @@ public final class OCLAssembler extends Assembler {
         emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE + "  // " + blockName);
     }
 
+    public void endScope() {
+        popIndent();
+        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE);
+    }
+
     public void beginScope() {
         emitLine(OCLAssemblerConstants.CURLY_BRACKET_OPEN);
         pushIndent();

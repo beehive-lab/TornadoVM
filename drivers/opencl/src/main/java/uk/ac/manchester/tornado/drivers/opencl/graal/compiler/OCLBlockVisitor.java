@@ -132,17 +132,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
         if (block.isLoopHeader()) {
             loopCount++;
-            openclBuilder.emitLoopHeader(block);
-            // Temporary fix to remove the end scope of the most outer loop
-            // without changing the loop schematics in IR level.
-            if (openclBuilder.shouldRemoveLoop()) {
-                if (loopCount > 1) { // TODO: Add a more generic fix for
-                    asm.beginScope();
-                }
-            } else {
-                asm.beginScope();
-            }
-
+            openclBuilder.emitLoopBlock(block);
         } else {
             // We emit either an ELSE statement or a SWITCH statement
             final Block dom = block.getDominator();
