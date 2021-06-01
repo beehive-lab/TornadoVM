@@ -42,7 +42,7 @@ public class SPIRVBinary {
             return opcode;
         }
 
-        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVId typeOperation, SPIRVKind spirvKind) {
+        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
             if (inputValue instanceof ConstantValue) {
                 return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
             } else {
@@ -51,8 +51,9 @@ public class SPIRVBinary {
                     // We need to perform a load first
                     SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
                     SPIRVId load = asm.module.getNextId();
+                    SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
-                            typeOperation, //
+                            type, //
                             load, //
                             param, //
                             new SPIRVOptionalOperand<>( //
@@ -72,8 +73,8 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId a = getId(x, asm, typeOperation, (SPIRVKind) x.getPlatformKind());
-            SPIRVId b = getId(y, asm, typeOperation, (SPIRVKind) y.getPlatformKind());
+            SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
 
             SPIRVLogger.traceCodeGen("emit " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
 

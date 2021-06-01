@@ -56,6 +56,7 @@ import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
+import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
@@ -312,7 +313,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 throw new RuntimeException("SWITCH CASE not supported");
             }
         } else if (beginNode instanceof MergeNode) {
-            throw new RuntimeException("Merge within an endNode not supported");
+            // This case we have a nested if within a loop
+            System.out.println("MERGE ------- IF " + LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0));
+            append(new SPIRVControlFlow.BranchIf(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
 
@@ -428,8 +431,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             loopExitMerge &= end.predecessor() instanceof LoopExitNode;
         }
 
+        for (MemoryPhiNode phi : mergeNode.memoryPhis()) {
+            SPIRVLogger.traceBuildLIR("MEMORY PHI:  %s", phi);
+
+        }
+
         for (ValuePhiNode phi : mergeNode.valuePhis()) {
             final ValueNode valuePhi = phi.singleValueOrThis();
+            SPIRVLogger.traceBuildLIR("PHI NODE %s", valuePhi);
             if (valuePhi != phi) {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);

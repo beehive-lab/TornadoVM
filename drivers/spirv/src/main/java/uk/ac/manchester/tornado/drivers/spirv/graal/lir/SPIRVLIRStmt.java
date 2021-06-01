@@ -4,6 +4,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
@@ -477,6 +478,7 @@ public class SPIRVLIRStmt {
             this.result = result;
             this.cast = cast;
             this.base = memoryRegion;
+            memoryRegion.assignTo((Variable) result);
         }
 
         @Override

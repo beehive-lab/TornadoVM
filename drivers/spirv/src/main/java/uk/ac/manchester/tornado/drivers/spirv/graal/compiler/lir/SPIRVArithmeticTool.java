@@ -314,10 +314,10 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
                     getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
                 }
 
-                // AllocatableValue valueHolder = memAccess.assignedTo();
-                // if (valueHolder != null) {
-                // getGen().append(new OCLLIRStmt.AssignStmt(valueHolder, input));
-                // }
+                AllocatableValue valueHolder = memAccess.assignedTo();
+                if (valueHolder != null) {
+                    getGen().append(new SPIRVLIRStmt.AssignStmt(valueHolder, input));
+                }
             }
         }
     }

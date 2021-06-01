@@ -4,6 +4,7 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
@@ -147,6 +148,8 @@ public class SPIRVUnary {
 
         private Value index;
 
+        private Variable assignedTo;
+
         MemoryAccess(SPIRVMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
             this.memoryRegion = base;
@@ -169,6 +172,14 @@ public class SPIRVUnary {
 
         public Value getIndex() {
             return index;
+        }
+
+        public void assignTo(Variable loadedTo) {
+            this.assignedTo = loadedTo;
+        }
+
+        public Variable assignedTo() {
+            return assignedTo;
         }
 
     }
