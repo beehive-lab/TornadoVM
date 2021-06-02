@@ -76,7 +76,7 @@ AWS_S3_LOGS_KEY = logfolder
 You can run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. If this flag is not used, the default configuration file is the `etc/xilinx-fpga.conf`.
 
 ### 4. Run a program that offloads a task on the FPGA. 
-Be aware to log the terminal output to a file (`output.log`) as the compilation may take a few hours and the connection may be terminated with a broken pipe (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
+You can redirect the output from Standard OUT to a file (`output.log`) as the compilation may take a few hours and the connection may be terminated with a broken pipe (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
 The following example uses a custom configuration file (`aws_fpga.conf`) to execute the DFT on the AWS F1 FPGA:
 
 ```bash
