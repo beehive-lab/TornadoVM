@@ -199,7 +199,7 @@ public class TestMatrices extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrixVector() {
+    public void testMatrixVectorSmall() {
         final int N = 4;
         float[] matrix = new float[N * N];
         float[] vector = new float[N];
@@ -229,7 +229,37 @@ public class TestMatrices extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrixInit1D() {
+    public void testMatrixVector() {
+        final int N = 256;
+        float[] matrix = new float[N * N];
+        float[] vector = new float[N];
+        float[] result = new float[N];
+        float[] resultSeq = new float[N];
+
+        Random r = new Random();
+        IntStream.range(0, N).parallel().forEach(idx -> {
+            vector[idx] = r.nextFloat();
+        });
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrix[idx] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestMatrices::matrixVector, matrix, vector, result, N)
+                .streamOut(result);
+        //@formatter:on
+        t.execute();
+
+        matrixVector(matrix, vector, resultSeq, N);
+
+        for (int i = 0; i < vector.length; i++) {
+            assertEquals(resultSeq[i], result[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testMatrixInit1DSmall() {
         final int N = 4;
         float[] matrix = new float[N * N];
         float[] resultSeq = new float[N * N];
@@ -248,8 +278,46 @@ public class TestMatrices extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrixInit2D() {
+    public void testMatrixInit1D() {
+        final int N = 256;
+        float[] matrix = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestMatrices::matrixInit1D, matrix, N) //
+                .streamOut(matrix); //
+
+        t.execute();
+
+        matrixInit1D(resultSeq, N);
+
+        for (int i = 0; i < matrix.length; i++) {
+            assertEquals(resultSeq[i], matrix[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testMatrixInit2DSmall() {
         final int N = 4;
+        float[] matrix = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestMatrices::matrixInit2D, matrix, N) //
+                .streamOut(matrix); //
+
+        t.execute();
+
+        matrixInit2D(resultSeq, N);
+
+        for (int i = 0; i < matrix.length; i++) {
+            assertEquals(resultSeq[i], matrix[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testMatrixInit2D() {
+        final int N = 1024;
         float[] matrix = new float[N * N];
         float[] resultSeq = new float[N * N];
 

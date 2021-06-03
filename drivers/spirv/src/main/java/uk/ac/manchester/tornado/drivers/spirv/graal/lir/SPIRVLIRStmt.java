@@ -167,16 +167,25 @@ public class SPIRVLIRStmt {
 
             SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
-            SPIRVId param = asm.lookUpLIRInstructions(rhs);
-            SPIRVId loadId = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
-                    uint, //
-                    loadId, //
-                    param, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(4)))//
-            ));
+            // If the right hand side expression is a constant, we don't need to load the
+            // constant, but rather just use is in the store
+            SPIRVId loadId;
+            if (rhs instanceof ConstantValue) {
+                ConstantValue constantValue = (ConstantValue) rhs;
+                loadId = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+                System.out.println(">>>>>>>>>>>> LOAD ID: " + loadId);
+            } else {
+                SPIRVId param = asm.lookUpLIRInstructions(rhs);
+                loadId = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        uint, //
+                        loadId, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(4)))//
+                ));
+            }
 
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(lhs);
             asm.currentBlockScope().add(new SPIRVOpStore( //

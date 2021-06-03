@@ -155,7 +155,6 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitBlockLabelIfNotPresent(Block b, SPIRVInstScope functionScope) {
-        System.out.println("NEW SCOPE: for block " + b.toString());
         String blockName = b.toString();
         if (!labelTable.containsKey(blockName)) {
             SPIRVId label = module.getNextId();
