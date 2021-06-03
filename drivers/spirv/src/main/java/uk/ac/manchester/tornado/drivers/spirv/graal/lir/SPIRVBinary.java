@@ -20,6 +20,9 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVBinary {
 
+    /**
+     * Generate SPIR-V for binary expressions.
+     */
     protected static class BinaryConsumer extends SPIRVLIROp {
 
         @Opcode
@@ -75,6 +78,20 @@ public class SPIRVBinary {
 
             SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
             SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+
+            if (opcode instanceof SPIRVAssembler.SPIRVBinaryOpLeftShift) {
+                if (y instanceof ConstantValue) {
+                    SPIRVKind baseKind = (SPIRVKind) x.getPlatformKind();
+                    SPIRVKind shiftKind = (SPIRVKind) y.getPlatformKind();
+                    if (baseKind != shiftKind) {
+                        // Create a new constant
+                        ConstantValue c = (ConstantValue) y;
+                        SPIRVId newConstantId = asm.emitConstantValue(baseKind, c.getConstant().toValueString());
+                        asm.constants.put(c.getConstant().toValueString(), newConstantId);
+                        b = newConstantId;
+                    }
+                }
+            }
 
             SPIRVLogger.traceCodeGen("emit " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
 

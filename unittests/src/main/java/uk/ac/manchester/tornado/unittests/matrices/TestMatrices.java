@@ -65,6 +65,38 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    public static void matrixInit1D(float[] result, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                result[i * size + j] = 100 + i;
+            }
+        }
+    }
+
+    public static void matrixInit2D(float[] result, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                result[i * size + j] = 120;
+            }
+        }
+    }
+
+    public static void matrixAddition1D(float[] matrixA, float[] matrixB, float[] result, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                result[i * size + j] = matrixA[i * size + j] + matrixB[i * size + j];
+            }
+        }
+    }
+
+    public static void matrixAddition2D(float[] matrixA, float[] matrixB, float[] result, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                result[i * size + j] = matrixA[i * size + j] + matrixB[i * size + j];
+            }
+        }
+    }
+
     public static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
@@ -196,6 +228,103 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void testMatrixInit1D() {
+        final int N = 4;
+        float[] matrix = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestMatrices::matrixInit1D, matrix, N) //
+                .streamOut(matrix); //
+
+        t.execute();
+
+        matrixInit1D(resultSeq, N);
+
+        for (int i = 0; i < matrix.length; i++) {
+            assertEquals(resultSeq[i], matrix[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testMatrixInit2D() {
+        final int N = 4;
+        float[] matrix = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestMatrices::matrixInit2D, matrix, N) //
+                .streamOut(matrix); //
+
+        t.execute();
+
+        matrixInit2D(resultSeq, N);
+
+        for (int i = 0; i < matrix.length; i++) {
+            assertEquals(resultSeq[i], matrix[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testMatrixAddition1D() {
+        final int N = 1;
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] result = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        Random r = new Random();
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixB[idx] = r.nextFloat();
+        });
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = r.nextFloat();
+        });
+
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", TestMatrices::matrixAddition1D, matrixA, matrixB, result, N) //
+                .streamOut(result); //
+
+        t.execute();
+
+        matrixAddition1D(matrixA, matrixB, resultSeq, N);
+
+        for (int i = 0; i < matrixB.length; i++) {
+            assertEquals(resultSeq[i], result[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testMatrixAddition2D() {
+        final int N = 4;
+        float[] matrixA = new float[N * N];
+        float[] matrixB = new float[N * N];
+        float[] result = new float[N * N];
+        float[] resultSeq = new float[N * N];
+
+        Random r = new Random();
+        IntStream.range(0, N).parallel().forEach(idx -> {
+            matrixB[idx] = r.nextFloat();
+        });
+        IntStream.range(0, N * N).parallel().forEach(idx -> {
+            matrixA[idx] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestMatrices::matrixAddition2D, matrixA, matrixB, result, N)
+                .streamOut(result);
+        //@formatter:on
+        t.execute();
+
+        matrixAddition2D(matrixA, matrixB, resultSeq, N);
+
+        for (int i = 0; i < matrixB.length; i++) {
+            assertEquals(resultSeq[i], result[i], 0.01f);
+        }
+    }
+
     public static void copyMatrix2D(final float[][] matrixA, final float[][] matrixB) {
         for (@Parallel int i = 0; i < matrixA.length; i++) {
             for (@Parallel int j = 0; j < matrixA[i].length; j++) {
@@ -230,7 +359,7 @@ public class TestMatrices extends TornadoTestBase {
 
     @Test
     public void testMatrixMultiplication() {
-        final int N = 64;
+        final int N = 2;
         float[] matrixA = new float[N * N];
         float[] matrixB = new float[N * N];
         float[] matrixC = new float[N * N];

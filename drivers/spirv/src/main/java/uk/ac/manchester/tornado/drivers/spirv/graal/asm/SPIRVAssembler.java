@@ -578,4 +578,5 @@ public final class SPIRVAssembler extends Assembler {
             emitValue(crb, value);
         }
     }
+
 }

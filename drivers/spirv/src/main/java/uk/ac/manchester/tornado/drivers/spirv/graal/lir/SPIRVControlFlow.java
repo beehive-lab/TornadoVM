@@ -210,4 +210,11 @@ public class SPIRVControlFlow {
 
         }
     }
+
+    public static class BranchLoopConditional extends BranchIf {
+
+        public BranchLoopConditional(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
+            super(branch, isConditional, isLoopEdgeBack);
+        }
+    }
 }

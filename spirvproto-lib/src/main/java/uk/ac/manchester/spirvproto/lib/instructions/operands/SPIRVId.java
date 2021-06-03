@@ -1,9 +1,9 @@
 package uk.ac.manchester.spirvproto.lib.instructions.operands;
 
-import uk.ac.manchester.spirvproto.lib.disassembler.SPIRVPrintingOptions;
-
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
+
+import uk.ac.manchester.spirvproto.lib.disassembler.SPIRVPrintingOptions;
 
 public class SPIRVId implements SPIRVOperand {
     public final int id;
@@ -44,7 +44,8 @@ public class SPIRVId implements SPIRVOperand {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof SPIRVId) return this.id == ((SPIRVId) other).id;
+        if (other instanceof SPIRVId)
+            return this.id == ((SPIRVId) other).id;
         return super.equals(other);
     }
 
@@ -54,7 +55,8 @@ public class SPIRVId implements SPIRVOperand {
     }
 
     private void checkName(boolean inlineNames) {
-        if (!inlineNames || name == null) name = Integer.toString(id);
+        if (!inlineNames || name == null)
+            name = Integer.toString(id);
     }
 
     public void setName(String newName) {
@@ -62,7 +64,8 @@ public class SPIRVId implements SPIRVOperand {
     }
 
     public String getName() {
-        if (name == null) return "";
+        if (name == null)
+            return "";
         return name;
     }
 }

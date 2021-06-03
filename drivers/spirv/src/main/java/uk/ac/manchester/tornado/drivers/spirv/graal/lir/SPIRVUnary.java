@@ -8,6 +8,7 @@ import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
@@ -414,6 +415,46 @@ public class SPIRVUnary {
             // OpSConvert
             SPIRVId result = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpSConvert(type, result, loadConvert));
+
+            asm.registerLIRInstructionValue(this, result);
+        }
+    }
+
+    public static class CastOperations extends UnaryConsumer {
+
+        protected CastOperations(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
+            super(opcode, valueKind, value);
+        }
+    }
+
+    public static class CastIToFloat extends CastOperations {
+
+        public CastIToFloat(LIRKind lirKind, Value inputVal) {
+            super(null, lirKind, inputVal);
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpConvertSToF : -> ");
+
+            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId param = asm.lookUpLIRInstructions(value);
+
+            SPIRVId loadConvert = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadConvert, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            // OpSConvert
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertSToF(type, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
         }

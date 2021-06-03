@@ -485,8 +485,10 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopExit(LoopExitNode node) {
+        SPIRVLogger.traceBuildLIR("LoopExitNode: %s", node);
         if (gen.getCurrentBlock().getSuccessors().length != 0) {
-            throw new RuntimeException("EMIT LOOP BREAK PENDING");
+            LabelRef labelRef = LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0);
+            append(new SPIRVControlFlow.BranchLoopConditional(labelRef, false, false));
         }
     }
 

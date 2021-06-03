@@ -1,15 +1,20 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
 
@@ -28,17 +33,17 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
         this.op = op;
     }
 
-    private SPIRVAssembler.SPIRVUnaryOp resolveOp() {
+    private SPIRVUnary.CastOperations resolveOp(LIRKind lirKind, Value value) {
         switch (op) {
+            case I2F:
+                return new SPIRVUnary.CastIToFloat(lirKind, value);
             case I2D:
             case F2D:
             case L2D:
-                return SPIRVAssembler.SPIRVUnaryOp.CAST_TO_DOUBLE();
             case D2L:
             case F2L:
-                return SPIRVAssembler.SPIRVUnaryOp.CAST_TO_LONG();
             default:
-                TornadoUnsupportedError.unsupported("Conversion unimplemented: ", op.toString());
+                TornadoUnsupportedError.unsupported("Conversion Cast Operation unimplemented: ", op.toString());
                 break;
         }
         return null;
@@ -46,6 +51,12 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        throw new RuntimeException("Not supported");
+        SPIRVLIRGenerator gen = (SPIRVLIRGenerator) generator.getLIRGeneratorTool();
+        LIRKind lirKind = gen.getLIRKind(stamp);
+        final Variable result = gen.newVariable(lirKind);
+        Value value = generator.operand(this.value);
+        SPIRVUnary.CastOperations cast = resolveOp(lirKind, value);
+        gen.append(new SPIRVLIRStmt.AssignStmt(result, cast));
+        generator.setResult(this, result);
     }
 }
