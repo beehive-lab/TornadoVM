@@ -76,17 +76,19 @@ AWS_S3_LOGS_KEY = logfolder
 You can run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. If this flag is not used, the default configuration file is the `etc/xilinx-fpga.conf`.
 
 ### 4. Run a program that offloads a task on the FPGA. 
-You can redirect the output from Standard OUT to a file (`output.log`) as the compilation may take a few hours and the connection may be terminated with a broken pipe (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
-The following example uses a custom configuration file (`aws_fpga.conf`) to execute the DFT on the AWS F1 FPGA:
+![image](https://user-images.githubusercontent.com/34061419/120612886-519ac700-c45e-11eb-9d6f-45f2aed99d7f.png)
 
+The following example uses a custom configuration file (`aws_fpga.conf`) to execute the DFT on the AWS F1 FPGA:
 ```bash
 $ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
 $ Ctrl-Z (^Z)
 $ bg
 $ disown
 ```
+This command will trigger TornadoVM to automatically compile Java to OpenCL and use the AWS FPGA Hardware Development Kit (HDK) to generate a bitstream. You can also redirect the output from Standard OUT to a file (`output.log`) as the compilation may take a few hours and the connection may be terminated with a broken pipe (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
+
 Read the `output.log` file in order to monitor the outcome of the TornadoVM execution. To monitor the outcome of the HLS compilation, read the `outputFPGA.log` file, which is automatically generated in the `DIRECTORY_BITSTREAM` (e.g. `fpga-source-comp`). 
-After the bitstream generation, TornadoVM will automatically invoke the creation of an Amazon FPGA Image and upload a file related to the kernel to the Amazon S3 bucket (configured in the Step 3).
+After the bitstream generation, TornadoVM will automatically invoke the creation of an Amazon FPGA Image (AFI) and upload a file related to the kernel to the Amazon S3 bucket (configured in the Step 3).
 The execution of the program will end up with an error as the bitstream is forwarded to be used, while the AFI image is not ready yet. E.g.: 
 ```bash
 [TornadoVM-OCL-JNI] ERROR : clCreateProgramWithBinary -> Returned: -44
@@ -130,7 +132,7 @@ This command will return the following message:
 }
 
 ```
-When the state change from `pending` to `available`, the awsxlcbin binary code can be executed via TornadoVM to the AWS FPGA.
+When the state change from `pending` to `available`, the `awsxlcbin` binary code can be executed via TornadoVM to the AWS FPGA.
 
 ### 6. Now that the AFI is available, you can execute the program and run the OpenCL kernel on the AWS FPGA.
 
