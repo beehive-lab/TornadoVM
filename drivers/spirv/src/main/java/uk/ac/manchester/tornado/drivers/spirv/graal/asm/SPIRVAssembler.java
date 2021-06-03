@@ -196,9 +196,9 @@ public final class SPIRVAssembler extends Assembler {
 
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
 
-        if (fp64Capability) {
-            module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
-        }
+        // if (fp64Capability) {
+        module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
+        // }
 
     }
 
