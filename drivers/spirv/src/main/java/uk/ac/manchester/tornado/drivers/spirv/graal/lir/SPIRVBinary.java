@@ -47,7 +47,8 @@ public class SPIRVBinary {
 
         protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
             if (inputValue instanceof ConstantValue) {
-                return asm.constants.get(((ConstantValue) inputValue).getConstant().toValueString());
+                SPIRVKind kind = (SPIRVKind) inputValue.getPlatformKind();
+                return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
@@ -86,9 +87,7 @@ public class SPIRVBinary {
                     if (baseKind != shiftKind) {
                         // Create a new constant
                         ConstantValue c = (ConstantValue) y;
-                        SPIRVId newConstantId = asm.emitConstantValue(baseKind, c.getConstant().toValueString());
-                        asm.constants.put(c.getConstant().toValueString(), newConstantId);
-                        b = newConstantId;
+                        b = asm.lookUpConstant(c.getConstant().toValueString(), baseKind);
                     }
                 }
             }

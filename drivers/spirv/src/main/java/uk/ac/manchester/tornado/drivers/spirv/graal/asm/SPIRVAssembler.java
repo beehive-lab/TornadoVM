@@ -56,6 +56,42 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
+    public static class ConstantKeyPair {
+        private String name;
+        private SPIRVKind kind;
+
+        public ConstantKeyPair(String name, SPIRVKind kind) {
+            this.name = name;
+            this.kind = kind;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public SPIRVKind getKind() {
+            return kind;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((name == null) ? 0 : name.hashCode());
+            result = prime * result + ((kind == null) ? 0 : kind.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof ConstantKeyPair) {
+                ConstantKeyPair ckp = (ConstantKeyPair) obj;
+                return (this.name.equals(ckp.name) && this.kind.equals(ckp.kind));
+            }
+            return false;
+        }
+    }
+
     public SPIRVModule module;
     public SPIRVInstScope functionScope;
     public SPIRVId mainFunctionID;
@@ -70,7 +106,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId prevId;
     public SPIRVId frameId;
 
-    public final Map<String, SPIRVId> constants;
+    private final Map<ConstantKeyPair, SPIRVId> constants;
     public final Map<Value, SPIRVId> lirTable;
     public final Map<String, SPIRVId> lirTableName;
     public SPIRVPrimitiveTypes primitives;
@@ -79,7 +115,6 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId v3ulong;
     public SPIRVId pointerToULongFunction;
     public SPIRVId ptrCrossWorkULong;
-    public SPIRVId ptrCrossWorkUInt;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -239,13 +274,18 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public SPIRVId lookUpConstant(String valueConstant, SPIRVKind type) {
-        if (constants.containsKey(valueConstant)) {
-            return constants.get(valueConstant);
+        ConstantKeyPair ckp = new ConstantKeyPair(valueConstant, type);
+        if (constants.containsKey(ckp)) {
+            return constants.get(ckp);
         } else {
             SPIRVId newConstantId = emitConstantValue(type, valueConstant);
-            constants.put(valueConstant, newConstantId);
+            constants.put(ckp, newConstantId);
             return newConstantId;
         }
+    }
+
+    public Map<ConstantKeyPair, SPIRVId> getConstants() {
+        return this.constants;
     }
 
     /**

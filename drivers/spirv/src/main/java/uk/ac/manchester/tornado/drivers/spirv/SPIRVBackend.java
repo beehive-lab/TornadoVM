@@ -546,11 +546,13 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         public SPIRVId typeID;
         public SPIRVLiteralContextDependentNumber n;
         public String valueString;
+        public SPIRVKind kind;
 
-        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber n, String valueString) {
+        public TypeConstant(SPIRVId typeID, SPIRVLiteralContextDependentNumber n, String valueString, SPIRVKind kind) {
             this.typeID = typeID;
             this.n = n;
             this.valueString = valueString;
+            this.kind = kind;
         }
     }
 
@@ -606,13 +608,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     // This is only for testing
     private void emitTestLogic(SPIRVModule module, SPIRVId frameId, SPIRVId ulong, SPIRVId ul0, SPIRVId ul1, SPIRVId ptrCrossWorkGroupUInt, SPIRVAssembler asm) {
 
-        final Map<String, SPIRVId> constants = asm.constants;
-
         SPIRVId id24 = module.getNextId();
         blockScope.add(new SPIRVOpLoad(pointerToULongFunction, id24, frameId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
 
         SPIRVId ptridx1 = module.getNextId();
-        blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToULongFunction, ptridx1, id24, constants.get("3"), new SPIRVMultipleOperands<>()));
+        blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToULongFunction, ptridx1, id24, asm.lookUpConstant("3", SPIRVKind.OP_TYPE_INT_32), new SPIRVMultipleOperands<>()));
 
         SPIRVId id27 = module.getNextId();
         blockScope.add(new SPIRVOpLoad(ulong, id27, ptridx1, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
@@ -623,7 +623,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         blockScope.add(new SPIRVOpLoad(ulong, id28, ul0, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
 
         SPIRVId add = module.getNextId();
-        blockScope.add(new SPIRVOpIAdd(ulong, add, id28, constants.get("24")));
+        blockScope.add(new SPIRVOpIAdd(ulong, add, id28, asm.lookUpConstant("24", SPIRVKind.OP_TYPE_INT_32)));
 
         blockScope.add(new SPIRVOpStore(ul1, add, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
 
@@ -633,7 +633,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVId id34 = module.getNextId();
         blockScope.add(new SPIRVOpConvertUToPtr(ptrCrossWorkGroupUInt, id34, id31));
 
-        blockScope.add(new SPIRVOpStore(id34, constants.get("50"), new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+        blockScope.add(new SPIRVOpStore(id34, asm.lookUpConstant("50", SPIRVKind.OP_TYPE_INT_32), new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
     }
 
     private void addVariableDef(Map<SPIRVKind, Set<Variable>> kindToVariable, Variable value) {
@@ -813,10 +813,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 }
 
                 SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
-                stack.add(new TypeConstant(typeId, literalNumber, value.toValueString()));
+                stack.add(new TypeConstant(typeId, literalNumber, value.toValueString(), kind));
             }
-
-            final Map<String, SPIRVId> constants = asm.constants;
 
             // Add constant 3 --> Frame Access
             int reservedSlots = SPIRVCallStack.RESERVED_SLOTS;
@@ -827,7 +825,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 TypeConstant t = stack.pop();
                 SPIRVId idConstant = module.getNextId();
                 module.add(new SPIRVOpConstant(t.typeID, idConstant, t.n));
-                constants.put(t.valueString, idConstant);
+                asm.getConstants().put(new SPIRVAssembler.ConstantKeyPair(t.valueString, t.kind), idConstant);
             }
 
             // emit Type Void

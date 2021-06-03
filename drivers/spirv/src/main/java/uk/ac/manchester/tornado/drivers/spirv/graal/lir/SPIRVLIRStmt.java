@@ -77,7 +77,7 @@ public class SPIRVLIRStmt {
             } else {
                 SPIRVId value;
                 if (rhs instanceof ConstantValue) {
-                    value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
+                    value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
                 } else {
                     value = asm.lookUpLIRInstructions(rhs);
                 }
@@ -338,7 +338,7 @@ public class SPIRVLIRStmt {
             ));
 
             String values = String.valueOf(indexFromStackFrame);
-            SPIRVId index = asm.constants.get(values);
+            SPIRVId index = asm.lookUpConstant(values, SPIRVKind.OP_TYPE_INT_32);
             SPIRVId accessPTR = asm.module.getNextId();
 
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
@@ -389,7 +389,7 @@ public class SPIRVLIRStmt {
             SPIRVId prev = asm.prevId;
 
             String values = String.valueOf(value);
-            SPIRVId index = asm.constants.get(values);
+            SPIRVId index = asm.lookUpConstant(values, SPIRVKind.OP_TYPE_FLOAT_32);
 
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
                     asm.pointerToULongFunction, //
@@ -559,7 +559,7 @@ public class SPIRVLIRStmt {
 
             SPIRVId value;
             if (rhs instanceof ConstantValue) {
-                value = asm.constants.get(((ConstantValue) this.rhs).getConstant().toValueString());
+                value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
             } else {
                 System.out.println("!!!!!!!!!!!!!!!! LOAD BEFORE STORE: ");
                 value = asm.lookUpLIRInstructions(rhs);
