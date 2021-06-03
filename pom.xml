@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>0.10-dev</tornado.version>
-        <graal.version>20.2.0</graal.version>
+        <graal.version>21.1.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
@@ -310,7 +310,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-11</id>
+            <id>graal-jdk-11-plus</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

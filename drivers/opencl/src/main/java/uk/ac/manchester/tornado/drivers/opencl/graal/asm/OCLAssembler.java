@@ -859,14 +859,14 @@ public final class OCLAssembler extends Assembler {
     }
 
     @Override
-    public AbstractAddress makeAddress(Register arg0, int arg1) {
-        unimplemented("Make address not implemented yet.");
-        return null;
+    protected void patchJumpTarget(int arg0, int arg1) {
+        unimplemented("Patch jump target not implemented yet.");
     }
 
     @Override
-    protected void patchJumpTarget(int arg0, int arg1) {
-        unimplemented("Patch jump target not implemented yet.");
+    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
+        unimplemented("Make address not implemented yet.");
+        return null;
     }
 
     /**
@@ -1101,8 +1101,8 @@ public final class OCLAssembler extends Assembler {
             return formatConstant(cv);
         } else if (value instanceof OCLNullary.Parameter) {
             /*
-             * This case covers when we want to pass a caller method parameter further down to a callee
-             * and there is no assignment of the parameter inside the caller.
+             * This case covers when we want to pass a caller method parameter further down
+             * to a callee and there is no assignment of the parameter inside the caller.
              */
             return value.toString();
         } else {

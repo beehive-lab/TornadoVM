@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -200,30 +201,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, boolean directPointers) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitArrayIndexOf(JavaKind arrayKind, JavaKind valueKind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value fromIndex, Value... searchValues) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
         unimplemented();
     }
@@ -305,6 +282,11 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
+
+    }
+
+    @Override
     public void emitJump(LabelRef lr) {
         unimplemented();
     }
@@ -322,14 +304,12 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
-        unimplemented();
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
         return null;
     }
 
     @Override
-    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
-        unimplemented();
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
         return null;
     }
 
@@ -407,11 +387,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     public <K extends ValueKind<K>> K toRegisterKind(K kind) {
         return kind;
-    }
-
-    @Override
-    protected void emitForeignCallOp(ForeignCallLinkage fcl, Value value, Value[] values, Value[] values1, LIRFrameState lirfs) {
-        unimplemented();
     }
 
     @Override

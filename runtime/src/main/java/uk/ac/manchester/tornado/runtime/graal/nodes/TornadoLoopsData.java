@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -20,25 +18,15 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.runtime.graal.compiler;
+package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.loop.LoopsData;
 
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+public class TornadoLoopsData extends LoopsData {
 
-public abstract class TornadoHighTier extends PhaseSuite<TornadoHighTierContext> {
-
-    protected final CanonicalizerPhase.CustomSimplification customCanonicalizer;
-
-    public CanonicalizerPhase.CustomSimplification getCustomCanonicalizer() {
-        return customCanonicalizer;
-    }
-
-    public TornadoHighTier(CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        this.customCanonicalizer = customCanonicalizer;
+    public TornadoLoopsData(StructuredGraph graph) {
+        super(graph);
     }
 }

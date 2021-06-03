@@ -14,33 +14,33 @@
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
   ###### DISCLAIMER:
-  TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs.
-  Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
+  
+  TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```
-  Red Hat Mandrel 11.0.9 (Mandrel 20.2.0 Final)
-  Amazon Corretto 11.0.9
-  GraalVM LabsJDK 11.0.8 (GraalVM 20.2.0)
-  OpenJDK 11.0.8
-  OpenJDK 12.0.2
-  OpenJDK 13.0.2
-  OpenJDK 14.0.2
+  Red Hat Mandrel 11.0.11 (Mandrel 21.1.0 Final) 
+  Amazon Corretto 11.0.11+9.1
+  GraalVM LabsJDK 11.0.11+8 (GraalVM 21.1.0)
+  OpenJDK 11.0.11+9
+  OpenJDK 16.0.1
   Microsoft Build of OpenJDK (OpenJDK 11.0.10+9)
   ```
 
 
 ### 1. Download a JDK 11+ distribution
+
 OpenJDK distributions are available to download at [https://adoptopenjdk.net/releases.html](https://adoptopenjdk.net/releases.html).<br/>
 Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
-Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).
+Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).<br/>
+Microsoft OpenJDK releases are available at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download).
 
-After downloading and extracting the JDK distribution, point your JAVA_HOME variable to the JDK root.
+After downloading and extracting the JDK distribution, point your `JAVA_HOME` variable to the JDK root.
 
 Example:
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
- $ export JAVA_HOME=$PWD/amazon-corretto-11.0.9.11.1-linux-x64
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.11.9.1-linux-x64
 ```
 
 ### 2. Download TornadoVM

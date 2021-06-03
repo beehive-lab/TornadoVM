@@ -35,9 +35,6 @@ import java.util.Set;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.loop.InductionVariable;
-import org.graalvm.compiler.loop.LoopEx;
-import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.PhiNode;
@@ -45,6 +42,9 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.loop.InductionVariable;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext> {
 
@@ -67,7 +68,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
     private void autoParallelise(StructuredGraph graph) {
         if (graph.hasLoops()) {
-            final LoopsData data = new LoopsData(graph);
+            final LoopsData data = new TornadoLoopsData(graph);
             data.detectedCountedLoops();
 
             final List<LoopEx> loops = data.outerFirst();

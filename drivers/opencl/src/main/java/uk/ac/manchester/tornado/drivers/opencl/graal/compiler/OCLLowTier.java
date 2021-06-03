@@ -29,7 +29,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
-import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
@@ -75,7 +74,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         // TODO Investigate why FixReads break kfusion on Nvidia GPUs
         if (TornadoOptions.ENABLE_FIX_READS) {
-            appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
+            appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS), canonicalizer));
         }
 
         appendPhase(new AddressLoweringPhase(addressLowering));

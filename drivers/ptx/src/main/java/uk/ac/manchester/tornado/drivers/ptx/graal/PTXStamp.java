@@ -21,19 +21,20 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.spi.LIRKindTool;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
+
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class PTXStamp extends ObjectStamp {
 
@@ -41,11 +42,12 @@ public class PTXStamp extends ObjectStamp {
     private static final boolean EXACT_TYPE = true;
     private static final boolean NON_NULL = true;
     private static final boolean ALWAYS_NULL = false;
+    private static final boolean ALWAYS_ARRAY = false;
 
     private PTXKind kind;
 
     public PTXStamp(PTXKind kind) {
-        super(STAMP_TYPE, EXACT_TYPE, NON_NULL, ALWAYS_NULL);
+        super(STAMP_TYPE, EXACT_TYPE, NON_NULL, ALWAYS_NULL, ALWAYS_ARRAY);
         this.kind = kind;
     }
 
@@ -164,8 +166,4 @@ public class PTXStamp extends ObjectStamp {
         return this;
     }
 
-    @Override
-    protected ObjectStamp copyWith(ResolvedJavaType rjt, boolean bln, boolean bln1, boolean bln2) {
-        return this;
-    }
 }
