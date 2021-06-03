@@ -77,10 +77,12 @@ public class OCLCodeCache {
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
+    private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
     private String fpgaName;
     private String fpgaCompiler;
     private String compilationFlags;
     private String directoryBitstream;
+    private boolean isFPGAInAWS;
     public static String fpgaBinLocation;
     private String fpgaSourceDir;
 
@@ -140,12 +142,16 @@ public class OCLCodeCache {
         return token.startsWith("#");
     }
 
+    private String resolveFPGAConfigurationFileName() {
+        return (FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
+                : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
+    }
+
     private void parseFPGAConfigurationFile() {
         FileReader fileReader;
         BufferedReader bufferedReader;
         try {
-            fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
-                    : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
+            fileReader = new FileReader(resolveFPGAConfigurationFileName());
             bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
@@ -164,7 +170,7 @@ public class OCLCodeCache {
                             fpgaCompiler = tokenizer.nextToken(" =");
                             break;
                         case "DIRECTORY_BITSTREAM":
-                            directoryBitstream = resolveAbsoluteBitstreamDirectory(tokenizer.nextToken(" ="));
+                            directoryBitstream = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
                             fpgaBinLocation = directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
                             fpgaSourceDir = directoryBitstream;
                             break;
@@ -178,12 +184,18 @@ public class OCLCodeCache {
                                     break;
                                 } else if (flag.contains("-")) {
                                     if (compilationFlags == null) {
-                                        compilationFlags = flag;
+                                        compilationFlags = resolveCompilationFlags(tokenizer, buildFlags, flag);
                                     } else {
-                                        compilationFlags = buildFlags.append(compilationFlags).append(" ").append(flag).toString();
+                                        if (buildFlags.toString().isEmpty()) {
+                                            buildFlags.append(compilationFlags);
+                                        }
+                                        compilationFlags = resolveCompilationFlags(tokenizer, buildFlags.append(" "), flag);
                                     }
                                 }
                             }
+                            break;
+                        case "AWS_ENV":
+                            isFPGAInAWS = tokenizer.nextToken(" =").toLowerCase().equals("yes");
                             break;
                         default:
                             break;
@@ -195,6 +207,17 @@ public class OCLCodeCache {
             System.out.println("Wrong configuration file or invalid settings. Please ensure that you have configured the configuration file with valid options!");
             System.exit(1);
         }
+    }
+
+    private String resolveCompilationFlags(StringTokenizer tokenizer, StringBuilder buildFlags, String flag) {
+        String resolvedFlags;
+        if (flag.contains("--")) {
+            String fileString = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
+            resolvedFlags = buildFlags.append(flag).append(" ").append(fileString).toString();
+        } else {
+            resolvedFlags = buildFlags.append(flag).toString();
+        }
+        return resolvedFlags;
     }
 
     private void processPrecompiledBinaries() {
@@ -261,9 +284,16 @@ public class OCLCodeCache {
         }
     }
 
-    private String resolveAbsoluteBitstreamDirectory(String dir) {
+    private String resolveAbsoluteDirectory(String dir) {
         final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
-        return Paths.get(dir).isAbsolute() ? dir : (tornadoRoot + "/" + dir);
+        if (Paths.get(dir).isAbsolute()) {
+            if (!Files.exists(Paths.get(dir))) {
+                throw new TornadoRuntimeException("invalid directory: " + dir.toString());
+            }
+            return dir;
+        } else {
+            return (tornadoRoot + "/" + dir);
+        }
     }
 
     private void createOrReuseDirectory(Path dir) {
@@ -466,6 +496,10 @@ public class OCLCodeCache {
                 invokeShellCommand(compilationCommand);
                 invokeShellCommand(commandRename);
                 invokeShellCommand(linkCommand);
+                if (isFPGAInAWS) {
+                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream };
+                    invokeShellCommand(afiAWSCommand);
+                }
             }
             return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
         } else {

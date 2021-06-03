@@ -29,10 +29,10 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CLOSE_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.COLON;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.DEFAULT_CASE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.EXPR_DELIMITER;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FOR_LOOP;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.IF_STMT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.NOT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.OPEN_PARENTHESIS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STMT_DELIMITER;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SWITCH;
 
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -117,9 +117,9 @@ public class OCLControlFlow {
             asm.indent();
             asm.emitSymbol(FOR_LOOP);
             asm.emitSymbol(OPEN_PARENTHESIS);
+            asm.delimiter();
             asm.indentOff();
             asm.eolOff();
-            asm.setDelimiter(EXPR_DELIMITER);
         }
     }
 
@@ -133,37 +133,50 @@ public class OCLControlFlow {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            if (asm.getByte(asm.position() - 2) == ',') {
-                asm.emitString(" ", asm.position() - 2);
-            }
 
+            asm.delimiter();
             asm.emitSymbol(CLOSE_PARENTHESIS);
 
-            asm.setDelimiter(STMT_DELIMITER);
             asm.indentOn();
             asm.eolOn();
+
+            asm.eol();
+            asm.beginScope();
         }
     }
 
+    /**
+     * This instruction can generate different code depending on whether or not there are additional
+     * {@link org.graalvm.compiler.lir.LIRInstruction}s between the loop condition and the {@link LoopPostOp},
+     * respectively the {@link LoopInitOp}.
+     */
     public static class LoopConditionOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
         @Use
         private final Value condition;
 
+        private boolean generateIfBreakStatement = true;
+
         public LoopConditionOp(Value condition) {
             super(TYPE);
             this.condition = condition;
         }
 
+        public void setGenerateIfBreakStatement(boolean value) {
+            this.generateIfBreakStatement = value;
+        }
+
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            if (asm.getByte(asm.position() - 1) == ',') {
-                asm.emitString(" ", asm.position() - 1);
-            }
+            if (generateIfBreakStatement) {
+                asm.indent();
 
-            asm.setDelimiter(STMT_DELIMITER);
-            asm.delimiter();
+                asm.emitSymbol(IF_STMT);
+                asm.emitSymbol(OPEN_PARENTHESIS);
+                asm.emitSymbol(NOT);
+                asm.emitSymbol(OPEN_PARENTHESIS);
+            }
 
             if (condition instanceof OCLLIROp) {
                 ((OCLLIROp) condition).emit(crb, asm);
@@ -171,11 +184,22 @@ public class OCLControlFlow {
                 asm.emitValue(crb, condition);
             }
 
-            if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
+            if (condition.getPlatformKind() == OCLKind.INT) {
                 asm.emit(" == 1");
             }
-            asm.delimiter();
-            asm.setDelimiter(EXPR_DELIMITER);
+
+            if (generateIfBreakStatement) {
+                asm.emitSymbol(CLOSE_PARENTHESIS);
+                asm.emitSymbol(CLOSE_PARENTHESIS);
+                asm.eol();
+
+                asm.beginScope();
+                asm.indent();
+                asm.emitSymbol(BREAK);
+                asm.delimiter();
+                asm.eol();
+                asm.endScope();
+            }
         }
     }
 
