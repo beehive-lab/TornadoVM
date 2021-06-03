@@ -36,8 +36,8 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
     private SPIRVUnary.CastOperations resolveOp(LIRKind lirKind, Value value) {
         switch (op) {
             case I2F:
-                return new SPIRVUnary.CastIToFloat(lirKind, value);
             case I2D:
+                return new SPIRVUnary.CastIToFloat(lirKind, value);
             case F2D:
             case L2D:
             case D2L:
