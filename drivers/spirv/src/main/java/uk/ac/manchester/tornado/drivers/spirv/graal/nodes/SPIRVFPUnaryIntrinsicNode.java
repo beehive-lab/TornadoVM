@@ -132,8 +132,29 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         Value input = builder.operand(getValue());
         Value result;
         switch (operation()) {
+            case FABS:
+                result = gen.genFloatAbs(input);
+                break;
+            case EXP:
+                result = gen.genFloatExp(input);
+                break;
+            case SQRT:
+                result = gen.genFloatSqrt(input);
+                break;
+            case FLOOR:
+                result = gen.genFloatFloor(input);
+                break;
+            case LOG:
+                result = gen.genFloatLog(input);
+                break;
             case COS:
                 result = gen.genFloatCos(input);
+                break;
+            case SIN:
+                result = gen.genFloatSin(input);
+                break;
+            case TAN:
+                result = gen.genFloatTan(input);
                 break;
             default:
                 throw new RuntimeException("Operation not supported");
@@ -155,6 +176,12 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
                 return Math.floor(value);
             case LOG:
                 return Math.log(value);
+            case COS:
+                return Math.cos(value);
+            case SIN:
+                return Math.sin(value);
+            case TAN:
+                return Math.tan(value);
             default:
                 throw new TornadoInternalError("unable to compute op %s", op);
         }
@@ -172,9 +199,14 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
                 return (float) Math.floor(value);
             case LOG:
                 return (float) Math.log(value);
+            case COS:
+                return (float) Math.cos(value);
+            case SIN:
+                return (float) Math.sin(value);
+            case TAN:
+                return (float) Math.tan(value);
             default:
                 throw new TornadoInternalError("unable to compute op %s", op);
         }
     }
-
 }

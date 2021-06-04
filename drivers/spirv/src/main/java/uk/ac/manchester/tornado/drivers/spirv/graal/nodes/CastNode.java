@@ -15,7 +15,6 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
-import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
 
 @NodeInfo(shortName = "SPIRVCastNode")
@@ -38,15 +37,15 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
             case I2F:
             case I2D:
                 return new SPIRVUnary.CastIToFloat(lirKind, value);
+            case D2F:
             case F2D:
+                return new SPIRVUnary.CastFloatDouble(lirKind, value);
             case L2D:
             case D2L:
             case F2L:
             default:
-                TornadoUnsupportedError.unsupported("Conversion Cast Operation unimplemented: ", op.toString());
-                break;
+                throw new RuntimeException("Conversion Cast Operation unimplemented: " + op);
         }
-        return null;
     }
 
     @Override

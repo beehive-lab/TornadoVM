@@ -5,6 +5,10 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIn
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMIN;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.POW;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.COS;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.EXP;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.LOG;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.SIN;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.SQRT;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation.MAX;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation.MIN;
 
@@ -77,7 +81,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        // TODO Regiter unary intrinsics
+        // TODO Register unary intrinsics
 
     }
 
@@ -90,6 +94,14 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
+        r.register1("sin", Double.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SIN, JavaKind.Double)));
+                return true;
+            }
+        });
+
         r.register1("cos", Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
@@ -97,6 +109,30 @@ public class SPIRVGraphBuilderPlugins {
                 return true;
             }
         });
+        r.register1("log", Double.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, LOG, JavaKind.Double)));
+                return true;
+            }
+        });
+
+        r.register1("sqrt", Double.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SQRT, JavaKind.Double)));
+                return true;
+            }
+        });
+
+        r.register1("exp", Double.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, EXP, JavaKind.Double)));
+                return true;
+            }
+        });
+
     }
 
     // FIXME: Revisit this method. In SPIR-V we can avoid this compiler Internal.

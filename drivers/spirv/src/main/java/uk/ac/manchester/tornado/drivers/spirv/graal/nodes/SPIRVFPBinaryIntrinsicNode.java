@@ -148,7 +148,7 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
         SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGen).getGen().getSpirvBuiltinTool();
 
         Value x = builder.operand(getX());
-        Value y = builder.operand(getX());
+        Value y = builder.operand(getY());
         Value result;
         switch (operation()) {
             case FMIN:
@@ -159,6 +159,7 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
                 break;
             case POW:
                 result = gen.genFloatPow(x, y);
+                break;
             default:
                 throw new RuntimeException("Math operation not supported yet");
         }

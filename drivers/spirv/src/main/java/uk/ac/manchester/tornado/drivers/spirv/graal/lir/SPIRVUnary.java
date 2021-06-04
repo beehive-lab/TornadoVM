@@ -11,6 +11,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSConvert;
@@ -462,6 +463,44 @@ public class SPIRVUnary {
         }
     }
 
+    public static class CastFloatDouble extends CastOperations {
+
+        public CastFloatDouble(LIRKind lirKind, Value inputVal) {
+            super(null, lirKind, inputVal);
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpFConvert");
+
+            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+            if (spirvKind == SPIRVKind.OP_TYPE_FLOAT_32) {
+                spirvKind = SPIRVKind.OP_TYPE_FLOAT_64;
+            } else {
+                spirvKind = SPIRVKind.OP_TYPE_FLOAT_32;
+            }
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId param = asm.lookUpLIRInstructions(value);
+
+            SPIRVId loadConvert = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadConvert, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            // OpSConvert
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpFConvert(type, result, loadConvert));
+
+            asm.registerLIRInstructionValue(this, result);
+        }
+    }
+
     public static class Intrinsic extends UnaryConsumer {
 
         /**
@@ -477,7 +516,7 @@ public class SPIRVUnary {
             ACOSPI("acospi", 2),
             ASIN("asin", 3),
             ASINH("asinh", 4),
-            ASINP("asinp", 5),
+            ASINPI("asinpi", 5),
             ATAN("atan", 6),
             ATAN2("atan2", 7),
             ATANH("atanh", 8),
@@ -487,6 +526,29 @@ public class SPIRVUnary {
             CEIL("ceil", 12),
             COPYSIGN("copysign", 13),
             COS("cos", 14),
+            COSH("cosh", 15),
+            COSPI("cospi", 16),
+            ERFC("erfc", 17),
+            ERF("erf", 18),
+            EXP("exp", 19),
+            EXP2("exp2", 20),
+            EXP10("exp10", 21),
+            EXPM1("expm1", 22),
+            FABS("FABS", 23),
+            FLOOR("floor", 25),
+            FMAX("fmax", 27),
+            FMIN("fmin", 28),
+            FMOD("fmod", 29),
+            HYPOT("hypot", 32),
+            LOG("log", 37),
+            LOG2("log2", 38),
+            LOG10("log10", 39),
+            POW("pow", 48),
+            RSQRT("rsqrt", 56),
+            SIN("sin", 57),
+            SQRT("sqrt", 61),
+            TAN("tan", 62),
+            TANH("tanh", 63),
             NATIVE_COS("native_cos", 81);  // Optimization
 
             int value;
@@ -496,11 +558,11 @@ public class SPIRVUnary {
                 this.value = value;
             }
 
-            String getName() {
+            public String getName() {
                 return this.name;
             }
 
-            int getValue() {
+            public int getValue() {
                 return this.value;
             }
         }
@@ -517,7 +579,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            System.out.println("GENERARTING:::::::: + COS : " + builtIn);
+            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger: " + builtIn.name);
 
             SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
             SPIRVId input = asm.lookUpLIRInstructions(value);
