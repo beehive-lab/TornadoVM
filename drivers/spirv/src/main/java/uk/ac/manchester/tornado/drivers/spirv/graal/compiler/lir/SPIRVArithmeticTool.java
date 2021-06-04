@@ -146,7 +146,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
-        return null;
+        SPIRVLogger.traceBuildLIR("emitRem: %s MOD %s", a, b);
+        return emitBinaryAssign(SPIRVBinaryOp.INTEGER_REM, LIRKind.combine(a, b), a, b);
     }
 
     @Override

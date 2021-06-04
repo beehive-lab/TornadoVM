@@ -6,6 +6,7 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIn
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.POW;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.COS;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.EXP;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.FABS;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.LOG;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.SIN;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.SQRT;
@@ -51,7 +52,9 @@ public class SPIRVGraphBuilderPlugins {
         // We have to overwrite some of standard math plugins
         r.setAllowOverwrite(true);
         registerOpenCLOverridesForType(r, Float.TYPE, JavaKind.Float);
-
+        registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);
+        registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);
+        registerOpenCLOverridesForType(r, Long.TYPE, JavaKind.Long);
         registerFPIntrinsics(r);
 
     }
@@ -81,8 +84,15 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        // TODO Register unary intrinsics
-
+        r.register1("abs", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                if (kind.isNumericFloat()) {
+                    b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, FABS, kind)));
+                }
+                return true;
+            }
+        });
     }
 
     private static void registerFPIntrinsics(Registration r) {

@@ -240,12 +240,12 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatMax(Value x, Value y) {
         SPIRVLogger.traceBuildLIR("gen: min(%s,%s)", x, y);
-        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMAX, null, LIRKind.combine(x, y), x, y);
+        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMAX, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatMin(Value x, Value y) {
         SPIRVLogger.traceBuildLIR("gen: min(%s,%s)", x, y);
-        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMIN, null, LIRKind.combine(x, y), x, y);
+        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMIN, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatMod(Value x, Value y) {
@@ -300,7 +300,7 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatPow(Value x, Value y) {
         SPIRVLogger.traceBuildLIR("genFloatPow: pow(%s,%s)", x, y);
-        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.POW, null, LIRKind.combine(x, y), x, y);
+        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.POW, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatPown(Value x, Value y) {

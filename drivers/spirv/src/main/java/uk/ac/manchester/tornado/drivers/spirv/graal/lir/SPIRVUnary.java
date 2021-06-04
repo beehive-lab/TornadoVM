@@ -544,6 +544,7 @@ public class SPIRVUnary {
             LOG2("log2", 38),
             LOG10("log10", 39),
             POW("pow", 48),
+            REMAINDER("remainder", 51),
             RSQRT("rsqrt", 56),
             SIN("sin", 57),
             SQRT("sqrt", 61),

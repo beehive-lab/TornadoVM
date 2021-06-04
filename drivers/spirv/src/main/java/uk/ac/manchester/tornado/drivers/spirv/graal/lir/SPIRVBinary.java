@@ -117,7 +117,7 @@ public class SPIRVBinary {
 
         private SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn;
 
-        protected Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn, SPIRVBinaryOp instruction, LIRKind valueKind, Value x, Value y) {
+        public Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn, LIRKind valueKind, Value x, Value y) {
             super(null, valueKind, x, y);
             this.builtIn = builtIn;
         }
