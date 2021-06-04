@@ -462,17 +462,32 @@ public class SPIRVUnary {
         }
     }
 
-    /**
-     * For obtaining the correct Int-Reference of the function:
-     * 
-     * https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html
-     * 
-     * 
-     */
     public static class Intrinsic extends UnaryConsumer {
 
+        /**
+         * For obtaining the correct Int-Reference of the function:
+         *
+         * https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html
+         *
+         */
+        // @formatter:off
         public enum OpenCLIntrinsic {
-            COS("cos", 14);
+            ACOS("acos", 0),
+            ACOSH("acosh", 1),
+            ACOSPI("acospi", 2),
+            ASIN("asin", 3),
+            ASINH("asinh", 4),
+            ASINP("asinp", 5),
+            ATAN("atan", 6),
+            ATAN2("atan2", 7),
+            ATANH("atanh", 8),
+            ATANPI("atanpi", 9),
+            ATAN2PI("atan2pi", 10),
+            CBRT("cbrt", 11),
+            CEIL("ceil", 12),
+            COPYSIGN("copysign", 13),
+            COS("cos", 14),
+            NATIVE_COS("native_cos", 81);  // Optimization
 
             int value;
             String name;
@@ -489,6 +504,7 @@ public class SPIRVUnary {
                 return this.value;
             }
         }
+        // @formatter:on
 
         public static final String COS = "cos";
         final private OpenCLIntrinsic builtIn;

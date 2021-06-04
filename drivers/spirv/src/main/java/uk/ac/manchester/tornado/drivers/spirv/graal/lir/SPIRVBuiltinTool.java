@@ -68,7 +68,7 @@ public class SPIRVBuiltinTool {
     // FIXME: REVISIT
     public Value genFloatCos(Value input) {
         SPIRVLogger.traceBuildLIR("genCos: cos(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.COS, LIRKind.value(input.getPlatformKind()), input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.NATIVE_COS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCosh(Value input) {
