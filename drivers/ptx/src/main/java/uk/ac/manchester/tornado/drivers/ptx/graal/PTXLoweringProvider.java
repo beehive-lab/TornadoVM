@@ -21,16 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
@@ -78,25 +72,37 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
+
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXWriteNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
-
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -109,7 +115,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private PTXGPUReduceSnippets.Templates GPUReduceSnippets;
 
-    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
+    public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
+            ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
@@ -180,6 +187,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
+    public boolean supportsRounding() {
+        return false;
+    }
+
+    @Override
     public void lower(Node node, LoweringTool tool) {
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
@@ -207,6 +219,12 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof InstanceOfNode) {
             // ignore InstanceOfNode nodes
+        } else if (node instanceof ThreadIdFixedWithNextNode) {
+            lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
+        } else if (node instanceof ThreadLocalIdFixedWithNextNode) {
+            lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
+        } else if (node instanceof GetGroupIdFixedWithNextNode) {
+            lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -333,6 +351,25 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
+    private void lowerThreadIdNode(ThreadIdFixedWithNextNode threadIdNode) {
+        StructuredGraph graph = threadIdNode.graph();
+
+        GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
+    }
+
+    private void lowerLocalThreadIdNode(ThreadLocalIdFixedWithNextNode threadLocalIdNode) {
+        StructuredGraph graph = threadLocalIdNode.graph();
+        LocalThreadIdNode localThreadIdNode = graph.addOrUnique(new LocalThreadIdNode(ConstantNode.forInt(threadLocalIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadLocalIdNode, localThreadIdNode);
+    }
+
+    private void lowerGetGroupIdNode(GetGroupIdFixedWithNextNode getGroupIdNode) {
+        StructuredGraph graph = getGroupIdNode.graph();
+        GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
+    }
+
     @Override
     protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool) {
         StructuredGraph graph = arrayLengthNode.graph();
@@ -344,7 +381,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
+    public void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
         JavaKind elementKind = loadIndexed.elementKind();
         AddressNode address;
@@ -364,7 +401,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
+    public void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
         ValueNode value = storeIndexed.value();

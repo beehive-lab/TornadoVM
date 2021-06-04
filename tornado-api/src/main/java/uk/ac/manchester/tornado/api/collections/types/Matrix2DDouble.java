@@ -205,7 +205,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     public String toString() {
         String result = String.format("MatrixDouble <%d x %d>", M, N);
         if (M < 16 && N < 16) {
-            result += "\n" + toString(DoubleOps.fmt);
+            result += "\n" + toString(DoubleOps.FMT);
         }
         return result;
     }

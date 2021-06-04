@@ -23,7 +23,26 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.loop.InductionVariable;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopsData;
+import org.graalvm.compiler.phases.BasePhase;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
+import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
+import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -32,26 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.loop.InductionVariable;
-import org.graalvm.compiler.loop.LoopEx;
-import org.graalvm.compiler.loop.LoopsData;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.phases.BasePhase;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
-import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
-import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -111,7 +111,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         });
 
         if (graph.hasLoops()) {
-            final LoopsData data = new LoopsData(graph);
+            final LoopsData data = new TornadoLoopsData(graph);
             data.detectedCountedLoops();
             int loopIndex = 0;
             final List<LoopEx> loops = data.outerFirst();

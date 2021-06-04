@@ -21,6 +21,7 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+--add-opens java.base/java.lang=tornado.drivers.opencl
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.opencl
@@ -64,7 +65,7 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.opencl
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.loop=tornado.drivers.opencl
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.drivers.opencl
@@ -86,3 +87,4 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.opencl
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.opencl

@@ -2,9 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +37,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -60,6 +57,7 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -105,6 +103,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     }
 
     private static DebugContext debugContext = null;
+
     public static DebugContext getDebugContext() {
         if (debugContext == null) {
             debugContext = new DebugContext.Builder(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider())).build();
@@ -147,7 +146,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
         vmBackend = vmRuntime.getHostJVMCIBackend();
-        vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore());
+        vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
         drivers = loadDrivers();
     }
 
@@ -161,13 +160,14 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
         List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().collect(Collectors.toList());
-        drivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
+        TornadoAcceleratorDriver[] drivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
-                drivers[index] = provider.createDriver(options, vmRuntime, vmConfig);
-                if (drivers[index] != null) {
+                TornadoAcceleratorDriver driver = provider.createDriver(options, vmRuntime, vmConfig);
+                if (driver != null) {
+                    drivers[index] = driver;
                     index++;
                 }
             }
@@ -191,7 +191,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     @Override
     public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {
         for (int driverIndex = 0; driverIndex < drivers.length; driverIndex++) {
-            if (drivers[driverIndex].getClass() == driverClass) {
+            if (drivers[driverIndex] != null && drivers[driverIndex].getClass() == driverClass) {
                 return driverIndex;
             }
         }
@@ -228,6 +228,11 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
             }
         }
         return null;
+    }
+
+    @Override
+    public TornadoVMBackend getBackendType(int index) {
+        return drivers[index].getBackendType();
     }
 
     @Override

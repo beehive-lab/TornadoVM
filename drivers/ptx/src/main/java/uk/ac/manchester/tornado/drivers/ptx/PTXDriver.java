@@ -29,6 +29,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXHotSpotBackendFactory;
@@ -39,7 +40,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-public class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+public final class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver {
 
     private final PTXBackend[] backends;
 
@@ -129,6 +130,11 @@ public class PTXDriver extends TornadoLogger implements TornadoAcceleratorDriver
     @Override
     public String getName() {
         return "PTX";
+    }
+
+    @Override
+    public TornadoVMBackend getBackendType() {
+        return TornadoVMBackend.PTX;
     }
 
     @Override

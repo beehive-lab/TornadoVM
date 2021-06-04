@@ -73,6 +73,11 @@ public class TornadoOptions {
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", "True");
 
     /**
+     * Enable/Disable Fix Reads Optimization. True by default.
+     */
+    public static final boolean ENABLE_FIX_READS = getBooleanValue("tornado.enable.fix.reads", "True");
+
+    /**
      * Enable/Disable events dumping on program finish. False by default.
      */
     public final static boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", "False"));
@@ -159,6 +164,12 @@ public class TornadoOptions {
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
 
     /**
+     * It enables automatic discovery and parallelisation of loops.
+     * Please note that this option is experimental and may cause issues if enabled.
+     */
+    public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", "False");
+
+    /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
      *
@@ -173,8 +184,13 @@ public class TornadoOptions {
     }
 
     /**
-     * Full Inlining Policy with the TornadoVM JIT compiler
+     * Full Inlining Policy with the TornadoVM JIT compiler. Default is False.
      */
     public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", "False");;
+
+    /**
+     * It enables inlining during Java bytecode parsing. Default is False.
+     */
+    public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", "False");
 
 }

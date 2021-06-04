@@ -30,12 +30,16 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.util.Arrays;
+
 public abstract class OCLKernelScheduler {
 
     protected final OCLDeviceContext deviceContext;
 
     protected double min;
     protected double max;
+
+    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(OCLFPGAScheduler.LOCAL_WORK_SIZE) + ".";
 
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
@@ -60,6 +64,10 @@ public abstract class OCLKernelScheduler {
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
             // Register the time for the task
             meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
         }
     }
 
@@ -89,12 +97,18 @@ public abstract class OCLKernelScheduler {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());
         long[] local = grid.getLocalWork();
         if (local != null) {
-            OCLGridInfo gridInfo = new OCLGridInfo(deviceContext.getDevice(), local);
+            OCLGridInfo gridInfo = new OCLGridInfo(deviceContext, local);
             boolean checkedDimensions = gridInfo.checkGridDimensions();
             if (!checkedDimensions) {
-                System.out.println(WARNING_THREAD_LOCAL);
-                grid.setLocalWorkToNull();
-                grid.setNumberOfWorkgroupsToNull();
+                if (deviceContext.isPlatformFPGA()) {
+                    System.out.println(WARNING_FPGA_THREAD_LOCAL);
+                    grid.setLocalWork(64, 1, 1);
+                    grid.setNumberOfWorkgroupsToNull();
+                } else {
+                    System.out.println(WARNING_THREAD_LOCAL);
+                    grid.setLocalWorkToNull();
+                    grid.setNumberOfWorkgroupsToNull();
+                }
             }
         }
     }

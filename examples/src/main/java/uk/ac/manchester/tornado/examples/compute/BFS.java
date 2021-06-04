@@ -39,17 +39,20 @@ public class BFS {
 
     private static final boolean BIDIRECTIONAL = false;
     private static final boolean PRINT_SOLUTION = false;
+    private static final boolean VALIDATION = true;
 
     int[] vertices;
+    int[] verticesJava;
     int[] adjacencyMatrix;
     int[] modify;
+    int[] modifyJava;
     int[] currentDepth;
 
     public static final boolean SAMPLE = false;
 
     /**
-     * Set to one the connection between node from and node to into the
-     * adjacency matrix.
+     * Set to one the connection between node from and node to into the adjacency
+     * matrix.
      *
      * @param from
      * @param to
@@ -139,10 +142,32 @@ public class BFS {
         }
     }
 
+    public boolean validateBFS(int[] vertices, int[] verticesJava) {
+        boolean check = true;
+        for (int i = 0; i < vertices.length; i++) {
+            if (vertices[i] != verticesJava[i]) {
+                check = false;
+            }
+        }
+        return check;
+    }
+
+    public boolean checkModify(int[] modify, int[] modifyJava) {
+        boolean check = true;
+        for (int i = 0; i < modify.length; i++) {
+            if (modify[i] != modifyJava[i]) {
+                check = false;
+            }
+        }
+        return check;
+    }
+
     public void tornadoBFS(int rootNode, int numNodes) throws IOException {
 
         vertices = new int[numNodes];
+        verticesJava = new int[numNodes];
         adjacencyMatrix = new int[numNodes * numNodes];
+        boolean validModifyResults = true;
 
         if (SAMPLE) {
             initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
@@ -156,8 +181,14 @@ public class BFS {
         s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
         s0.streamOut(vertices).execute();
 
+        // initialization of Java vertices
+        initializeVertices(numNodes, verticesJava, rootNode);
+
         modify = new int[] { 1 };
         Arrays.fill(modify, 1);
+
+        modifyJava = new int[] { 1 };
+        Arrays.fill(modifyJava, 1);
 
         currentDepth = new int[] { 0 };
 
@@ -173,10 +204,16 @@ public class BFS {
             // 2. Parallel BFS
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
-            // runBFS(vertices, adjacencyMatrix, numNodes, modify,
-            // currentDepth);
+            runBFS(verticesJava, adjacencyMatrix, numNodes, modifyJava, currentDepth);
             s1.execute();
             currentDepth[0]++;
+
+            if (VALIDATION) {
+                if (!(validModifyResults = checkModify(modify, modifyJava))) {
+                    break;
+                }
+            }
+
             for (int i = 0; i < modify.length; i++) {
                 if (modify[i] == 0) {
                     allDone &= false;
@@ -188,10 +225,19 @@ public class BFS {
                 done = true;
             }
             Arrays.fill(modify, 1);
+            Arrays.fill(modifyJava, 1);
         }
 
         if (PRINT_SOLUTION) {
             System.out.println("Solution: " + Arrays.toString(vertices));
+        }
+
+        if (VALIDATION) {
+            if (validateBFS(vertices, verticesJava) && validModifyResults) {
+                System.out.println("Validation true");
+            } else {
+                System.out.println("Validation false");
+            }
         }
     }
 

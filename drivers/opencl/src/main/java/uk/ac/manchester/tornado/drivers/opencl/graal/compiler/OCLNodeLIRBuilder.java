@@ -159,9 +159,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         Value[] parameters = visitInvokeArguments(invokeCc, callTarget.arguments());
 
-        LabelRef exceptionEdge = null;
-        LIRFrameState callState = stateWithExceptionEdge(x, exceptionEdge);
-
+        LIRFrameState callState = null;
         if (callTarget instanceof DirectCallTargetNode) {
             emitDirectCall((DirectCallTargetNode) callTarget, result, parameters, AllocatableValue.NONE, callState);
         } else if (callTarget instanceof IndirectCallTargetNode) {
@@ -617,11 +615,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             }
         } else {
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
-            int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
-                setResult(param, new OCLNullary.Parameter(locals[index].getName(), lirKind));
-                index++;
+                setResult(param, new OCLNullary.Parameter(locals[param.index()].getName(), lirKind));
             }
         }
     }

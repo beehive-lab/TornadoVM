@@ -22,6 +22,7 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -32,6 +33,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
@@ -49,7 +51,7 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
  * The terminology used in this class refers to the OpenCL Programming Model.
  */
 @NodeInfo
-public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {
+public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray, MemoryKill {
 
     public static final NodeClass<LocalArrayNode> TYPE = NodeClass.create(LocalArrayNode.class);
 
@@ -66,6 +68,14 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.length = length;
         this.kind = PTXKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = PTXKind.resolveTemplateType(elementType);
+    }
+
+    public LocalArrayNode(PTXMemoryBase memoryRegister, JavaKind elementKind, ConstantNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.kind = PTXKind.fromResolvedJavaKind(elementKind);
+        this.arrayTemplate = PTXKind.resolveTemplateType(elementKind);
     }
 
     public PTXMemoryBase getMemoryRegister() {

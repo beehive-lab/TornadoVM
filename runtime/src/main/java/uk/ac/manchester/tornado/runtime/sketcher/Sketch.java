@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -26,26 +26,29 @@
 package uk.ac.manchester.tornado.runtime.sketcher;
 
 import org.graalvm.compiler.graph.CachedGraph;
-
-import org.graalvm.compiler.nodes.StructuredGraph;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.api.common.Access;
 
 public class Sketch {
 
     private final CachedGraph<?> graph;
-    private final TaskMetaData meta;
 
-    Sketch(CachedGraph<?> graph, TaskMetaData meta) {
+    /**
+     * Argument accesses of the {@link #graph}.
+     * If arguments escape to callees, it will contain the updated accesses based on what the non-inlined methods do.
+     */
+    private final Access[] argumentsAccess;
+
+    Sketch(CachedGraph<?> graph, Access[] argumentAccesses) {
         this.graph = graph;
-        this.meta = meta;
+        this.argumentsAccess = argumentAccesses;
     }
 
     public CachedGraph<?> getGraph() {
         return graph;
     }
 
-    public TaskMetaData getMeta() {
-        return meta;
+    public Access[] getArgumentsAccess() {
+        return argumentsAccess;
     }
 
 }

@@ -23,6 +23,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.backend;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
@@ -194,7 +195,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
-        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, options, compilationResult);
+        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);
@@ -221,7 +222,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         emitPrintfPrototype(crb);
         if (crb.isKernel()) {
             emitKernelFunction(asm, crb.compilationResult.getName());
-            emitParamVariableDefs(asm, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
         } else {
             emitFunctionHeader(asm, method, lirGenRes);
@@ -289,18 +289,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     private void emitKernelFunction(PTXAssembler asm, String methodName) {
         asm.emitLine("%s %s %s(%s) {", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, methodName, architecture.getABI());
-    }
-
-    private void emitParamVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
-        Map<PTXKind, Set<Variable>> kindToVariable = lirGenRes.getParamTable();
-
-        for (PTXKind type : kindToVariable.keySet()) {
-            Set<Variable> vars = kindToVariable.get(type);
-            if (vars.size() != 0) {
-                asm.emitLine("\t.param .%s %sParam<%d>;", type, type.getRegisterTypeString(), vars.size() + 1);
-            }
-        }
-
     }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {

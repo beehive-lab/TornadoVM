@@ -1,0 +1,139 @@
+/*
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.runtime.graal.phases;
+
+import java.util.ArrayList;
+
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.extended.UnboxNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.phases.BasePhase;
+
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
+
+/**
+ * The {@link TornadoKernelContextReplacement} phase is performed during
+ * {@link uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier}.
+ * The objective is to replace all the FieldNodes of the {@link KernelContext}
+ * fields with FloatingNodes that can be lowered to TornadoVM nodes for OpenCL
+ * and PTX code emission.
+ */
+public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
+
+    private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, Node node, Node newNode) {
+        for (Node n : node.successors()) {
+            for (Node input : n.inputs()) { // This should be NullNode
+                input.safeDelete();
+            }
+            for (Node usage : n.usages()) { // This should be PiNode
+                usage.safeDelete();
+            }
+            n.replaceAtPredecessor(n.successors().first());
+            n.safeDelete();
+        }
+
+        Node unboxNode = node.successors().first();
+        if (unboxNode instanceof UnboxNode) {
+            unboxNode.replaceAtUsages(node);
+            node.replaceFirstSuccessor(unboxNode, unboxNode.successors().first());
+            unboxNode.safeDelete();
+        }
+
+        graph.addWithoutUnique(newNode);
+        newNode.replaceFirstSuccessor(null, node.successors().first());
+        node.replaceAtUsages(newNode);
+        node.replaceAtPredecessor(newNode);
+        nodesToBeRemoved.add(node);
+    }
+
+    private void introduceKernelContext(StructuredGraph graph) {
+        ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
+        graph.getNodes().filter(LoadFieldNode.class).forEach((node) -> {
+            if (node instanceof LoadFieldNode) {
+                String field = node.field().format("%H.%n");
+                if (field.contains("KernelContext.globalId")) {
+                    ThreadIdFixedWithNextNode threadIdNode;
+                    if (field.contains("globalIdx")) {
+                        threadIdNode = new ThreadIdFixedWithNextNode(node.getValue(), 0);
+                    } else if (field.contains("globalIdy")) {
+                        threadIdNode = new ThreadIdFixedWithNextNode(node.getValue(), 1);
+                    } else if (field.contains("globalIdz")) {
+                        threadIdNode = new ThreadIdFixedWithNextNode(node.getValue(), 2);
+                    } else {
+                        throw new TornadoRuntimeException("Unrecognized dimension");
+                    }
+
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, threadIdNode);
+                } else if (field.contains("KernelContext.localId")) {
+                    ThreadLocalIdFixedWithNextNode threadLocalIdNode;
+                    if (field.contains("localIdx")) {
+                        threadLocalIdNode = new ThreadLocalIdFixedWithNextNode(node.getValue(), 0);
+                    } else if (field.contains("localIdy")) {
+                        threadLocalIdNode = new ThreadLocalIdFixedWithNextNode(node.getValue(), 1);
+                    } else if (field.contains("localIdz")) {
+                        threadLocalIdNode = new ThreadLocalIdFixedWithNextNode(node.getValue(), 2);
+                    } else {
+                        throw new TornadoRuntimeException("Unrecognized dimension");
+                    }
+
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, threadLocalIdNode);
+                } else if (field.contains("KernelContext.groupId")) {
+                    GetGroupIdFixedWithNextNode groupIdNode;
+                    if (field.contains("groupIdx")) {
+                        groupIdNode = new GetGroupIdFixedWithNextNode(node.getValue(), 0);
+                    } else if (field.contains("groupIdy")) {
+                        groupIdNode = new GetGroupIdFixedWithNextNode(node.getValue(), 1);
+                    } else if (field.contains("groupIdz")) {
+                        groupIdNode = new GetGroupIdFixedWithNextNode(node.getValue(), 2);
+                    } else {
+                        throw new TornadoRuntimeException("Unrecognized dimension");
+                    }
+
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, groupIdNode);
+                } else {
+                    return;
+                }
+            }
+        });
+
+        nodesToBeRemoved.forEach(node -> {
+            node.clearSuccessors();
+            node.clearInputs();
+            node.safeDelete();
+        });
+
+    }
+
+    public void execute(StructuredGraph graph, TornadoSketchTierContext context) {
+        run(graph, context);
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        introduceKernelContext(graph);
+    }
+}

@@ -173,7 +173,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        return toString(DoubleOps.fmt6);
+        return toString(DoubleOps.FMT_6);
     }
 
     public static Double6 loadFromArray(final double[] array, int index) {

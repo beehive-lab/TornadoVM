@@ -14,11 +14,11 @@ __kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base,
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
 {
-  bool z_27, z_19;
-  float f_28, f_11, f_20, f_22, f_23;
-  ulong ul_1, ul_0, ul_10, ul_34;
-  int i_16, i_17, i_14, i_15, i_12, i_13, i_6, i_4, i_5, i_3, i_35, i_30, i_29, i_26, i_24, i_25, i_21, i_18;
-  long l_8, l_7, l_9, l_32, l_31, l_33;
+  long l_31, l_29, l_30, l_7, l_8, l_9;
+  ulong ul_10, ul_1, ul_0, ul_32;
+  int i_5, i_6, i_33, i_3, i_4, i_13, i_14, i_15, i_16, i_12, i_22, i_23, i_24, i_19, i_27, i_28;
+  bool z_17, z_25;
+  float f_20, f_18, f_11, f_26, f_21;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -26,7 +26,7 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
   // BLOCK 0
   ul_0  =  (ulong) _frame[3];
   ul_1  =  (ulong) _frame[4];
-  __local float ul_2[1024];
+  __local float f_2[1024];
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
@@ -39,7 +39,7 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
     l_9  =  l_8 + 24L;
     ul_10  =  ul_0 + l_9;
     f_11  =  *((__global float *) ul_10);
-    ul_2[i_5]  =  f_11;
+    f_2[i_5]  =  f_11;
     i_12  =  i_6 >> 31;
     i_13  =  i_12 + i_6;
     i_14  =  i_13 >> 1;
@@ -48,52 +48,50 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
     for(;i_15 >= 1;)    {
       // BLOCK 8
       barrier(CLK_LOCAL_MEM_FENCE);
-      i_16  =  i_15 >> 31;
-      i_17  =  i_16 + i_15;
-      i_18  =  i_17 >> 1;
-      z_19  =  i_5 < i_15;
-      if(z_19)
+      i_16  =  i_15 >> 1;
+      z_17  =  i_5 < i_15;
+      if(z_17)
       {
         // BLOCK 9
-        f_20  =  ul_2[i_5];
-        i_21  =  i_15 + i_5;
-        f_22  =  ul_2[i_21];
-        f_23  =  fmax(f_20, f_22);
-        ul_2[i_5]  =  f_23;
-        f_20  =  f_23;
+        f_18  =  f_2[i_5];
+        i_19  =  i_15 + i_5;
+        f_20  =  f_2[i_19];
+        f_21  =  fmax(f_18, f_20);
+        f_2[i_5]  =  f_21;
+        f_18  =  f_21;
       }  // B9
       else
       {
         // BLOCK 10
       }  // B10
       // BLOCK 11 MERGES [10 9 ]
-      i_24  =  i_18;
-      i_15  =  i_24;
+      i_22  =  i_16;
+      i_15  =  i_22;
     }  // B11
     // BLOCK 4
     barrier(CLK_GLOBAL_MEM_FENCE);
-    i_25  =  get_global_size(0);
-    i_26  =  i_25 + i_4;
-    z_27  =  i_5 == 0;
-    if(z_27)
+    i_23  =  get_global_size(0);
+    i_24  =  i_23 + i_4;
+    z_25  =  i_5 == 0;
+    if(z_25)
     {
       // BLOCK 5
-      f_28  =  ul_2[0];
-      i_29  =  get_group_id(0);
-      i_30  =  i_29 + 1;
-      l_31  =  (long) i_30;
-      l_32  =  l_31 << 2;
-      l_33  =  l_32 + 24L;
-      ul_34  =  ul_1 + l_33;
-      *((__global float *) ul_34)  =  f_28;
+      f_26  =  f_2[0];
+      i_27  =  get_group_id(0);
+      i_28  =  i_27 + 1;
+      l_29  =  (long) i_28;
+      l_30  =  l_29 << 2;
+      l_31  =  l_30 + 24L;
+      ul_32  =  ul_1 + l_31;
+      *((__global float *) ul_32)  =  f_26;
     }  // B5
     else
     {
       // BLOCK 6
     }  // B6
     // BLOCK 7 MERGES [6 5 ]
-    i_35  =  i_26;
-    i_4  =  i_35;
+    i_33  =  i_24;
+    i_4  =  i_33;
   }  // B7
   // BLOCK 12
   return;
@@ -103,8 +101,8 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
 {
-  float f_2, f_24, f_25, f_26, f_20, f_21, f_22, f_23, f_16, f_18, f_19, f_12, f_14, f_8, f_10, f_4, f_6;
-  ulong ul_15, ul_1, ul_17, ul_0, ul_11, ul_13, ul_7, ul_9, ul_3, ul_5;
+  ulong ul_9, ul_11, ul_5, ul_7, ul_1, ul_17, ul_3, ul_13, ul_15, ul_0;
+  float f_20, f_19, f_18, f_16, f_14, f_12, f_10, f_8, f_6, f_4, f_2, f_26, f_25, f_24, f_23, f_22, f_21;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 

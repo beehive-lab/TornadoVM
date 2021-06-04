@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 
@@ -858,14 +859,14 @@ public final class OCLAssembler extends Assembler {
     }
 
     @Override
-    public AbstractAddress makeAddress(Register arg0, int arg1) {
-        unimplemented("Make address not implemented yet.");
-        return null;
+    protected void patchJumpTarget(int arg0, int arg1) {
+        unimplemented("Patch jump target not implemented yet.");
     }
 
     @Override
-    protected void patchJumpTarget(int arg0, int arg1) {
-        unimplemented("Patch jump target not implemented yet.");
+    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
+        unimplemented("Make address not implemented yet.");
+        return null;
     }
 
     /**
@@ -1031,6 +1032,11 @@ public final class OCLAssembler extends Assembler {
         emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE + "  // " + blockName);
     }
 
+    public void endScope() {
+        popIndent();
+        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE);
+    }
+
     public void beginScope() {
         emitLine(OCLAssemblerConstants.CURLY_BRACKET_OPEN);
         pushIndent();
@@ -1098,6 +1104,12 @@ public final class OCLAssembler extends Assembler {
             }
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
+        } else if (value instanceof OCLNullary.Parameter) {
+            /*
+             * This case covers when we want to pass a caller method parameter further down
+             * to a callee and there is no assignment of the parameter inside the caller.
+             */
+            return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }

@@ -230,7 +230,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     public String toString() {
         String str = String.format("VectorDouble <%d>", numElements);
         if (numElements < 32) {
-            str += toString(DoubleOps.fmt);
+            str += toString(DoubleOps.FMT);
         }
         return str;
     }

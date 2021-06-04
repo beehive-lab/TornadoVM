@@ -24,22 +24,33 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.common.GridInfo;
+import uk.ac.manchester.tornado.drivers.common.GridInfo;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class OCLGridInfo implements GridInfo {
-    OCLTargetDevice device;
+    OCLDeviceContext deviceContext;
     public final long[] localWork;
 
-    public OCLGridInfo(OCLTargetDevice device, long[] localWork) {
-        this.device = device;
+    public OCLGridInfo(OCLDeviceContext deviceContext, long[] localWork) {
+        this.deviceContext = deviceContext;
         this.localWork = localWork;
     }
 
     @Override
     public boolean checkGridDimensions() {
-        long[] blockMaxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
+        if (deviceContext.isPlatformFPGA()) {
+            List<Boolean> localGroupComparison = IntStream.range(0, localWork.length).mapToObj(i -> localWork[i] == OCLFPGAScheduler.LOCAL_WORK_SIZE[i]).collect(Collectors.toList());
+            if (localGroupComparison.contains(Boolean.FALSE)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        long[] blockMaxWorkGroupSize = deviceContext.getDevice().getDeviceMaxWorkGroupSize();
         long maxWorkGroupSize = Arrays.stream(blockMaxWorkGroupSize).sum();
         long totalThreads = Arrays.stream(localWork).reduce(1, (a, b) -> a * b);
 

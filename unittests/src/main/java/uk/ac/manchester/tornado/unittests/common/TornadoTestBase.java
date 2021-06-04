@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.unittests.common;
 import org.junit.Before;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class TornadoTestBase {
@@ -54,7 +55,12 @@ public abstract class TornadoTestBase {
             }
         }
 
-        if (!wasDeviceInspected) {
+        /*
+         * Virtual Device execution assumes an environment with a single device.
+         * Therefore, there is no need to change the device even if a different device
+         * is set through the 'tornado.unittests.device' property
+         */
+        if (!wasDeviceInspected && !getVirtualDeviceEnabled()) {
             Tuple2<Integer, Integer> pairDriverDevice = getDriverAndDeviceIndex();
             int driverIndex = pairDriverDevice.f0();
             if (driverIndex != 0) {
@@ -71,16 +77,24 @@ public abstract class TornadoTestBase {
         }
     }
 
+    private boolean getVirtualDeviceEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.virtual.device", "False"));
+    }
+
     private Tuple2<Integer, Integer> getDriverAndDeviceIndex() {
         String driverAndDevice = System.getProperty("tornado.unittests.device", "0:0");
         String[] propertyValues = driverAndDevice.split(":");
         return new Tuple2<>(Integer.parseInt(propertyValues[0]), Integer.parseInt(propertyValues[1]));
     }
 
-    public void checkForPTX() {
+    public void assertNotBackend(TornadoVMBackend backend) {
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
-        if ("PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
-            throw new PTXNotSupported("Test not supported for the PTX backend");
+        if (TornadoRuntime.getTornadoRuntime().getBackendType(driverIndex) == backend) {
+            switch (backend) {
+                case PTX: throw new TornadoVMPTXNotSupported("Test not supported for the PTX backend");
+                case OpenCL: throw new TornadoVMOpenCLNotSupported("Test not supported for the OpenCL backend");
+            }
         }
     }
+
 }

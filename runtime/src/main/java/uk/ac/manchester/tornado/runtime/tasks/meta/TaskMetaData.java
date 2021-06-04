@@ -87,7 +87,7 @@ public class TaskMetaData extends AbstractMetaData {
         this(scheduleMetaData, id, 0);
     }
 
-    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
+    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method) {
         return new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
     }
 
@@ -155,6 +155,11 @@ public class TaskMetaData extends AbstractMetaData {
         localWork = null;
     }
 
+    public long[] initLocalWork() {
+        localWork = new long[] {1, 1, 1};
+        return localWork;
+    }
+
     public void setSchedule(boolean value) {
     }
 
@@ -167,11 +172,6 @@ public class TaskMetaData extends AbstractMetaData {
         }
         events = profiles.get(device);
         events.set(id);
-    }
-
-    @Override
-    public boolean enableAutoParallelisation() {
-        return super.enableAutoParallelisation() || scheduleMetaData.enableAutoParallelisation();
     }
 
     @Override
@@ -234,9 +234,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoAcceleratorDevice getLogicDevice() {
-        if (scheduleMetaData.isDeviceManuallySet()) {
-            return scheduleMetaData.getLogicDevice();
-        } else if (scheduleMetaData.isDeviceDefined() && !isDeviceDefined()) {
+        if (scheduleMetaData.isDeviceManuallySet() || (scheduleMetaData.isDeviceDefined() && !isDeviceDefined())) {
             return scheduleMetaData.getLogicDevice();
         }
         return super.getLogicDevice();
@@ -268,7 +266,7 @@ public class TaskMetaData extends AbstractMetaData {
         if (localWorkDefined) {
             guarantee(localWork.length == dims, "task %s has local work dims specified of wrong length", getId());
         } else {
-            localWork = new long[] { 1, 1, 1 };
+            localWork = initLocalWork();
         }
     }
 

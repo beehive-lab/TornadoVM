@@ -32,13 +32,13 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public abstract class TornadoHighTier extends PhaseSuite<TornadoHighTierContext> {
 
-    protected final CanonicalizerPhase.CustomCanonicalization customCanonicalizer;
+    protected final CanonicalizerPhase.CustomSimplification customCanonicalizer;
 
-    public CanonicalizerPhase.CustomCanonicalization getCustomCanonicalizer() {
+    public CanonicalizerPhase.CustomSimplification getCustomCanonicalizer() {
         return customCanonicalizer;
     }
 
-    public TornadoHighTier(CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
+    public TornadoHighTier(CanonicalizerPhase.CustomSimplification customCanonicalizer) {
         this.customCanonicalizer = customCanonicalizer;
     }
 }

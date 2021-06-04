@@ -190,7 +190,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        return toString(FloatOps.fmt8);
+        return toString(FloatOps.FMT_8);
     }
 
     protected static Float8 loadFromArray(final float[] array, int index) {

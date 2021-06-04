@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -31,6 +32,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -44,33 +46,35 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 @NodeInfo
-public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray {
+public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray, MemoryKill {
 
     public static final NodeClass<LocalArrayNode> TYPE = NodeClass.create(LocalArrayNode.class);
 
     @Input
     protected ConstantNode length;
 
-    protected OCLKind elementKind;
+    private OCLKind kind;
     protected OCLArchitecture.OCLMemoryBase memoryRegister;
-    protected ResolvedJavaType elementType;
     protected OCLAssembler.OCLBinaryTemplate arrayTemplate;
 
     public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.elementType = elementType;
-        this.elementKind = OCLKind.fromResolvedJavaType(elementType);
+        this.kind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
+    }
+
+    public LocalArrayNode(OCLArchitecture.OCLMemoryBase memoryRegister, JavaKind elementKind, ConstantNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.memoryRegister = memoryRegister;
+        this.length = length;
+        this.kind = OCLKind.fromResolvedJavaKind(elementKind);
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementKind);
     }
 
     public OCLArchitecture.OCLMemoryBase getMemoryRegister() {
         return memoryRegister;
-    }
-
-    public ResolvedJavaType getElementType() {
-        return elementType;
     }
 
     public ConstantNode getLength() {
@@ -81,7 +85,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
     public void generate(NodeLIRBuilderTool gen) {
         final Value lengthValue = gen.operand(length);
 
-        LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
+        LIRKind lirKind = LIRKind.value(kind);
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
         final OCLBinary.Expr declaration = new OCLBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 

@@ -13,5 +13,6 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.type.annotations;
     exports uk.ac.manchester.tornado.api.utils;
 
+    opens uk.ac.manchester.tornado.api;
     opens uk.ac.manchester.tornado.api.collections.types;
 }

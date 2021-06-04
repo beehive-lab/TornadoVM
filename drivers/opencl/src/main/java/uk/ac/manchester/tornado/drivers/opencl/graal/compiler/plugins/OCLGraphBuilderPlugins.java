@@ -37,6 +37,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -53,16 +54,22 @@ import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -71,17 +78,24 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
 
     public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
+        if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
+            ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
+        }
+
         registerCompilerIntrinsicsPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
         // Register Atomics
         registerTornadoVMAtomicsPlugins(plugins);
+        // Register KernelContext Plugins
+        registerKernelContextPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
@@ -187,8 +201,118 @@ public class OCLGraphBuilderPlugins {
         return atomicNode;
     }
 
-    private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
+    private static void registerLocalBarrier(Registration r) {
+        r.register1("localBarrier", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL);
+                b.add(localBarrierNode);
+                return true;
+            }
+        });
+    }
 
+    private static void registerGlobalBarrier(Registration r) {
+        r.register1("globalBarrier", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                OCLBarrierNode localBarrierNode = new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL);
+                b.add(localBarrierNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerLocalWorkGroup(Registration r, JavaKind returnedJavaKind) {
+        r.register2("getLocalGroupSize", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                LocalThreadSizeNode localThreadSizeNode = new LocalThreadSizeNode((ConstantNode) size);
+                b.push(returnedJavaKind, localThreadSizeNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+        r.register2("allocateIntLocalArray", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerLongLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+        r.register2("allocateLongLocalArray", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerFloatLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+        r.register2("allocateFloatLocalArray", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerDoubleLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
+        r.register2("allocateDoubleLocalArray", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                LocalArrayNode localArrayNode = new LocalArrayNode(OCLArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
+    }
+
+    private static void localWorkGroupPlugin(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Int;
+        registerLocalWorkGroup(r, returnedJavaKind);
+    }
+
+    private static void localArraysPlugins(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Object;
+
+        JavaKind elementType = OCLKind.INT.asJavaKind();
+        registerIntLocalArray(r, returnedJavaKind, elementType);
+
+        elementType = OCLKind.LONG.asJavaKind();
+        registerLongLocalArray(r, returnedJavaKind, elementType);
+
+        elementType = OCLKind.FLOAT.asJavaKind();
+        registerFloatLocalArray(r, returnedJavaKind, elementType);
+
+        elementType = OCLKind.DOUBLE.asJavaKind();
+        registerDoubleLocalArray(r, returnedJavaKind, elementType);
+    }
+
+    private static void registerKernelContextPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, KernelContext.class);
+
+        registerLocalBarrier(r);
+        registerGlobalBarrier(r);
+        localWorkGroupPlugin(r);
+        localArraysPlugins(r);
+    }
+
+    private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {
         final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
 
             @Override

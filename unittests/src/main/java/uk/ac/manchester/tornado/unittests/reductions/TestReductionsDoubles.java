@@ -29,6 +29,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -269,7 +270,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
     private static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i]);
+            result[0] = TornadoMath.max(result[0], input[i]);
         }
     }
 
@@ -302,7 +303,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
     private static void minReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.min(result[0], input[i]);
+            result[0] = TornadoMath.min(result[0], input[i]);
         }
     }
 
@@ -334,7 +335,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     private static void tornadoRemoveOutliers(final double[] values, @Reduce double[] result) {
-        final double sqrt = Math.sqrt(12.2321 / values.length);
+        final double sqrt = TornadoMath.sqrt(12.2321 / values.length);
         final double min = result[0] - (2 * sqrt);
         final double max = result[0] + (2 * sqrt);
 
@@ -415,7 +416,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     private static void computeStandardDeviation(final double[] values, final double[] sum, @Reduce final double[] std) {
         final double s = sum[0] / values.length;
         for (@Parallel int i = 0; i < values.length; i++) {
-            std[0] += Math.pow(values[i] - s, 2);
+            std[0] += TornadoMath.pow(values[i] - s, 2);
         }
     }
 
@@ -513,7 +514,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     private static void maxReductionAnnotation2(double[] input, @Reduce double[] result, double neutral) {
         result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i] * 100);
+            result[0] = TornadoMath.max(result[0], input[i] * 100);
         }
     }
 
@@ -545,7 +546,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     private static void minReductionAnnotation2(double[] input, @Reduce double[] result, double neutral) {
         result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.min(result[0], input[i] * 50);
+            result[0] = TornadoMath.min(result[0], input[i] * 50);
         }
     }
 

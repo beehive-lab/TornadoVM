@@ -219,7 +219,7 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public String toString() {
         String result = String.format("MatrixFloat <%d x %d>", M, N);
         if (M < 16 && N < 16) {
-            result += "\n" + toString(FloatOps.fmt);
+            result += "\n" + toString(FloatOps.FMT);
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,15 +41,16 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNodeUtil;
+import org.graalvm.compiler.nodes.WithExceptionNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
@@ -153,7 +154,7 @@ public class TornadoFloatingReadReplacement extends Phase {
 
     @Override
     public float codeSizeIncrease() {
-        return 1.25f;
+        return 1.50f;
     }
 
     /**
@@ -248,7 +249,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
         if (createFloatingReads) {
-            graph.setAfterFloatingReadPhase(true);
+            graph.setAfterFloatingReadPhase();
         }
     }
 
@@ -288,7 +289,7 @@ public class TornadoFloatingReadReplacement extends Phase {
                 }
                 mergedStatesCount++;
             }
-            newState.lastMemorySnapshot.put(key, merged);
+            newState.getMap().put(key, merged);
         }
         return newState;
 
@@ -315,6 +316,15 @@ public class TornadoFloatingReadReplacement extends Phase {
 
         @Override
         protected TornadoFloatingReadReplacement.MemoryMapImpl processNode(FixedNode node, TornadoFloatingReadReplacement.MemoryMapImpl state) {
+
+            if (node instanceof LoopExitNode) {
+                final LoopExitNode loopExitNode = (LoopExitNode) node;
+                final EconomicSet<LocationIdentity> modifiedInLoop = modifiedInLoops.get(loopExitNode.loopBegin());
+                final boolean anyModified = modifiedInLoop.contains(LocationIdentity.any());
+                state.getMap().replaceAll(
+                        (locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity)) ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity) : memoryNode);
+            }
+
             if (node instanceof MemoryAnchorNode) {
                 processAnchor((MemoryAnchorNode) node, state);
                 return state;
@@ -334,7 +344,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
 
             if (createMemoryMapNodes && node instanceof ReturnNode) {
-                ((ReturnNode) node).setMemoryMap(node.graph().unique(new MemoryMapNode(state.lastMemorySnapshot)));
+                ((ReturnNode) node).setMemoryMap(node.graph().unique(new MemoryMapNode(state.getMap())));
             }
             return state;
         }
@@ -380,10 +390,10 @@ public class TornadoFloatingReadReplacement extends Phase {
 
         private static void processIdentity(LocationIdentity identity, MemoryKill checkpoint, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             if (identity.isAny()) {
-                state.lastMemorySnapshot.clear();
+                state.getMap().clear();
             }
             if (identity.isMutable()) {
-                state.lastMemorySnapshot.put(identity, checkpoint);
+                state.getMap().put(identity, checkpoint);
             }
         }
 
@@ -425,17 +435,17 @@ public class TornadoFloatingReadReplacement extends Phase {
         @Override
         protected TornadoFloatingReadReplacement.MemoryMapImpl afterSplit(AbstractBeginNode node, TornadoFloatingReadReplacement.MemoryMapImpl oldState) {
             TornadoFloatingReadReplacement.MemoryMapImpl result = new TornadoFloatingReadReplacement.MemoryMapImpl(oldState);
-            if (node.predecessor() instanceof InvokeWithExceptionNode) {
+            if (node.predecessor() instanceof WithExceptionNode && node.predecessor() instanceof MemoryKill) {
                 /*
-                 * InvokeWithException cannot be the lastLocationAccess for a FloatingReadNode.
-                 * Since it is both the invoke and a control flow split, the scheduler cannot
-                 * schedule anything immediately after the invoke. It can only schedule in the
-                 * normal or exceptional successor - and we have to tell the scheduler here
-                 * which side it needs to choose by putting in the location identity on both
-                 * successors.
+                 * This WithExceptionNode cannot be the lastLocationAccess for a
+                 * FloatingReadNode. Since it is both a memory kill and a control flow split,
+                 * the scheduler cannot schedule anything immediately after the kill. It can
+                 * only schedule in the normal or exceptional successor - and we have to tell
+                 * the scheduler here which side it needs to choose by putting in the location
+                 * identity on both successors.
                  */
-                InvokeWithExceptionNode invoke = (InvokeWithExceptionNode) node.predecessor();
-                result.lastMemorySnapshot.put(invoke.getKilledLocationIdentity(), (MemoryKill) node);
+                LocationIdentity killedLocationIdentity = node.predecessor() instanceof SingleMemoryKill ? ((SingleMemoryKill) node.predecessor()).getKilledLocationIdentity() : LocationIdentity.any();
+                result.getMap().put(killedLocationIdentity, (MemoryKill) node);
             }
             return result;
         }
@@ -447,13 +457,13 @@ public class TornadoFloatingReadReplacement extends Phase {
             if (modifiedLocations.contains(LocationIdentity.any())) {
                 // create phis for all locations if ANY is modified in the loop
                 modifiedLocations = EconomicSet.create(Equivalence.DEFAULT, modifiedLocations);
-                modifiedLocations.addAll(initialState.lastMemorySnapshot.getKeys());
+                modifiedLocations.addAll(initialState.getMap().getKeys());
             }
 
             for (LocationIdentity location : modifiedLocations) {
                 createMemoryPhi(loop, initialState, phis, location);
             }
-            initialState.lastMemorySnapshot.putAll(phis);
+            initialState.getMap().putAll(phis);
 
             ReentrantNodeIterator.LoopInfo<TornadoFloatingReadReplacement.MemoryMapImpl> loopInfo = ReentrantNodeIterator.processLoop(this, loop, initialState);
 

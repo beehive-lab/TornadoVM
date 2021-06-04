@@ -161,7 +161,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        return toString(FloatOps.fmt3);
+        return toString(FloatOps.FMT_3);
     }
 
     /**

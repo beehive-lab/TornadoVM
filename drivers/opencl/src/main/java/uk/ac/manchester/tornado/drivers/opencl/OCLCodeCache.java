@@ -47,6 +47,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringJoiner;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -75,12 +76,13 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
-    private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
-    private final String XILINX_OPENCL_COMPILER = "xocc";
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
+    private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
     private String fpgaName;
+    private String fpgaCompiler;
     private String compilationFlags;
     private String directoryBitstream;
+    private boolean isFPGAInAWS;
     public static String fpgaBinLocation;
     private String fpgaSourceDir;
 
@@ -136,35 +138,86 @@ public class OCLCodeCache {
         }
     }
 
+    private boolean tokenStartsAComment(String token) {
+        return token.startsWith("#");
+    }
+
+    private String resolveFPGAConfigurationFileName() {
+        return (FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
+                : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
+    }
+
     private void parseFPGAConfigurationFile() {
         FileReader fileReader;
         BufferedReader bufferedReader;
         try {
-            fileReader = new FileReader((FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
-                    : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf")));
+            fileReader = new FileReader(resolveFPGAConfigurationFileName());
             bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                switch (line.split("=")[0]) {
-                    case "DEVICE_NAME":
-                        fpgaName = line.split("=")[1];
+                StringTokenizer tokenizer = new StringTokenizer(line, " =");
+                while (tokenizer.hasMoreElements()) {
+                    String token = tokenizer.nextToken();
+                    if (tokenStartsAComment(token)) {
                         break;
-                    case "DIRECTORY_BITSTREAM":
-                        directoryBitstream = line.split("=")[1];
-                        fpgaBinLocation = "./" + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
-                        fpgaSourceDir = directoryBitstream;
-                        break;
-                    case "FLAGS":
-                        compilationFlags = line.split("=")[1];
-                        break;
-                    default:
-                        break;
+                    }
+
+                    switch (token) {
+                        case "DEVICE_NAME":
+                            fpgaName = tokenizer.nextToken(" =");
+                            break;
+                        case "COMPILER":
+                            fpgaCompiler = tokenizer.nextToken(" =");
+                            break;
+                        case "DIRECTORY_BITSTREAM":
+                            directoryBitstream = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
+                            fpgaBinLocation = directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME;
+                            fpgaSourceDir = directoryBitstream;
+                            break;
+                        case "FLAGS":
+                            StringBuilder buildFlags = new StringBuilder();
+
+                            // Iterate over tokens that correspond to multiple flags
+                            while (tokenizer.hasMoreElements()) {
+                                String flag = tokenizer.nextToken(" =");
+                                if (tokenStartsAComment(flag)) {
+                                    break;
+                                } else if (flag.contains("-")) {
+                                    if (compilationFlags == null) {
+                                        compilationFlags = resolveCompilationFlags(tokenizer, buildFlags, flag);
+                                    } else {
+                                        if (buildFlags.toString().isEmpty()) {
+                                            buildFlags.append(compilationFlags);
+                                        }
+                                        compilationFlags = resolveCompilationFlags(tokenizer, buildFlags.append(" "), flag);
+                                    }
+                                }
+                            }
+                            break;
+                        case "AWS_ENV":
+                            isFPGAInAWS = tokenizer.nextToken(" =").toLowerCase().equals("yes");
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 }
             }
         } catch (IOException e) {
             System.out.println("Wrong configuration file or invalid settings. Please ensure that you have configured the configuration file with valid options!");
             System.exit(1);
         }
+    }
+
+    private String resolveCompilationFlags(StringTokenizer tokenizer, StringBuilder buildFlags, String flag) {
+        String resolvedFlags;
+        if (flag.contains("--")) {
+            String fileString = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
+            resolvedFlags = buildFlags.append(flag).append(" ").append(fileString).toString();
+        } else {
+            resolvedFlags = buildFlags.append(flag).toString();
+        }
+        return resolvedFlags;
     }
 
     private void processPrecompiledBinaries() {
@@ -231,25 +284,42 @@ public class OCLCodeCache {
         }
     }
 
-    private Path resolveDirectory(String dir) {
+    private String resolveAbsoluteDirectory(String dir) {
         final String tornadoRoot = (deviceContext.isPlatformFPGA()) ? System.getenv("PWD") : System.getenv("TORNADO_SDK");
-        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = (deviceContext.isPlatformFPGA()) ? Paths.get(tornadoRoot + "/" + dir) : Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
-        if (!Files.exists(outDir)) {
+        if (Paths.get(dir).isAbsolute()) {
+            if (!Files.exists(Paths.get(dir))) {
+                throw new TornadoRuntimeException("invalid directory: " + dir.toString());
+            }
+            return dir;
+        } else {
+            return (tornadoRoot + "/" + dir);
+        }
+    }
+
+    private void createOrReuseDirectory(Path dir) {
+        if (!Files.exists(dir)) {
             try {
-                Files.createDirectories(outDir);
+                Files.createDirectories(dir);
             } catch (IOException e) {
-                error("unable to create dir: %s", outDir.toString());
+                error("unable to create dir: %s", dir.toString());
                 error(e.getMessage());
             }
         }
+        guarantee(Files.isDirectory(dir), "target directory is not a directory: %s", dir.toAbsolutePath().toString());
+    }
 
-        guarantee(Files.isDirectory(outDir), "target directory is not a directory: %s", outDir.toAbsolutePath().toString());
+    private Path resolveDirectory(String dir) {
+        final String tornadoRoot = System.getenv("TORNADO_SDK");
+        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
+        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        createOrReuseDirectory(outDir);
         return outDir;
     }
 
     private Path resolveBitstreamDirectory() {
-        return resolveDirectory(directoryBitstream);
+        Path outDir = Paths.get(directoryBitstream);
+        createOrReuseDirectory(outDir);
+        return outDir;
     }
 
     private Path resolveCacheDirectory() {
@@ -281,10 +351,12 @@ public class OCLCodeCache {
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
-        bufferCommand.add(INTEL_ALTERA_OPENCL_COMPILER);
+        bufferCommand.add(fpgaCompiler);
         bufferCommand.add(inputFile);
 
-        bufferCommand.add(compilationFlags);
+        if (compilationFlags != null) {
+            bufferCommand.add(compilationFlags);
+        }
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-march=emulator") : ("-board=" + fpgaName));
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
@@ -293,11 +365,11 @@ public class OCLCodeCache {
     private String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
-        bufferCommand.add(XILINX_OPENCL_COMPILER);
+        bufferCommand.add(fpgaCompiler);
 
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -c " + "-k " + kernelName);
-        bufferCommand.add("-g " + "-I./" + directoryBitstream);
+        bufferCommand.add("-g " + "-I" + directoryBitstream);
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
         bufferCommand.add("--report_dir " + directoryBitstream + "reports");
         bufferCommand.add("--log_dir " + directoryBitstream + "logs");
@@ -313,13 +385,17 @@ public class OCLCodeCache {
     }
 
     private String[] composeXilinxHLSLinkCommand() {
-        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
+        StringJoiner bufferCommand = new StringJoiner(" ");
+
+        bufferCommand.add(fpgaCompiler);
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + directoryBitstream + "reports");
         bufferCommand.add("--log_dir " + directoryBitstream + "logs");
-        bufferCommand.add(compilationFlags);
+        if (compilationFlags != null) {
+            bufferCommand.add(compilationFlags);
+        }
         bufferCommand.add("--remote_ip_cache " + directoryBitstream + "ip_cache");
         bufferCommand.add("-o " + directoryBitstream + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin");
         addObjectKernelsToLinker(bufferCommand);
@@ -329,7 +405,7 @@ public class OCLCodeCache {
     private void invokeShellCommand(String[] command) {
         try {
             if (command != null) {
-                RuntimeUtilities.systemCall(command, true);
+                RuntimeUtilities.systemCall(command, Tornado.FPGA_DUMP_LOG, directoryBitstream);
             }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
@@ -420,6 +496,10 @@ public class OCLCodeCache {
                 invokeShellCommand(compilationCommand);
                 invokeShellCommand(commandRename);
                 invokeShellCommand(linkCommand);
+                if (isFPGAInAWS) {
+                    String[] afiAWSCommand = new String[] { FPGA_AWS_AFI_SCRIPT, resolveFPGAConfigurationFileName(), directoryBitstream };
+                    invokeShellCommand(afiAWSCommand);
+                }
             }
             return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
         } else {

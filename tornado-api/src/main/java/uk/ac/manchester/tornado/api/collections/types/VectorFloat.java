@@ -226,7 +226,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     public String toString() {
         String str = String.format("VectorFloat <%d>", numElements);
         if (numElements < 32) {
-            str += toString(FloatOps.fmt);
+            str += toString(FloatOps.FMT);
         }
         return str;
     }

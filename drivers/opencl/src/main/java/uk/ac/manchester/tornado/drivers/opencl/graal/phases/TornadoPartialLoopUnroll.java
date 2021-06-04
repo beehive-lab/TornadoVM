@@ -22,18 +22,19 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.loop.DefaultLoopPolicies;
-import org.graalvm.compiler.loop.LoopEx;
-import org.graalvm.compiler.loop.LoopFragmentInside;
-import org.graalvm.compiler.loop.LoopPolicies;
-import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
+import org.graalvm.compiler.nodes.loop.LoopPolicies;
+import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 /**
  * Applies partial unroll on counted loops of more than 128 elements. By default
@@ -65,7 +66,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     }
 
     private static void partialUnroll(StructuredGraph graph, MidTierContext context) {
-        final LoopsData dataCounted = new LoopsData(graph);
+        final LoopsData dataCounted = new TornadoLoopsData(graph);
 
         LoopPolicies loopPolicies = createLoopPolicies();
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();

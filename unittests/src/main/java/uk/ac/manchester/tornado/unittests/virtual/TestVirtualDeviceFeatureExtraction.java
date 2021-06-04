@@ -23,6 +23,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.io.File;
@@ -94,14 +95,14 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
 
     @Test
     public void testVirtualDeviceFeaturesGPU() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesGPU.json");
     }
 
     @Test
     public void testVirtualDeviceFeaturesCPU() {
-        checkForPTX();
+        assertNotBackend(TornadoVMBackend.PTX);
 
         testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesCPU.json");
     }

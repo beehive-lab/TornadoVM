@@ -57,12 +57,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
 
-    private static final String OCL_FP_BINARY_NODE = "OCLFPBinaryIntrinsicNode";
-    private static final String OCL_INT_BINARY_NODE = "OCLIntBinaryIntrinsicNode";
-
-    private static final String PTX_FP_BINARY_NODE = "PTXFPBinaryIntrinsicNode";
-    private static final String PTX_INT_BINARY_NODE = "PTXIntBinaryIntrinsicNode";
-
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         findParametersWithReduceAnnotations(graph);
@@ -134,10 +128,10 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     private static class ReductionMetadataNode {
-        private ValueNode value;
-        private ValueNode accumulator;
-        private ValueNode inputArray;
-        private ValueNode startNode;
+        private final ValueNode value;
+        private final ValueNode accumulator;
+        private final ValueNode inputArray;
+        private final ValueNode startNode;
 
         ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
             super();
@@ -146,31 +140,24 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             this.inputArray = inputArray;
             this.startNode = startNode;
         }
-
     }
 
-    private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray, ValueNode indexToStore) {
+    private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray) {
         ValueNode array = null;
         if (currentNode instanceof StoreIndexedNode) {
             StoreIndexedNode store = (StoreIndexedNode) currentNode;
-            return obtainInputArray(store.value(), store.array(), store.index());
+            return obtainInputArray(store.value(), store.array());
         } else if (currentNode instanceof BinaryArithmeticNode) {
             BinaryArithmeticNode<?> value = (BinaryArithmeticNode<?>) currentNode;
-            array = obtainInputArray(value.getX(), outputArray, indexToStore);
+            array = obtainInputArray(value.getX(), outputArray);
             if (array == null) {
-                array = obtainInputArray(value.getY(), outputArray, indexToStore);
+                array = obtainInputArray(value.getY(), outputArray);
             }
         } else if (currentNode instanceof BinaryNode) {
-            String currentNodeName = currentNode.getClass().getName();
-            if (currentNodeName.endsWith(OCL_FP_BINARY_NODE) || currentNodeName.endsWith(PTX_FP_BINARY_NODE)) {
-                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
+            if (currentNode instanceof MarkIntrinsicsNode) {
+                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray);
                 if (array == null) {
-                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
-                }
-            } else if (currentNodeName.endsWith(OCL_FP_BINARY_NODE) || currentNodeName.endsWith(PTX_FP_BINARY_NODE)) {
-                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
-                if (array == null) {
-                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
+                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray);
                 }
             }
         } else if (currentNode instanceof LoadIndexedNode) {
@@ -210,11 +197,9 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
             // We need to compare with the name because it is loaded from inner core
             // (tornado-driver).
-            String storeValueName = storeValue.getClass().getName();
-            if (storeValueName.endsWith(OCL_FP_BINARY_NODE) || storeValueName.endsWith(PTX_FP_BINARY_NODE)) {
+            if (storeValue instanceof MarkFloatingPointIntrinsicsNode || storeValue instanceof MarkIntIntrinsicNode) {
                 accumulator = ((BinaryNode) storeValue).getY();
-            } else if (storeValueName.endsWith(OCL_FP_BINARY_NODE) || storeValueName.endsWith(PTX_FP_BINARY_NODE)) {
-                accumulator = ((BinaryNode) storeValue).getX();
+                // TODO: Control getX case
             } else {
                 // For any other binary node
                 // if it is a builtin, we apply the general case
@@ -251,9 +236,9 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 arithmeticNode = reduce.getX();
             } else if (reduce.getY() instanceof BinaryArithmeticNode) {
                 arithmeticNode = reduce.getY();
-            } else if (reduce.getX().getClass().getName().endsWith(OCL_FP_BINARY_NODE) || reduce.getX().getClass().getName().endsWith(PTX_FP_BINARY_NODE)) {
+            } else if (reduce.getX() instanceof MarkFloatingPointIntrinsicsNode) {
                 arithmeticNode = reduce.getX();
-            } else if (reduce.getY().getClass().getName().endsWith(OCL_FP_BINARY_NODE) || reduce.getY().getClass().getName().endsWith(PTX_FP_BINARY_NODE)) {
+            } else if (reduce.getY() instanceof MarkFloatingPointIntrinsicsNode) {
                 arithmeticNode = reduce.getY();
             }
         }
@@ -297,7 +282,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     continue;
                 }
 
-                ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
+                ValueNode inputArray = obtainInputArray(store.value(), store.array());
                 ValueNode startNode = obtainStartLoopNode(store);
 
                 ReductionMetadataNode reductionNode = createReductionNode(graph, store, inputArray, startNode);

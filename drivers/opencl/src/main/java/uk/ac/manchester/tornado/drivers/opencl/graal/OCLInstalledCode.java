@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
@@ -222,13 +223,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         index++;
 
         // Atomics in Global Memory
-        if (atomicSpace != null) {
-            buffer.clear();
-            buffer.putLong(stack.toAtomicAddress());
-            kernel.setArg(index, buffer);
-        } else {
-            kernel.setArgUnused(index);
-        }
+        buffer.clear();
+        buffer.putLong(stack.toAtomicAddress());
+        kernel.setArg(index, buffer);
         index++;
 
     }
@@ -249,6 +246,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             setKernelArgs(stack, atomicSpace, meta);
             internalEvents[0] = stack.enqueueWrite(events);
             waitEvents = internalEvents;
+            updateProfilerStackWrite(internalEvents[0], meta, stack);
         } else {
             waitEvents = events;
         }
@@ -320,6 +318,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
             // Register the time for the task
             meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
         }
         return task;
     }
@@ -373,7 +375,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, atomicSpace, meta);
-            stack.enqueueWrite();
+            int stackWriteEventId = stack.enqueueWrite();
+            updateProfilerStackWrite(stackWriteEventId, meta, stack);
         }
 
         guarantee(kernel != null, "kernel is null");
@@ -381,6 +384,22 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             executeSingleThread();
         } else {
             launchKernel(stack, meta, batchThreads);
+        }
+    }
+
+    private void updateProfilerStackWrite(int stackWriteEventId, TaskMetaData meta, OCLCallStack stack) {
+        if (TornadoOptions.isProfilerEnabled()) {
+            TornadoProfiler profiler = meta.getProfiler();
+            Event event = deviceContext.resolveEvent(stackWriteEventId);
+            event.waitForEvents();
+            long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
+            copyInTimer += event.getExecutionTime();
+            profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
+            profiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, meta.getId(), stack.getSize());
+
+            long dispatchValue = profiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+            dispatchValue += event.getDriverDispatchTime();
+            profiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
         }
     }
 

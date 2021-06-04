@@ -144,6 +144,13 @@ class OCLEventsWrapper {
     }
 
     protected void reset() {
+        for (int index = 0; index < events.length; index++) {
+            if (events[index] > 0) {
+                internalEvent.setEventId(index, events[index]);
+                releaseEvent(index);
+                internalEvent.release();
+            }
+        }
         Arrays.fill(events, 0);
         eventIndex = 0;
     }

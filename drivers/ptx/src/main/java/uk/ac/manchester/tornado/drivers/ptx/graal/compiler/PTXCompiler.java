@@ -421,7 +421,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), task), taskMeta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), task));
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -441,12 +441,23 @@ public class PTXCompiler {
             methods.addAll(Arrays.asList(kernelCompResult.getMethods()));
         }
 
+        /*
+         * Given the non-inlined methods A, B, C, D and the call graph below, method D can be compiled twice.
+         * A  → B → D
+         *    ↘ C ↗
+         * We use hash set below to prevent this.
+         */
+        final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
         final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
-
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
+            if (nonInlinedCompiledMethods.contains(currentMethod)) {
+                continue;
+            } else {
+                nonInlinedCompiledMethods.add(currentMethod);
+            }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
+            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName());
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph).withCodeOwner(currentMethod).withProviders(providers)
@@ -507,7 +518,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(resolvedMethod.getName(), meta);
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(resolvedMethod.getName());
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         final PTXSuitesProvider suitesProvider = (PTXSuitesProvider) providers.getSuitesProvider();
@@ -522,7 +533,7 @@ public class PTXCompiler {
 
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
-            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), meta);
+            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName());
             StructuredGraph.Builder builder1 = new StructuredGraph.Builder(TornadoCoreRuntime.getOptions(), getDebugContext(), StructuredGraph.AllowAssumptions.YES);
             builder1.method(resolvedMethod);
             builder1.compilationId(id);

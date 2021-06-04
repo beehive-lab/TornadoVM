@@ -28,28 +28,30 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.api.common.Access;
 
 public class TornadoSketchTierContext extends HighTierContext {
 
-    protected final ResolvedJavaMethod method;
-    protected final TaskMetaData meta;
+    private final ResolvedJavaMethod method;
 
-    public TornadoSketchTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, TaskMetaData meta) {
+    /**
+     * Contains the argument accesses of the {@link #method}. The array gets populated in the {@link TornadoDataflowAnalysis} phase.
+     * It includes accesses of arguments passed to non-inlined callees of the {@link #method}.
+     */
+    private final Access[] argumentAccess;
+
+    public TornadoSketchTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method) {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
-        this.meta = meta;
+        int parameterCount = method.getParameters().length;
+        this.argumentAccess = new Access[method.isStatic() ? parameterCount : parameterCount + 1];
     }
 
     public ResolvedJavaMethod getMethod() {
         return method;
     }
 
-    public TaskMetaData getMeta() {
-        return meta;
-    }
-
-    public boolean hasMeta() {
-        return meta != null;
+    public Access[] getAccesses() {
+        return argumentAccess;
     }
 }

@@ -127,7 +127,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public String toString() {
-        return toString(ShortOps.fmt2);
+        return toString(ShortOps.FMT_2);
     }
 
     protected static Short2 loadFromArray(final short[] array, int index) {

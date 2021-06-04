@@ -149,7 +149,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        return toString(DoubleOps.fmt3);
+        return toString(DoubleOps.FMT_3);
     }
 
     /**

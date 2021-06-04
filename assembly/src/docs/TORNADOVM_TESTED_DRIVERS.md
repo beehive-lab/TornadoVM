@@ -17,10 +17,22 @@
 
 ##### Drivers from Intel Compute HD Graphics (Intel Compute Runtime) - NEO
 
-[Link](https://github.com/intel/compute-runtime/releases)   
+[Link](https://github.com/intel/compute-runtime/releases)
 
 The following drivers have been tested on Linux >= CentOS 7.3
 
+* 21.19.19792: OK  ( OpenCL 3.0 ) 
+* 21.18.19737: OK  ( OpenCL 3.0 ) 
+* 21.17.19709: OK  ( OpenCL 3.0 ) 
+* 21.16.19610: OK  ( OpenCL 3.0 )
+* 21.15.19533: OK  ( OpenCL 3.0 )
+* 21.14.19498: OK  ( OpenCL 3.0 )
+* 21.13.19438: OK  ( OpenCL 3.0 )  -- From this update, we get correct `LookupBuffer` for SPIRV kernels (experimental)
+* 21.12.19358: OK  ( OpenCL 3.0 )
+* 21.11.19310: OK  ( OpenCL 3.0 )
+* 21.10.19208: OK  ( OpenCL 3.0 )
+* 21.09.19150: OK  ( OpenCL 3.0 )
+* 21.08.19096: OK  ( OpenCL 3.0 )
 * 21.07.19042: OK  ( OpenCL 3.0 )
 * 21.06.18993: OK  ( OpenCL 3.0 )
 * 21.05.18936: OK  ( OpenCL 3.0 )
@@ -100,6 +112,10 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### OpenCL drivers
 
+* 460.80   : OK
+* 460.73.01: OK
+* 460.67   : OK
+* 460.56   : OK
 * 460.39   : OK
 * 450.80.02: OK
 * 450.66   : OK
@@ -114,6 +130,10 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### PTX (CUDA) drivers
 
+* 460.80   : OK
+* 460.73.01: OK
+* 460.67   : OK
+* 460.56   : OK
 * 460.39   : OK
 * 450.80.02: OK
 * 450.36   : OK
@@ -131,8 +151,10 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 
 * OpenCL 1.0, `xocc` v2018.2:  OK
+* OpenCL 1.0, `xocc` v2018.3:  OK
+* OpenCL 1.0, `v++`  v2020.2:  OK
 
 ## Known Driver Issues
 
 * Intel CPU OpenCL driver `18.1.0.0920` is not working with Ubuntu >= 19.04
-
+* Intel CPU OpenCL driver `1.1` on Mac OSx Catalina (v10.15.7) requires `null` for the local work group size. Any other value (e.g. 256) throws an error with the `CL_INVALID_WORK_GROUP_SIZE` OpenCL error flag, thereby resulting in 25 failed unit-tests.

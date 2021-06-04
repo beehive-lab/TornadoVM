@@ -24,7 +24,7 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.api.common.GridInfo;
+import uk.ac.manchester.tornado.drivers.common.GridInfo;
 
 import java.util.Arrays;
 

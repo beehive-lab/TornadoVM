@@ -127,7 +127,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        return toString(DoubleOps.fmt2);
+        return toString(DoubleOps.FMT_2);
     }
 
     protected static Double2 loadFromArray(final double[] array, int index) {

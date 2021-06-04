@@ -174,7 +174,7 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public String toString() {
         String result = String.format("MatrixFloat <%d x %d x %d>", X, Y, Z);
         if (X < 16 && Y < 16 && Z < 16) {
-            result += "\n" + toString(FloatOps.fmt);
+            result += "\n" + toString(FloatOps.FMT);
         }
         return result;
     }

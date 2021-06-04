@@ -104,20 +104,17 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
-    private static OCLDriver findDriver() {
-        if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
-            TornadoInternalError.guarantee(driver != null, "unable to find OpenCL driver");
-        }
-        return driver;
-    }
-
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
+        driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
 
-        platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
-        device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
+        if (driver == null) {
+            throw new RuntimeException("TornadoVM OpenCL Driver not found");
+        }
+
+        platformName = driver.getPlatformContext(platformIndex).getPlatform().getName();
+        device = driver.getPlatformContext(platformIndex).devices().get(deviceIndex);
         mappingAtomics = new ConcurrentHashMap<>();
     }
 
@@ -161,12 +158,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     public OCLBackend getBackend() {
-        return findDriver().getBackend(platformIndex, deviceIndex);
+        return driver.getBackend(platformIndex, deviceIndex);
     }
 
     @Override
     public void reset() {
-        getBackend().reset();
+        device.getDeviceContext().reset();
     }
 
     @Override
@@ -232,7 +229,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-        final TaskMetaData sketchMeta = sketch.getMeta();
 
         // Return the code from the cache
         if (!task.shouldCompile() && deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
@@ -241,7 +237,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         // copy meta data into task
         final TaskMetaData taskMeta = executable.meta();
-        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
@@ -305,7 +301,15 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-            return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
+            OCLInstalledCode installedCode;
+            if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
+                // A) for FPGA
+                installedCode = deviceContext.installCode(task.getId(), executable.getEntryPoint(), source, task.shouldCompile());
+            } else {
+                // B) for CPU multi-core or GPU
+                installedCode = deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
+            }
+            return installedCode;
         } catch (IOException e) {
             e.printStackTrace();
         }

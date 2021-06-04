@@ -33,4 +33,6 @@ public interface TornadoInstalledCode {
     int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
 
     int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
+
+    boolean isValid();
 }

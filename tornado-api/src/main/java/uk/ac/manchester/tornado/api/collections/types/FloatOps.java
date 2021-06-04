@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -46,16 +46,16 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 public class FloatOps {
 
     public static final float EPSILON = 1e-7f;
-    public static final String fmt = "%.3f";
-    public static final String fmt2 = "{%.3f,%.3f}";
-    public static final String fmt3 = "{%.3f,%.3f,%.3f}";
-    public static final String fmt3e = "{%.4e,%.4e,%.4e}";
-    public static final String fmt4 = "{%.3f,%.3f,%.3f,%.3f}";
-    public static final String fmt4m = "%.3f,%.3f,%.3f,%.3f";
-    public static final String fmt4em = "%.3e,%.3e,%.3e,%.3e";
-    public static final String fmt6 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
-    public static final String fmt8 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
-    public static final String fmt6e = "{%e,%e,%e,%e,%e,%e}";
+    public static final String FMT = "%.3f";
+    public static final String FMT_2 = "{%.3f,%.3f}";
+    public static final String FMT_3 = "{%.3f,%.3f,%.3f}";
+    public static final String FMT_3_E = "{%.4e,%.4e,%.4e}";
+    public static final String FMT_4 = "{%.3f,%.3f,%.3f,%.3f}";
+    public static final String FMT_4_M = "%.3f,%.3f,%.3f,%.3f";
+    public static final String FMT_4_EM = "%.3e,%.3e,%.3e,%.3e";
+    public static final String FMT_6 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
+    public static final String FMT_8 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
+    public static final String FMT_6_E = "{%e,%e,%e,%e,%e,%e}";
 
     public static boolean compareBits(float a, float b) {
         long ai = Float.floatToRawIntBits(a);

@@ -167,26 +167,24 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat m) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = m.storage[i];
-        }
+        System.arraycopy(storage, 0, m.storage, 0, storage.length);
     }
 
     public String toString(String fmt) {
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i < Y; i++) {
             for (int j = 0; j < X; j++) {
-                str += String.format(fmt, get(j, i)) + " ";
+                str.append(String.format(fmt, get(j, i))).append(" ");
             }
-            str += "\n";
+            str.append("\n");
         }
-        return str;
+        return str.toString();
     }
 
     public String toString() {
         String result = String.format("ImageFloat <%d x %d>", X, Y);
         if (Y < 16 && X < 16) {
-            result += "\n" + toString(FloatOps.fmt);
+            result += "\n" + toString(FloatOps.FMT);
         }
         return result;
     }
@@ -199,24 +197,24 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     public float mean() {
         float result = 0f;
-        for (int i = 0; i < storage.length; i++) {
-            result += storage[i];
+        for (float v : storage) {
+            result += v;
         }
         return result / (float) (X * Y);
     }
 
     public float min() {
         float result = Float.MAX_VALUE;
-        for (int i = 0; i < storage.length; i++) {
-            result = Math.min(result, storage[i]);
+        for (float v : storage) {
+            result = Math.min(result, v);
         }
         return result;
     }
 
     public float max() {
         float result = Float.MIN_VALUE;
-        for (int i = 0; i < storage.length; i++) {
-            result = Math.max(result, storage[i]);
+        for (float v : storage) {
+            result = Math.max(result, v);
         }
         return result;
     }

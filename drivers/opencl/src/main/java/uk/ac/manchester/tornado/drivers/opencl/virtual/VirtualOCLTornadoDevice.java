@@ -89,7 +89,6 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
         platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
         device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
-
     }
 
     @Override
@@ -129,7 +128,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-        getBackend().reset();
+        device.getDeviceContext().reset();
     }
 
     @Override
@@ -181,11 +180,10 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-        final TaskMetaData sketchMeta = sketch.getMeta();
 
         // copy meta data into task
         final TaskMetaData taskMeta = executable.meta();
-        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] sketchAccess = sketch.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
