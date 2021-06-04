@@ -2,9 +2,11 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 
 public class SPIRVBuiltinTool {
 
@@ -65,8 +67,8 @@ public class SPIRVBuiltinTool {
 
     // FIXME: REVISIT
     public Value genFloatCos(Value input) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("genCos: cos(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.COS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCosh(Value input) {
@@ -247,6 +249,8 @@ public class SPIRVBuiltinTool {
 
     // FIXME: REVISIT
     public Value genFloatMin(Value x, Value y) {
+        SPIRVLogger.traceBuildLIR("genFloatMin: min(%s,%s)", x, y);
+        // return new SPIRVBinary.Intrinsic("min", LIRKind.combine(x, y), x, y);
         unimplemented();
         return null;
     }

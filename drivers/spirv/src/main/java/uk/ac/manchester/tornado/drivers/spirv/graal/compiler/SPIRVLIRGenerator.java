@@ -276,6 +276,10 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return spirvGenTool;
     }
 
+    public SPIRVBuiltinTool getSpirvBuiltinTool() {
+        return spirvBuiltinTool;
+    }
+
     @Override
     public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
         unimplemented();

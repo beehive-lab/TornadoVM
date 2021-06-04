@@ -23,7 +23,6 @@ import static org.junit.Assert.assertArrayEquals;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -31,6 +30,13 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to run:
+ * 
+ * <code>
+ *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ * </code>
+ */
 public class TestMath extends TornadoTestBase {
 
     public static void testCos(double[] a) {

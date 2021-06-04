@@ -115,6 +115,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId v3ulong;
     public SPIRVId pointerToULongFunction;
     public SPIRVId ptrCrossWorkULong;
+    private SPIRVId openclImport;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -127,6 +128,14 @@ public final class SPIRVAssembler extends Assembler {
         builtinTable = new HashMap<>();
         currentBlockScopeStack = new Stack<>();
 
+    }
+
+    public void insertOpenCLImportId(SPIRVId oclImport) {
+        this.openclImport = oclImport;
+    }
+
+    public SPIRVId getOpenclImport() {
+        return this.openclImport;
     }
 
     public SPIRVInstScope currentBlockScope() {

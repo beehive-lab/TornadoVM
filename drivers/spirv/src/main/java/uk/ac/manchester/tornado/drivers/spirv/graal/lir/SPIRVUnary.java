@@ -10,11 +10,13 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
@@ -457,6 +459,70 @@ public class SPIRVUnary {
             asm.currentBlockScope().add(new SPIRVOpConvertSToF(type, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
+        }
+    }
+
+    /**
+     * For obtaining the correct Int-Reference of the function:
+     * 
+     * https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html
+     * 
+     * 
+     */
+    public static class Intrinsic extends UnaryConsumer {
+
+        public enum OpenCLIntrinsic {
+            COS("cos", 14);
+
+            int value;
+            String name;
+
+            OpenCLIntrinsic(String name, int value) {
+                this.value = value;
+            }
+
+            String getName() {
+                return this.name;
+            }
+
+            int getValue() {
+                return this.value;
+            }
+        }
+
+        public static final String COS = "cos";
+        final private OpenCLIntrinsic builtIn;
+
+        protected Intrinsic(OpenCLIntrinsic opcode, LIRKind valueKind, Value value) {
+            super(null, valueKind, value);
+            this.builtIn = opcode;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            System.out.println("GENERARTING:::::::: + COS : " + builtIn);
+
+            SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
+            SPIRVId input = asm.lookUpLIRInstructions(value);
+            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+
+            SPIRVId loadParam = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadParam, //
+                    input, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            SPIRVId result = asm.module.getNextId();
+            SPIRVId set = asm.getOpenclImport();
+            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.value, builtIn.name);
+            asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
+            asm.registerLIRInstructionValue(this, result);
+
         }
     }
 }

@@ -360,11 +360,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitSPIRVCodeIntoASMModule(asm, asm.module);
     }
 
-    private void dummySPIRVModuleTest(SPIRVModule module) {
+    private void dummySPIRVModuleTest(SPIRVAssembler asm, SPIRVModule module) {
         SPIRVInstScope functionScope;
         SPIRVInstScope blockScope;
 
-        emitSPIRVHeader(module, true);
+        emitSPIRVHeader(asm, module, true);
 
         SPIRVId opTypeInt = module.getNextId();
         module.add(new SPIRVOpTypeInt(opTypeInt, new SPIRVLiteralInteger(32), new SPIRVLiteralInteger(0)));
@@ -442,10 +442,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         module.add(new SPIRVOpCapability(SPIRVCapability.Int8()));
     }
 
-    private void emitImportOpenCL(SPIRVModule module) {
+    private void emitImportOpenCL(SPIRVAssembler asm, SPIRVModule module) {
         // Add import OpenCL STD
         SPIRVId idImport = module.getNextId();
         module.add(new SPIRVOpExtInstImport(idImport, new SPIRVLiteralString("OpenCL.std")));
+        asm.insertOpenCLImportId(idImport);
     }
 
     private void emitOpenCLAddressingMode(SPIRVModule module) {
@@ -472,10 +473,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return idSPIRVBuiltin;
     }
 
-    private void emitSPIRVHeader(SPIRVModule module, boolean isParallel) {
+    private void emitSPIRVHeader(SPIRVAssembler asm, SPIRVModule module, boolean isParallel) {
 
         emitSPIRVCapabilities(module);
-        emitImportOpenCL(module);
+        emitImportOpenCL(asm, module);
         emitOpenCLAddressingMode(module);
         emitOpSourceForOpenCL(module, SPIRV_VERSION_FOR_OPENCL);
 
@@ -730,7 +731,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             }
 
             emitSPIRVCapabilities(module);
-            emitImportOpenCL(module);
+            emitImportOpenCL(asm, module);
             emitOpenCLAddressingMode(module);
             emitOpSourceForOpenCL(module, SPIRV_VERSION_FOR_OPENCL);
 
