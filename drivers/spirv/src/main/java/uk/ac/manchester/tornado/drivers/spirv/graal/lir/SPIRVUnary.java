@@ -12,9 +12,11 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFConvert;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFNegate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSConvert;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSNegate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
@@ -602,6 +604,68 @@ public class SPIRVUnary {
             asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
             asm.registerLIRInstructionValue(this, result);
 
+        }
+    }
+
+    public static class Negate extends UnaryConsumer {
+
+        boolean isInteger;
+        String nameDebugInstruction;
+
+        public Negate(LIRKind lirKind, Value inputVal) {
+            super(null, lirKind, inputVal);
+            if (getSPIRVPlatformKind().isInteger()) {
+                isInteger = true;
+                nameDebugInstruction = "SPIRVOpSNegate";
+            } else if (getSPIRVPlatformKind().isFloatingPoint()) {
+                nameDebugInstruction = "SPIRVOpFNegate";
+            } else {
+                throw new RuntimeException("Error - not valid type");
+            }
+        }
+
+        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
+            if (inputValue instanceof ConstantValue) {
+                SPIRVKind kind = (SPIRVKind) inputValue.getPlatformKind();
+                return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
+            } else {
+                SPIRVId param = asm.lookUpLIRInstructions(inputValue);
+                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    // We need to perform a load first
+                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                    SPIRVId load = asm.module.getNextId();
+                    SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                    asm.currentBlockScope().add(new SPIRVOpLoad(//
+                            type, //
+                            load, //
+                            param, //
+                            new SPIRVOptionalOperand<>( //
+                                    SPIRVMemoryAccess.Aligned( //
+                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                    ));
+                    return load;
+                } else {
+                    return param;
+                }
+            }
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit " + nameDebugInstruction + getValue() + " with type: " + getSPIRVPlatformKind());
+
+            SPIRVId valueID = getId(getValue(), asm, getSPIRVPlatformKind());
+            SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
+            SPIRVId result = asm.module.getNextId();
+
+            if (isInteger) {
+                asm.currentBlockScope().add(new SPIRVOpSNegate(type, result, valueID));
+            } else if (getSPIRVPlatformKind().isFloatingPoint()) {
+                asm.currentBlockScope().add(new SPIRVOpFNegate(type, result, valueID));
+            }
+
+            asm.registerLIRInstructionValue(this, result);
         }
     }
 }

@@ -91,7 +91,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNegate(Value input) {
-        return null;
+        SPIRVLogger.traceBuildLIR("emitNegate:  - %s", input);
+        final Variable result = getGen().newVariable(LIRKind.combine(input));
+        SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), input);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, negateValue));
+        return result;
     }
 
     @Override
