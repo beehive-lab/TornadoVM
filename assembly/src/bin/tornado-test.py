@@ -54,7 +54,7 @@ __TEST_THE_WORLD__ = [
 
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
+    TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestFloats"),
     # TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
     # TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
@@ -84,7 +84,7 @@ __TEST_THE_WORLD__ = [
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
     # TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
     # TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
