@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -47,7 +48,21 @@ public class PrebuiltTest extends TornadoTestBase {
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         String filePath = tornadoSDK + "/examples/generated/";
-        filePath += defaultDevice.getDeviceName().contains("cuda") ? "add.ptx" : "add.cl";
+
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
+        switch (backendType) {
+            case PTX:
+                filePath += "add.ptx";
+                break;
+            case OpenCL:
+                filePath += "add.cl";
+                break;
+            case SPIRV:
+                filePath += "add.spv";
+                break;
+            default:
+                throw new RuntimeException("Backend not supported");
+        }
 
         // @formatter:off
         new TaskSchedule("s0")
@@ -63,7 +78,7 @@ public class PrebuiltTest extends TornadoTestBase {
         // @formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
     }
 
@@ -82,7 +97,21 @@ public class PrebuiltTest extends TornadoTestBase {
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         String filePath = tornadoSDK + "/examples/generated/";
-        filePath += defaultDevice.getDeviceName().contains("cuda") ? "add.ptx" : "add2.cl";
+
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
+        switch (backendType) {
+            case PTX:
+                filePath += "add.ptx";
+                break;
+            case OpenCL:
+                filePath += "add.cl";
+                break;
+            case SPIRV:
+                filePath += "add.spv";
+                break;
+            default:
+                throw new RuntimeException("Backend not supported");
+        }
 
         // @formatter:off
         new TaskSchedule("s0")
@@ -98,7 +127,7 @@ public class PrebuiltTest extends TornadoTestBase {
         // @formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
     }
 
