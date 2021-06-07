@@ -4,6 +4,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -14,7 +15,11 @@ import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
@@ -123,8 +128,24 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
     }
 
     @Override
-    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool gen) {
-
+    public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGeneratorTool) {
+        SPIRVBuiltinTool gen = ((SPIRVArithmeticTool) lirGeneratorTool).getGen().getSpirvBuiltinTool();
+        Value x = builder.operand(getX());
+        Value y = builder.operand(getY());
+        Value computeIntrinsic;
+        switch (operation) {
+            case MIN:
+                computeIntrinsic = gen.genIntMin(x, y);
+                break;
+            case MAX:
+                computeIntrinsic = gen.genIntMax(x, y);
+                break;
+            default:
+                throw new RuntimeException("Int binary intrinsic not supported yet");
+        }
+        Variable result = builder.getLIRGeneratorTool().newVariable(computeIntrinsic.getValueKind());
+        builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, computeIntrinsic));
+        builder.setResult(this, result);
     }
 
 }

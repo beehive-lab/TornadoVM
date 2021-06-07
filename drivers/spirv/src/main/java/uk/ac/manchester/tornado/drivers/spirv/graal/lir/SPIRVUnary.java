@@ -552,7 +552,13 @@ public class SPIRVUnary {
             SQRT("sqrt", 61),
             TAN("tan", 62),
             TANH("tanh", 63),
-            NATIVE_COS("native_cos", 81);  // Optimization
+            NATIVE_COS("native_cos", 81),  // Optimization
+            FCLAMP("flamp", 95),
+            SABS("s_abs", 141),
+            SCLAMP("s_clamp", 149),
+            SMAX("s_max", 156),
+            SMIN("s_min", 158),
+            POPCOPUNT("popcount", 166);
 
             int value;
             String name;

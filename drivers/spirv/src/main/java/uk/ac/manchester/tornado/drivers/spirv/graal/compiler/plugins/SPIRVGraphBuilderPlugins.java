@@ -45,6 +45,7 @@ public class SPIRVGraphBuilderPlugins {
 
         registerOpenCLBuiltinPlugins(invocationPlugins);
 
+        SPIRVMathPlugins.registerTornadoMathPlugins(invocationPlugins);
     }
 
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {

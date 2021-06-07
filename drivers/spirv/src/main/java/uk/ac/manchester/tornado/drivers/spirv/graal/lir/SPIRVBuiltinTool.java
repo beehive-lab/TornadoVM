@@ -343,10 +343,9 @@ public class SPIRVBuiltinTool {
         return null;
     }
 
-    // FIXME: REVISIT
     public Value genIntAbs(Value input) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("genIntAbs: abs(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.SABS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSqrt(Value input) {
@@ -354,16 +353,14 @@ public class SPIRVBuiltinTool {
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.SQRT, LIRKind.value(input.getPlatformKind()), input);
     }
 
-    // FIXME: REVISIT
     public Value genIntMax(Value x, Value y) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("genMax: max(%s,%s)", x, y);
+        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.SMAX, LIRKind.combine(x, y), x, y);
     }
 
-    // FIXME: REVISIT
     public Value genIntMin(Value x, Value y) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("genMin: min(%s,%s)", x, y);
+        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.SMIN, LIRKind.combine(x, y), x, y);
     }
 
     public Value genIntClz(Value value) {
@@ -371,16 +368,14 @@ public class SPIRVBuiltinTool {
         return null;
     }
 
-    // FIXME: REVISIT
     public Value genIntPopcount(Value value) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("genIntAbs: abs(%s)", value);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.POPCOPUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 
-    // FIXME: REVISIT
     public Value genIntClamp(Value x, Value y, Value z) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("genIntClamp: clamp(%s, %s, %s)", x, y, z);
+        return new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.SCLAMP, LIRKind.combine(x, y, z), x, y, z);
     }
 
     public Value genIntMad24(Value x, Value y, Value z) {
