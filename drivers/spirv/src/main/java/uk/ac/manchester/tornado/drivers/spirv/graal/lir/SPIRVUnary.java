@@ -513,6 +513,9 @@ public class SPIRVUnary {
          */
         // @formatter:off
         public enum OpenCLIntrinsic {
+            
+            // Math extended instructions
+            // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_math_a_math_extended_instructions
             ACOS("acos", 0),
             ACOSH("acosh", 1),
             ACOSPI("acospi", 2),
@@ -558,7 +561,16 @@ public class SPIRVUnary {
             SCLAMP("s_clamp", 149),
             SMAX("s_max", 156),
             SMIN("s_min", 158),
-            POPCOPUNT("popcount", 166);
+            POPCOPUNT("popcount", 166),
+            
+            // Vector Loads/Stores
+            // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_vector_a_vector_data_load_and_store_instructions
+            VLOADN("vloadn", 171),
+            VSTOREN("vstoren", 172),
+            VLOAD_HALF("vload_half", 173),
+            VLOAD_HALFN("vload_halfn", 174),
+            VSTORE_HALF("vstore_half", 175),
+            VSTORE_HALFN("vstore_halfn", 176);
 
             int value;
             String name;
