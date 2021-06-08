@@ -293,4 +293,8 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         return codeCache.getInstalledCode(id, entryPoint);
     }
 
+    public int enqueueMarker(int[] internalEvents) {
+        spirvContext.enqueueBarrier(getDeviceIndex());
+        return 0;
+    }
 }

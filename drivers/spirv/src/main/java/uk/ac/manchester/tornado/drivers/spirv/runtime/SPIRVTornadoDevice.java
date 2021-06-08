@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -253,7 +254,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
-        ObjectBuffer result = null;
+        System.out.println("Creating Device Buffer for object: " + object + " :: " + object.getClass());
         if (type.isArray()) {
             if (!type.getComponentType().isArray()) {
                 return createArrayWrapper(type, deviceContext, batchSize);
@@ -266,10 +267,17 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
                 }
             }
         } else if (!type.isPrimitive()) {
-            throw new RuntimeException("Not implemented yet");
-        }
+            System.out.println("It is NOT a primitive!");
+            if (object instanceof AtomicInteger) {
+                throw new RuntimeException("Atomic Integers not supported yet");
+            } else {
+                // Possible a vector type, we encapsulate in an object
+                System.out.println("It is an object possible vector type???? ");
+                return new SPIRVObjectWrapper(deviceContext, object, batchSize);
 
-        TornadoInternalError.guarantee(result != null, "Unable to create a buffer for object with type: " + type);
+            }
+        }
+        System.out.println("Object is nULLL!!!!");
         return null;
     }
 
@@ -281,7 +289,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
 
-        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, (SPIRVDeviceContext) getDeviceContext(), batchSize);
+        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
         buffer.allocate(object, batchSize);
         state.setBuffer(buffer);
 

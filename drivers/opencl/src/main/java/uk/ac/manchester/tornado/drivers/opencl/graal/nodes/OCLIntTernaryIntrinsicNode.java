@@ -137,6 +137,8 @@ public class OCLIntTernaryIntrinsicNode extends TernaryNode implements Arithmeti
 
     private static long doCompute(long x, long y, long z, Operation op) {
         switch (op) {
+            case CLAMP:
+                return TornadoMath.clamp(x, y, z);
             default:
                 throw new TornadoInternalError("unknown op %s", op);
         }
