@@ -12,6 +12,7 @@ public class SPIRVMemorySpace extends Value {
     public static final SPIRVMemorySpace CONSTANT = new SPIRVMemorySpace(SPIRVAssemblerConstants.CONSTANT_MEM_MODIFIER);
     public static final SPIRVMemorySpace SHARED = new SPIRVMemorySpace(OCLAssemblerConstants.SHARED_MEM_MODIFIER);
     public static final SPIRVMemorySpace LOCAL = new SPIRVMemorySpace(OCLAssemblerConstants.LOCAL_MEM_MODIFIER);
+    public static final SPIRVMemorySpace PRIVATE = new SPIRVMemorySpace(OCLAssemblerConstants.PRIVATE_REGION_NAME);
 
     private String name;
 

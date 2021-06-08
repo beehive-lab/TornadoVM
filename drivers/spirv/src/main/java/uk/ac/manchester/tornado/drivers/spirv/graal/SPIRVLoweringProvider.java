@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
@@ -39,6 +40,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
@@ -51,22 +53,27 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.CastNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 
 public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     private ConstantReflectionProvider constantReflectionProvider;
     private TornadoVMConfig vmConfig;
+
+    private static boolean gpuSnippet = false;
 
     public SPIRVLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig,
             MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflectionProvider, TornadoVMConfig vmConfig, SPIRVTargetDescription target,
@@ -99,6 +106,8 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
              */
         } else if (node instanceof LoadIndexedNode) {
             lowerLoadIndexedNode((LoadIndexedNode) node, tool);
+        } else if (node instanceof NewArrayNonVirtualizableNode) {
+            lowerNewArrayNode((NewArrayNonVirtualizableNode) node);
         } else if (node instanceof InstanceOfNode) {
             // ignore
         } else if (node instanceof StoreIndexedNode) {
@@ -113,6 +122,47 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         }
 
+    }
+
+    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
+        LocalArrayNode localArrayNode;
+        ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
+        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(SPIRVArchitecture.localSpace, newArray.elementType(), newLengthNode));
+        newArray.replaceAtUsages(localArrayNode);
+    }
+
+    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNonVirtualizableNode newArray) {
+        FixedArrayNode fixedArrayNode;
+        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(SPIRVArchitecture.privateSpace, newArray.elementType(), newLengthNode));
+        newArray.replaceAtUsages(fixedArrayNode);
+    }
+
+    private void lowerNewArrayNode(NewArrayNonVirtualizableNode newArray) {
+        final StructuredGraph graph = newArray.graph();
+        final ValueNode firstInput = newArray.length();
+        if (firstInput instanceof ConstantNode) {
+            if (newArray.dimensionCount() == 1) {
+                final ConstantNode lengthNode = (ConstantNode) firstInput;
+                if (lengthNode.getValue() instanceof PrimitiveConstant) {
+                    final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
+                    if (gpuSnippet) {
+                        lowerLocalNewArray(graph, length, newArray);
+                    } else {
+                        lowerPrivateNewArray(graph, length, newArray);
+                    }
+                    newArray.clearInputs();
+                    GraphUtil.unlinkFixedNode(newArray);
+                    GraphUtil.removeFixedWithUnusedInputs(newArray);
+                } else {
+                    shouldNotReachHere();
+                }
+            } else {
+                unimplemented("multi-dimensional array declarations are not supported");
+            }
+        } else {
+            unimplemented("dynamically sized array declarations are not supported");
+        }
     }
 
     private void lowerGetGroupIdNode(GetGroupIdFixedWithNextNode getGroupIdNode) {
@@ -243,7 +293,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         AddressNode address;
 
         Stamp loadStamp = loadIndexed.stamp(NodeView.DEFAULT);
-        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof OCLStamp)) {
+        if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof SPIRVStamp)) {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);

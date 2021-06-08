@@ -31,6 +31,7 @@ public class SPIRVArchitecture extends Architecture {
     public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase constantSpace = new SPIRVMemoryBase(2, HEAP_REF_NAME, SPIRVMemorySpace.CONSTANT, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(3, HEAP_REF_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
+    public static final SPIRVMemoryBase privateSpace = new SPIRVMemoryBase(4, HEAP_REF_NAME, SPIRVMemorySpace.PRIVATE, SPIRVKind.OP_TYPE_INT_8);
 
     private SPIRVRegister[] abiRegisters;
     private SPIRVRegister sp;

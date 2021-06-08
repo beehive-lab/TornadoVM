@@ -26,7 +26,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
     protected ResolvedJavaType elemenType;
     // FIXME SPIRVBinarTemplate is missing
 
-    protected FixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
+    public FixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryBase = memoryBase;
         this.length = length;
