@@ -211,8 +211,11 @@ public class OCLCodeCache {
 
     private String resolveCompilationFlags(StringTokenizer tokenizer, StringBuilder buildFlags, String flag) {
         String resolvedFlags;
-        if (flag.contains("--")) {
+        if (flag.contains("--config")) {
             String fileString = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
+            resolvedFlags = buildFlags.append(flag).append(" ").append(fileString).toString();
+        } else if (flag.contains("--nk")) {
+            String fileString = tokenizer.nextToken(" =");
             resolvedFlags = buildFlags.append(flag).append(" ").append(fileString).toString();
         } else {
             resolvedFlags = buildFlags.append(flag).toString();
