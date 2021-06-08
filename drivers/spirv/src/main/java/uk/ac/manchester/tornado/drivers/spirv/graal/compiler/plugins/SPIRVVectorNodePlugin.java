@@ -1,16 +1,17 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
-public class SPIRVOCLNodePlugin implements NodePlugin {
+public class SPIRVVectorNodePlugin implements NodePlugin {
 
     @Override
     public boolean handleNewInstance(GraphBuilderContext builderContext, ResolvedJavaType type) {

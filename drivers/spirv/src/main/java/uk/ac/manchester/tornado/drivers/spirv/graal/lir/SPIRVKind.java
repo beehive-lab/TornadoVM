@@ -113,7 +113,7 @@ public enum SPIRVKind implements PlatformKind {
     public static SPIRVKind fromResolvedJavaType(ResolvedJavaType type) {
         if (!type.isArray()) {
             for (SPIRVKind kind : SPIRVKind.values()) {
-                if (kind.javaClass != null && kind.javaClass.getSimpleName().equals(type.getUnqualifiedName())) {
+                if (kind.javaClass != null && (kind.javaClass.getSimpleName().equalsIgnoreCase(type.getJavaKind().name()) || kind.javaClass.getSimpleName().equals(type.getUnqualifiedName()))) {
                     return kind;
                 }
             }

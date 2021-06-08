@@ -35,7 +35,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
-        plugins.appendNodePlugin(new SPIRVOCLNodePlugin());
+        plugins.appendNodePlugin(new SPIRVVectorNodePlugin());
         // FIXME: Atomics for SPIRV Backend not implemented.
     }
 
@@ -46,6 +46,7 @@ public class SPIRVGraphBuilderPlugins {
         registerOpenCLBuiltinPlugins(invocationPlugins);
 
         SPIRVMathPlugins.registerTornadoMathPlugins(invocationPlugins);
+        SPIRVVectorPlugins.registerPlugins(plugins, invocationPlugins);
     }
 
     private static void registerOpenCLBuiltinPlugins(InvocationPlugins plugins) {
