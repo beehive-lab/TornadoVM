@@ -27,12 +27,6 @@
 
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
-import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
-
-import java.util.List;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
@@ -44,17 +38,30 @@ import org.graalvm.compiler.nodes.loop.LoopEx;
 import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
-
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipelineAttribute;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
-public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
+import java.util.List;
+
+import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
+import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
+
+public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
 
     private static final int UNROLL_FACTOR_NUMBER = 4;
+    private static final int XILINX_PIPELINING_II_NUMBER = 1;
+    private TornadoDeviceContext deviceContext;
 
-    private static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
+    public TornadoFPGAPragmas(TornadoDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
+    }
+
+    private static boolean shouldFullUnrollOrPipeline(OptionValues options, LoopEx loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
@@ -64,7 +71,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
         maxNodes = Math.min(maxNodes, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount());
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
         if (size * maxTrips <= maxNodes) {
-            // check whether we're allowed to unroll this loop
+            // check whether we're allowed to unroll or pipeline this loop
             int loops = 0;
             int ifs = 0;
             for (Node node : loop.inside().nodes()) {
@@ -100,14 +107,19 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                 final LoopsData dataCounted = new TornadoLoopsData(graph);
                 dataCounted.detectedCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
-                    if (shouldFullUnroll(graph.getOptions(), loop)) {
+                    if (shouldFullUnrollOrPipeline(graph.getOptions(), loop)) {
                         List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
                         int idx = 0;
                         for (EndNode end : snapshot) {
                             idx++;
                             if (idx == 2) {
-                                PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(UNROLL_FACTOR_NUMBER));
-                                graph.addBeforeFixed(end, unroll);
+                                if (deviceContext.isPlatformXilinxFPGA()) {
+                                    XilinxPipelineAttribute pipelineAttribute = graph.addOrUnique(new XilinxPipelineAttribute(XILINX_PIPELINING_II_NUMBER));
+                                    graph.addBeforeFixed(end, pipelineAttribute);
+                                } else {
+                                    PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(UNROLL_FACTOR_NUMBER));
+                                    graph.addBeforeFixed(end, unroll);
+                                }
                             }
 
                         }
