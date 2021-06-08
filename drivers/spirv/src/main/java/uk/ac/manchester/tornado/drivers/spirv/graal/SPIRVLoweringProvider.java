@@ -105,6 +105,10 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node);
+        } else if (node instanceof LoadFieldNode) {
+            lowerLoadFieldNode((LoadFieldNode) node, tool);
+        } else if (node instanceof StoreFieldNode) {
+            lowerStoreFieldNode((StoreFieldNode) node, tool);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         }
@@ -269,11 +273,27 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected void lowerLoadFieldNode(LoadFieldNode loadField, LoweringTool tool) {
-
+        assert loadField.getStackKind() != JavaKind.Illegal;
+        StructuredGraph graph = loadField.graph();
+        ResolvedJavaField field = loadField.field();
+        ValueNode object = loadField.isStatic() ? staticFieldBase(graph, field) : loadField.object();
+        Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
+        AddressNode address = createFieldAddress(graph, object, field);
+        assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
+        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, OnHeapMemoryAccess.BarrierType.NONE));
+        loadField.replaceAtUsages(memoryRead);
+        graph.replaceFixed(loadField, memoryRead);
     }
 
     @Override
     protected void lowerStoreFieldNode(StoreFieldNode storeField, LoweringTool tool) {
-
+        StructuredGraph graph = storeField.graph();
+        ResolvedJavaField field = storeField.field();
+        ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();
+        AddressNode address = createFieldAddress(graph, object, field);
+        assert address != null;
+        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), OnHeapMemoryAccess.BarrierType.NONE));
+        memoryWrite.setStateAfter(storeField.stateAfter());
+        graph.replaceFixed(storeField, memoryWrite);
     }
 }
