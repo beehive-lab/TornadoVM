@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -8,6 +9,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
@@ -118,6 +120,8 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
             lowerStoreFieldNode((StoreFieldNode) node, tool);
+        } else if (node instanceof ArrayLengthNode) {
+            lowerArrayLengthNode((ArrayLengthNode) node, tool);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         }
@@ -276,7 +280,12 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool) {
+        StructuredGraph graph = arrayLengthNode.graph();
+        ValueNode array = arrayLengthNode.array();
 
+        AddressNode address = createOffsetAddress(graph, array, arrayLengthOffset());
+        ReadNode arrayLengthRead = graph.add(new ReadNode(address, ARRAY_LENGTH_LOCATION, StampFactory.positiveInt(), OnHeapMemoryAccess.BarrierType.NONE));
+        graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
     private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
