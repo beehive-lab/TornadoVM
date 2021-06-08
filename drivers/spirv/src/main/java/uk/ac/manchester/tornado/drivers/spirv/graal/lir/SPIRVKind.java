@@ -4,6 +4,9 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
@@ -121,16 +124,16 @@ public enum SPIRVKind implements PlatformKind {
         return ILLEGAL;
     }
 
-    SPIRVKind(int size, Class<?> javaClass) {
-        this(size, javaClass, null);
+    SPIRVKind(int sizeInBytes, Class<?> javaClass) {
+        this(sizeInBytes, javaClass, null);
     }
 
-    SPIRVKind(int sizeInBytesPerElement, Class<?> javaClass, SPIRVKind kind) {
+    SPIRVKind(int numElements, Class<?> javaClass, SPIRVKind kind) {
         this.kind = this;
         this.javaClass = javaClass;
         this.elementKind = kind;
-        this.size = (elementKind == null) ? sizeInBytesPerElement : elementKind.size * sizeInBytesPerElement;
-        this.vectorLength = (elementKind == null) ? 1 : sizeInBytesPerElement;
+        this.size = (elementKind == null) ? numElements : elementKind.size * numElements;
+        this.vectorLength = (elementKind == null) ? 1 : numElements;
     }
 
     public static SPIRVKind fromJavaKind(JavaKind stackKind) {
@@ -258,6 +261,7 @@ public enum SPIRVKind implements PlatformKind {
         return JavaConstant.NULL_POINTER;
     }
 
+    // FIXME Could be deprecated
     public static SPIRVKind resolveToVectorKind(ResolvedJavaType type) {
         if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
             String typeName = type.getName();
@@ -267,6 +271,37 @@ public enum SPIRVKind implements PlatformKind {
                 simpleName = simpleName.replace("BYTE", "CHAR");
             }
             return SPIRVKind.valueOf(simpleName);
+        }
+        return SPIRVKind.ILLEGAL;
+    }
+
+    private static Map<String, SPIRVKind> vectorTable;
+
+    static {
+        vectorTable = new HashMap<>();
+        // Integers
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int2;", SPIRVKind.OP_TYPE_VECTOR2_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int3;", SPIRVKind.OP_TYPE_VECTOR3_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int4;", SPIRVKind.OP_TYPE_VECTOR4_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int8;", SPIRVKind.OP_TYPE_VECTOR8_INT_32);
+
+        // Floats
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32);
+
+        // Double
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double6;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64);
+
+    }
+
+    public static SPIRVKind fromResolvedJavaTypeToVectorKind(ResolvedJavaType type) {
+        if (vectorTable.containsKey(type.getName())) {
+            return vectorTable.get(type.getName());
         }
         return SPIRVKind.ILLEGAL;
     }

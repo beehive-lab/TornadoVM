@@ -36,7 +36,7 @@ public class SPIRVVectorPlugins {
             ps.appendNodePlugin(new NodePlugin() {
                 @Override
                 public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-                    SPIRVKind vectorKind = SPIRVKind.resolveToVectorKind(method.getDeclaringClass());
+                    SPIRVKind vectorKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(method.getDeclaringClass());
                     if (vectorKind == SPIRVKind.ILLEGAL) {
                         return false;
                     }
