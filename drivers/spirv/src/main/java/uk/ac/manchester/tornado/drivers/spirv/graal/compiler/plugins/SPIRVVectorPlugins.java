@@ -1,15 +1,115 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorAddNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorLoadElementNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElementProxyNode;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class SPIRVVectorPlugins {
+
+    public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
+
+        if (Tornado.ENABLE_VECTORS) {
+            ps.appendNodePlugin(new NodePlugin() {
+                @Override
+                public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                    SPIRVKind vectorKind = SPIRVKind.resolveToVectorKind(method.getDeclaringClass());
+                    if (vectorKind == SPIRVKind.ILLEGAL) {
+                        return false;
+                    }
+                    if (method.getName().equals("<init>")) {
+                        final SPIRVVectorValueNode vectorValueNode = resolveReceiver(args[0]);
+                        if (args.length > 1) {
+                            int offset = (vectorValueNode == args[0]) ? 1 : 0;
+                            for (int i = offset; i < args.length; i++) {
+                                vectorValueNode.setElement(i - offset, args[i]);
+                            }
+                        } else {
+                            if (vectorKind.getVectorLength() < 8) {
+                                vectorValueNode.initialiseToDefaultValues(vectorValueNode.graph());
+                            }
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+            });
+        }
+
+        // Adding ints
+        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, int[].class, int.class);
+
+    }
+
+    private static void registerVectorPlugins(final InvocationPlugins plugins, final SPIRVKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+
+        final Class<?> declaringClass = vectorKind.getJavaClass();
+        final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
+
+        final InvocationPlugins.Registration r = new InvocationPlugins.Registration(plugins, declaringClass);
+
+        r.register2("get", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
+                b.push(javaElementKind, b.append(loadElement));
+                return true;
+            }
+        });
+
+        r.register3("set", InvocationPlugin.Receiver.class, int.class, elementType, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                b.add(b.append(store));
+                return true;
+            }
+        });
+
+        r.register2("add", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+    }
+
+    private static SPIRVVectorValueNode resolveReceiver(ValueNode thisObject) {
+        SPIRVVectorValueNode vector = null;
+        if (thisObject instanceof PiNode) {
+            thisObject = ((PiNode) thisObject).getOriginalNode();
+        }
+        if (thisObject instanceof SPIRVVectorValueNode) {
+            vector = (SPIRVVectorValueNode) thisObject;
+        }
+        guarantee(vector != null, "[Vector Plugins] unable to resolve vector");
+        return vector;
+    }
 
     /**
      * If the parameter passed is a vector, we attach vector information (SPIRVKind)
