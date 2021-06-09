@@ -231,11 +231,11 @@ public class SPIRVLIRStmt {
 
         /**
          * Emit the following SPIR-V structure:
-         * 
+         *
          * <code>
-         *     OpStore <address> <value> Aligned <alignment>
+         * OpStore <address> <value> Aligned <alignment>
          * </code>
-         * 
+         *
          * @param crb
          *            {@link SPIRVCompilationResultBuilder}
          * @param asm
@@ -588,10 +588,17 @@ public class SPIRVLIRStmt {
             SPIRVId vloadId = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();
 
-            int valueIntrinsic = SPIRVUnary.Intrinsic.OpenCLIntrinsic.VLOADN.getValue();
+            SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLIntrinsic.VLOADN;
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
-            asm.currentBlockScope().add(new SPIRVOpExtInst(idKind, vloadId, set, new SPIRVLiteralExtInstInteger(valueIntrinsic, "vloadn"),
-                    new SPIRVMultipleOperands(idKind, idLongToPtr, new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getSizeInBytes()))));
+            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
+            SPIRVMultipleOperands operandsIntrinsic = new SPIRVMultipleOperands(baseIndex, idLongToPtr, new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getVectorLength()));
+
+            asm.currentBlockScope().add(new SPIRVOpExtInst(idKind, //
+                    vloadId, //
+                    set, //
+                    intrinsic, //
+                    operandsIntrinsic));
 
             SPIRVId resultID = asm.lookUpLIRInstructions(result);
 
