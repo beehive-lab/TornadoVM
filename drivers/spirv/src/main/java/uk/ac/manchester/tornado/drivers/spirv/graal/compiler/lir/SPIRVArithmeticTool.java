@@ -269,6 +269,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         getGen().append(new SPIRVLIRStmt.LoadStmt(result, cast, address));
     }
 
+    private void emitLoadVectorType(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
+        SPIRVLogger.traceBuildLIR("emitLoadVector STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        getGen().append(new SPIRVLIRStmt.LoadVectorStmt(result, cast, address));
+    }
+
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
         SPIRVLogger.traceBuildLIR("emitLoad: %s <- %s with state:%s", kind, address, state);
@@ -281,7 +286,9 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
 
         if (spirvKind.isVector()) {
-            throw new RuntimeException("Vector Load not supported");
+            System.out.println("SPIRV-KIND: " + spirvKind);
+            SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
+            emitLoadVectorType(result, cast, (MemoryAccess) address);
         } else {
             SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
             emitLoad(result, cast, (MemoryAccess) address);
@@ -311,7 +318,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         if (spirvKind.isVector()) {
-            throw new RuntimeException("Vector types not supported yet");
+            SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
+            getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, memAccess, input));
         } else {
             if (memAccess != null) {
                 SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));

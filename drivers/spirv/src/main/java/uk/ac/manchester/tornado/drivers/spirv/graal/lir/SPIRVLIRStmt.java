@@ -10,10 +10,12 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
@@ -537,6 +539,72 @@ public class SPIRVLIRStmt {
 
     }
 
+    @Opcode("LOAD_VECTOR")
+    public static class LoadVectorStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoadVectorStmt> TYPE = LIRInstructionClass.create(LoadVectorStmt.class);
+
+        @Def
+        protected AllocatableValue result;
+
+        @Use
+        protected SPIRVAddressCast cast;
+
+        @Use
+        protected MemoryAccess base;
+
+        public LoadVectorStmt(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess memoryRegion) {
+            super(TYPE);
+            this.result = result;
+            this.cast = cast;
+            this.base = memoryRegion;
+            memoryRegion.assignTo((Variable) result);
+        }
+
+        @Override
+        public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            // They key is in the cast.
+            asm.emitValue(crb, cast);
+            asm.emitValue(crb, base.value);
+            asm.emitValue(crb, result);
+
+            SPIRVId addressToLoad = asm.lookUpLIRInstructions(base.value);
+            SPIRVId idLoad = asm.module.getNextId();
+            SPIRVId idKindLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    idKindLoad, //
+                    idLoad, //
+                    addressToLoad, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
+
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive((SPIRVKind) result.getPlatformKind());
+            SPIRVId idLongToPtr = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, idLongToPtr, idLoad));
+
+            SPIRVId idKind = asm.primitives.getTypePrimitive(cast.getSPIRVPlatformKind());
+
+            SPIRVId vloadId = asm.module.getNextId();
+            SPIRVId set = asm.getOpenclImport();
+
+            int valueIntrinsic = SPIRVUnary.Intrinsic.OpenCLIntrinsic.VLOADN.getValue();
+
+            asm.currentBlockScope().add(new SPIRVOpExtInst(idKind, vloadId, set, new SPIRVLiteralExtInstInteger(valueIntrinsic, "vloadn"),
+                    new SPIRVMultipleOperands(idKind, idLongToPtr, new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getSizeInBytes()))));
+
+            SPIRVId resultID = asm.lookUpLIRInstructions(result);
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    resultID, //
+                    vloadId, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getByteCount())) //
+                    )));
+
+        }
+
+    }
+
     @Opcode("STORE")
     public static class StoreStmt extends AbstractInstruction {
 
@@ -588,6 +656,74 @@ public class SPIRVLIRStmt {
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(cast);
 
             SPIRVLogger.traceCodeGen("emit StoreStmt in address: " + cast + " <- " + rhs);
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    storeAddressID, //
+                    value, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount())) //
+                    )));
+        }
+    }
+
+    @Opcode("STORE_VECTOR")
+    public static class StoreVectorStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<StoreVectorStmt> TYPE = LIRInstructionClass.create(StoreVectorStmt.class);
+
+        @Use
+        protected Value rhs;
+
+        @Use
+        protected SPIRVAddressCast cast;
+
+        @Use
+        protected MemoryAccess address;
+
+        @Use
+        protected Value index;
+
+        public StoreVectorStmt(SPIRVAddressCast cast, MemoryAccess address, Value rhs) {
+            super(TYPE);
+            this.cast = cast;
+            this.address = address;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            cast.emit(crb, asm);
+
+            SPIRVId value;
+            if (rhs instanceof ConstantValue) {
+                value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+            } else {
+                value = asm.lookUpLIRInstructions(rhs);
+                SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());
+                SPIRVId loadID = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad( //
+                        resultType, // type of load
+                        loadID, // new id
+                        value, // pointer
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(rhs.getPlatformKind().getSizeInBytes()))) //
+                ));
+                value = loadID;
+            }
+
+            SPIRVKind spirvKind = (SPIRVKind) cast.getLIRKind().getPlatformKind();
+            SPIRVId storeAddressID = asm.lookUpLIRInstructions(cast);
+
+            SPIRVLogger.traceCodeGen("emit StoreVectorStmt in address: " + cast + " <- " + rhs);
+
+            SPIRVUnary.Intrinsic.OpenCLIntrinsic intrinsic = SPIRVUnary.Intrinsic.OpenCLIntrinsic.VLOADN;
+            SPIRVId set = asm.getOpenclImport();
+
+            // FIXME Pending instrinsic store -> the actual store should be gone.
+
+            // asm.currentBlockScope().add(new SPIRVOpExtInst(idKind, value, set, new
+            // SPIRVLiteralExtInstInteger(intrinsic.getValue(), intrinsic.getName()),
+            // new SPIRVMultipleOperands(idKind, idLongToPtr, new
+            // SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getSizeInBytes()))));
 
             asm.currentBlockScope().add(new SPIRVOpStore( //
                     storeAddressID, //
