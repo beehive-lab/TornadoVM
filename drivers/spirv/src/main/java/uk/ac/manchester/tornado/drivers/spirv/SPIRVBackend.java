@@ -789,7 +789,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // We add the type for char
             asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_8);
 
-            // Add all int KINDS
+            // Add all KINDS
             for (SPIRVKind kind : idTable.kindToVariable.keySet()) {
                 asm.primitives.getTypePrimitive(kind);
             }

@@ -7,6 +7,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeBool;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFloat;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
@@ -50,6 +51,11 @@ public class SPIRVPrimitiveTypes {
                 case OP_TYPE_FLOAT_32:
                 case OP_TYPE_FLOAT_64:
                     module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
+                    break;
+                case OP_TYPE_VECTOR2_INT_32:
+                    System.out.println("Registering a VECTOR: " + primitive);
+                    SPIRVId intPrimitiveId = getTypePrimitive(primitive.getElementKind());
+                    module.add(new SPIRVOpTypeVector(typeID, intPrimitiveId, new SPIRVLiteralInteger(primitive.getVectorLength())));
                     break;
                 default:
                     throw new RuntimeException("DataType Not supported yet");
