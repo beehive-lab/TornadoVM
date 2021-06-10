@@ -27,7 +27,7 @@ public class SPIRVVectorNodePlugin implements NodePlugin {
 
     private SPIRVKind resolveSPIRVKind(ResolvedJavaType type) {
         if (type instanceof HotSpotResolvedJavaType) {
-            return SPIRVKind.fromResolvedJavaType(type);
+            return SPIRVKind.fromResolvedJavaTypeToVectorKind(type);
         }
 
         return SPIRVKind.ILLEGAL;

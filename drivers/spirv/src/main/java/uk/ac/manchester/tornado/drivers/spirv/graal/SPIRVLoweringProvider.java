@@ -203,7 +203,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             if (returnStamp instanceof ObjectStamp) {
                 ObjectStamp os = (ObjectStamp) returnStamp;
                 ResolvedJavaType type = os.javaType(tool.getMetaAccess());
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(type);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(type);
                 if (kind != SPIRVKind.ILLEGAL) {
                     returnStampPair = StampPair.createSingle(SPIRVStampFactory.getStampFor(kind));
                 }

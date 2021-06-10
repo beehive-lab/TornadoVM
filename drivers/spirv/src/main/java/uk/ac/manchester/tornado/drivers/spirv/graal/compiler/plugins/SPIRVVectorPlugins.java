@@ -92,8 +92,6 @@ public class SPIRVVectorPlugins {
         final Class<?> declaringClass = spirvVectorKind.getJavaClass();
         final JavaKind javaElementKind = spirvVectorKind.getElementKind().asJavaKind();
 
-        System.out.println("javaElementKIND: " + javaElementKind);
-
         final InvocationPlugins.Registration r = new InvocationPlugins.Registration(plugins, declaringClass);
 
         r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
@@ -117,7 +115,7 @@ public class SPIRVVectorPlugins {
         r.register2("add", declaringClass, declaringClass, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
@@ -127,7 +125,7 @@ public class SPIRVVectorPlugins {
         r.register2("sub", declaringClass, declaringClass, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 VectorSubNode addNode = new VectorSubNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
@@ -137,7 +135,7 @@ public class SPIRVVectorPlugins {
         r.register2("mul", declaringClass, declaringClass, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 VectorMultNode addNode = new VectorMultNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
@@ -147,7 +145,7 @@ public class SPIRVVectorPlugins {
         r.register2("div", declaringClass, declaringClass, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 VectorDivNode addNode = new VectorDivNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
@@ -157,7 +155,7 @@ public class SPIRVVectorPlugins {
         r.register2("loadFromArray", storageType, int.class, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
                 b.push(JavaKind.Object, b.append(indexedLoad));
@@ -169,7 +167,7 @@ public class SPIRVVectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 ValueNode value = receiver.get();
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
                 b.append(b.append(indexedStore));
@@ -203,7 +201,7 @@ public class SPIRVVectorPlugins {
             if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
                 ObjectStamp objectStamp = (ObjectStamp) stampPair.getTrustedStamp();
                 if (objectStamp.type().getAnnotation(Vector.class) != null) {
-                    SPIRVKind kind = SPIRVKind.fromResolvedJavaType(objectStamp.type());
+                    SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(objectStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(SPIRVStampFactory.getStampFor(kind)));
                 }
             }

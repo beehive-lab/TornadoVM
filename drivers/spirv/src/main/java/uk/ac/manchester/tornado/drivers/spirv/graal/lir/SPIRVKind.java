@@ -113,16 +113,18 @@ public enum SPIRVKind implements PlatformKind {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private final EnumKey key = new EnumKey(this);
 
-    public static SPIRVKind fromResolvedJavaType(ResolvedJavaType type) {
-        if (!type.isArray()) {
-            for (SPIRVKind kind : SPIRVKind.values()) {
-                if (kind.javaClass != null && (kind.javaClass.getSimpleName().equalsIgnoreCase(type.getJavaKind().name()) || kind.javaClass.getSimpleName().equals(type.getUnqualifiedName()))) {
-                    return kind;
-                }
-            }
-        }
-        return ILLEGAL;
-    }
+    // public static SPIRVKind fromResolvedJavaType(ResolvedJavaType type) {
+    // if (!type.isArray()) {
+    // for (SPIRVKind kind : SPIRVKind.values()) {
+    // if (kind.javaClass != null &&
+    // (kind.javaClass.getSimpleName().equalsIgnoreCase(type.getJavaKind().name())
+    // || kind.javaClass.getSimpleName().equals(type.getUnqualifiedName()))) {
+    // return kind;
+    // }
+    // }
+    // }
+    // return ILLEGAL;
+    // }
 
     SPIRVKind(int sizeInBytes, Class<?> javaClass) {
         this(sizeInBytes, javaClass, null);

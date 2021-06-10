@@ -31,7 +31,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         this.memoryBase = memoryBase;
         this.length = length;
         this.elemenType = elementType;
-        this.elementKind = SPIRVKind.fromResolvedJavaType(elementType);
+        this.elementKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(elementType);
         System.out.println("NOTE -- Memory template is missing");
     }
 

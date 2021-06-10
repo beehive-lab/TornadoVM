@@ -334,7 +334,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             phi.setStamp(stamp);
         } else if (stamp instanceof ObjectStamp) {
             SPIRVStamp oStamp = (SPIRVStamp) stamp;
-            SPIRVKind kind = SPIRVKind.fromResolvedJavaType(oStamp.javaType(gen.getMetaAccess()));
+            SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(oStamp.javaType(gen.getMetaAccess()));
             if (kind != SPIRVKind.ILLEGAL && kind.isVector()) {
                 stamp = SPIRVStampFactory.getStampFor(kind);
                 phi.setStamp(stamp);

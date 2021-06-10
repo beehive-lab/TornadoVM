@@ -47,7 +47,7 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
         } else if (vectorStamp instanceof ObjectStamp) {
             ObjectStamp objectStamp = (ObjectStamp) vector.stamp(NodeView.DEFAULT);
             if (objectStamp.type() != null) {
-                vectorKind = SPIRVKind.fromResolvedJavaType(objectStamp.type());
+                vectorKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(objectStamp.type());
                 guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
                 guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), kind);
             }

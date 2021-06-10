@@ -98,6 +98,16 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             if (type.isArray()) {
                 if (type == int[].class) {
                     wrappedField = new SPIRVIntArrayWrapper(deviceContext, isFinal, batchSize);
+                } else if (type == float[].class) {
+                    wrappedField = new SPIRVFloatArrayWrapper(deviceContext, isFinal, batchSize);
+                } else if (type == double[].class) {
+                    wrappedField = new SPIRVDoubleArrayWrapper(deviceContext, isFinal, batchSize);
+                } else if (type == long[].class) {
+                    wrappedField = new SPIRVLongArrayWrapper(deviceContext, isFinal, batchSize);
+                } else if (type == short[].class) {
+                    wrappedField = new SPIRVShortArrayWrapper(deviceContext, isFinal, batchSize);
+                } else if (type == byte[].class) {
+                    wrappedField = new SPIRVByteArrayWrapper(deviceContext, isFinal, batchSize);
                 } else {
                     throw new RuntimeException("Cannot wrap field array type: " + type.getName());
                 }
