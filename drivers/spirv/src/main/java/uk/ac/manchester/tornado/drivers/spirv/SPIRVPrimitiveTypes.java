@@ -31,10 +31,21 @@ public class SPIRVPrimitiveTypes {
         this.crossGroupToPrimitives = new HashMap<>();
     }
 
+    private SPIRVId getVectorType(SPIRVKind vectorType, SPIRVId typeID) {
+        SPIRVId intPrimitiveId = getTypePrimitive(vectorType.getElementKind());
+        module.add(new SPIRVOpTypeVector(typeID, intPrimitiveId, new SPIRVLiteralInteger(vectorType.getVectorLength())));
+        primitives.put(vectorType, typeID);
+        return primitives.get(vectorType);
+    }
+
     public SPIRVId getTypePrimitive(SPIRVKind primitive) {
         if (!primitives.containsKey(primitive)) {
             SPIRVId typeID = module.getNextId();
             int sizeInBytes = primitive.getSizeInBytes() * 8;
+
+            if (primitive.isVector()) {
+                return getVectorType(primitive, typeID);
+            }
             switch (primitive) {
                 case OP_TYPE_VOID:
                     module.add(new SPIRVOpTypeVoid(typeID));
@@ -51,11 +62,6 @@ public class SPIRVPrimitiveTypes {
                 case OP_TYPE_FLOAT_32:
                 case OP_TYPE_FLOAT_64:
                     module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
-                    break;
-                case OP_TYPE_VECTOR2_INT_32:
-                    System.out.println("Registering a VECTOR: " + primitive);
-                    SPIRVId intPrimitiveId = getTypePrimitive(primitive.getElementKind());
-                    module.add(new SPIRVOpTypeVector(typeID, intPrimitiveId, new SPIRVLiteralInteger(primitive.getVectorLength())));
                     break;
                 default:
                     throw new RuntimeException("DataType Not supported yet");

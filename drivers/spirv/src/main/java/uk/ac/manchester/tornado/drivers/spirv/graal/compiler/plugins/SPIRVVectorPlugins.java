@@ -25,7 +25,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorAddNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorDivNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorLoadElementNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorMultNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElementProxyNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -127,6 +129,26 @@ public class SPIRVVectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
                 VectorSubNode addNode = new VectorSubNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register2("mul", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                VectorMultNode addNode = new VectorMultNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register2("div", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                VectorDivNode addNode = new VectorDivNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
             }
