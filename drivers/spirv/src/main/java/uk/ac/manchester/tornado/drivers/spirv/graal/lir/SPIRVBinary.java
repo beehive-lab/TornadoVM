@@ -150,6 +150,7 @@ public class SPIRVBinary {
             super(opcode, lirKind, x, y);
         }
 
+        // FIXME: Simplify this by using the class SPIRVVectorElementSelect.
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
