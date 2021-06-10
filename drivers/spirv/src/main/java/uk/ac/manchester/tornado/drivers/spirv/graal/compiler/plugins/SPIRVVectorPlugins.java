@@ -11,6 +11,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plu
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
@@ -26,6 +27,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValu
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorAddNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorLoadElementNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElementProxyNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class SPIRVVectorPlugins {
@@ -83,26 +85,28 @@ public class SPIRVVectorPlugins {
 
     }
 
-    private static void registerVectorPlugins(final InvocationPlugins plugins, final SPIRVKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+    private static void registerVectorPlugins(final InvocationPlugins plugins, final SPIRVKind spirvVectorKind, final Class<?> storageType, final Class<?> elementType) {
 
-        final Class<?> declaringClass = vectorKind.getJavaClass();
-        final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
+        final Class<?> declaringClass = spirvVectorKind.getJavaClass();
+        final JavaKind javaElementKind = spirvVectorKind.getElementKind().asJavaKind();
+
+        System.out.println("javaElementKIND: " + javaElementKind);
 
         final InvocationPlugins.Registration r = new InvocationPlugins.Registration(plugins, declaringClass);
 
-        r.register2("get", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+        r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(spirvVectorKind.getElementKind(), receiver.get(), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
         });
 
-        r.register3("set", InvocationPlugin.Receiver.class, int.class, elementType, new InvocationPlugin() {
+        r.register3("set", Receiver.class, int.class, elementType, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
-                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(spirvVectorKind.getElementKind(), receiver.get(), laneId, value);
                 b.add(b.append(store));
                 return true;
             }
@@ -113,6 +117,16 @@ public class SPIRVVectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register2("sub", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaType(resolvedType);
+                VectorSubNode addNode = new VectorSubNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
             }
@@ -129,7 +143,7 @@ public class SPIRVVectorPlugins {
             }
         });
 
-        r.register3("storeToArray", InvocationPlugin.Receiver.class, storageType, int.class, new InvocationPlugin() {
+        r.register3("storeToArray", Receiver.class, storageType, int.class, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 ValueNode value = receiver.get();
