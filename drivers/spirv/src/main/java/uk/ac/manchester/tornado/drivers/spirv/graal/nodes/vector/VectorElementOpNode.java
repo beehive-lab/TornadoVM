@@ -10,6 +10,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.InputType;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -23,6 +24,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect;
 
+@NodeInfo(nameTemplate = "Op .s{p#lane}")
 public class VectorElementOpNode extends FloatingNode implements LIRLowerable, Comparable<VectorElementOpNode> {
 
     public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
@@ -38,6 +40,7 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
     public VectorElementOpNode(NodeClass<? extends FloatingNode> c, SPIRVKind kind, ValueNode vector, ValueNode lane) {
         super(c, StampFactory.forKind(kind.asJavaKind()));
         this.kind = kind;
+        this.vector = vector;
         Stamp vectorStamp = vector.stamp(NodeView.DEFAULT);
         SPIRVKind vectorKind;
         if (vectorStamp instanceof SPIRVStamp) {

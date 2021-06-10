@@ -21,6 +21,6 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-        throw new RuntimeException("Vector Select empty implemenmtation");
+        throw new RuntimeException("Vector Select empty implementation");
     }
 }

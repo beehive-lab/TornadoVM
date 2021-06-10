@@ -18,6 +18,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -25,6 +26,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsic
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SlotsBaseAddressNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 // FIXME <TODO> When implementing vector types for the SPIRV platform
@@ -40,6 +42,11 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     public static void registerInvocationPlugins(Plugins plugins, final InvocationPlugins invocationPlugins) {
+
+        if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
+            plugins.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
+        }
+
         registerCompilerIntrinsicsPlugins(invocationPlugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
 

@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 
@@ -41,11 +42,13 @@ public class SPIRVVectorPlugins {
                 @Override
                 public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                     SPIRVKind vectorKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(method.getDeclaringClass());
+                    System.out.println("vectorKIND >>>>>>>>>>>>>>>>>>> " + vectorKind + " >> FROM : " + method.getDeclaringClass());
                     if (vectorKind == SPIRVKind.ILLEGAL) {
                         return false;
                     }
                     if (method.getName().equals("<init>")) {
                         final SPIRVVectorValueNode vectorValueNode = resolveReceiver(args[0]);
+                        System.out.println("????????????? " + vectorValueNode);
                         if (args.length > 1) {
                             int offset = (vectorValueNode == args[0]) ? 1 : 0;
                             for (int i = offset; i < args.length; i++) {
@@ -61,30 +64,29 @@ public class SPIRVVectorPlugins {
                     return false;
                 }
             });
+
+            // Floats
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32, float[].class, float.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32, float[].class, float.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32, float[].class, float.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, float[].class, float.class);
+
+            // Adding ints
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, int[].class, int.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_32, int[].class, int.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_INT_32, int[].class, int.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_INT_32, int[].class, int.class);
+
+            // Short
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_16, short[].class, short.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_16, short[].class, short.class);
+
+            // Doubles
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64, double[].class, double.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64, double[].class, double.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64, double[].class, double.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, double[].class, double.class);
         }
-
-        // Floats
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32, float[].class, float.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32, float[].class, float.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32, float[].class, float.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, float[].class, float.class);
-
-        // Adding ints
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, int[].class, int.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_32, int[].class, int.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_INT_32, int[].class, int.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_INT_32, int[].class, int.class);
-
-        // Short
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_16, short[].class, short.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_16, short[].class, short.class);
-
-        // Doubles
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64, double[].class, double.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64, double[].class, double.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64, double[].class, double.class);
-        registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, double[].class, double.class);
-
     }
 
     private static void registerVectorPlugins(final InvocationPlugins plugins, final SPIRVKind spirvVectorKind, final Class<?> storageType, final Class<?> elementType) {
@@ -92,7 +94,7 @@ public class SPIRVVectorPlugins {
         final Class<?> declaringClass = spirvVectorKind.getJavaClass();
         final JavaKind javaElementKind = spirvVectorKind.getElementKind().asJavaKind();
 
-        final InvocationPlugins.Registration r = new InvocationPlugins.Registration(plugins, declaringClass);
+        final Registration r = new Registration(plugins, declaringClass);
 
         r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
             @Override
