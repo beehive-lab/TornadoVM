@@ -103,9 +103,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipelineAttribute;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
@@ -560,7 +560,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
-        } else if (node instanceof PragmaUnrollNode || node instanceof XilinxPipelineAttribute || node instanceof ThreadConfigurationNode) {
+        } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof ThreadConfigurationNode) {
             // ignore emit-action
         } else {
             super.emitNode(node);
@@ -624,7 +624,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private void emitPragmaLoopUnroll(Block blk) {
         for (ValueNode tempDomBlockNode : blk.getNodes()) {
-            if (tempDomBlockNode instanceof PragmaUnrollNode || tempDomBlockNode instanceof XilinxPipelineAttribute) {
+            if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
                 super.emitNode(tempDomBlockNode);
             }
         }

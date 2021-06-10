@@ -40,8 +40,8 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipelineAttribute;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
@@ -114,11 +114,11 @@ public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
                             idx++;
                             if (idx == 2) {
                                 if (deviceContext.isPlatformXilinxFPGA()) {
-                                    XilinxPipelineAttribute pipelineAttribute = graph.addOrUnique(new XilinxPipelineAttribute(XILINX_PIPELINING_II_NUMBER));
-                                    graph.addBeforeFixed(end, pipelineAttribute);
+                                    XilinxPipeliningPragmaNode pipeliningPragmaNode = graph.addOrUnique(new XilinxPipeliningPragmaNode(XILINX_PIPELINING_II_NUMBER));
+                                    graph.addBeforeFixed(end, pipeliningPragmaNode);
                                 } else {
-                                    PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(UNROLL_FACTOR_NUMBER));
-                                    graph.addBeforeFixed(end, unroll);
+                                    IntelUnrollPragmaNode unrollPragmaNode = graph.addOrUnique(new IntelUnrollPragmaNode(UNROLL_FACTOR_NUMBER));
+                                    graph.addBeforeFixed(end, unrollPragmaNode);
                                 }
                             }
 

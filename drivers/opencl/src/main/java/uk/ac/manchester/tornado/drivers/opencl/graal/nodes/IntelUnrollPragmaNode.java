@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -18,6 +18,8 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
+ * Authors: Michalis Papadimitriou
+ *
  * */
 
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
@@ -33,21 +35,21 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 @NodeInfo
-public class XilinxPipelineAttribute extends FixedWithNextNode implements LIRLowerable {
+public class IntelUnrollPragmaNode extends FixedWithNextNode implements LIRLowerable {
 
     @Successor
     LoopBeginNode loopBgNd;
-    public static final NodeClass<XilinxPipelineAttribute> TYPE = NodeClass.create(XilinxPipelineAttribute.class);
+    public static final NodeClass<IntelUnrollPragmaNode> TYPE = NodeClass.create(IntelUnrollPragmaNode.class);
 
-    private int initiationIntervalValue;
+    private int unroll;
 
-    public XilinxPipelineAttribute(int initiationIntervalValue) {
+    public IntelUnrollPragmaNode(int unroll) {
         super(TYPE, StampFactory.forVoid());
-        this.initiationIntervalValue = initiationIntervalValue;
+        this.unroll = unroll;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
-        nodeLIRBuilderTool.getLIRGeneratorTool().append(new OCLLIRStmt.PragmaExpr(new XclPipelineAttribute(initiationIntervalValue)));
+        nodeLIRBuilderTool.getLIRGeneratorTool().append(new OCLLIRStmt.PragmaExpr(new OCLPragmaUnroll(unroll)));
     }
 }
