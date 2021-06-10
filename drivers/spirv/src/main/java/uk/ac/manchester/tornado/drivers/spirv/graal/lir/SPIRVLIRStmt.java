@@ -579,7 +579,9 @@ public class SPIRVLIRStmt {
                     addressToLoad, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
 
-            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive((SPIRVKind) result.getPlatformKind());
+            SPIRVKind vectorElementKind = ((SPIRVKind) result.getPlatformKind()).getElementKind();
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive(vectorElementKind);
+
             SPIRVId idLongToPtr = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, idLongToPtr, idLoad));
 
