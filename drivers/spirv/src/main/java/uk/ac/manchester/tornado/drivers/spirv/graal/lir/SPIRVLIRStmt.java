@@ -703,11 +703,11 @@ public class SPIRVLIRStmt {
 
             SPIRVId idLoad = asm.module.getNextId();
 
-            // We force to load a pointer to long
+            // We force to load a pointer to long since the arrays from a ptr to the
+            // device's heap
             SPIRVId typeLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address.getValue());
-
             if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 asm.currentBlockScope().add(new SPIRVOpLoad( //
                         typeLoad, //
@@ -757,7 +757,6 @@ public class SPIRVLIRStmt {
                     set, //
                     intrinsic, //
                     operandsIntrinsic));
-
         }
     }
 
