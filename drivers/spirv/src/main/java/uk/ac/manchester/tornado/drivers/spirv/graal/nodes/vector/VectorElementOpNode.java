@@ -41,6 +41,7 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
         super(c, StampFactory.forKind(kind.asJavaKind()));
         this.kind = kind;
         this.vector = vector;
+        this.lane = lane;
         Stamp vectorStamp = vector.stamp(NodeView.DEFAULT);
         SPIRVKind vectorKind;
         if (vectorStamp instanceof SPIRVStamp) {
@@ -89,7 +90,7 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
         Value targetVector = gen.operand(getVector());
         guarantee(targetVector != null, "vector is null");
 
-        SPIRVLogger.traceBuildLIR("emitVectorElementOp: targetVector=%s, laneId=%d", targetVector, laneId());
+        SPIRVLogger.traceBuildLIR("emitVectorElementOp SELECT: targetVector=%s, laneId=%d", targetVector, laneId());
 
         assert targetVector instanceof Variable;
         final SPIRVVectorElementSelect element = new SPIRVVectorElementSelect(LIRKind.value(targetVector.getPlatformKind()), (Variable) targetVector, laneId());

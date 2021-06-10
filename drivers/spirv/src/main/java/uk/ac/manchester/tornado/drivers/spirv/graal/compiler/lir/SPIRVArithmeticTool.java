@@ -40,6 +40,12 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return result;
     }
 
+    public Variable emitBinaryVectorAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVBinary.VectorOperation(op, lirKind, x, y)));
+        return result;
+    }
+
     @Override
     protected boolean isNumericInteger(PlatformKind platformKind) {
         if (!(platformKind instanceof SPIRVKind)) {
@@ -54,6 +60,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR2_INT_32:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.ADD_INTEGER, resultKind, a, b);
             case OP_TYPE_INT_16:
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:

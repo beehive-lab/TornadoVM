@@ -7,6 +7,7 @@ import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
@@ -140,6 +141,54 @@ public class SPIRVBinary {
             asm.currentBlockScope().add(new SPIRVOpExtInst(typeOperation, result, set, intrinsic, new SPIRVMultipleOperands<>(a, b)));
             asm.registerLIRInstructionValue(this, result);
 
+        }
+    }
+
+    public static class VectorOperation extends BinaryConsumer {
+
+        public VectorOperation(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            LIRKind lirKind = getLIRKind();
+            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
+
+            SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+
+            SPIRVKind vectorElementKind = ((SPIRVKind) x.getPlatformKind()).getElementKind();
+            SPIRVId idElementKind = asm.primitives.getTypePrimitive(vectorElementKind);
+
+            SPIRVId resultSelect1 = asm.module.getNextId();
+            if (x instanceof SPIRVVectorElementSelect) {
+                SPIRVVectorElementSelect select = (SPIRVVectorElementSelect) x;
+                asm.currentBlockScope().add(new SPIRVOpCompositeExtract(idElementKind, resultSelect1, a, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(select.getLaneId()))));
+            } else {
+                throw new RuntimeException("Operation not supported");
+            }
+
+            SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            SPIRVId resultSelect2 = asm.module.getNextId();
+            SPIRVKind vectorElementKind2 = ((SPIRVKind) y.getPlatformKind()).getElementKind();
+            SPIRVId idElementKind2 = asm.primitives.getTypePrimitive(vectorElementKind2);
+            if (y instanceof SPIRVVectorElementSelect) {
+                SPIRVVectorElementSelect select = (SPIRVVectorElementSelect) y;
+                asm.currentBlockScope().add(new SPIRVOpCompositeExtract(idElementKind2, resultSelect2, b, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(select.getLaneId()))));
+            } else {
+                throw new RuntimeException("Operation not supported");
+            }
+
+            SPIRVLogger.traceCodeGen("emit " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
+
+            SPIRVId binaryVectorOperationResult = asm.module.getNextId();
+
+            SPIRVInstruction instruction = opcode.generateInstruction(typeOperation, binaryVectorOperationResult, resultSelect1, resultSelect2);
+            asm.currentBlockScope().add(instruction);
+
+            asm.registerLIRInstructionValue(this, binaryVectorOperationResult);
         }
     }
 }

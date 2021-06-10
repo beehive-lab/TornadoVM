@@ -19,6 +19,10 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
         this.laneId = laneId;
     }
 
+    public int getLaneId() {
+        return laneId;
+    }
+
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
         throw new RuntimeException("Vector Select empty implementation");

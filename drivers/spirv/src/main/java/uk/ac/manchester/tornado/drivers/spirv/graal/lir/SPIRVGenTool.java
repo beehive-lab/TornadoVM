@@ -12,6 +12,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 
 /**
@@ -37,7 +38,12 @@ public class SPIRVGenTool {
         emitParameterLoad(result, index);
 
         if (spirvKind.isVector()) {
-            throw new RuntimeException("Vector Parameter Load not supported yet");
+
+            Variable vectorToLoad = generator.newVariable(lirKind);
+            SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
+            SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
+            SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
+            generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
         }
 
         return result;
