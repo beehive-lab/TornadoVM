@@ -157,7 +157,13 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            SPIRVId a;
+            if (x instanceof SPIRVVectorElementSelect) {
+                SPIRVVectorElementSelect select = (SPIRVVectorElementSelect) x;
+                a = getId(select.getVector(), asm, (SPIRVKind) x.getPlatformKind());
+            } else {
+                a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            }
 
             SPIRVKind vectorElementKind = ((SPIRVKind) x.getPlatformKind()).getElementKind();
             SPIRVId idElementKind = asm.primitives.getTypePrimitive(vectorElementKind);
@@ -170,7 +176,14 @@ public class SPIRVBinary {
                 throw new RuntimeException("Operation not supported");
             }
 
-            SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            SPIRVId b;
+            if (y instanceof SPIRVVectorElementSelect) {
+                SPIRVVectorElementSelect select = (SPIRVVectorElementSelect) y;
+                b = getId(select.getVector(), asm, (SPIRVKind) y.getPlatformKind());
+            } else {
+                b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            }
+
             SPIRVId resultSelect2 = asm.module.getNextId();
             SPIRVKind vectorElementKind2 = ((SPIRVKind) y.getPlatformKind()).getElementKind();
             SPIRVId idElementKind2 = asm.primitives.getTypePrimitive(vectorElementKind2);

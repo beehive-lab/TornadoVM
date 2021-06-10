@@ -44,6 +44,7 @@ public class SPIRVGenTool {
             SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
             SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
             generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
+            result = vectorToLoad;
         }
 
         return result;

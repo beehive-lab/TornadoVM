@@ -92,8 +92,6 @@ public class SPIRVLIRStmt {
                         )));
             }
 
-            // We can do this because the prev expression (right-hand side), register the
-            // stores.
             asm.registerLIRInstructionValue(lhs, storeAddressID);
         }
 
