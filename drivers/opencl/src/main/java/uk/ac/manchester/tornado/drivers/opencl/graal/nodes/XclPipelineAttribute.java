@@ -40,6 +40,6 @@ public class XclPipelineAttribute extends OCLLIROp {
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        asm.emitLine(" __attribute__((xcl_pipeline_loop(" + initiationIntervalValue + ")))");
+        asm.emitLine("__attribute__((xcl_pipeline_loop(" + initiationIntervalValue + ")))");
     }
 }
