@@ -53,7 +53,19 @@ import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUn
 
 public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
 
+    /*
+     * The default factor number for loop unrolling is 4, because this number
+     * yielded higher performance on Intel FPGAs.
+     */
     private static final int UNROLL_FACTOR_NUMBER = 4;
+    /**
+     * The default initiation interval number for loop pipelining is 1, because this
+     * number has been indicated as the default by Xilinx HLS for full pipelining.
+     *
+     * @see <a href=
+     *      "https://www.xilinx.com/html_docs/xilinx2020_2/vitis_doc/openclattributes.html#sgo1504034359903__ad410982"
+     *      * >Vitis 2020.2 Documentation</a>.
+     */
     private static final int XILINX_PIPELINING_II_NUMBER = 1;
     private TornadoDeviceContext deviceContext;
 
