@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -217,7 +217,7 @@ public class BFS {
         currentDepth = new int[] { 0 };
 
         WorkerGrid workerGrid = new WorkerGrid2D(numNodes, numNodes);
-        GridTask gridTask = new GridTask("s1.t1", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s1.t1", workerGrid);
         KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(numNodes, numNodes, 1);
@@ -235,7 +235,7 @@ public class BFS {
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
             runBFS(verticesJava, adjacencyMatrix, numNodes, modifyJava, currentDepth);
-            s1.execute(gridTask);
+            s1.execute(gridScheduler);
             currentDepth[0]++;
 
             if (VALIDATION) {

@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -144,7 +144,7 @@ public class MatrixMul2DLocalMemory {
         });
 
         WorkerGrid workerCUDAOld = new WorkerGrid2D(N, N);
-        GridTask gridTaskCUDAOld = new GridTask("cuda_old_api.t0", workerCUDAOld);
+        GridScheduler gridSchedulerCUDAOld = new GridScheduler("cuda_old_api.t0", workerCUDAOld);
         TaskSchedule scheduleCUDA = new TaskSchedule("cuda_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -155,7 +155,7 @@ public class MatrixMul2DLocalMemory {
 
         // Warm up CUDA
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            scheduleCUDA.execute(gridTaskCUDAOld);
+            scheduleCUDA.execute(gridSchedulerCUDAOld);
         }
 
         // Time CUDA
@@ -163,7 +163,7 @@ public class MatrixMul2DLocalMemory {
         long[] execTimesCUDA = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesCUDA.length; i++) {
             start = System.currentTimeMillis();
-            scheduleCUDA.execute(gridTaskCUDAOld);
+            scheduleCUDA.execute(gridSchedulerCUDAOld);
             stop = System.currentTimeMillis();
             execTimesCUDA[i] = stop - start;
         }
@@ -176,7 +176,7 @@ public class MatrixMul2DLocalMemory {
             throw new Exception("Could not get average execution time");
 
         WorkerGrid workerOpenCLOld = new WorkerGrid2D(N, N);
-        GridTask gridTaskOpenCLOld = new GridTask("ocl_old_api.t0", workerOpenCLOld);
+        GridScheduler gridSchedulerOpenCLOld = new GridScheduler("ocl_old_api.t0", workerOpenCLOld);
 
         TaskSchedule scheduleOCL = new TaskSchedule("ocl_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
 
@@ -199,14 +199,14 @@ public class MatrixMul2DLocalMemory {
 
         // Warm up OpenCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            scheduleOCL.execute(gridTaskOpenCLOld);
+            scheduleOCL.execute(gridSchedulerOpenCLOld);
         }
 
         // Time OpenCL
         long[] execTimesOCL = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesOCL.length; i++) {
             start = System.currentTimeMillis();
-            scheduleOCL.execute(gridTaskOpenCLOld);
+            scheduleOCL.execute(gridSchedulerOpenCLOld);
             stop = System.currentTimeMillis();
             execTimesOCL[i] = stop - start;
         }
@@ -220,7 +220,7 @@ public class MatrixMul2DLocalMemory {
 
         // Time New API OpenCL
         WorkerGrid workerOpenCLNew = new WorkerGrid2D(N, N);
-        GridTask gridTaskOpenCLNew = new GridTask("ocl_advanced_api.t0", workerOpenCLNew);
+        GridScheduler gridSchedulerOpenCLNew = new GridScheduler("ocl_advanced_api.t0", workerOpenCLNew);
         KernelContext context = new KernelContext();
 
         TaskSchedule oclNewApiTask = new TaskSchedule("ocl_advanced_api") //
@@ -233,7 +233,7 @@ public class MatrixMul2DLocalMemory {
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            oclNewApiTask.execute(gridTaskOpenCLNew);
+            oclNewApiTask.execute(gridSchedulerOpenCLNew);
         }
 
         // Time OPENCL
@@ -241,7 +241,7 @@ public class MatrixMul2DLocalMemory {
 
         for (int i = 0; i < EXECUTE_ITERATIONS; i++) {
             start = System.currentTimeMillis();
-            oclNewApiTask.execute(gridTaskOpenCLNew);
+            oclNewApiTask.execute(gridSchedulerOpenCLNew);
             stop = System.currentTimeMillis();
             execTimesOCLNewApi[i] = stop - start;
         }
@@ -255,7 +255,7 @@ public class MatrixMul2DLocalMemory {
 
         // Time New API CUDA
         WorkerGrid workerCudaNew = new WorkerGrid2D(N, N);
-        GridTask gridTaskCudaNew = new GridTask("cuda_advanced_api.t0", workerCudaNew);
+        GridScheduler gridSchedulerCudaNew = new GridScheduler("cuda_advanced_api.t0", workerCudaNew);
         KernelContext contextCUDA = new KernelContext();
 
         TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_advanced_api") //
@@ -268,7 +268,7 @@ public class MatrixMul2DLocalMemory {
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            cudaNewApiTask.execute(gridTaskCudaNew);
+            cudaNewApiTask.execute(gridSchedulerCudaNew);
         }
 
         // Time OPENCL
@@ -276,7 +276,7 @@ public class MatrixMul2DLocalMemory {
 
         for (int i = 0; i < EXECUTE_ITERATIONS; i++) {
             start = System.currentTimeMillis();
-            cudaNewApiTask.execute(gridTaskCudaNew);
+            cudaNewApiTask.execute(gridSchedulerCudaNew);
             stop = System.currentTimeMillis();
             execTimesCUDANewApi[i] = stop - start;
         }

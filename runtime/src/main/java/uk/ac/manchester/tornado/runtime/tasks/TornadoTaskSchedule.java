@@ -25,38 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
-
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -111,6 +84,32 @@ import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
@@ -168,7 +167,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private TornadoProfiler timeProfiler;
     private boolean updateData;
     private boolean isFinished;
-    private GridTask gridTask;
+    private GridScheduler gridScheduler;
 
     private static String RESET = "\u001B[0m";
     private static String RED = "\u001B[31m";
@@ -220,7 +219,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         updateReference(oldRef, newRef, streamOutObjects);
 
         // 3. Update from graphContext and replace the object state.
-        // Otherwise, if the object is copied in (via COPY_IN), we might think the object is already on the device heap.
+        // Otherwise, if the object is copied in (via COPY_IN), we might think the
+        // object is already on the device heap.
         executionContext.replaceObjectState(oldRef, newRef);
 
         // 4. Update the global states array in the vm.
@@ -228,7 +228,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             vm.fetchGlobalStates();
         }
 
-        // 5. Set the update data flag to true in order to create a new call stack on the device.
+        // 5. Set the update data flag to true in order to create a new call stack on
+        // the device.
         updateData = true;
 
         // 6. Update task-parameters
@@ -241,7 +242,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
             }
         }
-        if (this.gridTask == null) {
+        if (this.gridScheduler == null) {
             triggerRecompile();
         }
     }
@@ -484,15 +485,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
             return COMPILE_AND_UPDATE;
         } else if (updateData) {
-            if (gridTask == null) {
+            if (gridScheduler == null) {
                 return COMPILE_ONLY;
             }
-            /* TornadoVM should not recompile if there is a worker grid for each task. Otherwise, there is a combination of the
-               @Parallel API and the Grid Task. The @Parallel task might need the loop bound updated.
-               TODO This check will no longer be needed once we pass the loop bounds via the call stack instead of constant folding.
-            */
+            /*
+             * TornadoVM should not recompile if there is a worker grid for each task.
+             * Otherwise, there is a combination of the
+             * 
+             * @Parallel API and the Grid Task. The @Parallel task might need the loop bound
+             * updated. TODO This check will no longer be needed once we pass the loop
+             * bounds via the call stack instead of constant folding.
+             */
             for (TaskPackage taskPackage : taskPackages) {
-                if (!gridTask.contains(taskScheduleName, taskPackage.getId())) {
+                if (!gridScheduler.contains(taskScheduleName, taskPackage.getId())) {
                     return COMPILE_ONLY;
                 }
             }
@@ -510,11 +515,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
         executionContext.addLastDevice(meta().getLogicDevice());
 
-        /* Set the grid task outside the constructor of the {@link uk.ac.manchester.tornado.runtime.TornadoVM}
-           object. The same TornadoVM object will be used for different grid task objects, if the 
-           TornadoTaskSchedule::compile method is not called in different runs of the same TaskSchedule.
-        */
-        vm.setGridTask(gridTask);
+        /*
+         * Set the grid scheduler outside the constructor of the {@link
+         * uk.ac.manchester.tornado.runtime.TornadoVM} object. The same TornadoVM object
+         * will be used for different grid scheduler objects, if the
+         * TornadoTaskSchedule::compile method is not called in different runs of the
+         * same TaskSchedule.
+         */
+        vm.setGridScheduler(gridScheduler);
 
         if (updateData) {
             executionContext.newStack(true);
@@ -737,7 +745,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (vm == null) {
             return;
         }
-        /* Clean the profiler -- avoids the possibility of reporting the execute() profiling information twice. */
+        /*
+         * Clean the profiler -- avoids the possibility of reporting the execute()
+         * profiling information twice.
+         */
         timeProfiler.clean();
 
         executionContext.sync();
@@ -757,7 +768,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (vm == null) {
             return;
         }
-        /* Clean the profiler -- avoids the possibility of reporting the execute() profiling information twice */
+        /*
+         * Clean the profiler -- avoids the possibility of reporting the execute()
+         * profiling information twice
+         */
         timeProfiler.clean();
 
         executionContext.sync();
@@ -781,7 +795,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         if (TornadoOptions.isProfilerEnabled()) {
-            /* Clean the profiler -- avoids the possibility of reporting the execute() profiling information twice */
+            /*
+             * Clean the profiler -- avoids the possibility of reporting the execute()
+             * profiling information twice
+             */
             timeProfiler.clean();
             for (int i = 0; i < events.length; i++) {
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
@@ -878,8 +895,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph schedule(GridTask gridTask) {
-        this.gridTask = gridTask;
+    public AbstractTaskGraph schedule(GridScheduler gridScheduler) {
+        this.gridScheduler = gridScheduler;
         return schedule();
     }
 
