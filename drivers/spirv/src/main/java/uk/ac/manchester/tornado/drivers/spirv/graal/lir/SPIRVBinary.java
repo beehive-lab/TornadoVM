@@ -152,16 +152,25 @@ public class SPIRVBinary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            // Usually x and y are type of VectorElementSelect
-            ((SPIRVLIROp) x).emit(crb, asm);
-            ((SPIRVLIROp) y).emit(crb, asm);
+            SPIRVId resultSelect1;
+            if (x instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) x).emit(crb, asm);
+                resultSelect1 = asm.lookUpLIRInstructions(x);
+            } else {
+                resultSelect1 = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            }
 
-            SPIRVId resultSelect1 = asm.lookUpLIRInstructions(x);
-            SPIRVId resultSelect2 = asm.lookUpLIRInstructions(y);
+            SPIRVId resultSelect2;
+            if (y instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) y).emit(crb, asm);
+                resultSelect2 = asm.lookUpLIRInstructions(y);
+            } else {
+                resultSelect2 = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            }
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
-            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind.getElementKind()); /// Vector Selection -> Element Kind
 
             SPIRVLogger.traceCodeGen("emitVectorOperation " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
 
