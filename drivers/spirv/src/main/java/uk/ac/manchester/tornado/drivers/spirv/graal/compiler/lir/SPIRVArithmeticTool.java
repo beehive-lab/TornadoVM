@@ -66,6 +66,15 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_VECTOR4_INT_32:
             case OP_TYPE_VECTOR8_INT_32:
                 return emitBinaryVectorAssign(SPIRVBinaryOp.ADD_INTEGER, resultKind, a, b);
+            case OP_TYPE_VECTOR2_FLOAT_32:
+            case OP_TYPE_VECTOR3_FLOAT_32:
+            case OP_TYPE_VECTOR4_FLOAT_32:
+            case OP_TYPE_VECTOR8_FLOAT_32:
+            case OP_TYPE_VECTOR2_FLOAT_64:
+            case OP_TYPE_VECTOR3_FLOAT_64:
+            case OP_TYPE_VECTOR4_FLOAT_64:
+            case OP_TYPE_VECTOR8_FLOAT_64:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.ADD_FLOAT, resultKind, a, b);
             case OP_TYPE_INT_16:
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
@@ -87,6 +96,20 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR2_INT_32:
+            case OP_TYPE_VECTOR3_INT_32:
+            case OP_TYPE_VECTOR4_INT_32:
+            case OP_TYPE_VECTOR8_INT_32:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.SUB_INTEGER, resultKind, a, b);
+            case OP_TYPE_VECTOR2_FLOAT_32:
+            case OP_TYPE_VECTOR3_FLOAT_32:
+            case OP_TYPE_VECTOR4_FLOAT_32:
+            case OP_TYPE_VECTOR8_FLOAT_32:
+            case OP_TYPE_VECTOR2_FLOAT_64:
+            case OP_TYPE_VECTOR3_FLOAT_64:
+            case OP_TYPE_VECTOR4_FLOAT_64:
+            case OP_TYPE_VECTOR8_FLOAT_64:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.SUB_FLOAT, resultKind, a, b);
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.SUB_INTEGER;
@@ -116,6 +139,20 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR2_INT_32:
+            case OP_TYPE_VECTOR3_INT_32:
+            case OP_TYPE_VECTOR4_INT_32:
+            case OP_TYPE_VECTOR8_INT_32:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.MULT_INTEGER, LIRKind.combine(a, b), a, b);
+            case OP_TYPE_VECTOR2_FLOAT_32:
+            case OP_TYPE_VECTOR3_FLOAT_32:
+            case OP_TYPE_VECTOR4_FLOAT_32:
+            case OP_TYPE_VECTOR8_FLOAT_32:
+            case OP_TYPE_VECTOR2_FLOAT_64:
+            case OP_TYPE_VECTOR3_FLOAT_64:
+            case OP_TYPE_VECTOR4_FLOAT_64:
+            case OP_TYPE_VECTOR8_FLOAT_64:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.MULT_FLOAT, LIRKind.combine(a, b), a, b);
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.MULT_INTEGER;
@@ -146,6 +183,20 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR2_INT_32:
+            case OP_TYPE_VECTOR3_INT_32:
+            case OP_TYPE_VECTOR4_INT_32:
+            case OP_TYPE_VECTOR8_INT_32:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.DIV_INTEGER, LIRKind.combine(a, b), a, b);
+            case OP_TYPE_VECTOR2_FLOAT_32:
+            case OP_TYPE_VECTOR3_FLOAT_32:
+            case OP_TYPE_VECTOR4_FLOAT_32:
+            case OP_TYPE_VECTOR8_FLOAT_32:
+            case OP_TYPE_VECTOR2_FLOAT_64:
+            case OP_TYPE_VECTOR3_FLOAT_64:
+            case OP_TYPE_VECTOR4_FLOAT_64:
+            case OP_TYPE_VECTOR8_FLOAT_64:
+                return emitBinaryVectorAssign(SPIRVBinaryOp.DIV_FLOAT, LIRKind.combine(a, b), a, b);
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.DIV_INTEGER;
