@@ -42,13 +42,11 @@ public class SPIRVVectorPlugins {
                 @Override
                 public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                     SPIRVKind vectorKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(method.getDeclaringClass());
-                    System.out.println("vectorKIND >>>>>>>>>>>>>>>>>>> " + vectorKind + " >> FROM : " + method.getDeclaringClass());
                     if (vectorKind == SPIRVKind.ILLEGAL) {
                         return false;
                     }
                     if (method.getName().equals("<init>")) {
                         final SPIRVVectorValueNode vectorValueNode = resolveReceiver(args[0]);
-                        System.out.println("????????????? " + vectorValueNode);
                         if (args.length > 1) {
                             int offset = (vectorValueNode == args[0]) ? 1 : 0;
                             for (int i = offset; i < args.length; i++) {

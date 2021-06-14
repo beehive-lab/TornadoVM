@@ -248,7 +248,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
 
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        int event = -1;
+        int event;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             event = fieldBuffer.read(reference, events, useDeps);
