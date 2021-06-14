@@ -20,10 +20,13 @@
 [Link](https://github.com/intel/compute-runtime/releases)
 
 The following drivers have been tested on Linux >= CentOS 7.3
-
-* 21.19.19792: OK  ( OpenCL 3.0 ) 
-* 21.18.19737: OK  ( OpenCL 3.0 ) 
-* 21.17.19709: OK  ( OpenCL 3.0 ) 
++
+* 21.22.19967: OK  ( OpenCL 3.0 )
+* 21.21.19914: OK  ( OpenCL 3.0 )
+* 21.20.19883: OK  ( OpenCL 3.0 )
+* 21.19.19792: OK  ( OpenCL 3.0 )
+* 21.18.19737: OK  ( OpenCL 3.0 )
+* 21.17.19709: OK  ( OpenCL 3.0 )
 * 21.16.19610: OK  ( OpenCL 3.0 )
 * 21.15.19533: OK  ( OpenCL 3.0 )
 * 21.14.19498: OK  ( OpenCL 3.0 )
@@ -112,6 +115,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### OpenCL drivers
 
+* 460.84   : OK
 * 460.80   : OK
 * 460.73.01: OK
 * 460.67   : OK
@@ -130,6 +134,7 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 #### PTX (CUDA) drivers
 
+* 460.84   : OK
 * 460.80   : OK
 * 460.73.01: OK
 * 460.67   : OK
