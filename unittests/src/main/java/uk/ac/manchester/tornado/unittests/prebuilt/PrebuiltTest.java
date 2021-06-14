@@ -25,8 +25,6 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.collections.types.Float8;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -131,40 +129,6 @@ public class PrebuiltTest extends TornadoTestBase {
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
         }
-    }
-
-    @Test
-    public void testPrebuild03() {
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = "/home/juan/manchester/tornado/tornado/";
-
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        if (backendType == TornadoVMBackendType.SPIRV) {
-            filePath += "vectorFloat8.spv";
-        } else {
-            throw new RuntimeException("Backend not supported");
-        }
-
-        Float8 a = new Float8(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f);
-        Float8 b = new Float8(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f);
-        VectorFloat output = new VectorFloat(1);
-
-        // @formatter:off
-        new TaskSchedule("s0")
-                .prebuiltTask("t0",
-                        "dotMethodFloat8",
-                        filePath,
-                        new Object[] { a, b, output },
-                        new Access[] { Access.READ, Access.READ, Access.WRITE },
-                        defaultDevice,
-                        new int[] { 1 })
-                .streamOut(output)
-                .execute();
-        // @formatter:on
-
-        assertEquals(120, output.get(0), 0.001f);
-
     }
 
 }
