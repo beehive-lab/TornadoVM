@@ -53,9 +53,13 @@ import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUn
 
 public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
 
-    /*
-     * The default factor number for loop unrolling is 4, because this number
-     * yielded higher performance on Intel FPGAs.
+    /**
+     * The default factor number for loop unrolling is 4, as this number yielded the
+     * same performance with full unrolling on an Intel Arria 10 FPGA.
+     * 
+     * @see <a href= "https://arxiv.org/ftp/arxiv/papers/2010/2010.16304.pdf">
+     *      Transparent Compiler and Runtime Specializations for Accelerating
+     *      Managed Languages on FPGAs</a>.
      */
     private static final int UNROLL_FACTOR_NUMBER = 4;
     /**
