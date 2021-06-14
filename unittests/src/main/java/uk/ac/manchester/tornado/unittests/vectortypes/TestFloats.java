@@ -18,14 +18,8 @@
 
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.IllegalFormatConversionException;
-import java.util.Random;
-
 import org.junit.Ignore;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
@@ -38,8 +32,13 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+
+import static org.junit.Assert.assertEquals;
 
 public class TestFloats extends TornadoTestBase {
 
@@ -112,6 +111,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testSimpleDotProductFloat6() {
         Float6 a = new Float6(1f, 2f, 3f, 4f, 5f, 6f);
         Float6 b = new Float6(6f, 5f, 4f, 3f, 2f, 1f);
@@ -344,7 +344,6 @@ public class TestFloats extends TornadoTestBase {
             assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
         }
     }
-
 
     @Test
     public void testVectorFloat3toString() {

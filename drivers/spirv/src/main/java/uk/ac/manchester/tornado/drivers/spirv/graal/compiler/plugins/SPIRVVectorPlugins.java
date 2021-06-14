@@ -55,7 +55,7 @@ public class SPIRVVectorPlugins {
                                 vectorValueNode.setElement(i - offset, args[i]);
                             }
                         } else {
-                            if (vectorKind.getVectorLength() < 8) {
+                            if (vectorKind.getVectorLength() <= 8) {
                                 vectorValueNode.initialiseToDefaultValues(vectorValueNode.graph());
                             }
                         }

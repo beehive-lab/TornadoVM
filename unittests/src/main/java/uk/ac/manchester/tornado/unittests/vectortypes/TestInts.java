@@ -18,12 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Random;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
@@ -35,8 +30,11 @@ import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
-import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+
+import static org.junit.Assert.assertEquals;
 
 public class TestInts extends TornadoTestBase {
 
@@ -72,7 +70,6 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testAddInt3() {
         int size = 1;
         Int3 a = new Int3(1, 2, 3);
@@ -98,7 +95,6 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testAddInt8() {
         int size = 1;
         Int8 a = new Int8(1, 2, 3, 4, 1, 2, 3, 4);
@@ -124,7 +120,6 @@ public class TestInts extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testAddInt4() {
         int size = 1;
         Int4 a = new Int4(1, 2, 3, 4);
