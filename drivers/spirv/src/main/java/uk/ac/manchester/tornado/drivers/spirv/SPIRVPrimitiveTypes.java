@@ -9,6 +9,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUndef;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
@@ -22,6 +23,8 @@ public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, SPIRVId> crossGroupToPrimitives;
 
+    final private Map<SPIRVKind, SPIRVId> undefTable;
+
     private final uk.ac.manchester.spirvproto.lib.SPIRVModule module;
 
     public SPIRVPrimitiveTypes(uk.ac.manchester.spirvproto.lib.SPIRVModule module) {
@@ -29,6 +32,7 @@ public class SPIRVPrimitiveTypes {
         this.primitives = new HashMap<>();
         this.ptrToPrimitives = new HashMap<>();
         this.crossGroupToPrimitives = new HashMap<>();
+        this.undefTable = new HashMap<>();
     }
 
     private SPIRVId getVectorType(SPIRVKind vectorType, SPIRVId typeID) {
@@ -103,4 +107,15 @@ public class SPIRVPrimitiveTypes {
         getTypeVoid();
     }
 
+    public SPIRVId getUndef(SPIRVKind vectorType) {
+        if (undefTable.containsKey(vectorType)) {
+            return undefTable.get(vectorType);
+        } else {
+            SPIRVId undefId = module.getNextId();
+            SPIRVId typeId = getTypePrimitive(vectorType);
+            module.add(new SPIRVOpUndef(typeId, undefId));
+            undefTable.put(vectorType, undefId);
+            return undefId;
+        }
+    }
 }

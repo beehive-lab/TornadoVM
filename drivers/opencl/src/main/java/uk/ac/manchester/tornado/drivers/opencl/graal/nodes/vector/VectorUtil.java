@@ -123,6 +123,7 @@ public final class VectorUtil {
         return lookupValueByLength(loadTable, vectorKind);
     }
 
+    // FIXME: Remove this method
     public static OCLUnaryOp resolvePointerCast(OCLKind vectorKind) {
         return lookupValueByType(pointerTable, vectorKind);
     }

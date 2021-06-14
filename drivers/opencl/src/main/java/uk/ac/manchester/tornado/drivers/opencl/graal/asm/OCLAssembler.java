@@ -596,6 +596,7 @@ public final class OCLAssembler extends Assembler {
             super(opcode);
         }
 
+        // FIXME: Remove these emits from vector operations. They are not reachable
         public void emit(OCLCompilationResultBuilder crb, Value s0, Value s1) {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);

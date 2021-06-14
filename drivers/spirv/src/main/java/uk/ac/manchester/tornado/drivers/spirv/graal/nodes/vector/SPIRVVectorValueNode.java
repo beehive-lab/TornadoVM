@@ -21,12 +21,13 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorAssign;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
@@ -120,19 +121,20 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
     // THis construct generates the equivalent of the following OpenCL Code:
     // vtype = (a, b, c, d);
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {
-        OCLLIROp assignExpr = null;
-        Value s0,s1,s2,s3,s4,s5,s6,s7;
+        SPIRVLIROp assignExpr = null;
+        Value s0;
+        Value s1;
         switch (kind.getVectorLength()) {
-            // case 2:
-            // final OCLAssembler.OCLOp2 op2 = VectorUtil.resolveAssignOp2(getSPIRVKind());
-            // s0 = getParam(gen, tool, 0);
-            // s1 = getParam(gen, tool, 1);
-            // assignExpr = new OCLVectorAssign.Assign2Expr(op2, getSPIRVKind(), s0, s1);
-            // break;
+            case 2:
+                s0 = getParam(gen, tool, 0);
+                s1 = getParam(gen, tool, 1);
+                LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+                assignExpr = new SPIRVVectorAssign.Assign2Expr(lirKind, s0, s1);
+                break;
             default:
                 throw new RuntimeException("Operation type not supported");
         }
-        // tool.append(new SPIRVLIRStmt.AssignStmt(result, assignExpr);
-        // gen.setResult(this, result);
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, assignExpr));
+        gen.setResult(this, result);
     }
 }
