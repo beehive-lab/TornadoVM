@@ -591,13 +591,6 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
-    public static class Op2 extends SPIRVOp {
-
-        protected Op2(String opcode) {
-            super(opcode);
-        }
-    }
-
     public void emit(String str) {
         emitSubString(str);
     }
