@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorAssign;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 
-@NodeInfo(nameTemplate = "{p#kind/s}")
+@NodeInfo(nameTemplate = "{p#spirvKind/s}")
 public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
 
     public static final NodeClass<SPIRVVectorValueNode> TYPE = NodeClass.create(SPIRVVectorValueNode.class);

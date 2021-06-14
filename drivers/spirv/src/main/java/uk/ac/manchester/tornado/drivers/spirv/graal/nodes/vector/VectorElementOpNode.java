@@ -30,10 +30,10 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
     public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
 
     @Input(InputType.Extension)
-    ValueNode vector;
+    protected ValueNode vector;
 
     @Input
-    ValueNode lane;
+    protected ValueNode lane;
 
     protected final SPIRVKind kind;
 
