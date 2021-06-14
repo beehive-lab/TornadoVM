@@ -30,7 +30,7 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -141,7 +141,7 @@ public class Mandelbrot {
                 short[] result = new short[SIZE * SIZE];
 
                 WorkerGrid workerGrid = new WorkerGrid2D(SIZE, SIZE);
-                GridTask gridTask = new GridTask("s0.t0", workerGrid);
+                GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
                 KernelContext context = new KernelContext();
                 // [Optional] Set the global work group
                 workerGrid.setGlobalWork(SIZE, SIZE, 1);
@@ -151,7 +151,7 @@ public class Mandelbrot {
                 TaskSchedule s0 = new TaskSchedule("s0");
 
                 s0.task("t0", MandelbrotImage::mandelbrotTornado, context, SIZE, result);
-                s0.streamOut(result).execute(gridTask);
+                s0.streamOut(result).execute(gridScheduler);
                 this.image = writeFile(result, SIZE);
             }
             // draw the image

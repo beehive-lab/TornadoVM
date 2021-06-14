@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -72,15 +72,15 @@ public class ReductionsLocalMemory {
         float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0").streamIn(input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
                 .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)).streamOut(reduce);
         // Change the Grid
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final SUM
         float finalSum = reduce[0];

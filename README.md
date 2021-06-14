@@ -115,7 +115,7 @@ public class Compute {
         // When using the kernel-parallel API, we need to create a Grid and a Worker
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);    // Create a 2D Worker
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);   // Attach the worker to the Grid
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);  // Attach the worker to the Grid
         KernelContext context = new KernelContext();             // Create a context
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
 
@@ -123,7 +123,7 @@ public class Compute {
                 .streamIn(A, B)                                 // Stream data from host to device
                 .task("t0", Compute::mxmKernel, context, A, B, C, size)  // Each task points to an existing Java method
                 .streamOut(C);                                  // sync arrays with the host side
-        ts.execute(gridTask);   // Execute with a GridTask
+        ts.execute(gridScheduler);   // Execute with a GridScheduler
     }
 }
 ```

@@ -603,7 +603,7 @@ public interface TornadoAPI {
      */
     void execute();
 
-    void execute(GridTask gridTask);
+    void execute(GridScheduler gridScheduler);
 
     /**
      * Run with dynamic reconfiguration with an input policy
