@@ -130,5 +130,4 @@ public class PrebuiltTest extends TornadoTestBase {
             assertEquals(a[i] + b[i], c[i]);
         }
     }
-
 }
