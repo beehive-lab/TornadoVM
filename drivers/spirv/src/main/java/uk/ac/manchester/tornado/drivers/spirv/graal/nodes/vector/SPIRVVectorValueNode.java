@@ -121,15 +121,50 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
     // THis construct generates the equivalent of the following OpenCL Code:
     // vtype = (a, b, c, d);
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {
-        SPIRVLIROp assignExpr = null;
+        SPIRVLIROp assignExpr;
         Value s0;
         Value s1;
+        Value s2;
+        Value s3;
+        Value s4;
+        Value s5;
+        Value s6;
+        Value s7;
+        LIRKind lirKind;
         switch (kind.getVectorLength()) {
             case 2:
                 s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
-                LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
-                assignExpr = new SPIRVVectorAssign.Assign2Expr(lirKind, s0, s1);
+                gen.getLIRGeneratorTool().getLIRKind(stamp);
+                lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+                assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1);
+                break;
+            case 3:
+                s0 = getParam(gen, tool, 0);
+                s1 = getParam(gen, tool, 1);
+                s2 = getParam(gen, tool, 2);
+                lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+                assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2);
+                break;
+            case 4:
+                s0 = getParam(gen, tool, 0);
+                s1 = getParam(gen, tool, 1);
+                s2 = getParam(gen, tool, 2);
+                s3 = getParam(gen, tool, 3);
+                lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+                assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2, s3);
+                break;
+            case 8:
+                s0 = getParam(gen, tool, 0);
+                s1 = getParam(gen, tool, 1);
+                s2 = getParam(gen, tool, 2);
+                s3 = getParam(gen, tool, 3);
+                s4 = getParam(gen, tool, 4);
+                s5 = getParam(gen, tool, 5);
+                s6 = getParam(gen, tool, 6);
+                s7 = getParam(gen, tool, 7);
+                lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+                assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2, s3, s4, s5, s6, s7);
                 break;
             default:
                 throw new RuntimeException("Operation type not supported");

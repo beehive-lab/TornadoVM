@@ -18,15 +18,10 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVVectorAssign {
 
-    public static class Assign2Expr extends SPIRVLIROp {
+    abstract static class AssignVector extends SPIRVLIROp {
 
-        private final Value s0;
-        private final Value s1;
-
-        public Assign2Expr(LIRKind valueKind, Value s0, Value s1) {
+        protected AssignVector(LIRKind valueKind) {
             super(valueKind);
-            this.s0 = s0;
-            this.s1 = s1;
         }
 
         protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
@@ -54,40 +49,38 @@ public class SPIRVVectorAssign {
                 }
             }
         }
+    }
+
+    public static class AssignVectorExpr extends AssignVector {
+
+        private final Value[] values;
+
+        public AssignVectorExpr(LIRKind lirKind, Value... values) {
+            super(lirKind);
+            this.values = values;
+        }
+
+        private SPIRVId emitCompositeInsertN(SPIRVAssembler asm, SPIRVId composite, SPIRVId vectorType, int index) {
+            SPIRVId spirvIdS1 = getId(values[index], asm, (SPIRVKind) values[index].getPlatformKind());
+            SPIRVId compositeInsert = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpCompositeInsert( //
+                    vectorType, //
+                    compositeInsert, //
+                    spirvIdS1, //
+                    composite, //
+                    new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(index))));
+            return compositeInsert;
+        }
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
-            SPIRVId spirvIdS0 = getId(s0, asm, (SPIRVKind) s0.getPlatformKind());
-
-            SPIRVId compositeInsertId0 = asm.module.getNextId();
-
             SPIRVId vectorType = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
-
-            SPIRVId undef = asm.primitives.getUndef(getSPIRVPlatformKind());
-
-            asm.currentBlockScope().add(new SPIRVOpCompositeInsert( //
-                    vectorType, //
-                    compositeInsertId0, //
-                    spirvIdS0, //
-                    undef, //
-                    new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(0))));
-
-            SPIRVId spirvIdS1 = getId(s1, asm, (SPIRVKind) s1.getPlatformKind());
-
-            SPIRVId compositeInsertId1 = asm.module.getNextId();
-
-            asm.currentBlockScope().add(new SPIRVOpCompositeInsert( //
-                    vectorType, //
-                    compositeInsertId1, //
-                    spirvIdS1, //
-                    compositeInsertId0, //
-                    new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(1))));
-
-            SPIRVLogger.traceCodeGen("emit VectorComposite: " + this + " s0: " + s0 + " s1: " + s1 + " type:" + getSPIRVPlatformKind());
-
-            asm.registerLIRInstructionValue(this, compositeInsertId1);
+            SPIRVId composite0 = asm.primitives.getUndef(getSPIRVPlatformKind());
+            for (int i = 0; i < values.length; i++) {
+                composite0 = emitCompositeInsertN(asm, composite0, vectorType, i);
+            }
+            SPIRVLogger.traceCodeGen("emit VectorComposite: " + this + ": " + values.length + getSPIRVPlatformKind());
+            asm.registerLIRInstructionValue(this, composite0);
         }
     }
-
 }
