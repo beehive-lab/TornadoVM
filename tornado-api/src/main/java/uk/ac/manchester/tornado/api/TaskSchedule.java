@@ -302,8 +302,8 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public void execute(GridTask gridTask) {
-        taskScheduleImpl.schedule(gridTask).waitOn();
+    public void execute(GridScheduler gridScheduler) {
+        taskScheduleImpl.schedule(gridScheduler).waitOn();
     }
 
     @Override
@@ -467,9 +467,9 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
      * 
      * Arrays can be of different sizes.
      * 
-     * If a {@link GridTask} is not passed in the {@link #execute()} method, then it
-     * will also trigger recompilation. Otherwise TornadoVM will not recompile the
-     * code, since the first compilation was generic.
+     * If a {@link GridScheduler} is not passed in the {@link #execute()} method,
+     * then it will also trigger recompilation. Otherwise TornadoVM will not
+     * recompile the code, since the first compilation was generic.
      * 
      * 
      * @param oldRef

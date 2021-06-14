@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -148,7 +148,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * In this test, all tasks use the TaskSchedule API, and only t0 uses the
-     * {@link GridTask} and {@link WorkerGrid} to deploy a specific number of
+     * {@link GridScheduler} and {@link WorkerGrid} to deploy a specific number of
      * threads.
      */
     @Test
@@ -163,7 +163,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s01.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s01.t0", worker);
 
         TaskSchedule s01 = new TaskSchedule("s01") //
                 .streamIn(a, b) //
@@ -174,7 +174,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(size, 1, 1);
-        s01.execute(gridTask);
+        s01.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -187,8 +187,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * In this test, all tasks use the {@link KernelContext} within the TaskSchedule
-     * API, and all tasks share the same {@link GridTask} and {@link WorkerGrid} to
-     * deploy a specific number of threads.
+     * API, and all tasks share the same {@link GridScheduler} and
+     * {@link WorkerGrid} to deploy a specific number of threads.
      */
     @Test
     public void combinedAPI02() {
@@ -202,10 +202,10 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s02.t0", worker);
-        gridTask.setWorkerGrid("s02.t1", worker);
-        gridTask.setWorkerGrid("s02.t2", worker);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s02.t0", worker);
+        gridScheduler.setWorkerGrid("s02.t1", worker);
+        gridScheduler.setWorkerGrid("s02.t2", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s02 = new TaskSchedule("s02") //
@@ -214,7 +214,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
                 .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskSchedule::vectorSubV2, context, cTornado, b, cTornado) //
                 .streamOut(cTornado);
-        s02.execute(gridTask);
+        s02.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -227,7 +227,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * In this test, all tasks use the {@link KernelContext} within the TaskSchedule
-     * API, and tasks t1 and t2 share the same {@link GridTask} and
+     * API, and tasks t1 and t2 share the same {@link GridScheduler} and
      * {@link WorkerGrid} to deploy a specific number of threads.
      */
     @Test
@@ -242,9 +242,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s03.t1", worker);
-        gridTask.setWorkerGrid("s03.t2", worker);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s03.t1", worker);
+        gridScheduler.setWorkerGrid("s03.t2", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s03 = new TaskSchedule("s03") //
@@ -253,7 +253,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
                 .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskSchedule::vectorSubV2, context, cTornado, b, cTornado) //
                 .streamOut(cTornado);
-        s03.execute(gridTask);
+        s03.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -266,8 +266,8 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * In this test, t0 and t1 use the {@link KernelContext} within the TaskSchedule
-     * API, and share the same {@link GridTask} and {@link WorkerGrid} to deploy a
-     * specific number of threads. While, t2 uses the TaskSchedule API.
+     * API, and share the same {@link GridScheduler} and {@link WorkerGrid} to
+     * deploy a specific number of threads. While, t2 uses the TaskSchedule API.
      */
     @Test
     public void combinedAPI04() {
@@ -281,9 +281,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s04.t0", worker);
-        gridTask.setWorkerGrid("s04.t1", worker);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s04.t0", worker);
+        gridScheduler.setWorkerGrid("s04.t1", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s04 = new TaskSchedule("s04") //
@@ -292,7 +292,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
                 .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado) //
                 .streamOut(cTornado);
-        s04.execute(gridTask);
+        s04.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -305,7 +305,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
     /**
      * In this test, t0 and t1 use the {@link KernelContext} within the TaskSchedule
-     * API, and use separate {@link GridTask} and {@link WorkerGrid} to deploy
+     * API, and use separate {@link GridScheduler} and {@link WorkerGrid} to deploy
      * different number of threads. While, t2 uses the TaskSchedule API.
      */
     @Test
@@ -321,9 +321,9 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
 
         WorkerGrid workerT0 = new WorkerGrid1D(size);
         WorkerGrid workerT1 = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s05.t0", workerT0);
-        gridTask.setWorkerGrid("s05.t1", workerT1);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s05.t0", workerT0);
+        gridScheduler.setWorkerGrid("s05.t1", workerT1);
         KernelContext context = new KernelContext();
 
         TaskSchedule s05 = new TaskSchedule("s05") //
@@ -337,7 +337,7 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         workerT0.setLocalWork(size / 2, 1, 1);
         workerT1.setGlobalWork(size, 1, 1);
         workerT1.setLocalWorkToNull();
-        s05.execute(gridTask);
+        s05.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
