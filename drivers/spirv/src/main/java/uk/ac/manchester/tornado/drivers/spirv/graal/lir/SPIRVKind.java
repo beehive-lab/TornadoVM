@@ -297,7 +297,7 @@ public enum SPIRVKind implements PlatformKind {
         vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64);
         vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64);
         vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double6;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64);
 
     }
 

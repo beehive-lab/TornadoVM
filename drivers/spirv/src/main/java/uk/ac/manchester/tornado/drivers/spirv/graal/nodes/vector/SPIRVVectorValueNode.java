@@ -20,10 +20,8 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorOp;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
@@ -82,7 +80,7 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
 
             final ValuePhiNode phi = (ValuePhiNode) origin;
 
-            final Value phiOperand = ((OCLNodeLIRBuilder) gen).operandForPhi(phi);
+            final Value phiOperand = ((SPIRVNodeLIRBuilder) gen).operandForPhi(phi);
             final AllocatableValue result = (gen.hasOperand(this)) ? (Variable) gen.operand(this) : tool.newVariable(LIRKind.value(getSPIRVKind()));
             tool.append(new SPIRVLIRStmt.AssignStmt(result, phiOperand));
             gen.setResult(this, result);
@@ -96,13 +94,13 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
              *
              * 1. when this vector state has elements assigned individually.
              *
-             * 2.when this vector is assigned by a vector operation
+             * 2. when this vector is assigned by a vector operation
              *
              */
             final int numValues = values.count();
             final ValueNode firstValue = values.first();
 
-            if (firstValue instanceof VectorValueNode || firstValue instanceof VectorOp) {
+            if (firstValue instanceof SPIRVVectorValueNode || firstValue instanceof VectorOp) {
                 tool.append(new SPIRVLIRStmt.AssignStmt(result, gen.operand(values.first())));
                 gen.setResult(this, result);
             } else if (numValues > 0 && gen.hasOperand(firstValue)) {
