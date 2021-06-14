@@ -80,8 +80,22 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
-            SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            SPIRVId a;
+            if (x instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) x).emit(crb, asm);
+                a = asm.lookUpLIRInstructions(x);
+            } else {
+                a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            }
+            // SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            SPIRVId b;
+            if (y instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) y).emit(crb, asm);
+                b = asm.lookUpLIRInstructions(y);
+            } else {
+                b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            }
+            // SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
 
             if (opcode instanceof SPIRVAssembler.SPIRVBinaryOpLeftShift) {
                 if (y instanceof ConstantValue) {
@@ -95,7 +109,7 @@ public class SPIRVBinary {
                 }
             }
 
-            SPIRVLogger.traceCodeGen("emit " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
+            SPIRVLogger.traceCodeGen("emitBinaryOperation " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
 
             SPIRVId addId = asm.module.getNextId();
 

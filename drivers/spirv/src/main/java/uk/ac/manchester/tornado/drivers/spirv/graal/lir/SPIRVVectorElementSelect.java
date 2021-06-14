@@ -70,7 +70,7 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
         SPIRVKind vectorElementKind = getSPIRVPlatformKind().getElementKind();
         SPIRVId idElementKind = asm.primitives.getTypePrimitive(vectorElementKind);
-
+        SPIRVLogger.traceCodeGen("emit CompositeExtract: " + vector + " lane: " + laneId);
         SPIRVId resultSelect1 = asm.module.getNextId();
         asm.currentBlockScope().add(new SPIRVOpCompositeExtract(idElementKind, resultSelect1, vectorId, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(getLaneId()))));
 
