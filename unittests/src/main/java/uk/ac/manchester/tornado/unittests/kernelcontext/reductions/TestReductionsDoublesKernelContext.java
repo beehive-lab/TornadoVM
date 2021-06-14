@@ -17,19 +17,18 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * The unit-tests in this class implement reduce-operations such as add, max,
@@ -94,8 +93,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Create a 1D worker
         WorkerGrid worker = new WorkerGrid1D(size);
 
-        // Attach the Worker to the GridTask
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        // Attach the Worker to the GridScheduler
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
 
         // Create a KernelContext with its own worker
         KernelContext context = new KernelContext();
@@ -106,7 +105,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
                 .streamOut(reduce);
 
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final Reduction
         double finalSum = 0;
@@ -171,7 +170,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         double sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
@@ -181,7 +180,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -227,7 +226,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         double sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
@@ -237,7 +236,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -277,7 +276,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         double sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
@@ -287,7 +286,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -333,7 +332,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         double sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
@@ -343,7 +342,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -383,7 +382,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         double sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
@@ -393,7 +392,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;

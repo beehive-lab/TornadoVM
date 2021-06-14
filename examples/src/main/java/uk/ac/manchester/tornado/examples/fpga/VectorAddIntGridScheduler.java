@@ -19,10 +19,10 @@ package uk.ac.manchester.tornado.examples.fpga;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.GridTask;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -52,7 +52,7 @@ public class VectorAddIntGridScheduler {
         Arrays.fill(b, 20);
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         workerGrid.setGlobalWork(size, 1, 1);
         workerGrid.setLocalWork(size / 2, 1, 1);
 
@@ -63,7 +63,7 @@ public class VectorAddIntGridScheduler {
         //@formatter:on
 
         for (int idx = 0; idx < 10; idx++) {
-            graph.execute(gridTask);
+            graph.execute(gridScheduler);
             vectorAdd(a, b, result);
 
             boolean wrongResult = false;

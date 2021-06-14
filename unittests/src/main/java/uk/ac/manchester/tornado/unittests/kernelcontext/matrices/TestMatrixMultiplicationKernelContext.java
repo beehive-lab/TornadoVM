@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -77,14 +77,14 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         Arrays.fill(b, 4);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -116,15 +116,15 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         Arrays.fill(b, 4);
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -181,8 +181,8 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         Arrays.fill(b, 4);
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask();
-        gridTask.setWorkerGrid("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
@@ -192,7 +192,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, size, 1);
         worker.setLocalWork(TS, TS, 1);
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 

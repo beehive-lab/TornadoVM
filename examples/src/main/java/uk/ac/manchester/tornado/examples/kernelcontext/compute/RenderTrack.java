@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 import java.util.ArrayList;
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -122,7 +122,7 @@ public class RenderTrack {
         }
 
         WorkerGrid workerGrid = new WorkerGrid2D(n, m);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(n, m, 1);
@@ -134,7 +134,7 @@ public class RenderTrack {
         // task.warmup();
         for (int i = 0; i < 10; i++) {
             long start = System.nanoTime();
-            task.execute(gridTask);
+            task.execute(gridScheduler);
             long end = System.nanoTime();
             timers.add((end - start));
         }

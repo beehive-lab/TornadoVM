@@ -25,16 +25,8 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
@@ -45,6 +37,14 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
@@ -59,7 +59,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
             "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w", "-cl-std=CL2.0"));
     private TornadoProfiler profiler;
-    private GridTask gridTask;
+    private GridScheduler gridScheduler;
     private long[] ptxBlockDim;
     private long[] ptxGridDim;
 
@@ -461,16 +461,16 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         openclUseDriverScheduling = use;
     }
 
-    public void setGridTask(GridTask gridTask) {
-        this.gridTask = gridTask;
+    public void setGridScheduler(GridScheduler gridScheduler) {
+        this.gridScheduler = gridScheduler;
     }
 
     public boolean isWorkerGridAvailable() {
-        return (gridTask != null && gridTask.get(getId()) != null);
+        return (gridScheduler != null && gridScheduler.get(getId()) != null);
     }
 
     public WorkerGrid getWorkerGrid(String taskName) {
-        return gridTask.get(taskName);
+        return gridScheduler.get(taskName);
     }
 
     public long[] getPTXBlockDim() {

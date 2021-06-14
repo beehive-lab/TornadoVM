@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -49,7 +49,7 @@ public class HilbertMatrix {
         float[] output = new float[NROWS * NCOLS];
 
         WorkerGrid workerGrid = new WorkerGrid2D(NROWS, NCOLS);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(NROWS, NCOLS, 1);
@@ -61,7 +61,7 @@ public class HilbertMatrix {
                 .streamOut(output);
         // @formatter:on
 
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
 
         if (CHECK_RESULT) {
             float[] seq = new float[NROWS * NCOLS];

@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -84,7 +84,7 @@ public class Montecarlo {
         float[] seq = new float[size];
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         KernelContext context = new KernelContext();
         // [Optional] Set the global work size
         workerGrid.setGlobalWork(size, 1, 1);
@@ -94,7 +94,7 @@ public class Montecarlo {
         TaskSchedule t0 = new TaskSchedule("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).streamOut(output);
 
         long start = System.nanoTime();
-        t0.execute(gridTask);
+        t0.execute(gridScheduler);
         long end = System.nanoTime();
         long tornadoTime = (end - start);
 

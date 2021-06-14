@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
@@ -132,7 +132,7 @@ public class NBody {
         System.out.println(resultsIterations.toString());
 
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(numBodies, 1, 1);
         // [Optional] Set the local work group
@@ -148,7 +148,7 @@ public class NBody {
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            t0.execute(gridTask);
+            t0.execute(gridScheduler);
             end = System.nanoTime();
             uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");

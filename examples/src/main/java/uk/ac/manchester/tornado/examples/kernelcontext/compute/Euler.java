@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -185,7 +185,7 @@ public class Euler {
         long[] outputE = new long[size];
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask("s0.s0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.s0", workerGrid);
         KernelContext context = new KernelContext();
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(size, size, 1);
@@ -197,7 +197,7 @@ public class Euler {
         // Sequential
         for (int i = 0; i < ITERATIONS; i++) {
             long start = System.nanoTime();
-            ts.execute(gridTask);
+            ts.execute(gridScheduler);
             long end = System.nanoTime();
             System.out.println("Parallel: " + (end - start));
         }
