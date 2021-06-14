@@ -36,20 +36,20 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
     @OptionalInput(InputType.Association)
     private ValueNode origin;
 
-    private SPIRVKind kind;
+    private SPIRVKind spirvKind;
 
     @Input
     NodeInputList<ValueNode> values;
 
     public SPIRVVectorValueNode(SPIRVKind spirvVectorKind) {
         super(TYPE, SPIRVStampFactory.getStampFor(spirvVectorKind));
-        this.kind = spirvVectorKind;
-        this.values = new NodeInputList<>(this, kind.getVectorLength());
+        this.spirvKind = spirvVectorKind;
+        this.values = new NodeInputList<>(this, spirvKind.getVectorLength());
     }
 
     public void initialiseToDefaultValues(StructuredGraph graph) {
-        final ConstantNode defaultValue = ConstantNode.forPrimitive(kind.getElementKind().getDefaultValue(), graph);
-        for (int i = 0; i < kind.getVectorLength(); i++) {
+        final ConstantNode defaultValue = ConstantNode.forPrimitive(spirvKind.getElementKind().getDefaultValue(), graph);
+        for (int i = 0; i < spirvKind.getVectorLength(); i++) {
             setElement(i, defaultValue);
         }
     }
@@ -63,11 +63,11 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
     }
 
     public ValueNode length() {
-        return ConstantNode.forInt(kind.getVectorLength());
+        return ConstantNode.forInt(spirvKind.getVectorLength());
     }
 
     public SPIRVKind getSPIRVKind() {
-        return kind;
+        return spirvKind;
     }
 
     @Override
@@ -113,7 +113,7 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
 
     private Value getParam(NodeLIRBuilderTool gen, LIRGeneratorTool tool, int index) {
         final ValueNode valueNode = values.get(index);
-        return (valueNode == null) ? new ConstantValue(LIRKind.value(kind), kind.getDefaultValue()) : tool.load(gen.operand(valueNode));
+        return (valueNode == null) ? new ConstantValue(LIRKind.value(spirvKind), spirvKind.getDefaultValue()) : tool.load(gen.operand(valueNode));
     }
 
     // THis construct generates the equivalent of the following OpenCL Code:
@@ -129,7 +129,7 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
         Value s6;
         Value s7;
         LIRKind lirKind;
-        switch (kind.getVectorLength()) {
+        switch (spirvKind.getVectorLength()) {
             case 2:
                 s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);

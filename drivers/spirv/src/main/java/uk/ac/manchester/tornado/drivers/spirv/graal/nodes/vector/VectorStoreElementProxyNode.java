@@ -10,7 +10,6 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
@@ -46,8 +45,8 @@ public class VectorStoreElementProxyNode extends FixedWithNextNode implements Ca
     }
 
     public boolean canResolve() {
-        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode
-                && ((VectorValueNode) origin).getOCLKind().getVectorLength() > laneOrigin.asJavaConstant().asInt());
+        return ((origin != null && laneOrigin != null) && origin instanceof SPIRVVectorValueNode && laneOrigin instanceof ConstantNode
+                && ((SPIRVVectorValueNode) origin).getSPIRVKind().getVectorLength() > laneOrigin.asJavaConstant().asInt());
     }
 
     public boolean tryResolve() {
@@ -56,7 +55,7 @@ public class VectorStoreElementProxyNode extends FixedWithNextNode implements Ca
              * If we can resolve this node properly, this operation should be applied to the
              * vector node and this node should be discarded.
              */
-            final VectorValueNode vector = (VectorValueNode) origin;
+            final SPIRVVectorValueNode vector = (SPIRVVectorValueNode) origin;
             vector.setElement(laneOrigin.asJavaConstant().asInt(), value);
             clearInputs();
             return true;

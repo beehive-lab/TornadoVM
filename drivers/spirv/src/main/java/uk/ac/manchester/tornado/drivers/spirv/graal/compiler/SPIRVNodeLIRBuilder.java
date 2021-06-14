@@ -64,9 +64,6 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
@@ -74,6 +71,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
@@ -236,12 +236,12 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                             if (operand != null) {
                                 setResult(valueNode, operand);
                             }
-                        } else if (valueNode instanceof VectorValueNode) {
+                        } else if (valueNode instanceof SPIRVVectorValueNode) {
                             // There can be cases in which the result of an
                             // instruction is already set before by other
                             // instructions. case where vector value is used as an input to a phi
                             // node before it is assigned to
-                            final VectorValueNode vectorNode = (VectorValueNode) valueNode;
+                            final SPIRVVectorValueNode vectorNode = (SPIRVVectorValueNode) valueNode;
                             vectorNode.generate(this);
                         }
                     }
