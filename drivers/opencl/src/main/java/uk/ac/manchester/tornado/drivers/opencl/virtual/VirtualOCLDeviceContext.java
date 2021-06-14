@@ -190,6 +190,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
+    public boolean isPlatformXilinxFPGA() {
+        return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
+    }
+
+    @Override
     public int getDeviceIndex() {
         return device.getIndex();
     }
