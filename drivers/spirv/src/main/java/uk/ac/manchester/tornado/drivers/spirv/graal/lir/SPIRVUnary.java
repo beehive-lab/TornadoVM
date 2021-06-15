@@ -541,6 +541,7 @@ public class SPIRVUnary {
             EXPM1("expm1", 22),
             FABS("FABS", 23),
             FLOOR("floor", 25),
+            FMA("fma", 26),
             FMAX("fmax", 27),
             FMIN("fmin", 28),
             FMOD("fmod", 29),

@@ -1,17 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
-
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
@@ -20,9 +17,12 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVTernary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -401,5 +401,12 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
 
+    }
+
+    public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
+        LIRKind resultKind = LIRKind.combine(op1, op2, op3);
+        Variable result = getGen().newVariable(resultKind);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMA, resultKind, op1, op2, op3)));
+        return result;
     }
 }

@@ -16,6 +16,7 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
@@ -47,7 +48,7 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         // TODO: SPIRV FMA Phase
         if (TornadoOptions.ENABLE_FMA) {
-            System.out.println("FMA for SPIRV pending");
+            appendPhase(new SPIRVFMAPhase());
         }
 
         // TODO Atomics Phase for SPIRV (this is the last thing to support)
