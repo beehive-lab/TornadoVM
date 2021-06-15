@@ -161,13 +161,13 @@ public class TestMatrices extends TornadoTestBase {
     public void testFillMatrix2() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        final int numElements = 16;
+        final int numElements = 4;
         int[][] a = new int[numElements][numElements];
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
 		        .task("t0", TestMatrices::fillMatrix2, a)
-		        .streamOut(new int[][][]{ a });
+		        .streamOut(new Object[] { a });
 	    //@formatter:on
 
         t.warmup();
@@ -190,7 +190,7 @@ public class TestMatrices extends TornadoTestBase {
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
 		        .task("t0", TestMatrices::fillMatrix3, a)
-		        .streamOut(new int[][][]{ a });
+		        .streamOut(new Object[] { a });
 		//@formatter:on
 
         t.warmup();

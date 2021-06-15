@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -222,12 +223,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void enableThreadSharing() {
-
+        // empty method
     }
 
     @Override
     public void setAtomicRegion(ObjectBuffer bufferAtomics) {
-
+        throw new RuntimeException("Unsupported");
     }
 
     private ObjectBuffer createArrayWrapper(Class<?> klass, SPIRVDeviceContext device, long batchSize) {
@@ -250,11 +251,27 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
-        throw new RuntimeException("[SPIRV] createMultiArrayWrapper Not supported yet");
+        ObjectBuffer result = null;
+        if (componentType == int[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVIntArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == float[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVFloatArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == double[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVDoubleArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == long[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVLongArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == short[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVShortArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == char[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVCharArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == byte[].class) {
+            return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVByteArrayWrapper(context, batchSize), batchSize);
+        }
+        TornadoInternalError.unimplemented("[SPIRV] Array of type %s", type.getName());
+        return result;
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, SPIRVDeviceContext deviceContext, long batchSize) {
-        System.out.println("Creating Device Buffer for object: " + object + " :: " + object.getClass());
         if (type.isArray()) {
             if (!type.getComponentType().isArray()) {
                 return createArrayWrapper(type, deviceContext, batchSize);
@@ -267,17 +284,13 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
                 }
             }
         } else if (!type.isPrimitive()) {
-            System.out.println("It is NOT a primitive!");
             if (object instanceof AtomicInteger) {
                 throw new RuntimeException("Atomic Integers not supported yet");
             } else {
                 // Possible a vector type, we encapsulate in an object
-                System.out.println("It is an object possible vector type???? ");
                 return new SPIRVObjectWrapper(deviceContext, object, batchSize);
-
             }
         }
-        System.out.println("Object is nULLL!!!!");
         return null;
     }
 

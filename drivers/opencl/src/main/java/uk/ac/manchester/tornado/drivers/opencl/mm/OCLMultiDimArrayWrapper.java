@@ -89,7 +89,6 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         return tableWrapper.size();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
 
