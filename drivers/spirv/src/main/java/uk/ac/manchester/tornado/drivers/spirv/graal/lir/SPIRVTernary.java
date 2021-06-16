@@ -1,22 +1,16 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVTernary {
 
@@ -37,32 +31,6 @@ public class SPIRVTernary {
             this.x = x;
             this.y = y;
             this.z = z;
-        }
-
-        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
-            if (inputValue instanceof ConstantValue) {
-                SPIRVKind kind = (SPIRVKind) inputValue.getPlatformKind();
-                return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                    // We need to perform a load first
-                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
-                    SPIRVId load = asm.module.getNextId();
-                    SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                    asm.currentBlockScope().add(new SPIRVOpLoad(//
-                            type, //
-                            load, //
-                            param, //
-                            new SPIRVOptionalOperand<>( //
-                                    SPIRVMemoryAccess.Aligned( //
-                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                    ));
-                    return load;
-                } else {
-                    return param;
-                }
-            }
         }
 
         @Override
@@ -86,11 +54,12 @@ public class SPIRVTernary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
-            SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
-            SPIRVId c = getId(z, asm, (SPIRVKind) z.getPlatformKind());
+            SPIRVId a = loadSPIRVId(crb, asm, x);
+            SPIRVId b = loadSPIRVId(crb, asm, y);
+            SPIRVId c = loadSPIRVId(crb, asm, z);
 
-            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger (Ternary Intrinsic): " + builtIn.getName() + " (" + a + "," + b + "," + c + ")");
+            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger (Ternary Intrinsic): " + builtIn.getName() + " (" + x + "," + y + "," + z + ")");
+            SPIRVLogger.traceCodeGen("" + x.getClass());
 
             SPIRVId result = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();

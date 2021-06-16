@@ -207,10 +207,10 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
-            SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            SPIRVId a = loadSPIRVId(crb, asm, x);
+            SPIRVId b = loadSPIRVId(crb, asm, y);
 
-            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger: " + builtIn.getName() + " (" + a + "," + b + ")");
+            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger: " + builtIn.getName() + " (" + x + "," + y + ")");
 
             SPIRVId result = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();

@@ -612,6 +612,7 @@ public class SPIRVUnary {
 
             OpenCLIntrinsic(String name, int value) {
                 this.value = value;
+                this.name = name;
             }
 
             public String getName() {
@@ -638,18 +639,8 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger: " + builtIn.name);
 
             SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
-            SPIRVId input = asm.lookUpLIRInstructions(value);
-            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
 
-            SPIRVId loadParam = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
-                    type, //
-                    loadParam, //
-                    input, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-            ));
+            SPIRVId loadParam = loadSPIRVId(crb, asm, getValue());
 
             SPIRVId result = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();
