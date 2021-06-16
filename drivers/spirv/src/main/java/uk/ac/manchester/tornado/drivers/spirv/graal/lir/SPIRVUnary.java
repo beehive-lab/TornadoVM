@@ -198,7 +198,6 @@ public class SPIRVUnary {
             super(null, LIRKind.Illegal, baseValue);
             this.memoryRegion = memoryRegion;
             this.index = indexValue;
-            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! STORING INDEX: " + indexValue);
         }
 
         public Value getIndex() {
@@ -209,7 +208,7 @@ public class SPIRVUnary {
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVId arrayAccessId = asm.module.getNextId();
 
-            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
 
             SPIRVId indexId;
             if (index instanceof ConstantValue) {
