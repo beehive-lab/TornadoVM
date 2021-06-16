@@ -462,7 +462,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
-        LIRKind resultKind = LIRKind.combine(op1, op2);
+        LIRKind resultKind = LIRKind.combine(op1, op2, op3);
         Variable result = getGen().newVariable(resultKind);
         OCLAssembler.OCLTernaryOp operation = OCLTernaryIntrinsic.FMA;
         getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLTernary.Expr(operation, resultKind, op1, op2, op3)));
