@@ -63,6 +63,15 @@ public class SPIRVMidTier extends TornadoMidTier {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
 
+        appendPhase(new TornadoMemoryPhiElimination());
+        appendPhase(new RemoveValueProxyPhase());
+
+        appendPhase(canonicalizer);
+
+        if (ConditionalElimination.getValue(options)) {
+            appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
+        }
+
         appendPhase(new GuardLoweringPhase());
 
         appendPhase(canonicalizer);

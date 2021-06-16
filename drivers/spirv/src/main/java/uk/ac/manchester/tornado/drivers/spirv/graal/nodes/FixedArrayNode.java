@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
@@ -27,7 +28,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     protected SPIRVKind elementKind;
     protected SPIRVArchitecture.SPIRVMemoryBase memoryBase;
-    protected ResolvedJavaType elemenType;
     // FIXME SPIRVBinaryTemplate is missing
 
     public FixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
@@ -53,7 +53,9 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
         final Variable resultArray = generator.getLIRGeneratorTool().newVariable(lirKind);
 
+        SPIRVLogger.traceBuildLIR("Private Array Allocation: " + resultArray);
         generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.PrivateArrayAllocation(lirKind, resultArray, lengthValue));
+
         generator.setResult(this, resultArray);
     }
 }
