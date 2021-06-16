@@ -178,15 +178,13 @@ public class SPIRVBinary {
                 throw new RuntimeException("Constant expected");
             }
 
+            // Array declaration
             SPIRVId resultArrayId = asm.module.getNextId();
             asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, elementsId));
-
             SPIRVId functionPTR = asm.module.getNextId();
             asm.module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Function(), resultArrayId));
 
-            /// FIXME - Register arrays in the ASM module the same way we register constants
-            /// and pointers.
-
+            // Registration of the variable in the block 0 of the code
             asm.blockZeroScope.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
 
             asm.registerLIRInstructionValue(resultArray, idResult);
