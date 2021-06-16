@@ -15,6 +15,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 
@@ -50,11 +51,12 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
         final Value lengthValue = generator.operand(length);
         LIRKind lirKind = LIRKind.value(elementKind);
-
         final Variable resultArray = generator.getLIRGeneratorTool().newVariable(lirKind);
 
+        final SPIRVBinary.PrivateAllocation privateAllocationExpr = new SPIRVBinary.PrivateAllocation(lirKind, resultArray, lengthValue);
+
         SPIRVLogger.traceBuildLIR("Private Array Allocation: " + resultArray);
-        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.PrivateArrayAllocation(lirKind, resultArray, lengthValue));
+        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.PrivateArrayAllocation(privateAllocationExpr));
 
         generator.setResult(this, resultArray);
     }

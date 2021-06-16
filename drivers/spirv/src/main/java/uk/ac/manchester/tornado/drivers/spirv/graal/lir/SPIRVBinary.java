@@ -4,17 +4,21 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeArray;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
@@ -124,6 +128,49 @@ public class SPIRVBinary {
     public static class Expr extends BinaryConsumer {
         public Expr(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
             super(opcode, lirKind, x, y);
+        }
+    }
+
+    public static class PrivateAllocation extends BinaryConsumer {
+
+        private LIRKind lirKind;
+
+        @Use
+        private Variable resultArray;
+
+        @Use
+        private Value length;
+
+        public PrivateAllocation(LIRKind lirKind, Variable resultArray, Value lengthValue) {
+            super(null, lirKind, null, null);
+            this.lirKind = lirKind;
+            this.resultArray = resultArray;
+            this.length = lengthValue;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit ArrayDeclaration: " + resultArray + "[" + length + "]");
+
+            SPIRVId primitiveType = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
+
+            SPIRVId elementsId;
+            if (length instanceof ConstantValue) {
+                elementsId = asm.lookUpConstant(((ConstantValue) length).getConstant().toValueString(), SPIRVKind.OP_TYPE_INT_32);
+            } else {
+                throw new RuntimeException("Constant expected");
+            }
+
+            SPIRVId resultArrayId = asm.module.getNextId();
+            asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, elementsId));
+
+            SPIRVId functionPTR = asm.module.getNextId();
+            asm.module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Function(), resultArrayId));
+
+            /// FIXME - Register arrays in the ASM module the same way we register constants
+            /// and pointers.
+
+            asm.registerLIRInstructionValue(resultArray, resultArrayId);
         }
     }
 
