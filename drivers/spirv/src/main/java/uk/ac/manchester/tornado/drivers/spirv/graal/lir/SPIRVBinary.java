@@ -2,19 +2,25 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeArray;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
@@ -135,22 +141,33 @@ public class SPIRVBinary {
 
         private LIRKind lirKind;
 
-        @Use
-        private Variable resultArray;
+        @LIRInstruction.Def
+        private AllocatableValue resultArray;
 
         @Use
         private Value length;
 
-        public PrivateAllocation(LIRKind lirKind, Variable resultArray, Value lengthValue) {
+        public PrivateAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
             super(null, lirKind, null, null);
             this.lirKind = lirKind;
             this.resultArray = resultArray;
             this.length = lengthValue;
         }
 
+        private SPIRVId addSPIRVIdInPreamble(SPIRVAssembler asm) {
+            SPIRVId id = asm.module.getNextId();
+            asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(resultArray.toString())));
+            SPIRVKind kind = (SPIRVKind) resultArray.getPlatformKind();
+            asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(kind.getSizeInBytes()))));
+
+            return id;
+        }
+
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("emit ArrayDeclaration: " + resultArray + "[" + length + "]");
+
+            SPIRVId idResult = addSPIRVIdInPreamble(asm);
 
             SPIRVId primitiveType = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
 
@@ -170,7 +187,9 @@ public class SPIRVBinary {
             /// FIXME - Register arrays in the ASM module the same way we register constants
             /// and pointers.
 
-            asm.registerLIRInstructionValue(resultArray, resultArrayId);
+            asm.blockZeroScope.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+
+            asm.registerLIRInstructionValue(resultArray, idResult);
         }
     }
 

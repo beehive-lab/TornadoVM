@@ -4,13 +4,14 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
@@ -51,13 +52,14 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
         final Value lengthValue = generator.operand(length);
         LIRKind lirKind = LIRKind.value(elementKind);
-        final Variable resultArray = generator.getLIRGeneratorTool().newVariable(lirKind);
+        LIRGeneratorTool tool = generator.getLIRGeneratorTool();
+        final AllocatableValue resultArray = tool.newVariable(lirKind);
 
         final SPIRVBinary.PrivateAllocation privateAllocationExpr = new SPIRVBinary.PrivateAllocation(lirKind, resultArray, lengthValue);
 
         SPIRVLogger.traceBuildLIR("Private Array Allocation: " + resultArray + " with type: " + lirKind);
-        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.PrivateArrayAllocation(privateAllocationExpr));
-
         generator.setResult(this, resultArray);
+
+        tool.append(new SPIRVLIRStmt.PrivateArrayAllocation(privateAllocationExpr));
     }
 }

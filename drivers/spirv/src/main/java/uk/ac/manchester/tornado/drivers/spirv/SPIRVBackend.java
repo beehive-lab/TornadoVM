@@ -689,6 +689,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (LIRInstruction lirInstruction : lir.getLIRforBlock(b)) {
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
+                    System.out.println("INS: " + instruction);
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
                         if (variable.getName() != null) {
@@ -703,6 +704,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         SPIRVLogger.trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
+        int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
             System.out.println("VARIABLES -------------- ");
             System.out.println("\tTYPE: " + spirvKind);
@@ -710,7 +712,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 System.out.println("\tNAME: " + var);
 
                 SPIRVId variable = asm.module.getNextId();
-                asm.insertParameterId(0, variable); // We need to generalize this call
+                asm.insertParameterId(index, variable);
+                index++;
                 asm.module.add(new SPIRVOpName(variable, new SPIRVLiteralString(var.toString())));
                 asm.module.add(new SPIRVOpDecorate(variable, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(spirvKind.getByteCount()))));
                 asm.registerLIRInstructionValue(var.toString(), variable);
@@ -897,6 +900,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 SPIRVId resultType = asm.primitives.getPtrToTypePrimitive(kind, SPIRVStorageClass.Function());
                 blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
+            asm.blockZeroScope = blockScope;
             blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             asm.frameId = frameId;
             asm.pointerToULongFunction = pointerToULongFunction;
