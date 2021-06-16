@@ -19,6 +19,7 @@ import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.NodeView;
@@ -39,6 +40,7 @@ import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.PlatformConfigurationProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
@@ -69,6 +71,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -124,8 +127,9 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerArrayLengthNode((ArrayLengthNode) node, tool);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
+        } else {
+            super.lower(node, tool);
         }
-
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
@@ -311,9 +315,32 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(loadIndexed, memoryRead);
     }
 
+    private boolean isPrivateIdNode(StoreIndexedNode storeIndexed) {
+        Node nd = storeIndexed.inputs().first().asNode();
+        return (nd instanceof FixedArrayNode);
+    }
+
+    private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
+        Node nd = storeIndexed.inputs().first().asNode();
+        InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
+        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
+        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+    }
+
+    private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
+        return graph.unique(new OffsetAddressNode(array, index));
+    }
+
     private AbstractWriteNode createMemWriteNode(JavaKind elementKind, ValueNode value, ValueNode array, AddressNode address, StructuredGraph graph, StoreIndexedNode storeIndexed) {
         AbstractWriteNode memoryWrite;
-        memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
+        if (isLocalIdNode(storeIndexed) || isPrivateIdNode(storeIndexed)) {
+            address = createArrayLocalAddress(graph, array, storeIndexed.index());
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
+        } else {
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
+        }
         return memoryWrite;
     }
 

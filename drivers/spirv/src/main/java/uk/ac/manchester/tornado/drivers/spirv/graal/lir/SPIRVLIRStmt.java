@@ -780,4 +780,57 @@ public class SPIRVLIRStmt {
             }
         }
     }
+
+    @Opcode("INDEXED_ACCESS")
+    public static class IndexedMemAccess extends AbstractInstruction {
+
+        public static final LIRInstructionClass<IndexedMemAccess> TYPE = LIRInstructionClass.create(IndexedMemAccess.class);
+
+        @Use
+        protected Value rhs;
+
+        @Use
+        protected SPIRVUnary.MemoryIndexedAccess address;
+
+        @Use
+        protected Value index;
+
+        public IndexedMemAccess(SPIRVUnary.MemoryIndexedAccess address, Value rhs) {
+            super(TYPE);
+            this.address = address;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit IndexedMemAccess in address: " + address + "[ " + rhs + "]");
+
+            SPIRVId loadArray = asm.module.getNextId();
+
+            SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+
+            SPIRVId input = asm.lookUpLIRInstructions(rhs);
+
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadArray, //
+                    input, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            address.emit(crb, asm);
+
+            SPIRVId addressId = asm.lookUpLIRInstructions(address);
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    addressId, //
+                    loadArray, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
+            ));
+
+        }
+    }
 }

@@ -161,19 +161,15 @@ public class SPIRVUnary {
             this.memoryRegion = base;
         }
 
-        MemoryAccess(SPIRVMemoryBase base, Value value, Value index) {
-            super(null, LIRKind.Illegal, value);
-            this.memoryRegion = base;
-            this.index = index;
-        }
-
         public SPIRVMemoryBase getMemoryRegion() {
             return memoryRegion;
         }
 
+        // In SPIR-V, this class does not generate code, but rather keeps data to be
+        // used in other classes, such as the STORE
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µInstr MemoryAccess (EMPTY IMPLEMENTATION)");
+            throw new RuntimeException("Unimplemented");
         }
 
         public Value getIndex() {
@@ -188,6 +184,46 @@ public class SPIRVUnary {
             return assignedTo;
         }
 
+    }
+
+    public static class MemoryIndexedAccess extends UnaryConsumer {
+
+        private final SPIRVMemoryBase memoryRegion;
+
+        private Value index;
+
+        private Variable assignedTo;
+
+        public MemoryIndexedAccess(SPIRVMemoryBase memoryRegion, Value baseValue, Value indexValue, boolean needsBase) {
+            super(null, LIRKind.Illegal, baseValue);
+            this.memoryRegion = memoryRegion;
+            this.index = indexValue;
+            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! STORING INDEX: " + indexValue);
+        }
+
+        public Value getIndex() {
+            return index;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVId arrayAccessId = asm.module.getNextId();
+
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+
+            SPIRVId indexId;
+            if (index instanceof ConstantValue) {
+                indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
+            } else {
+                indexId = asm.lookUpLIRInstructions(index);
+            }
+
+            SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
+
+            SPIRVId type = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_FLOAT_32);
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
+            asm.registerLIRInstructionValue(this, arrayAccessId);
+        }
     }
 
     public static class SPIRVAddressCast extends UnaryConsumer {
@@ -255,17 +291,17 @@ public class SPIRVUnary {
 
         /**
          * Equivalent OpenCL Code:
-         *
+         * <p>
          * Example for get_global_id:
-         * 
+         *
          * <code>
-         *     int idx = get_global_id(dimensionIndex);
+         * int idx = get_global_id(dimensionIndex);
          * </code>
          *
          * <code>
-         *     %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
-         *   %call = OpCompositeExtract %ulong %37 0
-         *   %conv = OpUConvert %uint %call
+         * %37 = OpLoad %v3ulong %__spirv_BuiltInGlobalInvocationId Aligned 32
+         * %call = OpCompositeExtract %ulong %37 0
+         * %conv = OpUConvert %uint %call
          * </code>
          */
         @Override
@@ -380,14 +416,14 @@ public class SPIRVUnary {
         /**
          * Following this:
          * {@url https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpSConvert}
-         * 
+         *
          * <code>
-         *     Convert signed width. This is either a truncate or a sign extend.
+         * Convert signed width. This is either a truncate or a sign extend.
          * </code>
-         * 
+         * <p>
          * OpSConvert can be used for sign extend as well as truncate. The "S" symbol
          * represents signed format.
-         * 
+         *
          * @param crb
          *            {@link SPIRVCompilationResultBuilder}
          * @param asm
@@ -507,13 +543,12 @@ public class SPIRVUnary {
 
         /**
          * For obtaining the correct Int-Reference of the function:
-         *
+         * <p>
          * https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html
-         *
          */
         // @formatter:off
         public enum OpenCLIntrinsic {
-            
+
             // Math extended instructions
             // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_math_a_math_extended_instructions
             ACOS("acos", 0),
@@ -563,7 +598,7 @@ public class SPIRVUnary {
             SMAX("s_max", 156),
             SMIN("s_min", 158),
             POPCOPUNT("popcount", 166),
-            
+
             // Vector Loads/Stores
             // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_vector_a_vector_data_load_and_store_instructions
             VLOADN("vloadn", 171),

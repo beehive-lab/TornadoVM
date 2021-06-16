@@ -12,6 +12,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryIndexedAccess;
 
 @NodeInfo
 public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
@@ -55,7 +56,6 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         SPIRVLIRGenerator tool = (SPIRVLIRGenerator) generator.getLIRGeneratorTool();
-
         Value baseValue = genValue(generator, base);
         Value indexValue = genValue(generator, index);
         if (index == null) {
@@ -64,8 +64,21 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
         setMemoryAccess(generator, baseValue, indexValue, tool);
     }
 
+    private boolean isPrivateMemoryAccess() {
+        return this.memoryRegion.number == SPIRVArchitecture.privateSpace.number;
+    }
+
+    private boolean isLocalMemoryAccess() {
+        return this.memoryRegion.number == SPIRVArchitecture.localSpace.number;
+    }
+
     private void setMemoryAccess(NodeLIRBuilderTool generator, Value baseValue, Value indexValue, SPIRVLIRGenerator tool) {
-        Variable addressNode = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
-        generator.setResult(this, new MemoryAccess(memoryRegion, addressNode));
+
+        if (isPrivateMemoryAccess() || isLocalMemoryAccess()) {
+            generator.setResult(this, new MemoryIndexedAccess(memoryRegion, baseValue, indexValue, false));
+        } else {
+            Variable addressNode = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
+            generator.setResult(this, new MemoryAccess(memoryRegion, addressNode));
+        }
     }
 }

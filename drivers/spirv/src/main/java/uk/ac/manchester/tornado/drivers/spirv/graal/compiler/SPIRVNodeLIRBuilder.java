@@ -190,7 +190,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
-        SPIRVLogger.trace("SPIR-V LIR Builder %s - block %s", graph.method().getName(), block);
         OptionValues options = graph.getOptions();
         try (BlockScope ignored = gen.getBlockScope(block)) {
 

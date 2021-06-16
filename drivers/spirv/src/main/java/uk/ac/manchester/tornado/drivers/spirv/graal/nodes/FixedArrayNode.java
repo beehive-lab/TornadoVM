@@ -55,7 +55,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
         final SPIRVBinary.PrivateAllocation privateAllocationExpr = new SPIRVBinary.PrivateAllocation(lirKind, resultArray, lengthValue);
 
-        SPIRVLogger.traceBuildLIR("Private Array Allocation: " + resultArray);
+        SPIRVLogger.traceBuildLIR("Private Array Allocation: " + resultArray + " with type: " + lirKind);
         generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.PrivateArrayAllocation(privateAllocationExpr));
 
         generator.setResult(this, resultArray);
