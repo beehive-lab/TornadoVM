@@ -501,7 +501,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return graph;
     }
 
-    public void setGridScheduler(boolean use) {
+    public void setUseGridScheduler(boolean use) {
         this.useGridScheduler = use;
     }
 
