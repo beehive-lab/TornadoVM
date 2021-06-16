@@ -56,6 +56,8 @@ public interface TornadoDeviceContext {
 
     boolean isPlatformFPGA();
 
+    boolean isPlatformXilinxFPGA();
+
     boolean useRelativeAddresses();
 
     boolean isCached(String methodName, SchedulableTask task);

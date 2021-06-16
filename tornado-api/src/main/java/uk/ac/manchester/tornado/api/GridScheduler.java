@@ -43,15 +43,15 @@ package uk.ac.manchester.tornado.api;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class GridTask {
+public class GridScheduler {
 
     private final ConcurrentHashMap<String, WorkerGrid> gridTaskMap;
 
-    public GridTask() {
+    public GridScheduler() {
         gridTaskMap = new ConcurrentHashMap<>();
     }
 
-    public GridTask(String taskName, WorkerGrid workerGrid) {
+    public GridScheduler(String taskName, WorkerGrid workerGrid) {
         gridTaskMap = new ConcurrentHashMap<>();
         gridTaskMap.put(taskName, workerGrid);
     }

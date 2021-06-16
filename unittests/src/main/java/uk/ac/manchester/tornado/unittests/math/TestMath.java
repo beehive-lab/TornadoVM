@@ -143,6 +143,18 @@ public class TestMath extends TornadoTestBase {
         }
     }
 
+    public static void testFMA(float[] a, float[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] + b[i] * a[i];
+        }
+    }
+
+    public static void testFMA2(float[] a, double[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] + b[i] * a[i];
+        }
+    }
+
     @Test
     public void testMathCos() {
         final int size = 128;
@@ -422,4 +434,49 @@ public class TestMath extends TornadoTestBase {
         testRemainder(a, seq);
         assertArrayEquals(b, seq);
     }
+
+    @Test
+    public void testFMA() {
+        Random r = new Random();
+        final int size = 8192;
+        float[] a = new float[size];
+        float[] b = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+            seq[i] = b[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testFMA, a, b).streamOut(b).execute();
+
+        testFMA(a, seq);
+
+        assertArrayEquals(b, seq, 0.01f);
+    }
+
+    @Test
+    public void testFMA2() {
+        Random r = new Random();
+        final int size = 8192;
+        float[] a = new float[size];
+        double[] b = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+            seq[i] = b[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testFMA2, a, b).streamOut(b).execute();
+
+        testFMA2(a, seq);
+
+        assertArrayEquals(b, seq, 0.01f);
+    }
+
 }

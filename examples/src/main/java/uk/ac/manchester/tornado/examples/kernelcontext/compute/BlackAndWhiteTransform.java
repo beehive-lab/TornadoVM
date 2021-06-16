@@ -28,7 +28,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -65,7 +65,7 @@ public class BlackAndWhiteTransform {
         private static TaskSchedule tornadoTask;
 
         private static WorkerGrid workerGrid;
-        private static GridTask gridTask;
+        private static GridScheduler gridScheduler;
 
         LoadImage() {
             try {
@@ -136,7 +136,7 @@ public class BlackAndWhiteTransform {
 
                 if (tornadoTask == null) {
                     workerGrid = new WorkerGrid2D(w, s);
-                    gridTask = new GridTask("s0.t0", workerGrid);
+                    gridScheduler = new GridScheduler("s0.t0", workerGrid);
                     KernelContext context = new KernelContext();
 
                     tornadoTask = new TaskSchedule("s0");
@@ -147,7 +147,7 @@ public class BlackAndWhiteTransform {
                 workerGrid.setGlobalWork(w, s, 1);
 
                 taskStart = System.nanoTime();
-                tornadoTask.execute(gridTask);
+                tornadoTask.execute(gridScheduler);
                 taskEnd = System.nanoTime();
 
                 // unmarshall

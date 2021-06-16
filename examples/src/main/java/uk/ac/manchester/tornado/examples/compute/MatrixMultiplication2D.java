@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
@@ -70,7 +70,7 @@ public class MatrixMultiplication2D {
         }
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         // [Optional] Set the global work size
         workerGrid.setGlobalWork(size, size, 1);
         // [Optional] Set the local work group to be 32x32
@@ -84,12 +84,12 @@ public class MatrixMultiplication2D {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridTask);
+            t.execute(gridScheduler);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridTask);
+        t.execute(gridScheduler);
         long end = System.currentTimeMillis();
 
         // Run sequential

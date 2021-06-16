@@ -24,7 +24,7 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFPGAPragmas;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoTaskSpecialization;
@@ -90,7 +90,7 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
         if (deviceContext.isPlatformFPGA()) {
-            appendPhase(new TornadoPragmaUnroll());
+            appendPhase(new TornadoFPGAPragmas(deviceContext));
             appendPhase(new TornadoThreadScheduler());
         } else {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();

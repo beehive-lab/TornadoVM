@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.unittests.grid;
 
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
@@ -75,12 +75,12 @@ public class TestGrid extends TornadoTestBase {
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
-        GridTask gridTask = new GridTask("s0.t0", worker);
-        ts.execute(gridTask);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        ts.execute(gridScheduler);
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -106,11 +106,11 @@ public class TestGrid extends TornadoTestBase {
                 .streamOut(c); //
 
         WorkerGrid2D worker = new WorkerGrid2D(numElements, numElements);
-        GridTask gridTask = new GridTask("s0.t1", worker);
-        ts.execute(gridTask);
+        GridScheduler gridScheduler = new GridScheduler("s0.t1", worker);
+        ts.execute(gridScheduler);
 
         worker.setGlobalWork(512, 512, 1);
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         matrixMultiplication(a, b, seq, numElements);
 
@@ -137,8 +137,8 @@ public class TestGrid extends TornadoTestBase {
                 .streamOut(matrixB);
 
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
-        GridTask gridTask = new GridTask("foo.bar", worker);
-        ts.execute(gridTask);
+        GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
+        ts.execute(gridScheduler);
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -175,13 +175,13 @@ public class TestGrid extends TornadoTestBase {
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
-        GridTask gridTask = new GridTask("s0.t0", worker);
-        gridTask.setWorkerGrid("s0.t1", worker); // share the same worker
-        ts.execute(gridTask);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        gridScheduler.setWorkerGrid("s0.t1", worker); // share the same worker
+        ts.execute(gridScheduler);
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -206,10 +206,10 @@ public class TestGrid extends TornadoTestBase {
                 .streamOut(matrixC);
 
         WorkerGrid2D worker = new WorkerGrid2D(N, N);
-        GridTask gridTask = new GridTask("s0.mxm", worker);
+        GridScheduler gridScheduler = new GridScheduler("s0.mxm", worker);
         worker.setGlobalWork(N, N, 1);
         worker.setLocalWork(256, 256, 1);
 
-        s0.execute(gridTask);
+        s0.execute(gridScheduler);
     }
 }

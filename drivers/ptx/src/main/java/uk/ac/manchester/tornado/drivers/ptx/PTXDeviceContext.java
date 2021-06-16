@@ -23,13 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.List;
-
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -48,7 +41,14 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class PTXDeviceContext implements Initialisable, TornadoDeviceContext {
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.List;
+
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+
+public class PTXDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
     private final PTXDevice device;
     private final PTXMemoryManager memoryManager;
@@ -89,6 +89,11 @@ public class PTXDeviceContext implements Initialisable, TornadoDeviceContext {
 
     @Override
     public boolean isPlatformFPGA() {
+        return false;
+    }
+
+    @Override
+    public boolean isPlatformXilinxFPGA() {
         return false;
     }
 

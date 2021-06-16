@@ -76,7 +76,7 @@ public interface SchedulableTask {
 
     void enableDefaultThreadScheduler(boolean useDefaultScheduler);
 
-    void setGridScheduler(boolean use);
+    void setUseGridScheduler(boolean use);
 
     boolean isGridSchedulerEnabled();
 }

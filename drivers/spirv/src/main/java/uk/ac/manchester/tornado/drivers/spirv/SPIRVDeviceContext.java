@@ -297,4 +297,9 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         spirvContext.enqueueBarrier(getDeviceIndex());
         return 0;
     }
+
+    @Override
+    public boolean isPlatformXilinxFPGA() {
+        return false;
+    }
 }
