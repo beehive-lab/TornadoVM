@@ -27,6 +27,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
+import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
@@ -125,11 +126,18 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerStoreFieldNode((StoreFieldNode) node, tool);
         } else if (node instanceof ArrayLengthNode) {
             lowerArrayLengthNode((ArrayLengthNode) node, tool);
+        } else if (node instanceof IntegerDivRemNode) {
+            // lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
-            super.lower(node, tool);
+            // super.lower(node, tool);
         }
+    }
+
+    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
+        StructuredGraph graph = integerDivRemNode.graph();
+        // FIXME:
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
