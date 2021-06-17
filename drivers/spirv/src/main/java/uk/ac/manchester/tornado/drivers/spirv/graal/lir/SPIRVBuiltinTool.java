@@ -369,7 +369,7 @@ public class SPIRVBuiltinTool {
     }
 
     public Value genIntPopcount(Value value) {
-        SPIRVLogger.traceBuildLIR("genIntAbs: abs(%s)", value);
+        SPIRVLogger.traceBuildLIR("popcount: abs(%s)", value);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.POPCOPUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 

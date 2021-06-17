@@ -41,6 +41,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSDiv;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSRem;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftLeftLogical;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightLogical;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
@@ -414,9 +415,10 @@ public final class SPIRVAssembler extends Assembler {
 
         // Bitwise
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
+        public static final SPIRVBinaryOp BITWISE_RIGHT_SHIFT = new SPIRVBinaryOpRightShift(">>", "SPIRVBinaryOpRightShift");
         public static final SPIRVBinaryOp BITWISE_AND = new SPIRVBinaryOpBitwiseAnd("&", "SPIRVBinaryOpBitwiseAnd");
         public static final SPIRVBinaryOp BITWISE_OR = new SPIRVBinaryOpBitwiseOr("&", "SPIRVBinaryOpBitwiseOr");
-        public static final SPIRVBinaryOp BITWISE_XOR = new SPIRVBinaryOpBitwiseXor("&", "SPIRVBinaryOpBitwiseOr");
+        public static final SPIRVBinaryOp BITWISE_XOR = new SPIRVBinaryOpBitwiseXor("&", "SPIRVBinaryOpBitwiseXor");
 
         protected String spirvInstruction;
 
@@ -547,6 +549,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpShiftLeftLogical(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpRightShift extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpRightShift(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpShiftRightLogical(idResultType, idResult, operand1, operand2);
         }
     }
 
