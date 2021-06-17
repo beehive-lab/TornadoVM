@@ -19,6 +19,8 @@ import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.SPIRVModule;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBitwiseAnd;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBitwiseOr;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBitwiseXor;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExecutionMode;
@@ -413,6 +415,8 @@ public final class SPIRVAssembler extends Assembler {
         // Bitwise
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
         public static final SPIRVBinaryOp BITWISE_AND = new SPIRVBinaryOpBitwiseAnd("&", "SPIRVBinaryOpBitwiseAnd");
+        public static final SPIRVBinaryOp BITWISE_OR = new SPIRVBinaryOpBitwiseOr("&", "SPIRVBinaryOpBitwiseOr");
+        public static final SPIRVBinaryOp BITWISE_XOR = new SPIRVBinaryOpBitwiseXor("&", "SPIRVBinaryOpBitwiseOr");
 
         protected String spirvInstruction;
 
@@ -555,6 +559,30 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpBitwiseAnd(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpBitwiseOr extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpBitwiseOr(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpBitwiseOr(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpBitwiseXor extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpBitwiseXor(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpBitwiseXor(idResultType, idResult, operand1, operand2);
         }
     }
 
