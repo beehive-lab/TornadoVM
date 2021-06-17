@@ -6,7 +6,8 @@ public enum SPIRVOCLBuiltIn {
 
     // @formatter:off
     GLOBAL_THREAD_ID("spirv_BuiltInGlobalInvocationId", SPIRVBuiltIn.GlobalInvocationId()), 
-    GLOBAL_SIZE("spirv_BuiltInGlobalSize", SPIRVBuiltIn.GlobalSize());
+    GLOBAL_SIZE("spirv_BuiltInGlobalSize", SPIRVBuiltIn.GlobalSize()),
+    LOCAL_THREAD_ID("spirv_BuiltInLocalInvocationId", SPIRVBuiltIn.LocalInvocationId());
     // @formatter:on
 
     String name;

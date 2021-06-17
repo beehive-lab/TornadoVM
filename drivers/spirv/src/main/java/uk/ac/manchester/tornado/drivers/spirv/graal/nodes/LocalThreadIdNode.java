@@ -16,28 +16,30 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkGlobalThreadID;
 
-@NodeInfo(shortName = "SPIRV-Thread-ID")
-public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, MarkGlobalThreadID {
+@NodeInfo
+public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<GlobalThreadIdNode> TYPE = NodeClass.create(GlobalThreadIdNode.class);
+    public static final NodeClass<LocalThreadIdNode> TYPE = NodeClass.create(LocalThreadIdNode.class);
 
     @Input
     protected ConstantNode dimensionIndex;
 
-    public GlobalThreadIdNode(ConstantNode dimensionIndex) {
+    public LocalThreadIdNode(ConstantNode dimension) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
-        this.dimensionIndex = dimensionIndex;
+        this.dimensionIndex = dimension;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
+
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
+
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
         tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, lirKind, valueDimension)));
+
         generator.setResult(this, result);
 
     }
