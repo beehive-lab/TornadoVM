@@ -7,7 +7,8 @@ public enum SPIRVOCLBuiltIn {
     // @formatter:off
     GLOBAL_THREAD_ID("spirv_BuiltInGlobalInvocationId", SPIRVBuiltIn.GlobalInvocationId()), 
     GLOBAL_SIZE("spirv_BuiltInGlobalSize", SPIRVBuiltIn.GlobalSize()),
-    LOCAL_THREAD_ID("spirv_BuiltInLocalInvocationId", SPIRVBuiltIn.LocalInvocationId());
+    LOCAL_THREAD_ID("spirv_BuiltInLocalInvocationId", SPIRVBuiltIn.LocalInvocationId()),
+    WORKGROUP_SIZE("spirv_BuiltInWorkgroupSize", SPIRVBuiltIn.WorkgroupSize());
     // @formatter:on
 
     String name;

@@ -38,7 +38,7 @@ public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, lirKind, valueDimension)));
 
         generator.setResult(this, result);
 

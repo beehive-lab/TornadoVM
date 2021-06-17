@@ -18,14 +18,14 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 @NodeInfo
-public class LocalThreadIdFixedNode extends FixedWithNextNode implements LIRLowerable {
+public class LocalGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
-    public static NodeClass<LocalThreadIdFixedNode> TYPE = NodeClass.create(LocalThreadIdFixedNode.class);
+    public static final NodeClass<LocalGroupSizeNode> TYPE = NodeClass.create(LocalGroupSizeNode.class);
 
     @Input
-    protected ConstantNode dimensionIndex;
+    private ConstantNode dimensionIndex;
 
-    public LocalThreadIdFixedNode(ConstantNode dimensionIndex) {
+    public LocalGroupSizeNode(ConstantNode dimensionIndex) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.dimensionIndex = dimensionIndex;
     }
@@ -36,7 +36,7 @@ public class LocalThreadIdFixedNode extends FixedWithNextNode implements LIRLowe
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.WORKGROUP_SIZE, lirKind, valueDimension)));
         generator.setResult(this, result);
     }
 }
