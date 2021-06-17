@@ -130,7 +130,7 @@ public class SPIRVMathPlugins {
         r.register2("max", type, type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMIN, kind)));
+                b.push(kind, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMAX, kind)));
                 return true;
             }
         });

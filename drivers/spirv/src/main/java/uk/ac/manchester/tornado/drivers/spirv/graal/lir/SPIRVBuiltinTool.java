@@ -239,7 +239,7 @@ public class SPIRVBuiltinTool {
     }
 
     public Value genFloatMax(Value x, Value y) {
-        SPIRVLogger.traceBuildLIR("gen: min(%s,%s)", x, y);
+        SPIRVLogger.traceBuildLIR("gen: max(%s,%s)", x, y);
         return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMAX, LIRKind.combine(x, y), x, y);
     }
 
