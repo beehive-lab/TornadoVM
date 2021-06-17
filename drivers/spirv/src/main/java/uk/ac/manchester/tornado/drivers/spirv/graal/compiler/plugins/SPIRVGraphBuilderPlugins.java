@@ -25,6 +25,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
@@ -65,6 +66,24 @@ public class SPIRVGraphBuilderPlugins {
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);
         registerOpenCLOverridesForType(r, Long.TYPE, JavaKind.Long);
         registerFPIntrinsics(r);
+
+        Registration longRegistration = new Registration(plugins, Long.class);
+        longRegistration.register1("bitCount", Long.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(SPIRVIntUnaryIntrinsicNode.create(value, SPIRVIntUnaryIntrinsicNode.SPIRVIntOperation.POPCOUNT, JavaKind.Long)));
+                return true;
+            }
+        });
+
+        Registration intRegistration = new Registration(plugins, Integer.class);
+        intRegistration.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(SPIRVIntUnaryIntrinsicNode.create(value, SPIRVIntUnaryIntrinsicNode.SPIRVIntOperation.POPCOUNT, JavaKind.Int)));
+                return true;
+            }
+        });
 
     }
 

@@ -93,7 +93,7 @@ __TEST_THE_WORLD__ = [
     # TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     # TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
     # TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),

@@ -40,7 +40,7 @@ public class SPIRVIntBinaryIntrinsicNode extends BinaryNode implements Arithmeti
         ROTATE,
         SUB_SAT,
         UPSAMPLE,
-        MUL24
+        MUL24,
     }
     //@formatter:on
 
