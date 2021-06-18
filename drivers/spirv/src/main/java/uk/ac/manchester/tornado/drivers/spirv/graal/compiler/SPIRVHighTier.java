@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFPGAPragmas;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoParallelScheduler;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoSPIRVIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoTaskSpecialization;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoThreadScheduler;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -109,6 +110,7 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
 
         // TODO: Add SPIR-V Intrinsics Replacement
+        appendPhase(new TornadoSPIRVIntrinsicsReplacements(metaAccessProvider));
 
         appendPhase(new TornadoLocalMemoryAllocation());
         appendPhase(new ExceptionSuppression());

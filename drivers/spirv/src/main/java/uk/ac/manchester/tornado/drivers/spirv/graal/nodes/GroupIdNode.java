@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -11,6 +12,10 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 @NodeInfo
 public class GroupIdNode extends FloatingNode implements LIRLowerable {
@@ -30,9 +35,10 @@ public class GroupIdNode extends FloatingNode implements LIRLowerable {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
 
-        // Complete operations here
+        Value valueDimension = generator.operand(dimension);
+        LIRKind lirKind = tool.getLIRKind(stamp);
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn.GROUP_ID, lirKind, valueDimension)));
 
         generator.setResult(this, result);
-        throw new RuntimeException("Operation not supported yet");
     }
 }
