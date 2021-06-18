@@ -8,6 +8,9 @@ import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
+
 /**
  * Instruction: OpMemoryBarrier
  */
@@ -17,8 +20,18 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
     public static final NodeClass<SPIRVBarrierNode> TYPE = NodeClass.create(SPIRVBarrierNode.class);
 
     public enum SPIRVMemFenceFlags {
-        GLOBAL, //
-        LOCAL; //
+        GLOBAL(528), //
+        LOCAL(252); //
+
+        private int semantics;
+
+        SPIRVMemFenceFlags(int semantics) {
+            this.semantics = semantics;
+        }
+
+        public int getSemantics() {
+            return semantics;
+        }
     }
 
     private final SPIRVMemFenceFlags flags;
@@ -30,6 +43,6 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        throw new RuntimeException("Operation not supported");
+        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.ExprStmt(new SPIRVUnary.Barrier(flags)));
     }
 }

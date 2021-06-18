@@ -8,6 +8,7 @@ import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpControlBarrier;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
@@ -30,6 +31,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemor
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVUnaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
@@ -710,6 +712,24 @@ public class SPIRVUnary {
             }
 
             asm.registerLIRInstructionValue(this, result);
+        }
+    }
+
+    public static class Barrier extends UnaryConsumer {
+
+        private SPIRVBarrierNode.SPIRVMemFenceFlags flags;
+
+        public Barrier(SPIRVBarrierNode.SPIRVMemFenceFlags flags) {
+            super(null, LIRKind.Illegal, null);
+            this.flags = flags;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getSemantics());
+            SPIRVId constant2 = asm.lookUpConstant("2", SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(flags.getSemantics()), SPIRVKind.OP_TYPE_INT_32);
+            asm.currentBlockScope().add(new SPIRVOpControlBarrier(constant2, constant2, constantSemantics));
         }
     }
 }
