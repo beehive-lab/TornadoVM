@@ -89,6 +89,10 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         this.vmConfig = vmConfig;
     }
 
+    public static boolean isGPUSnippet() {
+        return gpuSnippet;
+    }
+
     @Override
     public void initialize(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
