@@ -34,15 +34,15 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
         }
     }
 
-    private final SPIRVMemFenceFlags flags;
+    private final SPIRVMemFenceFlags BARRIER_TYPE;
 
     public SPIRVBarrierNode(SPIRVMemFenceFlags flags) {
         super(TYPE, StampFactory.forVoid());
-        this.flags = flags;
+        this.BARRIER_TYPE = flags;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.ExprStmt(new SPIRVUnary.Barrier(flags)));
+        generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.ExprStmt(new SPIRVUnary.Barrier(BARRIER_TYPE)));
     }
 }

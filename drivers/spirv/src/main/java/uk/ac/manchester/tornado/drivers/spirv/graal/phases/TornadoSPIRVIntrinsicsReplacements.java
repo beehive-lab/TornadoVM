@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdFixedNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoSPIRVIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
@@ -52,10 +53,16 @@ public class TornadoSPIRVIntrinsicsReplacements extends BasePhase<TornadoHighTie
                     lowerInvokeNode(invoke);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.localBarrier":
-                    throw new RuntimeException("Unimplemented");
-                case "Direct#OpenCLIntrinsics.globalBarrier":
-                    throw new RuntimeException("Unimplemented");
+                case "Direct#OpenCLIntrinsics.localBarrier": {
+                    SPIRVBarrierNode barrierNode = graph.addOrUnique(new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.LOCAL));
+                    graph.replaceFixed(invoke, barrierNode);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.globalBarrier": {
+                    SPIRVBarrierNode barrierNode = graph.addOrUnique(new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL));
+                    graph.replaceFixed(invoke, barrierNode);
+                    break;
+                }
                 case "Direct#OpenCLIntrinsics.get_local_id": {
                     ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                     LocalThreadIdFixedNode localIdNode = graph.addOrUnique(new LocalThreadIdFixedNode(dimension));
