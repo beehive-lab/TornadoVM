@@ -31,6 +31,7 @@ import java.util.Set;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
@@ -58,6 +59,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     HashMap<Block, Integer> pending;
     private int loopCount;
     private int loopEnds;
+    Set<Block> rmvEndBracket;
 
     public OCLBlockVisitor(OCLCompilationResultBuilder resBuilder) {
         this.openclBuilder = resBuilder;
@@ -67,6 +69,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         switchClosed = new HashSet<>();
         closedLoops = new HashSet<>();
         pending = new HashMap<>();
+        rmvEndBracket = new HashSet<>();
     }
 
     private void emitBeginBlockForElseStatement(Block dom, Block block) {
@@ -78,6 +81,32 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
         asm.beginScope();
         asm.eolOn();
+    }
+
+    private void patch_2(Block block) {
+        Block dom = block.getDominator();
+        if (dom != null) {
+            if (dom.getPredecessorCount() == 2) { // Dom is merge block on enter
+                boolean mergeA = false,mergeB = false;
+                Block[] predecessors = dom.getPredecessors();
+                for (Block p : predecessors) {
+                    // Node Pi closes Loop
+                    if ((p.getBeginNode() instanceof LoopExitNode) && (p.getEndNode() instanceof LoopEndNode) && (block.getBeginNode() instanceof LoopExitNode)) {
+                        mergeA = true;
+                    }
+                    // Node Pi+1 close the if statement
+                    if ((p.getBeginNode() instanceof BeginNode) && (p.getEndNode() instanceof EndNode) && (block.getEndNode() instanceof EndNode)) {
+                        mergeB = true;
+                    }
+                    // falseSuccessor's endScope is redundant, can be removed.
+                    if (mergeA && mergeB) {
+                        if (((IfNode) dom.getEndNode()).falseSuccessor().equals(block.getBeginNode()) && (((IfNode) dom.getEndNode()).falseSuccessor().next().equals(block.getEndNode()))
+                                && block.getBeginNode() instanceof LoopExitNode)
+                            rmvEndBracket.add(block);
+                    }
+                }
+            }
+        }
     }
 
     private void emitBeginBlockForSwitchStatements(Block dom, Block beginBlockNode) {
@@ -275,6 +304,9 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
         if (block.getPostdominator() != null) {
             Block pdom = block.getPostdominator();
+
+            patch_2(block);
+
             if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(block)) {
                 // Check also if the current and next blocks are not merges block with more than
                 // 2 predecessors. In that case, we do not generate end scope.
@@ -283,7 +315,10 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
                     if (!wasBlockAlreadyClosed(block.getDominator()) && !isBlockInABreak(block, pdom)) {
-                        asm.endScope(block.toString());
+                        // asm.endScope(block.toString());
+                        if (!(rmvEndBracket.contains(block))) { // patch#2
+                            asm.endScope(block.toString());
+                        }
                     }
                 }
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(block) && isSwitchBlock(block.getDominator())) {
@@ -371,7 +406,9 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 dom.getBeginNode() instanceof LoopBeginNode && // The dominator is a loop node
                 dom.getEndNode() instanceof IfNode && //
                 block.getBeginNode() instanceof LoopExitNode && // The current block exits the block with a return
-                block.getEndNode() instanceof ReturnNode;
+                block.getEndNode() instanceof ReturnNode && //
+                !(dom.getFirstSuccessor().getEndNode() instanceof LoopEndNode && // patch#1
+                        dom.getFirstSuccessor().getBeginNode() instanceof BeginNode);
     }
 
     private void closeBranchBlock(Block block) {
