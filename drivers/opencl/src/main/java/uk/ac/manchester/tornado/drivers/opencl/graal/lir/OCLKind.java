@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -374,12 +375,9 @@ public enum OCLKind implements PlatformKind {
     public JavaConstant getDefaultValue() {
         if (!isVector()) {
             return JavaConstant.defaultForKind(asJavaKind());
-        } else {
-            return JavaConstant.defaultForKind(JavaKind.Float);
         }
-        // System.out.println("KIND FOUND: " + kind);
-        // unimplemented();
-        // return JavaConstant.NULL_POINTER;
+        unimplemented();
+        return JavaConstant.NULL_POINTER;
     }
 
     public static OCLKind resolveToVectorKind(ResolvedJavaType type) {
