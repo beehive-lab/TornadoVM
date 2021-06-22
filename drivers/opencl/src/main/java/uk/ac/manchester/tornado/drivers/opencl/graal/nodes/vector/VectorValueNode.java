@@ -23,10 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import java.util.List;
-
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -44,9 +42,6 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
@@ -58,6 +53,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLVectorAssign;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
+
+import java.util.List;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
 public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
@@ -160,30 +159,53 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
 
         Value s0,s1,s2,s3,s4,s5,s6,s7;
         switch (kind.getVectorLength()) {
-            case 2:
+            case 2: {
                 final OCLOp2 op2 = VectorUtil.resolveAssignOp2(getOCLKind());
                 s0 = getParam(gen, tool, 0);
+                OCLKind kindOp = (OCLKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 assignExpr = new OCLVectorAssign.Assign2Expr(op2, getOCLKind(), s0, s1);
                 break;
-            case 3:
+            }
+            case 3: {
                 final OCLOp3 op3 = VectorUtil.resolveAssignOp3(getOCLKind());
                 s0 = getParam(gen, tool, 0);
+                OCLKind kindOp = (OCLKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 assignExpr = new OCLVectorAssign.Assign3Expr(op3, getOCLKind(), s0, s1, s2);
                 break;
-            case 4:
+            }
+            case 4: {
                 final OCLOp4 op4 = VectorUtil.resolveAssignOp4(getOCLKind());
                 s0 = getParam(gen, tool, 0);
+                OCLKind kindOp = (OCLKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
                 assignExpr = new OCLVectorAssign.Assign4Expr(op4, getOCLKind(), s0, s1, s2, s3);
                 break;
-            case 8:
+            }
+            case 8: {
                 final OCLOp8 op8 = VectorUtil.resolveAssignOp8(getOCLKind());
                 s0 = getParam(gen, tool, 0);
+                OCLKind kindOp = (OCLKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
@@ -193,7 +215,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
                 s7 = getParam(gen, tool, 7);
                 assignExpr = new OCLVectorAssign.Assign8Expr(op8, getOCLKind(), s0, s1, s2, s3, s4, s5, s6, s7);
                 break;
-
+            }
             default:
                 unimplemented("new vector length = " + kind.getVectorLength());
         }

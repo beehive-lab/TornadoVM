@@ -150,26 +150,49 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
 
         Value s0,s1,s2,s3,s4,s5,s6,s7;
         switch (kind.getVectorLength()) {
-            case 2:
+            case 2: {
                 s0 = getParam(gen, tool, 0);
+                PTXKind kindOp = (PTXKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1);
                 break;
-            case 3:
+            }
+            case 3: {
                 s0 = getParam(gen, tool, 0);
+                PTXKind kindOp = (PTXKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2);
                 break;
-            case 4:
+            }
+            case 4: {
                 s0 = getParam(gen, tool, 0);
+                PTXKind kindOp = (PTXKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2, s3);
                 break;
-            case 8:
+            }
+            case 8: {
                 s0 = getParam(gen, tool, 0);
+                PTXKind kindOp = (PTXKind) s0.getPlatformKind();
+                if (kindOp.isVector()) {
+                    gen.setResult(this, s0);
+                    return;
+                }
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
@@ -179,7 +202,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
                 s7 = getParam(gen, tool, 7);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2, s3, s4, s5, s6, s7);
                 break;
-
+            }
             default:
                 unimplemented("new vector length = " + kind.getVectorLength());
         }
