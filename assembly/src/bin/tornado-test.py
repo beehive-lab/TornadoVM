@@ -146,6 +146,7 @@ __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.Pri
 __IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
+__PRINT_GRID__ = "-Dtornado.printGrid=True "
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
@@ -198,6 +199,9 @@ def composeAllOptions(args):
 
     if (args.debugTornado):
         options = options + __DEBUG_TORNADO__
+
+    if (args.printGrid):
+        options = options + __PRINT_GRID__
 
     if (args.printKernel):
         options = options + __PRINT_OPENCL_KERNEL__
@@ -405,6 +409,8 @@ def parseArguments():
                         help="Run test in verbose mode")
     parser.add_argument("--ea", "--enableassertions", action="store_true", dest="enable_assertions", default=False,
                         help="Enable Tornado assertions")
+    parser.add_argument('--printGrid', "-pg", action="store_true", dest="printGrid", default=False,
+                        help="Print grid information")
     parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False,
                         help="Print OpenCL kernel")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,
