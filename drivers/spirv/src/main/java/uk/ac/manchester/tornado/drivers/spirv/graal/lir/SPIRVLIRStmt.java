@@ -863,7 +863,7 @@ public class SPIRVLIRStmt {
         public static final LIRInstructionClass<IndexedLoadMemAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemAccess.class);
 
         @Use
-        protected Value rhs;
+        protected Value result;
 
         @Use
         protected SPIRVUnary.MemoryIndexedAccess address;
@@ -871,44 +871,43 @@ public class SPIRVLIRStmt {
         @Use
         protected Value index;
 
-        public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, Value rhs) {
+        public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, Value result) {
             super(TYPE);
             this.address = address;
-            this.rhs = rhs;
+            this.result = result;
         }
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            asm.emitValue(crb, rhs);
+            SPIRVLogger.traceCodeGen("emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]");
 
-            SPIRVLogger.traceCodeGen("emit IndexedLoadMemAccess in address: " + address + "[ " + rhs + "]");
+            address.emitForLoad(crb, asm);
 
-            SPIRVId loadArray = asm.module.getNextId();
-
-            SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
+            SPIRVId addressId = asm.lookUpLIRInstructions(address);
+            SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId input = asm.lookUpLIRInstructions(rhs);
-
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
+            SPIRVId loadId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
                     type, //
-                    loadArray, //
-                    input, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
+                    loadId, //
+                    addressId, //
+                    new SPIRVOptionalOperand<>(//
+                            SPIRVMemoryAccess.Aligned(//
                                     new SPIRVLiteralInteger(spirvKind.getByteCount())))//
             ));
 
-            address.emit(crb, asm);
-
-            SPIRVId addressId = asm.lookUpLIRInstructions(address);
+            // FIXME: Most likely I have to register a new variable.
+            SPIRVId storeId = asm.module.getNextId();
 
             asm.currentBlockScope().add(new SPIRVOpStore( //
-                    addressId, //
-                    loadArray, //
+                    storeId, //
+                    loadId, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
             ));
+
+            asm.registerLIRInstructionValue(result, storeId);
 
         }
     }

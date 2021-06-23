@@ -705,10 +705,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
-            // System.out.println("VARIABLES -------------- ");
-            // System.out.println("\tTYPE: " + spirvKind);
+            System.out.println("VARIABLES -------------- ");
+            System.out.println("\tTYPE: " + spirvKind);
             for (Variable var : kindToVariable.get(spirvKind)) {
-                // System.out.println("\tNAME: " + var);
+                System.out.println("\tNAME: " + var);
 
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);

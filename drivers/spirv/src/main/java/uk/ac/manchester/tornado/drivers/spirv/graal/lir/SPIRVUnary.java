@@ -229,6 +229,32 @@ public class SPIRVUnary {
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }
+
+        public void emitForLoad(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVId arrayAccessId = asm.module.getNextId();
+
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
+
+            SPIRVId indexId;
+            if (index instanceof ConstantValue) {
+                indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
+            } else {
+                indexId = asm.lookUpLIRInstructions(index);
+                SPIRVId loadId = asm.module.getNextId();
+                SPIRVId type = asm.primitives.getPtrToTypePrimitive((SPIRVKind) getValue().getPlatformKind());
+                asm.currentBlockScope().add(new SPIRVOpLoad(type, loadId, indexId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+                SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                SPIRVId convertID = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpSConvert(typeLong, convertID, loadId));
+                indexId = convertID;
+            }
+
+            SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
+            SPIRVId type = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_FLOAT_32);
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
+            asm.registerLIRInstructionValue(this, arrayAccessId);
+        }
     }
 
     public static class SPIRVAddressCast extends UnaryConsumer {
