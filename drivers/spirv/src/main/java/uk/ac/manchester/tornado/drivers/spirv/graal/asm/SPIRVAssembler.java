@@ -269,12 +269,15 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVId newConstantId = module.getNextId();
         SPIRVId typeID = primitives.getTypePrimitive(type);
         switch (type) {
+            case OP_TYPE_INT_8:
+            case OP_TYPE_INT_16:
             case OP_TYPE_INT_32:
                 module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentInt(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
                 break;
             case OP_TYPE_INT_64:
                 module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentLong(BigInteger.valueOf(Integer.parseInt(valueConstant)))));
                 break;
+            case OP_TYPE_FLOAT_16:
             case OP_TYPE_FLOAT_32:
                 module.add(new SPIRVOpConstant(typeID, newConstantId, new SPIRVContextDependentFloat(Float.parseFloat(valueConstant))));
                 break;
