@@ -38,7 +38,6 @@ import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_FLOAT;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_INT;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_LONG;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_SHORT;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -185,7 +184,7 @@ public class PTXStream extends TornadoLogger {
         assert Arrays.stream(gridDim).filter(i -> i <= 0).count() == 0;
         assert Arrays.stream(blockDim).filter(i -> i <= 0).count() == 0;
 
-        if (taskMeta.isDebug()) {
+        if (taskMeta.isPrintGrid()) {
             long[] blockDims = Arrays.stream(blockDim).mapToLong(i -> i).toArray();
             long[] gridDims = Arrays.stream(gridDim).mapToLong(i -> i).toArray();
             taskMeta.setPtxBlockDim(blockDims);

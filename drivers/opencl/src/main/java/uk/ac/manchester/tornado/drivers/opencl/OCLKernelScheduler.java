@@ -125,7 +125,7 @@ public abstract class OCLKernelScheduler {
             checkLocalWorkGroupFitsOnDevice(meta);
         }
 
-        if (meta.isDebug()) {
+        if (meta.isPrintGrid()) {
             meta.printThreadDims();
         }
         final int taskEvent = launch(kernel, meta, waitEvents, batchThreads);
