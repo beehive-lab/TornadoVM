@@ -206,6 +206,10 @@ public class SPIRVUnary {
             return index;
         }
 
+        public SPIRVMemoryBase getMemoryRegion() {
+            return this.memoryRegion;
+        }
+
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVId arrayAccessId = asm.module.getNextId();

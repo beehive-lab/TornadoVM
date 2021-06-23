@@ -191,6 +191,59 @@ public class SPIRVBinary {
         }
     }
 
+    public static class LocalAllocation extends BinaryConsumer {
+
+        private LIRKind lirKind;
+
+        @LIRInstruction.Def
+        private AllocatableValue resultArray;
+
+        @Use
+        private Value length;
+
+        public LocalAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
+            super(null, lirKind, null, null);
+            this.lirKind = lirKind;
+            this.resultArray = resultArray;
+            this.length = lengthValue;
+        }
+
+        private SPIRVId addSPIRVIdInPreamble(SPIRVAssembler asm) {
+            SPIRVId id = asm.module.getNextId();
+            asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(resultArray.toString())));
+            SPIRVKind kind = (SPIRVKind) resultArray.getPlatformKind();
+            asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(kind.getSizeInBytes()))));
+            return id;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit ArrayDeclaration: " + resultArray + "[" + length + "]");
+
+            SPIRVId idResult = addSPIRVIdInPreamble(asm);
+
+            SPIRVId primitiveType = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
+
+            SPIRVId elementsId;
+            if (length instanceof ConstantValue) {
+                elementsId = asm.lookUpConstant(((ConstantValue) length).getConstant().toValueString(), SPIRVKind.OP_TYPE_INT_32);
+            } else {
+                throw new RuntimeException("Constant expected");
+            }
+
+            // Array declaration
+            SPIRVId resultArrayId = asm.module.getNextId();
+            asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, elementsId));
+            SPIRVId functionPTR = asm.module.getNextId();
+            asm.module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Workgroup(), resultArrayId));
+
+            // Registration of the variable in the block 0 of the code
+            asm.blockZeroScope.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Workgroup(), new SPIRVOptionalOperand<>()));
+
+            asm.registerLIRInstructionValue(resultArray, idResult);
+        }
+    }
+
     public static class Intrinsic extends BinaryConsumer {
 
         private SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn;

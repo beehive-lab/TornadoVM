@@ -1,17 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
-
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
@@ -24,6 +21,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVTernary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -372,15 +371,18 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
-        SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
-
-        if (spirvKind.isVector()) {
-            System.out.println("SPIRV-KIND: " + spirvKind);
+        if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
+            SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
+            SPIRVLogger.traceCodeGen("emit IndexedLoadMemAccess in address: " + address + "[ " + result + "]");
+            getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
+        } else if (address instanceof MemoryAccess) {
+            SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
             SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
-            emitLoadVectorType(result, cast, (MemoryAccess) address);
-        } else {
-            SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
-            emitLoad(result, cast, (MemoryAccess) address);
+            if (spirvKind.isVector()) {
+                emitLoadVectorType(result, cast, (MemoryAccess) address);
+            } else {
+                emitLoad(result, cast, (MemoryAccess) address);
+            }
         }
 
         return result;

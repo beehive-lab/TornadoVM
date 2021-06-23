@@ -743,11 +743,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             if (isParallel) {
                 // Register Thread ID
                 SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
-                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
 
                 // Register Global Size
                 SPIRVId idSPIRVBuiltin_GlobalSize = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
-                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
 
                 // Register builtins
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, idSPIRVBuiltin);
