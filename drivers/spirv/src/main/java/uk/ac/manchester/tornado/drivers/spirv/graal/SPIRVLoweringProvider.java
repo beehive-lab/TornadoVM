@@ -4,6 +4,8 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import java.util.Iterator;
+
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
@@ -23,6 +25,7 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -66,20 +69,28 @@ import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
+import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
+    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
+
     private ConstantReflectionProvider constantReflectionProvider;
     private TornadoVMConfig vmConfig;
 
     private static boolean gpuSnippet = false;
+    private ReduceGPUSnippets.Templates GPUReduceSnippets;
 
     public SPIRVLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig,
             MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflectionProvider, TornadoVMConfig vmConfig, SPIRVTargetDescription target,
@@ -102,7 +113,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
-
+        this.GPUReduceSnippets = new ReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
     @Override
@@ -122,6 +133,8 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             // ignore
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
+        } else if (node instanceof StoreAtomicIndexedNode) {
+            lowerStoreAtomicsReduction(node, tool);
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node);
         } else if (node instanceof LoadFieldNode) {
@@ -137,6 +150,45 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             // super.lower(node, tool);
         }
+    }
+
+    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+        StructuredGraph graph = storeIndexed.graph();
+
+        // Find Get Global ID node and Global Size;
+        GlobalThreadIdNode spirvIDNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
+        GlobalThreadSizeNode spirvGlobalSize = graph.getNodes().filter(GlobalThreadSizeNode.class).first();
+
+        ValueNode threadID = null;
+        Iterator<Node> usages = spirvIDNode.usages().iterator();
+
+        boolean cpuScheduler = false;
+
+        while (usages.hasNext()) {
+            Node n = usages.next();
+
+            // GPU SCHEDULER
+            if (n instanceof PhiNode) {
+                gpuSnippet = true;
+                threadID = (ValueNode) n;
+                break;
+            }
+        }
+        // Depending on the Scheduler, call the proper snippet factory
+        if (cpuScheduler) {
+            throw new RuntimeException("CPU Snippets for SPIR-V not implemented yet");
+        } else {
+            GPUReduceSnippets.lower(storeIndexed, threadID, spirvGlobalSize, tool);
+        }
+
+        // We append this phase to move floating reads close to their actual usage and
+        // set FixedAccessNode::lastLocationAccess
+        snippetReadReplacementPhase.apply(graph);
+    }
+
+    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
+        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
+        lowerReduceSnippets(storeAtomicNode, tool);
     }
 
     private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
@@ -200,7 +252,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerInvoke(Invoke invoke, LoweringTool tool, StructuredGraph graph) {
         if (invoke.callTarget() instanceof MethodCallTargetNode) {
-            MethodCallTargetNode callTarget = (MethodCallTargetNode) invoke;
+            MethodCallTargetNode callTarget = (MethodCallTargetNode) invoke.callTarget();
             NodeInputList<ValueNode> parameters = callTarget.arguments();
             ValueNode receiver = null;
             if (parameters.size() > 0) {

@@ -109,7 +109,6 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
 
-        // TODO: Add SPIR-V Intrinsics Replacement
         appendPhase(new TornadoSPIRVIntrinsicsReplacements(metaAccessProvider));
 
         appendPhase(new TornadoLocalMemoryAllocation());

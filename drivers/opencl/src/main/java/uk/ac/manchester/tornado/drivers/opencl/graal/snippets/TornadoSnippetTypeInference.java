@@ -28,6 +28,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 
 import jdk.vm.ci.meta.JavaKind;
 
+/// FIXME: <Refactor> across 3 backends
 public interface TornadoSnippetTypeInference {
 
     SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra);

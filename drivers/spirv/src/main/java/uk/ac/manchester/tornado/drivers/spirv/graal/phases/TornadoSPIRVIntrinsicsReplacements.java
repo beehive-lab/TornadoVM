@@ -53,47 +53,47 @@ public class TornadoSPIRVIntrinsicsReplacements extends BasePhase<TornadoHighTie
                     lowerInvokeNode(invoke);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.localBarrier": {
+                case "Direct#SPIRVOCLIntrinsics.localBarrier": {
                     SPIRVBarrierNode barrierNode = graph.addOrUnique(new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.LOCAL));
                     graph.replaceFixed(invoke, barrierNode);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.globalBarrier": {
+                case "Direct#SPIRVOCLIntrinsics.globalBarrier": {
                     SPIRVBarrierNode barrierNode = graph.addOrUnique(new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL));
                     graph.replaceFixed(invoke, barrierNode);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.get_local_id": {
+                case "Direct#SPIRVOCLIntrinsics.get_local_id": {
                     ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                     LocalThreadIdFixedNode localIdNode = graph.addOrUnique(new LocalThreadIdFixedNode(dimension));
                     graph.replaceFixed(invoke, localIdNode);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.get_local_size": {
+                case "Direct#SPIRVOCLIntrinsics.get_local_size": {
                     ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                     LocalGroupSizeNode groupSize = graph.addOrUnique(new LocalGroupSizeNode(dimension));
                     graph.replaceFixed(invoke, groupSize);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.get_global_id": {
+                case "Direct#SPIRVOCLIntrinsics.get_global_id": {
                     ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                     GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(dimension));
                     graph.replaceFixed(invoke, globalThreadIdNode);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.get_global_size": {
+                case "Direct#SPIRVOCLIntrinsics.get_global_size": {
                     ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                     GlobalThreadSizeNode globalThreadSizeNode = graph.addOrUnique(new GlobalThreadSizeNode(dimension));
                     graph.replaceFixed(invoke, globalThreadSizeNode);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.get_group_id": {
+                case "Direct#SPIRVOCLIntrinsics.get_group_id": {
                     ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                     GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
                     graph.replaceFixed(invoke, groupIdNode);
                     break;
                 }
-                case "Direct#OpenCLIntrinsics.printEmpty": {
+                case "Direct#SPIRVOCLIntrinsics.printEmpty": {
                     throw new RuntimeException("Unimplemented");
                 }
             }
