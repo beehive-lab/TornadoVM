@@ -347,7 +347,6 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     }
 
-
     @Test
     public void testTornadoMathPI() {
         final int size = 128;

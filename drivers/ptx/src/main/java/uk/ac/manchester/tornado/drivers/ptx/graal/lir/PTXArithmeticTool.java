@@ -22,22 +22,25 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
+
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXTernaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.*;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
@@ -322,7 +325,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     public Value emitMultiplyAdd(Value op1, Value op2, Value op3) {
         trace("emitMultiplyAdd op1=%s op2=%s op3=%s", op1, op2, op3);
-        LIRKind resultKind = LIRKind.combine(op1, op2);
+        LIRKind resultKind = LIRKind.combine(op1, op2, op3);
         Variable result = getGen().newVariable(resultKind);
         PTXTernaryOp op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXTernaryOp.MAD : PTXTernaryOp.MAD_LO;
         getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(op, resultKind, op1, op2, op3)));

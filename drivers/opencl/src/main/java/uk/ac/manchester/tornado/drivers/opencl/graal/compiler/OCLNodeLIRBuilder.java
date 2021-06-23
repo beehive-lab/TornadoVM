@@ -25,15 +25,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
-import java.util.Collection;
-import java.util.List;
-
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -86,14 +84,6 @@ import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
-
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
@@ -113,13 +103,23 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+
+import java.util.Collection;
+import java.util.List;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -560,7 +560,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
-        } else if (node instanceof PragmaUnrollNode || node instanceof ThreadConfigurationNode) {
+        } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof ThreadConfigurationNode) {
             // ignore emit-action
         } else {
             super.emitNode(node);
@@ -624,7 +624,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private void emitPragmaLoopUnroll(Block blk) {
         for (ValueNode tempDomBlockNode : blk.getNodes()) {
-            if (tempDomBlockNode instanceof PragmaUnrollNode) {
+            if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
                 super.emitNode(tempDomBlockNode);
             }
         }
