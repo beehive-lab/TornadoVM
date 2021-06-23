@@ -20,6 +20,7 @@ import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -54,6 +55,8 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.IntegerTestNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
@@ -62,6 +65,7 @@ import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
@@ -345,6 +349,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     private Variable emitLogicNode(final LogicNode node) {
         SPIRVLogger.traceBuildLIR("emitLogicNode: %s", node);
         LIRKind boolLIRKind = LIRKind.value(SPIRVKind.OP_TYPE_BOOL);
+        LIRKind intLIRKind = LIRKind.value(SPIRVKind.OP_TYPE_INT_32);
         Variable result = getGen().newVariable(LIRKind.value(SPIRVKind.OP_TYPE_BOOL));
         if (node instanceof IntegerLessThanNode) {
             SPIRVLogger.traceBuildLIR("IntegerLessThanNode: %s", node);
@@ -367,9 +372,23 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_BELOW;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+        } else if (node instanceof IntegerTestNode) {
+            SPIRVLogger.traceBuildLIR("IntegerTestNode: %s", node);
+            final IntegerTestNode testNode = (IntegerTestNode) node;
+            final Value x = operand(testNode.getX());
+            final Value y = operand(testNode.getY());
+            SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_AND;
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+        } else if (node instanceof IsNullNode) {
+            SPIRVLogger.traceBuildLIR("IsNullNode: %s", node);
+            final IsNullNode isNullNode = (IsNullNode) node;
+            final Value x = operand(isNullNode.getValue());
+            SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, new ConstantValue(intLIRKind, PrimitiveConstant.NULL_POINTER))));
         } else {
             throw new RuntimeException("Condition Not implemented yet: " + node.getClass());
         }
+
         setResult(node, result);
         return result;
     }
