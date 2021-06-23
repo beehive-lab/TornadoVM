@@ -66,7 +66,6 @@ public final class VectorPlugins {
                 @Override
                 public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                     OCLKind vectorKind = OCLKind.resolveToVectorKind(method.getDeclaringClass());
-                    System.out.println("vectorKIND >>>>>>>>>>>>>>>>>>> " + vectorKind + " >> FROM : " + method.getDeclaringClass());
 
                     if (vectorKind == OCLKind.ILLEGAL) {
                         return false;
