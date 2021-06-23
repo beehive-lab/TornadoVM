@@ -689,7 +689,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (LIRInstruction lirInstruction : lir.getLIRforBlock(b)) {
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
-                    System.out.println("INS: " + instruction);
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
                         if (variable.getName() != null) {
@@ -706,10 +705,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
-            System.out.println("VARIABLES -------------- ");
-            System.out.println("\tTYPE: " + spirvKind);
+            // System.out.println("VARIABLES -------------- ");
+            // System.out.println("\tTYPE: " + spirvKind);
             for (Variable var : kindToVariable.get(spirvKind)) {
-                System.out.println("\tNAME: " + var);
+                // System.out.println("\tNAME: " + var);
 
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);
@@ -743,13 +742,34 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             if (isParallel) {
                 // Register Thread ID
                 SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
+                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
 
                 // Register Global Size
                 SPIRVId idSPIRVBuiltin_GlobalSize = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
+                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
 
                 // Register builtins
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, idSPIRVBuiltin);
                 asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, idSPIRVBuiltin_GlobalSize);
+
+                // Look for other constracts
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+                    SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.LOCAL_THREAD_ID);
+                    SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
+                    asm.builtinTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, id);
+                }
+
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
+                    SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GROUP_ID);
+                    SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GROUP_ID.name, id);
+                    asm.builtinTable.put(SPIRVOCLBuiltIn.GROUP_ID, id);
+                }
+
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()) {
+                    SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.WORKGROUP_SIZE);
+                    SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
+                    asm.builtinTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE, id);
+                }
             }
 
             // Decorate for heap_base
