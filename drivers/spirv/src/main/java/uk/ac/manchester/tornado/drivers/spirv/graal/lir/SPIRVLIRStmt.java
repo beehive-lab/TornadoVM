@@ -862,8 +862,8 @@ public class SPIRVLIRStmt {
 
         public static final LIRInstructionClass<IndexedLoadMemAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemAccess.class);
 
-        @Use
-        protected Value result;
+        @Def
+        protected AllocatableValue result;
 
         @Use
         protected SPIRVUnary.MemoryIndexedAccess address;
@@ -871,7 +871,7 @@ public class SPIRVLIRStmt {
         @Use
         protected Value index;
 
-        public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, Value result) {
+        public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, AllocatableValue result) {
             super(TYPE);
             this.address = address;
             this.result = result;
@@ -898,8 +898,8 @@ public class SPIRVLIRStmt {
                                     new SPIRVLiteralInteger(spirvKind.getByteCount())))//
             ));
 
-            // FIXME: Most likely I have to register a new variable.
-            SPIRVId storeId = asm.module.getNextId();
+            asm.emitValue(crb, result);
+            SPIRVId storeId = asm.lookUpLIRInstructions(result);
 
             asm.currentBlockScope().add(new SPIRVOpStore( //
                     storeId, //
