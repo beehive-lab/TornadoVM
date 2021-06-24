@@ -142,8 +142,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return id;
     }
 
-    public boolean isPrintGrid() {
-        return printGrid;
+    public boolean isThreadInfoEnabled() {
+        return threadInfo;
     }
 
     public boolean isDebug() {
@@ -257,7 +257,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /*
      * Forces the executing kernel to output its arguments before execution
      */
-    private final boolean printGrid;
+    private final boolean threadInfo;
     private final boolean debug;
     private final boolean dumpEvents;
     private final boolean dumpProfiles;
@@ -430,7 +430,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
-        printGrid = parseBoolean(getDefault("printGrid", id, "False"));
+        threadInfo = parseBoolean(getDefault("threadInfo", id, "False"));
         debug = parseBoolean(getDefault("debug", id, "False"));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));

@@ -39,7 +39,7 @@ function print_usage() {
   echo "usage:    tornado [options] class [arg0 ... argN]"
   echo ""
   echo "              -h|--help                       Show this message"
-  echo "              --printGrid                     Print grid information"
+  echo "              --threadInfo                    Print thread information"
   echo ""
   echo "          Debugging options:"
   echo ""
@@ -173,8 +173,8 @@ while [[ $# -gt 0 ]]; do
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.debug=True"
     shift # past argument
     ;;
-  --printGrid)
-      TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.printGrid=True"
+  --threadInfo)
+      TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.threadInfo=True"
       shift # past argument
       ;;
   --igv)
