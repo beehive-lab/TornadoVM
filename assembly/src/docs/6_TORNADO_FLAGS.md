@@ -21,8 +21,11 @@ Enables full debugging log to be output in the. command line.
 * `` --printKernel ``:  
 Print the generated OpenCL/PTX kernel in the command line.
 
-* ```--debug ```:  
-Print minor debug in fo such as number of parallel threads used.
+* ```--threadInfo```:  
+Print the information about the number of parallel threads used.
+
+* ```--debug```:  
+Print minor debug info.
 
 * ```--devices```:  
 Output a list of all available devices on the current system.
