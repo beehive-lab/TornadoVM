@@ -21,6 +21,8 @@ public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, SPIRVId> ptrToPrimitives;
 
+    final private Map<SPIRVKind, SPIRVId> ptrToPrimitivesWorkGroup;
+
     final private Map<SPIRVKind, SPIRVId> crossGroupToPrimitives;
 
     final private Map<SPIRVKind, SPIRVId> undefTable;
@@ -33,6 +35,7 @@ public class SPIRVPrimitiveTypes {
         this.ptrToPrimitives = new HashMap<>();
         this.crossGroupToPrimitives = new HashMap<>();
         this.undefTable = new HashMap<>();
+        this.ptrToPrimitivesWorkGroup = new HashMap<>();
     }
 
     private SPIRVId getVectorType(SPIRVKind vectorType, SPIRVId typeID) {
@@ -97,6 +100,20 @@ public class SPIRVPrimitiveTypes {
 
     public SPIRVId getPtrToTypePrimitive(SPIRVKind primitive) {
         return getPtrToTypePrimitive(primitive, SPIRVStorageClass.Function());
+    }
+
+    public SPIRVId getPtrToWorkGroupPrimitive(SPIRVKind primitive, SPIRVStorageClass storageClass) {
+        SPIRVId primitiveId = getTypePrimitive(primitive);
+        if (!ptrToPrimitivesWorkGroup.containsKey(primitive)) {
+            SPIRVId resultType = module.getNextId();
+            module.add(new SPIRVOpTypePointer(resultType, storageClass, primitiveId));
+            ptrToPrimitivesWorkGroup.put(primitive, resultType);
+        }
+        return ptrToPrimitivesWorkGroup.get(primitive);
+    }
+
+    public SPIRVId getPtrToWorkGroupPrimitive(SPIRVKind primitive) {
+        return getPtrToWorkGroupPrimitive(primitive, SPIRVStorageClass.Workgroup());
     }
 
     public SPIRVId getTypeVoid() {

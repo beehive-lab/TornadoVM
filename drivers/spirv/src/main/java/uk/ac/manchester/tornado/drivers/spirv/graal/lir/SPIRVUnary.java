@@ -241,7 +241,7 @@ public class SPIRVUnary {
             } else {
                 indexId = asm.lookUpLIRInstructions(index);
                 SPIRVId loadId = asm.module.getNextId();
-                SPIRVId type = asm.primitives.getPtrToTypePrimitive((SPIRVKind) getValue().getPlatformKind());
+                SPIRVId type = asm.primitives.getTypePrimitive((SPIRVKind) getValue().getPlatformKind());
                 asm.currentBlockScope().add(new SPIRVOpLoad(type, loadId, indexId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
 
                 SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
@@ -251,7 +251,7 @@ public class SPIRVUnary {
             }
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
-            SPIRVId type = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_FLOAT_32);
+            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive((SPIRVKind) getValue().getPlatformKind());
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }
