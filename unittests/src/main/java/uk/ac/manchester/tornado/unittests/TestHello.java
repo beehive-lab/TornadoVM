@@ -18,19 +18,18 @@
 
 package uk.ac.manchester.tornado.unittests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class TestHello extends TornadoTestBase {
 
@@ -96,7 +95,6 @@ public class TestHello extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testSimpleCompute() {
         int numElements = 256;
         int[] a = new int[numElements];
@@ -119,7 +117,6 @@ public class TestHello extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testSimpleCompute2() {
         int numElements = 256;
         int[] a = new int[numElements];

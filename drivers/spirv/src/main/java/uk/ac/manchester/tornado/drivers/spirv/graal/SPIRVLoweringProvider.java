@@ -356,10 +356,27 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
+    private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
+        // Either the node has as input a LocalArray or has a node which will be lowered
+        // to a LocalArray
+        Node nd = loadIndexedNode.inputs().first().asNode();
+        InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
+        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
+        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
+    }
+
+    private boolean isPrivateIDNode(LoadIndexedNode loadIndexedNode) {
+        Node nd = loadIndexedNode.inputs().first().asNode();
+        return (nd instanceof uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode);
+    }
+
     private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
         AddressNode address;
-        System.out.println("Pending Local Memory");
-        address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        if (isLocalIDNode(loadIndexed) || isPrivateIDNode(loadIndexed)) {
+            address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
+        } else {
+            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        }
         return address;
     }
 
