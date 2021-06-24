@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 /**
- * Generates the LIR for declaring a SPIR-V local memory array.
+ * Generates the LIR for declaring a SPIR-V array in local memory.
  */
 @NodeInfo
 public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocalArray, MemoryKill {
@@ -60,7 +60,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         final AllocatableValue resultArray = tool.newVariable(lirKind);
 
-        final SPIRVBinary.LocalAllocation localArray = new SPIRVBinary.LocalAllocation(lirKind, resultArray, lengthValue);
+        final SPIRVBinary.LocalArrayAllocation localArray = new SPIRVBinary.LocalArrayAllocation(lirKind, resultArray, lengthValue);
         SPIRVLogger.traceBuildLIR("Local Array Allocation: " + resultArray + " with type: " + lirKind);
 
         generator.setResult(this, resultArray);

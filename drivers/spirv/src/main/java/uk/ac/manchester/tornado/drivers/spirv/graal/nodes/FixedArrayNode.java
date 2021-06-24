@@ -20,6 +20,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 
+/**
+ * Fixed Node for private array allocation.
+ */
 @NodeInfo
 public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
@@ -30,7 +33,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     protected SPIRVKind elementKind;
     protected SPIRVArchitecture.SPIRVMemoryBase memoryBase;
-    // FIXME SPIRVBinaryTemplate is missing
 
     public FixedArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
@@ -55,7 +57,7 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         final AllocatableValue resultArray = tool.newVariable(lirKind);
 
-        final SPIRVBinary.PrivateAllocation privateAllocationExpr = new SPIRVBinary.PrivateAllocation(lirKind, resultArray, lengthValue);
+        final SPIRVBinary.PrivateArrayAllocation privateAllocationExpr = new SPIRVBinary.PrivateArrayAllocation(lirKind, resultArray, lengthValue);
 
         SPIRVLogger.traceBuildLIR("Private Array Allocation: " + resultArray + " with type: " + lirKind);
         generator.setResult(this, resultArray);

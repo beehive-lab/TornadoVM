@@ -137,7 +137,7 @@ public class SPIRVBinary {
         }
     }
 
-    public static class PrivateAllocation extends BinaryConsumer {
+    public static class PrivateArrayAllocation extends BinaryConsumer {
 
         private LIRKind lirKind;
 
@@ -147,7 +147,7 @@ public class SPIRVBinary {
         @Use
         private Value length;
 
-        public PrivateAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
+        public PrivateArrayAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
             super(null, lirKind, null, null);
             this.lirKind = lirKind;
             this.resultArray = resultArray;
@@ -191,7 +191,7 @@ public class SPIRVBinary {
         }
     }
 
-    public static class LocalAllocation extends BinaryConsumer {
+    public static class LocalArrayAllocation extends BinaryConsumer {
 
         private LIRKind lirKind;
 
@@ -201,14 +201,14 @@ public class SPIRVBinary {
         @Use
         private Value length;
 
-        public LocalAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
+        public LocalArrayAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
             super(null, lirKind, null, null);
             this.lirKind = lirKind;
             this.resultArray = resultArray;
             this.length = lengthValue;
         }
 
-        private SPIRVId addSPIRVIdInPreamble(SPIRVAssembler asm) {
+        private SPIRVId addSPIRVIdLocalArrayInPreamble(SPIRVAssembler asm) {
             SPIRVId id = asm.module.getNextId();
             asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(resultArray.toString())));
             SPIRVKind kind = (SPIRVKind) resultArray.getPlatformKind();
@@ -220,25 +220,27 @@ public class SPIRVBinary {
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("emit ArrayDeclaration: " + resultArray + "[" + length + "]");
 
-            SPIRVId idResult = addSPIRVIdInPreamble(asm);
+            SPIRVId idResult = addSPIRVIdLocalArrayInPreamble(asm);
 
             SPIRVId primitiveType = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
 
-            SPIRVId elementsId;
+            SPIRVId lengthId;
             if (length instanceof ConstantValue) {
-                elementsId = asm.lookUpConstant(((ConstantValue) length).getConstant().toValueString(), SPIRVKind.OP_TYPE_INT_32);
+                lengthId = asm.lookUpConstant(((ConstantValue) length).getConstant().toValueString(), SPIRVKind.OP_TYPE_INT_32);
             } else {
+                // We cannot allocate space in local memory using a value not known at compile
+                // time.
                 throw new RuntimeException("Constant expected");
             }
 
             // Array declaration
             SPIRVId resultArrayId = asm.module.getNextId();
-            asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, elementsId));
+            asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, lengthId));
             SPIRVId functionPTR = asm.module.getNextId();
             asm.module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Workgroup(), resultArrayId));
 
-            // Registration of the variable in the block 0 of the code
-            asm.blockZeroScope.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Workgroup(), new SPIRVOptionalOperand<>()));
+            // Registration of the variable in the module level
+            asm.module.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Workgroup(), new SPIRVOptionalOperand<>()));
 
             asm.registerLIRInstructionValue(resultArray, idResult);
         }
