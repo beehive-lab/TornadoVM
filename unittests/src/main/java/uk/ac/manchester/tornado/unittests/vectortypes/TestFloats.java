@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.unittests.vectortypes;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.IllegalFormatConversionException;
 import java.util.Random;
 
 import org.junit.Ignore;
@@ -345,7 +344,6 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
-
     @Test
     public void testVectorFloat3toString() {
         int size = 2;
@@ -440,6 +438,44 @@ public class TestFloats extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             Float8 sequential = new Float8(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
+            assertEquals(sequential.getS0(), output.get(i).getS0(), 0.001);
+            assertEquals(sequential.getS1(), output.get(i).getS1(), 0.001);
+            assertEquals(sequential.getS2(), output.get(i).getS2(), 0.001);
+            assertEquals(sequential.getS3(), output.get(i).getS3(), 0.001);
+            assertEquals(sequential.getS4(), output.get(i).getS4(), 0.001);
+            assertEquals(sequential.getS5(), output.get(i).getS5(), 0.001);
+            assertEquals(sequential.getS6(), output.get(i).getS6(), 0.001);
+            assertEquals(sequential.getS7(), output.get(i).getS7(), 0.001);
+        }
+    }
+
+    public static void addVectorFloat8Storage(VectorFloat8 a, VectorFloat8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            Float8 float8 = a.get(i);
+            results.set(i, new Float8(float8.getArray()));
+        }
+    }
+
+    @Test
+    public void testVectorFloat8_Storage() {
+        int size = 8;
+
+        VectorFloat8 a = new VectorFloat8(size);
+        VectorFloat8 output = new VectorFloat8(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Float8(i, i, i, i, i, i, i, i));
+        }
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::addVectorFloat8Storage, a, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Float8 sequential = new Float8(i, i, i, i, i, i, i, i);
             assertEquals(sequential.getS0(), output.get(i).getS0(), 0.001);
             assertEquals(sequential.getS1(), output.get(i).getS1(), 0.001);
             assertEquals(sequential.getS2(), output.get(i).getS2(), 0.001);
