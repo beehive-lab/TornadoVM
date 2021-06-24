@@ -18,6 +18,8 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
+import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled;
+
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -122,7 +124,7 @@ public class NBody {
             start = System.nanoTime();
             nBody(numBodies, posSeq, velSeq);
             end = System.nanoTime();
-            uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody sequential", start, end);
+            enqueueTaskIfEnabled("nbody sequential", start, end);
             resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
         }
@@ -150,14 +152,12 @@ public class NBody {
             start = System.nanoTime();
             t0.execute(gridScheduler);
             end = System.nanoTime();
-            uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody accelerated", start, end);
+            enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
 
         }
         long timeParallel = (end - start);
-
-        System.out.println(resultsIterations.toString());
 
         if (VALIDATION) {
             boolean isValid = validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
