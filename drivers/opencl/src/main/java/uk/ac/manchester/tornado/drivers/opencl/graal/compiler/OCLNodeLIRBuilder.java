@@ -497,7 +497,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                  */
                 setResult(phi, value);
             } else {
-                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 append(new OCLLIRStmt.AssignStmt(result, value));
             }
         }
@@ -683,6 +683,26 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             return;
         }
 
+        // Move the phi assignment outside the loop.
+        // Only do that for the phi nodes that are not inside "else { break; }" blocks.
+        Block curBlock = (Block) gen.getCurrentBlock();
+        boolean shouldSkipStmt = false;
+        if (curBlock.getBeginNode() instanceof LoopExitNode) {
+            LoopExitNode loopExitNode = (LoopExitNode) curBlock.getBeginNode();
+            LoopBeginNode loopBeginNode = loopExitNode.loopBegin();
+            Block loopBeginBlock = loopBeginNode.graph().getLastSchedule().getNodeToBlockMap().get(loopBeginNode);
+            for (Block pred : curBlock.getPredecessors()) {
+                if (pred == loopBeginBlock) {
+                    shouldSkipStmt = true;
+                    break;
+                }
+            }
+        }
+
+        if (shouldSkipStmt) {
+            append(new OCLLIRStmt.BeginSkipStmt());
+        }
+
         final AbstractMergeNode merge = end.merge();
         for (ValuePhiNode phi : merge.valuePhis()) {
             final ValueNode value = phi.valueAt(end);
@@ -690,6 +710,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 append(new OCLLIRStmt.AssignStmt(result, operand(value)));
             }
+        }
+
+        if (shouldSkipStmt) {
+            append(new OCLLIRStmt.EndSkipStmt());
         }
     }
 
