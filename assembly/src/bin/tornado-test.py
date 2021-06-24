@@ -52,6 +52,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestShorts"),
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIf"),
 
+    ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
@@ -86,7 +87,7 @@ __TEST_THE_WORLD__ = [
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
     TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
+    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
