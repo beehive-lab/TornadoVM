@@ -38,6 +38,8 @@ that includes NBody, DFT, KMeans computation and matrix computations.
 
 **Additional Information**
 
+[Documentation](assembly/src/docs)
+
 [Benchmarks](assembly/src/docs/4_BENCHMARKS.md)
 
 [Reductions](assembly/src/docs/5_REDUCTIONS.md)

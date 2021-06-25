@@ -34,7 +34,7 @@ kc = new KernelContext();
 
 ## Examples
 
-The following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/kernelContext/compute/MatrixMultiplication2DV2.java) is the Matrix Multiplication implementation using the `KernelContext` object for indexing threads and access to local memory. The following example also makes use of loop tiling.  There are three main steps to leverage the features of the `KernelContext`:
+The following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV2.java) is the Matrix Multiplication implementation using the `KernelContext` object for indexing threads and access to local memory. The following example also makes use of loop tiling.  There are three main steps to leverage the features of the `KernelContext`:
 
 1. The `KernelContext` object is passed as an argument in the method that will be accelerated. This implementation
    follows the OpenCL implementation description provided
@@ -116,7 +116,7 @@ t.execute(gridScheduler);    // Pass the GridScheduler in the execute method
 
 ## Multiple Tasks in a TaskSchedule with a `WorkerGrid` and `KernelContext`
 
-The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the KernelContext features or adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Examples can be found in the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/tree/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/KernelContext/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three tasks:
+The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the KernelContext features or adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Examples can be found in the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/kernelcontext/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three tasks:
 
 * `t0`: The `vectorAddV2` method adds two vectors by utilizing the thread attributes provided by KernelContext.
 * `t1`: The `vectorMulV2` method multiplies the result of the first task with a second vector, while also utilizing the
