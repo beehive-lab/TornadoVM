@@ -100,8 +100,6 @@ public class TestFFT {
 
         TaskSchedule s0 = new TaskSchedule("x0");
         s0.task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr);
-        // s0.task("t0", TestFFT::nesting2, input, dim, factors, size, dummyFac,
-        // dimArr);
         s0.streamOut(input);
         s0.execute();
 
