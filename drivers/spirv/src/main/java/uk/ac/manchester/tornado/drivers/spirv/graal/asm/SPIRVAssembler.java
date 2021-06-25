@@ -3,13 +3,16 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.cfg.Block;
 
 import jdk.vm.ci.code.Register;
@@ -198,13 +201,32 @@ public final class SPIRVAssembler extends Assembler {
         return functionPre;
     }
 
-    public void emitEntryPointMainKernel(String kernelName, boolean isParallel, boolean fp64Capability) {
+    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean isParallel, boolean fp64Capability) {
         mainFunctionID = module.getNextId();
 
         SPIRVMultipleOperands operands;
         if (isParallel) {
-            // FIXME - Pending this - We should query exactly the builtins the code enables.
-            operands = new SPIRVMultipleOperands(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID), builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_SIZE));
+            List<SPIRVId> builtInList = new ArrayList<>();
+            builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID));
+
+            if (graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.LOCAL_THREAD_ID));
+            }
+
+            if (graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.WORKGROUP_SIZE));
+            }
+
+            builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_SIZE));
+
+            if (graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GROUP_ID));
+            }
+
+            SPIRVId[] array = new SPIRVId[builtInList.size()];
+            builtInList.toArray(array);
+            operands = new SPIRVMultipleOperands(array);
+
         } else {
             operands = new SPIRVMultipleOperands();
         }

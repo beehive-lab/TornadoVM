@@ -798,7 +798,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // ----------------------------------
             // Emit Entry Kernel
             // ----------------------------------
-            asm.emitEntryPointMainKernel(method.getName(), isParallel, fp64Capability);
+            asm.emitEntryPointMainKernel(cfg.graph, method.getName(), isParallel, fp64Capability);
 
             // ----------------------------------
             // OpNames for the heap and frame
