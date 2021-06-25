@@ -71,7 +71,7 @@ public class SPIRVLIRStmt {
                 asm.emitValue(crb, rhs);
             }
 
-            SPIRVLogger.traceCodeGen("emit Assignment: " + lhs + " = " + rhs);
+            SPIRVLogger.traceCodeGen("emit Assignment : " + lhs + " = " + rhs.getClass());
 
             SPIRVId storeAddressID;
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
@@ -165,7 +165,8 @@ public class SPIRVLIRStmt {
 
             SPIRVLogger.traceCodeGen("emit ASSIGNWithLoad: " + lhs + " = " + rhs);
 
-            SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+            SPIRVKind kindRhs = (SPIRVKind) rhs.getPlatformKind();
+            SPIRVId typeRhs = asm.primitives.getTypePrimitive(kindRhs);
 
             // If the right hand side expression is a constant, we don't need to load the
             // constant, but rather just use is in the store
@@ -173,25 +174,25 @@ public class SPIRVLIRStmt {
             if (rhs instanceof ConstantValue) {
                 ConstantValue constantValue = (ConstantValue) rhs;
                 loadId = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
-                System.out.println(">>>>>>>>>>>> LOAD ID: " + loadId);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(rhs);
                 loadId = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        uint, //
+                        typeRhs, //
                         loadId, //
                         param, //
                         new SPIRVOptionalOperand<>( //
                                 SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(4)))//
+                                        new SPIRVLiteralInteger(kindRhs.getSizeInBytes())))//
                 ));
             }
 
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(lhs);
+            SPIRVKind kindLHS = (SPIRVKind) lhs.getPlatformKind();
             asm.currentBlockScope().add(new SPIRVOpStore( //
                     storeAddressID, //
                     loadId, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)) //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(kindLHS.getSizeInBytes())) //
                     )));
 
             // We can do this because the prev expression (right-hand side), register the

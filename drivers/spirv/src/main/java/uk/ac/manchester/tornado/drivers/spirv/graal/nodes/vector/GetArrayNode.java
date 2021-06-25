@@ -45,7 +45,7 @@ public class GetArrayNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, generator.operand(arrayNode)));
+        tool.append(new SPIRVLIRStmt.AssignStmtWithLoad(result, generator.operand(arrayNode)));
         generator.setResult(this, result);
     }
 }
