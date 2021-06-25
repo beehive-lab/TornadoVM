@@ -39,11 +39,11 @@ function print_usage() {
   echo "usage:    tornado [options] class [arg0 ... argN]"
   echo ""
   echo "              -h|--help                       Show this message"
-  echo "              -d|--debug                      Enable debug output"
+  echo "              --threadInfo                    Print thread information"
   echo ""
   echo "          Debugging options:"
   echo ""
-  echo "              --debug                         Print debugging information"
+  echo "              -d|--debug                         Print debugging information"
   echo "              --printBytecodes                Print TornadoVM bytecodes"
   echo "              --igv                           Dump GRAAL IR into IGV"
   echo "              --igvLowTier                    Dump OpenCL Low Tier with IGV"
@@ -173,6 +173,10 @@ while [[ $# -gt 0 ]]; do
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.debug=True"
     shift # past argument
     ;;
+  --threadInfo)
+      TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.threadInfo=True"
+      shift # past argument
+      ;;
   --igv)
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false"
     shift # past argument
