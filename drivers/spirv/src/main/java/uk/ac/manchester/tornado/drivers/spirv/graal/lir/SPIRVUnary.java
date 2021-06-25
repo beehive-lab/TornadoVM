@@ -252,7 +252,10 @@ public class SPIRVUnary {
                                 SPIRVMemoryAccess.Aligned(//
                                         new SPIRVLiteralInteger(kind.getSizeInBytes())))//
                 ));
-                indexId = loadId;
+                SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                SPIRVId idConversion = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpSConvert(typeLong, idConversion, loadId));
+                indexId = idConversion;
             }
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
