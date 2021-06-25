@@ -83,11 +83,15 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         asm.eolOn();
     }
 
-    private void patch_2(Block block) {
+    // Update a list of basic blocks to close. We add a block into the rvmEndBracket
+    // list if the current block starts with a lookExitNode and the false successor
+    // of the dominator points to the loopExitNode followed by an end-node.
+    private void updateListEndBracketsForLoopExitNodes(Block block) {
         Block dom = block.getDominator();
         if (dom != null) {
             if (dom.getPredecessorCount() == 2) { // Dom is merge block on enter
-                boolean mergeA = false,mergeB = false;
+                boolean mergeA = false;
+                boolean mergeB = false;
                 Block[] predecessors = dom.getPredecessors();
                 for (Block p : predecessors) {
                     // Node Pi closes Loop
@@ -305,7 +309,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (block.getPostdominator() != null) {
             Block pdom = block.getPostdominator();
 
-            patch_2(block);
+            updateListEndBracketsForLoopExitNodes(block);
 
             if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(block)) {
                 // Check also if the current and next blocks are not merges block with more than
@@ -315,8 +319,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
                     if (!wasBlockAlreadyClosed(block.getDominator()) && !isBlockInABreak(block, pdom)) {
-                        // asm.endScope(block.toString());
-                        if (!(rmvEndBracket.contains(block))) { // patch#2
+                        if (!(rmvEndBracket.contains(block))) {
                             asm.endScope(block.toString());
                         }
                     }
@@ -407,7 +410,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 dom.getEndNode() instanceof IfNode && //
                 block.getBeginNode() instanceof LoopExitNode && // The current block exits the block with a return
                 block.getEndNode() instanceof ReturnNode && //
-                !(dom.getFirstSuccessor().getEndNode() instanceof LoopEndNode && // patch#1
+                !(dom.getFirstSuccessor().getEndNode() instanceof LoopEndNode && //
                         dom.getFirstSuccessor().getBeginNode() instanceof BeginNode);
     }
 
