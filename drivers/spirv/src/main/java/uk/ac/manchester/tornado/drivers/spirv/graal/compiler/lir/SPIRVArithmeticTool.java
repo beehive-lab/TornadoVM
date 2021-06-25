@@ -426,7 +426,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             } else {
                 if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
                     SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-                    System.out.println("\t\tGenerate Indexed Access with index : " + indexedAccess.getIndex() + "  =----- " + indexedAccess.getValue());
+                    System.out.println("\t\tGenerate Indexed Access WITH PRIVATE OR LOCAL with index : " + indexedAccess.getIndex() + "  =----- " + indexedAccess.getValue());
                     getGen().append(new SPIRVLIRStmt.IndexedMemAccess(indexedAccess, input));
                 }
             }

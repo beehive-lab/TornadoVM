@@ -75,7 +75,7 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
     private void setMemoryAccess(NodeLIRBuilderTool generator, Value baseValue, Value indexValue, SPIRVLIRGenerator tool) {
 
         if (isPrivateMemoryAccess() || isLocalMemoryAccess()) {
-            generator.setResult(this, new MemoryIndexedAccess(memoryRegion, baseValue, indexValue, false));
+            generator.setResult(this, new MemoryIndexedAccess(memoryRegion, baseValue, indexValue));
         } else {
             Variable addressNode = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
             generator.setResult(this, new MemoryAccess(memoryRegion, addressNode));

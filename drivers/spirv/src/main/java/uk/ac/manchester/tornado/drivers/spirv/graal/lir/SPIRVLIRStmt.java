@@ -21,6 +21,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
@@ -814,20 +815,27 @@ public class SPIRVLIRStmt {
         protected Value rhs;
 
         @Use
-        protected SPIRVUnary.MemoryIndexedAccess address;
+        protected SPIRVUnary.MemoryIndexedAccess memoryIndexedAccess;
 
         @Use
         protected Value index;
 
-        public IndexedMemAccess(SPIRVUnary.MemoryIndexedAccess address, Value rhs) {
+        public IndexedMemAccess(SPIRVUnary.MemoryIndexedAccess memoryIndexedAccess, Value rhs) {
             super(TYPE);
-            this.address = address;
+            this.memoryIndexedAccess = memoryIndexedAccess;
             this.rhs = rhs;
         }
 
-        @Override
-        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit IndexedMemAccess in address: " + address + "[ " + rhs + "]");
+        private boolean isPrivateMemoryAccess() {
+            return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.privateSpace.number;
+        }
+
+        private boolean isLocalMemoryAccess() {
+            return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.localSpace.number;
+        }
+
+        private void emitIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
             SPIRVId loadArray = asm.module.getNextId();
 
@@ -845,16 +853,62 @@ public class SPIRVLIRStmt {
                                     new SPIRVLiteralInteger(spirvKind.getByteCount())))//
             ));
 
-            address.emit(crb, asm);
+            memoryIndexedAccess.emit(crb, asm);
 
-            SPIRVId addressId = asm.lookUpLIRInstructions(address);
+            SPIRVId addressId = asm.lookUpLIRInstructions(memoryIndexedAccess);
 
             asm.currentBlockScope().add(new SPIRVOpStore( //
                     addressId, //
                     loadArray, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
+                    new SPIRVOptionalOperand<>(//
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount()) //
+                            )) //
+            ));
+        }
+
+        private void emitIndexedAccessLocalMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit IndexedMemAccess for LOCAL MEMORY in address: " + memoryIndexedAccess + "[ " + rhs + "]");
+
+            SPIRVId loadArray = asm.module.getNextId();
+
+            SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+
+            SPIRVId input = asm.lookUpLIRInstructions(rhs);
+
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadArray, //
+                    input, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
             ));
 
+            memoryIndexedAccess.emit(crb, asm);
+
+            SPIRVId addressId = asm.lookUpLIRInstructions(memoryIndexedAccess);
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    addressId, //
+                    loadArray, //
+                    new SPIRVOptionalOperand<>(//
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount()) //
+                            )) //
+            ));
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            if (isPrivateMemoryAccess()) {
+                emitIndexedAccessPrivateMemory(crb, asm);
+            } else if (isLocalMemoryAccess()) {
+                emitIndexedAccessLocalMemory(crb, asm);
+            } else {
+                throw new RuntimeException("Indexed Memory Access not supported");
+            }
         }
     }
 
