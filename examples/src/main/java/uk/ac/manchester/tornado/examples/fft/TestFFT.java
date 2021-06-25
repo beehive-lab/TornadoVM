@@ -23,6 +23,12 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 
 /**
  * Example of FFT provided by Nikos Foutris.
+ * 
+ * How to run:
+ * 
+ * <code>
+ *     tornado uk.ac.manchester.tornado.examples.fft.TestFFT
+ * </code>
  */
 public class TestFFT {
 
@@ -90,6 +96,7 @@ public class TestFFT {
         int[] dimArr = new int[] { 2, 2, 2 };
         int size = factors.length;
         int dummyFac = 2;
+        int[] seq = new int[] { input[0], input[1] };
 
         TaskSchedule s0 = new TaskSchedule("x0");
         s0.task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr);
@@ -98,7 +105,17 @@ public class TestFFT {
         s0.streamOut(input);
         s0.execute();
 
-        System.out.println("Input = " + Arrays.toString(input));
+        nesting(seq, dim, factors, size, dummyFac, dimArr);
+
+        System.out.println("Tornado Output = " + Arrays.toString(input));
+        System.out.println("Seq Output     = " + Arrays.toString(seq));
+
+        boolean equals = Arrays.equals(input, seq);
+        if (equals) {
+            System.out.println("Result is correct");
+        } else {
+            System.out.println("Result is wrong");
+        }
 
     }
 
