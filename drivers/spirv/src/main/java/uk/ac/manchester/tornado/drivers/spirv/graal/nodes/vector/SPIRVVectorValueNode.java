@@ -129,23 +129,30 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
         Value s6;
         Value s7;
         LIRKind lirKind;
+
+        // check if first parameter is a vector
+        s0 = getParam(gen, tool, 0);
+        if (spirvKind.getVectorLength() >= 2) {
+            if (((SPIRVKind) s0.getPlatformKind()).isVector()) {
+                gen.setResult(this, s0);
+                return;
+            }
+        }
+
         switch (spirvKind.getVectorLength()) {
             case 2:
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 gen.getLIRGeneratorTool().getLIRKind(stamp);
                 lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
                 assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1);
                 break;
             case 3:
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
                 assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2);
                 break;
             case 4:
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
@@ -153,7 +160,6 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
                 assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2, s3);
                 break;
             case 8:
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);

@@ -1,7 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -16,13 +17,10 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.GetArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorAddNode;
@@ -32,6 +30,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorMultNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElementProxyNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public class SPIRVVectorPlugins {
 
@@ -171,6 +171,19 @@ public class SPIRVVectorPlugins {
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
                 b.append(b.append(indexedStore));
+                return true;
+            }
+        });
+
+        r.register1("getArray", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                ValueNode array = receiver.get();
+                GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
+                b.push(JavaKind.Object, b.append(getArrayNode));
                 return true;
             }
         });
