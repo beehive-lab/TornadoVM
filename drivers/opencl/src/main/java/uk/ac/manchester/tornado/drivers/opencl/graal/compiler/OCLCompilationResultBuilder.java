@@ -70,6 +70,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
@@ -264,6 +265,29 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         emitBlock(block);
     }
 
+    void emitRelocatedInstructions(Block block) {
+        if (block == null) {
+            return;
+        }
+
+        trace("block on exit %d", block.getId());
+
+        boolean relocatableInstruction = false;
+        for (LIRInstruction op : lir.getLIRforBlock(block)) {
+            if (op instanceof OCLLIRStmt.MarkRelocateInstruction) {
+                relocatableInstruction = true;
+            }
+
+            if (op != null && relocatableInstruction) {
+                try {
+                    emitOp(this, op);
+                } catch (TornadoInternalError e) {
+                    throw e.addContext("lir instruction", block + "@" + op.id() + " " + op + "\n");
+                }
+            }
+        }
+    }
+
     void emitBlock(Block block) {
         if (block == null) {
             return;
@@ -274,8 +298,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         LIRInstruction breakInst = null;
 
+        boolean relocatableInstruction = false;
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
-            if (op == null) {
+            if (op instanceof OCLLIRStmt.MarkRelocateInstruction) {
+                relocatableInstruction = true;
+            }
+
+            if (op == null || relocatableInstruction) {
                 continue;
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
