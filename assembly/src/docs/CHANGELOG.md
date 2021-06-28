@@ -1,6 +1,25 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+## TornadoVM 0.10 
+29/06/2021
+
+- TornadoVM JIT Compiler sync with Graal 21.1.0 
+- Experimental support for OpenJDK 16 
+- Tracing the TornadoVM thread distribution and device information with a new option `--threadInfo` instead of  `--debug`
+- Refactoring of the new API:
+	- `TornadoVMExecutionContext` renamed to `KernelContext`
+	- `GridTask` renamed to `GridScheduler`
+- AWS F1 AMI version upgraded to 1.10.0 and automated the generation of AFI image
+- Xilinx OpenCL backend expanded with:
+	- a) Initial integration of Xilinx OpenCL attributes for loop pipelining in the TornadoVM compiler
+	- b) Support for multiple compute units
+- Logging FPGA compilation option added to dump FPGA HLS compilation to a file
+- TornadoVM profiler enhanced for including data transfers for the stack-frame and kernel dispatch time
+- Initial support for 2D Arrays added
+- Several bug fixes and stability support for the OpenCL and PTX backends
+
+
 ## TornadoVM 0.9
 15/04/2021
 
