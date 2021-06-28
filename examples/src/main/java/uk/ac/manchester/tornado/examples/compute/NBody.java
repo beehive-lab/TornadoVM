@@ -18,9 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
+import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled;
+
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
@@ -129,7 +131,7 @@ public class NBody {
             start = System.nanoTime();
             nBody(numBodies, posSeq, velSeq, delT, espSqr);
             end = System.nanoTime();
-            uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody sequential", start, end);
+            enqueueTaskIfEnabled("nbody sequential", start, end);
             resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
         }
@@ -137,11 +139,11 @@ public class NBody {
         long timeSequential = (end - start);
 
         System.out.println(resultsIterations.toString());
-        WorkerGrid worker = new WorkerGrid1D(numBodies);
-        GridTask gridTask = new GridTask("s0.t0", worker);
-        worker.setGlobalWork(numBodies, 1, 1);
+        WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        workerGrid.setGlobalWork(numBodies, 1, 1);
         // [Optional] Set the local work group
-        worker.setLocalWork(1024, 1, 1);
+        workerGrid.setLocalWork(1024, 1, 1);
 
         // @formatter:off
             final TaskSchedule t0 = new TaskSchedule("s0")
@@ -153,9 +155,9 @@ public class NBody {
         for (int i = 0; i < iterations; i++) {
             // System.gc();
             start = System.nanoTime();
-            t0.execute(gridTask);
+            t0.execute(gridScheduler);
             end = System.nanoTime();
-            uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled("nbody accelerated", start, end);
+            enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
 

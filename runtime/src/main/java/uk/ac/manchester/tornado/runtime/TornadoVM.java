@@ -25,22 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -68,6 +53,21 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 /**
  * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
@@ -110,7 +110,7 @@ public class TornadoVM extends TornadoLogger {
     private boolean finishedWarmup;
     private boolean doUpdate;
 
-    private GridTask gridTask;
+    private GridScheduler gridScheduler;
 
     public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
@@ -435,8 +435,8 @@ public class TornadoVM extends TornadoLogger {
         task.setBatchThreads(batchThreads);
         task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
-        if (gridTask != null && gridTask.get(task.getId()) != null) {
-            task.setGridScheduler(true);
+        if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
+            task.setUseGridScheduler(true);
         }
 
         if (shouldCompile(installedCodes[taskIndex])) {
@@ -509,8 +509,8 @@ public class TornadoVM extends TornadoLogger {
         }
 
         HashMap<Integer, Integer> map = new HashMap<>();
-        if (gridTask != null && gridTask.get(task.getId()) != null) {
-            WorkerGrid workerGrid = gridTask.get(task.getId());
+        if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
+            WorkerGrid workerGrid = gridScheduler.get(task.getId());
             long[] global = workerGrid.getGlobalWork();
             int i = 0;
             for (long maxThread : global) {
@@ -594,7 +594,7 @@ public class TornadoVM extends TornadoLogger {
         }
         // We attach the profiler
         metadata.attachProfiler(timeProfiler);
-        metadata.setGridTask(gridTask);
+        metadata.setGridScheduler(gridScheduler);
 
         int lastEvent;
         try {
@@ -804,8 +804,8 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
-    public void setGridTask(GridTask gridTask) {
-        this.gridTask = gridTask;
+    public void setGridScheduler(GridScheduler gridScheduler) {
+        this.gridScheduler = gridScheduler;
     }
 
     public void printTimes() {

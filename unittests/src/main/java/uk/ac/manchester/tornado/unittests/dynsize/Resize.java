@@ -19,7 +19,7 @@
 package uk.ac.manchester.tornado.unittests.dynsize;
 
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
@@ -167,13 +167,13 @@ public class Resize {
         float[] b = createArray(256);
 
         WorkerGrid workerGrid = new WorkerGrid1D(256);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
         TaskSchedule ts = new TaskSchedule("s0") //
                 .streamIn(a) //
                 .task("t0", Resize::resize02, a, b) //
                 .streamOut(b); //
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         float[] aux = createArray(256);
 
@@ -181,13 +181,13 @@ public class Resize {
         ts.updateReference(b, aux);
         ts.updateReference(a, b);
         ts.updateReference(aux, a);
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         // Interchange again
         ts.updateReference(b, aux);
         ts.updateReference(a, b);
         ts.updateReference(aux, a);
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         for (float v : b) {
             assertEquals(40.0f, v, 0.001f);
@@ -200,20 +200,21 @@ public class Resize {
         float[] b = createArray(256);
 
         WorkerGrid workerGrid = new WorkerGrid1D(256);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
         // Do not stream in 'a'
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", Resize::resize02, a, b) //
                 .streamOut(b); //
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         float[] aux = createArray(256);
         Arrays.fill(aux, 15);
 
-        // Update copy in variable 'a'. It should invalidate the buffer state on the device and copy in the 'aux' array.
+        // Update copy in variable 'a'. It should invalidate the buffer state on the
+        // device and copy in the 'aux' array.
         ts.updateReference(a, aux);
-        ts.execute(gridTask);
+        ts.execute(gridScheduler);
 
         for (float v : b) {
             assertEquals(25.0f, v, 0.001f);

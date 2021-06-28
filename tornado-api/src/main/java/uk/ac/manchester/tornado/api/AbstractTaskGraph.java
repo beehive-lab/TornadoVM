@@ -108,7 +108,7 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     AbstractTaskGraph schedule();
 
-    AbstractTaskGraph schedule(GridTask gridTask);
+    AbstractTaskGraph schedule(GridScheduler gridScheduler);
 
     AbstractTaskGraph scheduleWithProfile(Policy policy);
 

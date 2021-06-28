@@ -62,7 +62,7 @@ import uk.ac.manchester.tornado.api.annotations.TornadoVMIntrinsic;
  * translated to both OpenCL and PTX by the TornadoVM JIT compiler. The main
  * difference with the {@link TaskSchedule} API is that the tasks within a
  * {@link TaskSchedule} that use {@link KernelContext} must be
- * {@link GridTask}.</li>
+ * {@link GridScheduler}.</li>
  * </ul>
  * </p>
  */

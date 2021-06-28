@@ -34,7 +34,7 @@ kc = new KernelContext();
 
 ## Examples
 
-The following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/kernelContext/compute/MatrixMultiplication2DV2.java) is the Matrix Multiplication implementation using the `KernelContext` object for indexing threads and access to local memory. The following example also makes use of loop tiling.  There are three main steps to leverage the features of the `KernelContext`:
+The following [example](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV2.java) is the Matrix Multiplication implementation using the `KernelContext` object for indexing threads and access to local memory. The following example also makes use of loop tiling.  There are three main steps to leverage the features of the `KernelContext`:
 
 1. The `KernelContext` object is passed as an argument in the method that will be accelerated. This implementation
    follows the OpenCL implementation description provided
@@ -88,14 +88,14 @@ public static void matrixMultiplication(KernelContext context,
 
 2. A TornadoVM program that uses the `KernelContext` must use the context with a `WorkerGrid` (1D/2D/3D). This is
    necessary in order to obtain awareness about the dimensions and the sizes of the threads that will be deployed.
-   **Therefore, `KernelContext` can only work with GridTasks.**
+   **Therefore, `KernelContext` can only work with tasks that are linked with a `GridScheduler`.**
 
 ```java
 // Create 2D Grid of Threads with a 2D Worker
 WorkerGrid workerGrid = new WorkerGrid2D(size, size);
 
-// Create a GridTask that associates a task-ID with a worker grid
-GridTask gridTask = new GridTask("s0.t0", workerGrid);
+// Create a GridScheduler that associates a task-ID with a worker grid
+GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
 // Create the TornadoVM Context
 KernelContext context = new KernelContext();
@@ -111,12 +111,12 @@ TaskSchedule t = new TaskSchedule("s0")
         .task("t0",MxM::compute,context, matrixA, matrixB, matrixC, size)
         .streamOut(matrixC);
 
-t.execute(gridTask);    // Pass the GridTask in the execute method
+t.execute(gridScheduler);    // Pass the GridScheduler in the execute method
 ```
 
 ## Multiple Tasks in a TaskSchedule with a `WorkerGrid` and `KernelContext`
 
-The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the KernelContext features or adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Examples can be found in the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/tree/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/KernelContext/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three tasks:
+The TornadoVM Task-Schedule can be composed of multiple tasks which can either exploit the KernelContext features or adhere to the original TornadoVM annotations (`@Parallel`/`@Reduce`). Examples can be found in the `TestCombinedTaskSchedule` [unit-tests](https://github.com/beehive-lab/TornadoVM/blob/master/unittests/src/main/java/uk/ac/manchester/tornado/unittests/kernelcontext/api/TestCombinedTaskSchedule.java). For instance, the `combinedApiDifferentWorkerGrids` test case executes one TaskSchedule (`s0`) composed of three tasks:
 
 * `t0`: The `vectorAddV2` method adds two vectors by utilizing the thread attributes provided by KernelContext.
 * `t1`: The `vectorMulV2` method multiplies the result of the first task with a second vector, while also utilizing the
@@ -128,12 +128,12 @@ The TornadoVM Task-Schedule can be composed of multiple tasks which can either e
 WorkerGrid workerT0 = new WorkerGrid1D(size);
 WorkerGrid workerT1 = new WorkerGrid1D(size);
 
-// Create a unique GridTask per TaskSchedule
-GridTask gridTask = new GridTask();
+// Create a unique GridScheduler per TaskSchedule
+GridScheduler gridScheduler = new GridScheduler();
 
 // Associate a worker per task within the task-scheduler
-gridTask.setWorkerGrid("s0.t0", workerT0);
-gridTask.setWorkerGrid("s0.t1", workerT1);
+gridScheduler.setWorkerGrid("s0.t0", workerT0);
+gridScheduler.setWorkerGrid("s0.t1", workerT1);
 
 // Create the KernelContext
 KernelContext context = new KernelContext();
@@ -147,7 +147,7 @@ TaskSchedule s0 = new TaskSchedule("s0")
         .streamOut(cTornado);
 
 // Execute the application
-s0.execute(gridTask);
+s0.execute(gridScheduler);
 
 // Change the Grid for the next round
 workerT0.setGlobalWork(size, 1, 1);
@@ -155,8 +155,8 @@ workerT0.setLocalWork(size/2, 1, 1);
 workerT1.setGlobalWork(size, 1, 1);
 workerT1.setLocalWorkToNull();
 
-s0.execute(gridTask);
+s0.execute(gridScheduler);
 ```
 
-In this test case, each of the first two tasks uses a separate `WorkerGrid`. The third task does not use a `WorkerGrid`, and it relies on the TornadoVM Runtime for the scheduling of the threads. The execution of the whole TaskSchedule is invoked by `s0.execute(gridTask);`.
+In this test case, each of the first two tasks uses a separate `WorkerGrid`. The third task does not use a `WorkerGrid`, and it relies on the TornadoVM Runtime for the scheduling of the threads. The execution of the whole TaskSchedule is invoked by `s0.execute(gridScheduler);`.
 

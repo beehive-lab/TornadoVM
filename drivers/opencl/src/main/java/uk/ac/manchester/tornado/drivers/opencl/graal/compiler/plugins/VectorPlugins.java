@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.GetArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
@@ -201,6 +202,20 @@ public final class VectorPlugins {
                 return true;
             }
         });
+
+        r.register1("getArray", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                ValueNode array = receiver.get();
+                GetArrayNode getArrayNode = new GetArrayNode(kind, array, elementKind);
+                b.push(JavaKind.Object, b.append(getArrayNode));
+                return true;
+            }
+        });
+
     }
 
     private static void registerGeometricBIFS(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {

@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.GridTask;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -115,7 +115,7 @@ public class MatrixMultiplication2DV2 {
         });
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridTask gridTask = new GridTask("s0.t0", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         KernelContext context = new KernelContext();
         // The local work group is configured to be TSxTS, to match the Tile Size (TS)
         workerGrid.setLocalWork(TS, TS, 1);
@@ -128,12 +128,12 @@ public class MatrixMultiplication2DV2 {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridTask);
+            t.execute(gridScheduler);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridTask);
+        t.execute(gridScheduler);
         long end = System.currentTimeMillis();
 
         // Run sequential

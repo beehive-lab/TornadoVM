@@ -22,9 +22,9 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -42,6 +42,10 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -49,9 +53,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorAssign;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
 public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
@@ -147,29 +148,37 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {
 
         PTXLIROp assignExpr = null;
-
         Value s0,s1,s2,s3,s4,s5,s6,s7;
+
+        // check if first parameter is a vector
+        s0 = getParam(gen, tool, 0);
+        if (kind.getVectorLength() >= 2) {
+            if (((PTXKind) s0.getPlatformKind()).isVector()) {
+                gen.setResult(this, s0);
+                return;
+            }
+        }
+
         switch (kind.getVectorLength()) {
-            case 2:
-                s0 = getParam(gen, tool, 0);
+            case 2: {
                 s1 = getParam(gen, tool, 1);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1);
                 break;
-            case 3:
-                s0 = getParam(gen, tool, 0);
+            }
+            case 3: {
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2);
                 break;
-            case 4:
-                s0 = getParam(gen, tool, 0);
+            }
+            case 4: {
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2, s3);
                 break;
-            case 8:
-                s0 = getParam(gen, tool, 0);
+            }
+            case 8: {
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
@@ -179,7 +188,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
                 s7 = getParam(gen, tool, 7);
                 assignExpr = new PTXVectorAssign.AssignVectorExpr(getPTXKind(), s0, s1, s2, s3, s4, s5, s6, s7);
                 break;
-
+            }
             default:
                 unimplemented("new vector length = " + kind.getVectorLength());
         }

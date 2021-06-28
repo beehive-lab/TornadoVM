@@ -185,8 +185,12 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     @Override
     public boolean isPlatformFPGA() {
-        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR
-                && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx"));
+        return getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (getPlatformContext().getPlatform().getName().toLowerCase().contains("fpga") || isPlatformXilinxFPGA());
+    }
+
+    @Override
+    public boolean isPlatformXilinxFPGA() {
+        return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
     }
 
     @Override
