@@ -157,33 +157,41 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {
 
         OCLLIROp assignExpr = null;
-
         Value s0,s1,s2,s3,s4,s5,s6,s7;
+
+        // check if first parameter is a vector
+        s0 = getParam(gen, tool, 0);
+        if (kind.getVectorLength() >= 2) {
+            if (((OCLKind) s0.getPlatformKind()).isVector()) {
+                gen.setResult(this, s0);
+                return;
+            }
+        }
+
         switch (kind.getVectorLength()) {
-            case 2:
+            case 2: {
                 final OCLOp2 op2 = VectorUtil.resolveAssignOp2(getOCLKind());
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 assignExpr = new OCLVectorAssign.Assign2Expr(op2, getOCLKind(), s0, s1);
                 break;
-            case 3:
+            }
+            case 3: {
                 final OCLOp3 op3 = VectorUtil.resolveAssignOp3(getOCLKind());
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 assignExpr = new OCLVectorAssign.Assign3Expr(op3, getOCLKind(), s0, s1, s2);
                 break;
-            case 4:
+            }
+            case 4: {
                 final OCLOp4 op4 = VectorUtil.resolveAssignOp4(getOCLKind());
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
                 assignExpr = new OCLVectorAssign.Assign4Expr(op4, getOCLKind(), s0, s1, s2, s3);
                 break;
-            case 8:
+            }
+            case 8: {
                 final OCLOp8 op8 = VectorUtil.resolveAssignOp8(getOCLKind());
-                s0 = getParam(gen, tool, 0);
                 s1 = getParam(gen, tool, 1);
                 s2 = getParam(gen, tool, 2);
                 s3 = getParam(gen, tool, 3);
@@ -193,7 +201,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
                 s7 = getParam(gen, tool, 7);
                 assignExpr = new OCLVectorAssign.Assign8Expr(op8, getOCLKind(), s0, s1, s2, s3, s4, s5, s6, s7);
                 break;
-
+            }
             default:
                 unimplemented("new vector length = " + kind.getVectorLength());
         }
