@@ -273,7 +273,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
         // -> new SPIRVByteArrayWrapper(context, batchSize), batchSize);
         // }
-        TornadoInternalError.unimplemented("[SPIRV] Array of type %s", type.getName());
+        TornadoInternalError.unimplemented("[SPIRV] Array of type %s", componentType.getName());
         return result;
     }
 
