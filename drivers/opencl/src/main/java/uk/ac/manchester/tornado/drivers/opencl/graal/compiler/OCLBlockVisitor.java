@@ -330,7 +330,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             closeBranchBlock(block);
         }
 
-        openclBuilder.emitSkippedInstructions(block);
+        /*
+         * It generates instructions that are relocated from within the for-loop to after the for-loop.
+         * https://github.com/beehive-lab/TornadoVM/pull/129
+         */
+        openclBuilder.emitRelocatedInstructions(block);
     }
 
     private void closeIfBlock(Block block, Block dom) {

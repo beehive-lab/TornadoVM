@@ -265,24 +265,20 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         emitBlock(block);
     }
 
-    void emitSkippedInstructions(Block block) {
+    void emitRelocatedInstructions(Block block) {
         if (block == null) {
             return;
         }
 
         trace("block on exit %d", block.getId());
 
-        boolean insideSkipSequence = false;
+        boolean relocatableInstruction = false;
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
-            if (op instanceof OCLLIRStmt.BeginSkipStmt) {
-                insideSkipSequence = true;
-                continue;
-            } else if (op instanceof OCLLIRStmt.EndSkipStmt) {
-                insideSkipSequence = false;
-                continue;
+            if (op instanceof OCLLIRStmt.MarkRelocateInstruction) {
+                relocatableInstruction = true;
             }
 
-            if (op != null && insideSkipSequence) {
+            if (op != null && relocatableInstruction) {
                 try {
                     emitOp(this, op);
                 } catch (TornadoInternalError e) {
@@ -302,17 +298,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         LIRInstruction breakInst = null;
 
-        boolean insideSkipSequence = false;
+        boolean relocatableInstruction = false;
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
-            if (op instanceof OCLLIRStmt.BeginSkipStmt) {
-                insideSkipSequence = true;
-                continue;
-            } else if (op instanceof OCLLIRStmt.EndSkipStmt) {
-                insideSkipSequence = false;
-                continue;
+            if (op instanceof OCLLIRStmt.MarkRelocateInstruction) {
+                relocatableInstruction = true;
             }
 
-            if (op == null || insideSkipSequence) {
+            if (op == null || relocatableInstruction) {
                 continue;
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;

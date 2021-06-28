@@ -55,12 +55,12 @@ public class OCLLIRStmt {
 
     }
 
-    @Opcode("BEGIN_SKIP_SEQUENCE")
-    public static class BeginSkipStmt extends AbstractInstruction {
+    @Opcode("MARK_RELOCATE")
+    public static class MarkRelocateInstruction extends AbstractInstruction {
 
-        public static final LIRInstructionClass<BeginSkipStmt> TYPE = LIRInstructionClass.create(BeginSkipStmt.class);
+        public static final LIRInstructionClass<MarkRelocateInstruction> TYPE = LIRInstructionClass.create(MarkRelocateInstruction.class);
 
-        public BeginSkipStmt() {
+        public MarkRelocateInstruction() {
             super(TYPE);
         }
 
@@ -69,22 +69,6 @@ public class OCLLIRStmt {
             // No code is generated
         }
     }
-
-    @Opcode("END_SKIP_SEQUENCE")
-    public static class EndSkipStmt extends AbstractInstruction {
-
-        public static final LIRInstructionClass<EndSkipStmt> TYPE = LIRInstructionClass.create(EndSkipStmt.class);
-
-        public EndSkipStmt() {
-            super(TYPE);
-        }
-
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // No code is generated
-        }
-    }
-
 
     @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
