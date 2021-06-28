@@ -55,6 +55,21 @@ public class OCLLIRStmt {
 
     }
 
+    @Opcode("MARK_RELOCATE")
+    public static class MarkRelocateInstruction extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MarkRelocateInstruction> TYPE = LIRInstructionClass.create(MarkRelocateInstruction.class);
+
+        public MarkRelocateInstruction() {
+            super(TYPE);
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // No code is generated
+        }
+    }
+
     @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
 

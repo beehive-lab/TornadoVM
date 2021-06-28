@@ -22,6 +22,7 @@ import static org.junit.Assert.assertArrayEquals;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -108,6 +109,7 @@ public class CodeGen extends TornadoTestBase {
     }
 
     @Test
+    @Ignore
     public void test03() {
         if (isRunningOnCPU()) {
             return;
