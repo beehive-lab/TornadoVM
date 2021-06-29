@@ -12,7 +12,7 @@ GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs 
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
 
-**Current Release:** TornadoVM 0.9 - 15/04/2021 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-09)
+**Current Release:** TornadoVM 0.10 - 29/06/2021 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-0.10)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 

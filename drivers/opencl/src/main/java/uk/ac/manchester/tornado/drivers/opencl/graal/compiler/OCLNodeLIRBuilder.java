@@ -497,7 +497,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                  */
                 setResult(phi, value);
             } else {
-                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 append(new OCLLIRStmt.AssignStmt(result, value));
             }
         }
@@ -681,6 +681,30 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         if (end instanceof LoopEndNode) {
             return;
+        }
+
+        // Move the phi assignment outside the loop.
+        // Only do that for the phi nodes that are not inside "else { break; }" blocks.
+        Block curBlock = (Block) gen.getCurrentBlock();
+        boolean shouldRelocateInstructions = false;
+        if (curBlock.getBeginNode() instanceof LoopExitNode) {
+            LoopExitNode loopExitNode = (LoopExitNode) curBlock.getBeginNode();
+            LoopBeginNode loopBeginNode = loopExitNode.loopBegin();
+            Block loopBeginBlock = loopBeginNode.graph().getLastSchedule().getNodeToBlockMap().get(loopBeginNode);
+            for (Block pred : curBlock.getPredecessors()) {
+                if (pred == loopBeginBlock) {
+                    shouldRelocateInstructions = true;
+                    break;
+                }
+            }
+        }
+
+        /*
+         * It generates instructions that are relocated from within the for-loop to after the for-loop.
+         * https://github.com/beehive-lab/TornadoVM/pull/129
+         */
+        if (shouldRelocateInstructions) {
+            append(new OCLLIRStmt.MarkRelocateInstruction());
         }
 
         final AbstractMergeNode merge = end.merge();
