@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
-import static org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMAX;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.FMIN;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.POW;
@@ -13,7 +12,10 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryInt
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation.MAX;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation.MIN;
 
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -22,6 +24,12 @@ import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
@@ -50,8 +58,10 @@ public class SPIRVGraphBuilderPlugins {
 
         registerCompilerIntrinsicsPlugins(invocationPlugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
-
         registerOpenCLBuiltinPlugins(invocationPlugins);
+
+        // Register plugins for the new API
+        registerKernelContextPlugins(invocationPlugins);
 
         SPIRVMathPlugins.registerTornadoMathPlugins(invocationPlugins);
         SPIRVVectorPlugins.registerPlugins(plugins, invocationPlugins);
@@ -85,6 +95,75 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
+    }
+
+    private static void registerKernelContextPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, KernelContext.class);
+
+        registerLocalBarrier(r);
+        registerGlobalBarrier(r);
+        localWorkGroupPlugin(r);
+        localArraysPlugins(r);
+    }
+
+    private static void registerLocalBarrier(Registration r) {
+        r.register1("localBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                SPIRVBarrierNode localBarrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.LOCAL);
+                b.append(localBarrierNode);
+                return true;
+            }
+        });
+    }
+
+    private static void registerGlobalBarrier(Registration r) {
+        r.register1("globalBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                SPIRVBarrierNode barrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL);
+                b.append(barrierNode);
+                return true;
+            }
+        });
+    }
+
+    private static void localWorkGroupPlugin(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Int;
+        registerLocalWorkGroup(r, returnedJavaKind);
+    }
+
+    private static void registerLocalWorkGroup(Registration r, JavaKind returnedJavaKind) {
+
+        r.register2("getLocalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                LocalGroupSizeNode localGroupSizeNode = new LocalGroupSizeNode((ConstantNode) size);
+                b.push(returnedJavaKind, localGroupSizeNode);
+                return true;
+            }
+        });
+    }
+
+    private static void localArraysPlugins(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Object;
+
+        registerLocalArray(r, "allocateIntLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_32.asJavaKind());
+        registerLocalArray(r, "allocateLongLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_INT_64.asJavaKind());
+        registerLocalArray(r, "allocateFloatLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_32.asJavaKind());
+        registerLocalArray(r, "allocateDoubleLocalArray", returnedJavaKind, SPIRVKind.OP_TYPE_FLOAT_64.asJavaKind());
+    }
+
+    private static void registerLocalArray(Registration r, final String method, JavaKind returnedJavaKind, JavaKind elementType) {
+        r.register2(method, InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
+                LocalArrayNode localArrayNode = new LocalArrayNode(SPIRVArchitecture.localSpace, elementType, constantNode);
+                b.push(returnedJavaKind, localArrayNode);
+                return true;
+            }
+        });
     }
 
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {

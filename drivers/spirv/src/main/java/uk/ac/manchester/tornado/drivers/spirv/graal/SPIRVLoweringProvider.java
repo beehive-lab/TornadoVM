@@ -79,6 +79,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
@@ -145,11 +146,19 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerArrayLengthNode((ArrayLengthNode) node, tool);
         } else if (node instanceof IntegerDivRemNode) {
             // lowerIntegerDivRemNode((IntegerDivRemNode) node);
+        } else if (node instanceof ThreadIdFixedWithNextNode) {
+            lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
             // super.lower(node, tool);
         }
+    }
+
+    private void lowerThreadIdNode(ThreadIdFixedWithNextNode threadIdNode) {
+        StructuredGraph graph = threadIdNode.graph();
+        GlobalThreadIdNode globalThreadIdNode = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(threadIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
     }
 
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {

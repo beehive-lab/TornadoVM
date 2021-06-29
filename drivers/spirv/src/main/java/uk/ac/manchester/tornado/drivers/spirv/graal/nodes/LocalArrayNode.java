@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
@@ -41,6 +42,13 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         this.memoryBase = memoryBase;
         this.length = length;
         this.elementKind = SPIRVKind.fromJavaKind(elementType.getJavaKind());
+    }
+
+    public LocalArrayNode(SPIRVArchitecture.SPIRVMemoryBase memoryBase, JavaKind elementType, ConstantNode length) {
+        super(TYPE, StampFactory.forKind(JavaKind.Object));
+        this.memoryBase = memoryBase;
+        this.length = length;
+        this.elementKind = SPIRVKind.fromJavaKind(elementType);
     }
 
     public SPIRVArchitecture.SPIRVMemoryBase getMemoryRegister() {

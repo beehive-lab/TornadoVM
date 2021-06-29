@@ -46,7 +46,6 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         appendPhase(new TornadoLoopCanonicalization());
 
-        // TODO: SPIRV FMA Phase
         if (TornadoOptions.ENABLE_FMA) {
             appendPhase(new SPIRVFMAPhase());
         }
