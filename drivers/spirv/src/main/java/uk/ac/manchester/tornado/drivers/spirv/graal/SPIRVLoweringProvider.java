@@ -73,6 +73,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -80,6 +81,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
@@ -148,11 +150,19 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             // lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof ThreadIdFixedWithNextNode) {
             lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
+        } else if (node instanceof ThreadLocalIdFixedWithNextNode) {
+            lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
             // super.lower(node, tool);
         }
+    }
+
+    private void lowerLocalThreadIdNode(ThreadLocalIdFixedWithNextNode threadLocalIdNode) {
+        StructuredGraph graph = threadLocalIdNode.graph();
+        LocalThreadIdNode localThreadIdNode = graph.addWithoutUnique(new LocalThreadIdNode(ConstantNode.forInt(threadLocalIdNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(threadLocalIdNode, localThreadIdNode);
     }
 
     private void lowerThreadIdNode(ThreadIdFixedWithNextNode threadIdNode) {
