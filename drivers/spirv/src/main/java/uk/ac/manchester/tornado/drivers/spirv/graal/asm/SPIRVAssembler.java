@@ -207,7 +207,9 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVMultipleOperands operands;
         if (isParallel) {
             List<SPIRVId> builtInList = new ArrayList<>();
-            builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID));
+            if (graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID));
+            }
 
             if (graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
                 builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.LOCAL_THREAD_ID));
@@ -217,7 +219,9 @@ public final class SPIRVAssembler extends Assembler {
                 builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.WORKGROUP_SIZE));
             }
 
-            builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_SIZE));
+            if (graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_SIZE));
+            }
 
             if (graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
                 builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GROUP_ID));

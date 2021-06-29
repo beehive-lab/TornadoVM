@@ -83,9 +83,16 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             System.arraycopy(meta.getLocalWork(), 0, localWork, 0, dims);
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
+
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            dims = grid.dimension();
+
             System.arraycopy(grid.getGlobalWork(), 0, globalWork, 0, dims);
-            System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
+
+            if (grid.getLocalWork() != null) {
+                System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
+            }
+
         }
 
         if (meta.isDebug()) {
@@ -93,13 +100,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         }
 
         // Statically decide a block size of 32
-        int groupSize = 32;
-        if (globalWork[0] <= 32) {
-            groupSize = 1;
-        }
+        // int groupSize = 32;
+        // if (globalWork[0] <= 32) {
+        // groupSize = 1;
+        // }
+
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
-        int[] groupSizeX = new int[] { groupSize };
+        int[] groupSizeX = new int[] { (int) globalWork[1] };
         int[] groupSizeY = new int[] { (int) globalWork[1] };
         int[] groupSizeZ = new int[] { (int) globalWork[2] };
         int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) globalWork[0], (int) globalWork[1], (int) globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
@@ -110,9 +118,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(globalWork[0] / localWork[0]);
-        dispatch.setGroupCountY(globalWork[1] / localWork[1]);
-        dispatch.setGroupCountZ(globalWork[2] / localWork[2]);
+        dispatch.setGroupCountX(globalWork[0] / groupSizeX[0]);
+        dispatch.setGroupCountY(globalWork[1] / groupSizeY[0]);
+        dispatch.setGroupCountZ(globalWork[2] / groupSizeZ[0]);
 
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();

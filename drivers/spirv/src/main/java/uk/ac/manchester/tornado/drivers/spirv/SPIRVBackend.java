@@ -741,16 +741,18 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // Generate this only if the kernel is parallel (it uses the get_global_id)
             if (isParallel) {
                 // Register Thread ID
-                SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
-                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+                    SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
+                    SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, id);
+                    asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, id);
+                }
 
                 // Register Global Size
-                SPIRVId idSPIRVBuiltin_GlobalSize = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
-                SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
-
-                // Register builtins
-                asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, idSPIRVBuiltin);
-                asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, idSPIRVBuiltin_GlobalSize);
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
+                    SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
+                    SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, id);
+                    asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, id);
+                }
 
                 // Look for other constracts
                 if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
