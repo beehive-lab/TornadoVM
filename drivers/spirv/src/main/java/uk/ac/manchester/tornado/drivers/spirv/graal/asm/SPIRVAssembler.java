@@ -211,7 +211,8 @@ public final class SPIRVAssembler extends Assembler {
                 builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID));
             }
 
-            if (graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+            if (graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
+                    || graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
                 builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.LOCAL_THREAD_ID));
             }
 

@@ -445,7 +445,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit OCL Intrinsic: " + builtIn);
+            SPIRVLogger.traceCodeGen("emit OCL-SPIRV Intrinsic: " + builtIn);
 
             SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 

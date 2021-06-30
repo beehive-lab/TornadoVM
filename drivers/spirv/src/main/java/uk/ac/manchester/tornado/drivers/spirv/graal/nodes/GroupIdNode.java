@@ -8,6 +8,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -18,7 +19,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 @NodeInfo
-public class GroupIdNode extends FloatingNode implements LIRLowerable {
+public class GroupIdNode extends FloatingNode implements LIRLowerable, MemoryKill {
 
     public static final NodeClass<GroupIdNode> TYPE = NodeClass.create(GroupIdNode.class);
 
@@ -27,6 +28,8 @@ public class GroupIdNode extends FloatingNode implements LIRLowerable {
 
     public GroupIdNode(ConstantNode dimension) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
+        assert stamp != null;
+
         this.dimension = dimension;
     }
 

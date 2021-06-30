@@ -755,7 +755,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 }
 
                 // Look for other constracts
-                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
+                        || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
                     SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.LOCAL_THREAD_ID);
                     SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
                     asm.builtinTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, id);

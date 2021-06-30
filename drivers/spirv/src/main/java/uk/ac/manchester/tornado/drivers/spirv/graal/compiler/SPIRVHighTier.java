@@ -98,9 +98,6 @@ public class SPIRVHighTier extends TornadoHighTier {
             appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
         }
 
-        LoopPolicies loopPolicies = new DefaultLoopPolicies();
-        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
-
         appendPhase(canonicalizer);
         appendPhase(new RemoveValueProxyPhase());
         appendPhase(canonicalizer);

@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -62,6 +63,42 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         }
         if (localIdx == 0) {
             b[groupID] = a[id];
+        }
+    }
+
+    public static void basicAccessThreadIds(KernelContext context, int[] a) {
+        // int localIdx = context.localIdx;
+        // int localGroupSize = context.getLocalGroupSize(0);
+        // int groupID = context.groupIdx;
+        // int id = localGroupSize * groupID + localIdx;
+        int idx = context.globalIdx;
+        int ldx = context.localIdx;
+        a[idx] = ldx;
+    }
+
+    @Test
+    public void basic() {
+        final int size = 1024;
+        final int localSize = 256;
+        int[] input = new int[size];
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(input, localSize) //
+                .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds, context, input) //
+                .streamOut(input);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+        s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(input));
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, input[i]);
         }
     }
 

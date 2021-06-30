@@ -27,6 +27,7 @@ public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
     public LocalThreadIdNode(ConstantNode dimension) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
+        assert stamp != null;
         this.dimensionIndex = dimension;
     }
 
