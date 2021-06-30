@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
@@ -11,6 +12,11 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 @NodeInfo
 public class SPIRVStackAccessNode extends FloatingNode implements LIRLowerable {
@@ -29,26 +35,21 @@ public class SPIRVStackAccessNode extends FloatingNode implements LIRLowerable {
         return this.index;
     }
 
-    /**
-     * OpenCL Equivalent:
-     * 
-     * <code>
-     *     val a = _frame[idx]; 
-     * </code>
-     * 
-     * @param gen
-     *            {@link NodeLIRBuilderTool gen}
-     */
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        // tool.append(new OCLLIRStmt.AssignStmt(result, new
-        // OCLUnary.LoadOCLStack(OCLAssembler.OCLUnaryIntrinsic.OCL_STACK_ACCESS,
-        // tool.getLIRKind(stamp), gen.operand(index))));
+
+        // We know we load a integer value
+        SPIRVKind spirvKind = SPIRVKind.OP_TYPE_INT_32;
+        LIRKind lirKind = LIRKind.value(spirvKind);
+
+        Value value = gen.operand(index);
+
+        SPIRVLIRStmt.ASSIGNIndexedParameter assignStmt = new SPIRVLIRStmt.ASSIGNIndexedParameter(result, new SPIRVUnary.LoadIndexValueFromStack(lirKind, spirvKind, value));
         gen.setResult(this, result);
 
-        throw new RuntimeException("SPIRV Operation not supported yet");
-
+        SPIRVLIRGenerator spirvlirGenerator = (SPIRVLIRGenerator) gen.getLIRGeneratorTool();
+        spirvlirGenerator.append(assignStmt);
     }
 }

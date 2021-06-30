@@ -38,7 +38,6 @@ public class SPIRVGenTool {
         emitParameterLoad(result, index);
 
         if (spirvKind.isVector()) {
-
             Variable vectorToLoad = generator.newVariable(lirKind);
             SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
             SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
@@ -73,8 +72,15 @@ public class SPIRVGenTool {
         // new SPIRVUnary.Expr(op, lirKind, stackIndex));
 
         // ASSIGN ( result, LOAD_FROM_STACK_FRAME_EXPR)
-        SPIRVLIRStmt.ASSIGNParameter assignStmt = new SPIRVLIRStmt.ASSIGNParameter(resultValue,
-                new SPIRVUnary.LoadFromStackFrameExpr(lirKind, SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET + index), index), SPIRVKind.OP_TYPE_INT_64.getSizeInBytes(), index);
+        SPIRVLIRStmt.ASSIGNParameter assignStmt = new SPIRVLIRStmt.ASSIGNParameter( //
+                resultValue, //
+                new SPIRVUnary.LoadFromStackFrameExpr( //
+                        lirKind, //
+                        SPIRVKind.OP_TYPE_INT_64, //
+                        (STACK_BASE_OFFSET + index), //
+                        index), //
+                SPIRVKind.OP_TYPE_INT_64.getSizeInBytes(), //
+                index); //
 
         generator.append(assignStmt);
     }

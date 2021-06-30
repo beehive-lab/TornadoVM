@@ -151,6 +151,61 @@ public class SPIRVUnary {
         }
     }
 
+    public static class LoadIndexValueFromStack extends Expr {
+
+        protected SPIRVKind type;
+        protected SPIRVId address;
+        protected Value parameterIndex;
+
+        public LoadIndexValueFromStack(LIRKind lirKind, SPIRVKind type, Value parameterIndex) {
+            super(null, lirKind, null);
+            this.type = type;
+            this.parameterIndex = parameterIndex;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.trace("µIns LoadIndexValueFromStack ");
+            SPIRVId loadID = asm.module.getNextId();
+
+            SPIRVId ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
+
+            SPIRVId address = asm.frameId;
+            final int alignment = 8;
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    ptrCrossWorkGroupULong, //
+                    loadID, //
+                    address, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            String constantValue = String.valueOf(0);
+            SPIRVId index = asm.lookUpConstant(constantValue, SPIRVKind.OP_TYPE_INT_32);
+
+            SPIRVId accessPTR = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain( //
+                    ptrCrossWorkGroupULong, //
+                    accessPTR, //
+                    loadID, //
+                    index, //
+                    new SPIRVMultipleOperands<>()));
+
+            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+
+            // Load Address
+            SPIRVId loadPtr = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    ulong, //
+                    loadPtr, //
+                    accessPTR, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            // The final store is emitted in the assignParameter
+            asm.registerLIRInstructionValue(this, loadPtr);
+        }
+    }
+
     public static class MemoryAccess extends UnaryConsumer {
 
         private final SPIRVMemoryBase memoryRegion;

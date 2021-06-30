@@ -14,6 +14,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpStore;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralExtInstInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
@@ -262,6 +263,72 @@ public class SPIRVLIRStmt {
                     parameterID, //
                     idExpression, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+            asm.registerLIRInstructionValue(lhs, parameterID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+    }
+
+    @Opcode("ASSIGNIndexedParameter")
+    public static class ASSIGNIndexedParameter extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ASSIGNIndexedParameter> TYPE = LIRInstructionClass.create(ASSIGNIndexedParameter.class);
+
+        @Def
+        protected AllocatableValue lhs;
+
+        @Use
+        protected Value rhs;
+
+        public ASSIGNIndexedParameter(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        /**
+         * Emit the following SPIR-V structure:
+         *
+         * <code>
+         * OpStore <address> <value> Aligned <alignment>
+         * </code>
+         *
+         * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
+         * @param asm
+         *            {@link SPIRVAssembler}
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("µIns ASSIGNIndexedParameter");
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            // Emit Store
+            // SPIRVId parameterID = asm.getParameterId(parameterIndex);
+
+            SPIRVId parameterID = asm.lookUpLIRInstructions(lhs);
+            SPIRVId idExpression = asm.lookUpLIRInstructions(rhs);
+
+            SPIRVId resultType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId convertId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpUConvert(resultType, convertId, idExpression));
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    parameterID, //
+                    convertId, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4))) //
             ));
             asm.registerLIRInstructionValue(lhs, parameterID);
         }

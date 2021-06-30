@@ -70,9 +70,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         final long[] localWork = new long[3];
         Arrays.fill(globalWork, 1);
         Arrays.fill(localWork, 1);
-        int dims = meta.getDims();
 
         if (!meta.isGridSchedulerEnabled()) {
+            int dims = meta.getDims();
             if (!meta.isGlobalWorkDefined()) {
                 calculateGlobalWork(meta, batchThreads);
             }
@@ -85,7 +85,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             checkLocalWorkGroupFitsOnDevice(meta);
 
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
-            dims = grid.dimension();
+            int dims = grid.dimension();
 
             System.arraycopy(grid.getGlobalWork(), 0, globalWork, 0, dims);
 
