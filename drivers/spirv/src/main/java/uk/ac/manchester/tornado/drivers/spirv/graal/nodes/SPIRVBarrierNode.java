@@ -22,7 +22,7 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
 
     public enum SPIRVMemFenceFlags {
         GLOBAL(528), //
-        LOCAL(252); //
+        LOCAL(272); //
 
         private int semantics;
 

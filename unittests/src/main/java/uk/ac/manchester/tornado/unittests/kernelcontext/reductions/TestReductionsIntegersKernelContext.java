@@ -103,7 +103,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     @Test
     public void testIntReductionsAddGlobalMemory() {
         final int size = 1024;
-        final int localSize = 256;
+        final int localSize = 32;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);

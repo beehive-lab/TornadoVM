@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -118,7 +119,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
     @Test
     public void testFloatReductionsAddLocalMemory() {
         final int size = 1024;
-        final int localSize = 256;
+        final int localSize = 32;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
@@ -136,6 +137,8 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(reduce));
 
         // Final SUM
         float finalSum = 0;
