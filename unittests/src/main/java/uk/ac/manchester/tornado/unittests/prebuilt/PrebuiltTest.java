@@ -21,10 +21,15 @@ package uk.ac.manchester.tornado.unittests.prebuilt;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -130,4 +135,49 @@ public class PrebuiltTest extends TornadoTestBase {
             assertEquals(a[i] + b[i], c[i]);
         }
     }
+
+    @Test
+    public void testPrebuild03() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OpenCL);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String filePath = tornadoSDK + "/examples/generated/reduce03.spv";
+
+        final int size = 256;
+        final int localSize = 32;
+        float[] input = new float[size];
+        float[] reduce = new float[size / localSize];
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        // @formatter:off
+        new TaskSchedule("s0")
+                .prebuiltTask("t0",
+                        "floatReductionAddLocalMemory",
+                        filePath,
+                        new Object[]{context, input, reduce},
+                        new Access[]{Access.READ, Access.READ, Access.WRITE},
+                        defaultDevice,
+                        new int[]{size})
+                .streamOut(reduce)
+                .execute(gridScheduler);
+        // @formatter:on
+
+        System.out.println(Arrays.toString(reduce));
+
+        // Final SUM
+        float finalSum = 0;
+        for (float v : reduce) {
+            finalSum += v;
+        }
+
+        assertEquals(512, finalSum, 0.0f);
+
+    }
+
 }
