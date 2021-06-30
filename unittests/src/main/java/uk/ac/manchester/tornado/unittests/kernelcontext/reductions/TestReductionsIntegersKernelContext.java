@@ -67,13 +67,11 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     }
 
     public static void basicAccessThreadIds(KernelContext context, int[] a) {
-        // int localIdx = context.localIdx;
-        // int localGroupSize = context.getLocalGroupSize(0);
-        // int groupID = context.groupIdx;
-        // int id = localGroupSize * groupID + localIdx;
-        int idx = context.globalIdx;
-        int ldx = context.localIdx;
-        a[idx] = ldx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.getLocalGroupSize(0);
+        int groupID = context.groupIdx;
+        int idx = localGroupSize * groupID + localIdx;
+        a[idx] = idx;
     }
 
     @Test

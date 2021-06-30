@@ -768,7 +768,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                     asm.builtinTable.put(SPIRVOCLBuiltIn.GROUP_ID, id);
                 }
 
-                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()) {
+                if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
+                        || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
                     SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.WORKGROUP_SIZE);
                     SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
                     asm.builtinTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE, id);

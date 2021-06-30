@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
-import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
@@ -129,16 +129,11 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void localWorkGroupPlugin(Registration r) {
-        JavaKind returnedJavaKind = JavaKind.Int;
-        registerLocalWorkGroup(r, returnedJavaKind);
-    }
-
-    private static void registerLocalWorkGroup(Registration r, JavaKind returnedJavaKind) {
-
+        final JavaKind returnedJavaKind = JavaKind.Int;
         r.register2("getLocalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalGroupSizeNode localGroupSizeNode = new LocalGroupSizeNode((ConstantNode) size);
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dimension) {
+                LocalThreadSizeNode localGroupSizeNode = new LocalThreadSizeNode((ConstantNode) dimension);
                 b.push(returnedJavaKind, localGroupSizeNode);
                 return true;
             }

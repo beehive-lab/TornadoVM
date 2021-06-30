@@ -9,6 +9,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdFixedNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 
 public enum SPIRVOCLBuiltIn {
 
@@ -16,7 +17,7 @@ public enum SPIRVOCLBuiltIn {
     GLOBAL_THREAD_ID("spirv_BuiltInGlobalInvocationId", SPIRVBuiltIn.GlobalInvocationId(), GlobalThreadIdNode.class, null), 
     GLOBAL_SIZE("spirv_BuiltInGlobalSize", SPIRVBuiltIn.GlobalSize(), GlobalThreadSizeNode.class, null),
     LOCAL_THREAD_ID("spirv_BuiltInLocalInvocationId", SPIRVBuiltIn.LocalInvocationId(), LocalThreadIdFixedNode.class, LocalThreadIdNode.class),
-    WORKGROUP_SIZE("spirv_BuiltInWorkgroupSize", SPIRVBuiltIn.WorkgroupSize(), LocalGroupSizeNode.class, null),
+    WORKGROUP_SIZE("spirv_BuiltInWorkgroupSize", SPIRVBuiltIn.WorkgroupSize(), LocalGroupSizeNode.class, LocalThreadSizeNode.class),
     GROUP_ID("spirv_BuiltInWorkgroupId", SPIRVBuiltIn.WorkgroupId(), GroupIdNode.class, null);
     // @formatter:on
 
