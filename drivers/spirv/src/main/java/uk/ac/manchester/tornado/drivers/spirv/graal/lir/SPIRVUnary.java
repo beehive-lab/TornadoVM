@@ -867,6 +867,8 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getSemantics());
             SPIRVId constant2 = asm.lookUpConstant("2", SPIRVKind.OP_TYPE_INT_32);
             SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(flags.getSemantics()), SPIRVKind.OP_TYPE_INT_32);
+            // SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(0x100 |
+            // 0x10), SPIRVKind.OP_TYPE_INT_32);
             asm.currentBlockScope().add(new SPIRVOpControlBarrier(constant2, constant2, constantSemantics));
         }
     }

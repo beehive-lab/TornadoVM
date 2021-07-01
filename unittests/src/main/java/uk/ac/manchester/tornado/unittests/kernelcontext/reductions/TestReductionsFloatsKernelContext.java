@@ -52,8 +52,8 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
     public static void floatReductionAddGlobalMemory(KernelContext context, float[] a, float[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
-        int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
+        int groupID = context.groupIdx;
+        int id = context.globalIdx;
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
@@ -61,6 +61,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
                 a[id] += a[id + stride];
             }
         }
+
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -68,11 +69,11 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     @Test
     public void testFloatReductionsAddGlobalMemory() {
-        final int size = 1024;
-        final int localSize = 256;
+        final int size = 512;
+        final int localSize = 32;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
         float sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -84,9 +85,11 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
-        worker.setGlobalWork(size, 1, 1);
-        worker.setLocalWork(localSize, 1, 1);
+        worker.setGlobalWork(32, 1, 1);
+        worker.setLocalWork(1, 1, 1);
         s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(reduce));
 
         // Final SUM
         float finalSum = 0;
@@ -118,11 +121,11 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     @Test
     public void testFloatReductionsAddLocalMemory() {
-        final int size = 1024;
-        final int localSize = 32;
+        final int size = 1;
+        final int localSize = 1;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
         float sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -134,7 +137,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
-        worker.setGlobalWork(size, 1, 1);
+        worker.setGlobalWork(1, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
 

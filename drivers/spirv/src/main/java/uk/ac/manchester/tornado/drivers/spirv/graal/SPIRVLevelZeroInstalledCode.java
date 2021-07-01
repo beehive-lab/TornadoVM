@@ -110,11 +110,18 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         int[] groupSizeX = new int[] { (int) globalWork[1] };
         int[] groupSizeY = new int[] { (int) globalWork[1] };
         int[] groupSizeZ = new int[] { (int) globalWork[2] };
+
         int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) globalWork[0], (int) globalWork[1], (int) globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
+
+        System.out.println("GLOBAL WORK:  " + Arrays.toString(globalWork));
+        System.out.println("LOCAL WORK :  " + Arrays.toString(localWork));
+        System.out.println("GroupX:  " + Arrays.toString(groupSizeX));
+        System.out.println("GroupY:  " + Arrays.toString(groupSizeY));
+        System.out.println("GroupZ:  " + Arrays.toString(groupSizeZ));
 
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();

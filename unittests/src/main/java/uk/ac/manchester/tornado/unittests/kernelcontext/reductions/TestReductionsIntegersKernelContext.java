@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -100,10 +101,93 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         }
     }
 
+    // Copy from Global to Local and Global memory again
+    public static void basicAccessThreadIds02(KernelContext context, int[] a, int[] b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.getLocalGroupSize(0);
+        int groupID = context.groupIdx;
+        int idx = localGroupSize * groupID + localIdx;
+
+        int[] localA = context.allocateIntLocalArray(256);
+        localA[localIdx] = a[idx];
+        b[idx] = localA[localIdx];
+    }
+
+    @Test
+    public void basic02() {
+        final int size = 1024;
+        final int localSize = 256;
+        int[] input = new int[size];
+        int[] output = new int[size];
+
+        IntStream.range(0, size).forEach(x -> input[x] = x);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(input, localSize) //
+                .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds02, context, input, output) //
+                .streamOut(output);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+        s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(output));
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(input[i], output[i]);
+        }
+    }
+
+    // Copy from Global to Local and Global memory again
+    public static void basicAccessThreadIds03(KernelContext context, int[] a, int[] b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.getLocalGroupSize(0);
+        int groupID = context.groupIdx;
+        int idx = localGroupSize * groupID + localIdx;
+
+        int[] localA = context.allocateIntLocalArray(256);
+        localA[localIdx] = a[idx];
+        localA[localIdx] *= 2;
+        b[idx] = localA[localIdx];
+    }
+
+    @Test
+    public void basic03() {
+        final int size = 1024;
+        final int localSize = 256;
+        int[] input = new int[size];
+        int[] output = new int[size];
+
+        IntStream.range(0, size).forEach(x -> input[x] = x);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(input, localSize) //
+                .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds03, context, input, output) //
+                .streamOut(output);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+        s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(output));
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(input[i] * 2, output[i]);
+        }
+    }
+
     @Test
     public void testIntReductionsAddGlobalMemory() {
         final int size = 1024;
-        final int localSize = 32;
+        final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
@@ -137,16 +221,17 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
 
-        int[] localA = context.allocateIntLocalArray(1024);
+        int[] localA = context.allocateIntLocalArray(256);
         localA[localIdx] = a[globalIdx];
+        context.localBarrier();
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
             if (localIdx < stride) {
-                localA[localIdx] += localA[localIdx + stride];
+                localA[localIdx] = localA[localIdx] + localA[localIdx + stride];
             }
+            context.localBarrier();
         }
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b[groupID] = localA[localIdx];
         }
     }
 
@@ -164,13 +249,15 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+                .streamIn(input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(reduce));
 
         // Final SUM
         int finalSum = 0;
@@ -368,7 +455,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        Random r = new Random();
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = r.nextInt(100000));
         int sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
