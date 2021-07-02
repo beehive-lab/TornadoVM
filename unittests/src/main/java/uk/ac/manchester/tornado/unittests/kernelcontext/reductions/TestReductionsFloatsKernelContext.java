@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -121,10 +122,11 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     @Test
     public void testFloatReductionsAddLocalMemory() {
-        final int size = 1;
-        final int localSize = 1;
+        final int size = 1024;
+        final int localSize = 256;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
+        Random r = new Random();
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
         float sequential = computeAddSequential(input);
 
@@ -137,7 +139,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
-        worker.setGlobalWork(1, 1, 1);
+        worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
 
