@@ -9,9 +9,11 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
+import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -24,13 +26,16 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization
 
 public class SPIRVLowTier extends TornadoLowTier {
 
-    public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
-        CanonicalizerPhase canonicalizer;
+    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
         if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+            return CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
-            canonicalizer = CanonicalizerPhase.create();
+            return CanonicalizerPhase.create();
         }
+    }
+
+    public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
+        CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER));
 
@@ -40,7 +45,13 @@ public class SPIRVLowTier extends TornadoLowTier {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
 
+        if (TornadoOptions.ENABLE_FIX_READS) {
+            appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS), canonicalizer));
+        }
+
         appendPhase(new AddressLoweringPhase(addressLowering));
+
+        appendPhase(new UseTrappingNullChecksPhase());
 
         appendPhase(new DeadCodeEliminationPhase(Required));
 

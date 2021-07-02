@@ -942,16 +942,22 @@ public class SPIRVLIRStmt {
             SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId input = asm.lookUpLIRInstructions(rhs);
-
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
-                    type, //
-                    loadArray, //
-                    input, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-            ));
+            SPIRVId input;
+            if (rhs instanceof ConstantValue) {
+                ConstantValue constantValue = (ConstantValue) rhs;
+                String value = constantValue.getConstant().toValueString();
+                loadArray = asm.lookUpConstant(value, (SPIRVKind) rhs.getPlatformKind());
+            } else {
+                input = asm.lookUpLIRInstructions(rhs);
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        type, //
+                        loadArray, //
+                        input, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+            }
 
             memoryIndexedAccess.emit(crb, asm);
 

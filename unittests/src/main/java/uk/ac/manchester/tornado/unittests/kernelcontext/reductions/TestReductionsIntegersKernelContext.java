@@ -184,6 +184,94 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         }
     }
 
+    // Copy from Global to Local and Global memory again
+    public static void basicAccessThreadIds04(KernelContext context, int[] a, int[] b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.getLocalGroupSize(0);
+        int groupID = context.groupIdx;
+        int idx = localGroupSize * groupID + localIdx;
+
+        int[] localA = context.allocateIntLocalArray(1024);
+        for (int i = 0; i < 256; i++) {
+            localA[i] = 2;
+        }
+
+        b[idx] = localA[localIdx];
+    }
+
+    @Test
+    public void basic04() {
+        final int size = 1024;
+        final int localSize = 256;
+        int[] input = new int[size];
+        int[] output = new int[size];
+
+        IntStream.range(0, size).forEach(x -> input[x] = x);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(input, localSize) //
+                .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds04, context, input, output) //
+                .streamOut(output);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+        s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(output));
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(2, output[i], 0.0);
+        }
+    }
+
+    // Copy from Global to Local and Global memory again
+    public static void basicAccessThreadIds05(KernelContext context, int[] a, int[] b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.getLocalGroupSize(0);
+        int groupID = context.groupIdx;
+        int idx = localGroupSize * groupID + localIdx;
+
+        int[] localA = context.allocateIntLocalArray(256);
+        for (int i = 0; i < localGroupSize; i++) {
+            localA[i] = 2;
+        }
+
+        b[idx] = localA[localIdx];
+    }
+
+    @Test
+    public void basic05() {
+        final int size = 1024;
+        final int localSize = 256;
+        int[] input = new int[size];
+        int[] output = new int[size];
+
+        IntStream.range(0, size).forEach(x -> input[x] = x);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskSchedule s0 = new TaskSchedule("s0") //
+                .streamIn(input, localSize) //
+                .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds05, context, input, output) //
+                .streamOut(output);
+        // Change the Grid
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
+        s0.execute(gridScheduler);
+
+        System.out.println(Arrays.toString(output));
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(2, output[i], 0.0);
+        }
+    }
+
     @Test
     public void testIntReductionsAddGlobalMemory() {
         final int size = 1024;
