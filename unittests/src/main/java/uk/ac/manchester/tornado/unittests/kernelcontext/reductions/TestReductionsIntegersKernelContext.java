@@ -314,11 +314,12 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                localA[localIdx] = localA[localIdx] + localA[localIdx + stride];
+                localA[localIdx] += localA[(localIdx + stride)];
             }
         }
+
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b[groupID] = localA[localIdx];
         }
     }
 
