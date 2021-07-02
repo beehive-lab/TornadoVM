@@ -309,17 +309,16 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
 
-        int[] localA = context.allocateIntLocalArray(256);
+        int[] localA = context.allocateIntLocalArray(1024);
         localA[localIdx] = a[globalIdx];
-        context.localBarrier();
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
             if (localIdx < stride) {
                 localA[localIdx] = localA[localIdx] + localA[localIdx + stride];
             }
-            context.localBarrier();
         }
         if (localIdx == 0) {
-            b[groupID] = localA[localIdx];
+            b[groupID] = localA[0];
         }
     }
 
@@ -329,7 +328,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
         int sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
