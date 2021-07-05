@@ -21,8 +21,9 @@
 
 The following drivers have been tested on Linux >= CentOS 7.3
 
-* 21.24.20098: OK  ( OpenCL 3.0 )  
-* 21.23.20043: OK  ( OpenCL 3.0 ) 
+* 21.25.20114: OK  ( OpenCL 3.0 )
+* 21.24.20098: OK  ( OpenCL 3.0 )
+* 21.23.20043: OK  ( OpenCL 3.0 )
 * 21.22.19967: OK  ( OpenCL 3.0 )
 * 21.21.19914: OK  ( OpenCL 3.0 )
 * 21.20.19883: OK  ( OpenCL 3.0 )
