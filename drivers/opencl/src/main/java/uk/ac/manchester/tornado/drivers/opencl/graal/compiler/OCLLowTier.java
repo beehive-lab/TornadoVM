@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParametersPhase;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoThreadScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
@@ -87,7 +87,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         if (tornadoDeviceContext.isPlatformFPGA()) {
             appendPhase(new OCLFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new TornadoThreadScheduler(tornadoDeviceContext));
+            appendPhase(new OCLFPGAThreadScheduler(tornadoDeviceContext));
         }
 
         appendPhase(new TornadoLoopCanonicalization());

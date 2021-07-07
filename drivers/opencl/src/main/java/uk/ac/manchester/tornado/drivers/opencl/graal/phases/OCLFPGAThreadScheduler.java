@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 
-public class TornadoThreadScheduler extends Phase {
+public class OCLFPGAThreadScheduler extends Phase {
 
     private int oneD = 64; // XXX: This value was chosen for Intel FPGAs due to experimental results
     private int twoD = 1;
@@ -41,7 +41,7 @@ public class TornadoThreadScheduler extends Phase {
 
     TornadoDeviceContext context;
 
-    public TornadoThreadScheduler(TornadoDeviceContext context) {
+    public OCLFPGAThreadScheduler(TornadoDeviceContext context) {
         this.context = context;
     }
 
