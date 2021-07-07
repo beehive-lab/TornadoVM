@@ -40,13 +40,10 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFPGAPragmas;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoThreadScheduler;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
@@ -76,7 +73,7 @@ public class OCLHighTier extends TornadoHighTier {
         return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 
-    public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+    public OCLHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
@@ -113,13 +110,9 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
-        if (deviceContext.isPlatformFPGA()) {
-            appendPhase(new TornadoFPGAPragmas(deviceContext));
-            appendPhase(new TornadoThreadScheduler());
-        } else {
-            LoopPolicies loopPolicies = new DefaultLoopPolicies();
-            appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
-        }
+
+        LoopPolicies loopPolicies = new DefaultLoopPolicies();
+        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
 
         appendPhase(canonicalizer);
         appendPhase(new RemoveValueProxyPhase());
