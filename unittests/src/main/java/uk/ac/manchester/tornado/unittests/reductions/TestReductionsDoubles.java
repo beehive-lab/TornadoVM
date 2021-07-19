@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -385,6 +386,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
     @Test
     public void testMultipleReductions() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         double[] data = new double[SIZE];
         double[] sequentialReduce = new double[1];
         double[] sequentialResult = new double[data.length];
