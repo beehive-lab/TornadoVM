@@ -114,8 +114,11 @@ public class TornadoExecutionContext {
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
-        /* Use the same index the oldObj was assigned. The argument indices are hardcoded in the TornadoVM bytecodes
-         *  during bytecode generation and must match the indices in the {@link objectState} and {@link objects} arrays. */
+        /*
+         * Use the same index the oldObj was assigned. The argument indices are
+         * hardcoded in the TornadoVM bytecodes during bytecode generation and must
+         * match the indices in the {@link objectState} and {@link objects} arrays.
+         */
         int index;
         if (oldObj.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(oldObj.getClass())) {
             index = constants.indexOf(oldObj);
@@ -213,13 +216,9 @@ public class TornadoExecutionContext {
     }
 
     private void assignTask(int index, SchedulableTask task) {
-        if (taskToDevice[index] != -1) {
-            return;
-        }
 
-        String id = task.getId();
         TornadoDevice target = task.getDevice();
-        TornadoAcceleratorDevice accelerator = null;
+        TornadoAcceleratorDevice accelerator;
 
         if (target instanceof TornadoAcceleratorDevice) {
             accelerator = (TornadoAcceleratorDevice) target;
@@ -227,9 +226,10 @@ public class TornadoExecutionContext {
             throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
-        info("assigning %s to %s", id, target.getDeviceName());
-
         int deviceIndex = devices.indexOf(target);
+
+        info("Assigning Task Index: " + index + " to device: " + deviceIndex);
+
         if (deviceIndex == -1) {
             deviceIndex = devices.size();
             devices.add(accelerator);

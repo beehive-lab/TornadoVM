@@ -25,6 +25,21 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
+import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -53,21 +68,6 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 /**
  * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
@@ -484,6 +484,16 @@ public class TornadoVM extends TornadoLogger {
         CallStack stack = info.stack;
         int[] waitList = info.waitList;
 
+        TaskMetaData metadata;
+        if (task.meta() instanceof TaskMetaData) {
+            metadata = (TaskMetaData) task.meta();
+        } else {
+            throw new RuntimeException("task.meta is not instanceof TaskMetadata");
+        }
+
+        System.out.println("TVM : " + device.getPhysicalDevice().getDeviceName());
+        System.out.println("TVM meta: " + metadata.getLogicDevice().getPhysicalDevice().getDeviceName());
+
         if (installedCodes[taskIndex] == null) {
             // After warming-up, it is possible to get a null pointer in the task-cache due
             // to lazy compilation for FPGAs. In tha case, we check again the code cache.
@@ -561,13 +571,6 @@ public class TornadoVM extends TornadoLogger {
             } else {
                 TornadoInternalError.shouldNotReachHere();
             }
-        }
-
-        TaskMetaData metadata;
-        if (task.meta() instanceof TaskMetaData) {
-            metadata = (TaskMetaData) task.meta();
-        } else {
-            throw new RuntimeException("task.meta is not instanceof TaskMetadata");
         }
 
         if (atomicsArray != null) {
