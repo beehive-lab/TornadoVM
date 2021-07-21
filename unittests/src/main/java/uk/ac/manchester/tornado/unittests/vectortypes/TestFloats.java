@@ -357,14 +357,10 @@ public class TestFloats extends TornadoTestBase {
             b.set(i, new Float3((float) size - i, (float) size - i, (float) size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestFloats::addVectorFloat3, a, b, output)
-                .streamOut(output)
+        new TaskSchedule("s0") //
+                .task("t0", TestFloats::addVectorFloat3, a, b, output)//
+                .streamOut(output)//
                 .execute();
-        //@formatter:on
-
-        System.out.println(" Test Output " + output.toString());
     }
 
     /**
