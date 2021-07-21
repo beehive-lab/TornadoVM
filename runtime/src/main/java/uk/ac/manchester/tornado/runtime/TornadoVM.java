@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -128,6 +129,7 @@ public class TornadoVM extends TornadoLogger {
         debug("loading tornado vm...");
 
         TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecodes.SETUP.value(), "invalid code");
+
         contexts = graphContext.getDevices();
         buffer.getInt();
         int taskCount = buffer.getInt();
@@ -156,7 +158,9 @@ public class TornadoVM extends TornadoLogger {
             final int deviceIndex = buffer.getInt();
             debug("loading context %s", contexts.get(deviceIndex));
             final long t0 = System.nanoTime();
-            contexts.get(deviceIndex).ensureLoaded();
+            if (contexts.get(deviceIndex) != null) {
+                contexts.get(deviceIndex).ensureLoaded();
+            }
             final long t1 = System.nanoTime();
             debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = buffer.get();
@@ -484,16 +488,6 @@ public class TornadoVM extends TornadoLogger {
         CallStack stack = info.stack;
         int[] waitList = info.waitList;
 
-        TaskMetaData metadata;
-        if (task.meta() instanceof TaskMetaData) {
-            metadata = (TaskMetaData) task.meta();
-        } else {
-            throw new RuntimeException("task.meta is not instanceof TaskMetadata");
-        }
-
-        System.out.println("TVM : " + device.getPhysicalDevice().getDeviceName());
-        System.out.println("TVM meta: " + metadata.getLogicDevice().getPhysicalDevice().getDeviceName());
-
         if (installedCodes[taskIndex] == null) {
             // After warming-up, it is possible to get a null pointer in the task-cache due
             // to lazy compilation for FPGAs. In tha case, we check again the code cache.
@@ -595,6 +589,14 @@ public class TornadoVM extends TornadoLogger {
             String verbose = String.format("vm: LAUNCH %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), contexts.get(contextIndex), batchThreads, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
+
+        TaskMetaData metadata;
+        if (task.meta() instanceof TaskMetaData) {
+            metadata = (TaskMetaData) task.meta();
+        } else {
+            throw new RuntimeException("task.meta is not instanceof TaskMetadata");
+        }
+
         // We attach the profiler
         metadata.attachProfiler(timeProfiler);
         metadata.setGridScheduler(gridScheduler);
@@ -656,7 +658,7 @@ public class TornadoVM extends TornadoLogger {
 
     private Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
-        contexts.forEach(TornadoAcceleratorDevice::enableThreadSharing);
+        contexts.stream().filter(Objects::nonNull).forEach(TornadoAcceleratorDevice::enableThreadSharing);
 
         final long t0 = System.nanoTime();
         int lastEvent = -1;
@@ -763,13 +765,15 @@ public class TornadoVM extends TornadoLogger {
         Event barrier = EMPTY_EVENT;
         if (!isWarmup) {
             for (TornadoAcceleratorDevice dev : contexts) {
-                if (useDependencies) {
-                    final int event = dev.enqueueMarker();
-                    barrier = dev.resolveEvent(event);
-                }
+                if (dev != null) {
+                    if (useDependencies) {
+                        final int event = dev.enqueueMarker();
+                        barrier = dev.resolveEvent(event);
+                    }
 
-                if (USE_VM_FLUSH) {
-                    dev.flush();
+                    if (USE_VM_FLUSH) {
+                        dev.flush();
+                    }
                 }
             }
         }

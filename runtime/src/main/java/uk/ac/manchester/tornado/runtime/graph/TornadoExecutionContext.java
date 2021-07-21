@@ -52,10 +52,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TornadoExecutionContext {
 
-    private final String name;
     private final int MAX_TASKS = 128;
-    private final ScheduleMetaData meta;
+    private final int INITIAL_DEVICE_CAPACITY = 16;
 
+    private final String name;
+    private final ScheduleMetaData meta;
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
     private final Map<Integer, Integer> objectMap;
@@ -81,7 +82,10 @@ public class TornadoExecutionContext {
         objectMap = new HashMap<>();
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
-        devices = new ArrayList<>();
+        devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
+        // IntStream.range(0,
+        // INITIAL_DEVICE_CAPACITY).<TornadoAcceleratorDevice>mapToObj(i ->
+        // null).forEach(devices::add);
         stacks = new CallStack[MAX_TASKS];
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
@@ -207,16 +211,22 @@ public class TornadoExecutionContext {
         }
     }
 
-    public void addDevice(TornadoAcceleratorDevice device) {
-        devices.add(device);
+    private void checkDeviceListSize(int deviceIndex) {
+        if (deviceIndex >= devices.size()) {
+            for (int i = devices.size(); i <= deviceIndex; i++) {
+                devices.add(null);
+            }
+        }
     }
 
     public void setDevice(int index, TornadoAcceleratorDevice device) {
+        checkDeviceListSize(index);
         devices.set(index, device);
     }
 
     private void assignTask(int index, SchedulableTask task) {
 
+        String id = task.getId();
         TornadoDevice target = task.getDevice();
         TornadoAcceleratorDevice accelerator;
 
@@ -227,13 +237,15 @@ public class TornadoExecutionContext {
         }
 
         int deviceIndex = devices.indexOf(target);
-
-        info("Assigning Task Index: " + index + " to device: " + deviceIndex);
+        info("assigning %s to %s", id, target.getDeviceName());
 
         if (deviceIndex == -1) {
-            deviceIndex = devices.size();
-            devices.add(accelerator);
+            // deviceIndex = devices.size();
+            deviceIndex = task.meta().getDeviceIndex();
+            checkDeviceListSize(deviceIndex);
+            devices.set(deviceIndex, accelerator);
         }
+
         taskToDevice[index] = deviceIndex;
     }
 
