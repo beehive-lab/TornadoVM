@@ -237,7 +237,6 @@ public class TornadoExecutionContext {
         info("assigning %s to %s", id, target.getDeviceName());
 
         if (deviceIndex == -1) {
-            // deviceIndex = devices.size();
             deviceIndex = task.meta().getDeviceIndex();
             checkDeviceListSize(deviceIndex);
             devices.set(deviceIndex, accelerator);
