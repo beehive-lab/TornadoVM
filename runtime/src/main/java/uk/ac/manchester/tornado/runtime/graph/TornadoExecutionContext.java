@@ -83,9 +83,6 @@ public class TornadoExecutionContext {
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
-        // IntStream.range(0,
-        // INITIAL_DEVICE_CAPACITY).<TornadoAcceleratorDevice>mapToObj(i ->
-        // null).forEach(devices::add);
         stacks = new CallStack[MAX_TASKS];
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
