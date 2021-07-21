@@ -40,6 +40,7 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
@@ -73,7 +74,7 @@ public class OCLHighTier extends TornadoHighTier {
         return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 
-    public OCLHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
+    public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
@@ -111,8 +112,10 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        LoopPolicies loopPolicies = new DefaultLoopPolicies();
-        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
+        if (!deviceContext.isPlatformFPGA()) {
+            LoopPolicies loopPolicies = new DefaultLoopPolicies();
+            appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
+        }
 
         appendPhase(canonicalizer);
         appendPhase(new RemoveValueProxyPhase());

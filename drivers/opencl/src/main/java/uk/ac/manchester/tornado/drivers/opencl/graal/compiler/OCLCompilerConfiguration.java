@@ -57,8 +57,8 @@ public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider) {
-        return new OCLHighTier(options, canonicalizer, metaAccessProvider);
+    public TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider) {
+        return new OCLHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
     }
 
     @Override

@@ -44,7 +44,7 @@ public interface TornadoCompilerConfiguration {
 
     TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification canonicalizer);
 
-    TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider);
+    TornadoHighTier createHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification canonicalizer, MetaAccessProvider metaAccessProvider);
 
     TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLowering addressLowering);
 

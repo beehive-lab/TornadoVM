@@ -55,7 +55,7 @@ public class TornadoSuites {
     public TornadoSuites(OptionValues options, TornadoDeviceContext deviceContext, TornadoCompilerConfiguration config, MetaAccessProvider metaAccessProvider,
             CanonicalizerPhase.CustomSimplification canonicalizer, AddressLowering addressLowering) {
         sketchTier = config.createSketchTier(options, canonicalizer);
-        highTier = config.createHighTier(options, canonicalizer, metaAccessProvider);
+        highTier = config.createHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
         midTier = config.createMidTier(options);
         lowTier = config.createLowTier(options, deviceContext, addressLowering);
         allocStage = config.createAllocationStage(options);
