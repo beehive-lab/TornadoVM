@@ -19,10 +19,14 @@
 
 [Link](https://github.com/intel/compute-runtime/releases)
 
-The following drivers have been tested on Linux >= CentOS 7.3
+The following drivers have been tested on Linux >= CentOS 7.3 
 
-* 21.24.20098: OK  ( OpenCL 3.0 )  
-* 21.23.20043: OK  ( OpenCL 3.0 ) 
+* 21.28.20343: OK  ( OpenCL 3.0 )
+* 21.27.20266: OK  ( OpenCL 3.0 )
+* 21.26.20194: OK  ( OpenCL 3.0 )
+* 21.25.20114: OK  ( OpenCL 3.0 )
+* 21.24.20098: OK  ( OpenCL 3.0 )
+* 21.23.20043: OK  ( OpenCL 3.0 )
 * 21.22.19967: OK  ( OpenCL 3.0 )
 * 21.21.19914: OK  ( OpenCL 3.0 )
 * 21.20.19883: OK  ( OpenCL 3.0 )
@@ -88,6 +92,14 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 * 20.22.16952: OK
 * 20.16.16582: OK
 * 20.13.16352: OK
+
+
+The following drivers have been tested Fedora >= 34
+
+* 21.28.20343: OK  ( OpenCL 3.0 )
+* 21.27.20266: OK  ( OpenCL 3.0 )
+* 21.26.20194: OK  ( OpenCL 3.0 )
+
 
 ##### ARM Mali GPUs
 

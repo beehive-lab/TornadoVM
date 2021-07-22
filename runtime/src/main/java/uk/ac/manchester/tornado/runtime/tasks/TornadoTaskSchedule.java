@@ -25,9 +25,38 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.Policy;
@@ -85,32 +114,6 @@ import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.profilerFileWriter;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
-
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
  */
@@ -126,6 +129,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
+    private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
     private Event event;
     private String taskScheduleName;
 
@@ -193,6 +197,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         result = null;
         event = null;
         this.taskScheduleName = taskScheduleName;
+        vmTable = new HashMap<>();
     }
 
     @Override
@@ -414,7 +419,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         BitSet deviceContexts = graph.filter(ContextNode.class);
         final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
         contextNode.setDeviceIndex(meta().getDeviceIndex());
-        executionContext.addDevice(meta().getLogicDevice());
+        executionContext.setDevice(meta().getDeviceIndex(), meta().getLogicDevice());
     }
 
     /**
@@ -423,7 +428,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * @param setNewDevice:
      *            boolean that specifies if set a new device or not.
      */
-    private void compile(boolean setNewDevice) {
+    private TornadoVM compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
@@ -436,16 +441,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // TornadoVM byte-code generation
         result = TornadoVMGraphCompiler.compile(graph, executionContext, batchSizeBytes);
 
-        vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
+        TornadoVM vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
 
         if (meta().shouldDumpSchedule()) {
             executionContext.print();
             graph.print();
             result.dump();
         }
+
+        return vm;
     }
 
     private boolean compareDevices(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
+        return lastDevices.contains(device2);
+    }
+
+    private boolean notEqual(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
         return lastDevices.contains(device2);
     }
 
@@ -510,10 +521,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (compileInfo.compile) {
             timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
             executionContext.assignToDevices();
-            compile(compileInfo.updateDevice);
+            TornadoVM vm = compile(compileInfo.updateDevice);
+            vmTable.put(meta().getLogicDevice(), vm);
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
         executionContext.addLastDevice(meta().getLogicDevice());
+
+        vm = vmTable.get(meta().getLogicDevice());
 
         /*
          * Set the grid scheduler outside the constructor of the {@link
@@ -662,7 +676,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (VM_USE_DEPS && event != null) {
             event.waitOn();
         } else {
-            executionContext.getDevices().forEach(TornadoDevice::sync);
+            executionContext.getDevices().stream().filter(Objects::nonNull).forEach(TornadoDevice::sync);
         }
     }
 
