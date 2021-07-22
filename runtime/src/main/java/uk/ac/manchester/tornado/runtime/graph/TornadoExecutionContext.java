@@ -52,10 +52,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TornadoExecutionContext {
 
-    private final String name;
     private final int MAX_TASKS = 128;
-    private final ScheduleMetaData meta;
+    private final int INITIAL_DEVICE_CAPACITY = 16;
 
+    private final String name;
+    private final ScheduleMetaData meta;
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
     private final Map<Integer, Integer> objectMap;
@@ -81,7 +82,7 @@ public class TornadoExecutionContext {
         objectMap = new HashMap<>();
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
-        devices = new ArrayList<>();
+        devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         stacks = new CallStack[MAX_TASKS];
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
@@ -114,8 +115,11 @@ public class TornadoExecutionContext {
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
-        /* Use the same index the oldObj was assigned. The argument indices are hardcoded in the TornadoVM bytecodes
-         *  during bytecode generation and must match the indices in the {@link objectState} and {@link objects} arrays. */
+        /*
+         * Use the same index the oldObj was assigned. The argument indices are
+         * hardcoded in the TornadoVM bytecodes during bytecode generation and must
+         * match the indices in the {@link objectState} and {@link objects} arrays.
+         */
         int index;
         if (oldObj.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(oldObj.getClass())) {
             index = constants.indexOf(oldObj);
@@ -204,22 +208,24 @@ public class TornadoExecutionContext {
         }
     }
 
-    public void addDevice(TornadoAcceleratorDevice device) {
-        devices.add(device);
+    private void checkDeviceListSize(int deviceIndex) {
+        if (deviceIndex >= devices.size()) {
+            for (int i = devices.size(); i <= deviceIndex; i++) {
+                devices.add(null);
+            }
+        }
     }
 
     public void setDevice(int index, TornadoAcceleratorDevice device) {
+        checkDeviceListSize(index);
         devices.set(index, device);
     }
 
     private void assignTask(int index, SchedulableTask task) {
-        if (taskToDevice[index] != -1) {
-            return;
-        }
 
         String id = task.getId();
         TornadoDevice target = task.getDevice();
-        TornadoAcceleratorDevice accelerator = null;
+        TornadoAcceleratorDevice accelerator;
 
         if (target instanceof TornadoAcceleratorDevice) {
             accelerator = (TornadoAcceleratorDevice) target;
@@ -227,13 +233,14 @@ public class TornadoExecutionContext {
             throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
+        int deviceIndex = devices.indexOf(target);
         info("assigning %s to %s", id, target.getDeviceName());
 
-        int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
-            deviceIndex = devices.size();
-            devices.add(accelerator);
+            deviceIndex = task.meta().getDeviceIndex();
+            setDevice(deviceIndex, accelerator);
         }
+
         taskToDevice[index] = deviceIndex;
     }
 
