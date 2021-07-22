@@ -18,6 +18,8 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
@@ -54,6 +56,11 @@ public class SPIRVLowTier extends TornadoLowTier {
         appendPhase(new UseTrappingNullChecksPhase());
 
         appendPhase(new DeadCodeEliminationPhase(Required));
+
+        if (deviceContext.isPlatformFPGA()) {
+            appendPhase(new OCLFPGAPragmaPhase(deviceContext));
+            appendPhase(new OCLFPGAThreadScheduler(deviceContext));
+        }
 
         appendPhase(new TornadoLoopCanonicalization());
 
