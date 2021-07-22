@@ -238,8 +238,7 @@ public class TornadoExecutionContext {
 
         if (deviceIndex == -1) {
             deviceIndex = task.meta().getDeviceIndex();
-            checkDeviceListSize(deviceIndex);
-            devices.set(deviceIndex, accelerator);
+            setDevice(deviceIndex, accelerator);
         }
 
         taskToDevice[index] = deviceIndex;
