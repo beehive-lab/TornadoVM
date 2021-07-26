@@ -95,7 +95,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         }
 
-        if (meta.isDebug()) {
+        if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
 
