@@ -187,7 +187,7 @@ public class PrebuiltTest extends TornadoTestBase {
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         String tornadoSDK = System.getenv("TORNADO_SDK");
-        String filePath = "/tmp/reduce01.spv";
+        String filePath = tornadoSDK + "/examples/generated/reduce04.spv";
 
         final int size = 32;
         final int localSize = 16;

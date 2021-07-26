@@ -52,6 +52,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
     public static void intReductionAddGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
+        int groupID = context.groupIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int id = context.globalIdx;
 
@@ -64,14 +65,9 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         }
 
         // Copy result
-        // if (localIdx == 0) {
-        // int groupID = context.groupIdx;
-        int groupID = 0;
-        b[groupID] = a[id];
-        b[groupID + 1] = localIdx;
-        b[groupID + 2] = localGroupSize;
-        b[groupID + 3] = context.getGlobalGroupSize(0);
-        // }
+        if (localIdx == 0) {
+            b[groupID] = a[localIdx];
+        }
     }
 
     public static void basicAccessThreadIds(KernelContext context, int[] a) {
