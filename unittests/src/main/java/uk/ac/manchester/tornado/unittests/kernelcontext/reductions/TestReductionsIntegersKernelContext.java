@@ -53,7 +53,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     public static void intReductionAddGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
-        int groupID = context.groupIdx; // Expose Group ID
         int id = context.globalIdx;
 
         int max = (localGroupSize / 2);
@@ -66,7 +65,12 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
         // Copy result
         // if (localIdx == 0) {
-        // b[groupID] = a[id];
+        // int groupID = context.groupIdx;
+        int groupID = 0;
+        b[groupID] = a[id];
+        b[groupID + 1] = localIdx;
+        b[groupID + 2] = localGroupSize;
+        b[groupID + 3] = context.getGlobalGroupSize(0);
         // }
     }
 

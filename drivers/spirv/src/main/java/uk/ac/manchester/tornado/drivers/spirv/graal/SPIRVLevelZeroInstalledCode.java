@@ -92,7 +92,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             if (grid.getLocalWork() != null) {
                 System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
             }
-
         }
 
         if (meta.isThreadInfoEnabled()) {
