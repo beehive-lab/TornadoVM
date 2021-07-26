@@ -44,7 +44,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSDiv;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSRem;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftLeftLogical;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightLogical;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightArithmetic;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
@@ -591,7 +591,9 @@ public final class SPIRVAssembler extends Assembler {
 
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
-            return new SPIRVOpShiftRightLogical(idResultType, idResult, operand1, operand2);
+            // return new SPIRVOpShiftRightLogical(idResultType, idResult, operand1,
+            // operand2);
+            return new SPIRVOpShiftRightArithmetic(idResultType, idResult, operand1, operand2);
         }
     }
 

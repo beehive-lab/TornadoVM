@@ -21,8 +21,8 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
     public static final NodeClass<SPIRVBarrierNode> TYPE = NodeClass.create(SPIRVBarrierNode.class);
 
     public enum SPIRVMemFenceFlags {
-        GLOBAL(528), //
-        LOCAL(258); //
+        GLOBAL(0x200 | 0x10), //
+        LOCAL(0x100 | 0x10); //
 
         private int semantics;
 
