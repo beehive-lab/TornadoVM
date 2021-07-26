@@ -145,8 +145,8 @@ public class PrebuiltTest extends TornadoTestBase {
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/reduce03.spv";
 
-        final int size = 256;
-        final int localSize = 32;
+        final int size = 1024;
+        final int localSize = 256;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
@@ -177,6 +177,51 @@ public class PrebuiltTest extends TornadoTestBase {
         }
 
         assertEquals(512, finalSum, 0.0f);
+
+    }
+
+    @Test
+    public void testPrebuild04() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OpenCL);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String filePath = "/tmp/reduce01.spv";
+
+        final int size = 32;
+        final int localSize = 16;
+        int[] input = new int[size];
+        int[] reduce = new int[size / localSize];
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        // @formatter:off
+        new TaskSchedule("s0")
+                .prebuiltTask("t0",
+                        "intReductionAddGlobalMemory",
+                        filePath,
+                        new Object[]{context, input, reduce},
+                        new Access[]{Access.READ, Access.READ_WRITE, Access.WRITE},
+                        defaultDevice,
+                        new int[]{size})
+                .streamOut(reduce, input)
+                .execute(gridScheduler);
+        // @formatter:on
+
+        System.out.println(Arrays.toString(reduce));
+        System.out.println(Arrays.toString(input));
+
+        // Final SUM
+        float finalSum = 0;
+        for (int v : reduce) {
+            finalSum += v;
+        }
+
+        assertEquals(64, finalSum, 0.0f);
 
     }
 

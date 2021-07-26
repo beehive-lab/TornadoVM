@@ -44,6 +44,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSDiv;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSRem;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftLeftLogical;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightArithmetic;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightLogical;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
@@ -239,9 +240,9 @@ public final class SPIRVAssembler extends Assembler {
 
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
 
-        // if (fp64Capability) {
-        module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
-        // }
+        if (fp64Capability) {
+            module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
+        }
 
     }
 
@@ -447,6 +448,7 @@ public final class SPIRVAssembler extends Assembler {
         // Bitwise
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
         public static final SPIRVBinaryOp BITWISE_RIGHT_SHIFT = new SPIRVBinaryOpRightShift(">>", "SPIRVBinaryOpRightShift");
+        public static final SPIRVBinaryOp BITWISE_UNSIGNED_RIGHT_SHIFT = new SPIRVBinaryOpUnsignedRightShift(">>", "SPIRVOpShiftRightArithmetic");
         public static final SPIRVBinaryOp BITWISE_AND = new SPIRVBinaryOpBitwiseAnd("&", "SPIRVBinaryOpBitwiseAnd");
         public static final SPIRVBinaryOp BITWISE_OR = new SPIRVBinaryOpBitwiseOr("&", "SPIRVBinaryOpBitwiseOr");
         public static final SPIRVBinaryOp BITWISE_XOR = new SPIRVBinaryOpBitwiseXor("&", "SPIRVBinaryOpBitwiseXor");
@@ -592,6 +594,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpShiftRightLogical(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryOpUnsignedRightShift extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryOpUnsignedRightShift(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpShiftRightArithmetic(idResultType, idResult, operand1, operand2);
         }
     }
 

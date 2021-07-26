@@ -501,7 +501,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 append(new OCLLIRStmt.AssignStmt(result, value));
             }
         }
-        emitPragmaLoopUnroll(currentBlockDominator);
+        emitOCLFPGAPragmas(currentBlockDominator);
         append(new OCLControlFlow.LoopInitOp());
         append(new OCLControlFlow.LoopPostOp());
         label.clearIncomingValues();
@@ -623,7 +623,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private void emitPragmaLoopUnroll(Block blk) {
+    private void emitOCLFPGAPragmas(Block blk) {
         for (ValueNode tempDomBlockNode : blk.getNodes()) {
             if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
                 super.emitNode(tempDomBlockNode);
@@ -702,8 +702,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         /*
-         * It generates instructions that are relocated from within the for-loop to after the for-loop.
-         * https://github.com/beehive-lab/TornadoVM/pull/129
+         * It generates instructions that are relocated from within the for-loop to
+         * after the for-loop. https://github.com/beehive-lab/TornadoVM/pull/129
          */
         if (shouldRelocateInstructions) {
             append(new OCLLIRStmt.MarkRelocateInstruction());

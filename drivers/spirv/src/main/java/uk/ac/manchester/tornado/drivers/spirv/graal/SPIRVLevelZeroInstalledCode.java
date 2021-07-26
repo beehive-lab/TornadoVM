@@ -92,24 +92,17 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             if (grid.getLocalWork() != null) {
                 System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
             }
-
         }
 
-        if (meta.isDebug()) {
+        if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
 
-        // Statically decide a block size of 32
-        // int groupSize = 32;
-        // if (globalWork[0] <= 32) {
-        // groupSize = 1;
-        // }
-
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
-        int[] groupSizeX = new int[] { (int) globalWork[1] };
-        int[] groupSizeY = new int[] { (int) globalWork[1] };
-        int[] groupSizeZ = new int[] { (int) globalWork[2] };
+        int[] groupSizeX = new int[] { (int) localWork[0] };
+        int[] groupSizeY = new int[] { (int) localWork[1] };
+        int[] groupSizeZ = new int[] { (int) localWork[2] };
 
         int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) globalWork[0], (int) globalWork[1], (int) globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);

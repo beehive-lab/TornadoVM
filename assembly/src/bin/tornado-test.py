@@ -70,30 +70,30 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     # TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskSchedule"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
     TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
     TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     # TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
@@ -331,7 +331,7 @@ def runTests(args):
         command = appendTestRunnerClassToCmd(cmd, args)
         if (args.fast):
             command = command + " " + args.testClass
-            print command
+            print(command)
             os.system(command)
         else:
             runSingleCommand(command, args)
