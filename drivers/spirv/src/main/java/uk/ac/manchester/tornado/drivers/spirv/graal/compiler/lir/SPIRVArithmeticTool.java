@@ -275,7 +275,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShr(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitShl: %s >> %s", a, b);
+        SPIRVLogger.traceBuildLIR("emitShiftRight: %s >> %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_RIGHT_SHIFT;
@@ -285,10 +285,10 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitUShr(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitShl: %s >>> %s", a, b);
+        SPIRVLogger.traceBuildLIR("emitUnsignedShiftRight: %s >>> %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_RIGHT_SHIFT;
+        SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_UNSIGNED_RIGHT_SHIFT;
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
         return result;
     }

@@ -54,7 +54,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         int localIdx = context.localIdx;
         int localGroupSize = context.getLocalGroupSize(0);
         int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
+        int id = context.globalIdx;
 
         int max = (localGroupSize / 2);
         for (int stride = max; stride > 0; stride /= 2) {
@@ -65,9 +65,9 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         }
 
         // Copy result
-        if (localIdx == 0) {
-            b[groupID] = a[id];
-        }
+        // if (localIdx == 0) {
+        // b[groupID] = a[id];
+        // }
     }
 
     public static void basicAccessThreadIds(KernelContext context, int[] a) {
