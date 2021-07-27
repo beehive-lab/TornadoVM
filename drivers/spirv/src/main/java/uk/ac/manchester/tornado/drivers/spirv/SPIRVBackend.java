@@ -701,7 +701,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             }
         }
 
-        SPIRVLogger.trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
+        // SPIRVLogger.trace("found %d variable, expected (%d)", variableCount.get(),
+        // expectedVariables);
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
@@ -709,7 +710,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             System.out.println("\tTYPE: " + spirvKind);
             for (Variable var : kindToVariable.get(spirvKind)) {
                 System.out.println("\tNAME: " + var);
-
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);
                 index++;

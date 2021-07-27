@@ -437,10 +437,13 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         AbstractWriteNode memoryWrite;
         if (isLocalIdNode(storeIndexed) || isPrivateIdNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
-        } else {
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE));
         }
+        ValueNode storeConvertValue = value;
+        Stamp valueStamp = value.stamp(NodeView.DEFAULT);
+        if (!(valueStamp instanceof SPIRVStamp) || !((SPIRVStamp) valueStamp).getSPIRVKind().isVector()) {
+            storeConvertValue = implicitStoreConvert(graph, elementKind, value);
+        }
+        memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, OnHeapMemoryAccess.BarrierType.NONE));
         return memoryWrite;
     }
 

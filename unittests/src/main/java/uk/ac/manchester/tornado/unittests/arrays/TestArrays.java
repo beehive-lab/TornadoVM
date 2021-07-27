@@ -89,7 +89,7 @@ public class TestArrays extends TornadoTestBase {
 
     public static void initializeSequentialByte(byte[] a) {
         for (int i = 0; i < a.length; i++) {
-            a[i] = 21;
+            a[i] = (byte) 21;
         }
     }
 
