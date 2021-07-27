@@ -30,6 +30,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExecutionMode;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFAdd;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFDiv;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFMul;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFOrdEqual;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFOrdLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFSub;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpFunction;
@@ -437,7 +438,7 @@ public final class SPIRVAssembler extends Assembler {
         public static final SPIRVBinaryOp DIV_INTEGER = new SPIRVBinaryOpIDiv("/", "SPIRVOpSDiv");
         public static final SPIRVBinaryOp INTEGER_REM = new SPIRVBinaryOpSRem("MOD", "SPIRVOpSRem");
         public static final SPIRVBinaryOp INTEGER_LESS_THAN = new SPIRVBinaryOpSLessThan("<", "SPIRVOpSLessThan");
-        public static final SPIRVBinaryOp INTEGER_EQUALS = new SPIRVBinaryOpIEqual("<", "SPIRVBinaryOpIEqual");
+        public static final SPIRVBinaryOp INTEGER_EQUALS = new SPIRVBinaryOpIEqual("==", "SPIRVBinaryOpIEqual");
         public static final SPIRVBinaryOp INTEGER_BELOW = new SPIRVBinaryOpIBelow("<", "SPIRVOpSLessThan");
 
         // Float
@@ -446,6 +447,7 @@ public final class SPIRVAssembler extends Assembler {
         public static final SPIRVBinaryOp MULT_FLOAT = new SPIRVBinaryOpFMul("*", "SPIRVOpFMul");
         public static final SPIRVBinaryOp DIV_FLOAT = new SPIRVBinaryOpFDiv("/", "SPIRVOpFDiv");
         public static final SPIRVBinaryOp FLOAT_LESS_THAN = new SPIRVBinaryFORLessThan("<", "SPIRVBinaryFORLessThan");
+        public static final SPIRVBinaryOp FLOAT_EQUALS = new SPIRVBinaryFOREquals("==", "SPIRVOpFOrdEqual");
 
         // Bitwise
         public static final SPIRVBinaryOp BITWISE_LEFT_SHIFT = new SPIRVBinaryOpLeftShift("<<", "SPIRVOpShiftLeftLogical");
@@ -584,6 +586,18 @@ public final class SPIRVAssembler extends Assembler {
         @Override
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpFOrdLessThan(idResultType, idResult, operand1, operand2);
+        }
+    }
+
+    public static class SPIRVBinaryFOREquals extends SPIRVBinaryOp {
+
+        protected SPIRVBinaryFOREquals(String opcode, String spirvInstruction) {
+            super(opcode, spirvInstruction);
+        }
+
+        @Override
+        public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
+            return new SPIRVOpFOrdEqual(idResultType, idResult, operand1, operand2);
         }
     }
 

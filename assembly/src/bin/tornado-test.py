@@ -300,6 +300,15 @@ def runCommandWithStats(command, stats):
     out = out.decode('utf-8')
     err = err.decode('utf-8')
 
+    if (err.rfind("Segmentation fault") > 0):
+        print(Colors.REVERSE)
+        print("[!] RUNNING AGAIN BECAUSE OF A SEG FAULT")
+        print(Colors.RESET)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        out = out.decode('utf-8')
+        err = err.decode('utf-8')
+
     print(err)
     print(out)
 
@@ -383,7 +392,6 @@ def runTestTheWorld(cmd, args):
             print(command)
             stats = runCommandWithStats(command, stats)
 
-        time.sleep(0.01)
     return stats
 
 
