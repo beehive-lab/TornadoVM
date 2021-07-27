@@ -52,6 +52,7 @@ import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
@@ -384,6 +385,13 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(isNullNode.getValue());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, new ConstantValue(intLIRKind, PrimitiveConstant.NULL_POINTER))));
+        } else if (node instanceof FloatLessThanNode) {
+            SPIRVLogger.traceBuildLIR("IntegerLessThanNode: %s", node);
+            final FloatLessThanNode condition = (FloatLessThanNode) node;
+            final Value x = operand(condition.getX());
+            final Value y = operand(condition.getY());
+            SPIRVBinaryOp op = SPIRVBinaryOp.FLOAT_LESS_THAN;
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else {
             throw new RuntimeException("Condition Not implemented yet: " + node.getClass());
         }

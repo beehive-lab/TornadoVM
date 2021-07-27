@@ -119,7 +119,9 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
 
         ZeKernelDesc kernelDesc = new ZeKernelDesc();
         ZeKernelHandle kernel = new ZeKernelHandle();
-        System.out.println("Set entry point! : " + entryPoint);
+        if (Tornado.DEBUG) {
+            System.out.println("Set entry point! : " + entryPoint);
+        }
         kernelDesc.setKernelName(entryPoint);
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
         LevelZeroUtils.errorLog("zeKernelCreate", result);

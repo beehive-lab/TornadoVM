@@ -383,6 +383,7 @@ def runTestTheWorld(cmd, args):
             print(command)
             stats = runCommandWithStats(command, stats)
 
+        time.sleep(0.01)
     return stats
 
 
