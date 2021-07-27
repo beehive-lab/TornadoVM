@@ -102,7 +102,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
     # TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
     # TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
     # TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),

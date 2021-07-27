@@ -14,6 +14,7 @@ import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
@@ -337,7 +338,25 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
-        return null;
+        SPIRVLogger.traceBuildLIR("emitZeroExtend: %s (from %d to %d)", inputVal, fromBits, toBits);
+        SPIRVLIRKindTool kindTool = getGen().getLIRKindTool();
+        SPIRVKind kind = (SPIRVKind) inputVal.getPlatformKind();
+
+        LIRKind toKind;
+        if (kind.isInteger()) {
+            toKind = kindTool.getIntegerKind(toBits);
+        } else if (kind.isFloatingPoint()) {
+            toKind = kindTool.getFloatingKind(toBits);
+        } else {
+            throw new RuntimeException("Not supported kind: " + kind);
+        }
+
+        Variable result = getGen().newVariable(toKind);
+
+        LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
+        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, inputVal, fromBits, toBits);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
+        return result;
     }
 
     @Override
@@ -421,8 +440,6 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             accumulator = address;
         }
 
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>> IS VECTOR: " + spirvKind.isVector());
-
         if (spirvKind.isVector()) {
             SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
             getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, memAccess, input));
@@ -440,7 +457,6 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             } else {
                 if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
                     SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-                    System.out.println("\t\tGenerate Indexed Access WITH PRIVATE OR LOCAL with index : " + indexedAccess.getIndex() + "  =----- " + indexedAccess.getValue());
                     getGen().append(new SPIRVLIRStmt.IndexedMemAccess(indexedAccess, input));
                 }
             }

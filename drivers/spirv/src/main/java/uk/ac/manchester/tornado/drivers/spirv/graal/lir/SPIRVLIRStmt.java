@@ -714,7 +714,6 @@ public class SPIRVLIRStmt {
             if (rhs instanceof ConstantValue) {
                 value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
             } else {
-                System.out.println("!!!!!!!!!!!!!!!! LOAD BEFORE STORE: ");
                 value = asm.lookUpLIRInstructions(rhs);
                 System.out.println("RHS: " + rhs);
                 SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());

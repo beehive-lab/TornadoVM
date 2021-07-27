@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkCastNode;
@@ -35,12 +36,15 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
     private SPIRVUnary.CastOperations resolveOp(LIRKind lirKind, Value value) {
         switch (op) {
             case I2F:
+                return new SPIRVUnary.CastIToFloat(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_32);
             case I2D:
-                return new SPIRVUnary.CastIToFloat(lirKind, value);
+                return new SPIRVUnary.CastIToFloat(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_64);
             case D2F:
+                return new SPIRVUnary.CastFloatDouble(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_32);
             case F2D:
-                return new SPIRVUnary.CastFloatDouble(lirKind, value);
+                return new SPIRVUnary.CastFloatDouble(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_64);
             case L2D:
+                return new SPIRVUnary.CastFloatDouble(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_64);
             case D2L:
             case F2L:
             default:

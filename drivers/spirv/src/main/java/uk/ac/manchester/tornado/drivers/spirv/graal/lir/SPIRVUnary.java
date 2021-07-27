@@ -514,31 +514,26 @@ public class SPIRVUnary {
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : " + fromBits + " -> " + toBits);
 
-            if (fromBits == 32 && toBits == 64) {
-                // OpSConvert
-                SPIRVId loadConvert = asm.module.getNextId();
+            // OpSConvert
+            SPIRVId loadConvert = asm.module.getNextId();
 
-                SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
-                SPIRVId param = asm.lookUpLIRInstructions(value);
+            SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId param = asm.lookUpLIRInstructions(value);
 
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        uint, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(4)))//
-                ));
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    uint, //
+                    loadConvert, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(4)))//
+            ));
 
-                SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
-                SPIRVId result = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpSConvert(ulong, result, loadConvert));
+            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpSConvert(ulong, result, loadConvert));
 
-                asm.registerLIRInstructionValue(this, result);
-
-            } else {
-                throw new RuntimeException("Conversion not supported");
-            }
+            asm.registerLIRInstructionValue(this, result);
 
         }
     }
@@ -604,8 +599,11 @@ public class SPIRVUnary {
 
     public static class CastIToFloat extends CastOperations {
 
-        public CastIToFloat(LIRKind lirKind, Value inputVal) {
+        private SPIRVKind toType;
+
+        public CastIToFloat(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
             super(null, lirKind, inputVal);
+            this.toType = toType;
         }
 
         @Override
@@ -613,7 +611,7 @@ public class SPIRVUnary {
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpConvertSToF : -> ");
 
-            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
+            SPIRVKind spirvKind = toType;
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
             SPIRVId param = asm.lookUpLIRInstructions(value);
 
@@ -637,8 +635,11 @@ public class SPIRVUnary {
 
     public static class CastFloatDouble extends CastOperations {
 
-        public CastFloatDouble(LIRKind lirKind, Value inputVal) {
+        private SPIRVKind toType;
+
+        public CastFloatDouble(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
             super(null, lirKind, inputVal);
+            this.toType = toType;
         }
 
         @Override
@@ -646,12 +647,7 @@ public class SPIRVUnary {
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpFConvert");
 
-            SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
-            if (spirvKind == SPIRVKind.OP_TYPE_FLOAT_32) {
-                spirvKind = SPIRVKind.OP_TYPE_FLOAT_64;
-            } else {
-                spirvKind = SPIRVKind.OP_TYPE_FLOAT_32;
-            }
+            SPIRVKind spirvKind = toType;
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
             SPIRVId param = asm.lookUpLIRInstructions(value);
 
