@@ -7,7 +7,6 @@ public class SPIRVFloatArrayWrapper extends SPIRVArrayWrapper<float[]> {
 
     public SPIRVFloatArrayWrapper(SPIRVDeviceContext device, long size) {
         this(device, false, size);
-        System.out.println("CREATING A FLOAT BUFFER of BATCH-SIZE: " + size);
     }
 
     public SPIRVFloatArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long size) {

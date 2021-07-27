@@ -7,7 +7,6 @@ public class SPIRVIntArrayWrapper extends SPIRVArrayWrapper<int[]> {
 
     public SPIRVIntArrayWrapper(SPIRVDeviceContext device, long batchSize) {
         this(device, false, batchSize);
-        System.out.println("CREATING AN INT BUFFER of BATCH-SIZE: " + batchSize);
     }
 
     public SPIRVIntArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long batchSize) {
