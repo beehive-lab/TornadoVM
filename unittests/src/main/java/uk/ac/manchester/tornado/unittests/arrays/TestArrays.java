@@ -146,7 +146,7 @@ public class TestArrays extends TornadoTestBase {
         s0.execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i]);
+            assertEquals((byte) 21, data[i]);
         }
     }
 
