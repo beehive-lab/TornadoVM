@@ -28,7 +28,7 @@ public class SPIRVGenTool {
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int index) {
-        SPIRVLogger.trace("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
+        SPIRVLogger.traceBuildLIR("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
         LIRKind lirKind = generator.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
         SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
 

@@ -212,7 +212,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     private void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
-            SPIRVLogger.trace("op: " + op);
+            SPIRVLogger.traceCodeGen("op: " + op);
             op.emitCode(crb);
         } catch (AssertionError | RuntimeException t) {
             throw new TornadoInternalError(t);

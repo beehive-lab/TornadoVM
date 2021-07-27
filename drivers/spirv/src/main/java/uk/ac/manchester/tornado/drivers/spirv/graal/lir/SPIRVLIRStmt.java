@@ -715,7 +715,6 @@ public class SPIRVLIRStmt {
                 value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
             } else {
                 value = asm.lookUpLIRInstructions(rhs);
-                System.out.println("RHS: " + rhs);
                 SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());
                 SPIRVId loadID = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpLoad( //

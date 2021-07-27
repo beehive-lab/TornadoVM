@@ -1,9 +1,15 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -56,6 +62,11 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
@@ -67,16 +78,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
@@ -110,7 +111,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        SPIRVLogger.trace("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
+        SPIRVLogger.traceBuildLIR("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
         if (isLegal(result) & ((SPIRVKind) result.getPlatformKind()).isVector()) {
             throw new RuntimeException("[SPIRV] CAll with Vector types not supported yet");
         }
@@ -170,7 +171,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void doRoot(ValueNode instr) {
-        SPIRVLogger.trace("Visiting %s", instr);
         emitNode(instr);
         if (hasOperand(instr)) {
             getDebugContext().log("Operand for %s = %s", instr, operand(instr));
@@ -265,7 +265,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitBranch(IfNode dominator) {
-        SPIRVLogger.trace("µInst emitBranch: " + dominator);
+        SPIRVLogger.traceBuildLIR("µInst emitBranch: " + dominator);
         boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
 
         if (hasElse) {
@@ -285,7 +285,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitEndNode(final AbstractEndNode end) {
-        SPIRVLogger.trace("µInst visitEnd: " + end);
+        SPIRVLogger.traceBuildLIR("µInst visitEnd: " + end);
 
         if (end instanceof LoopEndNode) {
             return;
@@ -323,7 +323,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected LIRKind getPhiKind(PhiNode phi) {
-        SPIRVLogger.trace("µInst phi node: " + phi);
+        SPIRVLogger.traceBuildLIR("µInst phi node: " + phi);
         Stamp stamp = phi.stamp(NodeView.DEFAULT);
         if (stamp.isEmpty()) {
             for (ValueNode n : phi.values()) {
