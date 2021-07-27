@@ -260,7 +260,6 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             }
 
             bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
-            System.out.println("[SPIRV] Buffer management: SIZE: " + bytesToAllocate + ",  with offset: " + bufferOffset);
 
             if (Tornado.FULL_DEBUG) {
                 info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,

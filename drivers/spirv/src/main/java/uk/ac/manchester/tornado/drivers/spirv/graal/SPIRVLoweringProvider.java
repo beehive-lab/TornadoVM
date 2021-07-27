@@ -77,6 +77,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -121,7 +122,9 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public void lower(Node node, LoweringTool tool) {
-        SPIRVLogger.trace("Lowering node: %s\n", node);
+        if (Tornado.DEBUG) {
+            SPIRVLogger.trace("Lowering node: %s\n", node);
+        }
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {

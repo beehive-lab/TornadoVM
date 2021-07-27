@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SlotsBaseAddressNode;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
@@ -263,7 +264,9 @@ public class SPIRVGraphBuilderPlugins {
 
     // FIXME: Revisit this method. In SPIR-V we can avoid this compiler Internal.
     private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
-        System.out.println("SPIRV Registering Intrinsics Plugins - pending");
+        if (Tornado.DEBUG) {
+            System.out.println("SPIRV Registering Intrinsics Plugins - pending");
+        }
         // FIXME <REFACTOR> For SPIRV, I am not sure we need the SlotBaseAddressPlugin
         Registration r = new Registration(plugins, CompilerInternals.class);
 
@@ -277,7 +280,9 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(Plugins plugins) {
-        System.out.println("SPIRV Registering VM Intrinsics Plugins - pending");
+        if (Tornado.DEBUG) {
+            System.out.println("SPIRV Registering VM Intrinsics Plugins - pending");
+        }
     }
 
 }
