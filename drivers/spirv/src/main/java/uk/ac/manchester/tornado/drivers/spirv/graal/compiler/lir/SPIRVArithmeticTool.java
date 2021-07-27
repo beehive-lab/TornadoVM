@@ -76,6 +76,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_VECTOR4_FLOAT_64:
             case OP_TYPE_VECTOR8_FLOAT_64:
                 return emitBinaryVectorAssign(SPIRVBinaryOp.ADD_FLOAT, resultKind, a, b);
+            case OP_TYPE_INT_8:
             case OP_TYPE_INT_16:
             case OP_TYPE_INT_64:
             case OP_TYPE_INT_32:

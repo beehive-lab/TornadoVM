@@ -188,6 +188,8 @@ public enum SPIRVKind implements PlatformKind {
         switch (kind) {
             case OP_TYPE_BOOL:
                 return 'z';
+            case OP_TYPE_INT_8:
+                return 'c';
             case OP_TYPE_INT_16:
                 return 's';
             case OP_TYPE_INT_32:
@@ -199,7 +201,7 @@ public enum SPIRVKind implements PlatformKind {
             case OP_TYPE_FLOAT_64:
                 return 'd';
             default:
-                throw new RuntimeException("SPIRVType Not implemented yet");
+                throw new RuntimeException("SPIRVType Not implemented yet: " + kind);
         }
     }
 
