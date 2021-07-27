@@ -100,7 +100,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
     # TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),
@@ -110,7 +110,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
     # TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     # TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
     #           testMethods=["testVirtualDeviceKernelGPU"],
     #           testParameters=[
