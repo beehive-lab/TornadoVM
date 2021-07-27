@@ -238,7 +238,7 @@ public enum SPIRVKind implements PlatformKind {
     }
 
     private boolean isIntType() {
-        return kind == OP_TYPE_INT_16 || kind == OP_TYPE_INT_32 || kind == OP_TYPE_INT_64;
+        return kind == OP_TYPE_INT_8 || kind == OP_TYPE_INT_16 || kind == OP_TYPE_INT_32 || kind == OP_TYPE_INT_64;
     }
 
     public boolean isInteger() {
@@ -283,6 +283,11 @@ public enum SPIRVKind implements PlatformKind {
 
     static {
         vectorTable = new HashMap<>();
+
+        // Bytes
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Byte3;", SPIRVKind.OP_TYPE_VECTOR3_INT_8);
+        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Byte4;", SPIRVKind.OP_TYPE_VECTOR4_INT_8);
+
         // Integers
         vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int2;", SPIRVKind.OP_TYPE_VECTOR2_INT_32);
         vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int3;", SPIRVKind.OP_TYPE_VECTOR3_INT_32);

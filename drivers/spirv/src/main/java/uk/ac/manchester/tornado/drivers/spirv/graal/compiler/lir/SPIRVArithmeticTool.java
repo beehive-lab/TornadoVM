@@ -62,6 +62,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR3_INT_8:
+            case OP_TYPE_VECTOR4_INT_8:
             case OP_TYPE_VECTOR2_INT_32:
             case OP_TYPE_VECTOR3_INT_32:
             case OP_TYPE_VECTOR4_INT_32:
@@ -98,6 +100,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR3_INT_8:
+            case OP_TYPE_VECTOR4_INT_8:
             case OP_TYPE_VECTOR2_INT_32:
             case OP_TYPE_VECTOR3_INT_32:
             case OP_TYPE_VECTOR4_INT_32:
@@ -141,6 +145,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR3_INT_8:
+            case OP_TYPE_VECTOR4_INT_8:
             case OP_TYPE_VECTOR2_INT_32:
             case OP_TYPE_VECTOR3_INT_32:
             case OP_TYPE_VECTOR4_INT_32:
@@ -185,6 +191,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
+            case OP_TYPE_VECTOR3_INT_8:
+            case OP_TYPE_VECTOR4_INT_8:
             case OP_TYPE_VECTOR2_INT_32:
             case OP_TYPE_VECTOR3_INT_32:
             case OP_TYPE_VECTOR4_INT_32:
@@ -409,6 +417,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             accumulator = address;
         }
+
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>> IS VECTOR: " + spirvKind.isVector());
 
         if (spirvKind.isVector()) {
             SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));

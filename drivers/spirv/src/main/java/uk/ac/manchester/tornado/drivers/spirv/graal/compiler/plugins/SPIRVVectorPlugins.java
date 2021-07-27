@@ -1,8 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -17,6 +16,10 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -30,8 +33,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorMultNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElementProxyNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public class SPIRVVectorPlugins {
 
@@ -62,6 +63,10 @@ public class SPIRVVectorPlugins {
                     return false;
                 }
             });
+
+            // Byte
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_8, byte[].class, byte.class);
+            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_INT_8, byte[].class, byte.class);
 
             // Floats
             registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32, float[].class, float.class);

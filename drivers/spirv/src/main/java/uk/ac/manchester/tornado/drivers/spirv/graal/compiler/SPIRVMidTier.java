@@ -17,8 +17,8 @@ import org.graalvm.compiler.phases.common.ReassociationPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.BoundCheckEliminationPhase;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;

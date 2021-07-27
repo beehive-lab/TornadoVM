@@ -379,7 +379,6 @@ public class TornadoFloatingReadReplacement extends Phase {
         private static void processFloatable(FloatableAccessNode accessNode, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
-            System.out.println("SHOULD BE FLOATING for node: " + accessNode + " = " + shouldBeFloatingRead(accessNode));
             if (accessNode.canFloat() && shouldBeFloatingRead(accessNode)) {
                 assert accessNode.getNullCheck() == false;
                 MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);

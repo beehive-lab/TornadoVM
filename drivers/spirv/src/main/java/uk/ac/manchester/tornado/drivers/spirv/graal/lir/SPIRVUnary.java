@@ -573,11 +573,6 @@ public class SPIRVUnary {
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : -> " + toBits);
 
-            // We will keep this check until we guarantee all unittests can pass
-            // if (toBits != 16 || toBits != 8) {
-            // throw new RuntimeException("Not supported yet: " + toBits);
-            // }
-
             SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
             SPIRVId param = asm.lookUpLIRInstructions(value);
