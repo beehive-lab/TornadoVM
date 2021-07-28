@@ -25,6 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
 public class OCLAssemblerConstants {
 
     public static final String KERNEL_MODIFIER = "__kernel";
@@ -101,8 +104,10 @@ public class OCLAssemblerConstants {
     public static final String PRAGMA = "#pragma";
     public static final String UNROLL = "unroll";
 
-    public static final String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(64,1,1)))";
-    public static final String FPGA_ATTRIBUTE_SEQ = "__attribute__((reqd_work_group_size(1,1,1)))";
+    public static final String FPGA_THREAD_ATTRIBUTE_PREFIX = "__attribute__((reqd_work_group_size(";
+    public static final String FPGA_THREAD_ATTRIBUTE_SUFFIX = ")))";
+    public static final String FPGA_THREAD_DEFAULT_PARALLEL_ATTRIBUTE = "64, 1, 1";
+    public static final String FPGA_THREAD_ATTRIBUTE_SEQUENTIAL = "1, 1, 1";
 
     public static final int STACK_BASE_OFFSET = 3;
 }

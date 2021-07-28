@@ -1134,23 +1134,28 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
-    private String createFPGAThreadAttribute(TaskMetaData metaData) {
-        if (metaData.isGridSchedulerEnabled()) {
-            long[] localWorkerGrid = metaData.getWorkerGrid(metaData.getId()).getLocalWork();
-            String fpgaThreadAttribute = "__attribute__((reqd_work_group_size(" + localWorkerGrid[0] + "," + localWorkerGrid[1] + "," + localWorkerGrid[2] + ")))";
-            return fpgaThreadAttribute;
+    private static String createFPGAThreadAttribute(OCLCompilationResultBuilder crb) {
+        TaskMetaData metaData = crb.getTaskMetaData();
+        String fpgaThreadAttribute;
+
+        if (crb.isParallel()) {
+            if (metaData.isGridSchedulerEnabled()) {
+                long[] localWorkerGrid = metaData.getWorkerGrid(metaData.getId()).getLocalWork();
+                fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkerGrid[0] + "," + localWorkerGrid[1] + "," + localWorkerGrid[2]
+                        + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
+            } else {
+                fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + OCLAssemblerConstants.FPGA_THREAD_DEFAULT_PARALLEL_ATTRIBUTE
+                        + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
+            }
         } else {
-            return OCLAssemblerConstants.FPGA_ATTRIBUTE;
+            fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SEQUENTIAL + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
         }
+        return fpgaThreadAttribute;
     }
 
     public void emitAttribute(OCLCompilationResultBuilder crb) {
-        if (crb.isParallel()) {
-            String parallelFPGAThreadAttribute = createFPGAThreadAttribute(crb.getTaskMetaData());
-            emitSymbol(parallelFPGAThreadAttribute);
-        } else {
-            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE_SEQ);
-        }
+        String fpgaThreadAttribute = createFPGAThreadAttribute(crb);
+        emitSymbol(fpgaThreadAttribute);
         emitLine("");
     }
 
