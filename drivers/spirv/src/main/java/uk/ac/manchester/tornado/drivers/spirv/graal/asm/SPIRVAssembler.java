@@ -108,6 +108,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId mainFunctionID;
     public SPIRVId functionPre;
     public SPIRVInstScope blockZeroScope;
+    public SPIRVId returnLabel;
 
     public final Stack<SPIRVInstScope> currentBlockScopeStack;
 

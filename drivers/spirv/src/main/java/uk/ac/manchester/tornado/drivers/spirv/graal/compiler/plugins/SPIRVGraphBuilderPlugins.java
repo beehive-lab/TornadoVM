@@ -259,7 +259,6 @@ public class SPIRVGraphBuilderPlugins {
                 return true;
             }
         });
-
     }
 
     // FIXME: Revisit this method. In SPIR-V we can avoid this compiler Internal.

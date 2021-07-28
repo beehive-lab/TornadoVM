@@ -128,6 +128,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCallStack;
 import uk.ac.manchester.tornado.drivers.spirv.tests.TestLKBufferAccess;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -967,6 +968,15 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
+
+        if (TornadoOptions.SPIRV_RETURN_LABEL) {
+            if (asm.returnLabel != null) {
+                SPIRVLogger.traceCodeGen("emit SPIRVOpReturn");
+                SPIRVInstScope block = asm.functionScope.add(new SPIRVOpLabel(asm.returnLabel));
+                block.add(new SPIRVOpReturn());
+            }
+        }
+
         SPIRVLogger.traceCodeGen("emit SPIRVOpFunctionEnd");
         asm.closeFunction(asm.functionScope);
     }
