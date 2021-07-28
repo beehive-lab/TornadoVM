@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -82,6 +83,7 @@ import jdk.vm.ci.meta.DefaultProfilingInfo;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
+import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
@@ -95,6 +97,7 @@ import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -187,7 +190,7 @@ public class OCLCompiler {
             if (r.meta != null && (r.meta.isParallel() || r.meta.isGridSchedulerEnabled())) {
                 isParallel = true;
             }
-            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
+            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel, r.meta);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);
         }
@@ -247,13 +250,13 @@ public class OCLCompiler {
     }
 
     public static <T extends OCLCompilationResult> void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, OCLBackend backend, T compilationResult,
-            CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel) {
+            CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel, TaskMetaData metaData) {
         try (DebugContext.Scope s = getDebugContext().scope("OpenCLBackend", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
             try (DebugContext.Scope s2 = getDebugContext().scope("OpenCLCodeGen", lirGen, lirGen.getLIR())) {
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
-                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel);
+                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel, metaData);
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
@@ -337,10 +340,10 @@ public class OCLCompiler {
     }
 
     public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, LIRGenerationResult lirGenRes,
-            OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel) {
+            OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel, TaskMetaData metaData) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, factory, isKernel, isParallel);
+            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, factory, isKernel, isParallel, metaData);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
 
             if (assumptions != null && !assumptions.isEmpty()) {
@@ -413,7 +416,6 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend) {
-
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 

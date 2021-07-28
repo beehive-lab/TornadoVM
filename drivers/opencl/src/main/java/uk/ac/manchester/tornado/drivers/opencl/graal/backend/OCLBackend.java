@@ -579,7 +579,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel,
-            boolean isParallel) {
+            boolean isParallel, TaskMetaData metaData) {
 
         OCLAssembler asm = createAssembler();
         OCLFrameContext frameContext = new OCLFrameContext();
@@ -587,6 +587,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
+        crb.setTaskMetaData(metaData);
         crb.setDeviceContext(deviceContext);
         return crb;
     }

@@ -37,6 +37,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -58,6 +59,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public final class OCLAssembler extends Assembler {
 
@@ -1132,9 +1134,20 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
+    private String createFPGAThreadAttribute(TaskMetaData metaData) {
+        if (metaData.isGridSchedulerEnabled()) {
+            long[] localWorkerGrid = metaData.getWorkerGrid(metaData.getId()).getLocalWork();
+            String fpgaThreadAttribute = "__attribute__((reqd_work_group_size(" + localWorkerGrid[0] + "," + localWorkerGrid[1] + "," + localWorkerGrid[2] + ")))";
+            return fpgaThreadAttribute;
+        } else {
+            return OCLAssemblerConstants.FPGA_ATTRIBUTE;
+        }
+    }
+
     public void emitAttribute(OCLCompilationResultBuilder crb) {
         if (crb.isParallel()) {
-            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE);
+            String parallelFPGAThreadAttribute = createFPGAThreadAttribute(crb.getTaskMetaData());
+            emitSymbol(parallelFPGAThreadAttribute);
         } else {
             emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE_SEQ);
         }
