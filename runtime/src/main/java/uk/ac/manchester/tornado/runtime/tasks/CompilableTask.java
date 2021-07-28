@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -169,6 +170,11 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public void setUseGridScheduler(boolean use) {
         meta.setUseGridScheduler(use);
+    }
+
+    @Override
+    public void setGridScheduler(GridScheduler gridScheduler) {
+        meta.setGridScheduler(gridScheduler);
     }
 
     @Override
