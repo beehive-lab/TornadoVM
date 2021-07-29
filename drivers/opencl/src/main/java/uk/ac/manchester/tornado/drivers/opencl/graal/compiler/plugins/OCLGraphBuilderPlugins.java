@@ -66,6 +66,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
@@ -234,6 +235,18 @@ public class OCLGraphBuilderPlugins {
         });
     }
 
+    private static void registerGlobalWorkGroupSize(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Int;
+        r.register2("getGlobalGroupSize", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                GlobalThreadSizeNode threadSize = new GlobalThreadSizeNode((ConstantNode) size);
+                b.push(returnedJavaKind, threadSize);
+                return true;
+            }
+        });
+    }
+
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateIntLocalArray", Receiver.class, int.class, new InvocationPlugin() {
             @Override
@@ -309,6 +322,7 @@ public class OCLGraphBuilderPlugins {
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
         localWorkGroupPlugin(r);
+        registerGlobalWorkGroupSize(r);
         localArraysPlugins(r);
     }
 
