@@ -106,8 +106,6 @@ public class OCLAssemblerConstants {
 
     public static final String FPGA_THREAD_ATTRIBUTE_PREFIX = "__attribute__((reqd_work_group_size(";
     public static final String FPGA_THREAD_ATTRIBUTE_SUFFIX = ")))";
-    public static final String FPGA_THREAD_DEFAULT_PARALLEL_ATTRIBUTE = "64, 1, 1";
-    public static final String FPGA_THREAD_ATTRIBUTE_SEQUENTIAL = "1, 1, 1";
 
     public static final int STACK_BASE_OFFSET = 3;
 }
