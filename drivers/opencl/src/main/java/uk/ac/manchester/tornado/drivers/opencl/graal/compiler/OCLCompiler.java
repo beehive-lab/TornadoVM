@@ -455,8 +455,10 @@ public class OCLCompiler {
         }
 
         /*
-         * Given the non-inlined methods A, B, C, D and the call graph below, method D
-         * can be compiled twice. A → B → D ↘ C ↗ We use hash set below to prevent this.
+         * Given the non-inlined methods A, B, C, D and the call graph below, method D can be compiled twice.
+         * A  → B → D
+         *    ↘ C ↗
+         * We use hash set below to prevent this.
          */
         final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
         final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());

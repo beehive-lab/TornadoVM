@@ -49,11 +49,6 @@ public class OCLFPGAThreadScheduler extends Phase {
         this.context = context;
     }
 
-    private boolean isGridSequential(WorkerGrid workerGrid) {
-        return workerGrid.getGlobalWork()[0] == OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D && workerGrid.getGlobalWork()[1] == OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D
-                && workerGrid.getGlobalWork()[2] == OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
-    }
-
     @Override
     protected void run(StructuredGraph graph) {
         if (graph.hasLoops() && context.isPlatformFPGA()) {
