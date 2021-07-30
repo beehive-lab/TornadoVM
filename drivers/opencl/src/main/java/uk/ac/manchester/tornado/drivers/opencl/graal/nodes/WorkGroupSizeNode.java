@@ -34,15 +34,15 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 @NodeInfo
-public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLowerable {
+public class WorkGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
     @Successor
     LoopBeginNode loopBegin;
     @Input
     LocalWorkGroupDimensionsNode localWorkNode;
-    public static final NodeClass<ThreadConfigurationNode> TYPE = NodeClass.create(ThreadConfigurationNode.class);
+    public static final NodeClass<WorkGroupSizeNode> TYPE = NodeClass.create(WorkGroupSizeNode.class);
 
-    public ThreadConfigurationNode(LocalWorkGroupDimensionsNode localWork) {
+    public WorkGroupSizeNode(LocalWorkGroupDimensionsNode localWork) {
         super(TYPE, StampFactory.forVoid());
         this.localWorkNode = localWork;
     }

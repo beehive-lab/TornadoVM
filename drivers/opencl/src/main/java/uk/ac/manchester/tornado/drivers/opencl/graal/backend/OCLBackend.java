@@ -115,7 +115,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -505,8 +505,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
-                ThreadConfigurationNode fpgaNode = (ThreadConfigurationNode) (cfg.getStartBlock().getEndNode().predecessor().asNode());
+            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof WorkGroupSizeNode) {
+                WorkGroupSizeNode fpgaNode = (WorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor().asNode());
                 String attribute = fpgaNode.createThreadAttribute();
 
                 asm.emitSymbol(attribute);
