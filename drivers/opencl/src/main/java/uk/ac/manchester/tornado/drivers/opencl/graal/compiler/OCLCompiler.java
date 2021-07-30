@@ -94,6 +94,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -206,6 +207,12 @@ public class OCLCompiler {
         return graph.start().next() == null;
     }
 
+    private static void attachTaskMetaDataToLowTier(TaskMetaData metaData, TornadoLowTier lowTier) {
+        if (lowTier instanceof OCLLowTier) {
+            ((OCLLowTier) lowTier).attachTaskMetaDataToDeviceContext(metaData);
+        }
+    }
+
     /**
      * Builds the graph, optimizes it.
      */
@@ -238,7 +245,10 @@ public class OCLCompiler {
             graph.maybeCompress();
 
             final LowTierContext lowTierContext = new LowTierContext(providers, backend);
-            suites.getLowTier().apply(graph, lowTierContext);
+
+            TornadoLowTier lowTier = suites.getLowTier();
+            attachTaskMetaDataToLowTier(meta, lowTier);
+            lowTier.apply(graph, lowTierContext);
 
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
         } catch (Throwable e) {
