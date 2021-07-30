@@ -106,6 +106,12 @@ public class OCLAssemblerConstants {
 
     public static final String FPGA_THREAD_ATTRIBUTE_PREFIX = "__attribute__((reqd_work_group_size(";
     public static final String FPGA_THREAD_ATTRIBUTE_SUFFIX = ")))";
+    public static final int DEFAULT_FPGA_PARALLEL_1D = 64; // This value was chosen for Intel FPGAs due to experimental results
+    public static final int DEFAULT_FPGA_PARALLEL_2D = 1;
+    public static final int DEFAULT_FPGA_PARALLEL_3D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_1D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_2D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_3D = 1;
 
     public static final int STACK_BASE_OFFSET = 3;
 }

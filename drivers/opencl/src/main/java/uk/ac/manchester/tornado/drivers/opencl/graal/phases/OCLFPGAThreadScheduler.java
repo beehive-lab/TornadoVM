@@ -32,20 +32,26 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAThreadScheduler extends Phase {
 
-    private int oneD = 64; // XXX: This value was chosen for Intel FPGAs due to experimental results
-    private int twoD = 1;
-    private int threeD = 1;
+    private int oneD = OCLAssemblerConstants.DEFAULT_FPGA_PARALLEL_1D;
+    private int twoD = OCLAssemblerConstants.DEFAULT_FPGA_PARALLEL_2D;
+    private int threeD = OCLAssemblerConstants.DEFAULT_FPGA_PARALLEL_3D;
 
     TornadoDeviceContext context;
 
     public OCLFPGAThreadScheduler(TornadoDeviceContext context) {
         this.context = context;
+    }
+
+    private boolean isGridSequential(WorkerGrid workerGrid) {
+        return workerGrid.getGlobalWork()[0] == OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D && workerGrid.getGlobalWork()[1] == OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D
+                && workerGrid.getGlobalWork()[2] == OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
     }
 
     @Override
@@ -61,27 +67,29 @@ public class OCLFPGAThreadScheduler extends Phase {
                     if (metaData.isGridSchedulerEnabled()) {
                         WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
                         if (workerGrid != null) {
-                            oneD = (int) workerGrid.getLocalWork()[0];
-                            twoD = (int) workerGrid.getLocalWork()[1];
-                            threeD = (int) workerGrid.getLocalWork()[2];
+                            if (isGridSequential(workerGrid)) {
+                                oneD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D;
+                                twoD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D;
+                                threeD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
+                            } else {
+                                oneD = (int) workerGrid.getLocalWork()[0];
+                                twoD = (int) workerGrid.getLocalWork()[1];
+                                threeD = (int) workerGrid.getLocalWork()[2];
+                            }
                         }
                     } else {
-                        if (metaData.isParallel()) {
-                            oneD = 64;
-                            twoD = 1;
-                            threeD = 1;
-                        } else {
-                            oneD = 1;
-                            twoD = 1;
-                            threeD = 1;
+                        if (!metaData.isParallel()) { // Sequential kernel
+                            oneD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D;
+                            twoD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D;
+                            threeD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
                         }
                     }
                 }
             }
 
             final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
-            ThreadConfigurationNode threadConfig = graph.addOrUnique(new ThreadConfigurationNode(localWorkGroupNode));
-            graph.addBeforeFixed(end, threadConfig);
+            WorkGroupSizeNode workGroupSizeNode = graph.addOrUnique(new WorkGroupSizeNode(localWorkGroupNode));
+            graph.addBeforeFixed(end, workGroupSizeNode);
         }
     }
 }
