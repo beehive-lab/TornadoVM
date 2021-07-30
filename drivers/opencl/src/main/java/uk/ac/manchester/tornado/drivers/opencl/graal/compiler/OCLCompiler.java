@@ -188,7 +188,7 @@ public class OCLCompiler {
             if (r.meta != null && (r.meta.isParallel() || r.meta.isGridSchedulerEnabled())) {
                 isParallel = true;
             }
-            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel, r.meta);
+            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
         } catch (Throwable e) {
             throw getDebugContext().handle(e);
         }
@@ -257,13 +257,13 @@ public class OCLCompiler {
     }
 
     public static <T extends OCLCompilationResult> void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, OCLBackend backend, T compilationResult,
-            CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel, TaskMetaData metaData) {
+            CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel) {
         try (DebugContext.Scope s = getDebugContext().scope("OpenCLBackend", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
             try (DebugContext.Scope s2 = getDebugContext().scope("OpenCLCodeGen", lirGen, lirGen.getLIR())) {
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
-                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel, metaData);
+                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel);
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
@@ -347,10 +347,10 @@ public class OCLCompiler {
     }
 
     public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, LIRGenerationResult lirGenRes,
-            OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel, TaskMetaData metaData) {
+            OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, factory, isKernel, isParallel, metaData);
+            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, factory, isKernel, isParallel);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
 
             if (assumptions != null && !assumptions.isEmpty()) {
