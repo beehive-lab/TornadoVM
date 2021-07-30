@@ -855,9 +855,9 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getSemantics());
+            SPIRVLogger.traceCodeGen("emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getMemorySementics());
             SPIRVId constant2 = asm.lookUpConstant("2", SPIRVKind.OP_TYPE_INT_32);
-            SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(flags.getSemantics()), SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(flags.getMemorySementics()), SPIRVKind.OP_TYPE_INT_32);
             // SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(0x200 |
             // 0x10), SPIRVKind.OP_TYPE_INT_32);
             asm.currentBlockScope().add(new SPIRVOpControlBarrier(constant2, constant2, constantSemantics));

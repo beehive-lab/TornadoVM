@@ -24,14 +24,14 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
         GLOBAL(0x200 | 0x10), //
         LOCAL(0x100 | 0x10); //
 
-        private int semantics;
+        private int memorySemantics;
 
         SPIRVMemFenceFlags(int semantics) {
-            this.semantics = semantics;
+            this.memorySemantics = semantics;
         }
 
-        public int getSemantics() {
-            return semantics;
+        public int getMemorySementics() {
+            return memorySemantics;
         }
     }
 
