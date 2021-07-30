@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDeviceContext {
@@ -69,4 +70,8 @@ public interface TornadoDeviceContext {
     String getDeviceName();
 
     int getDriverIndex();
+
+    void attachTaskMetaData(TaskMetaDataInterface metaDataInterface);
+
+    TaskMetaDataInterface getTaskMetaData();
 }
