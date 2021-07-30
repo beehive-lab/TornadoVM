@@ -1134,31 +1134,6 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
-    private static String createFPGAThreadAttribute(OCLCompilationResultBuilder crb) {
-        TaskMetaData metaData = crb.getTaskMetaData();
-        String fpgaThreadAttribute;
-
-        if (crb.isParallel()) {
-            if (metaData.isGridSchedulerEnabled()) {
-                long[] localWorkerGrid = metaData.getWorkerGrid(metaData.getId()).getLocalWork();
-                fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkerGrid[0] + "," + localWorkerGrid[1] + "," + localWorkerGrid[2]
-                        + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
-            } else {
-                fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + OCLAssemblerConstants.FPGA_THREAD_DEFAULT_PARALLEL_ATTRIBUTE
-                        + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
-            }
-        } else {
-            fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SEQUENTIAL + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
-        }
-        return fpgaThreadAttribute;
-    }
-
-    public void emitAttribute(OCLCompilationResultBuilder crb) {
-        String fpgaThreadAttribute = createFPGAThreadAttribute(crb);
-        emitSymbol(fpgaThreadAttribute);
-        emitLine("");
-    }
-
     public void assign() {
         emitSymbol(OCLAssemblerConstants.ASSIGN);
     }
