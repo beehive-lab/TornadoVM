@@ -30,8 +30,11 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAThreadScheduler extends Phase {
 
@@ -50,6 +53,32 @@ public class OCLFPGAThreadScheduler extends Phase {
         if (graph.hasLoops() && context.isPlatformFPGA()) {
             NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
             EndNode end = filter.first();
+            TaskMetaData metaData;
+
+            if (context instanceof OCLDeviceContext) {
+                metaData = (TaskMetaData) context.getTaskMetaData();
+                if (metaData != null) {
+                    if (metaData.isGridSchedulerEnabled()) {
+                        WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
+                        if (workerGrid != null) {
+                            oneD = (int) workerGrid.getLocalWork()[0];
+                            twoD = (int) workerGrid.getLocalWork()[1];
+                            threeD = (int) workerGrid.getLocalWork()[2];
+                        }
+                    } else {
+                        if (metaData.isParallel()) {
+                            oneD = 64;
+                            twoD = 1;
+                            threeD = 1;
+                        } else {
+                            oneD = 1;
+                            twoD = 1;
+                            threeD = 1;
+                        }
+                    }
+                }
+            }
+
             final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
             ThreadConfigurationNode threadConfig = graph.addOrUnique(new ThreadConfigurationNode(localWorkGroupNode));
             graph.addBeforeFixed(end, threadConfig);

@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 @NodeInfo
 public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLowerable {
@@ -38,12 +39,12 @@ public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLow
     @Successor
     LoopBeginNode loopBegin;
     @Input
-    LocalWorkGroupDimensionsNode localWork;
+    LocalWorkGroupDimensionsNode localWorkNode;
     public static final NodeClass<ThreadConfigurationNode> TYPE = NodeClass.create(ThreadConfigurationNode.class);
 
     public ThreadConfigurationNode(LocalWorkGroupDimensionsNode localWork) {
         super(TYPE, StampFactory.forVoid());
-        this.localWork = localWork;
+        this.localWorkNode = localWork;
     }
 
     /**
@@ -52,5 +53,13 @@ public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLow
      */
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
+    }
+
+    public String createThreadAttribute() {
+        String fpgaThreadAttribute;
+        fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkNode.oneD + ", " + localWorkNode.twoD + ", " + localWorkNode.threeD
+                + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
+
+        return fpgaThreadAttribute;
     }
 }
