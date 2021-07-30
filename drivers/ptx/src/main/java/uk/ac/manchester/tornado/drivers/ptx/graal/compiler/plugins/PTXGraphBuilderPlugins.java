@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXBarrierNode;
@@ -204,6 +205,18 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
+    private static void registerGlobalWorkGroupSize(Registration r) {
+        JavaKind returnedJavaKind = JavaKind.Int;
+        r.register2("getGlobalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
+                GlobalThreadSizeNode threadSize = new GlobalThreadSizeNode((ConstantNode) size);
+                b.push(returnedJavaKind, threadSize);
+                return true;
+            }
+        });
+    }
+
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
             @Override
@@ -279,6 +292,7 @@ public class PTXGraphBuilderPlugins {
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
         localWorkGroupPlugin(r);
+        registerGlobalWorkGroupSize(r);
         localArraysPlugins(r);
     }
 
