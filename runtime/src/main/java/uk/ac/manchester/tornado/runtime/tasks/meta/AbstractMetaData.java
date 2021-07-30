@@ -475,6 +475,10 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return (gridScheduler != null && gridScheduler.get(getId()) != null);
     }
 
+    public boolean isGridSequential() {
+        return getWorkerGrid(getId()).getGlobalWork()[0] == 1 && getWorkerGrid(getId()).getGlobalWork()[1] == 1 && getWorkerGrid(getId()).getGlobalWork()[2] == 1;
+    }
+
     public WorkerGrid getWorkerGrid(String taskName) {
         return gridScheduler.get(taskName);
     }

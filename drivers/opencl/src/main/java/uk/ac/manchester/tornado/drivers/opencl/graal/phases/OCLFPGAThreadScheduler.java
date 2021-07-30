@@ -65,9 +65,9 @@ public class OCLFPGAThreadScheduler extends Phase {
                 metaData = (TaskMetaData) context.getTaskMetaData();
                 if (metaData != null) {
                     if (metaData.isGridSchedulerEnabled()) {
-                        WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
-                        if (workerGrid != null) {
-                            if (isGridSequential(workerGrid)) {
+                        if (metaData.isWorkerGridAvailable()) {
+                            WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
+                            if (metaData.isGridSequential()) {
                                 oneD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D;
                                 twoD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D;
                                 threeD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
