@@ -30,7 +30,7 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
             this.memorySemantics = semantics;
         }
 
-        public int getMemorySementics() {
+        public int getMemorySemantics() {
             return memorySemantics;
         }
     }
