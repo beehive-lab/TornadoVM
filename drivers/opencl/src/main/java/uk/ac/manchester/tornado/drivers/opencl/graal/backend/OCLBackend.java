@@ -506,7 +506,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              */
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
             if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
-                asm.emitAttribute(crb); // value
+                ThreadConfigurationNode fpgaNode = (ThreadConfigurationNode) (cfg.getStartBlock().getEndNode().predecessor().asNode());
+                String attribute = fpgaNode.createThreadAttribute();
+
+                asm.emitSymbol(attribute);
+                asm.emitLine("");
             }
 
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
