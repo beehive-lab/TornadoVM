@@ -29,7 +29,7 @@ public class LevelZeroCommandQueue {
         return this.zeCommandQueueHandle;
     }
 
-    native int zeCommandQueueExecuteCommandLists_native(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, Object hFence);
+    native int zeCommandQueueExecuteCommandLists_native(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, long fenceHandlerPointer);
 
     /**
      * Executes a command list in a command queue.
@@ -81,8 +81,8 @@ public class LevelZeroCommandQueue {
      *
      *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
      */
-    public int zeCommandQueueExecuteCommandLists(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, Object hFence) {
-        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandListHandler, hFence);
+    public int zeCommandQueueExecuteCommandLists(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, LevelZeroFence hFence) {
+        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandListHandler, hFence == null ? -1 : hFence.getHandlerPointer());
     }
 
     native int zeCommandQueueSynchronize_native(long commandQueueHandlerPointer, long timeOut);

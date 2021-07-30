@@ -11,10 +11,10 @@ extern "C" {
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandQueue
  * Method:    zeCommandQueueExecuteCommandLists_native
- * Signature: (JILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueListHandle;Ljava/lang/Object;)I
- */
+ * Signature: (JILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandListHandle;J)I
+*/
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandQueue_zeCommandQueueExecuteCommandLists_1native
-        (JNIEnv *, jobject, jlong, jint, jobject, jobject);
+    (JNIEnv *, jobject, jlong, jint, jobject, jlong);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandQueue

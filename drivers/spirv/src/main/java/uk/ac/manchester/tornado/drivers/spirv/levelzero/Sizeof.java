@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
+/**
+ * Size, in bytes, for each primitive type in level-zero.
+ */
 public enum Sizeof {
 
     POINTER(8),

@@ -8,6 +8,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroFence;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
@@ -20,25 +21,21 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPrope
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeComputeProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceCacheProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceImageProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceFlag;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryAccessProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
@@ -48,35 +45,35 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
 /**
  * Kernel to test:
- * 
+ *
  * <code>
  *    __kernel void copydata(__global int* input, __global int* output) {
  * 	         uint idx = get_global_id(0);
  * 	         output[idx] = input[idx];
- *    }      
+ *    }
  * </code>
- * 
- * 
+ *
+ *
  * To compile to SPIR-V:
- * 
+ *
  * <code>
  *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
  *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
  *     $ mv opencl-copy.spv /tmp
  * </code>
- * 
+ *
  * How to run?
- * 
+ *
  * <code>
  *     tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZero
  * </code>
- * 
+ *
  */
-public class TestLevelZero {
+public class TestFences {
 
     // Test Program
     public static void main(String[] args) throws IOException {
-        System.out.println("Level-ZERO JNI Library - Test");
+        System.out.println("Level-ZERO JNI Library - TestFences");
 
         // Create the Level Zero Driver
         LevelZeroDriver driver = new LevelZeroDriver();
@@ -91,8 +88,6 @@ public class TestLevelZero {
 
         result = driver.zeDriverGet(numDrivers, driverHandler);
         LevelZeroUtils.errorLog("zeDriverGet", result);
-
-        ZeDeviceType type = ZeDeviceType.ZE_DEVICE_TYPE_GPU;
 
         // ============================================
         // Create the Context
@@ -134,65 +129,6 @@ public class TestLevelZero {
         // Query device properties
         // ============================================
         LevelZeroDevice device = driver.getDevice(driverHandler, 0);
-        ZeDeviceProperties deviceProperties = new ZeDeviceProperties();
-        result = device.zeDeviceGetProperties(device.getDeviceHandlerPtr(), deviceProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetProperties", result);
-        System.out.println(deviceProperties);
-
-        // ============================================
-        // Query device compute-properties
-        // ============================================
-        ZeComputeProperties computeProperties = new ZeComputeProperties();
-        result = device.zeDeviceGetComputeProperties(device.getDeviceHandlerPtr(), computeProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetComputeProperties", result);
-        System.out.println(computeProperties);
-
-        // ============================================
-        // Query device memory
-        // ============================================
-        // A) Count memories
-        int[] memoryCount = new int[1];
-        result = device.zeDeviceGetMemoryProperties(device.getDeviceHandlerPtr(), memoryCount, null);
-        LevelZeroUtils.errorLog("zeDeviceGetMemoryProperties", result);
-
-        // B) Access the properties of each of the memories
-        ZeMemoryProperties[] memoryProperties = new ZeMemoryProperties[memoryCount[0]];
-        result = device.zeDeviceGetMemoryProperties(device.getDeviceHandlerPtr(), memoryCount, memoryProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetMemoryProperties", result);
-        for (ZeMemoryProperties m : memoryProperties) {
-            System.out.println(m);
-        }
-
-        // ============================================
-        // Query device memory access properties
-        // ============================================
-        ZeMemoryAccessProperties memoryAccessProperties = new ZeMemoryAccessProperties();
-        result = device.zeDeviceGetMemoryAccessProperties(device.getDeviceHandlerPtr(), memoryAccessProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetMemoryAccessProperties", result);
-        System.out.println(memoryAccessProperties);
-
-        // ============================================
-        // Query device cache properties
-        // ============================================
-        int[] cacheCount = new int[1];
-        result = device.zeDeviceGetCacheProperties(device.getDeviceHandlerPtr(), cacheCount, null);
-        LevelZeroUtils.errorLog("zeDeviceGetCacheProperties", result);
-
-        ZeDeviceCacheProperties[] cacheProperties = new ZeDeviceCacheProperties[cacheCount[0]];
-        result = device.zeDeviceGetCacheProperties(device.getDeviceHandlerPtr(), cacheCount, cacheProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetCacheProperties", result);
-
-        for (ZeDeviceCacheProperties c : cacheProperties) {
-            System.out.println(c);
-        }
-
-        // ============================================
-        // Query device image properties
-        // ============================================
-        ZeDeviceImageProperties imageProperties = new ZeDeviceImageProperties();
-        device.zeDeviceGetImageProperties(device.getDeviceHandlerPtr(), imageProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetImageProperties", result);
-        System.out.println(imageProperties);
 
         // ============================================
         // Create a command queue
@@ -250,20 +186,13 @@ public class TestLevelZero {
         ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
-        // We force GC collection to check all memory buffers and JNI calls
-        System.gc();
-
         LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
         result = context.zeMemAllocShared(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferA);
         LevelZeroUtils.errorLog("zeMemAllocShared", result);
 
-        System.gc();
-
         LevelZeroBufferInteger bufferB = new LevelZeroBufferInteger();
         result = context.zeMemAllocShared(context.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
         LevelZeroUtils.errorLog("zeMemAllocShared", result);
-
-        System.gc();
 
         bufferA.memset(100, elements);
         bufferB.memset(0, elements);
@@ -274,12 +203,8 @@ public class TestLevelZero {
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
 
-        System.gc();
-
         result = context.zeModuleCreate(context.getDefaultContextPtr(), device.getDeviceHandlerPtr(), moduleDesc, module, buildLog, "/tmp/opencl-copy.spv");
         LevelZeroUtils.errorLog("zeModuleCreate", result);
-
-        System.gc();
 
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             // Print Logs
@@ -290,8 +215,6 @@ public class TestLevelZero {
             LevelZeroUtils.errorLog("zeModuleBuildLogGetString", result);
         }
 
-        System.gc();
-
         // Create Module Object
         LevelZeroModule levelZeroModule = new LevelZeroModule(module, moduleDesc, buildLog);
 
@@ -299,15 +222,11 @@ public class TestLevelZero {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
-        System.gc();
-
         ZeKernelDesc kernelDesc = new ZeKernelDesc();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName("copydata");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
         LevelZeroUtils.errorLog("zeKernelCreate", result);
-
-        System.gc();
 
         // We create a kernel Object
         LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel, levelZeroModule);
@@ -317,6 +236,7 @@ public class TestLevelZero {
         int[] groupSizeX = new int[] { 32 };
         int[] groupSizeY = new int[] { 1 };
         int[] groupSizeZ = new int[] { 1 };
+
         result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), elements, 1, 1, groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
 
@@ -340,13 +260,26 @@ public class TestLevelZero {
         result = commandList.zeCommandListClose(zeCommandListHandler.getPtrZeCommandListHandle());
         LevelZeroUtils.errorLog("zeCommandListClose", result);
 
-        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueueHandle.getCommandQueueHandlerPointer(), 1, zeCommandListHandler, null);
+        // Create a Fence
+        ZeFenceDesc fenceDesc = new ZeFenceDesc();
+        fenceDesc.setFlags(ZeFenceFlag.ZE_FENCE_FLAG_SIGNALED);
+        ZeFenceHandle fenceHandler = new ZeFenceHandle();
+
+        LevelZeroFence fence = new LevelZeroFence(fenceDesc, fenceHandler);
+        result = fence.zeFenceCreate(commandQueueHandle.getCommandQueueHandlerPointer(), fenceDesc, fenceHandler);
+        LevelZeroUtils.errorLog("zeFenceCreate", result);
+
+        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueueHandle.getCommandQueueHandlerPointer(), 1, zeCommandListHandler, fence);
         LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
+
+        result = fence.zeFenceHostSynchronize(fenceHandler.getPtrZeFenceHandle(), Long.MAX_VALUE);
+        LevelZeroUtils.errorLog("zeFenceHostSynchronize", result);
+
+        result = fence.zeFenceReset(fenceHandler.getPtrZeFenceHandle());
+        LevelZeroUtils.errorLog("zeFenceReset", result);
 
         result = commandQueue.zeCommandQueueSynchronize(commandQueueHandle.getCommandQueueHandlerPointer(), Long.MAX_VALUE);
         LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
-
-        System.gc();
 
         boolean isEqual = bufferA.isEqual(bufferB, elements);
         if (isEqual) {
@@ -369,5 +302,4 @@ public class TestLevelZero {
         LevelZeroUtils.errorLog("zeContextDestroy", result);
 
     }
-
 }

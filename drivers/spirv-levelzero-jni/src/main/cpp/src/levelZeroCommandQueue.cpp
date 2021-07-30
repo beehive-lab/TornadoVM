@@ -9,10 +9,10 @@
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandQueue
  * Method:    zeCommandQueueExecuteCommandLists_native
- * Signature: (JILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueListHandle;Ljava/lang/Object;)I
- */
+ * Signature: (JILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandListHandle;J)I
+*/
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandQueue_zeCommandQueueExecuteCommandLists_1native
-        (JNIEnv *env , jobject , jlong javaCommandQueueHandler, jint numCommandLists, jobject javaCommandListHandler, jobject  javaHFence) {
+    (JNIEnv *env , jobject , jlong javaCommandQueueHandler, jint numCommandLists, jobject javaCommandListHandler, jlong fencePointer) {
 
     ze_command_queue_handle_t commandQueue = reinterpret_cast<ze_command_queue_handle_t>(javaCommandQueueHandler);
 
@@ -21,7 +21,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jlong ptrCommandListHandler = env->GetLongField(javaCommandListHandler, fieldPointer);
     ze_command_list_handle_t commandList = reinterpret_cast<ze_command_list_handle_t>(ptrCommandListHandler);
 
-    ze_result_t result = zeCommandQueueExecuteCommandLists(commandQueue, numCommandLists, &commandList, nullptr);
+    ze_fence_handle_t fenceHandle = nullptr;
+    if (fencePointer != -1) {
+        fenceHandle = reinterpret_cast<ze_fence_handle_t>(fencePointer);
+    }
+
+    ze_result_t result = zeCommandQueueExecuteCommandLists(commandQueue, numCommandLists, &commandList, fenceHandle);
     LOG_ZE_JNI("zeCommandQueueExecuteCommandLists", result);
 
     // Set CommandQueue List handler pointer

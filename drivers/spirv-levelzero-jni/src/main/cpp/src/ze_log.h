@@ -5,7 +5,7 @@
 #ifndef TORNADO_ZE_LOG_H
 #define TORNADO_ZE_LOG_H
 
-#define LOG_JNI 0
+#define LOG_JNI 1
 
 #define RED "\033[1;31m"
 #define GREEN "\033[32m"
