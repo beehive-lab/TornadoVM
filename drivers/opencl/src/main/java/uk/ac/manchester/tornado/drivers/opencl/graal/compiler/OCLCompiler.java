@@ -185,7 +185,7 @@ public class OCLCompiler {
              * to use a domain with depth greater than zero, or (ii) it uses the
              * GridScheduler.
              */
-            if (r.meta != null && (r.meta.isParallel() || r.meta.isGridSchedulerEnabled())) {
+            if (r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()))) {
                 isParallel = true;
             }
             emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
