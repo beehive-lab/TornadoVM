@@ -22,9 +22,9 @@ public class LevelZeroCommandList {
         return this.context;
     }
 
-    native int zeCommandListAppendLaunchKernel_native(long commandListHandler, long ptrZeKernelHandle, ZeGroupDispatch dispatch, Object signalEvent, int numWaitEvents, Object phWaitEvents);
+    native int zeCommandListAppendLaunchKernel_native(long commandListHandler, long ptrZeKernelHandle, ZeGroupDispatch dispatch, ZeEventHandle signalEvent, int numWaitEvents, Object phWaitEvents);
 
-    public int zeCommandListAppendLaunchKernel(long commandListHandler, long ptrZeKernelHandle, ZeGroupDispatch dispatch, Object signalEvent, int numWaitEvents, Object phWaitEvents) {
+    public int zeCommandListAppendLaunchKernel(long commandListHandler, long ptrZeKernelHandle, ZeGroupDispatch dispatch, ZeEventHandle signalEvent, int numWaitEvents, Object phWaitEvents) {
         return zeCommandListAppendLaunchKernel_native(commandListHandler, ptrZeKernelHandle, dispatch, signalEvent, numWaitEvents, phWaitEvents);
     }
 
@@ -423,4 +423,13 @@ public class LevelZeroCommandList {
     public int zeCommandListReset(long commandListHandlerPtr) {
         return zeCommandListReset_native(commandListHandlerPtr);
     }
+
+    private native int zeCommandListAppendQueryKernelTimestamps_native(long commandListHandlerPtr, int numEvents, ZeEventHandle event, LevelZeroByteBuffer timeStampBuffer, int[] offsets,
+            ZeEventHandle signalEventHandler, int numWaitEvents, ZeEventHandle[] waitEventsHandlers);
+
+    public int zeCommandListAppendQueryKernelTimestamps(long commandListHandlerPtr, int numEvents, ZeEventHandle event, LevelZeroByteBuffer timeStampBuffer, int[] offsets,
+            ZeEventHandle signalEventHandler, int numWaitEvents, ZeEventHandle[] waitEventsHandlers) {
+        return zeCommandListAppendQueryKernelTimestamps_native(commandListHandlerPtr, numEvents, event, timeStampBuffer, offsets, signalEventHandler, numWaitEvents, waitEventsHandlers);
+    }
+
 }

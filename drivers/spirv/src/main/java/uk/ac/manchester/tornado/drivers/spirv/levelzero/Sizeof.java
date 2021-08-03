@@ -5,6 +5,9 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
  */
 public enum Sizeof {
 
+    // @formatter:off
+    
+    // Primitive Types
     POINTER(8),
     BYTE(1),
     BOOLEAN(1),
@@ -13,7 +16,12 @@ public enum Sizeof {
     INT(4),
     FLOAT(4),
     DOUBLE(8),
-    LONG(8);
+    LONG(8),
+    
+    // Native types in Level Zero
+    ze_kernel_timestamp_result_t(32);
+    
+    // @formatter:on
 
     private int numBytes;
 

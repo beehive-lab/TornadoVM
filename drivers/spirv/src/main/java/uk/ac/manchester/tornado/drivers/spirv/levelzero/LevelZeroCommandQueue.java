@@ -82,7 +82,7 @@ public class LevelZeroCommandQueue {
      *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
      */
     public int zeCommandQueueExecuteCommandLists(long commandQueueHandlerPointer, int numCommandLists, ZeCommandListHandle commandListHandler, LevelZeroFence hFence) {
-        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandListHandler, hFence == null ? -1 : hFence.getHandlerPointer());
+        return zeCommandQueueExecuteCommandLists_native(commandQueueHandlerPointer, numCommandLists, commandListHandler, (hFence == null)? -1:hFence.getHandlerPointer());
     }
 
     native int zeCommandQueueSynchronize_native(long commandQueueHandlerPointer, long timeOut);
