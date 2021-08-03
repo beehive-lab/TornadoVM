@@ -59,7 +59,7 @@ public class FPGAWorkGroupSizeNode extends FixedWithNextNode implements LIRLower
 
     public String createThreadAttribute() {
         String fpgaThreadAttribute;
-        fpgaThreadAttribute = FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkNode.oneD + ", " + localWorkNode.twoD + ", " + localWorkNode.threeD + FPGA_THREAD_ATTRIBUTE_SUFFIX;
+        fpgaThreadAttribute = FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkNode.getXToString() + ", " + localWorkNode.getYToString() + ", " + localWorkNode.getZToString() + FPGA_THREAD_ATTRIBUTE_SUFFIX;
 
         return fpgaThreadAttribute;
     }

@@ -24,9 +24,13 @@
  * */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -45,9 +49,9 @@ public class OCLFPGAThreadScheduler extends Phase {
     public static final int DEFAULT_FPGA_SEQUENTIAL_2D = 1;
     public static final int DEFAULT_FPGA_SEQUENTIAL_3D = 1;
 
-    private int oneD = DEFAULT_FPGA_PARALLEL_1D;
-    private int twoD = DEFAULT_FPGA_PARALLEL_2D;
-    private int threeD = DEFAULT_FPGA_PARALLEL_3D;
+    private static int oneD = DEFAULT_FPGA_PARALLEL_1D;
+    private static int twoD = DEFAULT_FPGA_PARALLEL_2D;
+    private static int threeD = DEFAULT_FPGA_PARALLEL_3D;
 
     TornadoDeviceContext context;
 
@@ -88,7 +92,11 @@ public class OCLFPGAThreadScheduler extends Phase {
                 }
             }
 
-            final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
+            ConstantNode xNode = graph.addOrUnique(ConstantNode.forInt(oneD));
+            ConstantNode yNode = graph.addOrUnique(ConstantNode.forInt(twoD));
+            ConstantNode zNode = graph.addOrUnique(ConstantNode.forInt(threeD));
+
+            final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(xNode, yNode, zNode));
             FPGAWorkGroupSizeNode workGroupSizeNode = graph.addOrUnique(new FPGAWorkGroupSizeNode(localWorkGroupNode));
             graph.addBeforeFixed(end, workGroupSizeNode);
         }
