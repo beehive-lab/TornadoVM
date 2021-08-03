@@ -367,7 +367,7 @@ public class TornadoExecutionContext {
 
                 if (TornadoOptions.isProfilerEnabled()) {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
-                    value += event.getExecutionTime();
+                    value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                     DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
                     profiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getBuffer().size());
