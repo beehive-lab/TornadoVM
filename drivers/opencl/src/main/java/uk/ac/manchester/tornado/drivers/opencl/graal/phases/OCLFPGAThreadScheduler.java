@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WorkGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -83,7 +83,7 @@ public class OCLFPGAThreadScheduler extends Phase {
             }
 
             final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
-            WorkGroupSizeNode workGroupSizeNode = graph.addOrUnique(new WorkGroupSizeNode(localWorkGroupNode));
+            FPGAWorkGroupSizeNode workGroupSizeNode = graph.addOrUnique(new FPGAWorkGroupSizeNode(localWorkGroupNode));
             graph.addBeforeFixed(end, workGroupSizeNode);
         }
     }

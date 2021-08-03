@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -34,15 +34,15 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 @NodeInfo
-public class WorkGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
+public class FPGAWorkGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
     @Successor
     LoopBeginNode loopBegin;
     @Input
     LocalWorkGroupDimensionsNode localWorkNode;
-    public static final NodeClass<WorkGroupSizeNode> TYPE = NodeClass.create(WorkGroupSizeNode.class);
+    public static final NodeClass<FPGAWorkGroupSizeNode> TYPE = NodeClass.create(FPGAWorkGroupSizeNode.class);
 
-    public WorkGroupSizeNode(LocalWorkGroupDimensionsNode localWork) {
+    public FPGAWorkGroupSizeNode(LocalWorkGroupDimensionsNode localWork) {
         super(TYPE, StampFactory.forVoid());
         this.localWorkNode = localWork;
     }
