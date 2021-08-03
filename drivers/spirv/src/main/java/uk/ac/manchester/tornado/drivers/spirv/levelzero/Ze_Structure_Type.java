@@ -34,10 +34,19 @@ public class Ze_Structure_Type {
     public static final int ZE_STRUCTURE_TYPE_KERNEL_PROPERTIES = 0x1e; /// < ::ze_kernel_properties_t
     public static final int ZE_STRUCTURE_TYPE_SAMPLER_DESC = 0x1f; /// < ::ze_sampler_desc_t
     public static final int ZE_STRUCTURE_TYPE_PHYSICAL_MEM_DESC = 0x20; /// < ::ze_physical_mem_desc_t
-    public static final int ZE_STRUCTURE_TYPE_RAYTRACING_MEM_ALLOC_EXT_DESC = 0x00010001; /// < ::ze_raytracing_mem_alloc_ext_desc_t
-
+    public static final int ZE_STRUCTURE_TYPE_KERNEL_PREFERRED_GROUP_SIZE_PROPERTIES = 0x21;/// < ::ze_kernel_preferred_group_size_properties_t
+    public static final int ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_WIN32 = 0x22; /// < ::ze_external_memory_import_win32_handle_t
+    public static final int ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_WIN32 = 0x23; /// < ::ze_external_memory_export_win32_handle_t
+    public static final int ZE_STRUCTURE_TYPE_DEVICE_RAYTRACING_EXT_PROPERTIES = 0x00010001;/// < ::ze_device_raytracing_ext_properties_t
+    public static final int ZE_STRUCTURE_TYPE_RAYTRACING_MEM_ALLOC_EXT_DESC = 0x10002; /// < ::ze_raytracing_mem_alloc_ext_desc_t
+    public static final int ZE_STRUCTURE_TYPE_FLOAT_ATOMIC_EXT_PROPERTIES = 0x10003;/// < ::ze_float_atomic_ext_properties_t
+    public static final int ZE_STRUCTURE_TYPE_CACHE_RESERVATION_EXT_DESC = 0x10004; /// < ::ze_cache_reservation_ext_desc_t
+    public static final int ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC = 0x00020001; /// < ::ze_relaxed_allocation_limits_exp_desc_t
+    public static final int ZE_STRUCTURE_TYPE_MODULE_PROGRAM_EXP_DESC = 0x00020002; /// < ::ze_module_program_exp_desc_t
+    public static final int ZE_STRUCTURE_TYPE_SCHEDULING_HINT_EXP_PROPERTIES = 0x00020003; /// < ::ze_scheduling_hint_exp_properties_t
+    public static final int ZE_STRUCTURE_TYPE_SCHEDULING_HINT_EXP_DESC = 0x00020004;/// < ::ze_scheduling_hint_exp_desc_t
+    public static final int ZE_STRUCTURE_TYPE_IMAGE_VIEW_PLANAR_EXP_DESC = 0x00020005; /// < ::ze_image_view_planar_exp_desc_t
     public static final int ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES_1_2 = 0x20006; /// < ::ze_device_properties_t
-
     public static final int ZE_STRUCTURE_TYPE_FORCE_UINT32 = 0x7fffffff;
 
 }
