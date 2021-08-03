@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -20,11 +20,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Michalis Papadimitriou
- *
- *
- * */
-
+ */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import org.graalvm.compiler.graph.Node;
@@ -37,13 +33,11 @@ import org.graalvm.compiler.nodes.loop.CountedLoopInfo;
 import org.graalvm.compiler.nodes.loop.LoopEx;
 import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 import java.util.List;
 
@@ -51,12 +45,12 @@ import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
 import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
 
-public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
+public class OCLFPGAPragmaPhase extends Phase {
 
     /**
      * The default factor number for loop unrolling is 4, as this number yielded the
      * same performance with full unrolling on an Intel Arria 10 FPGA.
-     * 
+     *
      * @see <a href= "https://arxiv.org/ftp/arxiv/papers/2010/2010.16304.pdf">
      *      Transparent Compiler and Runtime Specializations for Accelerating
      *      Managed Languages on FPGAs</a>.
@@ -73,7 +67,7 @@ public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
     private static final int XILINX_PIPELINING_II_NUMBER = 1;
     private TornadoDeviceContext deviceContext;
 
-    public TornadoFPGAPragmas(TornadoDeviceContext deviceContext) {
+    public OCLFPGAPragmaPhase(TornadoDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
     }
 
@@ -109,14 +103,10 @@ public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
         }
     }
 
-    public void execute(StructuredGraph graph, TornadoHighTierContext context) {
-        run(graph, context);
-    }
-
     @Override
-    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+    protected void run(StructuredGraph graph) {
         // Prevent Pragma Unroll for non-fpga devices
-        if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {
+        if (graph.hasLoops() && (deviceContext.isPlatformFPGA())) {
             boolean peeled;
             do {
                 peeled = false;
@@ -145,11 +135,5 @@ public class TornadoFPGAPragmas extends BasePhase<TornadoHighTierContext> {
                 }
             } while (peeled);
         }
-
-    }
-
-    @Override
-    public boolean checkContract() {
-        return false;
     }
 }

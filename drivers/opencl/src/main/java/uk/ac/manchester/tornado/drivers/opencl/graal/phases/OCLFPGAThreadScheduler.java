@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,22 +27,27 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.Phase;
 
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
-public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
+public class OCLFPGAThreadScheduler extends Phase {
 
     private int oneD = 64; // XXX: This value was chosen for Intel FPGAs due to experimental results
     private int twoD = 1;
     private int threeD = 1;
 
+    TornadoDeviceContext context;
+
+    public OCLFPGAThreadScheduler(TornadoDeviceContext context) {
+        this.context = context;
+    }
+
     @Override
-    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {
+    protected void run(StructuredGraph graph) {
+        if (graph.hasLoops() && context.isPlatformFPGA()) {
             NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
             EndNode end = filter.first();
             final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
