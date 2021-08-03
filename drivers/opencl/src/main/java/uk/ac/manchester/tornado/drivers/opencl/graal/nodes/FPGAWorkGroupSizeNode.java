@@ -31,7 +31,6 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 @NodeInfo
 public class FPGAWorkGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
@@ -41,6 +40,9 @@ public class FPGAWorkGroupSizeNode extends FixedWithNextNode implements LIRLower
     @Input
     LocalWorkGroupDimensionsNode localWorkNode;
     public static final NodeClass<FPGAWorkGroupSizeNode> TYPE = NodeClass.create(FPGAWorkGroupSizeNode.class);
+
+    public static final String FPGA_THREAD_ATTRIBUTE_PREFIX = "__attribute__((reqd_work_group_size(";
+    public static final String FPGA_THREAD_ATTRIBUTE_SUFFIX = ")))";
 
     public FPGAWorkGroupSizeNode(LocalWorkGroupDimensionsNode localWork) {
         super(TYPE, StampFactory.forVoid());
@@ -57,8 +59,7 @@ public class FPGAWorkGroupSizeNode extends FixedWithNextNode implements LIRLower
 
     public String createThreadAttribute() {
         String fpgaThreadAttribute;
-        fpgaThreadAttribute = OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkNode.oneD + ", " + localWorkNode.twoD + ", " + localWorkNode.threeD
-                + OCLAssemblerConstants.FPGA_THREAD_ATTRIBUTE_SUFFIX;
+        fpgaThreadAttribute = FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkNode.oneD + ", " + localWorkNode.twoD + ", " + localWorkNode.threeD + FPGA_THREAD_ATTRIBUTE_SUFFIX;
 
         return fpgaThreadAttribute;
     }

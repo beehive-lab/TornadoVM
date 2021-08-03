@@ -32,16 +32,22 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAThreadScheduler extends Phase {
 
-    private int oneD = OCLAssemblerConstants.DEFAULT_FPGA_PARALLEL_1D;
-    private int twoD = OCLAssemblerConstants.DEFAULT_FPGA_PARALLEL_2D;
-    private int threeD = OCLAssemblerConstants.DEFAULT_FPGA_PARALLEL_3D;
+    public static final int DEFAULT_FPGA_PARALLEL_1D = 64; // This value was chosen for Intel FPGAs due to experimental results
+    public static final int DEFAULT_FPGA_PARALLEL_2D = 1;
+    public static final int DEFAULT_FPGA_PARALLEL_3D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_1D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_2D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_3D = 1;
+
+    private int oneD = DEFAULT_FPGA_PARALLEL_1D;
+    private int twoD = DEFAULT_FPGA_PARALLEL_2D;
+    private int threeD = DEFAULT_FPGA_PARALLEL_3D;
 
     TornadoDeviceContext context;
 
@@ -63,9 +69,9 @@ public class OCLFPGAThreadScheduler extends Phase {
                         if (metaData.isWorkerGridAvailable()) {
                             WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
                             if (metaData.isGridSequential()) {
-                                oneD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D;
-                                twoD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D;
-                                threeD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
+                                oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
+                                twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
+                                threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
                             } else {
                                 oneD = (int) workerGrid.getLocalWork()[0];
                                 twoD = (int) workerGrid.getLocalWork()[1];
@@ -74,9 +80,9 @@ public class OCLFPGAThreadScheduler extends Phase {
                         }
                     } else {
                         if (!metaData.isParallel()) { // Sequential kernel
-                            oneD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_1D;
-                            twoD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_2D;
-                            threeD = OCLAssemblerConstants.DEFAULT_FPGA_SEQUENTIAL_3D;
+                            oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
+                            twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
+                            threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
                         }
                     }
                 }

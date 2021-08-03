@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,9 +24,6 @@
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
-
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLAssemblerConstants {
 
@@ -103,15 +100,6 @@ public class OCLAssemblerConstants {
 
     public static final String PRAGMA = "#pragma";
     public static final String UNROLL = "unroll";
-
-    public static final String FPGA_THREAD_ATTRIBUTE_PREFIX = "__attribute__((reqd_work_group_size(";
-    public static final String FPGA_THREAD_ATTRIBUTE_SUFFIX = ")))";
-    public static final int DEFAULT_FPGA_PARALLEL_1D = 64; // This value was chosen for Intel FPGAs due to experimental results
-    public static final int DEFAULT_FPGA_PARALLEL_2D = 1;
-    public static final int DEFAULT_FPGA_PARALLEL_3D = 1;
-    public static final int DEFAULT_FPGA_SEQUENTIAL_1D = 1;
-    public static final int DEFAULT_FPGA_SEQUENTIAL_2D = 1;
-    public static final int DEFAULT_FPGA_SEQUENTIAL_3D = 1;
 
     public static final int STACK_BASE_OFFSET = 3;
 }
