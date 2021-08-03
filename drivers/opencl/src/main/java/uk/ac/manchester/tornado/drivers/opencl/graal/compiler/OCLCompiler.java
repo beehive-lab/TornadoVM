@@ -208,9 +208,7 @@ public class OCLCompiler {
     }
 
     private static void attachTaskMetaDataToLowTier(TaskMetaData metaData, TornadoLowTier lowTier) {
-        if (lowTier instanceof OCLLowTier) {
-            ((OCLLowTier) lowTier).attachTaskMetaDataToDeviceContext(metaData);
-        }
+        lowTier.attachTaskMetaDataToDeviceContext(metaData);
     }
 
     /**

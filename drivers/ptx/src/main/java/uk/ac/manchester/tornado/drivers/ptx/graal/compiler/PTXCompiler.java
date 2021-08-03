@@ -62,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -369,6 +370,10 @@ public class PTXCompiler {
         AllocationPhase.AllocationContext allocContext = new AllocationPhase.AllocationContext(lirGen.getSpillMoveFactory(), registerAllocationConfig);
         lirSuites.getAllocationStage().apply(target, lirGenRes, allocContext);
         return lirGenRes;
+    }
+
+    private static void attachTaskMetaDataToLowTier(TaskMetaData metaData, TornadoLowTier lowTier) {
+        lowTier.attachTaskMetaDataToDeviceContext(metaData);
     }
 
     /**

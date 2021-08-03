@@ -25,7 +25,8 @@ package uk.ac.manchester.tornado.runtime.graal.compiler;
 
 import org.graalvm.compiler.phases.*;
 import org.graalvm.compiler.phases.tiers.*;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public abstract class TornadoLowTier extends PhaseSuite<LowTierContext> {
-
+    public abstract void attachTaskMetaDataToDeviceContext(TaskMetaData metaData);
 }

@@ -68,9 +68,7 @@ public class OCLLowTier extends TornadoLowTier {
     }
 
     public void attachTaskMetaDataToDeviceContext(TaskMetaData metaData) {
-        if (tornadoDeviceContext instanceof OCLDeviceContext) {
-            tornadoDeviceContext.attachTaskMetaData(metaData);
-        }
+        tornadoDeviceContext.attachTaskMetaData(metaData);
     }
 
     public OCLLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
