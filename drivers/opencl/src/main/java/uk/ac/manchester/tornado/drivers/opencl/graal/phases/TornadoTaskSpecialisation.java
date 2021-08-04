@@ -237,16 +237,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            if (gridScheduling) {
-                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
-                OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
-                parameterNode.replaceAtUsages(oclStackAccessNode);
-                index++;
-            } else {
-                ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
-                graph.addWithoutUnique(constant);
-                parameterNode.replaceAtUsages(constant);
-            }
+            ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
+            graph.addWithoutUnique(constant);
+            parameterNode.replaceAtUsages(constant);
         } else {
             parameterNode.usages().snapshot().forEach(n -> {
                 evaluate(graph, n, args[parameterNode.index()]);
