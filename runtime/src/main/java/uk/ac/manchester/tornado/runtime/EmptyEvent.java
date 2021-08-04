@@ -46,7 +46,7 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public long getExecutionTime() {
+    public long getElapsedTime() {
         return 0;
     }
 
@@ -56,7 +56,7 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public double getExecutionTimeInSeconds() {
+    public double getElapsedTimeInSeconds() {
         return 0;
     }
 

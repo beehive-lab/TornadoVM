@@ -23,6 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -40,13 +47,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 public class PTXDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
@@ -250,7 +250,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             Event event = resolveEvent(stackWriteEventId);
             event.waitForEvents();
             long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
-            copyInTimer += event.getExecutionTime();
+            copyInTimer += event.getElapsedTime();
             profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
             profiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, meta.getId(), stack.getSize());
 
@@ -266,9 +266,9 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             tornadoKernelEvent.waitForEvents();
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
             // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
             // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
             // Register the dispatch time of the kernel
             long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
