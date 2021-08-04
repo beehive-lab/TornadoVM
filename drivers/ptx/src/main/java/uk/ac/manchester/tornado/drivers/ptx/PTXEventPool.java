@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
@@ -34,6 +33,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.EventDescriptor;
 
 public class PTXEventPool {
 
@@ -50,7 +50,7 @@ public class PTXEventPool {
         this.eventIndex = 0;
     }
 
-    protected int registerEvent(byte[][] eventWrapper, int descriptorId, long tag) {
+    protected int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId, long tag) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -58,7 +58,7 @@ public class PTXEventPool {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         if (eventWrapper == null) {
-            fatal("invalid event: description=%s, tag=0x%x\n", EVENT_DESCRIPTIONS[descriptorId], tag);
+            fatal("invalid event: description=%s, tag=0x%x\n", descriptorId.getNameDescription(), tag);
             fatal("terminating application as system integrity has been compromised.");
             throw new TornadoBailoutRuntimeException("[ERROR] NULL event received from the CUDA driver !");
         }
