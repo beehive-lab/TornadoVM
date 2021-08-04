@@ -26,9 +26,8 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXEvent extends TornadoLogger implements Event {
+public class PTXEvent implements Event {
 
     protected static final long DEFAULT_TAG = 0x12;
 

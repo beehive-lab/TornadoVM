@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
@@ -36,16 +35,18 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 
-public class PTXEventsWrapper {
+public class PTXEventPool {
 
     private final PTXEvent[] events;
     private final BitSet retain;
     private int eventIndex;
+    private int eventPoolSize;
 
-    protected PTXEventsWrapper() {
-        this.retain = new BitSet(EVENT_WINDOW);
+    protected PTXEventPool(int poolSize) {
+        this.eventPoolSize = poolSize;
+        this.retain = new BitSet(poolSize);
         this.retain.clear();
-        this.events = new PTXEvent[EVENT_WINDOW];
+        this.events = new PTXEvent[poolSize];
         this.eventIndex = 0;
     }
 
@@ -80,7 +81,7 @@ public class PTXEventsWrapper {
             eventIndex = 0;
         }
 
-        guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
+        guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), eventPoolSize);
     }
 
     protected void reset() {

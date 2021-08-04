@@ -72,7 +72,6 @@ public class EmptyEvent implements Event {
 
     @Override
     public void waitOn() {
-
     }
 
     @Override

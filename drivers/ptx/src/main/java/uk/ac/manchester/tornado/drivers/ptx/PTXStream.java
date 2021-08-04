@@ -23,15 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DEFAULT_TAG;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_PARALLEL_KERNEL;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_READ_BYTE;
@@ -47,6 +38,16 @@ import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_FLOAT;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_INT;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_LONG;
 import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.DESC_WRITE_SHORT;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXStream extends TornadoLogger {
 
@@ -54,13 +55,12 @@ public class PTXStream extends TornadoLogger {
 
     private static final int DYNAMIC_SHARED_MEMORY_BYTES = 0;
 
-    private final byte[] streamWrapper;
-    private final PTXEventsWrapper eventsWrapper;
+    private final byte[] streamPool;
+    private final PTXEventPool ptxEventPool;
 
     public PTXStream() {
-        streamWrapper = cuCreateStream();
-
-        this.eventsWrapper = new PTXEventsWrapper();
+        streamPool = cuCreateStream();
+        this.ptxEventPool = new PTXEventPool(EVENT_WINDOW);
     }
 
     //@formatter:off
@@ -139,30 +139,30 @@ public class PTXStream extends TornadoLogger {
     private native static byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
     private int registerEvent(int descriptorId, long tag) {
-        return eventsWrapper.registerEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamWrapper), descriptorId, tag);
+        return ptxEventPool.registerEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamPool), descriptorId, tag);
     }
 
     private int registerEvent(byte[][] eventWrapper, int descriptorId, long tag) {
-        return eventsWrapper.registerEvent(eventWrapper, descriptorId, tag);
+        return ptxEventPool.registerEvent(eventWrapper, descriptorId, tag);
     }
 
     public void reset() {
-        eventsWrapper.reset();
+        ptxEventPool.reset();
     }
 
     public void sync() {
-        cuStreamSynchronize(streamWrapper);
+        cuStreamSynchronize(streamPool);
     }
 
     public void cleanup() {
-        cuDestroyStream(streamWrapper);
+        cuDestroyStream(streamPool);
     }
 
     public Event resolveEvent(int event) {
         if (event == -1) {
             return EMPTY_EVENT;
         }
-        return eventsWrapper.getEvent(event);
+        return ptxEventPool.getEvent(event);
     }
 
     private void waitForEvents(int[] localEventIds) {
@@ -172,7 +172,7 @@ public class PTXStream extends TornadoLogger {
 
         ArrayList<PTXEvent> events = new ArrayList<>();
         for (int localEventId : localEventIds) {
-            PTXEvent cuEvent = this.eventsWrapper.getEvent(localEventId);
+            PTXEvent cuEvent = this.ptxEventPool.getEvent(localEventId);
             if (cuEvent != null) {
                 events.add(cuEvent);
             }
@@ -193,11 +193,11 @@ public class PTXStream extends TornadoLogger {
         }
 
         return registerEvent(cuLaunchKernel(module.moduleWrapper, module.kernelFunctionName, gridDim[0], gridDim[1], gridDim[2], blockDim[0], blockDim[1], blockDim[2], DYNAMIC_SHARED_MEMORY_BYTES,
-                streamWrapper, kernelParams), DESC_PARALLEL_KERNEL, module.kernelFunctionName.hashCode());
+                streamPool, kernelParams), DESC_PARALLEL_KERNEL, module.kernelFunctionName.hashCode());
     }
 
     public int enqueueBarrier() {
-        cuStreamSynchronize(streamWrapper);
+        cuStreamSynchronize(streamPool);
         return registerEvent(DESC_SYNC_BARRIER, DEFAULT_TAG);
     }
 
@@ -208,146 +208,146 @@ public class PTXStream extends TornadoLogger {
 
     public int enqueueRead(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_BYTE, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_BYTE, address);
     }
 
     public int enqueueRead(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_SHORT, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_SHORT, address);
     }
 
     public int enqueueRead(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_BYTE, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_BYTE, address);
     }
 
     public int enqueueRead(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_INT, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_INT, address);
     }
 
     public int enqueueRead(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_LONG, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_LONG, address);
     }
 
     public int enqueueRead(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_FLOAT, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_FLOAT, address);
     }
 
     public int enqueueRead(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamWrapper), DESC_READ_DOUBLE, address);
+        return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), DESC_READ_DOUBLE, address);
     }
 
     public int enqueueAsyncRead(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_BYTE, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_BYTE, address);
     }
 
     public int enqueueAsyncRead(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_SHORT, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_SHORT, address);
     }
 
     public int enqueueAsyncRead(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_BYTE, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_BYTE, address);
     }
 
     public int enqueueAsyncRead(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_INT, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_INT, address);
     }
 
     public int enqueueAsyncRead(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_LONG, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_LONG, address);
     }
 
     public int enqueueAsyncRead(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_FLOAT, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_FLOAT, address);
     }
 
     public int enqueueAsyncRead(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamWrapper), DESC_READ_DOUBLE, address);
+        return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), DESC_READ_DOUBLE, address);
     }
 
     public void enqueueWrite(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_BYTE, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_BYTE, address);
     }
 
     public void enqueueWrite(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_SHORT, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_SHORT, address);
     }
 
     public void enqueueWrite(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_BYTE, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_BYTE, address);
     }
 
     public void enqueueWrite(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_INT, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_INT, address);
     }
 
     public void enqueueWrite(long address, long length, long[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_LONG, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_LONG, address);
     }
 
     public void enqueueWrite(long address, long length, float[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_FLOAT, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_FLOAT, address);
     }
 
     public void enqueueWrite(long address, long length, double[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamWrapper), DESC_WRITE_DOUBLE, address);
+        registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), DESC_WRITE_DOUBLE, address);
     }
 
     public int enqueueAsyncWrite(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_BYTE, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_BYTE, address);
     }
 
     public int enqueueAsyncWrite(long address, long length, char[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_BYTE, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_BYTE, address);
     }
 
     public int enqueueAsyncWrite(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_SHORT, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_SHORT, address);
     }
 
     public int enqueueAsyncWrite(long address, long length, int[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_INT, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_INT, address);
 
     }
 
     public int enqueueAsyncWrite(long address, long length, long[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_LONG, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_LONG, address);
     }
 
     public int enqueueAsyncWrite(long address, long length, float[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_FLOAT, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_FLOAT, address);
     }
 
     public int enqueueAsyncWrite(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
-        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamWrapper), DESC_WRITE_DOUBLE, address);
+        return registerEvent(writeArrayHtoDAsync(address, length, array, hostOffset, streamPool), DESC_WRITE_DOUBLE, address);
     }
 
-    public PTXEventsWrapper getEventsWrapper() {
-        return eventsWrapper;
+    public PTXEventPool getEventPool() {
+        return this.ptxEventPool;
     }
 }
