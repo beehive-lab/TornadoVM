@@ -50,7 +50,7 @@ public class PTXEventPool {
         this.eventIndex = 0;
     }
 
-    protected int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId, long tag) {
+    protected int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -58,7 +58,7 @@ public class PTXEventPool {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         if (eventWrapper == null) {
-            fatal("invalid event: description=%s, tag=0x%x\n", descriptorId.getNameDescription(), tag);
+            fatal("invalid event: description=%s\n", descriptorId.getNameDescription());
             fatal("terminating application as system integrity has been compromised.");
             throw new TornadoBailoutRuntimeException("[ERROR] NULL event received from the CUDA driver !");
         }
@@ -68,7 +68,7 @@ public class PTXEventPool {
             events[currentEvent].destroy();
             events[currentEvent] = null;
         }
-        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId, tag);
+        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId);
 
         findNextEventSlot();
         return currentEvent;

@@ -46,8 +46,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLEvent implements Event {
 
-    protected static final long DEFAULT_TAG = 0x12;
-
     private final long[] internalBuffer = new long[2];
 
     private OCLCommandQueue queue;
@@ -66,7 +64,7 @@ public class OCLEvent implements Event {
         this.queue = queue;
         this.localId = event;
         this.oclEventID = oclEventID;
-        this.name = String.format("%s: 0x%x", eventPool.getDescriptor(localId).getNameDescription(), eventPool.getTag(localId));
+        this.name = String.format("%s: 0x", eventPool.getDescriptor(localId).getNameDescription());
         this.status = -1;
     }
 

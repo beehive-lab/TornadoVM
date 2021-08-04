@@ -30,8 +30,6 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class PTXEvent implements Event {
 
-    protected static final long DEFAULT_TAG = 0x12;
-
     /**
      * Wrapper containing two serialized CUevent structs. Between the two events, on
      * the same CUDA stream has been registered another API call described by the
@@ -46,14 +44,12 @@ public class PTXEvent implements Event {
 
     private boolean isCompleted;
     private final String description;
-    private final long tag;
     private final String name;
 
-    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId, long tag) {
+    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
         eventWrapper = bytes;
         this.description = descriptorId.getNameDescription();
-        this.tag = tag;
-        this.name = String.format("%s: 0x%x", description, tag);
+        this.name = String.format("%s: ", description);
         isCompleted = false;
     }
 

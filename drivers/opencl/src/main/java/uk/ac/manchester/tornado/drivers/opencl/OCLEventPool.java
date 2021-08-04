@@ -48,7 +48,6 @@ class OCLEventPool {
 
     private final long[] events;
     private final EventDescriptor[] descriptors;
-    private final long[] tags;
     private final BitSet retain;
     private final OCLCommandQueue[] eventQueues;
     private int eventIndex;
@@ -64,14 +63,13 @@ class OCLEventPool {
         this.retain.clear();
         this.events = new long[eventPoolSize];
         this.descriptors = new EventDescriptor[eventPoolSize];
-        this.tags = new long[eventPoolSize];
         this.eventQueues = new OCLCommandQueue[eventPoolSize];
         this.eventIndex = 0;
         this.waitEventsBuffer = new long[MAX_WAIT_EVENTS];
         this.internalEvent = new OCLEvent();
     }
 
-    protected int registerEvent(long oclEventId, EventDescriptor descriptorId, long tag, OCLCommandQueue queue) {
+    protected int registerEvent(long oclEventId, EventDescriptor descriptorId, OCLCommandQueue queue) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -84,7 +82,7 @@ class OCLEventPool {
          * exit.
          */
         if (oclEventId == -1) {
-            fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription(), tag);
+            fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", oclEventId, descriptorId.getNameDescription());
             fatal("terminating application as system integrity has been compromised.");
             System.exit(-1);
         }
@@ -96,7 +94,6 @@ class OCLEventPool {
         }
         events[currentEvent] = oclEventId;
         descriptors[currentEvent] = descriptorId;
-        tags[currentEvent] = tag;
         eventQueues[currentEvent] = queue;
 
         findNextEventSlot();
@@ -126,7 +123,7 @@ class OCLEventPool {
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
-                debug("[%d] 0x%x - %s 0x%x\n", index, events[value], descriptors[value].getNameDescription(), tags[value]);
+                debug("[%d] 0x%x - %s\n", index, events[value], descriptors[value].getNameDescription());
 
             }
         }
@@ -174,7 +171,4 @@ class OCLEventPool {
         return descriptors[localEventID];
     }
 
-    protected long getTag(int localEventID) {
-        return tags[localEventID];
-    }
 }
