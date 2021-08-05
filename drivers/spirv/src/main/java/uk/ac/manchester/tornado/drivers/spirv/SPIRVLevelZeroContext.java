@@ -34,7 +34,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     private List<SPIRVLevelZeroCommandQueue> commandQueues;
     LevelZeroByteBuffer deviceBuffer;
 
-    // This class should only receives 1 device, not a list of devices.
+    // This class should only receive 1 device, not a list of devices.
     public SPIRVLevelZeroContext(SPIRVPlatform platform, List<SPIRVDevice> devices, LevelZeroContext levelZeroContext) {
         super(platform, devices);
         this.levelZeroContext = levelZeroContext;
@@ -330,7 +330,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         // Reset for the rest of executions
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         LevelZeroUtils.errorLog("zeCommandListReset", result);
-
     }
 
     @Override

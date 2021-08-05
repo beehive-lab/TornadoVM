@@ -11,6 +11,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -27,6 +28,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     protected SPIRVMemoryManager memoryManager;
     protected SPIRVCodeCache codeCache;
     protected boolean wasReset;
+    protected SPIRVEventPool spirvEventPool;
 
     private void init(SPIRVDevice device, SPIRVCommandQueue queue) {
         this.device = device;
@@ -39,6 +41,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
             this.codeCache = new SPIRVOCLCodeCache(this);
         }
         this.wasReset = false;
+        this.spirvEventPool = new SPIRVEventPool(Tornado.EVENT_WINDOW);
 
     }
 
