@@ -216,11 +216,6 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
-    public void attachTaskMetaData(TaskMetaDataInterface metaDataInterface) {
-        this.metaDataInterface = metaDataInterface;
-    }
-
-    @Override
     public TaskMetaDataInterface getTaskMetaData() {
         return metaDataInterface;
     }

@@ -71,7 +71,5 @@ public interface TornadoDeviceContext {
 
     int getDriverIndex();
 
-    void attachTaskMetaData(TaskMetaDataInterface metaDataInterface);
-
     TaskMetaDataInterface getTaskMetaData();
 }

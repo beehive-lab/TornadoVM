@@ -469,11 +469,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     }
 
     @Override
-    public void attachTaskMetaData(TaskMetaDataInterface metaDataInterface) {
-        this.metaDataInterface = metaDataInterface;
-    }
-
-    @Override
     public TaskMetaDataInterface getTaskMetaData() {
         return metaDataInterface;
     }

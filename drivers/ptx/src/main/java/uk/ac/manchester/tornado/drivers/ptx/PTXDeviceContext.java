@@ -149,11 +149,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     @Override
-    public void attachTaskMetaData(TaskMetaDataInterface metaDataInterface) {
-        this.metaDataInterface = metaDataInterface;
-    }
-
-    @Override
     public TaskMetaDataInterface getTaskMetaData() {
         return metaDataInterface;
     }
