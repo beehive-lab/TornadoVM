@@ -37,8 +37,10 @@ public class PTXEvent implements Event {
      * the two events to get the duration of the API call.
      *
      * <p>
-     * The first position (eventWrapper[0]) contains the beforeEvent The second
-     * position eventWrapper[1] contains the afterEvent.
+     * - The first position (eventWrapper[0]) contains the beforeEvent.
+     * 
+     * - The second position (eventWrapper[1]) contains the afterEvent.
+     * </p>
      */
     private final byte[][] eventWrapper;
 

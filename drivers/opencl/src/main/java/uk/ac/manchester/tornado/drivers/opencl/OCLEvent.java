@@ -59,12 +59,12 @@ public class OCLEvent implements Event {
         buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    OCLEvent(final OCLEventPool eventPool, final OCLCommandQueue queue, final int event, final long oclEventID) {
+    OCLEvent(String eventNameDescription, final OCLCommandQueue queue, final int event, final long oclEventID) {
         this();
         this.queue = queue;
         this.localId = event;
         this.oclEventID = oclEventID;
-        this.name = String.format("%s: 0x", eventPool.getDescriptor(localId).getNameDescription());
+        this.name = String.format("%s: 0x", eventNameDescription);
         this.status = -1;
     }
 

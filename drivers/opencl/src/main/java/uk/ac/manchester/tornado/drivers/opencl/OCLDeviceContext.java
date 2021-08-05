@@ -461,7 +461,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         if (event == -1) {
             return EMPTY_EVENT;
         }
-        return new OCLEvent(oclEventPool, queue, event, oclEventPool.getOCLEvent(event));
+        return new OCLEvent(oclEventPool.getDescriptor(event).getNameDescription(), queue, event, oclEventPool.getOCLEvent(event));
     }
 
     public void flush() {

@@ -138,7 +138,7 @@ class OCLEventPool {
             if (eventId <= 0) {
                 continue;
             }
-            result.add(new OCLEvent(this, eventQueues[i], i, eventId));
+            result.add(new OCLEvent(getDescriptor(i).getNameDescription(), eventQueues[i], i, eventId));
         }
         return result;
     }
