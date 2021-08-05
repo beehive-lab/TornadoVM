@@ -34,7 +34,6 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -57,7 +56,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private boolean wasReset;
-    private TaskMetaDataInterface metaDataInterface;
 
     public PTXDeviceContext(PTXDevice device, PTXStream stream) {
         this.device = device;
@@ -146,11 +144,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public int getDriverIndex() {
         return TornadoRuntime.getTornadoRuntime().getDriverIndex(PTXDriver.class);
-    }
-
-    @Override
-    public TaskMetaDataInterface getTaskMetaData() {
-        return metaDataInterface;
     }
 
     @Override

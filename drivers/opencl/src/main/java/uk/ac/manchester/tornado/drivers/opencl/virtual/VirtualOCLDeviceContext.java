@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
@@ -51,7 +50,6 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     private boolean useRelativeAddresses;
     private boolean printOnce = true;
     private final OCLCodeCache codeCache;
-    private TaskMetaDataInterface metaDataInterface;
 
     protected VirtualOCLDeviceContext(OCLTargetDevice device, VirtualOCLContext context) {
         this.device = device;
@@ -213,11 +211,6 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
         }
 
         return useRelativeAddresses;
-    }
-
-    @Override
-    public TaskMetaDataInterface getTaskMetaData() {
-        return metaDataInterface;
     }
 
     public boolean isKernelAvailable() {

@@ -29,7 +29,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
@@ -84,8 +83,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     private boolean printOnce = true;
 
     private final OCLEventsWrapper eventsWrapper;
-
-    private TaskMetaDataInterface metaDataInterface;
 
     protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -466,11 +463,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     @Override
     public int getDevicePlatform() {
         return context.getPlatformIndex();
-    }
-
-    @Override
-    public TaskMetaDataInterface getTaskMetaData() {
-        return metaDataInterface;
     }
 
     public long getBumpBuffer() {
