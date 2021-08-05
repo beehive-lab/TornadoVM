@@ -153,7 +153,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             debug("\tstatus   : %s", event.getStatus());
 
             if (meta != null && meta.enableProfiling()) {
-                debug("\texecuting: %f seconds", event.getExecutionTimeInSeconds());
+                debug("\texecuting: %f seconds", event.getElapsedTimeInSeconds());
                 debug("\ttotal    : %f seconds", event.getTotalTimeInSeconds());
             }
         }
@@ -315,9 +315,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             tornadoKernelEvent.waitForEvents();
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
             // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
             // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
             // Register the dispatch time of the kernel
             long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
@@ -393,7 +393,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             Event event = deviceContext.resolveEvent(stackWriteEventId);
             event.waitForEvents();
             long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
-            copyInTimer += event.getExecutionTime();
+            copyInTimer += event.getElapsedTime();
             profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
             profiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, meta.getId(), stack.getSize());
 

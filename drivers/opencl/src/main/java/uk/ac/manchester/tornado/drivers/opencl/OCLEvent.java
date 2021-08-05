@@ -229,7 +229,7 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public long getExecutionTime() {
+    public long getElapsedTime() {
         return (getCLEndTime() - getCLStartTime());
     }
 
@@ -239,13 +239,13 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public double getExecutionTimeInSeconds() {
+    public double getElapsedTimeInSeconds() {
         return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
     }
 
     @Override
     public double getTotalTimeInSeconds() {
-        return getExecutionTimeInSeconds();
+        return getElapsedTimeInSeconds();
     }
 
     @Override

@@ -816,7 +816,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             timeProfiler.clean();
             for (int i = 0; i < events.length; i++) {
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
-                value += events[i].getExecutionTime();
+                value += events[i].getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getObjectState(objects[i]);
                 DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
