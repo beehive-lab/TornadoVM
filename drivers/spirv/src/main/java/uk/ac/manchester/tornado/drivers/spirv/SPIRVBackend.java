@@ -105,7 +105,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperan
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
@@ -729,8 +729,14 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVLogger.traceCodeGen("[SPIR-V CodeGen] Generating SPIRV-Header for method: %s \n", methodName);
         if (crb.isKernel()) {
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
-                asm.emitAttribute(crb);
+
+            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof FPGAWorkGroupSizeNode) {
+                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor().asNode());
+                String attribute = fpgaNode.createThreadAttribute();
+
+                throw new RuntimeException("FPGA Thread Attributes not supported yet.");
+                // asm.emitSymbol(attribute);
+                // asm.emitLine("");
             }
 
             emitSPIRVCapabilities(module);

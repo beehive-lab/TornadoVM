@@ -59,7 +59,7 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         if (deviceContext.isPlatformFPGA()) {
             appendPhase(new OCLFPGAPragmaPhase(deviceContext));
-            appendPhase(new OCLFPGAThreadScheduler(deviceContext));
+            appendPhase(new OCLFPGAThreadScheduler());
         }
 
         appendPhase(new TornadoLoopCanonicalization());
