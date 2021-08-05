@@ -28,6 +28,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -37,33 +39,36 @@ import jdk.vm.ci.meta.JavaKind;
 @NodeInfo
 public class LocalWorkGroupDimensionsNode extends FloatingNode implements LIRLowerable {
 
-    public int oneD;
-    public int twoD;
-    public int threeD;
+    @Input
+    ConstantNode x;
+    @Input
+    ConstantNode y;
+    @Input
+    ConstantNode z;
 
     public static final NodeClass<LocalWorkGroupDimensionsNode> TYPE = NodeClass.create(LocalWorkGroupDimensionsNode.class);
 
-    public LocalWorkGroupDimensionsNode(int valueOne, int valueTwo, int valueThree) {
+    public LocalWorkGroupDimensionsNode(ConstantNode x, ConstantNode y, ConstantNode z) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
-        oneD = valueOne;
-        twoD = valueTwo;
-        threeD = valueThree;
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
     }
 
-    public int getOneD() {
-        return oneD;
+    public String getXToString() {
+        return x.asJavaConstant().toValueString();
     }
 
-    public int getTwoD() {
-        return twoD;
+    public String getYToString() {
+        return y.asJavaConstant().toValueString();
     }
 
-    public int getThreeD() {
-        return threeD;
+    public String getZToString() {
+        return z.asJavaConstant().toValueString();
     }
 }

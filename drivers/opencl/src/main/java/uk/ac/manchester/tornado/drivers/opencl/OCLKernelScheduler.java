@@ -39,7 +39,7 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(OCLFPGAScheduler.LOCAL_WORK_SIZE) + ".";
+    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE) + ".";
 
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 

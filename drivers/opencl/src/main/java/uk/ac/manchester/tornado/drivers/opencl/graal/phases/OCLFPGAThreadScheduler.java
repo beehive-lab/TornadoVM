@@ -25,34 +25,67 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.Phase;
-
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import org.graalvm.compiler.phases.BasePhase;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLFPGAThreadScheduler extends Phase {
+public class OCLFPGAThreadScheduler extends BasePhase<TornadoLowTierContext> {
 
-    private int oneD = 64; // XXX: This value was chosen for Intel FPGAs due to experimental results
-    private int twoD = 1;
-    private int threeD = 1;
+    public static final int DEFAULT_FPGA_PARALLEL_1D = 64; // This value was chosen for Intel FPGAs due to experimental results
+    public static final int DEFAULT_FPGA_PARALLEL_2D = 1;
+    public static final int DEFAULT_FPGA_PARALLEL_3D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_1D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_2D = 1;
+    public static final int DEFAULT_FPGA_SEQUENTIAL_3D = 1;
 
-    TornadoDeviceContext context;
-
-    public OCLFPGAThreadScheduler(TornadoDeviceContext context) {
-        this.context = context;
-    }
+    private static int oneD = DEFAULT_FPGA_PARALLEL_1D;
+    private static int twoD = DEFAULT_FPGA_PARALLEL_2D;
+    private static int threeD = DEFAULT_FPGA_PARALLEL_3D;
 
     @Override
-    protected void run(StructuredGraph graph) {
-        if (graph.hasLoops() && context.isPlatformFPGA()) {
+    protected void run(StructuredGraph graph, TornadoLowTierContext lowTierContext) {
+        if (graph.hasLoops()) {
             NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
             EndNode end = filter.first();
-            final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
-            ThreadConfigurationNode threadConfig = graph.addOrUnique(new ThreadConfigurationNode(localWorkGroupNode));
-            graph.addBeforeFixed(end, threadConfig);
+            TaskMetaData metaData;
+
+            metaData = lowTierContext.getMeta();
+            if (metaData != null) {
+                if (metaData.isGridSchedulerEnabled()) {
+                    if (metaData.isWorkerGridAvailable()) {
+                        WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
+                        if (metaData.isGridSequential()) {
+                            oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
+                            twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
+                            threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
+                        } else {
+                            oneD = (int) workerGrid.getLocalWork()[0];
+                            twoD = (int) workerGrid.getLocalWork()[1];
+                            threeD = (int) workerGrid.getLocalWork()[2];
+                        }
+                    }
+                } else {
+                    if (!metaData.isParallel()) { // Sequential kernel
+                        oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
+                        twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
+                        threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
+                    }
+                }
+            }
+
+            ConstantNode xNode = graph.addOrUnique(ConstantNode.forInt(oneD));
+            ConstantNode yNode = graph.addOrUnique(ConstantNode.forInt(twoD));
+            ConstantNode zNode = graph.addOrUnique(ConstantNode.forInt(threeD));
+
+            final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(xNode, yNode, zNode));
+            FPGAWorkGroupSizeNode workGroupSizeNode = graph.addOrUnique(new FPGAWorkGroupSizeNode(localWorkGroupNode));
+            graph.addBeforeFixed(end, workGroupSizeNode);
         }
     }
 }

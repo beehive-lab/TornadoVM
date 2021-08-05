@@ -73,7 +73,6 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.RegisterConfig;
@@ -95,6 +94,7 @@ import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -184,7 +184,7 @@ public class OCLCompiler {
              * to use a domain with depth greater than zero, or (ii) it uses the
              * GridScheduler.
              */
-            if (r.meta != null && (r.meta.isParallel() || r.meta.isGridSchedulerEnabled())) {
+            if (r.meta != null && (r.meta.isParallel() || (r.meta.isGridSchedulerEnabled() && !r.meta.isGridSequential()))) {
                 isParallel = true;
             }
             emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
@@ -237,7 +237,7 @@ public class OCLCompiler {
 
             graph.maybeCompress();
 
-            final LowTierContext lowTierContext = new LowTierContext(providers, backend);
+            final TornadoLowTierContext lowTierContext = new TornadoLowTierContext(providers, backend, meta);
             suites.getLowTier().apply(graph, lowTierContext);
 
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
@@ -413,7 +413,6 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend) {
-
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 

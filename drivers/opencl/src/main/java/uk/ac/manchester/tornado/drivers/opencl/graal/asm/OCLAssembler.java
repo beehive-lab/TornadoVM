@@ -37,6 +37,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -58,6 +59,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public final class OCLAssembler extends Assembler {
 
@@ -1130,15 +1132,6 @@ public final class OCLAssembler extends Assembler {
         } else {
             return toString(value);
         }
-    }
-
-    public void emitAttribute(OCLCompilationResultBuilder crb) {
-        if (crb.isParallel()) {
-            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE);
-        } else {
-            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE_SEQ);
-        }
-        emitLine("");
     }
 
     public void assign() {
