@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
 
-    public static final int[] LOCAL_WORK_SIZE = { 64, 1, 1 };
+    public static final int[] DEFAULT_LOCAL_WORK_SIZE = { 64, 1, 1 };
     private static final int WARP = 32;
 
     public OCLFPGAScheduler(final OCLDeviceContext context) {
@@ -68,7 +68,7 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
 
     private void setLocalWork(final int dimensions, long[] localWork, final TaskMetaData meta) {
         for (int i = 0; i < dimensions; i++) {
-            localWork[i] = calculateGroupSize(LOCAL_WORK_SIZE[i], meta.getGlobalWork()[i]);
+            localWork[i] = calculateGroupSize(DEFAULT_LOCAL_WORK_SIZE[i], meta.getGlobalWork()[i]);
         }
     }
 

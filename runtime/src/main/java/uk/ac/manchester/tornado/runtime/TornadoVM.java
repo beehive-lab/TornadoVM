@@ -441,6 +441,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             task.setUseGridScheduler(true);
+            task.setGridScheduler(gridScheduler);
         }
 
         if (shouldCompile(installedCodes[taskIndex])) {

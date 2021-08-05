@@ -46,14 +46,17 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoAtomicsParametersPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLLowTier extends TornadoLowTier {
+
+    TornadoDeviceContext tornadoDeviceContext;
 
     private CanonicalizerPhase getCannonicalizer(OptionValues options) {
         if (ImmutableCode.getValue(options)) {
@@ -64,6 +67,7 @@ public class OCLLowTier extends TornadoLowTier {
     }
 
     public OCLLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
+        this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER));
@@ -87,7 +91,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         if (tornadoDeviceContext.isPlatformFPGA()) {
             appendPhase(new OCLFPGAPragmaPhase(tornadoDeviceContext));
-            appendPhase(new OCLFPGAThreadScheduler(tornadoDeviceContext));
+            appendPhase(new OCLFPGAThreadScheduler());
         }
 
         appendPhase(new TornadoLoopCanonicalization());
