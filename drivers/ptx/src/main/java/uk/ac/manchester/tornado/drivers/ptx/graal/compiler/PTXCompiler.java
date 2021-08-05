@@ -51,7 +51,6 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXSuitesProvider;
@@ -62,8 +61,8 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -372,10 +371,6 @@ public class PTXCompiler {
         return lirGenRes;
     }
 
-    private static void attachTaskMetaDataToLowTier(TaskMetaData metaData, TornadoLowTier lowTier) {
-        lowTier.attachTaskMetaDataToDeviceContext(metaData);
-    }
-
     /**
      * Builds the graph and optimizes it.
      */
@@ -400,7 +395,7 @@ public class PTXCompiler {
 
             r.graph.maybeCompress();
 
-            final LowTierContext lowTierContext = new LowTierContext(r.providers, r.backend);
+            final TornadoLowTierContext lowTierContext = new TornadoLowTierContext(r.providers, r.backend, r.meta);
             r.suites.getLowTier().apply(r.graph, lowTierContext);
 
             getDebugContext().dump(DebugContext.BASIC_LEVEL, r.graph.getLastSchedule(), "Final HIR schedule");

@@ -73,7 +73,6 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.RegisterConfig;
@@ -94,8 +93,8 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -207,10 +206,6 @@ public class OCLCompiler {
         return graph.start().next() == null;
     }
 
-    private static void attachTaskMetaDataToLowTier(TaskMetaData metaData, TornadoLowTier lowTier) {
-        lowTier.attachTaskMetaDataToDeviceContext(metaData);
-    }
-
     /**
      * Builds the graph, optimizes it.
      */
@@ -242,11 +237,8 @@ public class OCLCompiler {
 
             graph.maybeCompress();
 
-            final LowTierContext lowTierContext = new LowTierContext(providers, backend);
-
-            TornadoLowTier lowTier = suites.getLowTier();
-            attachTaskMetaDataToLowTier(meta, lowTier);
-            lowTier.apply(graph, lowTierContext);
+            final TornadoLowTierContext lowTierContext = new TornadoLowTierContext(providers, backend, meta);
+            suites.getLowTier().apply(graph, lowTierContext);
 
             getDebugContext().dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
         } catch (Throwable e) {

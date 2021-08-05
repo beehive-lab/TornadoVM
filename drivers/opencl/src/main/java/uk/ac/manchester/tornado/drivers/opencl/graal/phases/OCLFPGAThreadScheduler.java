@@ -24,23 +24,18 @@
  * */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.phases.Phase;
-
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLowTierContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLFPGAThreadScheduler extends Phase {
+public class OCLFPGAThreadScheduler extends BasePhase<TornadoLowTierContext> {
 
     public static final int DEFAULT_FPGA_PARALLEL_1D = 64; // This value was chosen for Intel FPGAs due to experimental results
     public static final int DEFAULT_FPGA_PARALLEL_2D = 1;
@@ -53,41 +48,33 @@ public class OCLFPGAThreadScheduler extends Phase {
     private static int twoD = DEFAULT_FPGA_PARALLEL_2D;
     private static int threeD = DEFAULT_FPGA_PARALLEL_3D;
 
-    TornadoDeviceContext context;
-
-    public OCLFPGAThreadScheduler(TornadoDeviceContext context) {
-        this.context = context;
-    }
-
     @Override
-    protected void run(StructuredGraph graph) {
-        if (graph.hasLoops() && context.isPlatformFPGA()) {
+    protected void run(StructuredGraph graph, TornadoLowTierContext lowTierContext) {
+        if (graph.hasLoops()) {
             NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
             EndNode end = filter.first();
             TaskMetaData metaData;
 
-            if (context instanceof OCLDeviceContext) {
-                metaData = (TaskMetaData) context.getTaskMetaData();
-                if (metaData != null) {
-                    if (metaData.isGridSchedulerEnabled()) {
-                        if (metaData.isWorkerGridAvailable()) {
-                            WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
-                            if (metaData.isGridSequential()) {
-                                oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
-                                twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
-                                threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
-                            } else {
-                                oneD = (int) workerGrid.getLocalWork()[0];
-                                twoD = (int) workerGrid.getLocalWork()[1];
-                                threeD = (int) workerGrid.getLocalWork()[2];
-                            }
-                        }
-                    } else {
-                        if (!metaData.isParallel()) { // Sequential kernel
+            metaData = lowTierContext.getMeta();
+            if (metaData != null) {
+                if (metaData.isGridSchedulerEnabled()) {
+                    if (metaData.isWorkerGridAvailable()) {
+                        WorkerGrid workerGrid = metaData.getWorkerGrid(metaData.getId());
+                        if (metaData.isGridSequential()) {
                             oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
                             twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
                             threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
+                        } else {
+                            oneD = (int) workerGrid.getLocalWork()[0];
+                            twoD = (int) workerGrid.getLocalWork()[1];
+                            threeD = (int) workerGrid.getLocalWork()[2];
                         }
+                    }
+                } else {
+                    if (!metaData.isParallel()) { // Sequential kernel
+                        oneD = DEFAULT_FPGA_SEQUENTIAL_1D;
+                        twoD = DEFAULT_FPGA_SEQUENTIAL_2D;
+                        threeD = DEFAULT_FPGA_SEQUENTIAL_3D;
                     }
                 }
             }

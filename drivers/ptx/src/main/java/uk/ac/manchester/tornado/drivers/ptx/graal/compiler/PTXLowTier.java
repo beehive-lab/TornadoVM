@@ -42,21 +42,15 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
-import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXFMAPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXLowTier extends TornadoLowTier {
 
     TornadoDeviceContext tornadoDeviceContext;
-
-    public void attachTaskMetaDataToDeviceContext(TaskMetaData metaData) {
-        tornadoDeviceContext.attachTaskMetaData(metaData);
-    }
 
     public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
