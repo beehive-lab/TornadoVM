@@ -288,7 +288,7 @@ public class TornadoVM extends TornadoLogger {
                 Event event = device.resolveEvent(e);
                 event.waitForEvents();
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                copyInTimer += event.getExecutionTime();
+                copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
                 timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
 
@@ -324,7 +324,7 @@ public class TornadoVM extends TornadoLogger {
                 Event event = device.resolveEvent(e);
                 event.waitForEvents();
                 long copyInTimer = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                copyInTimer += event.getExecutionTime();
+                copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
                 timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
 
@@ -360,7 +360,7 @@ public class TornadoVM extends TornadoLogger {
             Event event = device.resolveEvent(lastEvent);
             event.waitForEvents();
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-            value += event.getExecutionTime();
+            value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
             timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
@@ -393,7 +393,7 @@ public class TornadoVM extends TornadoLogger {
             Event event = device.resolveEvent(tornadoEventID);
             event.waitForEvents();
             long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-            value += event.getExecutionTime();
+            value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
             timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, tasks.get(contextIndex).getId(), objectState.getBuffer().size());
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
@@ -441,6 +441,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             task.setUseGridScheduler(true);
+            task.setGridScheduler(gridScheduler);
         }
 
         if (shouldCompile(installedCodes[taskIndex])) {
@@ -575,7 +576,7 @@ public class TornadoVM extends TornadoLogger {
                     Event event = device.resolveEvent(e);
                     event.waitForEvents();
                     long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-                    value += event.getExecutionTime();
+                    value += event.getElapsedTime();
                     timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
                 }
             }
@@ -855,7 +856,7 @@ public class TornadoVM extends TornadoLogger {
                     TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventSet.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getQueuedTime(), profile.getSubmitTime(),
+                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
                                 profile.getStartTime(), profile.getEndTime());
                     }
                 }

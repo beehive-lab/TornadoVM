@@ -166,7 +166,7 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public long getExecutionTime() {
+    public long getElapsedTime() {
         return cuEventElapsedTime(eventWrapper);
     }
 
@@ -176,7 +176,7 @@ public class PTXEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public double getExecutionTimeInSeconds() {
+    public double getElapsedTimeInSeconds() {
         return RuntimeUtilities.elapsedTimeInSeconds(cuEventElapsedTime(eventWrapper));
     }
 
@@ -193,7 +193,7 @@ public class PTXEvent extends TornadoLogger implements Event {
 
     @Override
     public double getTotalTimeInSeconds() {
-        return getExecutionTimeInSeconds();
+        return getElapsedTimeInSeconds();
     }
 
     @Override

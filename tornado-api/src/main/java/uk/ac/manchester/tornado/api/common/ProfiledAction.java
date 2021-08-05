@@ -55,11 +55,11 @@ public interface ProfiledAction {
 
     long getEndTime();
 
-    long getExecutionTime();
+    long getElapsedTime();
 
     long getDriverDispatchTime();
 
-    double getExecutionTimeInSeconds();
+    double getElapsedTimeInSeconds();
 
     TornadoExecutionStatus getStatus();
 

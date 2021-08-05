@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 
@@ -77,6 +78,8 @@ public interface SchedulableTask {
     void enableDefaultThreadScheduler(boolean useDefaultScheduler);
 
     void setUseGridScheduler(boolean use);
+
+    void setGridScheduler(GridScheduler gridScheduler);
 
     boolean isGridSchedulerEnabled();
 }
