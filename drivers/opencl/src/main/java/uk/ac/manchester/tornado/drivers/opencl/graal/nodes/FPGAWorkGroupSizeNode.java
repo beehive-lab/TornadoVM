@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020-2021, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -33,17 +33,20 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 @NodeInfo
-public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLowerable {
+public class FPGAWorkGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
     @Successor
     LoopBeginNode loopBegin;
     @Input
-    LocalWorkGroupDimensionsNode localWork;
-    public static final NodeClass<ThreadConfigurationNode> TYPE = NodeClass.create(ThreadConfigurationNode.class);
+    LocalWorkGroupDimensionsNode localWorkNode;
+    public static final NodeClass<FPGAWorkGroupSizeNode> TYPE = NodeClass.create(FPGAWorkGroupSizeNode.class);
 
-    public ThreadConfigurationNode(LocalWorkGroupDimensionsNode localWork) {
+    public static final String FPGA_THREAD_ATTRIBUTE_PREFIX = "__attribute__((reqd_work_group_size(";
+    public static final String FPGA_THREAD_ATTRIBUTE_SUFFIX = ")))";
+
+    public FPGAWorkGroupSizeNode(LocalWorkGroupDimensionsNode localWork) {
         super(TYPE, StampFactory.forVoid());
-        this.localWork = localWork;
+        this.localWorkNode = localWork;
     }
 
     /**
@@ -52,5 +55,12 @@ public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLow
      */
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
+    }
+
+    public String createThreadAttribute() {
+        String fpgaThreadAttribute;
+        fpgaThreadAttribute = FPGA_THREAD_ATTRIBUTE_PREFIX + localWorkNode.getXToString() + ", " + localWorkNode.getYToString() + ", " + localWorkNode.getZToString() + FPGA_THREAD_ATTRIBUTE_SUFFIX;
+
+        return fpgaThreadAttribute;
     }
 }
