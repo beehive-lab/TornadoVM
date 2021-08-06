@@ -32,7 +32,7 @@ public class NBody {
 
     private static boolean VALIDATION = true;
 
-    static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
+    private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
 
