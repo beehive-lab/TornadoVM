@@ -172,21 +172,14 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
+            final ConstantNode constant;
 
-            if (gridScheduling) {
-                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
-                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
-                node.replaceAtUsages(ptxStackAccessNode);
-                index++;
+            if (batchThreads <= 0) {
+                constant = ConstantNode.forInt(length);
             } else {
-                final ConstantNode constant;
-                if (batchThreads <= 0) {
-                    constant = ConstantNode.forInt(length);
-                } else {
-                    constant = ConstantNode.forInt((int) batchThreads);
-                }
-                node.replaceAtUsages(graph.addOrUnique(constant));
+                constant = ConstantNode.forInt((int) batchThreads);
             }
+            node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
         } else if (node instanceof LoadFieldNode) {
