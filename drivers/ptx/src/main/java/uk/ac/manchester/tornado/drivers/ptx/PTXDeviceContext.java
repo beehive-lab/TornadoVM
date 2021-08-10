@@ -410,7 +410,7 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public void dumpEvents() {
-        List<PTXEvent> events = stream.getEventsWrapper().getEvents();
+        List<PTXEvent> events = stream.getEventPool().getEvents();
 
         final String deviceName = "PTX-" + device.getDeviceName();
         System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,6 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.ptx.PTXEvent.EVENT_DESCRIPTIONS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
@@ -35,21 +33,24 @@ import java.util.BitSet;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.EventDescriptor;
 
-public class PTXEventsWrapper {
+public class PTXEventPool {
 
     private final PTXEvent[] events;
     private final BitSet retain;
     private int eventIndex;
+    private int eventPoolSize;
 
-    protected PTXEventsWrapper() {
-        this.retain = new BitSet(EVENT_WINDOW);
+    protected PTXEventPool(int poolSize) {
+        this.eventPoolSize = poolSize;
+        this.retain = new BitSet(poolSize);
         this.retain.clear();
-        this.events = new PTXEvent[EVENT_WINDOW];
+        this.events = new PTXEvent[poolSize];
         this.eventIndex = 0;
     }
 
-    protected int registerEvent(byte[][] eventWrapper, int descriptorId, long tag) {
+    protected int registerEvent(byte[][] eventWrapper, EventDescriptor descriptorId) {
         if (retain.get(eventIndex)) {
             findNextEventSlot();
         }
@@ -57,7 +58,7 @@ public class PTXEventsWrapper {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         if (eventWrapper == null) {
-            fatal("invalid event: description=%s, tag=0x%x\n", EVENT_DESCRIPTIONS[descriptorId], tag);
+            fatal("invalid event: description=%s\n", descriptorId.getNameDescription());
             fatal("terminating application as system integrity has been compromised.");
             throw new TornadoBailoutRuntimeException("[ERROR] NULL event received from the CUDA driver !");
         }
@@ -67,7 +68,7 @@ public class PTXEventsWrapper {
             events[currentEvent].destroy();
             events[currentEvent] = null;
         }
-        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId, tag);
+        events[currentEvent] = new PTXEvent(eventWrapper, descriptorId);
 
         findNextEventSlot();
         return currentEvent;
@@ -80,7 +81,7 @@ public class PTXEventsWrapper {
             eventIndex = 0;
         }
 
-        guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
+        guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), eventPoolSize);
     }
 
     protected void reset() {
