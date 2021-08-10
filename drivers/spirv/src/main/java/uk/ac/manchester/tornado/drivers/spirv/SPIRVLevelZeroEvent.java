@@ -4,7 +4,9 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
@@ -18,11 +20,25 @@ public class SPIRVLevelZeroEvent extends SPIRVEvent {
     private ZeKernelTimeStampResult kernelTimeStampResult;
     private ZeDeviceProperties deviceProperties;
     private LevelZeroByteBuffer levelZeroBufferKernelResult;
+    private LevelZeroDevice device;
+
+    public enum RegionAllocBuffer {
+        HOST, SHARED
+    }
 
     public SPIRVLevelZeroEvent(ZeEventHandle eventHandle, LevelZeroCommandList commandList, ZeDeviceProperties deviceProperties) {
+        this(eventHandle, commandList, deviceProperties, null);
+    }
+
+    public SPIRVLevelZeroEvent(ZeEventHandle eventHandle, LevelZeroCommandList commandList, ZeDeviceProperties deviceProperties, LevelZeroDevice device) {
         this.eventHandle = eventHandle;
         this.commandList = commandList;
         this.deviceProperties = deviceProperties;
+        this.device = device;
+    }
+
+    private void setDevice(LevelZeroDevice device) {
+        this.device = device;
     }
 
     private void createKernelTimeStampResult(ZeDeviceProperties deviceProperties) {
@@ -33,12 +49,23 @@ public class SPIRVLevelZeroEvent extends SPIRVEvent {
         kernelTimeStampResult.resolve(buffer);
     }
 
-    private void createKernelBufferForResult() {
+    private void createKernelBufferForResult(RegionAllocBuffer region) {
         LevelZeroContext context = commandList.getContext();
         ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
         levelZeroBufferKernelResult = new LevelZeroByteBuffer();
-        int result = context.zeMemAllocHost(context.getDefaultContextPtr(), hostMemAllocDesc, Sizeof.ze_kernel_timestamp_result_t.getNumBytes(), 1, levelZeroBufferKernelResult);
-        LevelZeroUtils.errorLog("zeMemAllocHost", result);
+        if (region == RegionAllocBuffer.HOST) {
+            int result = context.zeMemAllocHost(context.getDefaultContextPtr(), hostMemAllocDesc, Sizeof.ze_kernel_timestamp_result_t.getNumBytes(), 1, levelZeroBufferKernelResult);
+            LevelZeroUtils.errorLog("zeMemAllocHost", result);
+        } else if (region == RegionAllocBuffer.SHARED) {
+            if (device == null) {
+                throw new RuntimeException("Device is null");
+            }
+            ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+            levelZeroBufferKernelResult = new LevelZeroByteBuffer();
+            int result = context.zeMemAllocShared(context.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, Sizeof.ze_kernel_timestamp_result_t.getNumBytes(), 1,
+                    device.getDeviceHandlerPtr(), levelZeroBufferKernelResult);
+            LevelZeroUtils.errorLog("zeMemAllocShared", result);
+        }
     }
 
     @Override
