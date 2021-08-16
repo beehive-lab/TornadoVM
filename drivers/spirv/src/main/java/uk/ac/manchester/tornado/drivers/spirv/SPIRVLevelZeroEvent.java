@@ -8,7 +8,11 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventScopeFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
@@ -66,6 +70,27 @@ public class SPIRVLevelZeroEvent extends SPIRVEvent {
                     device.getDeviceHandlerPtr(), levelZeroBufferKernelResult);
             LevelZeroUtils.errorLog("zeMemAllocShared", result);
         }
+    }
+
+    public void createEventPoolAndEvents(ZeEventPoolHandle eventPoolHandle, int poolEventFlags, int poolSize, ZeEventHandle kernelEvent) {
+
+        LevelZeroContext context = commandList.getContext();
+        ZeEventPoolDescription eventPoolDescription = new ZeEventPoolDescription();
+
+        eventPoolDescription.setCount(poolSize);
+        eventPoolDescription.setFlags(poolEventFlags);
+
+        // Create a pool of events
+        int result = context.zeEventPoolCreate(context.getDefaultContextPtr(), eventPoolDescription, 1, device.getDeviceHandlerPtr(), eventPoolHandle);
+        LevelZeroUtils.errorLog("zeEventPoolCreate", result);
+
+        // Create the Kernel Event
+        ZeEventDescription eventDescription = new ZeEventDescription();
+        eventDescription.setIndex(0);
+        eventDescription.setSignal(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
+        eventDescription.setWait(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
+        result = context.zeEventCreate(eventPoolHandle, eventDescription, kernelEvent);
+        LevelZeroUtils.errorLog("zeEventCreate", result);
     }
 
     @Override
