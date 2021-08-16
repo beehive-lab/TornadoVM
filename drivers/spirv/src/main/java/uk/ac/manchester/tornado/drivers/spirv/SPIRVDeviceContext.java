@@ -3,12 +3,14 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.lang.reflect.Array;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
+import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -20,6 +22,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * OpenCL device) with an SPIR-V Context.
  */
 public abstract class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
+
+    protected static final Event EMPTY_EVENT = new EmptyEvent();
 
     protected SPIRVDevice device;
     protected SPIRVCommandQueue queue;
@@ -304,5 +308,10 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     @Override
     public boolean isPlatformXilinxFPGA() {
         return false;
+    }
+
+    public Event resolveEvent(int event) {
+        System.out.println("SOLVING AN EMPTY EVENT");
+        return EMPTY_EVENT;
     }
 }

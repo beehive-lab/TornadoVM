@@ -7,13 +7,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
  * Method:    zeCommandListAppendLaunchKernel_native
- * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeGroupDispatch;Ljava/lang/Object;ILjava/lang/Object;)I
+ * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeGroupDispatch;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILjava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendLaunchKernel_1native
-        (JNIEnv *, jobject, jlong, jlong, jobject, jobject, jint, jobject);
+    (JNIEnv *, jobject, jlong, jlong, jobject, jobject, jint, jobject);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
@@ -159,6 +160,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListReset_1native
         (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendQueryKernelTimestamps_native
+ * Signature: (JILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;Luk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;[ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;I[Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendQueryKernelTimestamps_1native
+    (JNIEnv *, jobject, jlong, jint, jobject, jobject, jintArray, jobject, jint, jobjectArray);
 
 #ifdef __cplusplus
 }

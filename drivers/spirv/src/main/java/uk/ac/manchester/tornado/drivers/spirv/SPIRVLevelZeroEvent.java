@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.drivers.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -25,20 +26,24 @@ public class SPIRVLevelZeroEvent extends SPIRVEvent {
     private ZeDeviceProperties deviceProperties;
     private LevelZeroByteBuffer levelZeroBufferKernelResult;
     private LevelZeroDevice device;
+    private int eventId;
+    private EventDescriptor descriptorId;
 
     public enum RegionAllocBuffer {
-        HOST, SHARED
+        HOST, //
+        SHARED //
     }
 
-    public SPIRVLevelZeroEvent(ZeEventHandle eventHandle, LevelZeroCommandList commandList, ZeDeviceProperties deviceProperties) {
-        this(eventHandle, commandList, deviceProperties, null);
+    public SPIRVLevelZeroEvent(ZeEventHandle eventHandle, LevelZeroCommandList commandList, ZeDeviceProperties deviceProperties, int eventId, EventDescriptor descriptorId) {
+        this(eventHandle, commandList, deviceProperties, null, eventId, descriptorId);
     }
 
-    public SPIRVLevelZeroEvent(ZeEventHandle eventHandle, LevelZeroCommandList commandList, ZeDeviceProperties deviceProperties, LevelZeroDevice device) {
+    public SPIRVLevelZeroEvent(ZeEventHandle eventHandle, LevelZeroCommandList commandList, ZeDeviceProperties deviceProperties, LevelZeroDevice device, int eventId, EventDescriptor descriptorId) {
         this.eventHandle = eventHandle;
         this.commandList = commandList;
         this.deviceProperties = deviceProperties;
         this.device = device;
+        this.eventId = eventId;
     }
 
     private void setDevice(LevelZeroDevice device) {
@@ -152,4 +157,9 @@ public class SPIRVLevelZeroEvent extends SPIRVEvent {
     public void waitOn() {
 
     }
+
+    @Override
+    public void destroy() {
+    }
+
 }

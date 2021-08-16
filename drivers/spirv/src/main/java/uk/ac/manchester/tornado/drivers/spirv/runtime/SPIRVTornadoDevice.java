@@ -429,7 +429,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public Event resolveEvent(int event) {
-        return null;
+        return getDeviceContext().resolveEvent(event);
     }
 
     @Override

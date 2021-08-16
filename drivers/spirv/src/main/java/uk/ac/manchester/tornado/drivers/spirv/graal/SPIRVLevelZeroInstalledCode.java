@@ -3,19 +3,34 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventScopeFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
@@ -25,6 +40,9 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     private static final int WARP_SIZE = 32;
     private boolean valid;
     private boolean ADJUST_IRREGULAR = false;
+    private ZeKernelTimeStampResult resultKernel;
+    private LevelZeroByteBuffer timeStampBuffer;
+    private ZeEventPoolHandle eventPoolHandle;
 
     public SPIRVLevelZeroInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name, spirvModule, deviceContext);
@@ -34,6 +52,22 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     @Override
     public int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
+    }
+
+    private void updateProfiler(final int taskEvent, final TaskMetaData meta) {
+        if (TornadoOptions.isProfilerEnabled()) {
+            Event tornadoKernelEvent = deviceContext.resolveEvent(taskEvent);
+            tornadoKernelEvent.waitForEvents();
+            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            // Register globalTime
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
+            // Register the time for the task
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+        }
     }
 
     private void setKernelArgs(final SPIRVByteBuffer stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
@@ -127,14 +161,67 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();
 
+        ZeEventHandle kernelEventTimer = null;
+        LevelZeroDevice device = commandQueue.getDevice();
+        LevelZeroContext context = commandList.getContext();
+        if (TornadoOptions.isProfilerEnabled()) {
+            if (eventPoolHandle == null) {
+                eventPoolHandle = new ZeEventPoolHandle();
+            }
+            kernelEventTimer = new ZeEventHandle();
+            createEventPoolAndEvents(context, device, eventPoolHandle, ZeEventPoolFlags.ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP, 1, kernelEventTimer);
+        }
+
         // Launch the kernel on the Intel Integrated GPU
-        result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, null, 0, null);
+        result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, kernelEventTimer, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendLaunchKernel", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
+        if (TornadoOptions.isProfilerEnabled()) {
+            timeStampBuffer = new LevelZeroByteBuffer();
+            ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+            result = context.zeMemAllocHost(context.getDefaultContextPtr(), hostMemAllocDesc, Sizeof.ze_kernel_timestamp_result_t.getNumBytes(), 1, timeStampBuffer);
+            LevelZeroUtils.errorLog("zeMemAllocHost", result);
+
+            result = commandList.zeCommandListAppendQueryKernelTimestamps(commandList.getCommandListHandlerPtr(), 1, kernelEventTimer, timeStampBuffer, null, null, 0, null);
+            LevelZeroUtils.errorLog("zeCommandListAppendQueryKernelTimestamps", result);
+
+            solveKernelEvent(device);
+        }
+
         return 0;
+    }
+
+    public void solveKernelEvent(LevelZeroDevice device) {
+        ZeDeviceProperties deviceProperties = new ZeDeviceProperties();
+        int result = device.zeDeviceGetProperties(device.getDeviceHandlerPtr(), deviceProperties);
+        LevelZeroUtils.errorLog("zeDeviceGetProperties", result);
+        resultKernel = new ZeKernelTimeStampResult(deviceProperties);
+        deviceContext.flush(device.getDeviceIndex());
+
+        resultKernel.resolve(timeStampBuffer);
+        resultKernel.printTimers();
+    }
+
+    private static void createEventPoolAndEvents(LevelZeroContext context, LevelZeroDevice device, ZeEventPoolHandle eventPoolHandle, int poolEventFlags, int poolSize, ZeEventHandle kernelEvent) {
+
+        ZeEventPoolDescription eventPoolDescription = new ZeEventPoolDescription();
+
+        eventPoolDescription.setCount(poolSize);
+        eventPoolDescription.setFlags(poolEventFlags);
+
+        int result = context.zeEventPoolCreate(context.getDefaultContextPtr(), eventPoolDescription, 1, device.getDeviceHandlerPtr(), eventPoolHandle);
+        LevelZeroUtils.errorLog("zeEventPoolCreate", result);
+
+        // Create Kernel Event
+        ZeEventDescription eventDescription = new ZeEventDescription();
+        eventDescription.setIndex(0);
+        eventDescription.setSignal(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
+        eventDescription.setWait(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
+        result = context.zeEventCreate(eventPoolHandle, eventDescription, kernelEvent);
+        LevelZeroUtils.errorLog("zeEventCreate", result);
     }
 
     private void calculateLocalWork(TaskMetaData meta) {

@@ -639,28 +639,24 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     jclass klassEventPoolDescription = env->GetObjectClass(javaEventPoolDescription);
     jfieldID field = env->GetFieldID(klassEventPoolDescription, "stype", "I");
-    int stype = env->GetLongField(javaEventPoolDescription, field);
+    int stype = env->GetIntField(javaEventPoolDescription, field);
     field = env->GetFieldID(klassEventPoolDescription, "count", "I");
-    jint count = env->GetLongField(javaEventPoolDescription, field);
+    jint count = env->GetIntField(javaEventPoolDescription, field);
     field = env->GetFieldID(klassEventPoolDescription, "flags", "I");
-    jint flags = env->GetLongField(javaEventPoolDescription, field);
+    jint flags = env->GetIntField(javaEventPoolDescription, field);
+    field = env->GetFieldID(klassEventPoolDescription, "pNext", "J");
+    jint pNext = env->GetLongField(javaEventPoolDescription, field);
 
-    ze_event_pool_desc_t eventPoolDescription;
+    ze_event_pool_desc_t eventPoolDescription = {};
     eventPoolDescription.stype = static_cast<ze_structure_type_t>(stype);
+    eventPoolDescription.pNext = reinterpret_cast<const void *>(pNext);
     eventPoolDescription.count = count;
     eventPoolDescription.flags = flags;
 
-    ze_event_pool_handle_t eventPool;
+    ze_event_pool_handle_t eventPool = nullptr;
 
-    // FIXME: it receives a list of devices (phDevices) instead of single device
     ze_result_t result = zeEventPoolCreate(context, &eventPoolDescription, numDevices, &device, &eventPool);
     LOG_ZE_JNI("zeEventPoolCreate", result);
-
-    ze_event_desc_t eventDesc = {};
-    ze_event_handle_t event;
-    result = zeEventCreate(eventPool, &eventDesc, &event);
-    LOG_ZE_JNI("zeEventCreate", result);
-
 
     // Set fields for Java Event Pool Handle
     jclass eventPoolHandlerClass = env->GetObjectClass(javaEventPool);
@@ -670,18 +666,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     // Set Event Pool Description
     field = env->GetFieldID(klassEventPoolDescription, "ptrZeEventPoolDescription", "J");
     env->SetLongField(javaEventPoolDescription, field, reinterpret_cast<jlong>(&eventPoolDescription));
-
-    field = env->GetFieldID(klassEventPoolDescription, "stype", "I");
-    env->SetIntField(javaEventPoolDescription, field, eventPoolDescription.stype);
-
-    field = env->GetFieldID(klassEventPoolDescription, "pNext", "J");
-    env->SetLongField(javaEventPoolDescription, field, reinterpret_cast<jlong>(eventPoolDescription.pNext));
-
-    field = env->GetFieldID(klassEventPoolDescription, "flags", "I");
-    env->SetIntField(javaEventPoolDescription, field, eventPoolDescription.flags);
-
-    field = env->GetFieldID(klassEventPoolDescription, "count", "I");
-    env->SetIntField(javaEventPoolDescription, field, eventPoolDescription.count);
 
     return result;
 }
@@ -700,8 +684,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID field = env->GetFieldID(eventPoolClass, "ptrZeEventPoolHandle", "J");
     long ptrEventPool = env->GetLongField(javaEventPoolHandler, field);
     if (ptrEventPool != -1) {
-        ze_event_pool_handle_t *eventPoolPtr = reinterpret_cast<ze_event_pool_handle_t*>(ptrEventPool);
-        eventPool = *eventPoolPtr;
+        eventPool = reinterpret_cast<ze_event_pool_handle_t>(ptrEventPool);
     } else {
         std::cout << "[TornadoVM-JNI] Error, Java Event Pool Handler native pointer is null - Invoke zeEventPoolCreate before calling this function " << std::endl;
         return -1;
@@ -790,7 +773,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocHost_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeMemAllocHostDesc;IILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocHost_1native
         (JNIEnv *env, jobject, jlong javaContextPtr, jobject javaHostMemAllocDesc, jint allocSize, jint alignment, jobject javaLevelZeroBuffer) {

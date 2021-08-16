@@ -202,7 +202,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         if (isFinal && onDevice) {
             returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
-            // We first write the header for the object and then we write actual
+            // We first write the header for the object, and then we write actual
             // buffer
             final int headerEvent;
             if (batchSize <= 0) {

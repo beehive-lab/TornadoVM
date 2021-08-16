@@ -4,4 +4,5 @@ import uk.ac.manchester.tornado.api.common.Event;
 
 public abstract class SPIRVEvent implements Event {
 
+    public abstract void destroy();
 }

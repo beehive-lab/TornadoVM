@@ -32,7 +32,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     private LevelZeroContext levelZeroContext;
     private List<SPIRVDeviceContext> spirvDeviceContext;
     private List<SPIRVLevelZeroCommandQueue> commandQueues;
-    LevelZeroByteBuffer deviceBuffer;
+    private LevelZeroByteBuffer deviceBuffer;
 
     // This class should only receive 1 device, not a list of devices.
     public SPIRVLevelZeroContext(SPIRVPlatform platform, List<SPIRVDevice> devices, LevelZeroContext levelZeroContext) {

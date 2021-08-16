@@ -6,6 +6,9 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EV
 
 import java.util.BitSet;
 
+import uk.ac.manchester.tornado.drivers.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
+
 /**
  * This class controls a pools of low-level events for the device. There is a
  * pool of events per device, and it handles the actual events that will
@@ -14,33 +17,45 @@ import java.util.BitSet;
 public class SPIRVEventPool {
 
     private final int poolSize;
-    private long[] events;
     private final BitSet retain;
-    private int eventIndex;
+    private int eventPositionIndex;
+
+    private final ZeEventHandle[] events;
+    private final EventDescriptor[] descriptors;
 
     protected SPIRVEventPool(int poolSize) {
         this.poolSize = poolSize;
-        this.events = new long[poolSize];
+        this.events = new ZeEventHandle[poolSize];
+        this.descriptors = new EventDescriptor[poolSize];
         this.retain = new BitSet(poolSize);
-        this.eventIndex = 0;
+        this.eventPositionIndex = 0;
     }
 
     private void findNextEventSlot() {
-        eventIndex = retain.nextClearBit(eventIndex + 1);
-        if (CIRCULAR_EVENTS && (eventIndex >= events.length)) {
-            eventIndex = 0;
+        eventPositionIndex = retain.nextClearBit(eventPositionIndex + 1);
+        if (CIRCULAR_EVENTS && (eventPositionIndex >= events.length)) {
+            eventPositionIndex = 0;
         }
-        guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
+        guarantee(eventPositionIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
     }
 
-    protected int registerEvent(int descriptorId) {
-        if (retain.get(eventIndex)) {
+    protected int registerEvent(ZeEventHandle eventHandle, EventDescriptor eventDescriptor) {
+        if (retain.get(eventPositionIndex)) {
             findNextEventSlot();
         }
-        final int currentEvent = eventIndex;
-        guarantee(!retain.get(currentEvent), "overwriting retained event");
+        final int currentEventPosition = eventPositionIndex;
+        guarantee(!retain.get(currentEventPosition), "overwriting retained event");
 
-        return currentEvent;
+        if (events[currentEventPosition] != null && !retain.get(currentEventPosition)) {
+            events[currentEventPosition] = null;
+            throw new RuntimeException("Not supported");
+        }
+
+        events[currentEventPosition] = eventHandle;
+        descriptors[currentEventPosition] = eventDescriptor;
+        findNextEventSlot();
+
+        return currentEventPosition;
     }
 
     private int getPoolSize() {
