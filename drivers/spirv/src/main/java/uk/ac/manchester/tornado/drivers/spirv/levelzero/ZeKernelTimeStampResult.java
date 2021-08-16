@@ -75,10 +75,13 @@ public class ZeKernelTimeStampResult {
     }
 
     public void printTimers() {
-        System.out.println("Global Start: " + this.globalKernelStart + " (cycles)");
-        System.out.println("Global End: " + this.globalKernelEnd + " (cycles)");
-        System.out.println("Context Start: " + this.contextKernelStart + " (cycles)");
-        System.out.println("Context End: " + this.contextKernelEnd + " (cycles)");
-        System.out.println("Elapsed Time: " + this.kernelElapsedTime + " (ns)");
+        if (hasBeenResolved()) {
+            System.out.println("Global Start: " + this.globalKernelStart + " (cycles)");
+            System.out.println("Global End: " + this.globalKernelEnd + " (cycles)");
+            System.out.println("Context Start: " + this.contextKernelStart + " (cycles)");
+            System.out.println("Context End: " + this.contextKernelEnd + " (cycles)");
+            System.out.println("Elapsed Time: " + this.kernelElapsedTime + " (ns)");
+        }
+        System.err.println("Timer has not been resolved yet: ");
     }
 }
