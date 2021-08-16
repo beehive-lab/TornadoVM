@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
@@ -30,6 +29,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -54,19 +54,15 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         throw new RuntimeException("Unimplemented");
     }
 
-    private void updateProfiler(final int taskEvent, final TaskMetaData meta) {
+    private void updateProfiler(ZeKernelTimeStampResult resultKernel, final TaskMetaData meta) {
         if (TornadoOptions.isProfilerEnabled()) {
-            Event tornadoKernelEvent = deviceContext.resolveEvent(taskEvent);
-            tornadoKernelEvent.waitForEvents();
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            long kernelElapsedTime = (long) resultKernel.getKernelElapsedTime();
             // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + kernelElapsedTime);
             // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
-            // Register the dispatch time of the kernel
-            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
-            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), kernelElapsedTime);
+
         }
     }
 
@@ -189,6 +185,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             LevelZeroUtils.errorLog("zeCommandListAppendQueryKernelTimestamps", result);
 
             solveKernelEvent(device);
+            updateProfiler(resultKernel, meta);
         }
 
         return 0;
@@ -202,7 +199,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         deviceContext.flush(device.getDeviceIndex());
 
         resultKernel.resolve(timeStampBuffer);
-        resultKernel.printTimers();
+
+        if (Tornado.DEBUG) {
+            resultKernel.printTimers();
+        }
     }
 
     private static void createEventPoolAndEvents(LevelZeroContext context, LevelZeroDevice device, ZeEventPoolHandle eventPoolHandle, int poolEventFlags, int poolSize, ZeEventHandle kernelEvent) {
