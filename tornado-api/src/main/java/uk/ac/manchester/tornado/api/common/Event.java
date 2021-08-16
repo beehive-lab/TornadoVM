@@ -41,7 +41,15 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
-public interface Event extends ProfiledAction, SynchronisationPoint {
+public interface Event extends ProfiledAction {
 
+    /**
+     * Wait for the instanced event to be resolved.
+     */
     void waitForEvents();
+
+    /**
+     * Call to native wait depending on internal state.
+     */
+    void waitOn();
 }

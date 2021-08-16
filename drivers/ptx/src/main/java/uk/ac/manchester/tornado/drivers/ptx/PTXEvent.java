@@ -2,7 +2,7 @@
 * This file is part of Tornado: A heterogeneous programming framework:
 * https://github.com/beehive-lab/tornadovm
 *
-* Copyright (c) 2020, APT Group, Department of Computer Science,
+* Copyright (c) 2020-2021, APT Group, Department of Computer Science,
 * School of Engineering, The University of Manchester. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -24,53 +24,11 @@ package uk.ac.manchester.tornado.drivers.ptx;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.drivers.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXEvent extends TornadoLogger implements Event {
-
-    protected static final long DEFAULT_TAG = 0x12;
-
-    // @formatter:off
-    protected static final String[] EVENT_DESCRIPTIONS = {
-            "kernel - serial",
-            "kernel - parallel",
-            "writeToDevice - byte[]",
-            "writeToDevice - short[]",
-            "writeToDevice - int[]",
-            "writeToDevice - long[]",
-            "writeToDevice - float[]",
-            "writeToDevice - double[]",
-            "readFromDevice - byte[]",
-            "readFromDevice - short[]",
-            "readFromDevice - int[]",
-            "readFromDevice - long[]",
-            "readFromDevice - float[]",
-            "readFromDevice - double[]",
-            "sync - marker",
-            "sync - barrier",
-            "none"
-    };
-    // @formatter:on
-
-    protected static final int DESC_SERIAL_KERNEL = 0;
-    protected static final int DESC_PARALLEL_KERNEL = 1;
-    protected static final int DESC_WRITE_BYTE = 2;
-    protected static final int DESC_WRITE_SHORT = 3;
-    protected static final int DESC_WRITE_INT = 4;
-    protected static final int DESC_WRITE_LONG = 5;
-    protected static final int DESC_WRITE_FLOAT = 6;
-    protected static final int DESC_WRITE_DOUBLE = 7;
-    protected static final int DESC_READ_BYTE = 8;
-    protected static final int DESC_READ_SHORT = 9;
-    protected static final int DESC_READ_INT = 10;
-    protected static final int DESC_READ_LONG = 11;
-    protected static final int DESC_READ_FLOAT = 12;
-    protected static final int DESC_READ_DOUBLE = 13;
-    protected static final int DESC_SYNC_MARKER = 14;
-    protected static final int DESC_SYNC_BARRIER = 15;
-    protected static final int EVENT_NONE = 16;
+public class PTXEvent implements Event {
 
     /**
      * Wrapper containing two serialized CUevent structs. Between the two events, on
@@ -79,21 +37,21 @@ public class PTXEvent extends TornadoLogger implements Event {
      * the two events to get the duration of the API call.
      *
      * <p>
-     * The first position (eventWrapper[0]) contains the beforeEvent The second
-     * position eventWrapper[1] contains the afterEvent.
+     * - The first position (eventWrapper[0]) contains the beforeEvent.
+     * 
+     * - The second position (eventWrapper[1]) contains the afterEvent.
+     * </p>
      */
     private final byte[][] eventWrapper;
 
     private boolean isCompleted;
     private final String description;
-    private final long tag;
     private final String name;
 
-    public PTXEvent(byte[][] bytes, int descriptorId, long tag) {
+    public PTXEvent(byte[][] bytes, EventDescriptor descriptorId) {
         eventWrapper = bytes;
-        this.description = EVENT_DESCRIPTIONS[descriptorId];
-        this.tag = tag;
-        this.name = String.format("%s: 0x%x", description, tag);
+        this.description = descriptorId.getNameDescription();
+        this.name = String.format("%s: ", description);
         isCompleted = false;
     }
 
