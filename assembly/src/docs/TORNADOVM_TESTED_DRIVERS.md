@@ -21,6 +21,7 @@
 
 The following drivers have been tested on Linux >= CentOS 7.3 
 
+* 21.31.20514: OK  ( OpenCL 3.0 )
 * 21.28.20343: OK  ( OpenCL 3.0 )
 * 21.27.20266: OK  ( OpenCL 3.0 )
 * 21.26.20194: OK  ( OpenCL 3.0 )
@@ -129,6 +130,7 @@ The following drivers have been tested Fedora >= 34
 
 #### OpenCL drivers
 
+* 470.63.01: OK
 * 470.57.02: OK
 * 460.84   : OK
 * 460.80   : OK
@@ -149,6 +151,7 @@ The following drivers have been tested Fedora >= 34
 
 #### PTX (CUDA) drivers
 
+* 470.63.01: OK
 * 470.57.02: OK
 * 460.84   : OK
 * 460.80   : OK
