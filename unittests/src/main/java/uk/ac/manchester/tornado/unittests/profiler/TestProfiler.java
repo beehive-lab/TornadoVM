@@ -86,7 +86,7 @@ public class TestProfiler extends TornadoTestBase {
         }
         assertTrue(ts.getDeviceReadTime() >= 0);
         assertTrue(ts.getDeviceWriteTime() >= 0);
-        assertTrue(ts.getDeviceKernelTime() >= 0);
+        assertTrue(ts.getDeviceKernelTime() > 0);
 
         assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());
         assertEquals(ts.getTornadoCompilerTime() + ts.getDriverInstallTime(), ts.getCompileTime());
