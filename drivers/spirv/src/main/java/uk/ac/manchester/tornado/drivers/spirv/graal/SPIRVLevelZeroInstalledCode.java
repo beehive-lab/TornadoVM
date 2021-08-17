@@ -55,15 +55,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     private void updateProfiler(ZeKernelTimeStampResult resultKernel, final TaskMetaData meta) {
-        if (TornadoOptions.isProfilerEnabled()) {
-            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
-            long kernelElapsedTime = (long) resultKernel.getKernelElapsedTime();
-            // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + kernelElapsedTime);
-            // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), kernelElapsedTime);
-
-        }
+        long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+        long kernelElapsedTime = (long) resultKernel.getKernelElapsedTime();
+        // Register globalTime
+        meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + kernelElapsedTime);
+        // Register the time for the task
+        meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), kernelElapsedTime);
     }
 
     private void setKernelArgs(final SPIRVByteBuffer stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
