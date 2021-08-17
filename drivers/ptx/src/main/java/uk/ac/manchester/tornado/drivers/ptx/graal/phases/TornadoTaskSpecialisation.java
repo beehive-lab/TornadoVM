@@ -52,6 +52,9 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -172,14 +175,26 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
-            final ConstantNode constant;
 
-            if (batchThreads <= 0) {
-                constant = ConstantNode.forInt(length);
+            /**
+             * This condition covers the case that loop bounds should be taken based on the
+             * grid size given by {@link GridScheduler}. This allows the loop bounds to be
+             * dynamically configured, without requiring recompilation.
+             */
+            if (gridScheduling) {
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
+                node.replaceAtUsages(ptxStackAccessNode);
+                index++;
             } else {
-                constant = ConstantNode.forInt((int) batchThreads);
+                final ConstantNode constant;
+                if (batchThreads <= 0) {
+                    constant = ConstantNode.forInt(length);
+                } else {
+                    constant = ConstantNode.forInt((int) batchThreads);
+                }
+                node.replaceAtUsages(graph.addOrUnique(constant));
             }
-            node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
         } else if (node instanceof LoadFieldNode) {
