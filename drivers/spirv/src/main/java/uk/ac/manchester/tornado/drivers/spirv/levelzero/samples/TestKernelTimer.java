@@ -68,7 +68,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * How to run?
  *
  * <code>
- * tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZero
+ * tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestKernelTimer
  * </code>
  */
 public class TestKernelTimer {

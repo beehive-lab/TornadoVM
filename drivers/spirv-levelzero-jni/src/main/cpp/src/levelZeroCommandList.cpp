@@ -444,7 +444,30 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
     ze_result_t result = zeCommandListAppendQueryKernelTimestamps(commandList, numEvents, &events, timestampBuffer, offsets, nullptr, numWaitEvents, nullptr);
     LOG_ZE_JNI("zeCommandListAppendQueryKernelTimestamps", result);
-
     return result;
+}
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendWriteGlobalTimestamp_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;ILuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeEventHandle;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendWriteGlobalTimestamp_1native
+    (JNIEnv *env, jobject, jlong javaCommandListHandlePtr, jobject javaByteBuffer, jobject javaSignalEvents, jint numWaitEvents, jobject waitEventsHandler) {
+
+    ze_command_list_handle_t commandList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandlePtr);
+
+    uint64_t *timestampBuffer = nullptr;
+    if (javaByteBuffer != nullptr) {
+        jclass klass = env->GetObjectClass(javaByteBuffer);
+        jfieldID fieldPointer = env->GetFieldID(klass, "ptrBuffer", "J");
+        jlong ptr = env->GetLongField(javaByteBuffer, fieldPointer);
+        if (ptr != -1) {
+            timestampBuffer = reinterpret_cast<uint64_t *>(ptr);
+        }
+    }
+
+    ze_result_t result = zeCommandListAppendWriteGlobalTimestamp(commandList, (uint64_t *) timestampBuffer ,nullptr, numWaitEvents, nullptr);
+    LOG_ZE_JNI("zeCommandListAppendWriteGlobalTimestamp", result);
+    return result;
 }

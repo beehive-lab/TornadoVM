@@ -432,4 +432,41 @@ public class LevelZeroCommandList {
         return zeCommandListAppendQueryKernelTimestamps_native(commandListHandlerPtr, numEvents, event, timeStampBuffer, offsets, signalEventHandler, numWaitEvents, waitEventsHandlers);
     }
 
+    private native int zeCommandListAppendWriteGlobalTimestamp_native(long commandListHandlerPtr, LevelZeroByteBuffer bufferTimeStamp, ZeEventHandle hSignalEvents, int numWaitEvents,
+            ZeEventHandle phWaitEvents);
+
+    /**
+     * Appends a memory write of the device's global timestamp value into a command
+     * list.
+     * 
+     * @param commandListHandlerPtr
+     *            Pointer to the command list handler
+     * @param bufferTimeStamp
+     *            pointer to memory where timestamp value will be written; must be
+     *            8byte-aligned.
+     * @param hSignalEvents
+     *            handle of the event to signal on completion
+     * @param numWaitEvents
+     *            number of events to wait on before executing query;
+     * @param phWaitEvents
+     *            handle of the events to wait on before executing query
+     * @return Error code
+     * 
+     *         <code>
+     *  - ZE_RESULT_SUCCESS
+     *  - ZE_RESULT_ERROR_UNINITIALIZED
+     *  - ZE_RESULT_ERROR_DEVICE_LOST
+     *  - ZE_RESULT_ERROR_INVALID_NULL_HANDLE
+     *    + `-1 == commandListHandlerPtr`
+     *  - ZE_RESULT_ERROR_INVALID_NULL_POINTER
+     *    + `null == bufferTimeStamp`
+     *  - ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *  - ZE_RESULT_ERROR_INVALID_SIZE
+     *   + `(null == phWaitEvents) && (0 < numWaitEvents)`
+     *      </code>
+     * 
+     */
+    public int zeCommandListAppendWriteGlobalTimestamp(long commandListHandlerPtr, LevelZeroByteBuffer bufferTimeStamp, ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
+        return zeCommandListAppendWriteGlobalTimestamp_native(commandListHandlerPtr, bufferTimeStamp, hSignalEvents, numWaitEvents, phWaitEvents);
+    }
 }
