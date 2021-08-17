@@ -81,7 +81,8 @@ public class ZeKernelTimeStampResult {
             System.out.println("Context Start: " + this.contextKernelStart + " (cycles)");
             System.out.println("Context End: " + this.contextKernelEnd + " (cycles)");
             System.out.println("Elapsed Time: " + this.kernelElapsedTime + " (ns)");
+        } else {
+            System.err.println("Timer has not been resolved yet: ");
         }
-        System.err.println("Timer has not been resolved yet: ");
     }
 }
