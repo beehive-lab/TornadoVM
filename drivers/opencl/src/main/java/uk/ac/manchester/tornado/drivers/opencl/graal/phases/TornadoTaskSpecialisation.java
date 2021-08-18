@@ -75,6 +75,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private long batchThreads;
     private boolean gridScheduling;
     private int index;
+    private boolean printOnce = true;
 
     private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
 
@@ -174,6 +175,13 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return constant;
     }
 
+    private void printWarningMessageForDynamicLoopBounds() {
+        if (printOnce) {
+            System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
+            printOnce = false;
+        }
+    }
+
     private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
@@ -188,7 +196,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
              * bound is not retrievable at compile time.
              */
             if (gridScheduling && isParameterInvolvedInParallelLoopBound(node)) {
-                System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
+                printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
                 node.replaceAtUsages(oclStackAccessNode);
@@ -249,13 +257,11 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private boolean isParameterInvolvedInParallelLoopBound(Node parameterNode) {
         AtomicBoolean parameterInLoopBound = new AtomicBoolean(false);
-
         parameterNode.usages().snapshot().forEach(node -> {
             if (node instanceof ParallelRangeNode) {
                 parameterInLoopBound.set(true);
             }
         });
-
         return parameterInLoopBound.get();
     }
 
@@ -270,7 +276,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
              * bound is not retrievable at compile time.
              */
             if (gridScheduling && isParameterInvolvedInParallelLoopBound(parameterNode)) {
-                System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
+                printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
                 parameterNode.replaceAtUsages(oclStackAccessNode);
