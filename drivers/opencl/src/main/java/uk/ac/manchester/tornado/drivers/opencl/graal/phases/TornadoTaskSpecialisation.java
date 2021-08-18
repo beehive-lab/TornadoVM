@@ -176,7 +176,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
-            final ConstantNode constant;
 
             /**
              * This condition covers the case that loop bounds should be taken based on the
@@ -189,6 +188,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 node.replaceAtUsages(oclStackAccessNode);
                 index++;
             } else {
+                final ConstantNode constant;
                 if (batchThreads <= 0) {
                     constant = ConstantNode.forInt(length);
                 } else {
