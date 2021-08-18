@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLContext extends SPIRVContext {
@@ -51,72 +52,72 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvent, TimeStamp start, TimeStamp stops) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, TimeStamp start, TimeStamp stop) {
         throw new RuntimeException("Unimplemented");
     }
 

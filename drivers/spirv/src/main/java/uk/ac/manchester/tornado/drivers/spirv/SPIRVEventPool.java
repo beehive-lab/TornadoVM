@@ -5,9 +5,11 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 import uk.ac.manchester.tornado.drivers.EventDescriptor;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
+import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 
 /**
  * This class controls a pools of low-level events for the device. There is a
@@ -20,12 +22,12 @@ public class SPIRVEventPool {
     private final BitSet retain;
     private int eventPositionIndex;
 
-    private final ZeEventHandle[] events;
+    private final HashMap<Integer, LinkedList<TimeStamp>> events;
     private final EventDescriptor[] descriptors;
 
     protected SPIRVEventPool(int poolSize) {
         this.poolSize = poolSize;
-        this.events = new ZeEventHandle[poolSize];
+        this.events = new HashMap<>();
         this.descriptors = new EventDescriptor[poolSize];
         this.retain = new BitSet(poolSize);
         this.eventPositionIndex = 0;
@@ -33,25 +35,31 @@ public class SPIRVEventPool {
 
     private void findNextEventSlot() {
         eventPositionIndex = retain.nextClearBit(eventPositionIndex + 1);
-        if (CIRCULAR_EVENTS && (eventPositionIndex >= events.length)) {
+        if (CIRCULAR_EVENTS && (eventPositionIndex >= poolSize)) {
             eventPositionIndex = 0;
         }
         guarantee(eventPositionIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
     }
 
-    protected int registerEvent(ZeEventHandle eventHandle, EventDescriptor eventDescriptor) {
+    protected int registerEvent(EventDescriptor eventDescriptor, TimeStamp start, TimeStamp stop) {
         if (retain.get(eventPositionIndex)) {
             findNextEventSlot();
         }
         final int currentEventPosition = eventPositionIndex;
         guarantee(!retain.get(currentEventPosition), "overwriting retained event");
 
-        if (events[currentEventPosition] != null && !retain.get(currentEventPosition)) {
-            events[currentEventPosition] = null;
-            throw new RuntimeException("Not supported");
-        }
+        // if (events[currentEventPosition] != 0 && !retain.get(currentEventPosition)) {
+        // events[currentEventPosition] = 0;
+        // throw new RuntimeException("Not supported");
+        // }
 
-        events[currentEventPosition] = eventHandle;
+        LinkedList<TimeStamp> listTimeStamps = new LinkedList<>();
+        listTimeStamps.add(start);
+        listTimeStamps.add(stop);
+
+        events.put(currentEventPosition, listTimeStamps);
+
+        // events[currentEventPosition] = currentEventPosition;
         descriptors[currentEventPosition] = eventDescriptor;
         findNextEventSlot();
 
@@ -62,4 +70,11 @@ public class SPIRVEventPool {
         return poolSize;
     }
 
+    public LinkedList<TimeStamp> getTimers(int eventId) {
+        return events.get(eventId);
+    }
+
+    public EventDescriptor getDescriptor(int eventId) {
+        return descriptors[eventId];
+    }
 }
