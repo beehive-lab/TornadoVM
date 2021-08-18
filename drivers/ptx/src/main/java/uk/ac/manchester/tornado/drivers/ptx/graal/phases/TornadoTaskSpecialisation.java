@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
@@ -74,6 +75,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private long batchThreads;
     private int index;
     private boolean gridScheduling;
+
+    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -181,7 +184,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
              * grid size given by {@link GridScheduler}. This allows the loop bounds to be
              * dynamically configured, without requiring recompilation.
              */
-            if (gridScheduling) {
+            if (gridScheduling && isParameterInvolvedInParallelLoopBound(node)) {
+                System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
                 node.replaceAtUsages(ptxStackAccessNode);
@@ -240,11 +244,36 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return result;
     }
 
+    private boolean isParameterInvolvedInParallelLoopBound(Node parameterNode) {
+        AtomicBoolean parameterInLoopBound = new AtomicBoolean(false);
+
+        parameterNode.usages().snapshot().forEach(node -> {
+            if (node instanceof ParallelRangeNode) {
+                parameterInLoopBound.set(true);
+            }
+        });
+
+        return parameterInLoopBound.get();
+    }
+
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
-            graph.addWithoutUnique(constant);
-            parameterNode.replaceAtUsages(constant);
+            /**
+             * This condition covers the case that loop bounds should be taken based on the
+             * grid size given by {@link GridScheduler}. This allows the loop bounds to be
+             * dynamically configured, without requiring recompilation.
+             */
+            if (gridScheduling && isParameterInvolvedInParallelLoopBound(parameterNode)) {
+                System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
+                ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
+                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
+                parameterNode.replaceAtUsages(ptxStackAccessNode);
+                index++;
+            } else {
+                ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
+                graph.addWithoutUnique(constant);
+                parameterNode.replaceAtUsages(constant);
+            }
         } else {
             parameterNode.usages().snapshot().forEach(n -> {
                 evaluate(graph, n, args[parameterNode.index()]);
