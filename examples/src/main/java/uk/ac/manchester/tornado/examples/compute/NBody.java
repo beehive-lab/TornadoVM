@@ -143,7 +143,7 @@ public class NBody {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
         // [Optional] Set the local work group
-        workerGrid.setLocalWork(1024, 1, 1);
+        workerGrid.setLocalWork(256, 1, 1);
 
         // @formatter:off
             final TaskSchedule t0 = new TaskSchedule("s0")
