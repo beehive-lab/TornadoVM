@@ -423,7 +423,11 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             return eventID;
         } else {
             TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-            return objectState.getBuffer().read(object, hostOffset, events, events == null);
+            int event = objectState.getBuffer().read(object, hostOffset, events, events == null);
+            // We force a blocking copy -> we need to close the command list and command
+            // queue
+            flush();
+            return event;
         }
     }
 
