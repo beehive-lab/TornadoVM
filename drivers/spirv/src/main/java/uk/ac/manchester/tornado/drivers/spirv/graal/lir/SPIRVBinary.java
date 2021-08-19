@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
@@ -11,8 +12,10 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIEqual;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSelect;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeArray;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
@@ -315,4 +318,62 @@ public class SPIRVBinary {
             asm.registerLIRInstructionValue(this, binaryVectorOperationResult);
         }
     }
+
+    public static class TernaryCondition extends BinaryConsumer {
+
+        @Use
+        private Value leftVal;
+        private Condition cond;
+
+        @Use
+        private Value right;
+
+        @Use
+        private Value trueValue;
+
+        @Use
+        private Value falseValue;
+
+        public TernaryCondition(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+
+        public TernaryCondition(LIRKind lirKind, Value leftVal, Condition cond, Value right, Value trueValue, Value falseValue) {
+            super(null, lirKind, trueValue, falseValue);
+            this.cond = cond;
+            this.leftVal = leftVal;
+            this.right = right;
+            this.trueValue = trueValue;
+            this.falseValue = falseValue;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVId idLeftVar = getId(leftVal, asm, (SPIRVKind) leftVal.getPlatformKind());
+            SPIRVId idRightVar = getId(right, asm, (SPIRVKind) right.getPlatformKind());
+
+            SPIRVId typeBoolean = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
+            SPIRVId comparisonResult = asm.module.getNextId();
+
+            switch (cond) {
+                case EQ:
+                    asm.currentBlockScope().add(new SPIRVOpIEqual(typeBoolean, comparisonResult, idLeftVar, idRightVar));
+                    break;
+                default:
+                    throw new RuntimeException("Condition type not supported");
+            }
+
+            SPIRVId trueValueId = getId(trueValue, asm, (SPIRVKind) trueValue.getPlatformKind());
+            SPIRVId falseValueId = getId(falseValue, asm, (SPIRVKind) falseValue.getPlatformKind());
+
+            SPIRVKind kind = (SPIRVKind) getLIRKind().getPlatformKind();
+            SPIRVId resultType = asm.primitives.getTypePrimitive(kind);
+            SPIRVId resultSelectId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpSelect(resultType, resultSelectId, comparisonResult, trueValueId, falseValueId));
+
+            asm.registerLIRInstructionValue(this, resultSelectId);
+        }
+    }
+
 }

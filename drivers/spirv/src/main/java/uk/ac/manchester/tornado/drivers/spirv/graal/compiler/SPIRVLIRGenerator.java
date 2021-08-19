@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVGenTool;
@@ -173,7 +174,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value leftVal, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        throw new RuntimeException("Not implemented yet");
+        SPIRVLogger.traceBuildLIR("emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
+        final Variable resultConditionalMove = newVariable(LIRKind.combine(trueValue, falseValue));
+        SPIRVBinary.TernaryCondition ternaryInstruction = new SPIRVBinary.TernaryCondition(LIRKind.combine(trueValue, falseValue), leftVal, cond, right, trueValue, falseValue);
+        append(new SPIRVLIRStmt.AssignStmt(resultConditionalMove, ternaryInstruction));
+        return resultConditionalMove;
     }
 
     @Override
