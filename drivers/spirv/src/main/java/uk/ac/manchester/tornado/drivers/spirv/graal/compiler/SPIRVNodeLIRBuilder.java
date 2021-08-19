@@ -316,13 +316,20 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 emitBranch((IfNode) dominator);
             }
             if (dominator instanceof IntegerSwitchNode) {
-                throw new RuntimeException("SWITCH CASE not supported");
+                // throw new RuntimeException("SWITCH CASE not supported");
+                emitSwitchBreak(end);
             }
         } else if (beginNode instanceof MergeNode) {
             // This case we have a nested if within a loop
             System.out.println("MERGE ------- IF " + LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0));
             append(new SPIRVControlFlow.BranchIf(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
+    }
+
+    private void emitSwitchBreak(AbstractEndNode end) {
+        LabelRef lirBlock = getLIRBlock(end.merge());
+        SPIRVLogger.traceBuildLIR("emitSwitchBreak end: %s with %s", end, lirBlock);
+        append(new SPIRVControlFlow.BranchIf(lirBlock, false, false));
     }
 
     @Override
