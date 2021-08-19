@@ -11,8 +11,8 @@ processing.
 
 ## 2. How can I use it?
 
-In Linux and Mac OSx, TornadoVM can be automatically installed with the [installer](https://github.com/beehive-lab/tornadovm-installer).
-Althernatively, TornadoVM can be manually installed either [from source](INSTALL.md) or by [using Docker](13_INSTALL_WITH_DOCKER.md).
+In Linux and Mac OSx, TornadoVM can be installed with the [installer](https://github.com/beehive-lab/tornadovm-installer).
+Althernatively, TornadoVM can be installed either [from source](1_INSTALL.md) or by [using Docker](13_INSTALL_WITH_DOCKER.md).
 
 #### List of compatible JDKs
 
