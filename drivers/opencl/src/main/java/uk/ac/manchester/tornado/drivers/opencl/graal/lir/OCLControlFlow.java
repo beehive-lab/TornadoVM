@@ -146,9 +146,10 @@ public class OCLControlFlow {
     }
 
     /**
-     * This instruction can generate different code depending on whether or not there are additional
-     * {@link org.graalvm.compiler.lir.LIRInstruction}s between the loop condition and the {@link LoopPostOp},
-     * respectively the {@link LoopInitOp}.
+     * This instruction can generate different code depending on whether or not
+     * there are additional {@link org.graalvm.compiler.lir.LIRInstruction}s between
+     * the loop condition and the {@link LoopPostOp}, respectively the
+     * {@link LoopInitOp}.
      */
     public static class LoopConditionOp extends AbstractInstruction {
 
@@ -302,6 +303,7 @@ public class OCLControlFlow {
         }
     }
 
+    // FIXME: Remove this unused code
     public static class CaseOp extends AbstractInstruction {
 
         public static final LIRInstructionClass<CaseOp> TYPE = LIRInstructionClass.create(CaseOp.class);

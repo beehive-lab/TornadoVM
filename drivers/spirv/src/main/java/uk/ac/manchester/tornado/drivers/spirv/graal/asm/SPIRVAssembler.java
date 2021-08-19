@@ -167,7 +167,7 @@ public final class SPIRVAssembler extends Assembler {
         throw new RuntimeException("[Not supported for SPIR-V] FPGA ATTRIBUTES - Check with the OpenCL Backend");
     }
 
-    public SPIRVId emitBlockLabel(String blockName) {
+    public SPIRVId registerBlockLabel(String blockName) {
         if (!labelTable.containsKey(blockName)) {
             SPIRVId label = module.getNextId();
             module.add(new SPIRVOpName(label, new SPIRVLiteralString(blockName)));

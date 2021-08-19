@@ -220,7 +220,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        unimplemented();
+        SPIRVLogger.traceBuildLIR("emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
+        append(new SPIRVControlFlow.SwitchStatement(key, strategy, keyTargets, defaultTarget));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
@@ -67,6 +68,7 @@ import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -489,7 +491,32 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitSwitch(SwitchNode x) {
-        throw new RuntimeException("Not supported");
+        SPIRVLogger.traceBuildLIR("visit emitSwitch %s", x);
+        // We guarantee there is always a default successor
+        assert x.defaultSuccessor() != null;
+        LabelRef defaultTarget = getLIRBlock(x.defaultSuccessor());
+
+        int keyCount = x.keyCount();
+
+        if (keyCount == 0) {
+            gen.emitJump(defaultTarget);
+        } else {
+            Variable value = gen.load(operand(x.value()));
+            if (keyCount == 1) {
+                assert defaultTarget != null;
+                unimplemented();
+            } else {
+                LabelRef[] keyTargets = new LabelRef[keyCount];
+                JavaConstant[] keyConstants = new JavaConstant[keyCount];
+                double[] keyProbabilities = new double[keyCount];
+                for (int i = 0; i < keyCount; i++) {
+                    keyTargets[i] = getLIRBlock(x.keySuccessor(i));
+                    keyConstants[i] = (JavaConstant) x.keyAt(i);
+                    keyProbabilities[i] = x.keyProbability(i);
+                }
+                gen.emitStrategySwitch(keyConstants, keyProbabilities, keyTargets, defaultTarget, value);
+            }
+        }
     }
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {

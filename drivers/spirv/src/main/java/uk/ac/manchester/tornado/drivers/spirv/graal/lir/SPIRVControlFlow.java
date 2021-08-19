@@ -3,14 +3,24 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.SwitchStrategy;
+import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranch;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranchConditional;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLabel;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSwitch;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVPairLiteralIntegerIdRef;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -35,7 +45,7 @@ public class SPIRVControlFlow {
         private SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
             SPIRVId branch = asm.labelTable.get(blockName);
             if (branch == null) {
-                branch = asm.emitBlockLabel(blockName);
+                branch = asm.registerBlockLabel(blockName);
             }
             return branch;
         }
@@ -69,12 +79,12 @@ public class SPIRVControlFlow {
         }
 
         // We only declare the IDs
-        private SPIRVId getIfOfBranch(LabelRef ref, SPIRVAssembler asm) {
+        private SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
             AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
             String blockName = targetBlock.toString();
             SPIRVId branch = asm.labelTable.get(blockName);
             if (branch == null) {
-                branch = asm.emitBlockLabel(blockName);
+                branch = asm.registerBlockLabel(blockName);
             }
             return branch;
         }
@@ -96,8 +106,8 @@ public class SPIRVControlFlow {
 
             SPIRVId conditionId = asm.lookUpLIRInstructions(condition);
 
-            SPIRVId trueBranch = getIfOfBranch(lirTrueBlock, asm);
-            SPIRVId falseBranch = getIfOfBranch(lirFalseBlock, asm);
+            SPIRVId trueBranch = getIdForBranch(lirTrueBlock, asm);
+            SPIRVId falseBranch = getIdForBranch(lirFalseBlock, asm);
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpBranchConditional: " + condition + "? " + lirTrueBlock + ":" + lirFalseBlock);
 
@@ -141,7 +151,7 @@ public class SPIRVControlFlow {
             String blockName = targetBlock.toString();
             SPIRVId branch = asm.labelTable.get(blockName);
             if (branch == null) {
-                branch = asm.emitBlockLabel(blockName);
+                branch = asm.registerBlockLabel(blockName);
             }
             return branch;
         }
@@ -187,7 +197,7 @@ public class SPIRVControlFlow {
             String blockName = targetBlock.toString();
             SPIRVId branch = asm.labelTable.get(blockName);
             if (branch == null) {
-                branch = asm.emitBlockLabel(blockName);
+                branch = asm.registerBlockLabel(blockName);
             }
             return branch;
         }
@@ -215,6 +225,77 @@ public class SPIRVControlFlow {
 
         public BranchLoopConditional(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
             super(branch, isConditional, isLoopEdgeBack);
+        }
+    }
+
+    @Opcode("Switch")
+    public static class SwitchStatement extends SPIRVLIRStmt.AbstractInstruction {
+
+        public static final LIRInstructionClass<SwitchStatement> TYPE = LIRInstructionClass.create(SwitchStatement.class);
+
+        @Use
+        private Variable key;
+
+        private SwitchStrategy strategy;
+
+        @Use
+        private LabelRef[] keytargets;
+
+        @Use
+        private LabelRef defaultTarget;
+
+        // We only declare the IDs
+        private SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
+            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
+            String blockName = targetBlock.toString();
+            SPIRVId branch = asm.labelTable.get(blockName);
+            if (branch == null) {
+                branch = asm.registerBlockLabel(blockName);
+            }
+            return branch;
+        }
+
+        public SwitchStatement(Variable key, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget) {
+            super(TYPE);
+            this.key = key;
+            this.strategy = strategy;
+            this.keytargets = keyTargets;
+            this.defaultTarget = defaultTarget;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit SWITCH(" + key + ")");
+
+            SPIRVId valueKey = asm.lookUpLIRInstructions(key);
+
+            SPIRVKind spirvKind = (SPIRVKind) key.getPlatformKind();
+            SPIRVId typeKind = asm.primitives.getTypePrimitive(spirvKind);
+
+            // Perform a Load of the key value
+            SPIRVId loadId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    typeKind, //
+                    loadId, //
+                    valueKey, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
+            ));
+
+            SPIRVId defaultSelector = getIdForBranch(defaultTarget, asm);
+
+            SPIRVPairLiteralIntegerIdRef[] cases = new SPIRVPairLiteralIntegerIdRef[strategy.getKeyConstants().length];
+            int i = 0;
+            for (Constant keyConstant : strategy.getKeyConstants()) {
+                SPIRVId labelCase = getIdForBranch(keytargets[i], asm);
+                int caseIntValue = Integer.parseInt(keyConstant.toValueString());
+                SPIRVPairLiteralIntegerIdRef pairId = new SPIRVPairLiteralIntegerIdRef(new SPIRVLiteralInteger(caseIntValue), labelCase);
+                cases[i] = pairId;
+                i++;
+            }
+
+            asm.currentBlockScope().add(new SPIRVOpSwitch(loadId, defaultSelector, new SPIRVMultipleOperands<>(cases)));
         }
     }
 }
