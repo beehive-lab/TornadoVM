@@ -13,8 +13,11 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVInstruction;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpIEqual;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpINotEqual;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSGreaterThan;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSelect;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeArray;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
@@ -334,10 +337,6 @@ public class SPIRVBinary {
         @Use
         private Value falseValue;
 
-        public TernaryCondition(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
-        }
-
         public TernaryCondition(LIRKind lirKind, Value leftVal, Condition cond, Value right, Value trueValue, Value falseValue) {
             super(null, lirKind, trueValue, falseValue);
             this.cond = cond;
@@ -350,6 +349,8 @@ public class SPIRVBinary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
+            SPIRVLogger.traceCodeGen("emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
+
             SPIRVId idLeftVar = getId(leftVal, asm, (SPIRVKind) leftVal.getPlatformKind());
             SPIRVId idRightVar = getId(right, asm, (SPIRVKind) right.getPlatformKind());
 
@@ -359,6 +360,15 @@ public class SPIRVBinary {
             switch (cond) {
                 case EQ:
                     asm.currentBlockScope().add(new SPIRVOpIEqual(typeBoolean, comparisonResult, idLeftVar, idRightVar));
+                    break;
+                case NE:
+                    asm.currentBlockScope().add(new SPIRVOpINotEqual(typeBoolean, comparisonResult, idLeftVar, idRightVar));
+                    break;
+                case LT:
+                    asm.currentBlockScope().add(new SPIRVOpSLessThan(typeBoolean, comparisonResult, idLeftVar, idRightVar));
+                    break;
+                case GT:
+                    asm.currentBlockScope().add(new SPIRVOpSGreaterThan(typeBoolean, comparisonResult, idLeftVar, idRightVar));
                     break;
                 default:
                     throw new RuntimeException("Condition type not supported");
