@@ -112,7 +112,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameMap;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameMapBuilder;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
@@ -143,7 +142,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private final SPIRVArchitecture spirvArchitecture;
     private final SPIRVDeviceContext deviceContext;
     private final SPIRVCodeProvider codeCache;
-    SPIRVInstalledCode lookupCode;
     final ScheduleMetaData scheduleMetaData;
 
     final HashMap<String, SPIRVId> SPIRVSymbolTable;
