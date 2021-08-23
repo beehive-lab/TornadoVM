@@ -5,7 +5,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2021, 2021 APT Group, Department of Computer Science,
+# Copyright (c) 2013-2021, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -97,7 +97,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
