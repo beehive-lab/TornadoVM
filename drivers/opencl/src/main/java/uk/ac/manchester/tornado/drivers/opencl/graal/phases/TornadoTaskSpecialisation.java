@@ -25,13 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
@@ -52,9 +47,7 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -62,6 +55,14 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
@@ -74,6 +75,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private long batchThreads;
     private boolean gridScheduling;
     private int index;
+    private boolean printOnce = true;
+
+    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -171,18 +175,34 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return constant;
     }
 
+    private void printWarningMessageForDynamicLoopBounds() {
+        if (printOnce) {
+            System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
+            printOnce = false;
+        }
+    }
+
     private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
-            final ConstantNode constant;
 
-            if (gridScheduling) {
+            /**
+             * This condition covers the case that loop bounds should be taken based on the
+             * grid size given by {@link GridScheduler}. This allows the loop bounds to be
+             * dynamically configured, without requiring recompilation.
+             *
+             * This condition will disable the FPGA HLS loop optimizations, because the loop
+             * bound is not retrievable at compile time.
+             */
+            if (gridScheduling && isParameterInvolvedInParallelLoopBound(node)) {
+                printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
                 node.replaceAtUsages(oclStackAccessNode);
                 index++;
             } else {
+                final ConstantNode constant;
                 if (batchThreads <= 0) {
                     constant = ConstantNode.forInt(length);
                 } else {
@@ -235,9 +255,28 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return result;
     }
 
+    private boolean isParameterInvolvedInParallelLoopBound(Node parameterNode) {
+        AtomicBoolean parameterInLoopBound = new AtomicBoolean(false);
+        parameterNode.usages().snapshot().forEach(node -> {
+            if (node instanceof ParallelRangeNode) {
+                parameterInLoopBound.set(true);
+            }
+        });
+        return parameterInLoopBound.get();
+    }
+
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            if (gridScheduling) {
+            /**
+             * This condition covers the case that loop bounds should be taken based on the
+             * grid size given by {@link GridScheduler}. This allows the loop bounds to be
+             * dynamically configured, without requiring recompilation.
+             *
+             * This condition will disable the FPGA HLS loop optimizations, because the loop
+             * bound is not retrievable at compile time.
+             */
+            if (gridScheduling && isParameterInvolvedInParallelLoopBound(parameterNode)) {
+                printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 OCLStackAccessNode oclStackAccessNode = graph.addOrUnique(new OCLStackAccessNode(constantValue));
                 parameterNode.replaceAtUsages(oclStackAccessNode);

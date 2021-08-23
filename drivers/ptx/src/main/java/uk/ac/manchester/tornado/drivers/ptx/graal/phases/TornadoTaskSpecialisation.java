@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
@@ -52,6 +53,9 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -71,6 +75,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private long batchThreads;
     private int index;
     private boolean gridScheduling;
+    private boolean printOnce = true;
+
+    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -168,12 +175,25 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return constant;
     }
 
+    private void printWarningMessageForDynamicLoopBounds() {
+        if (printOnce) {
+            System.out.println(WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS);
+            printOnce = false;
+        }
+    }
+
     private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
 
-            if (gridScheduling) {
+            /**
+             * This condition covers the case that loop bounds should be taken based on the
+             * grid size given by {@link GridScheduler}. This allows the loop bounds to be
+             * dynamically configured, without requiring recompilation.
+             */
+            if (gridScheduling && isParameterInvolvedInParallelLoopBound(node)) {
+                printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
                 node.replaceAtUsages(ptxStackAccessNode);
@@ -232,9 +252,25 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return result;
     }
 
+    private boolean isParameterInvolvedInParallelLoopBound(Node parameterNode) {
+        AtomicBoolean parameterInLoopBound = new AtomicBoolean(false);
+        parameterNode.usages().snapshot().forEach(node -> {
+            if (node instanceof ParallelRangeNode) {
+                parameterInLoopBound.set(true);
+            }
+        });
+        return parameterInLoopBound.get();
+    }
+
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            if (gridScheduling) {
+            /**
+             * This condition covers the case that loop bounds should be taken based on the
+             * grid size given by {@link GridScheduler}. This allows the loop bounds to be
+             * dynamically configured, without requiring recompilation.
+             */
+            if (gridScheduling && isParameterInvolvedInParallelLoopBound(parameterNode)) {
+                printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
                 PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
                 parameterNode.replaceAtUsages(ptxStackAccessNode);
