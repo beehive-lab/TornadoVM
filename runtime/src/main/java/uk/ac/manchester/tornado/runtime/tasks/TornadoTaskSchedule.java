@@ -636,7 +636,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 if (Tornado.DEBUG) {
                     e.printStackTrace();
                 }
-                throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.toString());
+                throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.getMessage());
             }
         }
     }

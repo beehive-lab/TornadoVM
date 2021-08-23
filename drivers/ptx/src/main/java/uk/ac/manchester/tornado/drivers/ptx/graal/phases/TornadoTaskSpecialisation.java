@@ -221,7 +221,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 Object object = lookupRefField(graph, node, value, field.getName());
                 node.usages().forEach(n -> evaluate(graph, n, object));
             } else if (!field.isFinal()) {
-                throw new TornadoBailoutRuntimeException("Non-final objects introduced via scope not supported");
+                throw new TornadoBailoutRuntimeException("Non-final objects introduced via scope are not supported");
             }
         } else if (node instanceof IsNullNode) {
             final IsNullNode isNullNode = (IsNullNode) node;
