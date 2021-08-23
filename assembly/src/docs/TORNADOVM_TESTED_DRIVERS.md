@@ -10,7 +10,7 @@
 * 1.2 (Jan 23 2020)
    * Intel(R) Core(TM) i5-5257U CPU
    * Intel(R) Iris(TM) Graphics 6100
-
+ 
 ## List of supported drivers for Linux
 
 ### Intel
@@ -21,6 +21,8 @@
 
 The following drivers have been tested on Linux >= CentOS 7.3 
 
+* 21.33.20678: OK  ( OpenCL 3.0 ) 
+* 21.32.20609: OK  ( OpenCL 3.0 )
 * 21.31.20514: OK  ( OpenCL 3.0 )
 * 21.28.20343: OK  ( OpenCL 3.0 )
 * 21.27.20266: OK  ( OpenCL 3.0 )
@@ -97,6 +99,9 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 The following drivers have been tested Fedora >= 34
 
+* 21.32.20609: OK  ( OpenCL 3.0 )
+* 21.31.20514: OK  ( OpenCL 3.0 )
+* 21.28.20343: OK  ( OpenCL 3.0 )
 * 21.28.20343: OK  ( OpenCL 3.0 )
 * 21.27.20266: OK  ( OpenCL 3.0 )
 * 21.26.20194: OK  ( OpenCL 3.0 )
