@@ -452,7 +452,7 @@ public class SPIRVUnary {
             // All builtins have to be registered previous to this call
             SPIRVId idSPIRVBuiltin = asm.builtinTable.get(builtIn);
 
-            SPIRVId v3long = asm.v3ulong;
+            SPIRVId v3long = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_VECTOR3_INT_64);
 
             // Call Thread-ID getGlobalId(0)
             SPIRVId id19 = asm.module.getNextId();

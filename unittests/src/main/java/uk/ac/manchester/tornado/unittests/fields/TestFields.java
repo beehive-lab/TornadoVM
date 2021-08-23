@@ -32,9 +32,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestFields extends TornadoTestBase {
 
     private static class Foo {
-        int[] output;
-        int[] a;
-        int[] b;
+        final int[] output;
+        final int[] a;
+        final int[] b;
 
         public Foo(int elements) {
             output = new int[elements];
@@ -64,8 +64,8 @@ public class TestFields extends TornadoTestBase {
     }
 
     private static class Bar {
-        int[] output;
-        int initValue;
+        final int[] output;
+        final int initValue;
 
         public Bar(int elements, int initValue) {
             output = new int[elements];
