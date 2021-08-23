@@ -32,9 +32,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestFields extends TornadoTestBase {
 
     private static class Foo {
-        int[] output;
-        int[] a;
-        int[] b;
+        final int[] output;
+        final int[] a;
+        final int[] b;
 
         public Foo(int elements) {
             output = new int[elements];
@@ -42,7 +42,7 @@ public class TestFields extends TornadoTestBase {
             b = new int[elements];
         }
 
-        public void initRamdom() {
+        public void initRandom() {
             Random r = new Random();
             IntStream.range(0, a.length).forEach(idx -> {
                 a[idx] = r.nextInt(100);
@@ -64,7 +64,7 @@ public class TestFields extends TornadoTestBase {
     }
 
     private static class Bar {
-        int[] output;
+        final int[] output;
         int initValue;
 
         public Bar(int elements, int initValue) {
@@ -99,7 +99,7 @@ public class TestFields extends TornadoTestBase {
     public void testFields02() {
         final int N = 1024;
         Foo foo = new Foo(N);
-        foo.initRamdom();
+        foo.initRandom();
 
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);

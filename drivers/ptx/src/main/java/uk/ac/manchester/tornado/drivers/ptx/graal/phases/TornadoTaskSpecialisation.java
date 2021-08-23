@@ -54,8 +54,7 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXStackAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -221,6 +220,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             } else if (field.isFinal()) {
                 Object object = lookupRefField(graph, node, value, field.getName());
                 node.usages().forEach(n -> evaluate(graph, n, object));
+            } else if (!field.isFinal()) {
+                throw new TornadoBailoutRuntimeException("Non-final objects introduced via scope not supported");
             }
         } else if (node instanceof IsNullNode) {
             final IsNullNode isNullNode = (IsNullNode) node;
