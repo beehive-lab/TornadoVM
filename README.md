@@ -18,7 +18,8 @@ Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 ## 1. Installation
 
-TornadoVM can be installed either [from source](INSTALL.md) or
+In Linux and Mac OSx, TornadoVM can be installed by the [installer](https://github.com/beehive-lab/tornadovm-installer).
+Alternatively, TornadoVM can be installed either [from source](INSTALL.md) or 
 by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the

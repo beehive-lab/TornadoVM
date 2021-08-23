@@ -11,16 +11,16 @@ processing.
 
 ## 2. How can I use it?
 
-TornadoVM can be installed either [from source](INSTALL.md) or by [using Docker](13_INSTALL_WITH_DOCKER.md).
+In Linux and Mac OSx, TornadoVM can be installed by the [installer](https://github.com/beehive-lab/tornadovm-installer).
+Alternatively, TornadoVM can be installed either [from source](1_INSTALL.md) or by [using Docker](13_INSTALL_WITH_DOCKER.md).
 
 #### List of compatible JDKs
 
 TornadoVM can be currently executed with the following three configurations:
 
 * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
-* TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
-* TornadoVM with JDK11+ (e.g. OpenJDK, Red Hat Mandrel, Amazon Corretto, Windows JDK 11): see the installation
-  guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
+* TornadoVM with GraalVM (JDK 8, JDK 11, JDK 16): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+* TornadoVM with JDK11+ (e.g. OpenJDK 11, OpenJDK 16, Red Hat Mandrel 11, Amazon Corretto 11, Amazon Corretto 16, Windows JDK 11, Windows JDK 16): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
 
 Note: To run TornadoVM on ARM Mali GPUs, install TornadoVM with GraalVM and JDK 11. More information [here](18_MALI.md).
 
@@ -100,9 +100,9 @@ learning.
 
 TornadoVM is an open-source project, and, as such, we welcome contributions from all levels.
 
-* **Solve [issues](https://github.com/beehive-lab/TornadoVM/issues)** reported on the Github page. 
+* **Solve [issues](https://github.com/beehive-lab/TornadoVM/issues)** reported on the GitHub page. 
 * **New proposals**: We welcome new proposals and ideas. To work on a new proposal, use
-  the [discussion](https://github.com/beehive-lab/TornadoVM/discussions) page on Github. Alternatively, you can open a
+  the [discussion](https://github.com/beehive-lab/TornadoVM/discussions) page on GitHub. Alternatively, you can open a
   shared document (e.g., a shared Google doc) where we can discuss and analyse your proposal.
 
 [Here](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTING.md) you can find more information about how to
