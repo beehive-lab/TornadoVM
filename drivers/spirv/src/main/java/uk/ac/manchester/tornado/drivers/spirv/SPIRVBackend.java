@@ -937,7 +937,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // --------------------------------------
             emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base, asm);
 
-            // blockScope.add(new SPIRVOpReturn());
         } else {
             // Inner function to be called within the main kernel
             throw new RuntimeException("Not supported");

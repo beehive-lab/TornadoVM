@@ -96,7 +96,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
     # TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
@@ -160,7 +160,7 @@ __IGV_OPTIONS__                     = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph
 __IGV_LAST_PHASE__                  = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__             = "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__                   = "-Dtornado.debug=True "
-__THREAD_INFO__ = "-Dtornado.threadInfo=True "
+__THREAD_INFO__                     = "-Dtornado.threadInfo=True "
 __PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
 __GC__                              = "-Xmx6g "
 __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
@@ -169,7 +169,7 @@ __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.9_05082020"
+__VERSION__ = "0.9_23082021"
 
 JDK_8_VERSION = "1.8"
 try:
