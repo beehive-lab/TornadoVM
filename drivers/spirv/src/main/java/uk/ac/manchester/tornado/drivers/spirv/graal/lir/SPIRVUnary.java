@@ -267,6 +267,7 @@ public class SPIRVUnary {
         }
 
         private void emitPrivateMemoryIndexedAccess(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit Private memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
@@ -276,6 +277,22 @@ public class SPIRVUnary {
                 indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
             } else {
                 indexId = asm.lookUpLIRInstructions(index);
+                SPIRVKind kindIndex = (SPIRVKind) index.getPlatformKind();
+                SPIRVId loadId = asm.module.getNextId();
+                SPIRVId typeIndex = asm.primitives.getTypePrimitive(kindIndex);
+                asm.currentBlockScope().add(new SPIRVOpLoad( //
+                        typeIndex, //
+                        loadId, //
+                        indexId, //
+                        new SPIRVOptionalOperand<>(//
+                                SPIRVMemoryAccess.Aligned(//
+                                        new SPIRVLiteralInteger(kindIndex.getSizeInBytes())))//
+                ));
+
+                SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                SPIRVId idConversion = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpSConvert(typeLong, idConversion, loadId));
+                indexId = idConversion;
             }
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
@@ -286,6 +303,7 @@ public class SPIRVUnary {
         }
 
         private void emitLocalMemoryIndexedAccess(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit LOCAL memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
