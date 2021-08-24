@@ -902,21 +902,33 @@ public class SPIRVLIRStmt {
         private void emitIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("emit IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
-            SPIRVId loadArray = asm.module.getNextId();
+            SPIRVId privateAccessId = asm.module.getNextId();
 
             SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId input = asm.lookUpLIRInstructions(rhs);
+            if (rhs instanceof ConstantValue) {
+                // If the right-hand-side value is a constant, we do not emit the load, but
+                // rather the lookup in the constant table.
+                SPIRVKind kind = (SPIRVKind) rhs.getPlatformKind();
+                privateAccessId = asm.lookUpConstant(((ConstantValue) rhs).getConstant().toValueString(), kind);
+            } else {
+                SPIRVId input = asm.lookUpLIRInstructions(rhs);
 
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
-                    type, //
-                    loadArray, //
-                    input, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-            ));
+                if (input == null) {
+                    throw new RuntimeException("Input VALUE to access private array is NULL");
+                }
+
+                // Emit LOAD before generating local access
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        type, //
+                        privateAccessId, //
+                        input, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+            }
 
             memoryIndexedAccess.emit(crb, asm);
 
@@ -924,7 +936,7 @@ public class SPIRVLIRStmt {
 
             asm.currentBlockScope().add(new SPIRVOpStore( //
                     addressId, //
-                    loadArray, //
+                    privateAccessId, //
                     new SPIRVOptionalOperand<>(//
                             SPIRVMemoryAccess.Aligned( //
                                     new SPIRVLiteralInteger(spirvKind.getByteCount()) //
