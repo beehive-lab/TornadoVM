@@ -116,7 +116,6 @@ public class TestNewArrays extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialResult[i], c[i]);
         }
-
     }
 
     public static void initializeToOne(int[] a) {

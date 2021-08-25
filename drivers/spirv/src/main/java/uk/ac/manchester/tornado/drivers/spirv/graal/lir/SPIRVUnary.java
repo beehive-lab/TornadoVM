@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemor
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVUnaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -379,7 +380,16 @@ public class SPIRVUnary {
             }
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
-            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive((SPIRVKind) getValue().getPlatformKind());
+
+            SPIRVId type;
+            if (getMemoryRegion().memorySpace == SPIRVMemorySpace.LOCAL) {
+                type = asm.primitives.getPtrToWorkGroupPrimitive((SPIRVKind) getValue().getPlatformKind());
+            } else if (getMemoryRegion().memorySpace == SPIRVMemorySpace.PRIVATE) {
+                type = asm.primitives.getPtrToTypePrimitive((SPIRVKind) getValue().getPlatformKind());
+            } else {
+                throw new RuntimeException("Memory access not valid for a SPIRVOpInBoundsPtrAccessChain instruction");
+            }
+
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }

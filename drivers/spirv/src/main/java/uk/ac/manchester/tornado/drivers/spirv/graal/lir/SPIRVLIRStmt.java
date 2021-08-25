@@ -1018,7 +1018,7 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]");
+            SPIRVLogger.traceCodeGen("emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
 
             address.emitForLoad(crb, asm);
 
