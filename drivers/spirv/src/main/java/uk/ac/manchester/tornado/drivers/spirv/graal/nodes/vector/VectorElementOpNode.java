@@ -91,7 +91,6 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
         guarantee(targetVector != null, "vector is null");
 
         SPIRVLogger.traceBuildLIR("emitVectorElementOp SELECT: targetVector=%s, laneId=%d", targetVector, laneId());
-        SPIRVKind spirvKind = (SPIRVKind) targetVector.getPlatformKind();
         assert targetVector instanceof Variable;
         final SPIRVVectorElementSelect element = new SPIRVVectorElementSelect(LIRKind.value(targetVector.getPlatformKind()), (Variable) targetVector, laneId());
         gen.setResult(this, element);
