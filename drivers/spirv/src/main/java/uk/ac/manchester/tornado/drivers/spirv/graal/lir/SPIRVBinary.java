@@ -427,10 +427,11 @@ public class SPIRVBinary {
 
             asm.currentBlockScope().add(new SPIRVOpIEqual(booleanType, compEqual, bitWiseAnd, zeroConstant));
 
-            SPIRVId selectId = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpSelect(booleanType, selectId, compEqual, oneConstant, zeroConstant));
+            // SPIRVId selectId = asm.module.getNextId();
+            // asm.currentBlockScope().add(new SPIRVOpSelect(booleanType, selectId,
+            // compEqual, oneConstant, zeroConstant));
 
-            asm.registerLIRInstructionValue(this, selectId);
+            asm.registerLIRInstructionValue(this, compEqual);
         }
     }
 }
