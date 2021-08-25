@@ -386,4 +386,51 @@ public class SPIRVBinary {
         }
     }
 
+    public static class IntegerTestNode extends BinaryConsumer {
+        public IntegerTestNode(SPIRVBinaryOp binaryOp, LIRKind lirKind, Value x, Value y) {
+            super(binaryOp, lirKind, x, y);
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit IntegerTestNode: (" + x + " &  " + y + ")  ==   0");
+
+            LIRKind lirKind = getLIRKind();
+            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
+
+            SPIRVId a;
+            if (x instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) x).emit(crb, asm);
+                a = asm.lookUpLIRInstructions(x);
+            } else {
+                a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            }
+            SPIRVId b;
+            if (y instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) y).emit(crb, asm);
+                b = asm.lookUpLIRInstructions(y);
+            } else {
+                b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            }
+
+            SPIRVId bitWiseAnd = asm.module.getNextId();
+
+            SPIRVInstruction instruction = opcode.generateInstruction(typeOperation, bitWiseAnd, a, b);
+            asm.currentBlockScope().add(instruction);
+
+            SPIRVId compEqual = asm.module.getNextId();
+
+            SPIRVId booleanType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
+            SPIRVId zeroConstant = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId oneConstant = asm.lookUpConstant("1", SPIRVKind.OP_TYPE_INT_32);
+
+            asm.currentBlockScope().add(new SPIRVOpIEqual(booleanType, compEqual, bitWiseAnd, zeroConstant));
+
+            SPIRVId selectId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpSelect(booleanType, selectId, compEqual, oneConstant, zeroConstant));
+
+            asm.registerLIRInstructionValue(this, selectId);
+        }
+    }
 }

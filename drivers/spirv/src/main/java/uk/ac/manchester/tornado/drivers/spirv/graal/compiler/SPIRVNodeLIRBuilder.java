@@ -388,7 +388,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_AND;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.IntegerTestNode(op, boolLIRKind, x, y)));
         } else if (node instanceof IsNullNode) {
             SPIRVLogger.traceBuildLIR("IsNullNode: %s", node);
             final IsNullNode isNullNode = (IsNullNode) node;
