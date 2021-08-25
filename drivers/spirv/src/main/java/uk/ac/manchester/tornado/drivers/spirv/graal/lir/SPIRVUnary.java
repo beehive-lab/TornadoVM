@@ -9,6 +9,7 @@ import org.graalvm.compiler.lir.Variable;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpControlBarrier;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertFToS;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpExtInst;
@@ -692,6 +693,78 @@ public class SPIRVUnary {
             // OpSConvert
             SPIRVId result = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpFConvert(type, result, loadConvert));
+
+            asm.registerLIRInstructionValue(this, result);
+        }
+    }
+
+    public static class CastFloatToLong extends CastOperations {
+
+        private SPIRVKind toType;
+
+        public CastFloatToLong(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
+            super(null, lirKind, inputVal);
+            this.toType = toType;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpConvertSToF");
+
+            SPIRVKind spirvKind = toType;
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId param = asm.lookUpLIRInstructions(value);
+
+            SPIRVId loadConvert = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadConvert, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            // OpSConvert
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertSToF(type, result, loadConvert));
+
+            asm.registerLIRInstructionValue(this, result);
+        }
+    }
+
+    public static class CastFloatToInt extends CastOperations {
+
+        private SPIRVKind toType;
+
+        public CastFloatToInt(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
+            super(null, lirKind, inputVal);
+            this.toType = toType;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpConvertSToF");
+
+            SPIRVKind spirvKind = toType;
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId param = asm.lookUpLIRInstructions(value);
+
+            SPIRVId loadConvert = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    loadConvert, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+
+            // OpSConvert
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertFToS(type, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
         }

@@ -99,7 +99,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),

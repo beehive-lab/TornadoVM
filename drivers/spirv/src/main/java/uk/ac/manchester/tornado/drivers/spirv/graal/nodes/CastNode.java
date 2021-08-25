@@ -45,8 +45,13 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
                 return new SPIRVUnary.CastFloatDouble(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_64);
             case L2D:
                 return new SPIRVUnary.CastFloatDouble(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_64);
+            case L2F:
+                return new SPIRVUnary.CastFloatToLong(lirKind, value, SPIRVKind.OP_TYPE_FLOAT_32);
+            case F2I:
+                return new SPIRVUnary.CastFloatToInt(lirKind, value, SPIRVKind.OP_TYPE_INT_32);
             case D2L:
             case F2L:
+            case D2I:
             default:
                 throw new RuntimeException("Conversion Cast Operation unimplemented: " + op);
         }
