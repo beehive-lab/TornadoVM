@@ -42,7 +42,7 @@ public class TestFields extends TornadoTestBase {
             b = new int[elements];
         }
 
-        public void initRamdom() {
+        public void initRandom() {
             Random r = new Random();
             IntStream.range(0, a.length).forEach(idx -> {
                 a[idx] = r.nextInt(100);
@@ -99,7 +99,7 @@ public class TestFields extends TornadoTestBase {
     public void testFields02() {
         final int N = 1024;
         Foo foo = new Foo(N);
-        foo.initRamdom();
+        foo.initRandom();
 
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);

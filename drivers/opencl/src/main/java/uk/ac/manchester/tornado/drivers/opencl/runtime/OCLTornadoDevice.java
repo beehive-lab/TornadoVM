@@ -283,10 +283,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
             return installedCode;
         } catch (Exception e) {
-            driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            driver.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
-            driver.fatal("exception: %s", e.toString());
-            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
+            System.out.println(e.getMessage());
+            driver.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            driver.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ");
         }
     }
 
