@@ -6,6 +6,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpCompositeInsert;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
@@ -32,7 +33,7 @@ public class SPIRVVectorAssign {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     // We need to perform a load first
-                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                    SPIRVLogger.traceCodeGen("emit LOAD Variable from AssignVector :" + inputValue);
                     SPIRVId load = asm.module.getNextId();
                     SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
@@ -43,6 +44,17 @@ public class SPIRVVectorAssign {
                                     SPIRVMemoryAccess.Aligned( //
                                             new SPIRVLiteralInteger(spirvKind.getByteCount())))//
                     ));
+
+                    // If the type loaded differ from the element kind type, then we need to do a
+                    // type conversion (OpUConvert)
+                    SPIRVKind kind = ((SPIRVKind) getLIRKind().getPlatformKind()).getElementKind();
+                    if (spirvKind.getByteCount() != kind.getByteCount()) {
+                        SPIRVId resultConvert = asm.module.getNextId();
+                        SPIRVId toKind = asm.primitives.getTypePrimitive(kind);
+                        asm.currentBlockScope().add(new SPIRVOpUConvert(toKind, resultConvert, load));
+                        load = resultConvert;
+                    }
+
                     return load;
                 } else {
                     return param;

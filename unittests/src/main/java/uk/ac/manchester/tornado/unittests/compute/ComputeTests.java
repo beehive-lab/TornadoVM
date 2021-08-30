@@ -17,7 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.compute;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -29,12 +36,6 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test to check functionality of benchmarks available in the compute-benchmark
@@ -338,7 +339,7 @@ public class ComputeTests extends TornadoTestBase {
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
             for (@Parallel int x = 0; x < input.X(); x++) {
-                Byte3 pixel = null;
+                Byte3 pixel;
                 final int result = (int) input.get(x, y).getS2();
                 switch (result) {
                     case 1: // ok GREY
