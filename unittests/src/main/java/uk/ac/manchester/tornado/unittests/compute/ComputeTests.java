@@ -50,8 +50,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class ComputeTests extends TornadoTestBase {
 
-    private static float DELTA = 0.005f;
-    private static float ESP_SQR = 500.0f;
+    private static final float DELTA = 0.005f;
+    private static final float ESP_SQR = 500.0f;
 
     private static void nBody(int numBodies, float[] refPos, float[] refVel) {
         for (@Parallel int i = 0; i < numBodies; i++) {
@@ -116,7 +116,7 @@ public class ComputeTests extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
-        workerGrid.setLocalWork(1024, 1, 1);
+        workerGrid.setLocalWork(32, 1, 1);
 
         new TaskSchedule("s0") //
                 .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //

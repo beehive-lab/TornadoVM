@@ -423,13 +423,8 @@ public class SPIRVBinary {
 
             SPIRVId booleanType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
             SPIRVId zeroConstant = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
-            SPIRVId oneConstant = asm.lookUpConstant("1", SPIRVKind.OP_TYPE_INT_32);
 
             asm.currentBlockScope().add(new SPIRVOpIEqual(booleanType, compEqual, bitWiseAnd, zeroConstant));
-
-            // SPIRVId selectId = asm.module.getNextId();
-            // asm.currentBlockScope().add(new SPIRVOpSelect(booleanType, selectId,
-            // compEqual, oneConstant, zeroConstant));
 
             asm.registerLIRInstructionValue(this, compEqual);
         }

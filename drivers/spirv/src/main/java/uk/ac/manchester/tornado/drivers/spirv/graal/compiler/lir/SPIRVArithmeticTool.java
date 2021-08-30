@@ -321,8 +321,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVLogger.traceBuildLIR("emitNarrow: %s, %d", inputVal, bits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(bits);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVUnary.SignNarrowValue signExtend = new SPIRVUnary.SignNarrowValue(lirKind, inputVal, bits);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
+        SPIRVUnary.SignNarrowValue signNarrowValue = new SPIRVUnary.SignNarrowValue(lirKind, inputVal, bits);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, signNarrowValue));
         return result;
     }
 
