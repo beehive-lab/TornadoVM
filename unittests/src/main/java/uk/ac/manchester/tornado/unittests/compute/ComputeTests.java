@@ -94,7 +94,42 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testNBody() {
 
-        final int numBodies = 8192;
+        final int numBodies = 16384;
+        float[] posSeq = new float[numBodies * 4];
+        float[] velSeq = new float[numBodies * 4];
+
+        for (int i = 0; i < posSeq.length; i++) {
+            posSeq[i] = (float) Math.random();
+        }
+
+        Arrays.fill(velSeq, 0.0f);
+
+        float[] posTornadoVM = new float[numBodies * 4];
+        float[] velTornadoVM = new float[numBodies * 4];
+
+        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
+        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+
+        // Run Sequential
+        nBody(numBodies, posSeq, velSeq);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
+        GridScheduler gridScheduler = new GridScheduler("a.b", workerGrid);
+        workerGrid.setGlobalWork(numBodies, 1, 1);
+        workerGrid.setLocalWork(32, 1, 1);
+
+        new TaskSchedule("a") //
+                .task("b", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
+                .streamOut(posTornadoVM, velTornadoVM) //
+                .execute(gridScheduler);
+
+        validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
+    }
+
+    @Test
+    public void testNBodySmall() {
+
+        final int numBodies = 2048;
         float[] posSeq = new float[numBodies * 4];
         float[] velSeq = new float[numBodies * 4];
 
@@ -126,6 +161,36 @@ public class ComputeTests extends TornadoTestBase {
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
     }
 
+    @Test
+    public void testNBodyBigNoWorker() {
+
+        final int numBodies = 8192;
+        float[] posSeq = new float[numBodies * 4];
+        float[] velSeq = new float[numBodies * 4];
+
+        for (int i = 0; i < posSeq.length; i++) {
+            posSeq[i] = (float) Math.random();
+        }
+
+        Arrays.fill(velSeq, 0.0f);
+
+        float[] posTornadoVM = new float[numBodies * 4];
+        float[] velTornadoVM = new float[numBodies * 4];
+
+        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
+        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+
+        // Run Sequential
+        nBody(numBodies, posSeq, velSeq);
+
+        new TaskSchedule("compute") //
+                .task("nbody", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
+                .streamOut(posTornadoVM, velTornadoVM) //
+                .execute();
+
+        validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
+    }
+
     public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
@@ -153,7 +218,7 @@ public class ComputeTests extends TornadoTestBase {
 
     @Test
     public void testDFT() {
-        final int size = 1024;
+        final int size = 4096;
         TaskSchedule graph;
         float[] inReal = new float[size];
         float[] inImag = new float[size];
