@@ -48,7 +48,9 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSRem;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftLeftLogical;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightArithmetic;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpShiftRightLogical;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeArray;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFunction;
+import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentFloat;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVContextDependentInt;
@@ -59,6 +61,7 @@ import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVFunctionContro
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -116,6 +119,9 @@ public final class SPIRVAssembler extends Assembler {
     public Map<String, SPIRVId> labelTable;
     public Map<String, SPIRVInstScope> blockTable;
     public Map<Integer, SPIRVId> parametersId;
+    public Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
+    public Map<SPIRVId, SPIRVId> functionPtrToArray;
+    public Map<SPIRVId, SPIRVId> functionPtrToArrayLocal;
     public SPIRVId prevId;
     public SPIRVId frameId;
 
@@ -139,7 +145,9 @@ public final class SPIRVAssembler extends Assembler {
         lirTableName = new HashMap<>();
         builtinTable = new HashMap<>();
         currentBlockScopeStack = new Stack<>();
-
+        arrayDeclarationTable = new HashMap<>();
+        functionPtrToArray = new HashMap<>();
+        functionPtrToArrayLocal = new HashMap<>();
     }
 
     public void insertOpenCLImportId(SPIRVId oclImport) {
@@ -164,6 +172,50 @@ public final class SPIRVAssembler extends Assembler {
 
     public void emitAttribute(SPIRVCompilationResultBuilder crb) {
         throw new RuntimeException("[Not supported for SPIR-V] FPGA ATTRIBUTES - Check with the OpenCL Backend");
+    }
+
+    public SPIRVId createArrayDeclaration(SPIRVId elementTypeId, SPIRVId elementsId) {
+        SPIRVId resultArrayId = module.getNextId();
+        module.add(new SPIRVOpTypeArray(resultArrayId, elementTypeId, elementsId));
+        return resultArrayId;
+    }
+
+    public SPIRVId declareArray(SPIRVKind elementType, SPIRVId elementTypeId, SPIRVId elementsId) {
+        if (!arrayDeclarationTable.containsKey(elementType)) {
+            SPIRVId resultArray = createArrayDeclaration(elementTypeId, elementsId);
+            HashMap<SPIRVId, SPIRVId> value = new HashMap<>();
+            value.put(elementsId, resultArray);
+            arrayDeclarationTable.put(elementType, value);
+            return resultArray;
+        } else {
+            HashMap<SPIRVId, SPIRVId> value = arrayDeclarationTable.get(elementType);
+            if (value.containsKey(elementsId)) {
+                return value.get(elementsId);
+            } else {
+                SPIRVId resultArray = createArrayDeclaration(elementTypeId, elementsId);
+                value.put(elementsId, resultArray);
+                arrayDeclarationTable.put(elementType, value);
+                return resultArray;
+            }
+        }
+    }
+
+    public SPIRVId getFunctionPtrToPrivateArray(SPIRVId resultArrayId) {
+        if (!functionPtrToArray.containsKey(resultArrayId)) {
+            SPIRVId functionPTR = module.getNextId();
+            module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Function(), resultArrayId));
+            functionPtrToArray.put(resultArrayId, functionPTR);
+        }
+        return functionPtrToArray.get(resultArrayId);
+    }
+
+    public SPIRVId getFunctionPtrToLocalArray(SPIRVId resultArrayId) {
+        if (!functionPtrToArrayLocal.containsKey(resultArrayId)) {
+            SPIRVId functionPTR = module.getNextId();
+            module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Workgroup(), resultArrayId));
+            functionPtrToArrayLocal.put(resultArrayId, functionPTR);
+        }
+        return functionPtrToArrayLocal.get(resultArrayId);
     }
 
     public SPIRVId registerBlockLabel(String blockName) {

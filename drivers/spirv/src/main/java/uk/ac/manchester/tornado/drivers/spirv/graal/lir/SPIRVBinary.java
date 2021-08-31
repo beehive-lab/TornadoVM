@@ -19,8 +19,6 @@ import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSGreaterThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpSelect;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeArray;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
@@ -165,7 +163,6 @@ public class SPIRVBinary {
             asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(resultArray.toString())));
             SPIRVKind kind = (SPIRVKind) resultArray.getPlatformKind();
             asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(kind.getSizeInBytes()))));
-
             return id;
         }
 
@@ -175,7 +172,7 @@ public class SPIRVBinary {
 
             SPIRVId idResult = addSPIRVIdInPreamble(asm);
 
-            SPIRVId primitiveType = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
+            SPIRVId primitiveTypeId = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
 
             SPIRVId elementsId;
             if (length instanceof ConstantValue) {
@@ -184,15 +181,12 @@ public class SPIRVBinary {
                 throw new RuntimeException("Constant expected");
             }
 
-            // Array declaration
-            SPIRVId resultArrayId = asm.module.getNextId();
-            asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, elementsId));
-            SPIRVId functionPTR = asm.module.getNextId();
-            asm.module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Function(), resultArrayId));
+            // Array declaration avoiding duplications
+            SPIRVId resultArrayId = asm.declareArray((SPIRVKind) lirKind.getPlatformKind(), primitiveTypeId, elementsId);
+            SPIRVId functionPTR = asm.getFunctionPtrToPrivateArray(resultArrayId);
 
             // Registration of the variable in the block 0 of the code
             asm.blockZeroScope.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-
             asm.registerLIRInstructionValue(resultArray, idResult);
         }
     }
@@ -239,11 +233,9 @@ public class SPIRVBinary {
                 throw new RuntimeException("Constant expected");
             }
 
-            // Array declaration
-            SPIRVId resultArrayId = asm.module.getNextId();
-            asm.module.add(new SPIRVOpTypeArray(resultArrayId, primitiveType, lengthId));
-            SPIRVId functionPTR = asm.module.getNextId();
-            asm.module.add(new SPIRVOpTypePointer(functionPTR, SPIRVStorageClass.Workgroup(), resultArrayId));
+            // Array declaration in local memory avoiding duplications
+            SPIRVId resultArrayId = asm.declareArray((SPIRVKind) lirKind.getPlatformKind(), primitiveType, lengthId);
+            SPIRVId functionPTR = asm.getFunctionPtrToLocalArray(resultArrayId);
 
             // Registration of the variable in the module level
             asm.module.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Workgroup(), new SPIRVOptionalOperand<>()));
