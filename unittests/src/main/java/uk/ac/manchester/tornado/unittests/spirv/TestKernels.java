@@ -44,6 +44,13 @@ public class TestKernels {
         }
     }
 
+    public static void init(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 100;
+            b[i] = 500;
+        }
+    }
+
     public static void vectorAddCompute(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i] + c[i];

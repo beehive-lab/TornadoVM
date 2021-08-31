@@ -18,6 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
@@ -312,6 +313,43 @@ public class PrebuiltTest extends TornadoTestBase {
         // @formatter:on
 
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
+    }
+
+    @Test
+    public void test05() {
+        // Check only for the SPIR-V backend
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OpenCL);
+
+        final int numElements = 8192 * 16;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Arrays.fill(a, 0);
+        Arrays.fill(b, 0);
+        int[] expectedResultA = new int[numElements];
+        int[] expectedResultB = new int[numElements];
+        Arrays.fill(expectedResultA, 100);
+        Arrays.fill(expectedResultB, 500);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String filePath = "/tmp/init.spv";
+
+        // @formatter:off
+        new TaskSchedule("s0")
+                .prebuiltTask("t0",
+                        "init",
+                        filePath,
+                        new Object[]{a, b},
+                        new Access[]{Access.WRITE, Access.WRITE},
+                        defaultDevice,
+                        new int[]{numElements})
+                .streamOut(a, b)
+                .execute();
+        // @formatter:on
+
+        assertArrayEquals(expectedResultA, a);
+        assertArrayEquals(expectedResultB, b);
     }
 
 }

@@ -96,4 +96,26 @@ public class TestIntegers extends TornadoTestBase {
         assertArrayEquals(expectedResult, a);
     }
 
+    @Test
+    public void test05() {
+        final int numElements = 8192 * 16;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Arrays.fill(a, 0);
+        Arrays.fill(b, 0);
+        int[] expectedResultA = new int[numElements];
+        int[] expectedResultB = new int[numElements];
+        Arrays.fill(expectedResultA, 100);
+        Arrays.fill(expectedResultB, 500);
+
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::init, a, b) //
+                .streamOut(a, b) //
+                .execute(); //
+
+        assertArrayEquals(expectedResultA, a);
+        assertArrayEquals(expectedResultB, b);
+    }
+
 }
