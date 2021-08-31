@@ -69,7 +69,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),                 ## 2 fail
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
-    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),           ## 5 fail (types)
+    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),          
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),  ## 1 fail (not supported)
