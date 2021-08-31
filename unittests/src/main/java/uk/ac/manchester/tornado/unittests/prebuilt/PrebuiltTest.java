@@ -304,7 +304,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         "nBody",
                         filePath,
                         new Object[]{numBodies, posTornadoVM, velTornadoVM},
-                        new Access[]{Access.READ, Access.READ, Access.WRITE},
+                        new Access[]{Access.READ, Access.WRITE, Access.WRITE},
                         defaultDevice,
                         new int[]{numBodies})
                 .streamOut(posTornadoVM, velTornadoVM)
