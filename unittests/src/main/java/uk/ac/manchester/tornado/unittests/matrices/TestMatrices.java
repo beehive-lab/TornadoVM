@@ -31,6 +31,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrices extends TornadoTestBase {
@@ -157,6 +158,7 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    @SPIRVNotSupported
     @Test
     public void testFillMatrix2() {
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -180,6 +182,7 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    @SPIRVNotSupported
     @Test
     public void testFillMatrix3() {
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -465,6 +468,7 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    @SPIRVNotSupported
     @Test
     public void testCopyMatrix2D() {
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -634,6 +638,7 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    @SPIRVNotSupported
     @Test
     public void testAddMatrix() {
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -677,6 +682,7 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
+    @SPIRVNotSupported
     @Test
     public void testAddMatrixMultiple() {
         assertNotBackend(TornadoVMBackendType.PTX);
