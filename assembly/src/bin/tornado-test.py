@@ -67,12 +67,12 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
     TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),                 ## 2 fail
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
-    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),           ## 5 fail (types)
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),  ## 1 fail (not supported)
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
@@ -81,7 +81,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskSchedule"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelPluginsTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"), ## 1 fail
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
