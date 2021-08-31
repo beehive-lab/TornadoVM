@@ -333,7 +333,8 @@ public class PrebuiltTest extends TornadoTestBase {
         Arrays.fill(expectedResultB, 500);
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = "/tmp/init.spv";
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String filePath = tornadoSDK + "/examples/generated/init.spv";
 
         // @formatter:off
         new TaskSchedule("s0")
