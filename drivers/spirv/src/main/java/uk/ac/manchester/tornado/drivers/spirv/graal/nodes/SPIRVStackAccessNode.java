@@ -40,12 +40,11 @@ public class SPIRVStackAccessNode extends FloatingNode implements LIRLowerable {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
 
-        // We know we load a integer value
+        // We know we load an integer value
         SPIRVKind spirvKind = SPIRVKind.OP_TYPE_INT_32;
         LIRKind lirKind = LIRKind.value(spirvKind);
 
         Value value = gen.operand(index);
-
         SPIRVLIRStmt.ASSIGNIndexedParameter assignStmt = new SPIRVLIRStmt.ASSIGNIndexedParameter(result, new SPIRVUnary.LoadIndexValueFromStack(lirKind, spirvKind, value));
         gen.setResult(this, result);
 

@@ -167,7 +167,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns LoadIndexValueFromStack ");
+            SPIRVLogger.traceCodeGen("µIns LoadIndexValueFromSPIRVStack ");
             SPIRVId loadID = asm.module.getNextId();
 
             SPIRVId ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
