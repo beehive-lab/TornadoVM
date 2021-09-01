@@ -169,7 +169,7 @@ __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.9_23082021"
+__VERSION__ = "0.9_01092021"
 
 JDK_8_VERSION = "1.8"
 try:

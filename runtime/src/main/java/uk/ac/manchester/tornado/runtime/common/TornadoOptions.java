@@ -222,12 +222,12 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "True");
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "False");
 
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "True");
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "False");
 
     /**
      * Use return as a common label and insert the instruction before function
