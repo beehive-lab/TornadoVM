@@ -272,7 +272,7 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("emit Private memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
-            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVId indexId;
             if (index instanceof ConstantValue) {
@@ -308,7 +308,7 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("emit LOCAL memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
-            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVKind kind = (SPIRVKind) index.getPlatformKind();
             SPIRVId indexId;
@@ -364,7 +364,7 @@ public class SPIRVUnary {
         public void emitForLoad(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVId arrayAccessId = asm.module.getNextId();
 
-            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);
+            SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVId indexId;
             if (index instanceof ConstantValue) {
