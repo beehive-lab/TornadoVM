@@ -871,10 +871,10 @@ public class SPIRVLIRStmt {
         }
     }
 
-    @Opcode("INDEXED_ACCESS")
-    public static class IndexedMemAccess extends AbstractInstruction {
+    @Opcode("STORE_INDEXED_ACCESS")
+    public static class StoreIndexedMemAccess extends AbstractInstruction {
 
-        public static final LIRInstructionClass<IndexedMemAccess> TYPE = LIRInstructionClass.create(IndexedMemAccess.class);
+        public static final LIRInstructionClass<StoreIndexedMemAccess> TYPE = LIRInstructionClass.create(StoreIndexedMemAccess.class);
 
         @Use
         protected Value rhs;
@@ -885,7 +885,7 @@ public class SPIRVLIRStmt {
         @Use
         protected Value index;
 
-        public IndexedMemAccess(SPIRVUnary.MemoryIndexedAccess memoryIndexedAccess, Value rhs) {
+        public StoreIndexedMemAccess(SPIRVUnary.MemoryIndexedAccess memoryIndexedAccess, Value rhs) {
             super(TYPE);
             this.memoryIndexedAccess = memoryIndexedAccess;
             this.rhs = rhs;

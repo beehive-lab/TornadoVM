@@ -298,8 +298,8 @@ public class SPIRVUnary {
             }
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
-            SPIRVKind kind = (SPIRVKind) getValue().getPlatformKind();
-            SPIRVId type = asm.primitives.getPtrToTypePrimitive(kind);
+            SPIRVKind spirvKind = (SPIRVKind) getValue().getPlatformKind();
+            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive(spirvKind);
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }
@@ -334,7 +334,8 @@ public class SPIRVUnary {
             }
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
-            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive(kind);
+            SPIRVKind spirvKind = (SPIRVKind) getValue().getPlatformKind();
+            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive(spirvKind);
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }

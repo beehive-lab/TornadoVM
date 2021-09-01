@@ -457,7 +457,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             } else {
                 if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
                     SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-                    getGen().append(new SPIRVLIRStmt.IndexedMemAccess(indexedAccess, input));
+                    getGen().append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, input));
                 }
             }
         }
