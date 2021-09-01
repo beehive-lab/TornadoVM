@@ -20,17 +20,12 @@ package uk.ac.manchester.tornado.unittests.slam.graphics;
 
 import static org.junit.Assert.assertEquals;
 import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rigidTransform;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.max;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.min;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.api.collections.types.Float2.mult;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.div;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.length;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.normalise;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.sub;
-import static uk.ac.manchester.tornado.api.collections.types.VolumeOps.grad;
-import static uk.ac.manchester.tornado.api.collections.types.VolumeOps.interp;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -72,18 +67,18 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class GraphicsTests extends TornadoTestBase {
 
-    private static void testPhiNode(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
+    private static void testPhiNode(ImageFloat3 vertices, ImageFloat depths, Matrix4x4Float invK) {
         final float depth = depths.get(0, 0);
         final Float3 pix = new Float3(0, 0, 1f);
         final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3(0f, 0f, 0f);
-        verticies.set(0, 0, vertex);
+        vertices.set(0, 0, vertex);
     }
 
-    private static void testPhiNode2(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
+    private static void testPhiNode2(ImageFloat3 vertices, ImageFloat depths, Matrix4x4Float invK) {
         final float depth = depths.get(0, 0);
         final Float3 pix = new Float3(0, 0, 1f);
         final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3();
-        verticies.set(0, 0, vertex);
+        vertices.set(0, 0, vertex);
     }
 
     @Test
@@ -195,7 +190,6 @@ public class GraphicsTests extends TornadoTestBase {
             assertEquals("index = " + i, destSeq.get(i), dest.get(i), 0.001);
         }
     }
-
 
     private static Float3 rotate(Matrix4x4Float m, Float3 v) {
         return new Float3(Float3.dot(m.row(0).asFloat3(), v), Float3.dot(m.row(1).asFloat3(), v), Float3.dot(m.row(2).asFloat3(), v));
@@ -355,23 +349,24 @@ public class GraphicsTests extends TornadoTestBase {
     public final class Constants {
         private Constants() {
         }
-        public static final int		X		= 0;
-        public static final int		Y		= 1;
-        public static final int		Z		= 2;
-        public static final int		W		= 3;
 
-        public static final float	INVALID	= -2f;
+        public static final int X = 0;
+        public static final int Y = 1;
+        public static final int Z = 2;
+        public static final int W = 3;
 
-        public static final int		BLACK	= -1;
-        public static final int		RED		= -2;
-        public static final int		GREEN	= -3;
-        public static final int		BLUE	= -4;
-        public static final int		YELLOW	= -5;
-        public static final int		GREY	= 1;
+        public static final float INVALID = -2f;
+
+        public static final int BLACK = -1;
+        public static final int RED = -2;
+        public static final int GREEN = -3;
+        public static final int BLUE = -4;
+        public static final int YELLOW = -5;
+        public static final int GREY = 1;
     }
 
     public static void trackPose(final ImageFloat8 results, final ImageFloat3 verticies, final ImageFloat3 normals, final ImageFloat3 referenceVerticies, final ImageFloat3 referenceNormals,
-                                 final Matrix4x4Float currentPose, final Matrix4x4Float view, final float distanceThreshold, final float normalThreshold) {
+            final Matrix4x4Float currentPose, final Matrix4x4Float view, final float distanceThreshold, final float normalThreshold) {
 
         final Float8 NO_INPUT = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLACK);
         final Float8 NOT_IN_IMAGE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.RED);
@@ -463,9 +458,7 @@ public class GraphicsTests extends TornadoTestBase {
         fillMatrix4x4Float(projectReference, min, max);
 
         // Sequential execution
-        trackPose(sequantialPyramidTrackingResults, pyramidVertices, pyramidNormals,
-                referenceViewVertices, referenceViewNormals, pyramidPose,
-                projectReference, distanceThreshold, normalThreshold);
+        trackPose(sequantialPyramidTrackingResults, pyramidVertices, pyramidNormals, referenceViewVertices, referenceViewNormals, pyramidPose, projectReference, distanceThreshold, normalThreshold);
 
         // @formatter:off
         new TaskSchedule("s0")
@@ -670,14 +663,13 @@ public class GraphicsTests extends TornadoTestBase {
 
     private static final float INVALID = -2;
 
-    public static final void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims,
-                                     Matrix4x4Float view, float nearPlane, float farPlane, float largeStep, float smallStep) {
+    public static final void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep,
+            float smallStep) {
 
         // use volume model to generate a reference view by raycasting ...
         for (@Parallel int y = 0; y < verticies.Y(); y++) {
             for (@Parallel int x = 0; x < verticies.X(); x++) {
-                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane,
-                        smallStep, largeStep);
+                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
 
                 final Float3 normal;
                 final Float3 position;
@@ -768,14 +760,13 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static final void testRayCastPointIsolation(ImageFloat4 output, ImageFloat3 verticies, VolumeShort2 volume, Float3 volumeDims,
-                                     Matrix4x4Float view, float nearPlane, float farPlane, float largeStep, float smallStep) {
+    public static final void testRayCastPointIsolation(ImageFloat4 output, ImageFloat3 verticies, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane,
+            float largeStep, float smallStep) {
 
         // use volume model to generate a reference view by raycasting ...
         for (@Parallel int i = 0; i < verticies.X(); i++) {
             for (@Parallel int j = 0; j < verticies.Y(); j++) {
-                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, i, j, view, nearPlane, farPlane,
-                        smallStep, largeStep);
+                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, i, j, view, nearPlane, farPlane, smallStep, largeStep);
                 output.set(i, j, hit);
             }
         }
@@ -1057,9 +1048,8 @@ public class GraphicsTests extends TornadoTestBase {
      * * Creates a 4x4 matrix representing the intrinsic camera matrix
      *
      * @param k
-     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y}
-     *            specifies the focal length of the camera and {x_0,y_0} the
-     *            principle point
+     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
+     *            the focal length of the camera and {x_0,y_0} the principle point
      * @param m
      *            - returned matrix
      */
@@ -1133,7 +1123,7 @@ public class GraphicsTests extends TornadoTestBase {
         float nearPlane = 0.4f;
         float farPlane = 4.0f * 2;
         float largeStep = 0.75f * 0.1f;
-        float smallStep = Float3.min(volumeDims) /  Int3.max(volumeSize);
+        float smallStep = Float3.min(volumeDims) / Int3.max(volumeSize);
         Float3 light = new Float3(1.0f, 1.0f, -1.0f);
         Float3 ambient = new Float3(0.1f, 0.1f, 0.1f);
 

@@ -371,8 +371,16 @@ public class SPIRVUnary {
             } else {
                 indexId = asm.lookUpLIRInstructions(index);
                 SPIRVId loadId = asm.module.getNextId();
-                SPIRVId type = asm.primitives.getTypePrimitive((SPIRVKind) getValue().getPlatformKind());
-                asm.currentBlockScope().add(new SPIRVOpLoad(type, loadId, indexId, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+                SPIRVKind spirvKind = (SPIRVKind) index.getPlatformKind();
+                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                asm.currentBlockScope().add(new SPIRVOpLoad( //
+                        type, //
+                        loadId, //
+                        indexId, //
+                        new SPIRVOptionalOperand<>(//
+                                SPIRVMemoryAccess.Aligned(//
+                                        new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
+                ));
 
                 SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
                 SPIRVId convertID = asm.module.getNextId();
