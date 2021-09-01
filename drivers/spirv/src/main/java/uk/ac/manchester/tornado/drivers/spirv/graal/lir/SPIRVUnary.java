@@ -566,6 +566,8 @@ public class SPIRVUnary {
             SPIRVId toTypeId;
             if (toBits == 64) {
                 toTypeId = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+            } else if (toBits == 32) {
+                toTypeId = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
             } else {
                 throw new RuntimeException("to Type not supported: " + toBits);
             }
