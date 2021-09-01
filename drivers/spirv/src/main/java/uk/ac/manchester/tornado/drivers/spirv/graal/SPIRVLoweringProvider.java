@@ -157,7 +157,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
         } else {
-            // super.lower(node, tool);
+            super.lower(node, tool);
         }
     }
 
