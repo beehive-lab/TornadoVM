@@ -31,7 +31,6 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -222,97 +221,6 @@ public class PrebuiltTest extends TornadoTestBase {
 
         assertEquals(64, finalSum, 0.0f);
 
-    }
-
-    private static final float DELTA = 0.005f;
-    private static final float ESP_SQR = 500.0f;
-
-    private static void nBody(int numBodies, float[] refPos, float[] refVel) {
-        for (@Parallel int i = 0; i < numBodies; i++) {
-            int body = 4 * i;
-
-            float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
-            for (int j = 0; j < numBodies; j++) {
-                float[] r = new float[3];
-                int index = 4 * j;
-
-                float distSqr = 0.0f;
-                for (int k = 0; k < 3; k++) {
-                    r[k] = refPos[index + k] - refPos[body + k];
-                    distSqr += r[k] * r[k];
-                }
-
-                float invDist = (float) (1.0f / Math.sqrt(distSqr + ESP_SQR));
-
-                float invDistCube = invDist * invDist * invDist;
-                float s = refPos[index + 3] * invDistCube;
-
-                for (int k = 0; k < 3; k++) {
-                    acc[k] += s * r[k];
-                }
-            }
-            for (int k = 0; k < 3; k++) {
-                refPos[body + k] += refVel[body + k] * DELTA + 0.5f * acc[k] * DELTA * DELTA;
-                refVel[body + k] += acc[k] * DELTA;
-            }
-        }
-    }
-
-    public static void validate(int numBodies, float[] posTornadoVM, float[] velTornadoVM, float[] posSequential, float[] velSequential) {
-        for (int i = 0; i < numBodies * 4; i++) {
-            assertEquals(posSequential[i], posTornadoVM[i], 0.1f);
-            assertEquals(velSequential[i], velTornadoVM[i], 0.1f);
-        }
-    }
-
-    // Provisional test
-    @Test
-    public void testNBody() {
-
-        assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.OpenCL);
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = "/tmp/nbody.spv";
-
-        final int numBodies = 2048;
-        float[] posSeq = new float[numBodies * 4];
-        float[] velSeq = new float[numBodies * 4];
-
-        for (int i = 0; i < posSeq.length; i++) {
-            posSeq[i] = (float) Math.random();
-        }
-
-        Arrays.fill(velSeq, 0.0f);
-
-        float[] posTornadoVM = new float[numBodies * 4];
-        float[] velTornadoVM = new float[numBodies * 4];
-
-        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
-        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
-
-        // Run Sequential
-        nBody(numBodies, posSeq, velSeq);
-
-        WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-        workerGrid.setGlobalWork(numBodies, 1, 1);
-        workerGrid.setLocalWork(32, 1, 1);
-
-        // @formatter:off
-        new TaskSchedule("s0")
-                .prebuiltTask("t0",
-                        "nBody",
-                        filePath,
-                        new Object[]{numBodies, posTornadoVM, velTornadoVM},
-                        new Access[]{Access.READ, Access.WRITE, Access.WRITE},
-                        defaultDevice,
-                        new int[]{numBodies})
-                .streamOut(posTornadoVM, velTornadoVM)
-                .execute(gridScheduler);
-        // @formatter:on
-
-        validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
     }
 
     @Test
