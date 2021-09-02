@@ -579,7 +579,7 @@
         </dependency>
     </dependencies>
     <modules>
-        <module>spirvproto-lib</module>
+        <module>spirv-beehive-toolkit</module>
         <module>runtime</module>
         <module>matrices</module>
         <module>drivers</module>

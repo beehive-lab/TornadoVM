@@ -1,0 +1,79 @@
+/*
+* MIT License
+*
+* Copyright (c) 2021, APT Group, Department of Computer Science,
+* The University of Manchester.
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
+
+package uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands;
+
+import javax.annotation.Generated;
+import java.util.List;
+import java.util.ArrayList;
+import java.nio.ByteBuffer;
+
+@Generated("beehive-lab.spirvbeehivetoolkit.generator")
+public class SPIRVFunctionParameterAttribute extends SPIRVEnum {
+
+    protected SPIRVFunctionParameterAttribute(int value, String name, List<SPIRVOperand> parameters, SPIRVCapability... capabilities) {
+        super(value, name, parameters, capabilities);
+    }
+
+    @Override
+    public void write(ByteBuffer output) {
+        super.write(output);
+        parameters.forEach(param -> param.write(output));
+    }
+
+
+    public static SPIRVFunctionParameterAttribute Zext() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(0, "Zext", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute Sext() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(1, "Sext", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute ByVal() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(2, "ByVal", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute Sret() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(3, "Sret", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute NoAlias() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(4, "NoAlias", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute NoCapture() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(5, "NoCapture", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute NoWrite() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(6, "NoWrite", params, SPIRVCapability.Kernel());
+    }
+    public static SPIRVFunctionParameterAttribute NoReadWrite() {
+        List<SPIRVOperand> params = new ArrayList<>(0);
+        return new SPIRVFunctionParameterAttribute(7, "NoReadWrite", params, SPIRVCapability.Kernel());
+    }
+}

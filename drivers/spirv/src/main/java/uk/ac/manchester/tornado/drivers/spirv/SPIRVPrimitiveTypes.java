@@ -3,16 +3,16 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeBool;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeFloat;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeInt;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypePointer;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVector;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpTypeVoid;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpUndef;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeBool;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeFloat;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeInt;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVector;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUndef;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 public class SPIRVPrimitiveTypes {
@@ -27,9 +27,9 @@ public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, SPIRVId> undefTable;
 
-    private final uk.ac.manchester.spirvproto.lib.SPIRVModule module;
+    private final uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module;
 
-    public SPIRVPrimitiveTypes(uk.ac.manchester.spirvproto.lib.SPIRVModule module) {
+    public SPIRVPrimitiveTypes(uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module) {
         this.module = module;
         this.primitives = new HashMap<>();
         this.ptrToPrimitives = new HashMap<>();

@@ -5,12 +5,12 @@ import org.graalvm.compiler.lir.ConstantValue;
 
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvproto.lib.SPIRVModule;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpLoad;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralInteger;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVMemoryAccess;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;

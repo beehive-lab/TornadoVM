@@ -3,11 +3,11 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 
-import uk.ac.manchester.spirvproto.lib.SPIRVInstScope;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpBranch;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpName;
-import uk.ac.manchester.spirvproto.lib.instructions.SPIRVOpReturn;
-import uk.ac.manchester.spirvproto.lib.instructions.operands.SPIRVLiteralString;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBranch;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpReturn;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;

@@ -15,7 +15,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>spirvproto-lib</artifactId>
+            <artifactId>spirv-beehive-toolkit</artifactId>
             <version>${project.version}</version>
         </dependency>
 
