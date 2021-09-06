@@ -11,8 +11,11 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
  */
 public class SPIRVTargetDescription extends TargetDescription {
 
+    private boolean supportsFP64;
+
     public SPIRVTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
         super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
+        this.supportsFP64 = supportsFP64;
     }
 
     public SPIRVArchitecture getArch() {
@@ -21,6 +24,10 @@ public class SPIRVTargetDescription extends TargetDescription {
 
     public SPIRVKind getSPIRVKind(JavaKind kind) {
         return (SPIRVKind) arch.getPlatformKind(kind);
+    }
+
+    public boolean isSupportsFP64() {
+        return this.supportsFP64;
     }
 
 }

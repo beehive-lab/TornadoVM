@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -460,8 +461,10 @@ public class TornadoVM extends TornadoLogger {
                 installedCodes[taskIndex] = device.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
-            } catch (Exception e) {
+            } catch (TornadoBailoutRuntimeException e) {
                 throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);
+            } catch (TornadoDeviceFP64NotSupported e) {
+                throw e;
             }
         }
         return new ExecutionInfo(stack, waitList);

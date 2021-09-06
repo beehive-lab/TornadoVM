@@ -15,6 +15,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -177,11 +178,13 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
-        } catch (Exception e) {
+        } catch (TornadoBailoutRuntimeException e) {
             System.err.printf("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
             System.err.printf("Exception occurred when compiling %s\n", task.getMethod().getName());
             e.printStackTrace();
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
+        } catch (TornadoDeviceFP64NotSupported e) {
+            throw new TornadoDeviceFP64NotSupported(e);
         }
     }
 

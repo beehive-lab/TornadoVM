@@ -85,6 +85,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -638,6 +639,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
                 throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.getMessage());
             }
+        } catch (TornadoDeviceFP64NotSupported e) {
+            throw e;
         }
     }
 

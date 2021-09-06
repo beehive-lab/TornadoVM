@@ -104,6 +104,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMulti
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
@@ -157,7 +158,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private SPIRVInstScope blockScope;
     private SPIRVId pointerToFrameAccess;
     private SPIRVId ptrFunctionPTRCrossWorkGroupUChar;
-    private boolean fp64Capability;
+    private boolean fp64CapabilityEnabled;
+    private boolean supportsFP64;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -166,8 +168,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         this.targetDescription = targetDescription;
         this.codeCache = codeProvider;
         this.deviceContext = deviceContext;
-        spirvArchitecture = targetDescription.getArch();
-        scheduleMetaData = new ScheduleMetaData("spirvBackend");
+        this.spirvArchitecture = targetDescription.getArch();
+        this.scheduleMetaData = new ScheduleMetaData("spirvBackend");
+        this.supportsFP64 = targetDescription.isSupportsFP64();
         this.isInitialized = false;
         this.SPIRVSymbolTable = new HashMap<>();
     }
@@ -429,7 +432,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     private void emitFP64Capability(SPIRVModule module) {
         module.add(new SPIRVOpCapability(SPIRVCapability.Float64())); // To use doubles
-        fp64Capability = true;
+        fp64CapabilityEnabled = true;
     }
 
     private void emitSPIRVCapabilities(SPIRVModule module) {
@@ -811,7 +814,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // ----------------------------------
             // Emit Entry Kernel
             // ----------------------------------
-            asm.emitEntryPointMainKernel(cfg.graph, method.getName(), isParallel, fp64Capability);
+            if (fp64CapabilityEnabled && !supportsFP64) {
+                throw new TornadoDeviceFP64NotSupported("Error - The current SPIR-V device does not support FP64");
+            }
+            asm.emitEntryPointMainKernel(cfg.graph, method.getName(), isParallel, fp64CapabilityEnabled);
 
             // ----------------------------------
             // OpNames for the heap and frame
