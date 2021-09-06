@@ -21,6 +21,7 @@ public class SPIRVCompilationResult extends CompilationResult {
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private TaskMetaData taskMetaData;
     private String id;
+    private ByteBuffer spirvBinary;
 
     public SPIRVCompilationResult(String id, String methodName, TaskMetaData taskMetaData) {
         super(methodName);
@@ -65,5 +66,13 @@ public class SPIRVCompilationResult extends CompilationResult {
 
     public String getId() {
         return id;
+    }
+
+    public byte[] getSPIRVBinary() {
+        return spirvBinary.array();
+    }
+
+    public void setSPIRVBinary(ByteBuffer spirvByteBuffer) {
+        this.spirvBinary = spirvByteBuffer;
     }
 }

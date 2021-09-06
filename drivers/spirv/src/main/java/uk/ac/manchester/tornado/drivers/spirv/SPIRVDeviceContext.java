@@ -324,7 +324,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public TornadoInstalledCode installBinary(SPIRVCompilationResult result) {
-        return installBinary(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
+        return installBinary(result.getMeta(), result.getId(), result.getName(), result.getSPIRVBinary());
     }
 
     public SPIRVInstalledCode installBinary(TaskMetaData meta, String id, String entryPoint, byte[] code) {

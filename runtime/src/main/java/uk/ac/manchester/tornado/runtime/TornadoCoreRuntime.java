@@ -58,6 +58,7 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -164,7 +165,9 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         TornadoAcceleratorDriver[] tornadoVMDrivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
-            System.out.println("Loading DRIVER: " + provider);
+            if (Tornado.DEBUG) {
+                System.out.println("Loading DRIVER: " + provider);
+            }
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
                 TornadoAcceleratorDriver driver = provider.createDriver(options, vmRuntime, vmConfig);

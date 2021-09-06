@@ -318,9 +318,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // Close SPIR-V module without validation while we develop the SPIR-V backend
         module.close().write(out);
-        for (int i = 0; i < module.getByteCount(); i++) {
-            asm.emitByte(out.get(i));
-        }
+        out.flip();
+        asm.setSPIRVByteBuffer(out);
+
+        // for (int i = 0; i < module.getByteCount(); i++) {
+        // asm.emitByte(out.get(i));
+        // }
     }
 
     public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {

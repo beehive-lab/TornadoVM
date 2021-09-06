@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -97,8 +96,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
 
-        System.out.println(Arrays.toString(input));
-
         for (int i = 0; i < size; i++) {
             assertEquals(i, input[i]);
         }
@@ -137,8 +134,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
-
-        System.out.println(Arrays.toString(output));
 
         for (int i = 0; i < size; i++) {
             assertEquals(input[i], output[i]);
@@ -179,8 +174,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
-
-        System.out.println(Arrays.toString(output));
 
         for (int i = 0; i < size; i++) {
             assertEquals(input[i] * 2, output[i]);
@@ -224,8 +217,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
 
-        System.out.println(Arrays.toString(output));
-
         for (int i = 0; i < size; i++) {
             assertEquals(2, output[i], 0.0);
         }
@@ -268,8 +259,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
 
-        System.out.println(Arrays.toString(output));
-
         for (int i = 0; i < size; i++) {
             assertEquals(2, output[i], 0.0);
         }
@@ -296,9 +285,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
-
-        System.out.println(Arrays.toString(reduce));
-        System.out.println(Arrays.toString(input));
 
         // Final SUM
         int finalSum = 0;
@@ -350,8 +336,6 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
-
-        System.out.println(Arrays.toString(reduce));
 
         // Final SUM
         int finalSum = 0;

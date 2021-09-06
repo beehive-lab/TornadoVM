@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +70,16 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
+
+    private ByteBuffer spirvByteBuffer;
+
+    public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
+        this.spirvByteBuffer = spirvByteBuffer;
+    }
+
+    public ByteBuffer getSPIRVByteBuffer() {
+        return this.spirvByteBuffer;
+    }
 
     public static class ConstantKeyPair {
         private String name;

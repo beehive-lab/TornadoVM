@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
@@ -287,6 +288,8 @@ public class SPIRVCompiler {
             }
 
             compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
+            SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
+            compilationResult.setSPIRVBinary(asm.getSPIRVByteBuffer());
             crb.finish();
 
             if (getDebugContext().isCountEnabled()) {

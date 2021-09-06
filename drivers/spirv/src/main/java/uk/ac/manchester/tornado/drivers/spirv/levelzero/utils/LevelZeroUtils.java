@@ -59,6 +59,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class LevelZeroUtils {
 
@@ -320,7 +321,9 @@ public class LevelZeroUtils {
 
         long baseAddress = allocate.getLong(0);
         output[0] = baseAddress;
-        System.out.println("Base Address: " + Long.toUnsignedString(baseAddress));
+        if (Tornado.DEBUG) {
+            System.out.println("Base Address: " + Long.toUnsignedString(baseAddress));
+        }
         commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
         return baseAddress;
