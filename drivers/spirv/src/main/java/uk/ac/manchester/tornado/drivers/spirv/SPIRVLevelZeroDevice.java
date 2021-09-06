@@ -1,17 +1,19 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
+import java.nio.ByteOrder;
+
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeComputeProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceModuleFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceModuleProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
-
-import java.nio.ByteOrder;
 
 public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
@@ -23,6 +25,9 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     ZeAPIVersion apiVersion;
 
     private long totalMemorySize;
+
+    private boolean queriedSupportFP64;
+    private ZeDeviceModuleProperties moduleProperties;
 
     public SPIRVLevelZeroDevice(int platformIndex, int deviceIndex, LevelZeroDevice device) {
         super(platformIndex, deviceIndex);
@@ -90,7 +95,14 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
     @Override
     public boolean isDeviceDoubleFPSupported() {
-        return true;
+        if (!queriedSupportFP64) {
+            moduleProperties = new ZeDeviceModuleProperties();
+            int result = device.zeDeviceGetModuleProperties(device.getDeviceHandlerPtr(), moduleProperties);
+            errorLog("zeDeviceGetModuleProperties", result);
+            queriedSupportFP64 = true;
+        }
+        int flags = moduleProperties.getFlags();
+        return (ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_FP64 & flags) == ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_FP64;
     }
 
     @Override
