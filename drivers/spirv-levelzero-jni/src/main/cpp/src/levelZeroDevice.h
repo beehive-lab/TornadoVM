@@ -81,6 +81,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDevice
+ * Method:    zeDeviceGetModuleProperties_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceModuleProperties;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDevice_zeDeviceGetModuleProperties_1native
+        (JNIEnv *, jobject, jlong, jobject);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDevice
  * Method:    zeDeviceGetCommandQueueGroupProperties_native
  * Signature: (J[I[Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueGroupProperties;)I
  */

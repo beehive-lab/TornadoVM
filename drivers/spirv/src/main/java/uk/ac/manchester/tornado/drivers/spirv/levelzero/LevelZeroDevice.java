@@ -88,6 +88,12 @@ public class LevelZeroDevice {
         return zeDeviceGetCacheProperties_native(deviceHandlerPtr, cacheCount, cacheProperties);
     }
 
+    private native int zeDeviceGetModuleProperties_native(long deviceHandlerPtr, ZeDeviceModuleProperties deviceModuleProperties);
+
+    public int zeDeviceGetModuleProperties(long deviceHandlerPtr, ZeDeviceModuleProperties deviceModuleProperties) {
+        return zeDeviceGetModuleProperties_native(deviceHandlerPtr, deviceModuleProperties);
+    }
+
     native int zeDeviceGetCommandQueueGroupProperties_native(long deviceHandlerPtr, int[] numQueueGroups, ZeCommandQueueGroupProperties[] commandQueueGroupProperties);
 
     public int zeDeviceGetCommandQueueGroupProperties(long deviceHandlerPtr, int[] numQueueGroups, ZeCommandQueueGroupProperties[] commandQueueGroupProperties) {

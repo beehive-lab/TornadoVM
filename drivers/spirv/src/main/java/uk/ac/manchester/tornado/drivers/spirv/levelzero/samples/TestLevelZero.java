@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceCacheProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceImageProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceModuleProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
@@ -214,9 +215,15 @@ public class TestLevelZero {
         // Query device image properties
         // ============================================
         ZeDeviceImageProperties imageProperties = new ZeDeviceImageProperties();
-        device.zeDeviceGetImageProperties(device.getDeviceHandlerPtr(), imageProperties);
+        result = device.zeDeviceGetImageProperties(device.getDeviceHandlerPtr(), imageProperties);
         LevelZeroUtils.errorLog("zeDeviceGetImageProperties", result);
         System.out.println(imageProperties);
+
+        // Query Device Module Properties
+        ZeDeviceModuleProperties deviceModuleProperties = new ZeDeviceModuleProperties();
+        result = device.zeDeviceGetModuleProperties(device.getDeviceHandlerPtr(), deviceModuleProperties);
+        LevelZeroUtils.errorLog("zeDeviceGetModuleProperties", result);
+        System.out.println(deviceModuleProperties);
 
         // ============================================
         // Create a command queue

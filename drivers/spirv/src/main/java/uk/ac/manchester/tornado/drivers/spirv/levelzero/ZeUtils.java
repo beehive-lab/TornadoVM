@@ -33,6 +33,8 @@ public class ZeUtils {
 
     public static String zeTypeToString(int type) {
         switch (type) {
+            case Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_MODULE_PROPERTIES:
+                return "ZE_STRUCTURE_TYPE_DEVICE_MODULE_PROPERTIES";
             case Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES:
                 return "ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES";
             case Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES:
@@ -118,6 +120,72 @@ public class ZeUtils {
             str += "CACHE_PROPERTY_FLAG_USER_CONTROL | ";
         }
         return (str.length() > 3) ? "Device::{ " + str.substring(0, str.length() - 3) + " }" : "Device::{ ? }";
+    }
+
+    public static String zeDeviceModuleFlagsToString(long flag) {
+        String str = "";
+        if (0 == flag) {
+            str += "0 | ";
+        }
+
+        if ((ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_FP16 & flag) == ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_FP16) {
+            str += "ZE_DEVICE_MODULE_FLAG_FP16 | ";
+        }
+
+        if ((ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_FP64 & flag) == ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_FP64) {
+            str += "ZE_DEVICE_MODULE_FLAG_FP64 | ";
+        }
+
+        if ((ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_INT64_ATOMICS & flag) == ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_INT64_ATOMICS) {
+            str += "ZE_DEVICE_MODULE_FLAG_INT64_ATOMICS | ";
+        }
+
+        if ((ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_DP4A & flag) == ZeDeviceModuleFlags.ZE_DEVICE_MODULE_FLAG_DP4A) {
+            str += "ZE_DEVICE_MODULE_FLAG_DP4A | ";
+        }
+
+        return (str.length() > 3) ? "Flags::{ " + str.substring(0, str.length() - 3) + " }" : "Flags::{ ? }";
+    }
+
+    public static String zeDeviceFPXXtoString(long flag) {
+        String str = "";
+        if (0 == flag) {
+            str += "0 | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_DENORM & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_DENORM) {
+            str += "ZE_DEVICE_FP_FLAG_DENORM | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_INF_NAN & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_INF_NAN) {
+            str += "ZE_DEVICE_FP_FLAG_INF_NAN | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUND_TO_NEAREST & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUND_TO_NEAREST) {
+            str += "ZE_DEVICE_FP_FLAG_ROUND_TO_NEAREST | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUND_TO_ZERO & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUND_TO_ZERO) {
+            str += "ZE_DEVICE_FP_FLAG_ROUND_TO_ZERO | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUND_TO_INF & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUND_TO_INF) {
+            str += "ZE_DEVICE_FP_FLAG_ROUND_TO_INF | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_FMA & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_FMA) {
+            str += "ZE_DEVICE_FP_FLAG_FMA | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUNDED_DIVIDE_SQRT & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_ROUNDED_DIVIDE_SQRT) {
+            str += "ZE_DEVICE_FP_FLAG_ROUNDED_DIVIDE_SQRT | ";
+        }
+
+        if ((ZeDeviceFlags.ZE_DEVICE_FP_FLAG_SOFT_FLOAT & flag) == ZeDeviceFlags.ZE_DEVICE_FP_FLAG_SOFT_FLOAT) {
+            str += "ZE_DEVICE_FP_FLAG_SOFT_FLOAT | ";
+        }
+
+        return (str.length() > 3) ? "Flags::{ " + str.substring(0, str.length() - 3) + " }" : "Flags::{ ? }";
     }
 
 }

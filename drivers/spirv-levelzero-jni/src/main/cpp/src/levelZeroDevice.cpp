@@ -390,6 +390,71 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDevice
+ * Method:    zeDeviceGetModuleProperties_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceModuleProperties;)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDevice_zeDeviceGetModuleProperties_1native
+        (JNIEnv *env, jobject object, jlong javaDeviceHandler, jobject javaDeviceModuleProperties) {
+
+    ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
+
+    jclass descriptionClass = env->GetObjectClass(javaDeviceModuleProperties);
+    jfieldID fieldType = env->GetFieldID(descriptionClass, "stype", "I");
+    ze_structure_type_t type = static_cast<ze_structure_type_t>(env->GetIntField(javaDeviceModuleProperties, fieldType));
+    jfieldID fieldPNext = env->GetFieldID(descriptionClass, "pNext", "J");
+    long pNext = static_cast<long>(env->GetLongField(javaDeviceModuleProperties, fieldPNext));
+    void* ptrNext = nullptr;
+    if (pNext != -1) {
+        ptrNext = reinterpret_cast<void *>(pNext);
+    }
+
+    ze_device_module_properties_t deviceModuleProperties;
+    deviceModuleProperties.stype = type;
+    deviceModuleProperties.pNext = ptrNext;
+
+    ze_result_t result = zeDeviceGetModuleProperties(device, &deviceModuleProperties);
+    LOG_ZE_JNI("zeDeviceGetModuleProperties", result);
+
+    // Update the device module structure
+    jfieldID field = env->GetFieldID(descriptionClass, "pNext", "J");
+    env->SetLongField(javaDeviceModuleProperties, field, reinterpret_cast<jlong>(deviceModuleProperties.pNext));
+
+    field = env->GetFieldID(descriptionClass, "spirvVersionSupported", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.spirvVersionSupported);
+
+    field = env->GetFieldID(descriptionClass, "flags", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.flags);
+
+    field = env->GetFieldID(descriptionClass, "fp16flags", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.fp16flags);
+
+    field = env->GetFieldID(descriptionClass, "fp32flags", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.fp32flags);
+
+    field = env->GetFieldID(descriptionClass, "fp64flags", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.fp64flags);
+
+    field = env->GetFieldID(descriptionClass, "maxArgumentsSize", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.maxArgumentsSize);
+
+    field = env->GetFieldID(descriptionClass, "printBufferSize", "I");
+    env->SetIntField(javaDeviceModuleProperties, field, deviceModuleProperties.printfBufferSize);
+
+    field = env->GetFieldID(descriptionClass, "nativeKernelSupported", "[I");
+
+    jintArray intArray = env->NewIntArray(ZE_MAX_NATIVE_KERNEL_UUID_SIZE);
+    jint *ids = env->GetIntArrayElements(intArray, 0);
+    for (int i = 0; i  < ZE_MAX_NATIVE_KERNEL_UUID_SIZE; i++) {
+        ids[i] = deviceModuleProperties.nativeKernelSupported.id[i];
+    }
+    env->ReleaseIntArrayElements(intArray, ids, 0);
+    env->SetObjectField(javaDeviceModuleProperties, field, intArray);
+
+    return result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroDevice
  * Method:    zeDeviceGetCommandQueueGroupProperties_native
  * Signature: (J[I[Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeCommandQueueGroupProperties;)I
  */
