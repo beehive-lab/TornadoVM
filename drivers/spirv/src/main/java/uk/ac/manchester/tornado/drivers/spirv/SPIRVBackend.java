@@ -145,8 +145,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private final SPIRVCodeProvider codeCache;
     final ScheduleMetaData scheduleMetaData;
 
-    final HashMap<String, SPIRVId> SPIRVSymbolTable;
-
     public static final int SPIRV_VERSION_FOR_OPENCL = 100000;
     public static final int SPIRV_MAJOR_VERSION = 1;
     public static final int SPIRV_MINOR_VERSION = 2;
@@ -172,7 +170,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         this.scheduleMetaData = new ScheduleMetaData("spirvBackend");
         this.supportsFP64 = targetDescription.isSupportsFP64();
         this.isInitialized = false;
-        this.SPIRVSymbolTable = new HashMap<>();
     }
 
     // FIXME <REFACTOR> <S>
@@ -489,27 +486,27 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (isParallel) {
             // Register Thread ID
             SPIRVId idSPIRVBuiltin = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, idSPIRVBuiltin);
 
             // Register Global Size
             SPIRVId idSPIRVBuiltin_GlobalSize = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, idSPIRVBuiltin_GlobalSize);
         }
 
         // Decorate for heap_base
         SPIRVId heapBaseAddrId = module.getNextId();
         module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-        SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
+        asm.SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
 
         // Decorate for frameBaseAddrId
         SPIRVId frameBaseAddrId = module.getNextId();
         module.add(new SPIRVOpDecorate(frameBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-        SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
+        asm.SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
 
         // Decorate for frameId
         SPIRVId frameId = module.getNextId();
         module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-        SPIRVSymbolTable.put("frameId", frameId);
+        asm.SPIRVSymbolTable.put("frameId", frameId);
 
         module.add(new SPIRVOpName(heapBaseAddrId, new SPIRVLiteralString("heapBaseAddr")));
         module.add(new SPIRVOpName(frameBaseAddrId, new SPIRVLiteralString("frameBaseAddr")));
@@ -731,14 +728,14 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // Register Thread ID
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, id);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, id);
         }
 
         // Register Global Size
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, id);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, id);
         }
 
@@ -746,20 +743,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
                 || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.LOCAL_THREAD_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, id);
         }
 
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GROUP_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GROUP_ID.name, id);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GROUP_ID.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.GROUP_ID, id);
         }
 
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
                 || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.WORKGROUP_SIZE);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
+            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE, id);
         }
     }
@@ -794,17 +791,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // Decorate for heap_base
             SPIRVId heapBaseAddrId = module.getNextId();
             module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
+            asm.SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
 
             // Decorate for frameBaseAddrId
             SPIRVId frameBaseAddrId = module.getNextId();
             module.add(new SPIRVOpDecorate(frameBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
+            asm.SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
 
             // Decorate for frameId
             SPIRVId frameId = module.getNextId();
             module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            SPIRVSymbolTable.put("frameId", frameId);
+            asm.SPIRVSymbolTable.put("frameId", frameId);
 
             // ----------------------------------
             // Emit all variables (types and initial values)

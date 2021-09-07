@@ -42,11 +42,17 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         final String methodName = targetNode.targetMethod().getName();
 
-        int paramIndex = 0;
-        SPIRVId[] idsForParameters = new SPIRVId[parameters.length];
+        SPIRVId[] ids = asm.loadHeapPointerAndFrameIndex();
+
+        int paramIndex = 2;
+        SPIRVId[] idsForParameters = new SPIRVId[parameters.length + 2];
+        idsForParameters[0] = ids[0];
+        idsForParameters[1] = ids[1];
+
         for (Value parameter : parameters) {
             SPIRVKind spirvKind = (SPIRVKind) parameter.getPlatformKind();
             if (spirvKind.isVector()) {
+                // Load Vector - Not supported for now
                 throw new RuntimeException("No supported yet");
             } else {
                 // Emit Load
@@ -74,6 +80,7 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         asm.registerLIRInstructionValue(result, functionResult);
 
-        crb.addNonInlinedMethod(targetNode.targetMethod());
+        // XXX: Enable the following call for generating multiple methods
+        // crb.addNonInlinedMethod(targetNode.targetMethod());
     }
 }

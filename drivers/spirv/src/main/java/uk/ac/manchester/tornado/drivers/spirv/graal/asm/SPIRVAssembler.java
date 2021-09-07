@@ -42,6 +42,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpIEqual;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpIMul;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpISub;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLabel;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSDiv;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSLessThan;
@@ -60,8 +61,11 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVExecu
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
@@ -145,6 +149,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId pointerToULongFunction;
     public SPIRVId ptrCrossWorkULong;
     private SPIRVId openclImport;
+    public final Map<String, SPIRVId> SPIRVSymbolTable;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -159,6 +164,7 @@ public final class SPIRVAssembler extends Assembler {
         arrayDeclarationTable = new HashMap<>();
         functionPtrToArray = new HashMap<>();
         functionPtrToArrayLocal = new HashMap<>();
+        SPIRVSymbolTable = new HashMap<>();
     }
 
     public void insertOpenCLImportId(SPIRVId oclImport) {
@@ -837,6 +843,35 @@ public final class SPIRVAssembler extends Assembler {
         } else {
             emitValue(crb, value);
         }
+    }
+
+    public SPIRVId[] loadHeapPointerAndFrameIndex() {
+
+        SPIRVId loadHeap = module.getNextId();
+        SPIRVId frameIndexId = module.getNextId();
+
+        SPIRVId heapId = SPIRVSymbolTable.get("heapBaseAddrId");
+        SPIRVId frameId = SPIRVSymbolTable.get("frameBaseAddrId");
+
+        SPIRVId ptrToUChar = primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+
+        int alignment = 8;
+        currentBlockScope().add(new SPIRVOpLoad( //
+                ptrToUChar, //
+                loadHeap, //
+                heapId, //
+                new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+        ));
+
+        SPIRVId ulong = primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+        currentBlockScope().add(new SPIRVOpLoad( //
+                ulong, //
+                frameIndexId, //
+                frameId, //
+                new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8))) //
+        ));
+
+        return new SPIRVId[] { loadHeap, frameIndexId };
     }
 
 }
