@@ -261,4 +261,8 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     public SPIRVAssembler getAssembler() {
         return (SPIRVAssembler) asm;
     }
+
+    public void addNonInlinedMethod(ResolvedJavaMethod targetMethod) {
+        nonInlinedMethods.add(targetMethod);
+    }
 }

@@ -17,15 +17,21 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import org.junit.Assert;
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
+import java.util.stream.IntStream;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Tests TornadoVM compilation under different scenarios, when not performing inlining in the method passed to the task.
+ * Tests TornadoVM compilation under different scenarios, when not performing
+ * inlining in the method passed to the task.
  */
 public class TestMultipleFunctions extends TornadoTestBase {
 
@@ -81,7 +87,47 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
     }
 
+    public static void vectorAddInteger(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = operation(a[i], b[i]);
+        }
+    }
 
+    private static int operation(int a, int b) {
+        return a + b;
+    }
+
+    @Test
+    public void test01() {
+
+        final int numElements = 4096;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Random r = new Random();
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = r.nextInt();
+            b[i] = r.nextInt();
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(a, b)
+                .task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i]);
+        }
+    }
+
+    /**
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
+     * a method and writing to one of the parameters in the callee.
+     */
     public void caller1(int[] calleeRead, int ignoreParam1, int[] callerReadCalleeWrite, int ignoreParam2, int[] callerRead, int[] callerWrite) {
         for (int i = 0; i < callerRead.length; i++) {
             callerWrite[i] = callerRead[i] + callerReadCalleeWrite[i] + 10;
@@ -115,8 +161,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling a method and writing to one
-     * of the parameters in the callee.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
+     * a method and writing to one of the parameters in the callee.
      */
     @Test
     public void testSingleTask() {
@@ -126,9 +172,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskSchedule ts = new TaskSchedule("s0")
-                .task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2, testArrays.callerReadTor, testArrays.callerWriteTor)
-                .streamOut(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
+        TaskSchedule ts = new TaskSchedule("s0").task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2,
+                testArrays.callerReadTor, testArrays.callerWriteTor).streamOut(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
         ts.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
@@ -138,8 +183,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling two methods from different tasks,
-     * passing the same parameter to both tasks, and writing in only one callee.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
+     * two methods from different tasks, passing the same parameter to both tasks,
+     * and writing in only one callee.
      */
     @Test
     public void testMultipleTasks() {
@@ -151,7 +197,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
         TaskSchedule ts = new TaskSchedule("s0")
-                .task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2, testArrays.callerReadTor, testArrays.callerWriteTor)
+                .task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2, testArrays.callerReadTor,
+                        testArrays.callerWriteTor)
                 .task("t1", testTaskAccesses::caller2, testArrays.callerReadTor, testArrays.calleeReadTor)
                 .streamOut(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
         ts.execute();
@@ -163,8 +210,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling three methods from different tasks.
-     * Performs a combination of {@link #testMultipleTasks} and {@link #testSingleTask}.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
+     * three methods from different tasks. Performs a combination of
+     * {@link #testMultipleTasks} and {@link #testSingleTask}.
      */
     @Test
     public void testMultipleTasksMultipleCallees() {
@@ -209,22 +257,20 @@ public class TestMultipleFunctions extends TornadoTestBase {
         arr[0] = -1;
     }
 
-    /**
-     * Tests if methods/functions invoked from different places in the call graph do not get compiled twice.
-     * A → B → D
-     *   ↘ C ↗
+    //@formatter:off
+    /** Tests if methods/functions invoked from different places in the call graph do not get compiled twice.
+     *    A → B → D
+     *      ↘ C ↗
      * If compiled twice, it will generate a runtime exception when launching the kernel.
      */
+    //@formatter:on
     @Test
     public void testNoDoubleCompilation() {
         int[] arr = new int[] { 0 };
-
-        TaskSchedule ts = new TaskSchedule("s0")
-                .task("t0", TestMultipleFunctions::functionA, arr)
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", TestMultipleFunctions::functionA, arr)//
                 .streamOut(arr);
-
         ts.execute();
-
         Assert.assertEquals(-1, arr[0]);
     }
 

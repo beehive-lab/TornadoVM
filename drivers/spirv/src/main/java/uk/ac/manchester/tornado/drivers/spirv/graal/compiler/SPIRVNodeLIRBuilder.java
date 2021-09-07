@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -70,6 +71,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
@@ -77,6 +79,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVDirectCall;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
@@ -119,9 +122,12 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         if (isLegal(result) & ((SPIRVKind) result.getPlatformKind()).isVector()) {
             throw new RuntimeException("[SPIRV] CAll with Vector types not supported yet");
         }
-        // TODO: Analyze first how is a direct call in SPIRV
-        // append(new SPIRVLIRStmt.ExprStmt);
-        throw new RuntimeException("Not supported yet");
+        final SPIRVDirectCall spirvDirectCall = new SPIRVDirectCall(callTarget, result, parameters, callState);
+        if (isLegal(result)) {
+            append(new SPIRVLIRStmt.AssignStmt(gen.asAllocatable(result), spirvDirectCall));
+        } else {
+            append(new SPIRVLIRStmt.ExprStmt(spirvDirectCall));
+        }
     }
 
     @Override
@@ -139,9 +145,56 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         throw new RuntimeException("Not supported");
     }
 
+    private LIRKind resolveStamp(Stamp stamp) {
+        LIRKind lirKind = LIRKind.Illegal;
+        if (!stamp.isEmpty()) {
+            if (stamp instanceof ObjectStamp) {
+                ObjectStamp os = (ObjectStamp) stamp;
+                ResolvedJavaType resolvedJavaType = os.javaType(gen.getMetaAccess());
+                SPIRVKind spirvKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedJavaType);
+                if (spirvKind != SPIRVKind.ILLEGAL) {
+                    // It is a vector type
+                    lirKind = LIRKind.value(spirvKind);
+                } else {
+                    lirKind = gen.getLIRKind(stamp);
+                }
+            } else {
+                lirKind = gen.getLIRKind(stamp);
+            }
+        }
+        return lirKind;
+    }
+
     @Override
     public void emitInvoke(Invoke x) {
-        throw new RuntimeException("Not supported");
+
+        LoweredCallTargetNode callTargetNode = (LoweredCallTargetNode) x.callTarget();
+
+        final Stamp stamp = x.asNode().stamp(NodeView.DEFAULT);
+        LIRKind lirKind = resolveStamp(stamp);
+        AllocatableValue result = Value.ILLEGAL;
+
+        if (lirKind != LIRKind.Illegal) {
+            result = gen.newVariable(lirKind);
+        }
+
+        CallingConvention callingConvention = new CallingConvention(0, result);
+        gen.getResult().getFrameMapBuilder().callsMethod(callingConvention);
+
+        Value[] parameters = visitInvokeArguments(callingConvention, callTargetNode.arguments());
+
+        LIRFrameState callState = stateWithExceptionEdge(x, null);
+
+        if (callTargetNode instanceof DirectCallTargetNode) {
+            emitDirectCall((DirectCallTargetNode) callTargetNode, result, parameters, AllocatableValue.NONE, callState);
+        } else if (callTargetNode instanceof IndirectCallTargetNode) {
+            throw new RuntimeException("Not supported");
+        } else {
+            throw new RuntimeException("Not supported");
+        }
+        if (isLegal(result)) {
+            setResult(x.asNode(), result);
+        }
     }
 
     @Override
