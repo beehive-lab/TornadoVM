@@ -8,13 +8,13 @@ import org.graalvm.compiler.nodes.DirectCallTargetNode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunctionCall;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVUtils;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVDirectCall extends SPIRVLIROp {
 
@@ -40,14 +40,19 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         SPIRVLogger.traceCodeGen("emit OpFunctionCall for method: " + targetNode.targetMethod().getName());
 
-        final String methodName = targetNode.targetMethod().getName();
+        final String methodName = SPIRVUtils.makeMethodName(targetNode.targetMethod());
 
-        SPIRVId[] ids = asm.loadHeapPointerAndFrameIndex();
-
-        int paramIndex = 2;
-        SPIRVId[] idsForParameters = new SPIRVId[parameters.length + 2];
-        idsForParameters[0] = ids[0];
-        idsForParameters[1] = ids[1];
+        SPIRVId[] idsForParameters;
+        int paramIndex = 0;
+        if (TornadoOptions.DIRECT_CALL_WITH_LOAD_HEAP) {
+            SPIRVId[] ids = asm.loadHeapPointerAndFrameIndex();
+            paramIndex = 2;
+            idsForParameters = new SPIRVId[parameters.length + 2];
+            idsForParameters[0] = ids[0];
+            idsForParameters[1] = ids[1];
+        } else {
+            idsForParameters = new SPIRVId[parameters.length];
+        }
 
         for (Value parameter : parameters) {
             SPIRVKind spirvKind = (SPIRVKind) parameter.getPlatformKind();
@@ -68,9 +73,11 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         SPIRVMultipleOperands<SPIRVId> operands = new SPIRVMultipleOperands<>(idsForParameters);
 
-        // XX: Fix this ID for the function call
-        SPIRVId functionToCall = asm.module.getNextId();
-        asm.module.add(new SPIRVOpName(functionToCall, new SPIRVLiteralString(methodName)));
+        // At this point we need to register the new function
+        SPIRVId functionToCall = asm.getMethodRegistrationId(methodName);
+        if (functionToCall == null) {
+            functionToCall = asm.registerNewMethod(methodName);
+        }
 
         asm.currentBlockScope().add(new SPIRVOpFunctionCall( //
                 resultTypeId, //

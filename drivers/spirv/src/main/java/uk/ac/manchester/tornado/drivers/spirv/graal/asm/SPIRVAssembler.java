@@ -26,6 +26,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBitwiseAnd;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBitwiseOr;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBitwiseXor;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConstant;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExecutionMode;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFAdd;
@@ -57,10 +58,12 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVConte
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentFloat;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentInt;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentLong;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVExecutionMode;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLinkageType;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
@@ -872,6 +875,18 @@ public final class SPIRVAssembler extends Assembler {
         ));
 
         return new SPIRVId[] { loadHeap, frameIndexId };
+    }
+
+    public SPIRVId getMethodRegistrationId(String methodName) {
+        return SPIRVSymbolTable.get(methodName);
+    }
+
+    public SPIRVId registerNewMethod(String methodName) {
+        SPIRVId functionToCall = module.getNextId();
+        module.add(new SPIRVOpName(functionToCall, new SPIRVLiteralString(methodName)));
+        module.add(new SPIRVOpDecorate(functionToCall, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(methodName), SPIRVLinkageType.Export())));
+        SPIRVSymbolTable.put(methodName, functionToCall);
+        return functionToCall;
     }
 
 }

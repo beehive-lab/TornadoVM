@@ -235,4 +235,10 @@ public class TornadoOptions {
      */
     public static final boolean SPIRV_RETURN_LABEL = getBooleanValue("tornado.spirv.returnlabel", "True");
 
+    /**
+     * Use the heap and frame index for any direct call invocation inside the
+     * generated SPIRV kernel.
+     */
+    public static final boolean DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", "False");
+
 }
