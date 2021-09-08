@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Opcode;
@@ -30,7 +31,34 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationRes
  */
 public class SPIRVControlFlow {
 
-    public static class LoopBeginLabel extends SPIRVLIRStmt.AbstractInstruction {
+    public abstract static class BaseControlFlow extends SPIRVLIRStmt.AbstractInstruction {
+
+        public BaseControlFlow(LIRInstructionClass<? extends LIRInstruction> c) {
+            super(c);
+        }
+
+        // We only declare the IDs
+        protected SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
+            SPIRVId branch = asm.labelTable.get(blockName);
+            if (branch == null) {
+                branch = asm.registerBlockLabel(blockName);
+            }
+            return branch;
+        }
+
+        // We only declare the IDs
+        protected SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
+            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
+            String blockName = targetBlock.toString();
+            SPIRVId branch = asm.labelTable.get(blockName);
+            if (branch == null) {
+                branch = asm.registerBlockLabel(blockName);
+            }
+            return branch;
+        }
+    }
+
+    public static class LoopBeginLabel extends BaseControlFlow {
 
         public static final LIRInstructionClass<LoopBeginLabel> TYPE = LIRInstructionClass.create(LoopBeginLabel.class);
 
@@ -39,15 +67,6 @@ public class SPIRVControlFlow {
         public LoopBeginLabel(String blockName) {
             super(TYPE);
             this.blockId = blockName;
-        }
-
-        // We only declare the IDs
-        private SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
-            SPIRVId branch = asm.labelTable.get(blockName);
-            if (branch == null) {
-                branch = asm.registerBlockLabel(blockName);
-            }
-            return branch;
         }
 
         @Override
@@ -61,7 +80,7 @@ public class SPIRVControlFlow {
         }
     }
 
-    public static class BranchConditional extends SPIRVLIRStmt.AbstractInstruction {
+    public static class BranchConditional extends BaseControlFlow {
 
         public static final LIRInstructionClass<BranchConditional> TYPE = LIRInstructionClass.create(BranchConditional.class);
 
@@ -76,17 +95,6 @@ public class SPIRVControlFlow {
             this.condition = condition;
             this.lirTrueBlock = lirTrueBlock;
             this.lirFalseBlock = lirFalseBlock;
-        }
-
-        // We only declare the IDs
-        private SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
-            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
-            String blockName = targetBlock.toString();
-            SPIRVId branch = asm.labelTable.get(blockName);
-            if (branch == null) {
-                branch = asm.registerBlockLabel(blockName);
-            }
-            return branch;
         }
 
         /**
@@ -133,7 +141,7 @@ public class SPIRVControlFlow {
         }
     }
 
-    public static class Branch extends SPIRVLIRStmt.AbstractInstruction {
+    public static class Branch extends BaseControlFlow {
 
         public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
 
@@ -143,17 +151,6 @@ public class SPIRVControlFlow {
         public Branch(LabelRef branch) {
             super(TYPE);
             this.branch = branch;
-        }
-
-        // We only declare the IDs
-        private SPIRVId getIfOfBranch(LabelRef ref, SPIRVAssembler asm) {
-            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
-            String blockName = targetBlock.toString();
-            SPIRVId branch = asm.labelTable.get(blockName);
-            if (branch == null) {
-                branch = asm.registerBlockLabel(blockName);
-            }
-            return branch;
         }
 
         /**
@@ -168,14 +165,14 @@ public class SPIRVControlFlow {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVId branchId = getIfOfBranch(branch, asm);
+            SPIRVId branchId = getIdForBranch(branch, asm);
             SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + branch);
             asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
 
         }
     }
 
-    public static class BranchIf extends SPIRVLIRStmt.AbstractInstruction {
+    public static class BranchIf extends BaseControlFlow {
 
         public static final LIRInstructionClass<BranchIf> TYPE = LIRInstructionClass.create(BranchIf.class);
 
@@ -191,17 +188,6 @@ public class SPIRVControlFlow {
             this.isLoopEdgeBack = isLoopEdgeBack;
         }
 
-        // We only declare the IDs
-        private SPIRVId getIfOfBranch(LabelRef ref, SPIRVAssembler asm) {
-            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
-            String blockName = targetBlock.toString();
-            SPIRVId branch = asm.labelTable.get(blockName);
-            if (branch == null) {
-                branch = asm.registerBlockLabel(blockName);
-            }
-            return branch;
-        }
-
         /**
          * It emits the following pattern:
          *
@@ -214,7 +200,7 @@ public class SPIRVControlFlow {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVId branchId = getIfOfBranch(branch, asm);
+            SPIRVId branchId = getIdForBranch(branch, asm);
             SPIRVLogger.traceCodeGen("emit IF_CASE SPIRVOpBranch: " + branch);
             asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
 
@@ -229,7 +215,7 @@ public class SPIRVControlFlow {
     }
 
     @Opcode("Switch")
-    public static class SwitchStatement extends SPIRVLIRStmt.AbstractInstruction {
+    public static class SwitchStatement extends BaseControlFlow {
 
         public static final LIRInstructionClass<SwitchStatement> TYPE = LIRInstructionClass.create(SwitchStatement.class);
 
@@ -243,17 +229,6 @@ public class SPIRVControlFlow {
 
         @Use
         private LabelRef defaultTarget;
-
-        // We only declare the IDs
-        private SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
-            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
-            String blockName = targetBlock.toString();
-            SPIRVId branch = asm.labelTable.get(blockName);
-            if (branch == null) {
-                branch = asm.registerBlockLabel(blockName);
-            }
-            return branch;
-        }
 
         public SwitchStatement(Variable key, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);

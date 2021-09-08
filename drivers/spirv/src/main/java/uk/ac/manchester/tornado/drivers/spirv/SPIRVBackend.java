@@ -780,7 +780,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
 
         String methodName = crb.compilationResult.getName();
-        SPIRVLogger.traceCodeGen("[SPIR-V CodeGen] Generating SPIRV-Header for method: %s \n", methodName);
+        SPIRVLogger.traceCodeGen("[SPIR-V CodeGen] Generating SPIRV-Header for method: %s", methodName);
         if (crb.isKernel()) {
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
 
