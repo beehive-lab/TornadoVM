@@ -1,12 +1,14 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpControlBarrier;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertFToS;
@@ -17,6 +19,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFNegate;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpReturnValue;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSNegate;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUConvert;
@@ -1025,6 +1028,31 @@ public class SPIRVUnary {
             // SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(0x200 |
             // 0x10), SPIRVKind.OP_TYPE_INT_32);
             asm.currentBlockScope().add(new SPIRVOpControlBarrier(constant2, constant2, constantSemantics));
+        }
+    }
+
+    public static class ReturnWithValue extends SPIRVLIROp {
+
+        private AbstractBlockBase<?> currentBlock;
+
+        @Use
+        private Value input;
+
+        public ReturnWithValue(LIRKind lirKind, Value input, AbstractBlockBase<?> currentBlock) {
+            super(lirKind);
+            this.currentBlock = currentBlock;
+            this.input = input;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            // Search the block
+            SPIRVInstScope blockScope = asm.blockTable.get(currentBlock.toString());
+
+            // Add Block with Return
+            SPIRVKind spirvKind = (SPIRVKind) input.getPlatformKind();
+            SPIRVId valueToReturn = getId(input, asm, spirvKind);
+            blockScope.add(new SPIRVOpReturnValue(valueToReturn));
         }
     }
 }

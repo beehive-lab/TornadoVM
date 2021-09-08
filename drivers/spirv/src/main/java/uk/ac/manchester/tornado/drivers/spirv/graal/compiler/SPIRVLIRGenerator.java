@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVGenTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVNullary;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 /**
  * It traverses the SPIR-V HIR and generates SPIR-V LIR from which the backend
@@ -143,10 +144,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
         SPIRVLogger.traceBuildLIR("emitReturn: input=%s", input);
+        AbstractBlockBase<?> currentBlock = getCurrentBlock();
         if (input != null) {
-            throw new RuntimeException("Return with value expressions not supported yet");
+            LIRKind lirKind = LIRKind.value(input.getPlatformKind());
+            append(new SPIRVLIRStmt.ExprStmt(new SPIRVUnary.ReturnWithValue(lirKind, input, currentBlock)));
         } else {
-            AbstractBlockBase<?> currentBlock = getCurrentBlock();
             append(new SPIRVLIRStmt.ExprStmt(new SPIRVNullary.ReturnNoOperands(LIRKind.Illegal, currentBlock)));
         }
     }
