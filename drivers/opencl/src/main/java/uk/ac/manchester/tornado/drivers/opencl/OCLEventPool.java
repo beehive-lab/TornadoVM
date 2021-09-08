@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import uk.ac.manchester.tornado.drivers.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 
 /**
  * Class which holds mapping between OpenCL events and TornadoVM local events
