@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class KernelPluginsTests extends TornadoTestBase {
 
     private static void apiTest(KernelContext context, int[] data) {
-        data[0] = context.getGlobalGroupSize(0);
+        data[0] = context.globalGroupSizeX;
     }
 
     @Test
