@@ -78,14 +78,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
-    public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
-        this.spirvByteBuffer = spirvByteBuffer;
-    }
-
-    public ByteBuffer getSPIRVByteBuffer() {
-        return this.spirvByteBuffer;
-    }
-
     public static class ConstantKeyPair {
         private String name;
         private SPIRVKind kind;
@@ -132,7 +124,7 @@ public final class SPIRVAssembler extends Assembler {
     public final Stack<SPIRVInstScope> currentBlockScopeStack;
 
     // Table that stores the Block ID with its Label Reference ID
-    public Map<String, SPIRVId> labelTable;
+    private Map<String, SPIRVId> labelTable;
     public Map<String, SPIRVInstScope> blockTable;
     public Map<Integer, SPIRVId> parametersId;
     public Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
@@ -169,6 +161,14 @@ public final class SPIRVAssembler extends Assembler {
         functionPtrToArray = new HashMap<>();
         functionPtrToArrayLocal = new HashMap<>();
         SPIRVSymbolTable = new HashMap<>();
+    }
+
+    public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
+        this.spirvByteBuffer = spirvByteBuffer;
+    }
+
+    public ByteBuffer getSPIRVByteBuffer() {
+        return this.spirvByteBuffer;
     }
 
     public void insertOpenCLImportId(SPIRVId oclImport) {
@@ -888,6 +888,10 @@ public final class SPIRVAssembler extends Assembler {
         module.add(new SPIRVOpDecorate(functionToCall, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(methodName), SPIRVLinkageType.Export())));
         SPIRVSymbolTable.put(methodName, functionToCall);
         return functionToCall;
+    }
+
+    public SPIRVId getLabel(String blockName) {
+        return labelTable.get(blockName);
     }
 
 }

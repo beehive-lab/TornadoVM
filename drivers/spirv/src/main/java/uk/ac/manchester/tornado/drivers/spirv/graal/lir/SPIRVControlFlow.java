@@ -39,7 +39,7 @@ public class SPIRVControlFlow {
 
         // We only declare the IDs
         protected SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
-            SPIRVId branch = asm.labelTable.get(blockName);
+            SPIRVId branch = asm.getLabel(blockName);
             if (branch == null) {
                 branch = asm.registerBlockLabel(blockName);
             }
@@ -50,7 +50,7 @@ public class SPIRVControlFlow {
         protected SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
             AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
             String blockName = targetBlock.toString();
-            SPIRVId branch = asm.labelTable.get(blockName);
+            SPIRVId branch = asm.getLabel(blockName);
             if (branch == null) {
                 branch = asm.registerBlockLabel(blockName);
             }
