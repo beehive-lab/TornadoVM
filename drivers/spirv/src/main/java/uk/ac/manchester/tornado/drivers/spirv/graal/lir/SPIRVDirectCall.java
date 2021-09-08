@@ -44,7 +44,7 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         SPIRVId[] idsForParameters;
         int paramIndex = 0;
-        if (TornadoOptions.DIRECT_CALL_WITH_LOAD_HEAP) {
+        if (TornadoOptions.SPIRV_DIRECT_CALL_WITH_LOAD_HEAP) {
             SPIRVId[] ids = asm.loadHeapPointerAndFrameIndex();
             paramIndex = 2;
             idsForParameters = new SPIRVId[parameters.length + 2];

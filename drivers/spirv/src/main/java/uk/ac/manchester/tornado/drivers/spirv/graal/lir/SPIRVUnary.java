@@ -1032,6 +1032,23 @@ public class SPIRVUnary {
         }
     }
 
+    public static class LoadParameter extends SPIRVLIROp {
+
+        @Use
+        Local local;
+
+        public LoadParameter(Local local, LIRKind lirKind) {
+            super(lirKind);
+            this.local = local;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
+
+        }
+    }
+
     public static class ReturnWithValue extends SPIRVLIROp {
 
         private AbstractBlockBase<?> currentBlock;
@@ -1053,23 +1070,10 @@ public class SPIRVUnary {
             // Add Block with Return
             SPIRVKind spirvKind = (SPIRVKind) input.getPlatformKind();
             SPIRVId valueToReturn = getId(input, asm, spirvKind);
+
+            SPIRVLogger.traceCodeGen("emit SPIRVOpReturnValue : " + currentBlock.toString() + " with value: " + input);
+            asm.returnWithValue = true;
             blockScope.add(new SPIRVOpReturnValue(valueToReturn));
-        }
-    }
-
-    public static class LoadParameter extends SPIRVLIROp {
-
-        Local local;
-
-        public LoadParameter(Local local, LIRKind lirKind) {
-            super(lirKind);
-            this.local = local;
-        }
-
-        @Override
-        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
-
         }
     }
 }

@@ -46,13 +46,16 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVHeader;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
@@ -105,6 +108,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptio
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
@@ -115,6 +119,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameMap;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameMapBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVSuitesProvider;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVUtils;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -360,11 +365,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
         crb.emit(lir);
 
-        // 3. Close main kernel
+        // 3. Close kernel
         emitEpilogue(asm);
 
-        // 4. Write the assembler module content into Hotspot.
+        // 4. Clean-up
+        cleanUp(asm);
+
+        // 5. Write the assembler module content into Hotspot.
         emitSPIRVCodeIntoASMModule(asm, asm.module);
+    }
+
+    private void cleanUp(SPIRVAssembler asm) {
+        this.blockScope = null;
+        asm.returnWithValue = false;
+        asm.returnLabel = null;
     }
 
     private void dummySPIRVModuleTest(SPIRVAssembler asm, SPIRVModule module) {
@@ -713,10 +727,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
-            // System.out.println("VARIABLES -------------- ");
-            // System.out.println("\tTYPE: " + spirvKind);
             for (Variable var : kindToVariable.get(spirvKind)) {
-                // System.out.println("\tNAME: " + var);
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);
                 index++;
@@ -912,7 +923,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // --------------------------------------
             // Main kernel Begins
             // --------------------------------------
-            SPIRVInstScope functionScope = asm.emitOpFunction(asm.primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionPredefinition());
+            SPIRVInstScope functionScope = asm.emitOpFunction(asm.primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionSignature());
 
             // --------------------------------------
             // Main kernel parameters
@@ -949,8 +960,107 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base, asm);
 
         } else {
+            emitSPIRVCapabilities(module);
 
-            throw new RuntimeException("Non main kernel-methods not supported");
+            final CallingConvention callingConvention = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
+            methodName = SPIRVUtils.makeMethodName(method);
+
+            // Find declaration ID for the new method
+            SPIRVId methodId = asm.getMethodRegistrationId(methodName);
+
+            if (methodId == null) {
+                throw new RuntimeException("Method not registered");
+            }
+
+            // Register the function
+            // final JavaKind returnKind = method.getSignature().getReturnKind();
+            final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
+            SPIRVKind returnKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(returnType);
+            if (returnKind == SPIRVKind.ILLEGAL) {
+                returnKind = SPIRVKind.fromJavaKind(method.getSignature().getReturnKind());
+            }
+            SPIRVLogger.traceCodeGen("Return TYPE: " + returnKind);
+
+            SPIRVId returnId = asm.primitives.getTypePrimitive(returnKind);
+
+            final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
+
+            SPIRVId[] ids;
+            int index = 0;
+            if (TornadoOptions.SPIRV_DIRECT_CALL_WITH_LOAD_HEAP) {
+                ids = new SPIRVId[locals.length + 2];
+                SPIRVId ptrToUChar = asm.primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+                SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                ids[0] = ptrToUChar;
+                ids[1] = ulong;
+                index = 2;
+            } else {
+                ids = new SPIRVId[locals.length];
+            }
+
+            // XXX:Fix for more complex types
+            int j = 0;
+            SPIRVKind[] kinds = new SPIRVKind[ids.length];
+            for (int i = index; i < locals.length; i++, j++) {
+                Local l = locals[j];
+                JavaKind type = l.getType().getJavaKind();
+                SPIRVKind kind = SPIRVKind.fromJavaKind(type);
+                SPIRVId kindId = asm.primitives.getTypePrimitive(kind);
+                kinds[i] = kind;
+                ids[i] = kindId;
+            }
+            SPIRVId methodSignatureId = asm.emitOpTypeFunction(returnId, ids);
+
+            // --------------------------------------
+            // Method Begins
+            // --------------------------------------
+            SPIRVInstScope functionScope = asm.emitOpFunction(returnId, methodId, methodSignatureId);
+
+            // ----------------------------------
+            // Emit all variables (types and initial values)
+            // ----------------------------------
+            IDTable idTable = emitVariableDefs(crb, asm, lir);
+
+            // --------------------------------------
+            // Main kernel parameters
+            // --------------------------------------
+
+            SPIRVId[] paramIds = new SPIRVId[ids.length];
+            for (int i = 0; i < ids.length; i++) {
+                SPIRVId id = asm.module.getNextId();
+                paramIds[i] = id;
+                asm.emitParameterFunction(ids[i], id, functionScope);
+            }
+
+            // --------------------------------------
+            // Label Entry
+            // --------------------------------------
+            blockScope = asm.emitBlockLabel("B0" + methodName, functionScope);
+
+            // --------------------------------------
+            // All variable declaration
+            // --------------------------------------
+            for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
+                SPIRVKind kind = id.second;
+                // we need a pointer to kind
+                SPIRVId resultType = asm.primitives.getPtrToTypePrimitive(kind, SPIRVStorageClass.Function());
+                blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            }
+
+            // OpStore for each parameter
+            for (int i = 0; i < ids.length; i++) {
+                SPIRVId paramId = paramIds[i];
+                SPIRVId varId = idTable.list.get(i).first;
+                SPIRVKind spirvKind = kinds[i];
+                blockScope.add(new SPIRVOpStore( //
+                        varId, //
+                        paramId, //
+                        new SPIRVOptionalOperand<>(//
+                                SPIRVMemoryAccess.Aligned(//
+                                        new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
+                ));
+            }
+
         }
     }
 
@@ -984,7 +1094,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private void emitEpilogue(SPIRVAssembler asm) {
 
         if (TornadoOptions.SPIRV_RETURN_LABEL) {
-            if (asm.returnLabel != null) {
+            if (!asm.returnWithValue && asm.returnLabel != null) {
                 SPIRVLogger.traceCodeGen("emit SPIRVOpReturn");
                 SPIRVInstScope block = asm.functionScope.add(new SPIRVOpLabel(asm.returnLabel));
                 block.add(new SPIRVOpReturn());

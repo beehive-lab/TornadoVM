@@ -78,8 +78,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
-    private ByteBuffer spirvByteBuffer;
-
     public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
         this.spirvByteBuffer = spirvByteBuffer;
     }
@@ -127,7 +125,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVModule module;
     public SPIRVInstScope functionScope;
     public SPIRVId mainFunctionID;
-    public SPIRVId functionPre;
+    public SPIRVId functionSignature;
     public SPIRVInstScope blockZeroScope;
     public SPIRVId returnLabel;
 
@@ -153,6 +151,9 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVId ptrCrossWorkULong;
     private SPIRVId openclImport;
     public final Map<String, SPIRVId> SPIRVSymbolTable;
+
+    public boolean returnWithValue;
+    private ByteBuffer spirvByteBuffer;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -271,9 +272,9 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public SPIRVId emitOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
-        functionPre = module.getNextId();
-        module.add(new SPIRVOpTypeFunction(functionPre, returnType, new SPIRVMultipleOperands<>(operands)));
-        return functionPre;
+        functionSignature = module.getNextId();
+        module.add(new SPIRVOpTypeFunction(functionSignature, returnType, new SPIRVMultipleOperands<>(operands)));
+        return functionSignature;
     }
 
     public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean isParallel, boolean fp64Capability) {
@@ -320,19 +321,19 @@ public final class SPIRVAssembler extends Assembler {
 
     }
 
-    public SPIRVId getFunctionPredefinition() {
-        return functionPre;
+    public SPIRVId getFunctionSignature() {
+        return functionSignature;
     }
 
     public SPIRVId getMainKernelId() {
         return mainFunctionID;
     }
 
-    public SPIRVInstScope emitOpFunction(SPIRVId voidType, SPIRVId functionID, SPIRVId functionPredefinition) {
+    public SPIRVInstScope emitOpFunction(SPIRVId returnType, SPIRVId functionID, SPIRVId functionPredefinition) {
         if (functionID == null || functionPredefinition == null) {
             throw new RuntimeException("MainFunction or FunctionPre SPIR-V IDs are null. It can't generate correct SPIR-V code");
         }
-        functionScope = module.add(new SPIRVOpFunction(voidType, functionID, SPIRVFunctionControl.DontInline(), functionPredefinition));
+        functionScope = module.add(new SPIRVOpFunction(returnType, functionID, SPIRVFunctionControl.DontInline(), functionPredefinition));
         return functionScope;
     }
 

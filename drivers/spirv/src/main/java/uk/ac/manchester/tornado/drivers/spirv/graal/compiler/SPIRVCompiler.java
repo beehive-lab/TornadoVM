@@ -298,7 +298,10 @@ public class SPIRVCompiler {
             // module.
             compilationResult.setAssembler((SPIRVAssembler) crb.asm);
 
-            crb.finish();
+            if (crb.getNonInlinedMethods() == null) {
+                System.out.println("CLOSING COMPILATION RESULT");
+                crb.finish();
+            }
 
             if (getDebugContext().isCountEnabled()) {
                 DebugContext.counter("CompilationResults").increment(getDebugContext());
@@ -396,6 +399,9 @@ public class SPIRVCompiler {
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
             final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(task.getId(), currentMethod.getName(), taskMeta);
+
+            // Share assembler across compilation results
+            compilationResult.setAssembler(kernelCompilationRequest.compilationResult.getAssembler());
 
             // @formatter:off
             SPIRVCompilationRequest methodCompilationRequest = new SPIRVCompilationRequest(

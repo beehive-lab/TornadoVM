@@ -229,8 +229,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
+                SPIRVLogger.traceBuildLIR("Generating LoadParameter : " + locals[param.index()].getName());
                 Variable result = getGen().newVariable(lirKind);
-                getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind)));
+                getGen().append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind)));
                 setResult(param, result);
             }
         }
