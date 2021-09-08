@@ -949,8 +949,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base, asm);
 
         } else {
-            // Inner function to be called within the main kernel
-            throw new RuntimeException("Not supported");
+
+            throw new RuntimeException("Non main kernel-methods not supported");
         }
     }
 

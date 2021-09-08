@@ -86,6 +86,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
@@ -94,7 +95,6 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameMap;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameMapBuilder;
@@ -532,7 +532,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.eol();
         } else {
 
-            final CallingConvention incomingArguments = OCLCodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
+            final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
 
             final JavaKind returnKind = method.getSignature().getReturnKind();

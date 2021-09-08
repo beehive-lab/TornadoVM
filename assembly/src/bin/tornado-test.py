@@ -112,6 +112,7 @@ __TEST_THE_WORLD__ = [
     # TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
     # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
     #           testMethods=["testVirtualDeviceKernelGPU"],
     #           testParameters=[

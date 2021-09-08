@@ -70,6 +70,7 @@ import org.graalvm.compiler.options.OptionValues;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
@@ -82,6 +83,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVDirectCall;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
@@ -223,7 +225,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
-            throw new RuntimeException("Unimplemented - Pending prologue for non main kernels");
+            SPIRVLogger.traceBuildLIR("Generating function");
+            final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
+            for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
+                Variable result = getGen().newVariable(lirKind);
+                getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind)));
+                setResult(param, result);
+            }
         }
     }
 

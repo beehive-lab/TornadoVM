@@ -21,7 +21,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal;
+package uk.ac.manchester.tornado.drivers.common.code;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
@@ -35,7 +35,7 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 
-public class OCLCodeUtil {
+public class CodeUtil {
 
     /**
      * Create a calling convention from a {@link ResolvedJavaMethod}.

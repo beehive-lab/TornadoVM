@@ -7,6 +7,7 @@ import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
@@ -1053,6 +1054,22 @@ public class SPIRVUnary {
             SPIRVKind spirvKind = (SPIRVKind) input.getPlatformKind();
             SPIRVId valueToReturn = getId(input, asm, spirvKind);
             blockScope.add(new SPIRVOpReturnValue(valueToReturn));
+        }
+    }
+
+    public static class LoadParameter extends SPIRVLIROp {
+
+        Local local;
+
+        public LoadParameter(Local local, LIRKind lirKind) {
+            super(lirKind);
+            this.local = local;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
+
         }
     }
 }
