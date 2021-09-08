@@ -292,7 +292,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     public SPIRVCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGen, FrameMap frameMap, SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory,
             boolean isKernel, boolean isParallel) {
 
-        SPIRVAssembler asm = createAssembler();
+        SPIRVAssembler asm;
+        if (compilationResult.getAssembler() == null) {
+            asm = createAssembler();
+        } else {
+            asm = compilationResult.getAssembler();
+        }
         SPIRVFrameContext frameContext = new SPIRVFrameContext();
         DataBuilder dataBuilder = new SPIRVDataBuilder();
         SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);

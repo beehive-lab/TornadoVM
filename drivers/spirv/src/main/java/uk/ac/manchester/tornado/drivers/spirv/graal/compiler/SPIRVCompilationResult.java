@@ -7,6 +7,7 @@ import java.util.Set;
 import org.graalvm.compiler.code.CompilationResult;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -22,6 +23,7 @@ public class SPIRVCompilationResult extends CompilationResult {
     private TaskMetaData taskMetaData;
     private String id;
     private ByteBuffer spirvBinary;
+    private SPIRVAssembler spirvAssembler;
 
     public SPIRVCompilationResult(String id, String methodName, TaskMetaData taskMetaData) {
         super(methodName);
@@ -74,5 +76,13 @@ public class SPIRVCompilationResult extends CompilationResult {
 
     public void setSPIRVBinary(ByteBuffer spirvByteBuffer) {
         this.spirvBinary = spirvByteBuffer;
+    }
+
+    public SPIRVAssembler getAssembler() {
+        return spirvAssembler;
+    }
+
+    public void setAssembler(SPIRVAssembler assembler) {
+        spirvAssembler = assembler;
     }
 }

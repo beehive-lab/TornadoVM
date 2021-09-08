@@ -289,7 +289,15 @@ public class SPIRVCompiler {
 
             compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
             SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
+
+            // Set the byte[] from the SPIRVModule
             compilationResult.setSPIRVBinary(asm.getSPIRVByteBuffer());
+
+            // We need to reuse the assembler instance for all methods to be compiled in the
+            // same SPIR-V compilation unit because we need to obtain symbols from the main
+            // module.
+            compilationResult.setAssembler((SPIRVAssembler) crb.asm);
+
             crb.finish();
 
             if (getDebugContext().isCountEnabled()) {

@@ -87,7 +87,6 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         asm.registerLIRInstructionValue(result, functionResult);
 
-        // XXX: Enable the following call for generating multiple methods
-        // crb.addNonInlinedMethod(targetNode.targetMethod());
+        crb.addNonInlinedMethod(targetNode.targetMethod());
     }
 }
