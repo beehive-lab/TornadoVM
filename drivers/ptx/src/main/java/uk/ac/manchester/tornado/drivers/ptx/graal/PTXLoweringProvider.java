@@ -87,15 +87,19 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
@@ -224,6 +228,10 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
+        } else if (node instanceof GlobalGroupSizeFixedWithNextNode) {
+            lowerGlobalGroupSizeNode((GlobalGroupSizeFixedWithNextNode) node);
+        } else if (node instanceof LocalGroupSizeFixedWithNextNode) {
+            lowerLocalGroupSizeNode((LocalGroupSizeFixedWithNextNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -367,6 +375,18 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         StructuredGraph graph = getGroupIdNode.graph();
         GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(getGroupIdNode.getDimension(), graph)));
         graph.replaceFixedWithFloating(getGroupIdNode, groupIdNode);
+    }
+
+    private void lowerGlobalGroupSizeNode(GlobalGroupSizeFixedWithNextNode globalGroupSizeNode) {
+        StructuredGraph graph = globalGroupSizeNode.graph();
+        GlobalThreadSizeNode globalThreadSizeNode = graph.addOrUnique(new GlobalThreadSizeNode(ConstantNode.forInt(globalGroupSizeNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(globalGroupSizeNode, globalThreadSizeNode);
+    }
+
+    private void lowerLocalGroupSizeNode(LocalGroupSizeFixedWithNextNode localGroupSizeNode) {
+        StructuredGraph graph = localGroupSizeNode.graph();
+        LocalThreadSizeNode localThreadSizeNode = graph.addOrUnique(new LocalThreadSizeNode(ConstantNode.forInt(localGroupSizeNode.getDimension(), graph)));
+        graph.replaceFixedWithFloating(localGroupSizeNode, localThreadSizeNode);
     }
 
     @Override
