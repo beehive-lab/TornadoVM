@@ -958,7 +958,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // --------------------------------------
             // Main kernel Begins
             // --------------------------------------
-            SPIRVInstScope functionScope = asm.emitOpFunction(asm.primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionSignature());
+            SPIRVInstScope functionScope = asm.emitOpFunction(asm.primitives.getTypeVoid(), asm.getMainKernelId(), asm.getFunctionSignature(), SPIRVFunctionControl.DontInline());
 
             // --------------------------------------
             // Main kernel parameters
@@ -1065,7 +1065,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // --------------------------------------
             // Method Begins
             // --------------------------------------
-            SPIRVInstScope functionScope = asm.emitOpFunction(returnId, methodId, methodSignatureId);
+            SPIRVInstScope functionScope = asm.emitOpFunction(returnId, methodId, methodSignatureId, SPIRVFunctionControl.DontInline());
 
             // ----------------------------------
             // Emit all variables (types and initial values)

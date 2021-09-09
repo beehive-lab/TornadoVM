@@ -356,11 +356,11 @@ public final class SPIRVAssembler extends Assembler {
         return mainFunctionID;
     }
 
-    public SPIRVInstScope emitOpFunction(SPIRVId returnType, SPIRVId functionID, SPIRVId functionPredefinition) {
+    public SPIRVInstScope emitOpFunction(SPIRVId returnType, SPIRVId functionID, SPIRVId functionPredefinition, SPIRVFunctionControl functionControl) {
         if (functionID == null || functionPredefinition == null) {
             throw new RuntimeException("MainFunction or FunctionPre SPIR-V IDs are null. It can't generate correct SPIR-V code");
         }
-        functionScope = module.add(new SPIRVOpFunction(returnType, functionID, SPIRVFunctionControl.DontInline(), functionPredefinition));
+        functionScope = module.add(new SPIRVOpFunction(returnType, functionID, functionControl, functionPredefinition));
         return functionScope;
     }
 
