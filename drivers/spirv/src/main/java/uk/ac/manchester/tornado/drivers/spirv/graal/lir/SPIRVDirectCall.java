@@ -85,7 +85,7 @@ public class SPIRVDirectCall extends SPIRVLIROp {
                 functionToCall, //
                 operands));
 
-        asm.registerLIRInstructionValue(result, functionResult);
+        asm.registerLIRInstructionValue(this, functionResult);
 
         crb.addNonInlinedMethod(targetNode.targetMethod());
     }

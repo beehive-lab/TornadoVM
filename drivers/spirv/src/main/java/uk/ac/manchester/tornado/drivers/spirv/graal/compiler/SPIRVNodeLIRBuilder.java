@@ -125,7 +125,11 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
         final SPIRVDirectCall spirvDirectCall = new SPIRVDirectCall(callTarget, result, parameters, callState);
         if (isLegal(result)) {
-            append(new SPIRVLIRStmt.AssignStmt(gen.asAllocatable(result), spirvDirectCall));
+            // Variable result2 =
+            // getGen().newVariable(LIRKind.value(result.getPlatformKind()));
+            AllocatableValue allocatableValue = gen.asAllocatable(result);
+            append(new SPIRVLIRStmt.AssignStmt(allocatableValue, spirvDirectCall));
+            setResult(callTarget, allocatableValue);
         } else {
             append(new SPIRVLIRStmt.ExprStmt(spirvDirectCall));
         }
