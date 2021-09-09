@@ -172,7 +172,20 @@ public class SPIRVLIRStmt {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(lhs.getPlatformKind().getSizeInBytes())) //
                     )));
 
-            asm.registerLIRInstructionValue(lhs, storeValue);
+            // We register the left part because we want the disassociation from the right
+            // part (a not valid ID) from the left part.
+            // From this point in the execution, we need the new ID (registered with Graal).
+            // This is only for function parameters.
+
+            // Example:
+            // OpStore %spirv_i_0F1 %aF1 Aligned 4 // aF1 and aF2 are parameters, not
+            // variables.
+            // OpStore %spirv_i_1F1 %bF1 Aligned 4
+
+            // In order to use later the spirv_XXX variables, we register the current ID
+            // (left part) with its ID.
+
+            asm.registerLIRInstructionValue(lhs, lhsId);
         }
 
         public AllocatableValue getResult() {
