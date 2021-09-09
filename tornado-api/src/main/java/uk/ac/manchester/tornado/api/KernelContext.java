@@ -207,30 +207,4 @@ public class KernelContext implements ExecutionContext {
     public double[] allocateDoubleLocalArray(int size) {
         return new double[size];
     }
-
-    /**
-     * It returns the local group size of the associated WorkerGrid for a particular
-     * dimension.
-     * <p>
-     * OpenCL equivalent: get_local_size();
-     * <p>
-     * PTX equivalent: blockDim
-     */
-    @TornadoVMIntrinsic
-    public int getLocalGroupSize(int dim) {
-        return 0;
-    }
-
-    /**
-     * It returns the global group size of the associated WorkerGrid for a
-     * particular dimension.
-     * <p>
-     * OpenCL equivalent: get_global_size();
-     * <p>
-     * PTX equivalent: gridDim * blockDim
-     */
-    @TornadoVMIntrinsic
-    public int getGlobalGroupSize(int dim) {
-        return 0;
-    }
 }
