@@ -948,7 +948,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 // ThreadID-1, ThreadID-2) that will be used in the OCL builtins for thread id
                 // and global sizes.
 
-                SPIRVId ptrV3ulong = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_VECTOR3_INT_64);
+                SPIRVId ptrV3ulong = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
 
                 for (Map.Entry<SPIRVOCLBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
                     asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
