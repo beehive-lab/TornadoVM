@@ -319,15 +319,18 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVAssembler(targetDescription);
     }
 
-    private void emitSPIRVCodeIntoASMModule(SPIRVAssembler asm, SPIRVModule module) {
+    private void appendKernelToGeneralByteBuffer(SPIRVAssembler asm) {
+        SPIRVModule module = asm.module;
         ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
         out.order(ByteOrder.LITTLE_ENDIAN);
 
         // Close SPIR-V module without validation while we develop the SPIR-V backend
-        module.close().write(out);
-        out.flip();
+        // module.close().write(out);
+        // out.flip();
+
         asm.setSPIRVByteBuffer(out);
 
+        // In case we need to add it with Graal
         // for (int i = 0; i < module.getByteCount(); i++) {
         // asm.emitByte(out.get(i));
         // }
@@ -352,7 +355,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (SPIRV_TEST_ASSEMBLER) {
             TestLKBufferAccess.testAssignWithLookUpBufferOptimized(asm.module);
             // dummySPIRVModuleTest(asm.module);
-            emitSPIRVCodeIntoASMModule(asm, asm.module);
+            appendKernelToGeneralByteBuffer(asm);
             return;
         }
 
@@ -372,7 +375,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         cleanUp(asm);
 
         // 5. Write the assembler module content into Hotspot.
-        emitSPIRVCodeIntoASMModule(asm, asm.module);
+        appendKernelToGeneralByteBuffer(asm);
     }
 
     private void cleanUp(SPIRVAssembler asm) {

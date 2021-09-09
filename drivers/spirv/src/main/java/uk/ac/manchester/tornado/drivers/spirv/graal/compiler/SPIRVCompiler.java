@@ -298,10 +298,9 @@ public class SPIRVCompiler {
             // module.
             compilationResult.setAssembler((SPIRVAssembler) crb.asm);
 
-            if (crb.getNonInlinedMethods() == null) {
-                System.out.println("CLOSING COMPILATION RESULT");
-                crb.finish();
-            }
+            // if (crb.getNonInlinedMethods() == null) {
+            // crb.finish();
+            // }
 
             if (getDebugContext().isCountEnabled()) {
                 DebugContext.counter("CompilationResults").increment(getDebugContext());
@@ -430,6 +429,11 @@ public class SPIRVCompiler {
             }
             kernelCompilationResult.addCompiledMethodCode(compilationResult.getTargetCode());
         }
+
+        // Close the byte buffer
+        SPIRVAssembler asm = kernelCompilationResult.getAssembler();
+        asm.module.close().write(asm.getSPIRVByteBuffer());
+        asm.getSPIRVByteBuffer().flip();
 
         if (DUMP_COMPILED_METHODS) {
             final Path outDir = Paths.get("./spirv-compiled-methods");
