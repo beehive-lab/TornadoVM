@@ -244,7 +244,7 @@ public class SPIRVCompiler {
             RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
             LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig, graph, stub);
-            LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
+            LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes, backend.getMethodIndex());
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
 
             // LIR generation

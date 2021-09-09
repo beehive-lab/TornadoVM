@@ -52,11 +52,13 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     private SPIRVGenTool spirvGenTool;
     private SPIRVBuiltinTool spirvBuiltinTool;
+    private final int methodIndex;
 
-    public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes) {
+    public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
         super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVMoveFactory(), providers, lirGenRes);
         spirvGenTool = new SPIRVGenTool(this);
         spirvBuiltinTool = new SPIRVBuiltinTool();
+        this.methodIndex = methodIndex;
     }
 
     @Override
@@ -269,7 +271,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         SPIRVLogger.traceBuildLIR("[SPIR-V] newVariable: %s <- %s (%s)", variable.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         // Format of the variable "<type>_<number>"
-        variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index);
+        variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index + "F" + methodIndex);
         SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
         res.insertVariable(variable);
         return variable;

@@ -146,6 +146,7 @@ public final class SPIRVAssembler extends Assembler {
 
     public boolean returnWithValue;
     private ByteBuffer spirvByteBuffer;
+    private int methodIndex;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -239,7 +240,23 @@ public final class SPIRVAssembler extends Assembler {
         return functionPtrToArrayLocal.get(resultArrayId);
     }
 
+    /**
+     * This method composes a unique name for all labels used. This is important
+     * since all methods within the same compilation unit will be in the same file,
+     * and SPIR-V requires different names.
+     * 
+     * If we want to return the same names per module, just return the labelName.
+     * 
+     * @param labelName
+     *            String
+     * @return a new label name.
+     */
+    public String composeUniqueLabelName(String labelName) {
+        return labelName + "F" + methodIndex;
+    }
+
     public SPIRVId registerBlockLabel(String blockName) {
+        blockName = composeUniqueLabelName(blockName);
         if (!labelTable.containsKey(blockName)) {
             SPIRVId label = module.getNextId();
             module.add(new SPIRVOpName(label, new SPIRVLiteralString(blockName)));
@@ -249,7 +266,7 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitBlockLabelIfNotPresent(Block b, SPIRVInstScope functionScope) {
-        String blockName = b.toString();
+        String blockName = composeUniqueLabelName(b.toString());
         if (!labelTable.containsKey(blockName)) {
             SPIRVId label = module.getNextId();
             module.add(new SPIRVOpName(label, new SPIRVLiteralString(blockName)));
@@ -262,6 +279,7 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
+        labelName = composeUniqueLabelName(labelName);
         SPIRVId label = module.getNextId();
         module.add(new SPIRVOpName(label, new SPIRVLiteralString(labelName)));
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
@@ -891,7 +909,16 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public SPIRVId getLabel(String blockName) {
+        blockName = composeUniqueLabelName(blockName);
         return labelTable.get(blockName);
+    }
+
+    public void setMethodIndex(int methodIndex) {
+        this.methodIndex = methodIndex;
+    }
+
+    public int getMethodIndex() {
+        return methodIndex;
     }
 
 }

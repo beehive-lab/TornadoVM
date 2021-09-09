@@ -390,6 +390,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         backEndInitialized = true;
     }
 
+    @Override
+    public int getMethodIndex() {
+        return 0;
+    }
+
     public OCLDeviceContextInterface getDeviceContext() {
         return deviceContext;
     }

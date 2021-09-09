@@ -163,6 +163,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private SPIRVId ptrFunctionPTRCrossWorkGroupUChar;
     private boolean fp64CapabilityEnabled;
     private boolean supportsFP64;
+    private AtomicInteger methodIndex;
 
     public SPIRVBackend(OptionValues options, SPIRVProviders providers, SPIRVTargetDescription targetDescription, SPIRVCodeProvider codeProvider, SPIRVDeviceContext deviceContext) {
         super(providers);
@@ -175,6 +176,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         this.scheduleMetaData = new ScheduleMetaData("spirvBackend");
         this.supportsFP64 = targetDescription.isSupportsFP64();
         this.isInitialized = false;
+        this.methodIndex = new AtomicInteger(0);
     }
 
     // FIXME <REFACTOR> <S>
@@ -217,6 +219,15 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
             isInitialized = true;
         }
+    }
+
+    @Override
+    public int getMethodIndex() {
+        return methodIndex.get();
+    }
+
+    public void incrementMethodIndex() {
+        methodIndex.incrementAndGet();
     }
 
     public SPIRVSuitesProvider getTornadoSuites() {
@@ -286,8 +297,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVIRGenerationResult(compilationId, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
-    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
-        return new SPIRVLIRGenerator(getProviders(), lirGenRes);
+    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes, final int methodIndex) {
+        return new SPIRVLIRGenerator(getProviders(), lirGenRes, methodIndex);
     }
 
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
@@ -340,6 +351,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
 
+        asm.setMethodIndex(methodIndex.get());
+
         // SPIR-V Header
         asm.module = new SPIRVModule( //
                 new SPIRVHeader( //
@@ -382,6 +395,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         this.blockScope = null;
         asm.returnWithValue = false;
         asm.returnLabel = null;
+        incrementMethodIndex();
     }
 
     private void dummySPIRVModuleTest(SPIRVAssembler asm, SPIRVModule module) {

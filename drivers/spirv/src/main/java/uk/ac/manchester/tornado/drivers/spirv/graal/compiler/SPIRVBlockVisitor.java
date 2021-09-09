@@ -25,7 +25,8 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
             assembler.emitBlockLabelIfNotPresent(b, assembler.functionScope);
         }
         if (!b.isLoopHeader()) {
-            assembler.pushScope(assembler.blockTable.get(b.toString()));
+            String blockName = assembler.composeUniqueLabelName(b.toString());
+            assembler.pushScope(assembler.blockTable.get(blockName));
         }
         crb.emitBlock(b);
         return null;

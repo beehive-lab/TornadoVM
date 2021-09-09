@@ -47,7 +47,8 @@ public class SPIRVNullary {
                 SPIRVInstScope blockScope = asm.currentBlockScope();
                 if (asm.returnLabel == null) {
                     asm.returnLabel = asm.module.getNextId();
-                    asm.module.add(new SPIRVOpName(asm.returnLabel, new SPIRVLiteralString("return")));
+                    String blockName = asm.composeUniqueLabelName("return");
+                    asm.module.add(new SPIRVOpName(asm.returnLabel, new SPIRVLiteralString(blockName)));
                 }
                 blockScope.add(new SPIRVOpBranch(asm.returnLabel));
             } else {

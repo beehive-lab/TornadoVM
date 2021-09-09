@@ -155,6 +155,11 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         isInitialised = true;
     }
 
+    @Override
+    public int getMethodIndex() {
+        return 0;
+    }
+
     /**
      * It allocates the smallest of the requested heap size or the max global memory
      * size.
