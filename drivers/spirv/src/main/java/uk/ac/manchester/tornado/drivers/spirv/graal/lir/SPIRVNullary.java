@@ -53,7 +53,8 @@ public class SPIRVNullary {
                 blockScope.add(new SPIRVOpBranch(asm.returnLabel));
             } else {
                 // Search the block
-                SPIRVInstScope blockScope = asm.blockTable.get(currentBLock.toString());
+                String blockName = asm.composeUniqueLabelName(currentBLock.toString());
+                SPIRVInstScope blockScope = asm.blockTable.get(blockName);
                 // Add Block Return
                 blockScope.add(new SPIRVOpReturn());
             }

@@ -91,9 +91,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValu
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
  * the SPIR-V backend.
- *
+ * <p>
  * SPIR-V Visitor from HIR to LIR.
- * 
  */
 public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -231,7 +230,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
                 SPIRVLogger.traceBuildLIR("Generating LoadParameter : " + locals[param.index()].getName());
                 Variable result = getGen().newVariable(lirKind);
-                getGen().append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind)));
+                getGen().append(new SPIRVLIRStmt.StoreParameter(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind, param.index())));
                 setResult(param, result);
             }
         }

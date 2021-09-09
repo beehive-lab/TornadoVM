@@ -121,7 +121,7 @@ public final class SPIRVAssembler extends Assembler {
     public SPIRVInstScope blockZeroScope;
     public SPIRVId returnLabel;
 
-    public final Stack<SPIRVInstScope> currentBlockScopeStack;
+    private Stack<SPIRVInstScope> currentBlockScopeStack;
 
     // Table that stores the Block ID with its Label Reference ID
     private Map<String, SPIRVId> labelTable;
@@ -180,8 +180,16 @@ public final class SPIRVAssembler extends Assembler {
         return this.openclImport;
     }
 
+    public void intializeScopeStack() {
+        this.currentBlockScopeStack = new Stack<>();
+    }
+
     public SPIRVInstScope currentBlockScope() {
         return currentBlockScopeStack.peek();
+    }
+
+    public int scopeSize() {
+        return currentBlockScopeStack.size();
     }
 
     public void pushScope(SPIRVInstScope scope) {
@@ -280,6 +288,7 @@ public final class SPIRVAssembler extends Assembler {
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
         labelName = composeUniqueLabelName(labelName);
+        System.out.println("LABEL NAME: " + labelName);
         SPIRVId label = module.getNextId();
         module.add(new SPIRVOpName(label, new SPIRVLiteralString(labelName)));
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
@@ -356,6 +365,7 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitParameterFunction(SPIRVId typeID, SPIRVId parameterId, SPIRVInstScope functionScope) {
+        System.out.println("EMIT FUNCTION PARAMETER: " + parameterId);
         functionScope.add(new SPIRVOpFunctionParameter(typeID, parameterId));
     }
 

@@ -128,7 +128,51 @@ public class SPIRVLIRStmt {
             }
             SPIRVLogger.traceCodeGen("emit IgnorableAssignment: " + lhs + " = " + rhs);
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(rhs);
+            SPIRVLogger.traceCodeGen("Storing: " + storeAddressID);
             asm.registerLIRInstructionValue(lhs, storeAddressID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+    }
+
+    @Opcode("StoreParameter")
+    public static class StoreParameter extends AbstractInstruction {
+
+        public static final LIRInstructionClass<StoreParameter> TYPE = LIRInstructionClass.create(StoreParameter.class);
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected Value rhs;
+
+        public StoreParameter(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            asm.emitValue(crb, lhs);
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+            SPIRVLogger.traceCodeGen("emit StoreParameter: " + lhs + " = " + rhs);
+            SPIRVId storeValue = asm.lookUpLIRInstructions(rhs);
+            SPIRVId lhsId = asm.lookUpLIRInstructions(lhs);
+
+            asm.currentBlockScope().add(new SPIRVOpStore( //
+                    lhsId, //
+                    storeValue, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(lhs.getPlatformKind().getSizeInBytes())) //
+                    )));
+
+            asm.registerLIRInstructionValue(lhs, storeValue);
         }
 
         public AllocatableValue getResult() {

@@ -1037,15 +1037,23 @@ public class SPIRVUnary {
         @Use
         Local local;
 
-        public LoadParameter(Local local, LIRKind lirKind) {
+        private int paramIndex;
+
+        public LoadParameter(Local local, LIRKind lirKind, int paramIndex) {
             super(lirKind);
             this.local = local;
+            this.paramIndex = paramIndex;
         }
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
-
+            // String variableName = local.getName() + "Param" + paramIndex + "var";
+            String variableName = local.getName() + "F" + asm.getMethodIndex();
+            System.out.println(variableName);
+            SPIRVId idLocal = asm.lookUpLIRInstructionsName(variableName);
+            SPIRVLogger.traceCodeGen("Loading Method Parameter found????? :" + idLocal);
+            asm.registerLIRInstructionValue(this, idLocal);
         }
     }
 
@@ -1065,7 +1073,8 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             // Search the block
-            SPIRVInstScope blockScope = asm.blockTable.get(currentBlock.toString());
+            String blockName = asm.composeUniqueLabelName(currentBlock.toString());
+            SPIRVInstScope blockScope = asm.blockTable.get(blockName);
 
             // Add Block with Return
             SPIRVKind spirvKind = (SPIRVKind) input.getPlatformKind();

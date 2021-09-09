@@ -68,11 +68,16 @@ public class SPIRVBinary {
                 return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
+                if (param == null) {
+                    throw new RuntimeException("LOADING PARAMETER: " + inputValue + " with NULL VALUE in SPIR-V Table");
+                }
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     // We need to perform a load first
-                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue + " ::: " + param);
                     SPIRVId load = asm.module.getNextId();
                     SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                    SPIRVLogger.traceCodeGen("\t with type: " + spirvKind);
+
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
                             type, //
                             load, //

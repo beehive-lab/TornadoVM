@@ -8,6 +8,8 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METH
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,6 +52,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -291,7 +294,7 @@ public class SPIRVCompiler {
             SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
 
             // Set the byte[] from the SPIRVModule
-            compilationResult.setSPIRVBinary(asm.getSPIRVByteBuffer());
+            // compilationResult.setSPIRVBinary(asm.getSPIRVByteBuffer());
 
             // We need to reuse the assembler instance for all methods to be compiled in the
             // same SPIR-V compilation unit because we need to obtain symbols from the main
@@ -427,13 +430,26 @@ public class SPIRVCompiler {
                 methods.add(graph.method());
                 methods.addAll(graph.getMethods());
             }
-            kernelCompilationResult.addCompiledMethodCode(compilationResult.getTargetCode());
+            // kernelCompilationResult.addCompiledMethodCode(compilationResult.getTargetCode());
         }
 
-        // Close the byte buffer
+        // ==================================================================
+        // End of the compilation unit: close the byte buffer
+        // ==================================================================
         SPIRVAssembler asm = kernelCompilationResult.getAssembler();
-        asm.module.close().write(asm.getSPIRVByteBuffer());
-        asm.getSPIRVByteBuffer().flip();
+        SPIRVModule module = asm.module;
+        ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
+        out.order(ByteOrder.LITTLE_ENDIAN);
+
+        // SPIRVAssembler asm = kernelCompilationResult.getAssembler();
+        // asm.module.close().write(asm.getSPIRVByteBuffer());
+        asm.module.close().write(out);
+        out.flip();
+        asm.setSPIRVByteBuffer(out);
+        // asm.getSPIRVByteBuffer().flip();
+
+        kernelCompilationResult.setSPIRVBinary(out);
+        kernelCompilationResult.setAssembler(asm);
 
         if (DUMP_COMPILED_METHODS) {
             final Path outDir = Paths.get("./spirv-compiled-methods");
