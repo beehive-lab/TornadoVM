@@ -1050,9 +1050,7 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
             // String variableName = local.getName() + "Param" + paramIndex + "var";
             String variableName = local.getName() + "F" + asm.getMethodIndex();
-            System.out.println(variableName);
             SPIRVId idLocal = asm.lookUpLIRInstructionsName(variableName);
-            SPIRVLogger.traceCodeGen("Loading Method Parameter found????? :" + idLocal);
             asm.registerLIRInstructionValue(this, idLocal);
         }
     }

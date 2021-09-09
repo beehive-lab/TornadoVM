@@ -749,10 +749,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
-            System.out.println("VARIABLES -------------- ");
-            System.out.println("\tTYPE: " + spirvKind);
+            // System.out.println("VARIABLES -------------- ");
+            // System.out.println("\tTYPE: " + spirvKind);
             for (Variable var : kindToVariable.get(spirvKind)) {
-                System.out.println("\tNAME: " + var);
+                // System.out.println("\tNAME: " + var);
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);
                 index++;
@@ -804,12 +804,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     private static class LocalParameter {
         public String actualName;
-        private SPIRVId functionParameterId;
-        private SPIRVId variableId;
-        private SPIRVKind spirvKind;
         private SPIRVId typeId;
-        private String variableName;
-        private String functionParameterName;
     }
 
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
@@ -1047,8 +1042,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 Local l = locals[j];
                 String name = locals[j].getName() + "Param" + j; // FIXME Add methodID
 
-                System.out.println("Preparing var: " + name);
-
                 JavaKind type = l.getType().getJavaKind();
                 SPIRVKind kind = SPIRVKind.fromJavaKind(type);
                 SPIRVId kindId = asm.primitives.getTypePrimitive(kind);
@@ -1058,9 +1051,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 }
 
                 localParameters[i].actualName = locals[j].getName();
-                localParameters[i].spirvKind = kind;
                 localParameters[i].typeId = kindId;
-                localParameters[i].functionParameterName = name;
             }
             SPIRVId[] typesOfLocalVars = new SPIRVId[localParameters.length];
             Arrays.setAll(typesOfLocalVars, i -> localParameters[i].typeId);
@@ -1082,7 +1073,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // --------------------------------------
             for (LocalParameter localParameter : localParameters) {
                 SPIRVId id = asm.module.getNextId();
-                localParameter.functionParameterId = id;
                 String name = localParameter.actualName + "F" + asm.getMethodIndex();
                 asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(name)));
                 asm.emitParameterFunction(localParameter.typeId, id, functionScope);
@@ -1093,7 +1083,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // Label Entry
             // --------------------------------------
             blockScope = asm.emitBlockLabel("B0", functionScope);
-            System.out.println("BLOCK B0 method: " + asm.scopeSize());
 
             // --------------------------------------
             // All variable declaration
@@ -1101,47 +1090,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
                 SPIRVKind kind = id.second;
                 // we need a pointer to kind
-                System.out.println("VARIABLE: " + id.first);
                 SPIRVId resultType = asm.primitives.getPtrToTypePrimitive(kind, SPIRVStorageClass.Function());
                 blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
 
-            // // Declare names and alignment for each parameter
-            // for (LocalParameter localParameter : localParameters) {
-            //
-            // String variableName = localParameter.functionParameterName + "var";
-            // localParameter.variableName = variableName;
-            //
-            // SPIRVId variableId = asm.module.getNextId();
-            // localParameter.variableId = variableId;
-            //
-            // SPIRVKind spirvKind = localParameter.spirvKind;
-            //
-            // System.out.println("OPNAME: " + variableName + " :: " + variableId);
-            //
-            // asm.module.add(new SPIRVOpName(variableId, new
-            // SPIRVLiteralString(variableName)));
-            // asm.module.add(new SPIRVOpDecorate(variableId, SPIRVDecoration.Alignment(new
-            // SPIRVLiteralInteger(spirvKind.getByteCount()))));
-            // asm.registerLIRInstructionValue(variableName, variableId);
-            // }
-
-            // // OpStore for each parameter
-            // for (LocalParameter localParameter : localParameters) {
-            // SPIRVId functionParameterId = localParameter.functionParameterId;
-            // SPIRVId varId = localParameter.variableId;
-            // SPIRVKind spirvKind = localParameter.spirvKind;
-            //
-            // System.out.println("STORE: " + varId);
-            //
-            // blockScope.add(new SPIRVOpStore( //
-            // varId, //
-            // functionParameterId, //
-            // new SPIRVOptionalOperand<>(//
-            // SPIRVMemoryAccess.Aligned(//
-            // new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
-            // ));
-            // }
         }
     }
 

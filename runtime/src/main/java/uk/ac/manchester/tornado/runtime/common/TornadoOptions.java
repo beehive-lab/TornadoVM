@@ -203,6 +203,10 @@ public class TornadoOptions {
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", "False");
 
+    // ================================================================================================================
+    // New Flags for SPIR-V and Intel LevelZero
+    // ================================================================================================================
+
     /**
      * Use Level Zero as a dispatcher for SPIRV
      */
@@ -220,16 +224,6 @@ public class TornadoOptions {
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", "False");
 
     /**
-     * Trace code generation
-     */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "True");
-
-    /**
-     * Trace code generation
-     */
-    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "True");
-
-    /**
      * Use return as a common label and insert the instruction before function
      * ending.
      */
@@ -240,5 +234,15 @@ public class TornadoOptions {
      * generated SPIRV kernel.
      */
     public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", "False");
+
+    /**
+     * Trace code generation
+     */
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "False");
+
+    /**
+     * Trace code generation
+     */
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "False");
 
 }

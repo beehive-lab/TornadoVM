@@ -88,8 +88,6 @@ public class HuffmanTornadoDecoder {
             String taskID = "x0.t" + i + ".device";
             String location = "0:" + i;
 
-            System.out.println("PREPARING: " + taskID);
-
             TaskSchedule s0 = new TaskSchedule("x0");
             s0.task("t" + i, HuffmanTornadoDecoder::decodeTornadoKernel, kernelPackage.input, kernelPackage.frequencies, kernelPackage.data, kernelPackage.left, kernelPackage.right,
                     kernelPackage.output);

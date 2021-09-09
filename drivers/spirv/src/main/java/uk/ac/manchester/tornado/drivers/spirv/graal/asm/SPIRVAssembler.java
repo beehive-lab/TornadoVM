@@ -288,7 +288,6 @@ public final class SPIRVAssembler extends Assembler {
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
         labelName = composeUniqueLabelName(labelName);
-        System.out.println("LABEL NAME: " + labelName);
         SPIRVId label = module.getNextId();
         module.add(new SPIRVOpName(label, new SPIRVLiteralString(labelName)));
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
@@ -365,7 +364,6 @@ public final class SPIRVAssembler extends Assembler {
     }
 
     public void emitParameterFunction(SPIRVId typeID, SPIRVId parameterId, SPIRVInstScope functionScope) {
-        System.out.println("EMIT FUNCTION PARAMETER: " + parameterId);
         functionScope.add(new SPIRVOpFunctionParameter(typeID, parameterId));
     }
 
