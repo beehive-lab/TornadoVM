@@ -642,7 +642,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToGlobalMemoryHeap, ptridx, id20, id21, new SPIRVMultipleOperands<>()));
 
         SPIRVId id23 = module.getNextId();
-        blockScope.add(new SPIRVOpBitcast(pointerToULongFunction, id23, ptridx));
+        SPIRVId ptrToGlobalLong = asm.primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
+        // blockScope.add(new SPIRVOpBitcast(pointerToULongFunction, id23, ptridx));
+        blockScope.add(new SPIRVOpBitcast(ptrToGlobalLong, id23, ptridx));
 
         blockScope.add(new SPIRVOpStore(frameId, id23, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
     }
@@ -936,8 +938,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
 
-            asm.ptrCrossWorkULong = module.getNextId();
-            module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkULong, SPIRVStorageClass.CrossWorkgroup(), asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
+            // asm.ptrCrossWorkULong = module.getNextId();
+            // module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkULong,
+            // SPIRVStorageClass.CrossWorkgroup(),
+            // asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
+            asm.ptrCrossWorkULong = asm.primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
 
             pointerToULongFunction = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
             pointerToFrameAccess = module.getNextId();
