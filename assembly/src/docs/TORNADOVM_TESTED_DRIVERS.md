@@ -99,6 +99,8 @@ The following drivers have been tested on Linux - Ubuntu 20.04
 
 The following drivers have been tested Fedora >= 34
 
+* 21.34.20767: OK  ( OpenCL 3.0 )
+* 21.33.20678: OK  ( OpenCL 3.0 ) 
 * 21.32.20609: OK  ( OpenCL 3.0 )
 * 21.31.20514: OK  ( OpenCL 3.0 )
 * 21.28.20343: OK  ( OpenCL 3.0 )
