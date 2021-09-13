@@ -20,7 +20,7 @@ The following table includes the platforms that TornadoVM can be executed.
 TornadoVM can be currently executed with the following two configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
-  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with GraalVM (either with JDK 8, JDK 11, JDK 16): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
 
 Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
 
