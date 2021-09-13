@@ -143,7 +143,7 @@ public class TornadoOptions {
      */
     public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
 
-    public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
+    public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "True");
 
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");
 
@@ -164,8 +164,8 @@ public class TornadoOptions {
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
 
     /**
-     * It enables automatic discovery and parallelisation of loops.
-     * Please note that this option is experimental and may cause issues if enabled.
+     * It enables automatic discovery and parallelisation of loops. Please note that
+     * this option is experimental and may cause issues if enabled.
      */
     public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", "False");
 
