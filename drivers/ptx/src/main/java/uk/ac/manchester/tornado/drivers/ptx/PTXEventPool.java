@@ -33,7 +33,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.drivers.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 
 public class PTXEventPool {
 

@@ -24,7 +24,7 @@ package uk.ac.manchester.tornado.drivers.ptx;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
-import uk.ac.manchester.tornado.drivers.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXEventStatus;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
