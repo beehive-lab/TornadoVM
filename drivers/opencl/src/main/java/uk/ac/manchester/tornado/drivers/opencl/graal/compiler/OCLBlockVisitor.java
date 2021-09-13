@@ -461,36 +461,13 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             }
         }
 
-        boolean allMergesClosed = true;
-        if (isMerge) {
-            MergeNode mergeNode = (MergeNode) block.getBeginNode();
-            NodeMap<Block> nodeToBlockMap = mergeNode.graph().getLastSchedule().getNodeToBlockMap();
-            for (EndNode predecessor : mergeNode.cfgPredecessors()) {
-                Block b = nodeToBlockMap.get(predecessor);
-                if (!blocksClosed.contains(b)) {
-                    allMergesClosed = false;
-                }
-            }
-
-        }
-
         boolean isReturn = block.getEndNode() instanceof ReturnNode;
 
         // if false, we still need to traverse more basic blocks before the end function
         // scope.
         boolean pendingBlocks = !(block.getEarliestPostDominated().equals(block.getDominator()));
-        return dominator != null //
-                && postDominator != null //
-                && !allMergesClosed // Make sure all branches are closed
-                && pendingBlocks // if there are pending blocks to visit
-                && isMerge //
-                && sameDominator //
-                && isReturn //
-                && !dominator.isLoopHeader() //
-                && isIfBlock(dominator);
 
-        // return dominator != null && isMerge && !isOrdered && sameDominator &&
-        // isReturn && !dominator.isLoopHeader() && isIfBlock(dominator);
+        return dominator != null && isMerge && pendingBlocks && sameDominator && isReturn && !dominator.isLoopHeader() && isIfBlock(dominator);
     }
 
     private boolean isIfBlockNode(Block block) {
