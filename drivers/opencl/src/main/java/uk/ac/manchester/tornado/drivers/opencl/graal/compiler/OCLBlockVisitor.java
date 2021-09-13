@@ -369,8 +369,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
 
         /*
-         * It generates instructions that are relocated from within the for-loop to after the for-loop.
-         * https://github.com/beehive-lab/TornadoVM/pull/129
+         * It generates instructions that are relocated from within the for-loop to
+         * after the for-loop. https://github.com/beehive-lab/TornadoVM/pull/129
          */
         openclBuilder.emitRelocatedInstructions(block);
     }
@@ -427,6 +427,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         final Block dom = block.getDominator();
         boolean isMerge = block.getBeginNode() instanceof MergeNode;
 
+        // The post dominator must be not null, because in that case, we close the
+        // function scope, which is automatically generated
+        // at the end of the OpenCL backend code-gen.
+        Block postDominator = block.getPostdominator();
+
         boolean sameDominator = isMerge;
         if (isMerge) {
             MergeNode mergeNode = (MergeNode) block.getBeginNode();
@@ -440,7 +445,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
 
         boolean isReturn = block.getEndNode() instanceof ReturnNode;
-        return dom != null && isMerge && sameDominator && isReturn && !dom.isLoopHeader() && isIfBlock(dom);
+        return dom != null && postDominator != null && isMerge && sameDominator && isReturn && !dom.isLoopHeader() && isIfBlock(dom);
     }
 
     private boolean isIfBlockNode(Block block) {
