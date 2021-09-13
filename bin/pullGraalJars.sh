@@ -24,10 +24,10 @@
 #
 
 VERSION="21.1.0"
-COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/21.1.0/compiler-21.1.0.jar
-COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/21.1.0/compiler-management-21.1.0.jar
-GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/21.1.0/graal-sdk-21.1.0.jar
-TRUFFLE_API_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/21.1.0/truffle-api-21.1.0.jar
+COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/21.2.0/compiler-21.2.0.jar
+COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/21.2.0/compiler-management-21.2.0.jar
+GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/21.2.0/graal-sdk-21.2.0.jar
+TRUFFLE_API_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/21.2.0/truffle-api-21.2.0.jar
 
 
 if [ ! -d $PWD/graalJars ]; then
