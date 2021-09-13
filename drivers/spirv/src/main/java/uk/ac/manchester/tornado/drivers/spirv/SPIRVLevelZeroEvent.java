@@ -1,7 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
-import uk.ac.manchester.tornado.drivers.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 

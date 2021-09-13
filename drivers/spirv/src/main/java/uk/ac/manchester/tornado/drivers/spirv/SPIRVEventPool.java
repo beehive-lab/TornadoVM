@@ -8,7 +8,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import uk.ac.manchester.tornado.drivers.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 
 /**
