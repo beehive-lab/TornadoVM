@@ -60,7 +60,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     Map<Block, Integer> closedLoops;
     Set<Block> switches;
     Set<Node> switchClosed;
-    Set<Block> blocksClosed;
     HashMap<Block, Integer> pending;
     private int loopCount;
     private int loopEnds;
@@ -75,7 +74,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         closedLoops = new HashMap<>();
         pending = new HashMap<>();
         rmvEndBracket = new HashSet<>();
-        blocksClosed = new HashSet<>();
     }
 
     private void emitBeginBlockForElseStatement(Block dom, Block block) {
@@ -191,7 +189,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private void closeBlock(Block block) {
         asm.endScope(block.toString());
-        blocksClosed.add(block);
     }
 
     private void checkClosingBlockInsideIf(Block block, Block pdom) {
