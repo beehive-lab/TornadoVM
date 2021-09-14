@@ -11,11 +11,11 @@ pipeline {
     }
 
     environment {
-        JDK_8_JAVA_HOME="/opt/jenkins/openjdk1.8.0_292-jvmci-21.1-b05"
-        CORRETTO_11_JAVA_HOME="/opt/jenkins/amazon-corretto-11.0.11.9.1-linux-x64"
-        GRAALVM_8_JAVA_HOME="/opt/jenkins/graalvm-ce-java8-21.1.0"
-        GRAALVM_11_JAVA_HOME="/opt/jenkins/graalvm-ce-java11-21.1.0"
-        GRAALVM_16_JAVA_HOME="/opt/jenkins/graalvm-ce-java16-21.1.0"
+        JDK_8_JAVA_HOME="/opt/jenkins/jdks/openjdk1.8.0_302-jvmci-21.2-b08"
+        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.12.7.1-linux-x64"
+        GRAALVM_8_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java8-21.2.0"
+        GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java11-21.2.0"
+        GRAALVM_16_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java16-21.2.0"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
