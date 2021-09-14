@@ -243,6 +243,6 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "False");
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "True");
 
 }

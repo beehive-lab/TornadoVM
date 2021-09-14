@@ -140,6 +140,8 @@ public enum SPIRVKind implements PlatformKind {
 
     public static SPIRVKind fromJavaKind(JavaKind stackKind) {
         switch (stackKind) {
+            case Void:
+                return SPIRVKind.OP_TYPE_VOID;
             case Boolean:
                 return SPIRVKind.OP_TYPE_BOOL;
             case Byte:
@@ -200,8 +202,37 @@ public enum SPIRVKind implements PlatformKind {
                 return 'f';
             case OP_TYPE_FLOAT_64:
                 return 'd';
+            case OP_TYPE_VECTOR2_INT_16:
+            case OP_TYPE_VECTOR2_INT_32:
+            case OP_TYPE_VECTOR2_INT_64:
+
+            case OP_TYPE_VECTOR3_INT_8:
+            case OP_TYPE_VECTOR3_INT_16:
+            case OP_TYPE_VECTOR3_INT_32:
+            case OP_TYPE_VECTOR3_INT_64:
+
+            case OP_TYPE_VECTOR4_INT_8:
+            case OP_TYPE_VECTOR4_INT_32:
+            case OP_TYPE_VECTOR4_INT_64:
+
+            case OP_TYPE_VECTOR8_INT_32:
+            case OP_TYPE_VECTOR8_INT_64:
+
+            case OP_TYPE_VECTOR2_FLOAT_16:
+            case OP_TYPE_VECTOR2_FLOAT_32:
+            case OP_TYPE_VECTOR2_FLOAT_64:
+
+            case OP_TYPE_VECTOR4_FLOAT_16:
+            case OP_TYPE_VECTOR4_FLOAT_32:
+            case OP_TYPE_VECTOR4_FLOAT_64:
+
+            case OP_TYPE_VECTOR8_FLOAT_16:
+            case OP_TYPE_VECTOR8_FLOAT_32:
+            case OP_TYPE_VECTOR8_FLOAT_64:
+                return 'v';
+
             default:
-                throw new RuntimeException("SPIRVType Not implemented yet: " + kind);
+                return '-';
         }
     }
 

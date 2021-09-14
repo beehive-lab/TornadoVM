@@ -120,7 +120,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
         SPIRVLogger.traceBuildLIR("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
-        if (isLegal(result) & ((SPIRVKind) result.getPlatformKind()).isVector()) {
+        if (isLegal(result) && ((SPIRVKind) result.getPlatformKind()).isVector()) {
             throw new RuntimeException("[SPIRV] CAll with Vector types not supported yet");
         }
         final SPIRVDirectCall spirvDirectCall = new SPIRVDirectCall(callTarget, result, parameters, callState);
