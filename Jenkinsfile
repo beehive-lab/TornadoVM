@@ -125,7 +125,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sh "make ${tornadoProfile} BACKEND=ptx,opencl"
     }
     stage('PTX: Unit Tests') {
-        timeout(time: 5, unit: 'MINUTES') {
+        timeout(time: 12, unit: 'MINUTES') {
             sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
             sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
             sh 'test-native.sh'
@@ -134,14 +134,14 @@ void buildAndTest(String JDK, String tornadoProfile) {
     stage("OpenCL: Unit Tests") {
         parallel (
             "OpenCL and GPU: Nvidia GeForce GTX 1060" : {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=1:1"'
                     sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=1:1" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             },
             "OpenCL and CPU: Intel Xeon E5-2620" : {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=1:0"'
                     sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=1:0" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
@@ -150,7 +150,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         )
     }
     stage('Benchmarks') {
-        timeout(time: 10, unit: 'MINUTES') {
+        timeout(time: 15, unit: 'MINUTES') {
             sh 'python assembly/src/bin/tornado-benchmarks.py --printBenchmarks '
             sh 'python assembly/src/bin/tornado-benchmarks.py --medium --skipSequential --iterations 5 '
         }
