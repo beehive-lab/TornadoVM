@@ -7,7 +7,6 @@ import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 
 import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunctionCall;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
@@ -67,17 +66,9 @@ public class SPIRVDirectCall extends SPIRVLIROp {
             paramIndex++;
         }
 
-        ValueKind platformKind = result.getValueKind();
-        SPIRVKind resultType;
-        // if (platformKind == ValueKind.Illegal) {
-        // resultType = SPIRVKind.OP_TYPE_VOID;
-        // } else {
-        resultType = (SPIRVKind) result.getPlatformKind();
-        // }
+        SPIRVKind resultType = (SPIRVKind) result.getPlatformKind();
         SPIRVId resultTypeId = asm.primitives.getTypePrimitive(resultType);
-
         SPIRVId functionResult = asm.module.getNextId();
-
         SPIRVMultipleOperands<SPIRVId> operands = new SPIRVMultipleOperands<>(idsForParameters);
 
         // At this point we need to register the new function

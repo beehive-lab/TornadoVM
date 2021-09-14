@@ -16,6 +16,7 @@ import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.VoidStamp;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
@@ -179,6 +180,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
         if (lirKind != LIRKind.Illegal) {
             result = gen.newVariable(lirKind);
+        } else if (stamp instanceof VoidStamp) {
+            SPIRVLogger.traceBuildLIR("Generating Void Type Variable for function");
+            result = gen.newVariable(LIRKind.value(SPIRVKind.OP_TYPE_VOID));
         }
 
         CallingConvention callingConvention = new CallingConvention(0, result);

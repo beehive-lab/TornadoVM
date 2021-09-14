@@ -230,7 +230,6 @@ public enum SPIRVKind implements PlatformKind {
             case OP_TYPE_VECTOR8_FLOAT_32:
             case OP_TYPE_VECTOR8_FLOAT_64:
                 return 'v';
-
             default:
                 return '-';
         }
