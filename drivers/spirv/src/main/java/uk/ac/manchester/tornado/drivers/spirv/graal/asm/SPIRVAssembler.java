@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -148,6 +149,8 @@ public final class SPIRVAssembler extends Assembler {
     private ByteBuffer spirvByteBuffer;
     private int methodIndex;
 
+    private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
+
     public SPIRVAssembler(TargetDescription target) {
         super(target);
         labelTable = new HashMap<>();
@@ -162,6 +165,38 @@ public final class SPIRVAssembler extends Assembler {
         functionPtrToArray = new HashMap<>();
         functionPtrToArrayLocal = new HashMap<>();
         SPIRVSymbolTable = new HashMap<>();
+        opFunctionTable = new HashMap<>();
+    }
+
+    private static class SPIRVOpFunctionTable {
+
+        private SPIRVId returnId;
+        SPIRVId[] params;
+        private SPIRVId functionID;
+
+        public SPIRVOpFunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
+            this.returnId = returnId;
+            this.functionID = functionID;
+            this.params = params;
+        }
+
+        public boolean areParamsEqual(SPIRVId... params) {
+            if (params == null) {
+                return false;
+            }
+
+            if (params.length != this.params.length) {
+                return false;
+            }
+
+            for (int i = 0; i < this.params.length; i++) {
+                SPIRVId param = this.params[i];
+                if (!param.equals(params[i++])) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
@@ -297,9 +332,88 @@ public final class SPIRVAssembler extends Assembler {
         return block;
     }
 
-    public SPIRVId emitOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
+    private SPIRVId createNewOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
         functionSignature = module.getNextId();
         module.add(new SPIRVOpTypeFunction(functionSignature, returnType, new SPIRVMultipleOperands<>(operands)));
+        return functionSignature;
+    }
+
+    private SPIRVId createNewFunctionAndUpdateTables(SPIRVId returnType, SPIRVId... operands) {
+        int numParams = operands.length;
+        SPIRVId functionId = createNewOpTypeFunction(returnType, operands);
+        functionSignature = functionId;
+        SPIRVOpFunctionTable functionTable = new SPIRVOpFunctionTable(returnType, functionId, operands);
+        LinkedList<SPIRVOpFunctionTable> list = new LinkedList<>();
+        list.add(functionTable);
+        HashMap<Integer, LinkedList<SPIRVOpFunctionTable>> m = new HashMap<>();
+        m.put(numParams, list);
+        opFunctionTable.put(returnType, m);
+        return functionId;
+    }
+
+    /**
+     * To emit a {@link SPIRVOpTypeFunction}, the id has to be unique and the
+     * function return type and the parameters have to be one per function
+     * signature. This means that, if two functions have the same return type and
+     * the same type of parameters and the parameter types are the same. we should
+     * return the same ID previously registered for the first function declaration.
+     * 
+     * This method checks whether we have a function type with the same return ID
+     * and same parameters already registered. To do so, we manage a table
+     * {@link SPIRVAssembler#opFunctionTable}, that stores the information as
+     * follows:
+     * 
+     * <code>
+     *     Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>> 
+     * </code>
+     * 
+     * If we have the same number of parameters with the same return type, when we
+     * do a sequential search over the linked-list to check the type of each
+     * parameter (stored in the {@link SPIRVOpFunctionTable) class).
+     * 
+     * @param returnType
+     *            ID with the return value.
+     * @param operands
+     *            List of IDs for the operads.
+     * @return A {@link SPIRVId} for the {@link SPIRVOpFunction}
+     */
+    public SPIRVId emitOpTypeFunction(SPIRVId returnType, SPIRVId... operands) {
+        if (!opFunctionTable.containsKey(returnType)) {
+            createNewFunctionAndUpdateTables(returnType, operands);
+        } else {
+            // Search the type
+            Map<Integer, LinkedList<SPIRVOpFunctionTable>> internalMap = opFunctionTable.get(returnType);
+
+            if (internalMap.containsKey(operands.length)) {
+                // Sequential Check for all operands
+                LinkedList<SPIRVOpFunctionTable> spirvOpFunctionTables = internalMap.get(operands.length);
+                boolean isInCache = false;
+                SPIRVId functionType = null;
+                for (SPIRVOpFunctionTable functionTable : spirvOpFunctionTables) {
+                    if (functionTable.areParamsEqual(operands)) {
+                        isInCache = true;
+                        functionType = functionTable.functionID;
+                        break;
+                    }
+                }
+
+                if (!isInCache) {
+                    // Add a new Entry
+                    functionType = createNewOpTypeFunction(returnType, operands);
+                    spirvOpFunctionTables.add(new SPIRVOpFunctionTable(returnType, functionType, operands));
+
+                    // Update function tables
+                    internalMap.put(operands.length, spirvOpFunctionTables);
+                    opFunctionTable.put(returnType, internalMap);
+                }
+                functionSignature = functionType;
+                return functionType;
+            } else {
+                // Create a new entry in the internal map
+                functionSignature = createNewFunctionAndUpdateTables(returnType, operands);
+            }
+        }
+
         return functionSignature;
     }
 
