@@ -87,14 +87,24 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
     }
 
+    private static int operation(int a, int b) {
+        return a + b;
+    }
+
     public static void vectorAddInteger(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = operation(a[i], b[i]);
         }
     }
 
-    private static int operation(int a, int b) {
-        return a + b;
+    private static int operation2(int a, int b) {
+        return a + operation(a, b);
+    }
+
+    public static void vectorAddInteger2(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = operation2(a[i], b[i]);
+        }
     }
 
     @Test
@@ -121,6 +131,32 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
+        }
+    }
+
+    @Test
+    public void test02() {
+
+        final int numElements = 4096;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = 100;
+            b[i] = 100 + i;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(a, b)
+                .task("t0", TestMultipleFunctions::vectorAddInteger2, a, b, c)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals((a[i] + (a[i] + b[i])), c[i]);
         }
     }
 

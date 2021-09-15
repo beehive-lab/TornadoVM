@@ -430,8 +430,17 @@ public class SPIRVCompiler {
                 methods.add(graph.method());
                 methods.addAll(graph.getMethods());
             }
+
+            // Update the assembler
+            kernelCompilationRequest.compilationResult.setAssembler(compilationResult.getAssembler());
+
+            // Update the list of pending methods to compile
+            workList.addAll(compilationResult.getNonInlinedMethods());
+
             // kernelCompilationResult.addCompiledMethodCode(compilationResult.getTargetCode());
         }
+
+        System.out.println("\n\n\nEnd of the process");
 
         // ==================================================================
         // End of the compilation unit: close the byte buffer
