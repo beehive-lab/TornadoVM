@@ -62,7 +62,7 @@ We will refer hereafter the directory with TornadoVM sources as `<TornadoVM>`.
 
 Download the version you prefer. TornadoVM can run with JDK 8, 11 and 16. Visit [GraalVM Community Edition 21.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.2.0) and download either of the following builds:
 - [Download for JDK 8](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java8-windows-amd64-21.2.0.zip).
-- [Download for JDK 11] (https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-windows-amd64-21.2.0.zip)
+- [Download for JDK 11](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-windows-amd64-21.2.0.zip)
 - [Download for JDK 16](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java16-windows-amd64-21.2.0.zip) 
 
 Extract the downloaded file to any directory.

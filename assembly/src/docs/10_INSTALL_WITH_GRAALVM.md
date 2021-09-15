@@ -13,7 +13,7 @@
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
 
-#### 1 Download GraalVM Community Edition 21.2.0
+#### 1. Download GraalVM Community Edition 21.2.0
 
 GraalVM 21.2.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.2.0).
 
