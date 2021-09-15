@@ -440,8 +440,6 @@ public class SPIRVCompiler {
             // kernelCompilationResult.addCompiledMethodCode(compilationResult.getTargetCode());
         }
 
-        System.out.println("\n\n\nEnd of the process");
-
         // ==================================================================
         // End of the compilation unit: close the byte buffer
         // ==================================================================
