@@ -107,6 +107,16 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
     }
 
+    private static int operation3(int a, int b) {
+        return a + operation2(a, b);
+    }
+
+    public static void vectorAddInteger3(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = operation3(a[i], b[i]);
+        }
+    }
+
     @Test
     public void test01() {
 
@@ -142,9 +152,10 @@ public class TestMultipleFunctions extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
+        Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = 100;
-            b[i] = 100 + i;
+            a[i] = r.nextInt();
+            b[i] = r.nextInt();
         });
 
         //@formatter:off
@@ -157,6 +168,33 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + (a[i] + b[i])), c[i]);
+        }
+    }
+
+    @Test
+    public void test03() {
+
+        final int numElements = 4096;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Random r = new Random();
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = r.nextInt();
+            b[i] = r.nextInt();
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(a, b)
+                .task("t0", TestMultipleFunctions::vectorAddInteger3, a, b, c)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals((a[i] + (a[i] + (a[i] + b[i]))), c[i]);
         }
     }
 
