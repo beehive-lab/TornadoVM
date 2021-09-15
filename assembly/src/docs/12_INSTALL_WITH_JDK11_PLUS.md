@@ -23,7 +23,7 @@
   GraalVM LabsJDK 11.0.11+8 (GraalVM 21.2.0)
   OpenJDK 11.0.11+9
   OpenJDK 16.0.2
-  Microsoft Build of OpenJDK (OpenJDK 11.0.10+9)
+  Microsoft Build of OpenJDK (OpenJDK 11.0.12+7)
   ```
 
 
