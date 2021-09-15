@@ -227,7 +227,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
         if (createFloatingReads) {
-            graph.setAfterFloatingReadPhase();
+            graph.setAfterStage(StructuredGraph.StageFlag.FLOATING_READS);
         }
     }
 

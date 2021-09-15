@@ -1,7 +1,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodes.spi.SimplifierTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
