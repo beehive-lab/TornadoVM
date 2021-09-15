@@ -509,6 +509,11 @@ public final class SPIRVAssembler extends Assembler {
         return lirTableName.get(valueLIRInstruction);
     }
 
+    public void clearLIRTable() {
+        lirTable.clear();
+        lirTableName.clear();
+    }
+
     public SPIRVId emitConstantValue(SPIRVKind type, String valueConstant) {
         SPIRVId newConstantId = module.getNextId();
         SPIRVId typeID = primitives.getTypePrimitive(type);
