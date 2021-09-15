@@ -153,6 +153,10 @@ public class TornadoOptions {
      */
     public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
 
+    /**
+     * Dump the Control-Flow-Graph with IGV for the compiled-graph after the last
+     * phase in the Low-Tier.
+     */
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
 
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");

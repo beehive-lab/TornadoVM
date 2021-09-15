@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>0.11-dev</tornado.version>
-        <graal.version>21.1.0</graal.version>
+        <graal.version>21.2.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
