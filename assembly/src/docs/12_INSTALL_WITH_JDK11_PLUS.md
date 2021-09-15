@@ -17,13 +17,13 @@
   
   TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
-  ```
-  Red Hat Mandrel 11.0.11 (Mandrel 21.1.0 Final) 
-  Amazon Corretto 11.0.11+9.1
-  GraalVM LabsJDK 11.0.11+8 (GraalVM 21.1.0)
+  ```bash
+  Red Hat Mandrel 11.0.12 (Mandrel 21.2.0.1 Final) 
+  Amazon Corretto >= 11.0.12+6
+  GraalVM LabsJDK 11.0.11+8 (GraalVM 21.2.0)
   OpenJDK 11.0.11+9
-  OpenJDK 16.0.1
-  Microsoft Build of OpenJDK (OpenJDK 11.0.10+9)
+  OpenJDK 16.0.2
+  Microsoft Build of OpenJDK (OpenJDK 11.0.12+7)
   ```
 
 
@@ -40,7 +40,7 @@ Example:
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
- $ export JAVA_HOME=$PWD/amazon-corretto-11.0.11.9.1-linux-x64
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.12.7.1-linux-x64
 ```
 
 ### 2. Download TornadoVM

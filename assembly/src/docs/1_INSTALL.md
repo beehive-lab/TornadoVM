@@ -4,14 +4,15 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Status       | Hardware                                                                          |
-| -------------------------- | -------------|---------------------------------------------------------------------------------- |
-| CentOS >= 7.3              | Supported    | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
-| Fedora >= 21               | Supported    | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
-| Ubuntu >= 16.04            | Supported    | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
-| Mac OS X Mojave 10.14.6    | Experimental | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                  |
-| Mac OS X Catalina 10.15.3  | Experimental | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                  |
-| Windows 10                 | Experimental | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device    |
+| OS                         | Hardware                                                              |
+| -------------------------- | --------------------------------------------------------------------- |
+| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
+| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
+| Mac OS X Big Sur 11.5.1    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
+| Windows 10		     | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
 
 
 ## 1. Installation
@@ -22,11 +23,11 @@ TornadoVM can be built with two compiler backends and is able to generate OpenCL
 $ make BACKENDS=opencl,ptx
 ```
 
-As well as being built with two compiler backends, TornadoVM can be executed with the following two configurations:
+As well as being built with two compiler backends, TornadoVM can be executed with the following three configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
-  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
-  * TornadoVM with JDK11+ (e.g. OpenJDK, Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
+  * TornadoVM with GraalVM (either with JDK 8, JDK 11 and JDK 16): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with JDK11+ (e.g. OpenJDK [11-16], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
 
 Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
 
@@ -114,10 +115,37 @@ The command above will run the MatrixMultiplication1D example on the integrated 
 
 ## 3. Running Benchmarks
 
+
+###### Running all benchmarks with default values
+```bash
+$ tornado-benchmarks.py
+Running TornadoVM Benchmarks
+[INFO] This process takes between 30-60 minutes
+List of benchmarks: 
+       *saxpy
+       *addImage
+       *stencil
+       *convolvearray
+       *convolveimage
+       *blackscholes
+       *montecarlo
+       *blurFilter
+       *renderTrack
+       *euler
+       *nbody
+       *sgemm
+       *dgemm
+       *mandelbrot
+       *dft
+[INFO] TornadoVM options: -Xms24G -Xmx24G -server 
+....
+```
+
+###### Running a specific benchmark
+
 ```bash
 $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
 ```
-
 
 ## 4. Running Unittests
 

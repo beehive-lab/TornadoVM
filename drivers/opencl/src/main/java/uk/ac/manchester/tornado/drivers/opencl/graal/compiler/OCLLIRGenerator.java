@@ -43,7 +43,6 @@ import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 
@@ -110,12 +109,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public VirtualStackSlot allocateStackSlots(int slots) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public Value emitReadCallerStackPointer(Stamp wordStamp) {
         unimplemented();
         return null;
@@ -130,6 +123,16 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     public void emitZeroMemory(Value address, Value length, boolean isAligned) {
         unimplemented();
+    }
+
+    @Override
+    public void emitCacheWriteback(Value address) {
+        unimplemented();
+    }
+
+    @Override
+    public void emitCacheWritebackSync(boolean isPreSync) {
+
     }
 
     @Override

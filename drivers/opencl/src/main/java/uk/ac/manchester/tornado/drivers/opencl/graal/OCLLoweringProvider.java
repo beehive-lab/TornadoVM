@@ -517,13 +517,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected ValueNode createReadArrayComponentHub(StructuredGraph arg0, ValueNode arg1, FixedNode arg2) {
+    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool) {
+        unimplemented("Create READ hub is not supported yet");
         return null;
     }
 
     @Override
-    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool) {
-        unimplemented("Create READ hub not supported yet");
+    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, boolean isKnownObjectArray, FixedNode anchor) {
         return null;
     }
 

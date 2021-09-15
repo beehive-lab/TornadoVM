@@ -23,13 +23,13 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.spi.Canonicalizable;
-import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.spi.Canonicalizable;
+import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
