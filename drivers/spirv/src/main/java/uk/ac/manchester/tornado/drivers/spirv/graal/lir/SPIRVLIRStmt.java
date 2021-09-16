@@ -67,10 +67,12 @@ public class SPIRVLIRStmt {
             // This call will register the lhs id in case is not in the lookupTable yet.
             asm.emitValue(crb, lhs);
 
+            boolean performLoad = false;
             if (rhs instanceof SPIRVLIROp) {
                 ((SPIRVLIROp) rhs).emit(crb, asm);
             } else {
                 asm.emitValue(crb, rhs);
+                performLoad = true;
             }
 
             SPIRVLogger.traceCodeGen("emit Assignment : " + lhs + " = " + rhs.getClass());
@@ -80,10 +82,28 @@ public class SPIRVLIRStmt {
                 storeAddressID = asm.lookUpLIRInstructions(rhs);
             } else {
                 SPIRVId value;
-                if (rhs instanceof ConstantValue) {
+                boolean isConstant = rhs instanceof ConstantValue;
+                if (isConstant) {
                     value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
                 } else {
                     value = asm.lookUpLIRInstructions(rhs);
+                }
+
+                if (performLoad && !isConstant) {
+                    SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
+                    SPIRVId resultType = asm.primitives.getTypePrimitive(spirvKind);
+                    SPIRVId loadId = asm.module.getNextId();
+                    asm.currentBlockScope().add(new SPIRVOpLoad( //
+                            resultType, //
+                            loadId, //
+                            value, //
+                            new SPIRVOptionalOperand<>( //
+                                    SPIRVMemoryAccess.Aligned( //
+                                            new SPIRVLiteralInteger( //
+                                                    rhs.getPlatformKind().getSizeInBytes())) //
+                            )));
+
+                    value = loadId;
                 }
 
                 storeAddressID = asm.lookUpLIRInstructions(lhs);

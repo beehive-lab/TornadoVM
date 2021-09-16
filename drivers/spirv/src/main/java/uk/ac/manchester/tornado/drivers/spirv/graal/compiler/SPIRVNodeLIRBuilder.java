@@ -131,9 +131,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             append(new SPIRVLIRStmt.AssignStmt(allocatableValue, spirvDirectCall));
             setResult(callTarget, allocatableValue);
         } else {
-            if (spirvKind == SPIRVKind.OP_TYPE_VOID) {
-                append(new SPIRVLIRStmt.ExprStmt(spirvDirectCall));
-            }
+            append(new SPIRVLIRStmt.ExprStmt(spirvDirectCall));
         }
     }
 
