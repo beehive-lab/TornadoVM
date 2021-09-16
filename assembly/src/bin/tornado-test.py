@@ -137,8 +137,8 @@ __TEST_THE_WORLD__ = [
     #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
     #               "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
     #               "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
-    #           testParameters=["-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"])
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
+               testParameters=["-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"])
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
