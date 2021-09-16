@@ -26,13 +26,14 @@ package uk.ac.manchester.tornado.runtime.graal.nodes.logic;
 import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.spi.Canonicalizable;
-import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.spi.Canonicalizable;
+import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo
@@ -40,7 +41,8 @@ public abstract class UnaryLogicalNode extends LogicNode implements IterableNode
 
     public static final NodeClass<UnaryLogicalNode> TYPE = NodeClass.create(UnaryLogicalNode.class);
 
-    @Input(InputType.Condition) LogicNode value;
+    @Input(InputType.Condition)
+    LogicNode value;
 
     protected UnaryLogicalNode(NodeClass<? extends UnaryLogicalNode> type, LogicNode value) {
         super(type);

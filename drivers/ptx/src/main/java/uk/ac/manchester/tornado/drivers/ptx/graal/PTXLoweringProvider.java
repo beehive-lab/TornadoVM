@@ -172,7 +172,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, FixedNode anchor) {
+    protected ValueNode createReadArrayComponentHub(StructuredGraph graph, ValueNode arrayHub, boolean isKnownObjectArray, FixedNode anchor) {
         unimplemented();
         return null;
     }
