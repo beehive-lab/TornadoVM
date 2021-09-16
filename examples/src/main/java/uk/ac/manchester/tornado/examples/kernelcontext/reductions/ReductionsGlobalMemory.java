@@ -30,7 +30,7 @@ public class ReductionsGlobalMemory {
     // Reduction in Global memory using KernelContext
     public static void reduction(float[] a, float[] b, KernelContext context) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
         int id = localGroupSize * groupID + localIdx;
 

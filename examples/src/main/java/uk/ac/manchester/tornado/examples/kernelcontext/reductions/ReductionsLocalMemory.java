@@ -31,7 +31,7 @@ public class ReductionsLocalMemory {
     public static void reductionLocal(float[] a, float[] b, int localSize, KernelContext context) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         float[] localA = context.allocateFloatLocalArray(256);

@@ -194,29 +194,6 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
-    private static void registerLocalWorkGroup(Registration r, JavaKind returnedJavaKind) {
-        r.register2("getLocalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                LocalThreadSizeNode localThreadSizeNode = new LocalThreadSizeNode((ConstantNode) size);
-                b.push(returnedJavaKind, localThreadSizeNode);
-                return true;
-            }
-        });
-    }
-
-    private static void registerGlobalWorkGroupSize(Registration r) {
-        JavaKind returnedJavaKind = JavaKind.Int;
-        r.register2("getGlobalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
-                GlobalThreadSizeNode threadSize = new GlobalThreadSizeNode((ConstantNode) size);
-                b.push(returnedJavaKind, threadSize);
-                return true;
-            }
-        });
-    }
-
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
         r.register2("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
             @Override
@@ -265,11 +242,6 @@ public class PTXGraphBuilderPlugins {
         });
     }
 
-    private static void localWorkGroupPlugin(Registration r) {
-        JavaKind returnedJavaKind = JavaKind.Int;
-        registerLocalWorkGroup(r, returnedJavaKind);
-    }
-
     private static void localArraysPlugins(Registration r) {
         JavaKind returnedJavaKind = JavaKind.Object;
 
@@ -291,8 +263,6 @@ public class PTXGraphBuilderPlugins {
 
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
-        localWorkGroupPlugin(r);
-        registerGlobalWorkGroupSize(r);
         localArraysPlugins(r);
     }
 
