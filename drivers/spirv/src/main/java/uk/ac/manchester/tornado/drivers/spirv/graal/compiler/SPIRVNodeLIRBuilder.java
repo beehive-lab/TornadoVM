@@ -125,12 +125,15 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             throw new RuntimeException("[SPIRV] CAll with Vector types not supported yet");
         }
         final SPIRVDirectCall spirvDirectCall = new SPIRVDirectCall(callTarget, result, parameters, callState);
-        if (isLegal(result)) {
+        SPIRVKind spirvKind = ((SPIRVKind) result.getPlatformKind());
+        if (isLegal(result) && spirvKind != SPIRVKind.OP_TYPE_VOID) {
             AllocatableValue allocatableValue = gen.asAllocatable(result);
             append(new SPIRVLIRStmt.AssignStmt(allocatableValue, spirvDirectCall));
             setResult(callTarget, allocatableValue);
         } else {
-            append(new SPIRVLIRStmt.ExprStmt(spirvDirectCall));
+            if (spirvKind == SPIRVKind.OP_TYPE_VOID) {
+                append(new SPIRVLIRStmt.ExprStmt(spirvDirectCall));
+            }
         }
     }
 
