@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
-    public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
+    public static final String WARNING_THREAD_LOCAL = "[TornadoVM SPIR-V] Warning: TornadoVM changed the user-defined local size to the suggested values by the driver.";
 
     private static final int WARP_SIZE = 32;
     private boolean valid;
@@ -98,10 +98,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             }
         }
 
-        if (meta.isThreadInfoEnabled()) {
-            meta.printThreadDims();
-        }
-
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
         int[] groupSizeX = new int[] { (int) localWork[0] };
@@ -120,6 +116,18 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             System.out.println("GroupX:  " + Arrays.toString(groupSizeX));
             System.out.println("GroupY:  " + Arrays.toString(groupSizeY));
             System.out.println("GroupZ:  " + Arrays.toString(groupSizeZ));
+        }
+
+        if (meta.isGridSchedulerEnabled()) {
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            grid.setLocalWork(groupSizeX[0], groupSizeY[0], groupSizeZ[0]);
+        }
+
+        long[] localWorkAfterSuggestion = new long[] { groupSizeX[0], groupSizeY[0], groupSizeZ[0] };
+        meta.setLocalWork(localWorkAfterSuggestion);
+
+        if (meta.isThreadInfoEnabled()) {
+            meta.printThreadDims();
         }
 
         // Dispatch SPIR-V Kernel

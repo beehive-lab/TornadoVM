@@ -105,7 +105,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeX, context, data).streamOut(data);
         ts.execute(grid);
-        assertEquals(8, data[0]);
+        assertEquals(worker.getLocalWork()[0], data[0]);
     }
 
     private static void apiTestLocalGroupSizeY(KernelContext context, int[] data) {
@@ -123,7 +123,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeY, context, data).streamOut(data);
         ts.execute(grid);
-        assertEquals(8, data[0]);
+        assertEquals(worker.getLocalWork()[1], data[0]);
     }
 
     private static void apiTestLocalGroupSizeZ(KernelContext context, int[] data) {
@@ -141,6 +141,6 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeZ, context, data).streamOut(data);
         ts.execute(grid);
-        assertEquals(8, data[0]);
+        assertEquals(worker.getLocalWork()[2], data[0]);
     }
 }

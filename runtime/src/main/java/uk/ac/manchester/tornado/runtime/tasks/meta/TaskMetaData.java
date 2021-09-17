@@ -147,6 +147,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public void setLocalWork(long[] values) {
+        localWork = new long[values.length];
         System.arraycopy(values, 0, localWork, 0, values.length);
         localWorkDefined = true;
     }
