@@ -67,9 +67,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
     TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),                 
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
-    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),          
+    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
@@ -80,8 +80,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskSchedule"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelPluginsTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
@@ -138,7 +138,8 @@ __TEST_THE_WORLD__ = [
     #               "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
     #               "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
-               testParameters=["-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"])
+              testParameters=[
+                  "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"])
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod

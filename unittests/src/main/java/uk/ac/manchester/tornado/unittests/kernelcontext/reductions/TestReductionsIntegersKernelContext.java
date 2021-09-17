@@ -51,19 +51,16 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
     public static void intReductionAddGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int groupID = context.groupIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
-        int id = context.globalIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+        int id = localGroupSize * groupID + localIdx;
 
-        int max = (localGroupSize / 2);
-        for (int stride = max; stride > 0; stride /= 2) {
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
                 a[id] += a[id + stride];
             }
         }
-
-        // Copy result
         if (localIdx == 0) {
             b[groupID] = a[localIdx];
         }
@@ -71,7 +68,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
     public static void basicAccessThreadIds(KernelContext context, int[] a) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx;
         int idx = localGroupSize * groupID + localIdx;
         a[idx] = idx;
@@ -104,7 +101,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     // Copy from Global to Local and Global memory again
     public static void basicAccessThreadIds02(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx;
         int idx = localGroupSize * groupID + localIdx;
 
@@ -143,7 +140,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     // Copy from Global to Local and Global memory again
     public static void basicAccessThreadIds03(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx;
         int idx = localGroupSize * groupID + localIdx;
 
@@ -183,7 +180,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     // Copy from Global to Local and Global memory again
     public static void basicAccessThreadIds04(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx;
         int idx = localGroupSize * groupID + localIdx;
 
@@ -225,7 +222,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     // Copy from Global to Local and Global memory again
     public static void basicAccessThreadIds05(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx;
         int idx = localGroupSize * groupID + localIdx;
 
@@ -298,7 +295,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     public static void intReductionAddLocalMemory(KernelContext context, int[] a, int[] b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         int[] localA = context.allocateIntLocalArray(1024);
@@ -306,22 +303,21 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                localA[localIdx] += localA[(localIdx + stride)];
+                localA[localIdx] += localA[localIdx + stride];
             }
         }
-
         if (localIdx == 0) {
-            b[groupID] = localA[localIdx];
+            b[groupID] = localA[0];
         }
     }
 
     @Test
     public void testIntReductionsAddLocalMemory() {
-        final int size = 32;
-        final int localSize = 1;
+        final int size = 1024;
+        final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         int sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -356,7 +352,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
     private static void intReductionMaxGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
         int id = localGroupSize * groupID + localIdx;
 
@@ -405,7 +401,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     public static void intReductionMaxLocalMemory(KernelContext context, int[] a, int[] b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         int[] localA = context.allocateIntLocalArray(256);
@@ -462,7 +458,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
     private static void intReductionMinGlobalMemory(KernelContext context, int[] a, int[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
         int id = localGroupSize * groupID + localIdx;
 
@@ -511,7 +507,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
     public static void intReductionMinLocalMemory(KernelContext context, int[] a, int[] b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         int[] localA = context.allocateIntLocalArray(256);

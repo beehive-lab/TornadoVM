@@ -19,8 +19,6 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -52,8 +50,8 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     public static void floatReductionAddGlobalMemory(KernelContext context, float[] a, float[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
-        int groupID = context.groupIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
         int id = context.globalIdx;
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
@@ -62,7 +60,6 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
                 a[id] += a[id + stride];
             }
         }
-
         if (localIdx == 0) {
             b[groupID] = a[id];
         }
@@ -74,7 +71,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         final int localSize = 32;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         float sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -86,11 +83,9 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
-        worker.setGlobalWork(32, 1, 1);
-        worker.setLocalWork(1, 1, 1);
+        worker.setGlobalWork(size, 1, 1);
+        worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
-
-        System.out.println(Arrays.toString(reduce));
 
         // Final SUM
         float finalSum = 0;
@@ -104,7 +99,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
     public static void floatReductionAddLocalMemory(KernelContext context, float[] a, float[] b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         float[] localA = context.allocateFloatLocalArray(256);
@@ -126,8 +121,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         final int localSize = 256;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
-        Random r = new Random();
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
         float sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -142,8 +136,6 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);
-
-        System.out.println(Arrays.toString(reduce));
 
         // Final SUM
         float finalSum = 0;
@@ -164,7 +156,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     private static void floatReductionMaxGlobalMemory(KernelContext context, float[] a, float[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
         int id = localGroupSize * groupID + localIdx;
 
@@ -213,7 +205,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
     public static void floatReductionMaxLocalMemory(KernelContext context, float[] a, float[] b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         float[] localA = context.allocateFloatLocalArray(256);
@@ -270,7 +262,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     private static void floatReductionMinGlobalMemory(KernelContext context, float[] a, float[] b) {
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
         int id = localGroupSize * groupID + localIdx;
 
@@ -319,7 +311,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
     public static void floatReductionMinLocalMemory(KernelContext context, float[] a, float[] b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
-        int localGroupSize = context.getLocalGroupSize(0);
+        int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         float[] localA = context.allocateFloatLocalArray(256);

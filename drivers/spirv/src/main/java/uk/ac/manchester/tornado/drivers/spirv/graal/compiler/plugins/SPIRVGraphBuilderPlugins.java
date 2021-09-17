@@ -27,9 +27,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
-import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
@@ -101,11 +99,8 @@ public class SPIRVGraphBuilderPlugins {
 
     private static void registerKernelContextPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, KernelContext.class);
-
         registerLocalBarrier(r);
         registerGlobalBarrier(r);
-        localWorkGroupPlugin(r);
-        globalWorkGroupPlugin(r);
         localArraysPlugins(r);
     }
 
@@ -126,30 +121,6 @@ public class SPIRVGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 SPIRVBarrierNode barrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL);
                 b.append(barrierNode);
-                return true;
-            }
-        });
-    }
-
-    private static void localWorkGroupPlugin(Registration r) {
-        final JavaKind returnedJavaKind = JavaKind.Int;
-        r.register2("getLocalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dimension) {
-                LocalThreadSizeNode localGroupSizeNode = new LocalThreadSizeNode((ConstantNode) dimension);
-                b.push(returnedJavaKind, localGroupSizeNode);
-                return true;
-            }
-        });
-    }
-
-    private static void globalWorkGroupPlugin(Registration r) {
-        final JavaKind returnedJavaKind = JavaKind.Int;
-        r.register2("getGlobalGroupSize", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode dimension) {
-                GlobalThreadSizeNode sizeThreadGlobal = new GlobalThreadSizeNode((ConstantNode) dimension);
-                b.push(returnedJavaKind, sizeThreadGlobal);
                 return true;
             }
         });

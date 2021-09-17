@@ -32,6 +32,8 @@ import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 
@@ -114,6 +116,32 @@ public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTier
                     }
 
                     replaceKernelContextNode(graph, nodesToBeRemoved, node, groupIdNode);
+                } else if (field.contains("KernelContext.globalGroupSize")) {
+                    GlobalGroupSizeFixedWithNextNode globalGroupSizeNode;
+                    if (field.contains("globalGroupSizeX")) {
+                        globalGroupSizeNode = new GlobalGroupSizeFixedWithNextNode(node.getValue(), 0);
+                    } else if (field.contains("globalGroupSizeY")) {
+                        globalGroupSizeNode = new GlobalGroupSizeFixedWithNextNode(node.getValue(), 1);
+                    } else if (field.contains("globalGroupSizeZ")) {
+                        globalGroupSizeNode = new GlobalGroupSizeFixedWithNextNode(node.getValue(), 2);
+                    } else {
+                        throw new TornadoRuntimeException("Unrecognized dimension");
+                    }
+
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, globalGroupSizeNode);
+                } else if (field.contains("KernelContext.localGroupSize")) {
+                    LocalGroupSizeFixedWithNextNode localGroupSizeNode;
+                    if (field.contains("localGroupSizeX")) {
+                        localGroupSizeNode = new LocalGroupSizeFixedWithNextNode(node.getValue(), 0);
+                    } else if (field.contains("localGroupSizeY")) {
+                        localGroupSizeNode = new LocalGroupSizeFixedWithNextNode(node.getValue(), 1);
+                    } else if (field.contains("localGroupSizeZ")) {
+                        localGroupSizeNode = new LocalGroupSizeFixedWithNextNode(node.getValue(), 2);
+                    } else {
+                        throw new TornadoRuntimeException("Unrecognized dimension");
+                    }
+
+                    replaceKernelContextNode(graph, nodesToBeRemoved, node, localGroupSizeNode);
                 } else {
                     return;
                 }

@@ -103,6 +103,28 @@ public class KernelContext implements ExecutionContext {
     public final Integer localIdz = 0;
 
     /**
+     * It returns the global group size of a particular dimension (e.g. X, Y, Z).
+     * <p>
+     * OpenCL equivalent: get_global_size();
+     * <p>
+     * PTX equivalent: gridDim * blockDim
+     */
+    public final Integer globalGroupSizeX = 0;
+    public final Integer globalGroupSizeY = 0;
+    public final Integer globalGroupSizeZ = 0;
+
+    /**
+     * It returns the global group size of a particular dimension (e.g. X, Y, Z).
+     * <p>
+     * OpenCL equivalent: get_local_size();
+     * <p>
+     * PTX equivalent: blockDim
+     */
+    public final Integer localGroupSizeX = 0;
+    public final Integer localGroupSizeY = 0;
+    public final Integer localGroupSizeZ = 0;
+
+    /**
      * Class constructor specifying a particular {@link WorkerGrid} object.
      */
     public KernelContext() {
@@ -184,31 +206,5 @@ public class KernelContext implements ExecutionContext {
     @Override
     public double[] allocateDoubleLocalArray(int size) {
         return new double[size];
-    }
-
-    /**
-     * It returns the local group size of the associated WorkerGrid for a particular
-     * dimension.
-     * <p>
-     * OpenCL equivalent: get_local_size();
-     * <p>
-     * PTX equivalent: blockDim
-     */
-    @TornadoVMIntrinsic
-    public int getLocalGroupSize(int dim) {
-        return 0;
-    }
-
-    /**
-     * It returns the global group size of the associated WorkerGrid for a
-     * particular dimension.
-     * <p>
-     * OpenCL equivalent: get_global_size();
-     * <p>
-     * PTX equivalent: gridDim * blockDim
-     */
-    @TornadoVMIntrinsic
-    public int getGlobalGroupSize(int dim) {
-        return 0;
     }
 }
