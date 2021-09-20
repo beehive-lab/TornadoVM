@@ -298,22 +298,24 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
-        int[] localA = context.allocateIntLocalArray(1024);
+        int[] localA = context.allocateIntLocalArray(256);
         localA[localIdx] = a[globalIdx];
+        context.localBarrier();
+
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
             if (localIdx < stride) {
                 localA[localIdx] += localA[localIdx + stride];
             }
+            context.localBarrier();
         }
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b[groupID] = localA[localIdx];
         }
     }
 
     @Test
     public void testIntReductionsAddLocalMemory() {
-        final int size = 1024;
+        final int size = 256;
         final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
@@ -325,9 +327,9 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
+
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -339,7 +341,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
             finalSum += v;
         }
 
-        assertEquals(sequential, finalSum, 0);
+        assertEquals(sequential, finalSum);
     }
 
     public static int computeMaxSequential(int[] input) {
@@ -373,7 +375,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        Random r = new Random();
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = r.nextInt());
         int sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -423,7 +426,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        Random r = new Random();
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = r.nextInt());
         int sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -479,7 +483,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         final int localSize = 256;
         int[] input = new int[size];
         int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        Random r = new Random();
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = r.nextInt(10000000));
         int sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);

@@ -555,7 +555,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     protected void emitNode(final ValueNode node) {
         trace("emitNode: %s", node);
-        System.out.printf("emitNode: %s\n", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
@@ -571,7 +570,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitSwitch(SwitchNode x) {
-        System.out.println("SWITCH NODE OCL:");
+        trace("SWITCH NODE OCL:");
         assert x.defaultSuccessor() != null;
         LabelRef defaultTarget = getLIRBlock(x.defaultSuccessor());
         int keyCount = x.keyCount();
