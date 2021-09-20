@@ -125,7 +125,21 @@ public class TestMultipleFunctions extends TornadoTestBase {
         return a * a;
     }
 
+    private static float foo(float a) {
+        return a + a;
+    }
+
+    private static float bar(float a) {
+        return a * a;
+    }
+
     public static void vectorAddInteger4(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = foo(a[i]) + bar(b[i]);
+        }
+    }
+
+    public static void vectorAddFloats(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = foo(a[i]) + bar(b[i]);
         }
@@ -236,6 +250,33 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i]);
+        }
+    }
+
+    @Test
+    public void test05() {
+
+        final int numElements = 4096;
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+        float[] c = new float[numElements];
+
+        Random r = new Random();
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = r.nextInt();
+            b[i] = r.nextInt();
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(a, b)
+                .task("t0", TestMultipleFunctions::vectorAddFloats, a, b, c)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i], 0.001f);
         }
     }
 
