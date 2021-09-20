@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static org.junit.Assert.assertEquals;
+import static junit.framework.TestCase.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -154,14 +154,26 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
     }
 
+    /**
+     * Test to check we can generate vector types for the method signature and
+     * non-main kernel functions.
+     * 
+     * This is just a test. To store the result, we need to use float4.set(value).
+     * However. this cases an error in lowering. Since these errors are replicated
+     * for all backends, we just check the code gen for vector types, not fot the
+     * access. Future releases will provide store access for non-inlined methods for
+     * all backends.
+     * 
+     * @param a
+     * @param b
+     * @param c
+     */
     public static void vectorTypes(Float4 a, Float4 b, Float4 c) {
-        Float4 tmp = foo(a);
-        c = Float4.add(tmp, bar(b));
+        c = Float4.add(foo(a), bar(b));
     }
 
     @Test
     public void test01() {
-
         final int numElements = 4096;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
@@ -182,7 +194,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+            assertEquals((a[i] + b[i]), c[i]);
         }
     }
 
@@ -290,14 +302,24 @@ public class TestMultipleFunctions extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i], 0.001f);
+            assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i], 0.01f);
         }
     }
 
+    /**
+     * Test to check we can generate vector types for the method signature and
+     * non-main kernel functions.
+     *
+     * This is just a test. To store the result, we need to use float4.set(value).
+     * However. this cases an error in lowering. Since these errors are replicated
+     * for all backends, we just check the code gen for vector types, not fot the
+     * access. Future releases will provide store access for non-inlined methods for
+     * all backends.
+     * 
+     */
     @Test
     public void testVector01() {
 
-        final int numElements = 4096;
         Float4 a = new Float4(1, 2, 3, 4);
         Float4 b = new Float4(4, 3, 2, 1);
         Float4 c = new Float4();
@@ -310,6 +332,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .execute();
         //@formatter:on
 
+        Float4 result = Float4.add(foo(a), bar(b));
     }
 
     /**

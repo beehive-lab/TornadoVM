@@ -58,7 +58,7 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
         return value;
     }
 
-    protected VectorStoreElementProxyNode(NodeClass<? extends VectorStoreElementProxyNode> c, OCLKind kind, ValueNode origin, ValueNode lane) {
+    private VectorStoreElementProxyNode(NodeClass<? extends VectorStoreElementProxyNode> c, OCLKind kind, ValueNode origin, ValueNode lane) {
         super(c, OCLStampFactory.getStampFor(kind));
         this.origin = origin;
         this.laneOrigin = lane;
