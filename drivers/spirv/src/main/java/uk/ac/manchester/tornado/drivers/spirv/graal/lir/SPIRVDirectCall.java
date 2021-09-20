@@ -56,14 +56,7 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         for (Value parameter : parameters) {
             SPIRVKind spirvKind = (SPIRVKind) parameter.getPlatformKind();
-            if (spirvKind.isVector()) {
-                // Load Vector - Not supported for now
-                throw new RuntimeException("No supported yet");
-            } else {
-                // Emit Load
-                idsForParameters[paramIndex] = getId(parameter, asm, spirvKind);
-            }
-            paramIndex++;
+            idsForParameters[paramIndex++] = getId(parameter, asm, spirvKind);
         }
 
         SPIRVKind resultType = (SPIRVKind) result.getPlatformKind();

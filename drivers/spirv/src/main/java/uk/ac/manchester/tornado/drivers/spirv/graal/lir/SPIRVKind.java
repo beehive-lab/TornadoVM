@@ -103,6 +103,7 @@ public enum SPIRVKind implements PlatformKind {
     
     // @formatter:on
 
+    public static final String VECTOR_COLLECTION_PATH = "uk.ac.manchester.tornado.api.collections.types";
     private final int size;
     private final int vectorLength;
 
@@ -441,6 +442,39 @@ public enum SPIRVKind implements PlatformKind {
             }
         }
         return JavaKind.Illegal;
+    }
+
+    public static SPIRVKind getKindFromStringClassVector(String vectorType) {
+        switch (vectorType) {
+            case "Float2":
+                return SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32;
+            case "Float3":
+                return SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32;
+            case "Float4":
+                return SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32;
+            case "Int2":
+                return SPIRVKind.OP_TYPE_VECTOR2_INT_32;
+            case "Int3":
+                return SPIRVKind.OP_TYPE_VECTOR3_INT_32;
+            case "Int4":
+                return SPIRVKind.OP_TYPE_VECTOR4_INT_32;
+            case "Int8":
+                return SPIRVKind.OP_TYPE_VECTOR8_INT_32;
+            case "Double2":
+                return SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64;
+            case "Double3":
+                return SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64;
+            case "Double4":
+                return SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64;
+            case "Double8":
+                return SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64;
+            case "Short2":
+                return SPIRVKind.OP_TYPE_VECTOR2_INT_16;
+            case "Short3":
+                return SPIRVKind.OP_TYPE_VECTOR3_INT_16;
+            default:
+                throw new RuntimeException("Vector type not supported: " + vectorType);
+        }
     }
 
 }

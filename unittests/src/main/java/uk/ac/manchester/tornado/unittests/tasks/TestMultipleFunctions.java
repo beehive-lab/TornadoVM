@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -133,6 +134,14 @@ public class TestMultipleFunctions extends TornadoTestBase {
         return a * a;
     }
 
+    private static Float4 foo(Float4 a) {
+        return Float4.add(a, a);
+    }
+
+    private static Float4 bar(Float4 a) {
+        return Float4.mult(a, a);
+    }
+
     public static void vectorAddInteger4(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = foo(a[i]) + bar(b[i]);
@@ -143,6 +152,11 @@ public class TestMultipleFunctions extends TornadoTestBase {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = foo(a[i]) + bar(b[i]);
         }
+    }
+
+    public static void vectorTypes(Float4 a, Float4 b, Float4 c) {
+        Float4 tmp = foo(a);
+        c = Float4.add(tmp, bar(b));
     }
 
     @Test
@@ -278,6 +292,24 @@ public class TestMultipleFunctions extends TornadoTestBase {
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i], 0.001f);
         }
+    }
+
+    @Test
+    public void testVector01() {
+
+        final int numElements = 4096;
+        Float4 a = new Float4(1, 2, 3, 4);
+        Float4 b = new Float4(4, 3, 2, 1);
+        Float4 c = new Float4();
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(a, b)
+                .task("t0", TestMultipleFunctions::vectorTypes, a, b, c)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
     }
 
     /**
