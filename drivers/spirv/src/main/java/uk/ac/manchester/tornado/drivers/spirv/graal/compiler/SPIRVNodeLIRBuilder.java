@@ -387,7 +387,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             }
         } else if (beginNode instanceof MergeNode) {
             // This case we have a nested if within a loop
-            System.out.println("MERGE ------- IF " + LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0));
             append(new SPIRVControlFlow.BranchIf(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }

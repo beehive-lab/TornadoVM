@@ -234,9 +234,6 @@ public class SPIRVGraphBuilderPlugins {
 
     // FIXME: Revisit this method. In SPIR-V we can avoid this compiler Internal.
     private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
-        if (Tornado.DEBUG) {
-            System.out.println("SPIRV Registering Intrinsics Plugins - pending");
-        }
         // FIXME <REFACTOR> For SPIRV, I am not sure we need the SlotBaseAddressPlugin
         Registration r = new Registration(plugins, CompilerInternals.class);
 
