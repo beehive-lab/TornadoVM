@@ -431,33 +431,34 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         guarantee(kind.getPlatformKind() instanceof SPIRVKind, "invalid LIRKind: %s", kind);
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
 
-        MemoryAccess memAccess = null;
-        Value accumulator = null;
+        SPIRVUnary.AbstractMemoryAccess memAccess = null;
 
         if (address instanceof MemoryAccess) {
             memAccess = (MemoryAccess) address;
-        } else {
-            accumulator = address;
+        } else if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
+            memAccess = (SPIRVUnary.MemoryIndexedAccess) address;
         }
 
         if (spirvKind.isVector()) {
-            SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
-            getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, memAccess, input));
+            MemoryAccess memoryAccess2 = (MemoryAccess) address;
+            SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memoryAccess2.getMemoryRegion(), LIRKind.value(spirvKind));
+            getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, memoryAccess2, input));
         } else {
             if (memAccess != null) {
-                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
-                if (memAccess.getIndex() == null) {
-                    getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memAccess, input));
+                if (address instanceof MemoryAccess) {
+                    MemoryAccess memoryAccess2 = (MemoryAccess) address;
+                    SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memoryAccess2.getMemoryRegion(), LIRKind.value(spirvKind));
+                    if (memoryAccess2.getIndex() == null) {
+                        getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memoryAccess2, input));
+                    }
+                } else if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
+                    SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
+                    getGen().append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, input));
                 }
 
                 AllocatableValue valueHolder = memAccess.assignedTo();
                 if (valueHolder != null) {
                     getGen().append(new SPIRVLIRStmt.AssignStmt(valueHolder, input));
-                }
-            } else {
-                if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
-                    SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-                    getGen().append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, input));
                 }
             }
         }

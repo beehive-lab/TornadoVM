@@ -1094,6 +1094,7 @@ public class SPIRVLIRStmt {
             super(TYPE);
             this.address = address;
             this.result = result;
+            address.assignTo((Variable) result);
         }
 
         @Override

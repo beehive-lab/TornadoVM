@@ -213,13 +213,28 @@ public class SPIRVUnary {
         }
     }
 
-    public static class MemoryAccess extends UnaryConsumer {
+    public static class AbstractMemoryAccess extends UnaryConsumer {
+
+        protected Variable assignedTo;
+
+        protected AbstractMemoryAccess(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
+            super(opcode, valueKind, value);
+        }
+
+        public void assignTo(Variable loadedTo) {
+            this.assignedTo = loadedTo;
+        }
+
+        public Variable assignedTo() {
+            return assignedTo;
+        }
+    }
+
+    public static class MemoryAccess extends AbstractMemoryAccess {
 
         private final SPIRVMemoryBase memoryRegion;
 
         private Value index;
-
-        private Variable assignedTo;
 
         MemoryAccess(SPIRVMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
@@ -241,23 +256,13 @@ public class SPIRVUnary {
             return index;
         }
 
-        public void assignTo(Variable loadedTo) {
-            this.assignedTo = loadedTo;
-        }
-
-        public Variable assignedTo() {
-            return assignedTo;
-        }
-
     }
 
-    public static class MemoryIndexedAccess extends UnaryConsumer {
+    public static class MemoryIndexedAccess extends AbstractMemoryAccess {
 
         private final SPIRVMemoryBase memoryRegion;
 
         private Value index;
-
-        private Variable assignedTo;
 
         public MemoryIndexedAccess(SPIRVMemoryBase memoryRegion, Value baseValue, Value indexValue) {
             super(null, LIRKind.Illegal, baseValue);
