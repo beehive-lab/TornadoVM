@@ -976,8 +976,8 @@ public class SPIRVLIRStmt {
             return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.localSpace.number;
         }
 
-        private void emitIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
+        private void emitStoreIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            SPIRVLogger.traceCodeGen("emit [Private] IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
             SPIRVId privateAccessId = asm.module.getNextId();
 
@@ -1021,7 +1021,7 @@ public class SPIRVLIRStmt {
             ));
         }
 
-        private void emitIndexedAccessLocalMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+        private void emitStoreIndexedAccessLocalMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("emit IndexedMemAccess for LOCAL MEMORY in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
             SPIRVId loadArray = asm.module.getNextId();
@@ -1063,9 +1063,9 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             if (isPrivateMemoryAccess()) {
-                emitIndexedAccessPrivateMemory(crb, asm);
+                emitStoreIndexedAccessPrivateMemory(crb, asm);
             } else if (isLocalMemoryAccess()) {
-                emitIndexedAccessLocalMemory(crb, asm);
+                emitStoreIndexedAccessLocalMemory(crb, asm);
             } else {
                 throw new RuntimeException("Indexed Memory Access not supported");
             }

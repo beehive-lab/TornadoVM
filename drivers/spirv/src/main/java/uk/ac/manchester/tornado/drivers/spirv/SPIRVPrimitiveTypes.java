@@ -102,7 +102,7 @@ public class SPIRVPrimitiveTypes {
         return getPtrToTypePrimitive(primitive, SPIRVStorageClass.Function());
     }
 
-    public SPIRVId getPtrToWorkGroupPrimitive(SPIRVKind primitive, SPIRVStorageClass storageClass) {
+    public SPIRVId getPtrOpTypePointerWithStorage(SPIRVKind primitive, SPIRVStorageClass storageClass) {
         SPIRVId primitiveId = getTypePrimitive(primitive);
         if (!ptrToPrimitivesWorkGroup.containsKey(primitive)) {
             SPIRVId resultType = module.getNextId();
@@ -112,8 +112,8 @@ public class SPIRVPrimitiveTypes {
         return ptrToPrimitivesWorkGroup.get(primitive);
     }
 
-    public SPIRVId getPtrToWorkGroupPrimitive(SPIRVKind primitive) {
-        return getPtrToWorkGroupPrimitive(primitive, SPIRVStorageClass.Workgroup());
+    public SPIRVId getPtrOpTypePointerWithStorage(SPIRVKind primitive) {
+        return getPtrOpTypePointerWithStorage(primitive, SPIRVStorageClass.Workgroup());
     }
 
     public SPIRVId getTypeVoid() {

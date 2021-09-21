@@ -30,6 +30,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiter
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
@@ -273,7 +274,7 @@ public class SPIRVUnary {
         }
 
         private void emitPrivateMemoryIndexedAccess(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit Private memory access");
+            SPIRVLogger.traceCodeGen("\temit Private memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
@@ -302,7 +303,7 @@ public class SPIRVUnary {
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
             SPIRVKind spirvKind = (SPIRVKind) getValue().getPlatformKind();
-            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive(spirvKind);
+            SPIRVId type = asm.primitives.getPtrOpTypePointerWithStorage(spirvKind, SPIRVStorageClass.Function());
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }
@@ -338,7 +339,7 @@ public class SPIRVUnary {
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
             SPIRVKind spirvKind = (SPIRVKind) getValue().getPlatformKind();
-            SPIRVId type = asm.primitives.getPtrToWorkGroupPrimitive(spirvKind);
+            SPIRVId type = asm.primitives.getPtrOpTypePointerWithStorage(spirvKind);
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }
@@ -396,7 +397,7 @@ public class SPIRVUnary {
 
             SPIRVId type;
             if (getMemoryRegion().memorySpace == SPIRVMemorySpace.LOCAL) {
-                type = asm.primitives.getPtrToWorkGroupPrimitive((SPIRVKind) getValue().getPlatformKind());
+                type = asm.primitives.getPtrOpTypePointerWithStorage((SPIRVKind) getValue().getPlatformKind());
             } else if (getMemoryRegion().memorySpace == SPIRVMemorySpace.PRIVATE) {
                 type = asm.primitives.getPtrToTypePrimitive((SPIRVKind) getValue().getPlatformKind());
             } else {

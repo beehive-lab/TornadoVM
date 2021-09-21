@@ -114,12 +114,12 @@ public class ComputeTests extends TornadoTestBase {
         nBody(numBodies, posSeq, velSeq);
 
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
-        GridScheduler gridScheduler = new GridScheduler("a.b", workerGrid);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
         workerGrid.setLocalWork(32, 1, 1);
 
-        new TaskSchedule("a") //
-                .task("b", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
+        new TaskSchedule("s0") //
+                .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
                 .streamOut(posTornadoVM, velTornadoVM) //
                 .execute(gridScheduler);
 
