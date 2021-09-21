@@ -18,25 +18,17 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, SPIRVId> primitives;
-    //
-    // final private Map<SPIRVKind, SPIRVId> ptrToPrimitives;
-    //
-    // final private Map<SPIRVKind, SPIRVId> ptrToPrimitivesWorkGroup;
-    // final private Map<SPIRVKind, SPIRVId> crossGroupToPrimitives;
 
     final private Map<SPIRVKind, SPIRVId> undefTable;
 
-    final private Map<SPIRVKind, HashMap<SPIRVStorageClass, SPIRVId>> ptrWithStorageClassToPrimitive;
+    final private Map<SPIRVKind, HashMap<String, SPIRVId>> ptrWithStorageClassToPrimitive;
 
     private final uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module;
 
     public SPIRVPrimitiveTypes(uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module) {
         this.module = module;
         this.primitives = new HashMap<>();
-        // this.ptrToPrimitives = new HashMap<>();
-        // this.crossGroupToPrimitives = new HashMap<>();
         this.undefTable = new HashMap<>();
-        // this.ptrToPrimitivesWorkGroup = new HashMap<>();
         this.ptrWithStorageClassToPrimitive = new HashMap<>();
     }
 
@@ -91,21 +83,21 @@ public class SPIRVPrimitiveTypes {
     public SPIRVId getPtrOpTypePointerWithStorage(SPIRVKind primitive, SPIRVStorageClass storageClass) {
         SPIRVId primitiveId = getTypePrimitive(primitive);
         if (!ptrWithStorageClassToPrimitive.containsKey(primitive)) {
-            HashMap<SPIRVStorageClass, SPIRVId> spirvStorageClassSPIRVIdMap = new HashMap<>();
+            HashMap<String, SPIRVId> spirvStorageClassSPIRVIdMap = new HashMap<>();
             SPIRVId resultType = module.getNextId();
             module.add(new SPIRVOpTypePointer(resultType, storageClass, primitiveId));
-            spirvStorageClassSPIRVIdMap.put(storageClass, resultType);
+            spirvStorageClassSPIRVIdMap.put(storageClass.name, resultType);
             ptrWithStorageClassToPrimitive.put(primitive, spirvStorageClassSPIRVIdMap);
-            return spirvStorageClassSPIRVIdMap.get(storageClass);
+            return spirvStorageClassSPIRVIdMap.get(storageClass.name);
         } else {
-            HashMap<SPIRVStorageClass, SPIRVId> spirvStorageClassSPIRVIdMap = ptrWithStorageClassToPrimitive.get(primitive);
-            if (!spirvStorageClassSPIRVIdMap.containsKey(storageClass)) {
+            HashMap<String, SPIRVId> spirvStorageClassSPIRVIdMap = ptrWithStorageClassToPrimitive.get(primitive);
+            if (!spirvStorageClassSPIRVIdMap.containsKey(storageClass.name)) {
                 SPIRVId resultType = module.getNextId();
                 module.add(new SPIRVOpTypePointer(resultType, storageClass, primitiveId));
-                spirvStorageClassSPIRVIdMap.put(storageClass, resultType);
+                spirvStorageClassSPIRVIdMap.put(storageClass.name, resultType);
                 ptrWithStorageClassToPrimitive.put(primitive, spirvStorageClassSPIRVIdMap);
             }
-            return spirvStorageClassSPIRVIdMap.get(storageClass);
+            return spirvStorageClassSPIRVIdMap.get(storageClass.name);
         }
     }
 
