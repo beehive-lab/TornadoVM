@@ -339,7 +339,7 @@ public class SPIRVUnary {
 
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
             SPIRVKind spirvKind = (SPIRVKind) getValue().getPlatformKind();
-            SPIRVId type = asm.primitives.getPtrOpTypePointerWithStorage(spirvKind);
+            SPIRVId type = asm.primitives.getPtrOpTypePointerWithStorage(spirvKind, SPIRVStorageClass.Workgroup());
             asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
             asm.registerLIRInstructionValue(this, arrayAccessId);
         }
@@ -397,9 +397,9 @@ public class SPIRVUnary {
 
             SPIRVId type;
             if (getMemoryRegion().memorySpace == SPIRVMemorySpace.LOCAL) {
-                type = asm.primitives.getPtrOpTypePointerWithStorage((SPIRVKind) getValue().getPlatformKind());
+                type = asm.primitives.getPtrOpTypePointerWithStorage((SPIRVKind) getValue().getPlatformKind(), SPIRVStorageClass.Workgroup());
             } else if (getMemoryRegion().memorySpace == SPIRVMemorySpace.PRIVATE) {
-                type = asm.primitives.getPtrToTypePrimitive((SPIRVKind) getValue().getPlatformKind());
+                type = asm.primitives.getPtrToTypeFunctionPrimitive((SPIRVKind) getValue().getPlatformKind());
             } else {
                 throw new RuntimeException("Memory access not valid for a SPIRVOpInBoundsPtrAccessChain instruction");
             }
@@ -451,7 +451,7 @@ public class SPIRVUnary {
                 idLoad = addressToLoad;
             }
 
-            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
 
             SPIRVId storeAddressID = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, storeAddressID, idLoad));

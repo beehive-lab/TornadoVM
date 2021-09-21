@@ -1002,7 +1002,7 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVId heapId = SPIRVSymbolTable.get("heapBaseAddrId");
         SPIRVId frameId = SPIRVSymbolTable.get("frameBaseAddrId");
 
-        SPIRVId ptrToUChar = primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+        SPIRVId ptrToUChar = primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
 
         int alignment = 8;
         currentBlockScope().add(new SPIRVOpLoad( //

@@ -436,7 +436,7 @@ public class SPIRVLIRStmt {
 
             SPIRVId typeId = null;
             if (type == SPIRVKind.OP_TYPE_INT_64) {
-                typeId = asm.primitives.getPtrToTypePrimitive(type);
+                typeId = asm.primitives.getPtrToTypeFunctionPrimitive(type);
             } else {
                 throw new RuntimeException("Not supported");
             }
@@ -479,7 +479,7 @@ public class SPIRVLIRStmt {
 
             SPIRVId ptrFUnctionULong = null;
             if (type == SPIRVKind.OP_TYPE_INT_64) {
-                ptrFUnctionULong = asm.primitives.getPtrToTypePrimitive(type);
+                ptrFUnctionULong = asm.primitives.getPtrToTypeFunctionPrimitive(type);
             } else {
                 throw new RuntimeException("Not supported");
             }
@@ -654,7 +654,7 @@ public class SPIRVLIRStmt {
                     addressToLoad, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
 
-            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive((SPIRVKind) result.getPlatformKind());
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive((SPIRVKind) result.getPlatformKind());
             SPIRVId storeAddressID = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, storeAddressID, idLoad));
 
@@ -724,7 +724,7 @@ public class SPIRVLIRStmt {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
 
             SPIRVKind vectorElementKind = ((SPIRVKind) result.getPlatformKind()).getElementKind();
-            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive(vectorElementKind);
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive(vectorElementKind);
 
             SPIRVId idLongToPtr = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, idLongToPtr, idLoad));
@@ -861,7 +861,7 @@ public class SPIRVLIRStmt {
             }
 
             SPIRVKind vectorElementKind = ((SPIRVKind) cast.getLIRKind().getPlatformKind()).getElementKind();
-            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossGroupPrimitive(vectorElementKind);
+            SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive(vectorElementKind);
 
             SPIRVId ptrConversionId = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, ptrConversionId, idLoad));

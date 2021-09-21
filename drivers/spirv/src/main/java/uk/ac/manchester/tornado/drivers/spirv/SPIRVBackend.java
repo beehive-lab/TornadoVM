@@ -1,19 +1,27 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -34,6 +42,21 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.InvalidSPIRVModuleException;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVHeader;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
@@ -115,28 +138,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -642,7 +643,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         blockScope.add(new SPIRVOpInBoundsPtrAccessChain(pointerToGlobalMemoryHeap, ptridx, id20, id21, new SPIRVMultipleOperands<>()));
 
         SPIRVId id23 = module.getNextId();
-        SPIRVId ptrToGlobalLong = asm.primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
+        SPIRVId ptrToGlobalLong = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
         // blockScope.add(new SPIRVOpBitcast(pointerToULongFunction, id23, ptridx));
         blockScope.add(new SPIRVOpBitcast(ptrToGlobalLong, id23, ptridx));
 
@@ -937,9 +938,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkULong,
             // SPIRVStorageClass.CrossWorkgroup(),
             // asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
-            asm.ptrCrossWorkULong = asm.primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
+            asm.ptrCrossWorkULong = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
 
-            pointerToULongFunction = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+            pointerToULongFunction = asm.primitives.getPtrToTypeFunctionPrimitive(SPIRVKind.OP_TYPE_INT_64);
             pointerToFrameAccess = module.getNextId();
             module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), asm.ptrCrossWorkULong));
 
@@ -948,7 +949,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 // ThreadID-1, ThreadID-2) that will be used in the OCL builtins for thread id
                 // and global sizes.
 
-                SPIRVId ptrV3ulong = asm.primitives.getPtrToTypePrimitive(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
+                SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
 
                 for (Map.Entry<SPIRVOCLBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
                     asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
@@ -981,7 +982,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
                 SPIRVKind kind = id.second;
                 // we need a pointer to kind
-                SPIRVId resultType = asm.primitives.getPtrToTypePrimitive(kind, SPIRVStorageClass.Function());
+                SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
                 blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
             asm.blockZeroScope = blockScope;
@@ -1024,7 +1025,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             int index = 0;
             if (TornadoOptions.SPIRV_DIRECT_CALL_WITH_LOAD_HEAP) {
                 localParameters = new LocalParameter[locals.length + 2];
-                SPIRVId ptrToUChar = asm.primitives.getPtrToCrossGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+                SPIRVId ptrToUChar = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
                 SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
                 localParameters[0] = new LocalParameter();
                 localParameters[0].typeId = ptrToUChar;
@@ -1098,7 +1099,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
                 SPIRVKind kind = id.second;
                 // we need a pointer to kind
-                SPIRVId resultType = asm.primitives.getPtrToTypePrimitive(kind, SPIRVStorageClass.Function());
+                SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
                 blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
 
