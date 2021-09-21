@@ -289,7 +289,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
             super(variable.getValueKind(), variable.index);
             this.variable = variable;
             this.length = length;
-            System.out.println("Array Name: " + this.getName());
             this.setName(variable.getName());
         }
 
