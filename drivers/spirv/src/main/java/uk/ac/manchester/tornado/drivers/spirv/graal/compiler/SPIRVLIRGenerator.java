@@ -280,6 +280,37 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return variable;
     }
 
+    public static class ArrayVariable extends Variable {
+
+        private Variable variable;
+        private Value length;
+
+        public ArrayVariable(Variable variable, Value length) {
+            super(variable.getValueKind(), variable.index);
+            this.variable = variable;
+            this.length = length;
+            System.out.println("Array Name: " + this.getName());
+            this.setName(variable.getName());
+        }
+
+        public Value getLength() {
+            return length;
+        }
+
+        public Variable getVariable() {
+            return variable;
+        }
+
+        @Override
+        public String getName() {
+            return variable.getName();
+        }
+    }
+
+    public Variable newArrayVariable(Variable variable, Value length) {
+        return new ArrayVariable(variable, length);
+    }
+
     @Override
     public SPIRVLIRKindTool getLIRKindTool() {
         return (SPIRVLIRKindTool) super.getLIRKindTool();

@@ -907,11 +907,15 @@ public class SPIRVLIRStmt {
 
         public static final LIRInstructionClass<PrivateArrayAllocation> TYPE = LIRInstructionClass.create(PrivateArrayAllocation.class);
 
+        @Def
+        AllocatableValue allocatableValue;
+
         @Use
         private Value privateAllocation;
 
-        public PrivateArrayAllocation(Value privateAllocation) {
+        public PrivateArrayAllocation(AllocatableValue allocatableValue, Value privateAllocation) {
             super(TYPE);
+            this.allocatableValue = allocatableValue;
             this.privateAllocation = privateAllocation;
         }
 

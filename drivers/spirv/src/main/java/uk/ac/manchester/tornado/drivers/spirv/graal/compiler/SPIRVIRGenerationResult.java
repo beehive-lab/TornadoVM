@@ -33,7 +33,4 @@ public class SPIRVIRGenerationResult extends LIRGenerationResult {
         variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(variable);
     }
 
-    public Map<SPIRVKind, Set<Variable>> getVariableTable() {
-        return variableTable;
-    }
 }

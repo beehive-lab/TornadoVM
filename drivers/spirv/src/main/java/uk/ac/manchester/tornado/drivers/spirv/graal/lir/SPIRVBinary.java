@@ -153,46 +153,16 @@ public class SPIRVBinary {
         @LIRInstruction.Def
         private AllocatableValue resultArray;
 
-        @Use
-        private Value length;
-
-        public PrivateArrayAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
+        public PrivateArrayAllocation(LIRKind lirKind, AllocatableValue resultArray) {
             super(null, lirKind, null, null);
             this.lirKind = lirKind;
             this.resultArray = resultArray;
-            this.length = lengthValue;
-        }
-
-        private SPIRVId addSPIRVIdInPreamble(SPIRVAssembler asm) {
-            SPIRVId id = asm.module.getNextId();
-            asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(resultArray.toString())));
-            SPIRVKind kind = (SPIRVKind) resultArray.getPlatformKind();
-            asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(kind.getSizeInBytes()))));
-            return id;
         }
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit ArrayDeclaration: " + resultArray + "[" + length + "]");
-
-            SPIRVId idResult = addSPIRVIdInPreamble(asm);
-
-            SPIRVId primitiveTypeId = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
-
-            SPIRVId elementsId;
-            if (length instanceof ConstantValue) {
-                elementsId = asm.lookUpConstant(((ConstantValue) length).getConstant().toValueString(), SPIRVKind.OP_TYPE_INT_32);
-            } else {
-                throw new RuntimeException("Constant expected");
-            }
-
-            // Array declaration avoiding duplications
-            SPIRVId resultArrayId = asm.declareArray((SPIRVKind) lirKind.getPlatformKind(), primitiveTypeId, elementsId);
-            SPIRVId functionPTR = asm.getFunctionPtrToPrivateArray(resultArrayId);
-
-            // Registration of the variable in the block 0 of the code
-            asm.blockZeroScope.add(new SPIRVOpVariable(functionPTR, idResult, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-            asm.registerLIRInstructionValue(resultArray, idResult);
+            SPIRVId idArrayResult = asm.lookUpLIRInstructionsName(resultArray.toString());
+            asm.registerLIRInstructionValue(resultArray, idArrayResult);
         }
     }
 
