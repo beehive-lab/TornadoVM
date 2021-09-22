@@ -281,16 +281,16 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
     @Test
     public void test05() {
-
-        final int numElements = 4096;
+        final int numElements = 8192 * 4;
         float[] a = new float[numElements];
         float[] b = new float[numElements];
         float[] c = new float[numElements];
+        float[] checker = new float[numElements];
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+            a[i] = r.nextInt(10);
+            b[i] = r.nextInt(10);
         });
 
         //@formatter:off
@@ -301,8 +301,10 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .execute();
         //@formatter:on
 
+        vectorAddFloats(a, b, checker);
+
         for (int i = 0; i < c.length; i++) {
-            assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i], 0.01f);
+            assertEquals(checker[i], c[i], 0.01f);
         }
     }
 
