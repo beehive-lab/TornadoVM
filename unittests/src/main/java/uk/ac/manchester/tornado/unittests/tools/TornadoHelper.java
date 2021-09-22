@@ -80,6 +80,7 @@ public class TornadoHelper {
         Method[] methods = klass.getMethods();
         ArrayList<Method> methodsToTest = new ArrayList<>();
         HashSet<Method> unsupportedMethods = new HashSet<>();
+        HashSet<Method> spirvNotSupportedMethods = new HashSet<>();
         for (Method m : methods) {
             Annotation[] annotations = m.getAnnotations();
             boolean testEnabled = false;
@@ -94,14 +95,14 @@ public class TornadoHelper {
                     unsupportedMethods.add(m);
                 } else if (a instanceof SPIRVNotSupported) {
                     testEnabled = true;
-                    unsupportedMethods.add(m);
+                    spirvNotSupportedMethods.add(m);
                 }
             }
             if (testEnabled & !ignoreTest) {
                 methodsToTest.add(m);
             }
         }
-        return new TestSuiteCollection(methodsToTest, unsupportedMethods);
+        return new TestSuiteCollection(methodsToTest, unsupportedMethods, spirvNotSupportedMethods);
     }
 
     public static void printInfoTest(String buffer, int success, int fails) {
@@ -144,7 +145,12 @@ public class TornadoHelper {
             bufferFile.append(message);
 
             if (suite != null && suite.unsupportedMethods.contains(m)) {
-                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
+                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [NOT VALID TEST: UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                bufferConsole.append(message);
+                bufferFile.append(message);
+                continue;
+            } else if (suite != null && suite.spirvUnsupportedMethods.contains(m)) {
+                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [SPIRV UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
                 continue;
@@ -229,10 +235,12 @@ public class TornadoHelper {
     static class TestSuiteCollection {
         ArrayList<Method> methodsToTest;
         HashSet<Method> unsupportedMethods;
+        HashSet<Method> spirvUnsupportedMethods;
 
-        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
+        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods, HashSet<Method> spirvUnsupportedMethods) {
             this.methodsToTest = methodsToTest;
             this.unsupportedMethods = unsupportedMethods;
+            this.spirvUnsupportedMethods = spirvUnsupportedMethods;
         }
     }
 }

@@ -27,7 +27,6 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLambdas extends TornadoTestBase {
@@ -93,7 +92,6 @@ public class TestLambdas extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testVectorFunctionLambda03() {
         final int numElements = 4096;
         double[] a = new double[numElements];
