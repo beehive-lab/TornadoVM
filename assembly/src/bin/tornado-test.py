@@ -31,7 +31,6 @@ import subprocess
 import sys
 import time
 
-
 class TestEntry:
     def __init__(self, testName, testMethods=None, testParameters=None):
         self.testName = testName
@@ -171,7 +170,7 @@ __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.9_01092021"
+__VERSION__ = "0.11_22092021"
 
 JDK_8_VERSION = "1.8"
 try:
