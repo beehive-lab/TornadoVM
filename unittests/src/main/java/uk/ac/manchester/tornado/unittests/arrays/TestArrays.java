@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestArrays extends TornadoTestBase {
@@ -335,7 +334,6 @@ public class TestArrays extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testVectorChars() {
         final int numElements = 4096;
         char[] a = new char[numElements];
@@ -393,7 +391,6 @@ public class TestArrays extends TornadoTestBase {
      *      "http://computer-graphics.se/hello-world-for-cuda.html">http://computer-graphics.se/hello-world-for-cuda.html</a>
      */
     @Test
-    @SPIRVNotSupported
     public void testVectorCharsMessage() {
         char[] a = new char[] { 'h', 'e', 'l', 'l', 'o', ' ', '\0', '\0', '\0', '\0', '\0', '\0' };
         int[] b = new int[] { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

@@ -146,11 +146,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
         // Loop over all tiles
         int numTiles = size / TS;
-        for (int t = 0; t < numTiles; t++) {
+        for (int tileIndex = 0; tileIndex < numTiles; tileIndex++) {
 
             // Load one tile of A and B into local memory
-            int tiledRow = TS * t + row;
-            int tiledCol = TS * t + col;
+            int tiledRow = TS * tileIndex + row;
+            int tiledCol = TS * tileIndex + col;
             aSub[col * TS + row] = A[tiledCol * size + globalRow];
             bSub[col * TS + row] = B[globalCol * size + tiledRow];
 
@@ -177,8 +177,8 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         float[] cJava = new float[size * size];
         float[] cTornado = new float[size * size];
 
-        Arrays.fill(a, 2);
-        Arrays.fill(b, 4);
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 1);
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler();
