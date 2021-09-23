@@ -1,14 +1,17 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -63,6 +66,14 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
@@ -76,17 +87,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
@@ -498,10 +498,10 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        if (isLoop) {
-            AbstractBlockBase<?> currentBlock = getGen().getCurrentBlock();
-            append(new SPIRVControlFlow.LoopBeginLabel(currentBlock.toString()));
-        }
+        // if (isLoop) {
+        // AbstractBlockBase<?> currentBlock = getGen().getCurrentBlock();
+        // append(new SPIRVControlFlow.LoopBeginLabel(currentBlock.toString()));
+        // }
 
         final Variable condition = emitLogicNode(x.condition());
         if (isLoop) {
@@ -611,7 +611,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
-        // append(new SPIRVControlFlow.LoopBeginLabel(block.toString()));
+        append(new SPIRVControlFlow.LoopBeginLabel(block.toString()));
 
         label.clearIncomingValues();
     }

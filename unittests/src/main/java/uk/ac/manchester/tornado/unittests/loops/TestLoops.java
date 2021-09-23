@@ -28,7 +28,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -850,15 +849,14 @@ public class TestLoops extends TornadoTestBase {
     }
 
     /**
-     * Make sure that at the last iteration of the loop, the address computed in {@link #getNumber} has been updated
-     * with the latest value of the induction variable, in order to be used in the if condition.
+     * Make sure that at the last iteration of the loop, the address computed in
+     * {@link #getNumber} has been updated with the latest value of the induction
+     * variable, in order to be used in the if condition.
      */
     @Test
     public void testSingleThreadLoopCondition() {
-        assertNotBackend(TornadoVMBackendType.OpenCL);
 
         int size = 1024;
-
         int[] inTor = new int[size];
         int[] outTor = new int[size];
         for (int i = 0; i < size; i++) {
@@ -871,9 +869,7 @@ public class TestLoops extends TornadoTestBase {
 
         inTor[0] = inSeq[0] = size / 4 - 1;
 
-        TaskSchedule ts = new TaskSchedule("s0")
-                .task("t0", TestLoops::testSingleThreadLoopCond, inTor, outTor)
-                .streamOut(inTor, outTor);
+        TaskSchedule ts = new TaskSchedule("s0").task("t0", TestLoops::testSingleThreadLoopCond, inTor, outTor).streamOut(inTor, outTor);
 
         ts.execute();
 
@@ -885,8 +881,7 @@ public class TestLoops extends TornadoTestBase {
     private static void testMultipleThreadLoopCond(int[] in, int[] out) {
         int otherCompVal = in[0];
 
-        @Parallel
-        int i = 0;
+        @Parallel int i = 0;
         for (; i < in.length / 4 - 1; i++) {
             int someNumber = getNumber(in, i, i % 4, 4);
             in[i] = someNumber + i;
@@ -915,13 +910,13 @@ public class TestLoops extends TornadoTestBase {
 
         inTor[0] = inSeq[0] = size / 4 - 1;
 
-        TaskSchedule ts = new TaskSchedule("s0")
-                .task("t0", TestLoops::testMultipleThreadLoopCond, inTor, outTor)
-                .streamOut(inTor, outTor);
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", TestLoops::testMultipleThreadLoopCond, inTor, outTor) //
+                .streamOut(inTor, outTor); //
 
         ts.execute();
 
-        testSingleThreadLoopCond(inSeq, outSeq);
+        testMultipleThreadLoopCond(inSeq, outSeq);
 
         Assert.assertArrayEquals(outSeq, outTor);
     }
