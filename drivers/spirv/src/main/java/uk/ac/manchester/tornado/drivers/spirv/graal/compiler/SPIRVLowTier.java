@@ -47,9 +47,7 @@ public class SPIRVLowTier extends TornadoLowTier {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
 
-        if (TornadoOptions.ENABLE_FIX_READS) {
-            appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS), canonicalizer));
-        }
+        appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS), canonicalizer));
 
         appendPhase(new AddressLoweringPhase(addressLowering));
 
