@@ -41,7 +41,7 @@ class TestEntry:
 ## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
 
-    ## SPIR-V foundation tests
+    ## SPIR-V, OpenCL and PTX foundation tests
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestDoubles"),
@@ -108,37 +108,42 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
+    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-    #           testMethods=["testVirtualDeviceKernelGPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-    #               "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
-    #               "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-    #           testMethods=["testVirtualDeviceKernelCPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-    #               "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
-    #               "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-    #           testMethods=["testVirtualDeviceFeaturesGPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-    #               "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-    #               "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-    #           testMethods=["testVirtualDeviceFeaturesCPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-    #               "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-    #               "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
+
+    ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
               testParameters=[
-                  "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"])
+                  "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"]),
+
+    ## Tests for Virtual Devices
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
+              testMethods=["testVirtualDeviceKernelGPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
+                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
+              testMethods=["testVirtualDeviceKernelCPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
+                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
+              testMethods=["testVirtualDeviceFeaturesGPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
+                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
+              testMethods=["testVirtualDeviceFeaturesCPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
+                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
+    
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
@@ -291,6 +296,10 @@ def processStats(out, stats):
                 ## set a flag
                 __TEST_NOT_PASSED__ = True
 
+        elif (l.find("UNSUPPORTED") != -1):
+            stats["[UNSUPPORTED]"] = stats["[UNSUPPORTED]"] + 1
+
+
     return stats
 
 
@@ -370,7 +379,7 @@ def runTests(args):
 
 
 def runTestTheWorld(cmd, args):
-    stats = {"[PASS]": 0, "[FAILED]": 0}
+    stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]" : 0}
 
     for t in __TEST_THE_WORLD__:
         command = cmd

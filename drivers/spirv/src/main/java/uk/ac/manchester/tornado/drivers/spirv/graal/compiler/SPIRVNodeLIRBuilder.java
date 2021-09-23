@@ -498,11 +498,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean isNegated = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        // if (isLoop) {
-        // AbstractBlockBase<?> currentBlock = getGen().getCurrentBlock();
-        // append(new SPIRVControlFlow.LoopBeginLabel(currentBlock.toString()));
-        // }
-
         final Variable condition = emitLogicNode(x.condition());
         if (isLoop) {
             getGen().emitConditionalBranch(condition, getLIRBlock(x.trueSuccessor()), getLIRBlock(x.falseSuccessor()));

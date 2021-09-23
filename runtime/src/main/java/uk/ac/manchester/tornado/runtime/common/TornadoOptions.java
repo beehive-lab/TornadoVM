@@ -242,7 +242,7 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "True");
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "False");
 
     /**
      * Trace code generation
