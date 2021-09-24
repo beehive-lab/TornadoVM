@@ -91,7 +91,7 @@
             <useAllReactorProjects>true</useAllReactorProjects>
             <!-- Now, select which projects to include in this module-set. -->
             <includes>
-                <include>tornado:spirvproto-lib</include>
+                <include>tornado:spirv-beehive-toolkit</include>
                 <include>tornado:tornado-api</include>
                 <include>tornado:tornado-runtime</include>
                 <include>tornado:tornado-annotation</include>

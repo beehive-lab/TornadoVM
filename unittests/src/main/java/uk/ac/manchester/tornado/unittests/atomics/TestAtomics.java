@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -90,6 +91,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic04() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -123,6 +125,7 @@ public class TestAtomics extends TornadoTestBase {
      * </code>
      */
     @Test
+    @SPIRVNotSupported
     public void testAtomic05_precompiled() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -166,6 +169,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic06() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -200,6 +204,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic07() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -228,6 +233,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic08() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -273,6 +279,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic09() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -298,6 +305,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic10() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -323,6 +331,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic11() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
@@ -355,6 +364,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic12() {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -392,6 +402,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic13() {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -423,6 +434,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic14() {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -466,6 +478,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic15() {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -496,6 +509,7 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     @Test
+    @SPIRVNotSupported
     public void testAtomic16() {
         // Calling multiple atomics
         assertNotBackend(TornadoVMBackendType.PTX);

@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMSPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 public class TornadoHelper {
@@ -47,12 +48,12 @@ public class TornadoHelper {
         System.out.printf("Test ran: %s, Failed: %s%n", result.getRunCount(), result.getFailureCount());
     }
 
-    private static void printResult(int success, int failed) {
-        System.out.printf("Test ran: %s, Failed: %s%n", (success + failed), failed);
+    private static void printResult(int success, int failed, int notSupported) {
+        System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported);
     }
 
-    private static void printResult(int success, int failed, StringBuffer buffer) {
-        buffer.append(String.format("Test ran: %s, Failed: %s%n", (success + failed), failed));
+    private static void printResult(int success, int failed, int notSupported, StringBuffer buffer) {
+        buffer.append(String.format("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported));
     }
 
     static boolean getProperty(String property) {
@@ -80,6 +81,7 @@ public class TornadoHelper {
         Method[] methods = klass.getMethods();
         ArrayList<Method> methodsToTest = new ArrayList<>();
         HashSet<Method> unsupportedMethods = new HashSet<>();
+        HashSet<Method> spirvNotSupportedMethods = new HashSet<>();
         for (Method m : methods) {
             Annotation[] annotations = m.getAnnotations();
             boolean testEnabled = false;
@@ -94,20 +96,20 @@ public class TornadoHelper {
                     unsupportedMethods.add(m);
                 } else if (a instanceof SPIRVNotSupported) {
                     testEnabled = true;
-                    unsupportedMethods.add(m);
+                    spirvNotSupportedMethods.add(m);
                 }
             }
             if (testEnabled & !ignoreTest) {
                 methodsToTest.add(m);
             }
         }
-        return new TestSuiteCollection(methodsToTest, unsupportedMethods);
+        return new TestSuiteCollection(methodsToTest, unsupportedMethods, spirvNotSupportedMethods);
     }
 
-    public static void printInfoTest(String buffer, int success, int fails) {
+    public static void printInfoTest(String buffer, int success, int fails, int notSupported) {
         System.out.println(buffer);
         System.out.print("\n\t");
-        printResult(success, fails);
+        printResult(success, fails, notSupported);
     }
 
     static void runTestVerbose(String klassName, String methodName) throws ClassNotFoundException {
@@ -128,6 +130,7 @@ public class TornadoHelper {
 
         int successCounter = 0;
         int failedCounter = 0;
+        int notSupported = 0;
 
         bufferConsole.append("Test: " + klass);
         bufferFile.append("Test: " + klass);
@@ -144,9 +147,17 @@ public class TornadoHelper {
             bufferFile.append(message);
 
             if (suite != null && suite.unsupportedMethods.contains(m)) {
-                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
+                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [NOT VALID TEST: UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
+                notSupported++;
+                continue;
+            }
+            if (suite != null && suite.spirvUnsupportedMethods.contains(m)) {
+                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [SPIRV UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                bufferConsole.append(message);
+                bufferFile.append(message);
+                notSupported++;
                 continue;
             }
             Request request = Request.method(klass, m.getName());
@@ -161,9 +172,10 @@ public class TornadoHelper {
                 // If UnsupportedConfigurationException is thrown this means that test did not
                 // fail, it simply can't be run on current configuration
                 if (result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).count() > 0) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION] " + ColorsTerminal.RESET + "\n");
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: At least 2 accelerators are needed] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
+                    notSupported++;
                     continue;
                 }
 
@@ -171,6 +183,7 @@ public class TornadoHelper {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [PTX CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
+                    notSupported++;
                     continue;
                 }
 
@@ -178,6 +191,15 @@ public class TornadoHelper {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [OPENCL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMSPIRVNotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [SPIRV CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
                     continue;
                 }
 
@@ -185,6 +207,7 @@ public class TornadoHelper {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [FP64 NOT SUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
+                    notSupported++;
                     continue;
                 }
 
@@ -199,8 +222,8 @@ public class TornadoHelper {
             }
         }
 
-        printResult(successCounter, failedCounter, bufferConsole);
-        printResult(successCounter, failedCounter, bufferFile);
+        printResult(successCounter, failedCounter, notSupported, bufferConsole);
+        printResult(successCounter, failedCounter, notSupported, bufferFile);
         System.out.println(bufferConsole);
 
         // Print File
@@ -229,10 +252,12 @@ public class TornadoHelper {
     static class TestSuiteCollection {
         ArrayList<Method> methodsToTest;
         HashSet<Method> unsupportedMethods;
+        HashSet<Method> spirvUnsupportedMethods;
 
-        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
+        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods, HashSet<Method> spirvUnsupportedMethods) {
             this.methodsToTest = methodsToTest;
             this.unsupportedMethods = unsupportedMethods;
+            this.spirvUnsupportedMethods = spirvUnsupportedMethods;
         }
     }
 }
