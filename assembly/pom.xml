@@ -13,12 +13,6 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>spirv-beehive-toolkit</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>
             <version>${project.version}</version>
         </dependency>
