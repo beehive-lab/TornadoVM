@@ -82,7 +82,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ZeModuleDesc moduleDesc = new ZeModuleDesc();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
-        moduleDesc.setBuildFlags("");
+        moduleDesc.setBuildFlags("-ze-opt-level 2 -ze-opt-large-register-file");
 
         checkBinaryFileExists(pathToFile);
 
