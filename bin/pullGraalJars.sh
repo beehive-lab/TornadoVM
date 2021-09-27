@@ -23,7 +23,7 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-VERSION="21.1.0"
+VERSION="21.2.0"
 COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/21.2.0/compiler-21.2.0.jar
 COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/21.2.0/compiler-management-21.2.0.jar
 GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/21.2.0/graal-sdk-21.2.0.jar
