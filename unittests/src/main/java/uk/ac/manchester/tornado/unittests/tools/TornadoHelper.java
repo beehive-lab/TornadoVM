@@ -172,7 +172,7 @@ public class TornadoHelper {
                 // If UnsupportedConfigurationException is thrown this means that test did not
                 // fail, it simply can't be run on current configuration
                 if (result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).count() > 0) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: At least 2 accelerators are needed] " + ColorsTerminal.RESET + "\n");
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: At least 2 accelerators are required] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;
