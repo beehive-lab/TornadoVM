@@ -29,7 +29,7 @@
 cd $TORNADO_SDK
 cd share/java/tornado/
 
-TORNADOVM_VERSION="0.10"
+TORNADOVM_VERSION="0.11"
 
 read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
 
