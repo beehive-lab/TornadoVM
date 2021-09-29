@@ -1,6 +1,25 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+## CHANGELOG 0.11
+29/09/2021 
+
+- TornadoVM JIT Compiler upgrade to work with Graal 21.2.0 and JDK 8 with JVMCI 21.2.0
+- Refactoring of the Kernel Parallel API for Heterogeneous Programming:
+    - Methods `getLocalGroupSize(index)` and `getGlobalGroupSize` moved to public fields to keep consistency with the rest of the thread properties within the `KernelContext` class.
+      - Changeset: https://github.com/beehive-lab/TornadoVM/commit/e1ebd66035d0722ca90eb0121c55dbc744840a74
+- Compiler update to register the global number of threads: https://github.com/beehive-lab/TornadoVM/pull/133/files 
+- Simplification of the TornadoVM events handler: https://github.com/beehive-lab/TornadoVM/pull/135/files 
+- Renaming the Profiler API method from `event.getExecutionTime` to `event.getElapsedTime`: https://github.com/beehive-lab/TornadoVM/pull/134 
+- Deprecating `OCLWriteNode` and `PTXWriteNode` and fixing stores for bytes: https://github.com/beehive-lab/TornadoVM/pull/131 
+- Refactoring of the FPGA IR extensions, from the high-tier to the low-tier of the JIT compiler
+  - Utilizing the FPGA Thread-Attributes compiler phase for the FPGA execution
+  - Using the `GridScheduler` object (if present) or use a default value (e.g., 64, 1, 1) for defining the FPGA OpenCL local workgroup
+- Several bugs fixed:
+  - Codegen for sequential kernels fixed
+  - Function parameters with non-inlined method calls fixed 
+
+
 ## TornadoVM 0.10 
 29/06/2021
 
