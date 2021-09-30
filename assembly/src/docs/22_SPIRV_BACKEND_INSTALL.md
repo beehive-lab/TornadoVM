@@ -1,8 +1,9 @@
 # Install TornadoVM for SPIR-V
 
-SPIR-V makes use of the [Intel Level Zero API](https://spec.oneapi.io/level-zero/latest/index.html). 
+SPIR-V makes use of the [Intel Level Zero API](https://spec.oneapi.io/level-zero/latest/index.html).
 
-Disclaimer: The SPIR-V backend with Intel Level-Zero dispatcher is a new project within TornadoVM. Currently, we offer a preview and an initial implementation. 
+Disclaimer: The SPIR-V backend with Intel Level-Zero dispatcher is a new project within TornadoVM. Currently, we offer a
+preview and an initial implementation.
 
 ## 1. Install Intel oneAPI Level Zero
 
@@ -30,7 +31,7 @@ Example:
 export ZE_SHARED_LOADER="/home/user/level-zero/build/lib/libze_loader.so"
 ```
 
-## 2. Install TornadoVM 
+## 2. Install TornadoVM
 
 Then setup TornadoVM as usual. Please, visit [1_INSTALL](1_INSTALL.md) for more details.
 
@@ -40,12 +41,9 @@ To build the SPIR-V Backend, enable the backend as follows:
 $ make BACKEND=spirv
 ```
 
-
 ## 3. Run examples with the SPIR-V Backend and inspect the assembly code
 
-
 #### Running DFT from the unit-test suite
-
 
 ```bash
 $ tornado-test.py -V --fast --threadInfo --debug uk.ac.manchester.tornado.unittests.compute.ComputeTests#testDFT
@@ -65,9 +63,8 @@ Test: class uk.ac.manchester.tornado.unittests.compute.ComputeTests#testDFT
 	Running test: testDFT                    ................  [PASS] 
 ```
 
-
-The SPIR-V Binary was stored in `/tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv`. We can dissasemble the binary with `spirv-dis` [from Khronos](https://github.com/KhronosGroup/SPIRV-Tools)
-
+The SPIR-V Binary was stored in `/tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv`. We can dissasemble the binary
+with `spirv-dis` [from Khronos](https://github.com/KhronosGroup/SPIRV-Tools)
 
 Note: Usually, `spirv-dis` can be installed from the common OS repositories:
 
@@ -81,7 +78,7 @@ sudo apt-get install spirv-tools
 
 ##### Dissasemble the binary:
 
-````llvm 
+```llvm 
 $ spirv-dis /tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv
 ; SPIR-V
 ; Version: 1.2
