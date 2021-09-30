@@ -38,13 +38,13 @@ if [[ $selected_backends == *spirv* ]]
 then
 	current=$PWD
 	spirvToolkit="spirv-beehive-toolkit"
-    if [[ ! -d spirv-beehive-toolkit ]]
-	then 
-		git clone git@github.com:beehive-lab/spirv-beehive-toolkit.git
-    fi
-	cd $spirvToolkit
-	mvn clean install 
-	cd $current 
+  if [[ ! -d spirv-beehive-toolkit ]]
+  then 
+    git clone git@github.com:beehive-lab/spirv-beehive-toolkit.git
+  fi
+  cd $spirvToolkit
+  mvn clean install 
+  cd $current 
 fi
 
 options="-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P$1,${selected_backends} "
