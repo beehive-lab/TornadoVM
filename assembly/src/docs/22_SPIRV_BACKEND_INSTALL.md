@@ -7,13 +7,20 @@ preview and an initial implementation.
 
 ## 1. Install Intel oneAPI Level Zero
 
-Use GCC >= 9:
+A. In order to use Intel Level Zero from oneAPI, you need to install the driver for the Intel HD Graphics. 
+
+All drivers are avilable here: [https://github.com/intel/compute-runtime/releases](https://github.com/intel/compute-runtime/releases)
+
+
+B. Use GCC >= 9:
 
 On CentOS:
 
 ```
 $ scl enable devtoolset-9 bash # Only for CentOS 7.X
 ```
+
+C. Build Level Zero loader from source:
 
 ```bash
 $ git clone https://github.com/oneapi-src/level-zero
