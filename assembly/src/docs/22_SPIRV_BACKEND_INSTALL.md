@@ -37,7 +37,7 @@ Then setup TornadoVM as usual. Please, visit [1_INSTALL](1_INSTALL.md) for more 
 To build the SPIR-V Backend, enable the backend as follows:
 
 ```
-$ make BACKEND=SPIRV
+$ make BACKEND=spirv
 ```
 
 

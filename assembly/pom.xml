@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>tornado</groupId>
-    <artifactId>tornado</artifactId>
-    <version>0.12-dev</version>
-  </parent>
-  <artifactId>tornado-assembly</artifactId>
-  <packaging>pom</packaging>
-  <name>tornado-assembly</name>
-  <dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>tornado</groupId>
+        <artifactId>tornado</artifactId>
+        <version>0.12-dev</version>
+    </parent>
+    <artifactId>tornado-assembly</artifactId>
+    <packaging>pom</packaging>
+    <name>tornado-assembly</name>
+    <dependencies>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -57,6 +58,26 @@
     <profiles>
         <profile>
             <id>opencl-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-opencl</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-opencl-jni</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>libs</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>spirv-backend</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

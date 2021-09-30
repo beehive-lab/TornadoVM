@@ -2,7 +2,7 @@
 
 # Parameters passed to this script:
 # $1 - which JDK is used to build TornadoVM { jdk-8, graal-jdk-8, graal-jdk-11-plus, jdk-11-plus }
-# $2 - backends selected for TornadoVM. It can be any combination of { opencl, ptx }
+# $2 - backends selected for TornadoVM. It can be any combination of { opencl, ptx, spirv }
 # $3 - build TornadoVM with maven offline mode. Use "OFFLINE" 
 
 JAVA_CMD=${JAVA_HOME}/bin/java
@@ -20,7 +20,7 @@ if [ $? -eq 1 ]; then
 fi
 
 ## Maven clean-up
-mvn -Popencl-backend,ptx-backend clean
+mvn -Popencl-backend,ptx-backend,spirv-backend clean
 
 # The maven profiles of each backend use the naming {ptx,opencl}-backend
 selected_backends=''
