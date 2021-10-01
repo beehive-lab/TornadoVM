@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUt
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -107,7 +108,7 @@ public class TestLookUpBufferAddress {
         errorLog("zeCommandQueueSynchronize", result);
 
         long baseAddress = output[0];
-        System.out.println("Base Address: " + baseAddress);
+        SPIRVLogger.traceRuntime("Base Address: " + baseAddress);
     }
 
     private static void testLookUpBufferAddress(LevelZeroContext context, LevelZeroDevice device) {
