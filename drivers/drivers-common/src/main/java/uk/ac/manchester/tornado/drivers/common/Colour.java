@@ -3,7 +3,7 @@
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2021, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
