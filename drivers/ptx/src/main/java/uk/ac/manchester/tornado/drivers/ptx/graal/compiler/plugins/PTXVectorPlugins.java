@@ -50,8 +50,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GetArrayNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorAddNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorDivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorLoadElementNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorMultNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorStoreElementProxyNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
 public final class PTXVectorPlugins {
@@ -161,6 +164,36 @@ public final class PTXVectorPlugins {
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register3("sub", Receiver.class, declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
+                VectorSubNode subNode = new VectorSubNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(subNode));
+                return true;
+            }
+        });
+
+        r.register3("mult", Receiver.class, declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
+                VectorMultNode multNode = new VectorMultNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(multNode));
+                return true;
+            }
+        });
+
+        r.register3("div", Receiver.class, declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
+                VectorDivNode divNode = new VectorDivNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(divNode));
                 return true;
             }
         });

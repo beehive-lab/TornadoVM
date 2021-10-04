@@ -54,8 +54,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.GetArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorDivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorMulNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
 public final class VectorPlugins {
@@ -173,6 +176,36 @@ public final class VectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register2("sub", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                VectorSubNode addNode = new VectorSubNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register2("mult", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                VectorMulNode addNode = new VectorMulNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(addNode));
+                return true;
+            }
+        });
+
+        r.register2("div", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                VectorDivNode addNode = new VectorDivNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
             }
