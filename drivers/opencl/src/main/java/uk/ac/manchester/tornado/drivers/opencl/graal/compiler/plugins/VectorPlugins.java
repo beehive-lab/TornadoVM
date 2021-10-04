@@ -185,8 +185,8 @@ public final class VectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                VectorSubNode addNode = new VectorSubNode(kind, input1, input2);
-                b.push(JavaKind.Illegal, b.append(addNode));
+                VectorSubNode subNode = new VectorSubNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(subNode));
                 return true;
             }
         });
@@ -195,8 +195,8 @@ public final class VectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                VectorMulNode addNode = new VectorMulNode(kind, input1, input2);
-                b.push(JavaKind.Illegal, b.append(addNode));
+                VectorMulNode multNode = new VectorMulNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(multNode));
                 return true;
             }
         });
@@ -205,8 +205,8 @@ public final class VectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                VectorDivNode addNode = new VectorDivNode(kind, input1, input2);
-                b.push(JavaKind.Illegal, b.append(addNode));
+                VectorDivNode divNode = new VectorDivNode(kind, input1, input2);
+                b.push(JavaKind.Illegal, b.append(divNode));
                 return true;
             }
         });
