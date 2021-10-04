@@ -45,6 +45,7 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.Constant;
@@ -52,7 +53,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 
@@ -215,11 +215,13 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
                 isWritten = true;
+            } else if (currentNode instanceof MarkVectorStore) {
+                isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
                 // All objects are passed by reference -> R/W
                 isRead = true;
                 isWritten = true;
-            } else if (currentNode instanceof PiNode) {
+            } else if (currentNode instanceof PiNode || currentNode instanceof AddressNode) {
                 currentNode.usages().forEach(nf::add);
             }
         }

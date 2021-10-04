@@ -20,49 +20,41 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 
-import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
+import org.graalvm.compiler.nodes.spi.LIRLowerable;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorStore;
 
 /**
- * The {@code VectorStoreNode} represents a vector-write to contiguous set of
- * array elements.
+ * The {@code VectorStoreGlobalMemory} represents a vector-write to global memory.
  */
-@NodeInfo(nameTemplate = "VectorStore")
-public final class VectorStoreNode extends AccessIndexedNode {
+@NodeInfo(nameTemplate = "VectorStoreGlobalMemory")
+public final class VectorStoreGlobalMemory extends FixedWithNextNode implements LIRLowerable, MarkVectorStore {
 
-    public static final NodeClass<VectorStoreNode> TYPE = NodeClass.create(VectorStoreNode.class);
+    public static final NodeClass<VectorStoreGlobalMemory> TYPE = NodeClass.create(VectorStoreGlobalMemory.class);
 
     @Input ValueNode value;
+    @Input ValueNode address;
 
-    public boolean hasSideEffect() {
-        return true;
-    }
-
-    public ValueNode value() {
-        return value;
-    }
-
-    public VectorStoreNode(OCLKind vectorKind, ValueNode array, ValueNode index, ValueNode value) {
-        super(TYPE, OCLStampFactory.getStampFor(vectorKind), array, index, null, JavaKind.Illegal);
+    public VectorStoreGlobalMemory(OCLKind vectorKind, ValueNode address, ValueNode value) {
+        super(TYPE, OCLStampFactory.getStampFor(vectorKind));
         this.value = value;
+        this.address = address;
     }
 
     @Override
-    public JavaKind elementKind() {
-        return ((OCLStamp) stamp(NodeView.DEFAULT)).getOCLKind().getElementKind().asJavaKind();
+    public void generate(NodeLIRBuilderTool gen) {
+        LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value), null);
     }
-
 }

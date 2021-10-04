@@ -44,6 +44,8 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -52,6 +54,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVector
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorAddNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorLoadElementNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorStoreElementProxyNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
 public final class PTXVectorPlugins {
@@ -143,6 +146,19 @@ public final class PTXVectorPlugins {
                 final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
                 b.push(javaElementKind, b.append(loadElement));
                 return true;
+            }
+        });
+
+        r.register2("set", Receiver.class, vectorKind.getJavaClass(), new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                if (receiver.get() instanceof ParameterNode) {
+                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                    final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(vectorKind, address, value);
+                    b.add(b.append(store));
+                    return true;
+                }
+                return false;
             }
         });
 

@@ -55,9 +55,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
+import java.util.HashMap;
+
 public class OCLGenTool {
 
     protected OCLLIRGenerator gen;
+
+    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
 
     public OCLGenTool(OCLLIRGenerator gen) {
         this.gen = gen;
@@ -83,6 +87,7 @@ public class OCLGenTool {
 
         Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
         emitParameterLoad(result, index);
+        parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {
 
@@ -131,5 +136,9 @@ public class OCLGenTool {
         LIRKind lirKind = LIRKind.value(oclKind);
         final OCLUnaryOp op = getParameterLoadOp(oclKind);
         gen.append(new AssignStmt(dst, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
+    }
+
+    public HashMap<ParameterNode, Variable> getParameterToVariable() {
+        return parameterToVariable;
     }
 }
