@@ -29,6 +29,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
@@ -54,6 +55,10 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        Stamp currentStamp = stamp(NodeView.DEFAULT);
+        if (currentStamp instanceof PTXStamp) {
+            return currentStamp;
+        }
         return (stampX instanceof PTXStamp) ? stampX.join(stampY) : stampY.join(stampX);
     }
 

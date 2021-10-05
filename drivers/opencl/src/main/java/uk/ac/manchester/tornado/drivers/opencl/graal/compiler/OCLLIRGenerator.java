@@ -77,8 +77,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
-    private OCLBuiltinTool oclBuiltinTool;
-    private OCLGenTool oclGenTool;
+    private final OCLBuiltinTool oclBuiltinTool;
+    private final OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
         super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
@@ -401,6 +401,10 @@ public class OCLLIRGenerator extends LIRGenerator {
     protected JavaConstant zapValueForKind(PlatformKind pk) {
         unimplemented();
         return null;
+    }
+
+    public OCLGenTool getOclGenTool() {
+        return oclGenTool;
     }
 
 }

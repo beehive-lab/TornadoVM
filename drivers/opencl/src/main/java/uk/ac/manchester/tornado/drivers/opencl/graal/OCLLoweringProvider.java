@@ -106,7 +106,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
@@ -161,10 +161,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
-        } else if (node instanceof VectorLoadNode) {
-            lowerVectorLoadNode((VectorLoadNode) node);
-        } else if (node instanceof VectorStoreNode) {
-            lowerVectorStoreNode((VectorStoreNode) node);
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
             /*
              * No lowering, we currently generate LIR directly for these nodes.
@@ -460,23 +456,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(NodeView.DEFAULT), floatConvert.getFloatConvert(), floatConvert.getValue()));
         floatConvert.replaceAtUsages(asFloat);
         floatConvert.safeDelete();
-    }
-
-    private void lowerVectorStoreNode(VectorStoreNode vectorStore) {
-        StructuredGraph graph = vectorStore.graph();
-        JavaKind elementKind = vectorStore.elementKind();
-        AddressNode address = createArrayAddress(graph, vectorStore.array(), elementKind, vectorStore.index());
-        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), OnHeapMemoryAccess.BarrierType.ARRAY));
-        graph.replaceFixed(vectorStore, vectorWrite);
-    }
-
-    private void lowerVectorLoadNode(VectorLoadNode vectorLoad) {
-        StructuredGraph graph = vectorLoad.graph();
-        JavaKind elementKind = vectorLoad.elementKind();
-        AddressNode address = createArrayAddress(graph, vectorLoad.array(), elementKind, vectorLoad.index());
-        ReadNode vectorRead = graph
-                .addWithoutUnique(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorLoad.stamp(NodeView.DEFAULT), OnHeapMemoryAccess.BarrierType.NONE));
-        graph.replaceFixed(vectorLoad, vectorRead);
     }
 
     private void lowerNewArrayNode(NewArrayNonVirtualizableNode newArray) {

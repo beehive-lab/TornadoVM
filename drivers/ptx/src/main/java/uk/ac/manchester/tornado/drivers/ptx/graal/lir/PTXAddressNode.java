@@ -29,11 +29,14 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXMemoryBase;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
@@ -70,11 +73,20 @@ public class PTXAddressNode extends AddressNode implements LIRLowerable {
         PTXLIRGenerator tool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
 
         Value baseValue = base == null ? Value.ILLEGAL : gen.operand(base);
+        if (base instanceof ParameterNode && base.stamp(NodeView.DEFAULT) instanceof PTXStamp) {
+            PTXStamp stamp = (PTXStamp) base.stamp(NodeView.DEFAULT);
+            PTXKind kind = stamp.getPTXKind();
+            if (kind.isVector()) {
+                baseValue = tool.getPTXGenTool().getParameterToVariable().get(base);
+            }
+        }
+
         Value indexValue = index == null ? Value.ILLEGAL : gen.operand(index);
         if (index == null) {
             gen.setResult(this, new PTXUnary.MemoryAccess(memoryRegister, baseValue, null));
+        } else {
+            setMemoryAccess(gen, baseValue, indexValue, tool);
         }
-        setMemoryAccess(gen, baseValue, indexValue, tool);
     }
 
     private boolean isLocalMemoryAccess() {
