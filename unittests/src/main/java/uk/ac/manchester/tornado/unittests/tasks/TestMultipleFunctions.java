@@ -19,16 +19,15 @@ package uk.ac.manchester.tornado.unittests.tasks;
 
 import static junit.framework.TestCase.assertEquals;
 
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Assert;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+import java.util.stream.IntStream;
 
 /**
  * Tests TornadoVM compilation under different scenarios, when not performing
@@ -157,19 +156,10 @@ public class TestMultipleFunctions extends TornadoTestBase {
     /**
      * Test to check we can generate vector types for the method signature and
      * non-main kernel functions.
-     * 
-     * This is just a test. To store the result, we need to use float4.set(value).
-     * However. this cases an error in lowering. Since these errors are replicated
-     * for all backends, we just check the code gen for vector types, not fot the
-     * access. Future releases will provide store access for non-inlined methods for
-     * all backends.
-     * 
-     * @param a
-     * @param b
-     * @param c
      */
     public static void vectorTypes(Float4 a, Float4 b, Float4 c) {
         c = Float4.add(foo(a), bar(b));
+        //c.set(Float4.add(foo(a), bar(b)));
     }
 
     @Test
@@ -311,13 +301,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
     /**
      * Test to check we can generate vector types for the method signature and
      * non-main kernel functions.
-     *
-     * This is just a test. To store the result, we need to use float4.set(value).
-     * However. this cases an error in lowering. Since these errors are replicated
-     * for all backends, we just check the code gen for vector types, not fot the
-     * access. Future releases will provide store access for non-inlined methods for
-     * all backends.
-     * 
      */
     @Test
     public void testVector01() {
@@ -483,7 +466,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", TestMultipleFunctions::functionA, arr)//
                 .streamOut(arr);
+
         ts.execute();
+
         Assert.assertEquals(-1, arr[0]);
     }
 

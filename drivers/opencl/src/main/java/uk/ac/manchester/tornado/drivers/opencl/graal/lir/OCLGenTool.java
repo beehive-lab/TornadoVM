@@ -51,12 +51,17 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
+import java.util.HashMap;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 
 public class OCLGenTool {
 
     protected OCLLIRGenerator gen;
+
+    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
 
     public OCLGenTool(OCLLIRGenerator gen) {
         this.gen = gen;
@@ -80,6 +85,7 @@ public class OCLGenTool {
 
         Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
         emitParameterLoad(result, index);
+        parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {
 
@@ -125,23 +131,27 @@ public class OCLGenTool {
 
     /**
      * This represents a load from a parameter.
-     * 
+     *
      * This an example of the target code to generate:
-     * 
+     *
      * <code>
      *      ulong0 = (ulong) frame[3];
      * </code>
-     * 
+     *
      * @param resultValue
      *            result
      * @param index
      *            Parameter index to be loaded.
-     * 
+     *
      */
     private void emitParameterLoad(AllocatableValue resultValue, int index) {
         OCLKind oclKind = (OCLKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(oclKind);
         final OCLUnaryOp op = getParameterLoadOp(oclKind);
         gen.append(new AssignStmt(resultValue, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
+    }
+
+    public HashMap<ParameterNode, Variable> getParameterToVariable() {
+        return parameterToVariable;
     }
 }

@@ -24,29 +24,32 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.globalSpace;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STACK_BASE_OFFSET;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
-
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary.MemoryAccess;
 
+import java.util.HashMap;
+
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.globalSpace;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STACK_BASE_OFFSET;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 public class PTXGenTool {
 
     protected PTXLIRGenerator gen;
+
+    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
 
     public PTXGenTool(PTXLIRGenerator generator) {
         gen = generator;
@@ -68,6 +71,7 @@ public class PTXGenTool {
 
         Variable result = (kind.isVector()) ? gen.newVariable(LIRKind.value(target.getPTXKind(JavaKind.Object))) : gen.newVariable(lirKind);
         emitParameterLoad(result, paramOffset);
+        parameterToVariable.put(paramNode, result);
 
         if (kind.isVector()) {
             Variable vector = gen.newVariable(lirKind);
@@ -83,13 +87,13 @@ public class PTXGenTool {
 
     /**
      * Generate code for an address access from the stack frame.
-     * 
+     *
      * PTX Code equivalent:
-     * 
+     *
      * <code>
      *     ldu.global.u64	rud1, [rud0+24];
      * </code>
-     * 
+     *
      * @param dst
      *            result
      * @param index
@@ -102,6 +106,10 @@ public class PTXGenTool {
         MemoryAccess memoryAccess = new MemoryAccess(globalSpace, parameterAllocation, stackIndex);
         PTXLIRStmt.LoadStmt loadStmt = new PTXLIRStmt.LoadStmt(memoryAccess, (Variable) dst, PTXAssembler.PTXNullaryOp.LDU);
         gen.append(loadStmt);
+    }
+
+    public HashMap<ParameterNode, Variable> getParameterToVariable() {
+        return parameterToVariable;
     }
 
 }
