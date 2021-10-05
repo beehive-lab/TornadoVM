@@ -279,7 +279,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return null;
     }
 
-    // FIXME: <Revisit> This method returns an inplemented inside the inner class.
+    // FIXME: <Revisit> This method returns an implemented inside the inner class.
     // Check if we can return null instead.
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
