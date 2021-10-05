@@ -14,14 +14,16 @@ The following table includes the platforms that TornadoVM can be executed.
 | Mac OS X Big Sur 11.5.1    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
 | Windows 10                 | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device                       | 
 
-Note: SPIR-V and Level-Zero backend are only supported for Linux OS. 
+Note: The SPIR-V backend is only supported for Linux OS.
 
 
 ## 1. Installation
 
-TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. At least one backend must be specified at build time to the `make` command.
+TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
 
-**Important [SPIR-V Backend Configuration]** The SPIR-V backends requires extra-steps (such as the Level-Zero installation and configuration for TornadoVM). If you wish to build the SPIR-V backend, please follow the guidelines for [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
+**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
+
+At least one backend must be specified at build time to the `make` command:
 
 ```bash
 $ make BACKENDS=opencl,ptx,spirv
