@@ -49,6 +49,10 @@ public class ZeDriverProperties {
         this.nativePointer = -1;
     }
 
+    public int[] getUUID() {
+        return uuid;
+    }
+
     public int getDriverVersion() {
         return this.driverVersion;
     }

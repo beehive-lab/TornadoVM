@@ -167,6 +167,15 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     valuePointerDescription = reinterpret_cast<long>(&(driverProperties));
     env->SetLongField(javaDriverProperties, fieldDescriptionPointer, valuePointerDescription);
 
+    jfieldID field = env->GetFieldID(descriptionClass, "uuid", "[I");
+    jintArray array = env->NewIntArray(ZE_MAX_DRIVER_UUID_SIZE);
+    jint* arr = env->GetIntArrayElements(array, 0);
+    for (int i = 0; i < ZE_MAX_DRIVER_UUID_SIZE; i++) {
+        arr[i] = driverProperties.uuid.id[i];
+    }
+    env->ReleaseIntArrayElements(array, arr, 0);
+    env->SetObjectField(javaDriverProperties, field, array);
+
     jfieldID fieldDriverVersion = env->GetFieldID(descriptionClass, "driverVersion", "I");
     env->SetIntField(javaDriverProperties, fieldDriverVersion, driverProperties.driverVersion);
 
