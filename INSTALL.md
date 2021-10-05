@@ -21,7 +21,7 @@ Note: The SPIR-V backend is only supported for Linux OS.
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
 
-**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](22_SPIRV_BACKEND_INSTALL.md).
+**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
 
 At least one backend must be specified at build time to the `make` command:
 
