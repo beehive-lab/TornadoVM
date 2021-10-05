@@ -4,15 +4,18 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Hardware                                                              |
-| -------------------------- | --------------------------------------------------------------------- |
-| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Mac OS X Big Sur 11.5.1    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Windows 10             | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| OS                         | Hardware support for each backend                                                                    |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device, Level-Zero >= 1.1.2  |
+| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device, Level-Zero >= 1.1.2  |
+| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device, Level-Zero >= 1.1.2  |
+| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
+| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
+| Mac OS X Big Sur 11.5.1    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
+| Windows 10                 | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device                       | 
+
+Note: SPIR-V and Level-Zero backend are only supported for Linux OS. 
+
 
 ## 1. Installation
 
