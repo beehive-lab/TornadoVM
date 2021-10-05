@@ -17,13 +17,15 @@ The following table includes the platforms that TornadoVM can be executed.
 
 ## 1. Installation
 
-TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command:
+TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. At least one backend must be specified at build time to the `make` command.
+
+**Important [SPIR-V Backend Configuration]** The SPIR-V backends requires extra-steps (such as the Level-Zero installation and configuration for TornadoVM). If you wish to build the SPIR-V backend, please follow the guidelines for [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
 
 ```bash
-$ make BACKENDS=opencl,ptx
+$ make BACKENDS=opencl,ptx,spirv
 ```
 
-As well as being built with two compiler backends, TornadoVM can be executed with the following three configurations:
+As well as being built with three compiler backends, TornadoVM can be executed with the following three configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (either with JDK 8, JDK 11 and JDK 16): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).

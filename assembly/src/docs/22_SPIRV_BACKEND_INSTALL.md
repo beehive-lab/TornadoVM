@@ -7,10 +7,10 @@ preview and an initial implementation.
 
 ## 1. Install Intel oneAPI Level Zero
 
-A. In order to use Intel Level Zero from oneAPI, you need to install the driver for the Intel HD Graphics. 
+A. In order to use Intel Level Zero from oneAPI, you need to install the driver for the Intel HD Graphics.
 
-All drivers are avilable here: [https://github.com/intel/compute-runtime/releases](https://github.com/intel/compute-runtime/releases)
-
+All drivers are available
+here: [https://github.com/intel/compute-runtime/releases](https://github.com/intel/compute-runtime/releases)
 
 B. Use GCC >= 9:
 
@@ -36,6 +36,15 @@ Example:
 
 ```bash 
 export ZE_SHARED_LOADER="/home/user/level-zero/build/lib/libze_loader.so"
+```
+
+You also need to update `CPLUS_INCLUDE_PATH` and `LD_LIBRARY_PATH` to include the level-zero headers and dynamic
+libraries:
+
+```bash
+export CPLUS_INCLUDE_PATH=/home/user/level-zero/include:$CPLUS_INCLUDE_PATH
+export C_INCLUDE_PATH=/home/user/level-zero/include:$C_INCLUDE_PATH
+export LD_LIBRARY_PATH=/home/user/level-zero/build/lib:$LD_LIBRARY_PATH
 ```
 
 ## 2. Install TornadoVM
