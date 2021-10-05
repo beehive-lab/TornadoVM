@@ -26,6 +26,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -33,6 +35,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
@@ -68,11 +71,20 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         OCLLIRGenerator tool = (OCLLIRGenerator) gen.getLIRGeneratorTool();
 
         Value baseValue = base == null ? Value.ILLEGAL : gen.operand(base);
+        if (base instanceof ParameterNode && base.stamp(NodeView.DEFAULT) instanceof OCLStamp) {
+            OCLStamp stamp = (OCLStamp) base.stamp(NodeView.DEFAULT);
+            OCLKind kind = stamp.getOCLKind();
+            if (kind.isVector()) {
+                baseValue = tool.getOclGenTool().getParameterToVariable().get(base);
+            }
+        }
+
         Value indexValue = index == null ? Value.ILLEGAL : gen.operand(index);
         if (index == null) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
+        } else {
+            setMemoryAccess(gen, baseValue, indexValue, tool);
         }
-        setMemoryAccess(gen, baseValue, indexValue, tool);
     }
 
     private boolean isLocalMemoryAccess() {
