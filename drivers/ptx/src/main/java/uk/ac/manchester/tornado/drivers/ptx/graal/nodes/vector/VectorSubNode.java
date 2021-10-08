@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 
-@NodeInfo(shortName = "-")
+@NodeInfo(shortName = "Vector(-)")
 public class VectorSubNode extends BinaryNode implements LIRLowerable, VectorOp {
 
     public static final NodeClass<VectorSubNode> TYPE = NodeClass.create(VectorSubNode.class);

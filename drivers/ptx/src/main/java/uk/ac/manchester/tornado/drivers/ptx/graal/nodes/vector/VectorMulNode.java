@@ -44,11 +44,11 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 
 @NodeInfo(shortName = "Vector(*)")
-public class VectorMultNode extends BinaryNode implements LIRLowerable, VectorOp {
+public class VectorMulNode extends BinaryNode implements LIRLowerable, VectorOp {
 
-    public static final NodeClass<VectorMultNode> TYPE = NodeClass.create(VectorMultNode.class);
+    public static final NodeClass<VectorMulNode> TYPE = NodeClass.create(VectorMulNode.class);
 
-    public VectorMultNode(PTXKind kind, ValueNode x, ValueNode y) {
+    public VectorMulNode(PTXKind kind, ValueNode x, ValueNode y) {
         super(TYPE, PTXStampFactory.getStampFor(kind), x, y);
     }
 

@@ -41,13 +41,15 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
-@NodeInfo(shortName = "-")
+@NodeInfo(shortName = "Vector(-)")
 public class VectorSubNode extends FloatingNode implements LIRLowerable, VectorOp {
 
     public static final NodeClass<VectorSubNode> TYPE = NodeClass.create(VectorSubNode.class);
 
-    @Input ValueNode x;
-    @Input ValueNode y;
+    @Input
+    ValueNode x;
+    @Input
+    ValueNode y;
 
     public VectorSubNode(OCLKind kind, ValueNode x, ValueNode y) {
         this(TYPE, kind, x, y);

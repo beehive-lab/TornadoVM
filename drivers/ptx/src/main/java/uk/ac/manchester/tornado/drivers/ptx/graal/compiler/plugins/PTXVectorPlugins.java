@@ -40,12 +40,12 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -54,10 +54,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVector
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorAddNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorDivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorLoadElementNode;
-import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorMultNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorMulNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorStoreElementProxyNode;
-import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorStoreGlobalMemory;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
 
 public final class PTXVectorPlugins {
@@ -198,7 +198,7 @@ public final class PTXVectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
-                VectorMultNode multNode = new VectorMultNode(kind, input1, input2);
+                VectorMulNode multNode = new VectorMulNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(multNode));
                 return true;
             }
