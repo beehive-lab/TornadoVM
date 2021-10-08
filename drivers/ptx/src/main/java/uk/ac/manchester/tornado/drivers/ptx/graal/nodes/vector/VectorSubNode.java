@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -18,55 +18,43 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
+package uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector;
 
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.calc.BinaryNode;
+import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStamp;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 
 @NodeInfo(shortName = "Vector(-)")
-public class VectorSubNode extends FloatingNode implements LIRLowerable, VectorOp {
+public class VectorSubNode extends BinaryNode implements LIRLowerable, VectorOp {
 
     public static final NodeClass<VectorSubNode> TYPE = NodeClass.create(VectorSubNode.class);
 
-    @Input
-    ValueNode x;
-    @Input
-    ValueNode y;
-
-    public VectorSubNode(OCLKind kind, ValueNode x, ValueNode y) {
-        this(TYPE, kind, x, y);
+    public VectorSubNode(PTXKind kind, ValueNode x, ValueNode y) {
+        super(TYPE, PTXStampFactory.getStampFor(kind), x, y);
     }
 
-    protected VectorSubNode(NodeClass<? extends VectorSubNode> c, OCLKind kind, ValueNode x, ValueNode y) {
-        super(c, OCLStampFactory.getStampFor(kind));
-        this.x = x;
-        this.y = y;
-    }
-
-    public ValueNode getX() {
-        return x;
-    }
-
-    public ValueNode getY() {
-        return y;
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        return (stampX instanceof PTXStamp) ? stampX.join(stampY) : stampY.join(stampX);
     }
 
     @Override
@@ -77,9 +65,19 @@ public class VectorSubNode extends FloatingNode implements LIRLowerable, VectorO
         final Value input1 = gen.operand(x);
         final Value input2 = gen.operand(y);
 
-        trace("emitVectorSub: %s + %s", input1, input2);
-        gen.getLIRGeneratorTool().append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.SUB, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
+        trace("emitVectorSub: %s - %s", input1, input2);
+        gen.getLIRGeneratorTool().append(new AssignStmt(result, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SUB, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
         gen.setResult(this, result);
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool ct, ValueNode t, ValueNode t1) {
+        return this;
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool ct) {
+        return this;
     }
 
 }
