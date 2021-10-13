@@ -519,6 +519,60 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @Test
+    public void testMultipleReductions4() {
+
+        final int size = 8;
+        double[] data1 = new double[size];
+        double[] data2 = new double[size];
+        double[] data3 = new double[size];
+
+        double[] resultStd1 = new double[1];
+        double[] resultStd2 = new double[1];
+        double[] resultStd3 = new double[1];
+
+        double[] sequentialStd1 = new double[1];
+        double[] sequentialStd2 = new double[1];
+        double[] sequentialStd3 = new double[1];
+        double[] sequentialData1 = new double[data1.length];
+        double[] sequentialData2 = new double[data2.length];
+        double[] sequentialData3 = new double[data3.length];
+
+        Random r = new Random();
+        IntStream.range(0, data1.length).forEach(idx -> {
+            data1[idx] = r.nextDouble();
+            sequentialData1[idx] = data1[idx];
+        });
+
+        IntStream.range(0, data2.length).forEach(idx -> {
+            data2[idx] = r.nextDouble();
+            sequentialData2[idx] = data2[idx];
+        });
+
+        IntStream.range(0, data3.length).forEach(idx -> {
+            data3[idx] = r.nextDouble();
+            sequentialData3[idx] = data3[idx];
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(data1, data2, data3)
+                .task("t1", TestReductionsDoubles::compute2, data1, resultStd1)
+                .task("t2", TestReductionsDoubles::compute2, data2, resultStd2)
+                .task("t3", TestReductionsDoubles::compute2, data3, resultStd3)
+                .streamOut(resultStd1, resultStd2, resultStd3)
+                .execute();
+        //@formatter:on
+
+        compute2(sequentialData1, sequentialStd1);
+        compute2(sequentialData2, sequentialStd2);
+        compute2(sequentialData3, sequentialStd3);
+
+        assertEquals(sequentialStd1[0], resultStd1[0], 0.01);
+        assertEquals(sequentialStd2[0], resultStd2[0], 0.01);
+        assertEquals(sequentialStd3[0], resultStd3[0], 0.01);
+    }
+
+    @Test
     public void testMaxReduction2() {
         double[] input = new double[SIZE];
         double[] result = new double[1];
