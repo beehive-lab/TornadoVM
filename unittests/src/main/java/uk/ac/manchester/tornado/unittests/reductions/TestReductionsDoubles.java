@@ -481,7 +481,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         final int size = 8;
         double[] data = new double[size];
-        double[] data2 = new double[size];
 
         double[] resultSum = new double[1];
         double[] resultStd = new double[1];
@@ -490,9 +489,9 @@ public class TestReductionsDoubles extends TornadoTestBase {
         double[] sequentialStd = new double[1];
         double[] sequentialData = new double[data.length];
 
+        Random r = new Random();
         IntStream.range(0, data.length).forEach(idx -> {
-            data[idx] = 1;
-            data2[idx] = data[idx];
+            data[idx] = r.nextDouble();
             sequentialData[idx] = data[idx];
         });
 
@@ -501,13 +500,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .streamIn(data)
                 .task("t0", TestReductionsDoubles::prepareTornadoSum, data, resultSum)
                 .task("t1", TestReductionsDoubles::compute2, data, resultStd)
-                .streamOut(resultStd)
+                .streamOut(resultSum, resultStd)
                 .execute();
         //@formatter:on
 
         prepareTornadoSum(sequentialData, sequentialSum);
         compute2(sequentialData, sequentialStd);
 
+        assertEquals(sequentialSum[0], resultSum[0], 0.01);
         assertEquals(sequentialStd[0], resultStd[0], 0.01);
     }
 
