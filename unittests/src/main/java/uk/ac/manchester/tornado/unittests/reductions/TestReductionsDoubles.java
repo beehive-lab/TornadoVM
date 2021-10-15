@@ -524,6 +524,48 @@ public class TestReductionsDoubles extends TornadoTestBase {
         final int size = 8;
         double[] data1 = new double[size];
         double[] data2 = new double[size];
+
+        double[] resultStd1 = new double[1];
+        double[] resultStd2 = new double[1];
+
+        double[] sequentialStd1 = new double[1];
+        double[] sequentialStd2 = new double[1];
+        double[] sequentialData1 = new double[data1.length];
+        double[] sequentialData2 = new double[data2.length];
+
+        Random r = new Random();
+        IntStream.range(0, data1.length).forEach(idx -> {
+            data1[idx] = r.nextDouble();
+            sequentialData1[idx] = data1[idx];
+        });
+
+        IntStream.range(0, data2.length).forEach(idx -> {
+            data2[idx] = r.nextDouble();
+            sequentialData2[idx] = data2[idx];
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(data1, data2)
+                .task("t1", TestReductionsDoubles::compute2, data1, resultStd1)
+                .task("t2", TestReductionsDoubles::compute2, data2, resultStd2)
+                .streamOut(resultStd1, resultStd2)
+                .execute();
+        //@formatter:on
+
+        compute2(sequentialData1, sequentialStd1);
+        compute2(sequentialData2, sequentialStd2);
+
+        assertEquals(sequentialStd1[0], resultStd1[0], 0.01);
+        assertEquals(sequentialStd2[0], resultStd2[0], 0.01);
+    }
+
+    @Test
+    public void testMultipleReductions5() {
+
+        final int size = 8;
+        double[] data1 = new double[size];
+        double[] data2 = new double[size];
         double[] data3 = new double[size];
 
         double[] resultStd1 = new double[1];
