@@ -5,47 +5,18 @@ SPIR-V makes use of the [Intel Level Zero API](https://spec.oneapi.io/level-zero
 Disclaimer: The SPIR-V backend with Intel Level-Zero dispatcher is a new project within TornadoVM. Currently, we offer a
 preview and an initial implementation.
 
-## 1. Install Intel oneAPI Level Zero
+## 1. Install Intel oneAPI Level Zero Compute Runtime
 
-A. In order to use Intel Level Zero from oneAPI, you need to install the driver for the Intel HD Graphics.
+In order to use Intel Level Zero from oneAPI, you need to install the driver for the Intel HD Graphics.
 
 All drivers are available
 here: [https://github.com/intel/compute-runtime/releases](https://github.com/intel/compute-runtime/releases)
 
-B. Use GCC >= 9:
 
-On CentOS:
+###### Level Zero in Linux distributions 
 
-```
-$ scl enable devtoolset-9 bash # Only for CentOS 7.X
-```
+https://github.com/intel/compute-runtime/blob/master/level_zero/doc/DISTRIBUTIONS.md
 
-C. Build Level Zero loader from source:
-
-```bash
-$ git clone https://github.com/oneapi-src/level-zero
-$ mkdir build
-$ cd build
-$ cmake ..
-$ cmake --build . --config Release
-```
-
-Export `ZE_SHARED_LOADER` pointing to `libze_loader.so`:
-
-Example:
-
-```bash 
-export ZE_SHARED_LOADER="/home/user/level-zero/build/lib/libze_loader.so"
-```
-
-You also need to update `CPLUS_INCLUDE_PATH` and `LD_LIBRARY_PATH` to include the level-zero headers and dynamic
-libraries:
-
-```bash
-export CPLUS_INCLUDE_PATH=/home/user/level-zero/include:$CPLUS_INCLUDE_PATH
-export C_INCLUDE_PATH=/home/user/level-zero/include:$C_INCLUDE_PATH
-export LD_LIBRARY_PATH=/home/user/level-zero/build/lib:$LD_LIBRARY_PATH
-```
 
 ## 2. Install TornadoVM
 

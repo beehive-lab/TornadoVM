@@ -59,6 +59,9 @@ then
   fi
 
   export ZE_SHARED_LOADER="$PWD/level-zero/build/lib/libze_loader.so"
+  export CPLUS_INCLUDE_PATH=$PWD/level-zero/include:$CPLUS_INCLUDE_PATH
+  export C_INCLUDE_PATH=$PWD/level-zero/include:$C_INCLUDE_PATH
+  export LD_LIBRARY_PATH=$PWD/level-zero/build/lib:$LD_LIBRARY_PATH
 
   cd $current 
 fi
