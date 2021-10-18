@@ -23,6 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.builtins;
 
+/**
+ * Intrinsics from OpenCL to get access to global and local ids, thread block
+ * size and barriers.
+ */
 public class SPIRVOCLIntrinsics {
 
     public static native int get_global_id(int value);

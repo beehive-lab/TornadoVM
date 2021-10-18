@@ -28,18 +28,44 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVLogger {
 
+    /**
+     * Method to track SPIR-V code generation
+     * 
+     * @param message
+     *            String message with code gen trace
+     * @param args
+     *            Arguments to the string message
+     */
     public static void traceCodeGen(final String message, final Object... args) {
         if (TornadoOptions.TRACE_CODE_GEN) {
             System.out.printf(Colour.CYAN + "[SPIRV-CodeGen] " + message + Colour.RESET + "\n", args);
         }
     }
 
+    /**
+     * Method to track SPIR-V IR Builder (from last IR phase to IR Builder for
+     * codegen)
+     *
+     * @param message
+     *            String message with the IR Builder
+     * @param args
+     *            Arguments to the string message
+     */
     public static void traceBuildLIR(String message, final Object... args) {
         if (TornadoOptions.TRACE_BUILD_LIR) {
             System.out.printf(Colour.GREEN + "[SPIRV-BuildLIR] " + message + Colour.RESET + "\n", args);
         }
     }
 
+    /**
+     * Method to track internal calls in the TornadoVM Runtime for running the
+     * SPIR-V code.
+     * 
+     * @param message
+     *            String track message
+     * @param args
+     *            Arguments to the string.
+     */
     public static void traceRuntime(String message, final Object... args) {
         System.out.printf(Colour.YELLOW + "[SPIRV-Runtime] " + message + Colour.RESET + "\n", args);
     }
