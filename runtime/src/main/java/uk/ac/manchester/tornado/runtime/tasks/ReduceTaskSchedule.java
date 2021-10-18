@@ -338,8 +338,6 @@ class ReduceTaskSchedule {
                         LinkedList<Integer> taskList = new LinkedList<>();
                         taskList.add(taskNumber);
                         reduceOperandTable.put(streamInObjects.get(i), taskList);
-                    } else {
-                        reduceOperandTable.get(streamInObjects.get(i)).add(taskNumber);
                     }
                 }
 
