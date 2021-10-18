@@ -60,11 +60,16 @@ public class SPIRVArchitecture extends Architecture {
     private SPIRVRegister[] abiRegisters;
     private SPIRVRegister sp;
 
+    public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
+
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
-        super("TornadoVM SPIRV", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
+        super(BACKEND_ARCHITECTURE, wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
         sp = new SPIRVRegister(1, FRAME_BASE_NAME, wordKind);
+
+        // For future releases, we might add memory spaces/regions for each kernel
         // abiRegisters = new SPIRVRegister[] { globalSpace, sp, constantSpace,
         // localSpace };
+
         abiRegisters = new SPIRVRegister[] { globalSpace, sp };
     }
 
