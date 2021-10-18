@@ -33,7 +33,7 @@ for ((i=0;i<${#selected_backends_list[@]};i++)); do
     selected_backends=${selected_backends}${selected_backends_list[i]}
 done
 
-## Automatic Build for the SPIR-V Beehive Toolkit
+## Automatic Build for the SPIR-V Beehive Toolkit and Intel Level Zero 
 if [[ $selected_backends == *spirv* ]] 
 then
 	current=$PWD
@@ -44,6 +44,22 @@ then
   fi
   cd $spirvToolkit
   mvn clean install 
+  cd $current 
+
+	levelZeroLib="level-zero"
+  if [[ ! -d levelZeroLib ]]
+  then 
+    git clone https://github.com/oneapi-src/level-zero
+    cd $levelZeroLib
+    mkdir build
+    cd build
+    cmake ..
+    cmake --build . --config Release
+    cd $current
+  fi
+
+  export ZE_SHARED_LOADER="$PWD/level-zero/build/lib/libze_loader.so"
+
   cd $current 
 fi
 
