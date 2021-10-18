@@ -68,16 +68,16 @@ public class SPIRVNullary {
 
             if (TornadoOptions.SPIRV_RETURN_LABEL) {
                 SPIRVInstScope blockScope = asm.currentBlockScope();
-                if (asm.returnLabel == null) {
-                    asm.returnLabel = asm.module.getNextId();
+                if (asm.getReturnLabel() == null) {
+                    asm.setReturnLabel(asm.module.getNextId());
                     String blockName = asm.composeUniqueLabelName("return");
-                    asm.module.add(new SPIRVOpName(asm.returnLabel, new SPIRVLiteralString(blockName)));
+                    asm.module.add(new SPIRVOpName(asm.getReturnLabel(), new SPIRVLiteralString(blockName)));
                 }
-                blockScope.add(new SPIRVOpBranch(asm.returnLabel));
+                blockScope.add(new SPIRVOpBranch(asm.getReturnLabel()));
             } else {
                 // Search the block
                 String blockName = asm.composeUniqueLabelName(currentBLock.toString());
-                SPIRVInstScope blockScope = asm.blockTable.get(blockName);
+                SPIRVInstScope blockScope = asm.getBlockTable().get(blockName);
                 // Add Block Return
                 blockScope.add(new SPIRVOpReturn());
             }

@@ -103,6 +103,101 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
+    public SPIRVModule module;
+    public SPIRVPrimitiveTypes primitives;
+    public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
+
+    private SPIRVInstScope functionScope;
+    private SPIRVId mainFunctionID;
+    private SPIRVId functionSignature;
+    private SPIRVInstScope blockZeroScope;
+    private SPIRVId returnLabel;
+    private boolean returnWithValue;
+
+    private Stack<SPIRVInstScope> currentBlockScopeStack;
+
+    /**
+     * Table that stores the Block ID with its Label Reference ID
+     */
+    private Map<String, SPIRVId> labelTable;
+    private Map<String, SPIRVInstScope> blockTable;
+    private Map<Integer, SPIRVId> parametersId;
+    private Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
+    private Map<SPIRVId, SPIRVId> functionPtrToArray;
+    private Map<SPIRVId, SPIRVId> functionPtrToArrayLocal;
+
+    private SPIRVId frameId;
+
+    private final Map<ConstantKeyPair, SPIRVId> constants;
+    private final Map<Value, SPIRVId> lirTable;
+    private final Map<String, SPIRVId> lirTableName;
+
+    public SPIRVId ptrCrossWorkULong;
+    private SPIRVId openclImport;
+    public final Map<String, SPIRVId> SPIRVSymbolTable;
+
+    private ByteBuffer spirvByteBuffer;
+    private int methodIndex;
+
+    private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
+
+    public SPIRVAssembler(TargetDescription target) {
+        super(target);
+        labelTable = new HashMap<>();
+        blockTable = new HashMap<>();
+        constants = new HashMap<>();
+        parametersId = new HashMap<>();
+        lirTable = new HashMap<>();
+        lirTableName = new HashMap<>();
+        builtinTable = new HashMap<>();
+        currentBlockScopeStack = new Stack<>();
+        arrayDeclarationTable = new HashMap<>();
+        functionPtrToArray = new HashMap<>();
+        functionPtrToArrayLocal = new HashMap<>();
+        SPIRVSymbolTable = new HashMap<>();
+        opFunctionTable = new HashMap<>();
+    }
+
+    public SPIRVInstScope getFunctionScope() {
+        return functionScope;
+    }
+
+    public void setReturnLabel(SPIRVId returnLabel) {
+        this.returnLabel = returnLabel;
+    }
+
+    public SPIRVId getReturnLabel() {
+        return returnLabel;
+    }
+
+    public void setBlockZeroScope(SPIRVInstScope blockScope) {
+        this.blockZeroScope = blockScope;
+    }
+
+    public SPIRVInstScope getBlockZeroScope() {
+        return blockZeroScope;
+    }
+
+    public Map<String, SPIRVInstScope> getBlockTable() {
+        return blockTable;
+    }
+
+    public void setStackFrameId(SPIRVId frameId) {
+        this.frameId = frameId;
+    }
+
+    public SPIRVId getStackFrameId() {
+        return this.frameId;
+    }
+
+    public void setReturnWithValue(boolean returnWithValue) {
+        this.returnWithValue = returnWithValue;
+    }
+
+    public boolean returnWithValue() {
+        return this.returnWithValue;
+    }
+
     public static class ConstantKeyPair {
         private String name;
         private SPIRVKind kind;
@@ -137,59 +232,6 @@ public final class SPIRVAssembler extends Assembler {
             }
             return false;
         }
-    }
-
-    public SPIRVModule module;
-    public SPIRVInstScope functionScope;
-    public SPIRVId mainFunctionID;
-    public SPIRVId functionSignature;
-    public SPIRVInstScope blockZeroScope;
-    public SPIRVId returnLabel;
-
-    private Stack<SPIRVInstScope> currentBlockScopeStack;
-
-    // Table that stores the Block ID with its Label Reference ID
-    private Map<String, SPIRVId> labelTable;
-    public Map<String, SPIRVInstScope> blockTable;
-    public Map<Integer, SPIRVId> parametersId;
-    public Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
-    public Map<SPIRVId, SPIRVId> functionPtrToArray;
-    public Map<SPIRVId, SPIRVId> functionPtrToArrayLocal;
-    public SPIRVId prevId;
-    public SPIRVId frameId;
-
-    private final Map<ConstantKeyPair, SPIRVId> constants;
-    public final Map<Value, SPIRVId> lirTable;
-    public final Map<String, SPIRVId> lirTableName;
-    public SPIRVPrimitiveTypes primitives;
-    public SPIRVId pointerToGlobalMemoryHeap;
-    public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
-    public SPIRVId pointerToULongFunction;
-    public SPIRVId ptrCrossWorkULong;
-    private SPIRVId openclImport;
-    public final Map<String, SPIRVId> SPIRVSymbolTable;
-
-    public boolean returnWithValue;
-    private ByteBuffer spirvByteBuffer;
-    private int methodIndex;
-
-    private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
-
-    public SPIRVAssembler(TargetDescription target) {
-        super(target);
-        labelTable = new HashMap<>();
-        blockTable = new HashMap<>();
-        constants = new HashMap<>();
-        parametersId = new HashMap<>();
-        lirTable = new HashMap<>();
-        lirTableName = new HashMap<>();
-        builtinTable = new HashMap<>();
-        currentBlockScopeStack = new Stack<>();
-        arrayDeclarationTable = new HashMap<>();
-        functionPtrToArray = new HashMap<>();
-        functionPtrToArrayLocal = new HashMap<>();
-        SPIRVSymbolTable = new HashMap<>();
-        opFunctionTable = new HashMap<>();
     }
 
     private static class SPIRVOpFunctionTable {

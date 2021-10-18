@@ -46,11 +46,11 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
         if (!b.isLoopHeader() && b.getPredecessorCount() != 0) {
             // Do not generate a label for the first block. This was already generated in
             // the SPIR-V preamble because we need the declaration of all variables.
-            assembler.emitBlockLabelIfNotPresent(b, assembler.functionScope);
+            assembler.emitBlockLabelIfNotPresent(b, assembler.getFunctionScope());
         }
         if (!b.isLoopHeader()) {
             String blockName = assembler.composeUniqueLabelName(b.toString());
-            assembler.pushScope(assembler.blockTable.get(blockName));
+            assembler.pushScope(assembler.getBlockTable().get(blockName));
         }
         crb.emitBlock(b);
         return null;

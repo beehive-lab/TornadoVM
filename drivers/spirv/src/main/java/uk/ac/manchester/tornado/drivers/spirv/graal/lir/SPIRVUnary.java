@@ -145,7 +145,7 @@ public class SPIRVUnary {
             if (type == SPIRVKind.OP_TYPE_INT_64) {
                 ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
             }
-            SPIRVId address = asm.frameId;
+            SPIRVId address = asm.getStackFrameId();
             int alignment = 8;
             asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrCrossWorkGroupULong, //
@@ -200,7 +200,7 @@ public class SPIRVUnary {
 
             SPIRVId ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
 
-            SPIRVId address = asm.frameId;
+            SPIRVId address = asm.getStackFrameId();
             final int alignment = 8;
             asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrCrossWorkGroupULong, //
@@ -1101,14 +1101,14 @@ public class SPIRVUnary {
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             // Search the block
             String blockName = asm.composeUniqueLabelName(currentBlock.toString());
-            SPIRVInstScope blockScope = asm.blockTable.get(blockName);
+            SPIRVInstScope blockScope = asm.getBlockTable().get(blockName);
 
             // Add Block with Return
             SPIRVKind spirvKind = (SPIRVKind) input.getPlatformKind();
             SPIRVId valueToReturn = getId(input, asm, spirvKind);
 
             SPIRVLogger.traceCodeGen("emit SPIRVOpReturnValue : " + currentBlock.toString() + " with value: " + input);
-            asm.returnWithValue = true;
+            asm.setReturnWithValue(true);
             blockScope.add(new SPIRVOpReturnValue(valueToReturn));
         }
     }
