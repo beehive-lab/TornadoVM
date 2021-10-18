@@ -630,7 +630,7 @@ class ReduceTaskSchedule {
             threadSequentialExecution.stream().forEach(Thread::start);
         }
         rewrittenTaskSchedule.execute();
-        updateOutputArray();
+        updateOutputArrays();
     }
 
     private void setNeutralElement() {
@@ -768,7 +768,7 @@ class ReduceTaskSchedule {
      * two elements left (one from the accelerator and the other from the CPU)
      * </p>
      */
-    private void updateOutputArray() {
+    private void updateOutputArrays() {
         joinHostThreads();
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
             Object originalReduceVariable = pair.getKey();
