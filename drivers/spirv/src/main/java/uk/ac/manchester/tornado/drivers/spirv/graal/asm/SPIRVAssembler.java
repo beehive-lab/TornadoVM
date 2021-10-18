@@ -24,8 +24,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.asm;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -103,8 +101,19 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 
 public final class SPIRVAssembler extends Assembler {
 
+    /**
+     * Control for the SPIR-V module (beehive-spirv-toolkit)
+     */
     public SPIRVModule module;
+
+    /**
+     * Control and Handling of SPIR-V primitives for the module being generated
+     */
     public SPIRVPrimitiveTypes primitives;
+
+    /**
+     * Control and handling for the SPIR-V builtin functions
+     */
     public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
 
     private SPIRVInstScope functionScope;
@@ -132,9 +141,9 @@ public final class SPIRVAssembler extends Assembler {
     private final Map<Value, SPIRVId> lirTable;
     private final Map<String, SPIRVId> lirTableName;
 
-    public SPIRVId ptrCrossWorkULong;
+    private SPIRVId ptrCrossWorkULong;
     private SPIRVId openclImport;
-    public final Map<String, SPIRVId> SPIRVSymbolTable;
+    private final Map<String, SPIRVId> SPIRVSymbolTable;
 
     private ByteBuffer spirvByteBuffer;
     private int methodIndex;
@@ -196,6 +205,22 @@ public final class SPIRVAssembler extends Assembler {
 
     public boolean returnWithValue() {
         return this.returnWithValue;
+    }
+
+    public void setPtrCrossWorkGroupULong(SPIRVId ptrToCrossWorkGroupPrimitive) {
+        this.ptrCrossWorkULong = ptrToCrossWorkGroupPrimitive;
+    }
+
+    public SPIRVId getPTrCrossWorkULong() {
+        return this.ptrCrossWorkULong;
+    }
+
+    public Map<String, SPIRVId> getSPIRVSymbolTable() {
+        return this.SPIRVSymbolTable;
+    }
+
+    public void putSymbol(String name, SPIRVId id) {
+        SPIRVSymbolTable.put(name, id);
     }
 
     public static class ConstantKeyPair {
@@ -384,7 +409,6 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVId label = labelTable.get(blockName);
         SPIRVInstScope block = functionScope.add(new SPIRVOpLabel(label));
         blockTable.put(blockName, block);
-        // currentBlockScopeStack.push(block);
     }
 
     public SPIRVInstScope emitBlockLabel(String labelName, SPIRVInstScope functionScope) {
@@ -651,22 +675,9 @@ public final class SPIRVAssembler extends Assembler {
 
         private final boolean prefix;
 
-        protected SPIRVUnaryOp(String opcode) {
-            this(opcode, false);
-        }
-
         protected SPIRVUnaryOp(String opcode, boolean prefix) {
             super(opcode);
             this.prefix = prefix;
-        }
-
-        public static SPIRVUnaryOp CAST_TO_DOUBLE() {
-            return null;
-        }
-
-        public static SPIRVUnaryOp CAST_TO_LONG() {
-            // I think we can return an OpSConvert
-            return null;
         }
 
         public void emit(SPIRVCompilationResultBuilder crb, Value x) {
@@ -679,35 +690,6 @@ public final class SPIRVAssembler extends Assembler {
                 emitOpcode(asm);
             }
         }
-    }
-
-    @Deprecated
-    public static class SPIRVUnaryTemplate extends SPIRVUnaryOp {
-        // @formatter:off
-
-        @Deprecated
-        public static final SPIRVUnaryTemplate LOAD_PARAM_INT = new SPIRVUnaryTemplate("param", "(int) " + FRAME_REF_NAME + "[%s]");
-        @Deprecated
-        public static final SPIRVUnaryTemplate LOAD_PARAM_LONG = new SPIRVUnaryTemplate("param", "(long) " + FRAME_REF_NAME + "[%s]");
-
-        // @formatter:on
-        private final String template;
-
-        @Deprecated
-        protected SPIRVUnaryTemplate(String opcode, String template) {
-            super(opcode);
-            this.template = template;
-        }
-
-        @Override
-        public void emit(SPIRVCompilationResultBuilder crb, Value x) {
-
-        }
-
-        public String getTemplate() {
-            return template;
-        }
-
     }
 
     /**

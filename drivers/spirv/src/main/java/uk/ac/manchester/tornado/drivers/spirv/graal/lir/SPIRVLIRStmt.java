@@ -416,8 +416,6 @@ public class SPIRVLIRStmt {
             }
 
             // Emit Store
-            // SPIRVId parameterID = asm.getParameterId(parameterIndex);
-
             SPIRVId parameterID = asm.lookUpLIRInstructions(lhs);
             SPIRVId idExpression = asm.lookUpLIRInstructions(rhs);
 
@@ -464,36 +462,6 @@ public class SPIRVLIRStmt {
 
         public Value getExpr() {
             return expr;
-        }
-    }
-
-    @Opcode("MOVE")
-    public static class MoveStmt extends AbstractInstruction {
-
-        public static final LIRInstructionClass<MoveStmt> TYPE = LIRInstructionClass.create(MoveStmt.class);
-
-        @Def
-        protected AllocatableValue lhs;
-        @Use
-        protected Value rhs;
-
-        public MoveStmt(AllocatableValue lhs, Value rhs) {
-            super(TYPE);
-            this.lhs = lhs;
-            this.rhs = rhs;
-        }
-
-        @Override
-        public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
-        }
-
-        public AllocatableValue getResult() {
-            return lhs;
-        }
-
-        public Value getExpr() {
-            return rhs;
         }
     }
 
@@ -560,8 +528,6 @@ public class SPIRVLIRStmt {
                     loadID, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getByteCount())) //
                     )));
-
-            // asm.registerLIRInstructionValue(result, loadID);
         }
 
     }
@@ -636,9 +602,7 @@ public class SPIRVLIRStmt {
                     vloadId, //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getByteCount())) //
                     )));
-
         }
-
     }
 
     @Opcode("STORE")

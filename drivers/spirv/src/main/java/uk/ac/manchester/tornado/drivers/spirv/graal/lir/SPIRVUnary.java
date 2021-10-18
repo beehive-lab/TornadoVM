@@ -143,7 +143,7 @@ public class SPIRVUnary {
 
             SPIRVId ptrCrossWorkGroupULong = null;
             if (type == SPIRVKind.OP_TYPE_INT_64) {
-                ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
+                ptrCrossWorkGroupULong = asm.getPTrCrossWorkULong();
             }
             SPIRVId address = asm.getStackFrameId();
             int alignment = 8;
@@ -198,7 +198,7 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("µIns LoadIndexValueFromSPIRVStack ");
             SPIRVId loadID = asm.module.getNextId();
 
-            SPIRVId ptrCrossWorkGroupULong = asm.ptrCrossWorkULong;
+            SPIRVId ptrCrossWorkGroupULong = asm.getPTrCrossWorkULong();
 
             SPIRVId address = asm.getStackFrameId();
             final int alignment = 8;
@@ -1055,8 +1055,6 @@ public class SPIRVUnary {
             SPIRVLogger.traceCodeGen("emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getMemorySemantics());
             SPIRVId constant2 = asm.lookUpConstant("2", SPIRVKind.OP_TYPE_INT_32);
             SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(flags.getMemorySemantics()), SPIRVKind.OP_TYPE_INT_32);
-            // SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(0x200 |
-            // 0x10), SPIRVKind.OP_TYPE_INT_32);
             asm.currentBlockScope().add(new SPIRVOpControlBarrier(constant2, constant2, constantSemantics));
         }
     }
@@ -1077,7 +1075,6 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
-            // String variableName = local.getName() + "Param" + paramIndex + "var";
             String variableName = local.getName() + "F" + asm.getMethodIndex();
             SPIRVId idLocal = asm.lookUpLIRInstructionsName(variableName);
             asm.registerLIRInstructionValue(this, idLocal);

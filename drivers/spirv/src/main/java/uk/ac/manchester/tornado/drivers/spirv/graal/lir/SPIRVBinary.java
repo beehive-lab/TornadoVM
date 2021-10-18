@@ -129,7 +129,6 @@ public class SPIRVBinary {
             } else {
                 a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
             }
-            // SPIRVId a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
             SPIRVId b;
             if (y instanceof SPIRVVectorElementSelect) {
                 ((SPIRVLIROp) y).emit(crb, asm);
@@ -137,7 +136,6 @@ public class SPIRVBinary {
             } else {
                 b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
             }
-            // SPIRVId b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
 
             if (opcode instanceof SPIRVAssembler.SPIRVBinaryOpLeftShift) {
                 if (y instanceof ConstantValue) {

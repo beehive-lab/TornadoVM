@@ -76,24 +76,6 @@ public class SPIRVGenTool {
         SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(spirvKind);
 
-        // ConstantValue stackIndex = new
-        // ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_32),
-        // JavaConstant.forInt((index + STACK_BASE_OFFSET) *
-        // SPIRVKind.OP_TYPE_INT_64.getSizeInBytes()));
-
-        // Implement an LIR utility to load the ptr parameter from the TornadoVM call
-        // stack
-        // generator.append(new
-        // SPIRVLIRStmt.LoadFromStackFrame(SPIRVKind.OP_TYPE_INT_64, (STACK_BASE_OFFSET
-        // + index), index));
-
-        // generator.append(new SPIRVLIRStmt.LoadFrame(SPIRVKind.OP_TYPE_INT_64));
-        // System.out.println("INDEX: " + index);
-        // generator.append(new SPIRVLIRStmt.AccessPointerChain(STACK_BASE_OFFSET));
-
-        // SPIRVLIRStmt.AssignStmt assignStmt = new SPIRVLIRStmt.AssignStmt(resultValue,
-        // new SPIRVUnary.Expr(op, lirKind, stackIndex));
-
         // ASSIGN ( result, LOAD_FROM_STACK_FRAME_EXPR)
         SPIRVLIRStmt.ASSIGNParameter assignStmt = new SPIRVLIRStmt.ASSIGNParameter( //
                 resultValue, //

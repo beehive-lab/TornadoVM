@@ -640,17 +640,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void registerParallelIntrinsics(ControlFlowGraph cfg, SPIRVAssembler asm, SPIRVModule module) {
+
+        Map<String, SPIRVId> SPIRVSymbolTable = asm.getSPIRVSymbolTable();
+
         // Register Thread ID
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
-            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, id);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, id);
         }
 
         // Register Global Size
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
-            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, id);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, id);
         }
 
@@ -658,20 +661,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
                 || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.LOCAL_THREAD_ID);
-            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, id);
         }
 
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GROUP_ID);
-            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GROUP_ID.name, id);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GROUP_ID.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.GROUP_ID, id);
         }
 
         if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
                 || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
             SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.WORKGROUP_SIZE);
-            asm.SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
+            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
             asm.builtinTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE, id);
         }
     }
@@ -713,17 +716,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             // Decorate for heap_base
             SPIRVId heapBaseAddrId = module.getNextId();
             module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            asm.SPIRVSymbolTable.put("heapBaseAddrId", heapBaseAddrId);
+            asm.putSymbol("heapBaseAddrId", heapBaseAddrId);
 
             // Decorate for frameBaseAddrId
             SPIRVId frameBaseAddrId = module.getNextId();
             module.add(new SPIRVOpDecorate(frameBaseAddrId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            asm.SPIRVSymbolTable.put("frameBaseAddrId", frameBaseAddrId);
+            asm.putSymbol("frameBaseAddrId", frameBaseAddrId);
 
             // Decorate for frameId
             SPIRVId frameId = module.getNextId();
             module.add(new SPIRVOpDecorate(frameId, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8)))); // Long Type
-            asm.SPIRVSymbolTable.put("frameId", frameId);
+            asm.putSymbol("frameId", frameId);
 
             // ----------------------------------
             // Emit all variables (types and initial values)
@@ -806,15 +809,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             ptrFunctionPTRCrossWorkGroupUChar = module.getNextId();
             module.add(new SPIRVOpTypePointer(ptrFunctionPTRCrossWorkGroupUChar, SPIRVStorageClass.Function(), pointerToGlobalMemoryHeap));
 
-            // asm.ptrCrossWorkULong = module.getNextId();
-            // module.add(new SPIRVOpTypePointer(asm.ptrCrossWorkULong,
-            // SPIRVStorageClass.CrossWorkgroup(),
-            // asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64)));
-            asm.ptrCrossWorkULong = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
+            asm.setPtrCrossWorkGroupULong(asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64));
 
             pointerToULongFunction = asm.primitives.getPtrToTypeFunctionPrimitive(SPIRVKind.OP_TYPE_INT_64);
             pointerToFrameAccess = module.getNextId();
-            module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), asm.ptrCrossWorkULong));
+            module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), asm.getPTrCrossWorkULong()));
 
             if (isParallel) {
                 // If the kernel is parallel, we need to declare a vector 3 (ThreadID-0,
