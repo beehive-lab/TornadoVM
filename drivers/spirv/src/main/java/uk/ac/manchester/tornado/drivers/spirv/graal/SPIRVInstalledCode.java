@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import java.nio.ByteBuffer;
-
 import jdk.vm.ci.code.InstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
@@ -34,13 +32,11 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
 
     protected SPIRVDeviceContext deviceContext;
     protected SPIRVModule spirvModule;
-    protected final ByteBuffer buffer = ByteBuffer.allocate(32);
 
     public SPIRVInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name);
         this.deviceContext = deviceContext;
         this.spirvModule = spirvModule;
-        buffer.order(deviceContext.getDevice().getByteOrder());
     }
 
     public SPIRVModule getSPIRVModule() {
@@ -51,6 +47,12 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
         return this.deviceContext;
     }
 
+    /**
+     * The SPIR-V backend generates a binary, not source code. This method is not
+     * applicable for this backend.
+     * 
+     * @return String.
+     */
     public String getGeneratedSourceCode() {
         return " NOT IMPLEMENTED YET";
     }

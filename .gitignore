@@ -61,3 +61,6 @@ spirv-beehive-toolkit/target/
 graal_dumps/*
 drivers/spirv-levelzero-jni/.idea/
 drivers/spirv/target/
+level-zero/
+spirv-beehive-toolkit/
+
