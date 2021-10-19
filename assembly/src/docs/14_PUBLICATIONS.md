@@ -63,12 +63,13 @@ reductions), please use the following citation:
 
 ```bibtex
 @inproceedings{Fumero:DARHH:VEE:2019,
- author = {Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis},
+ author = {Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and Xekalaki, Maria and Clarkson, James and Kotselidis, Christos},
  title = {{Dynamic Application Reconfiguration on Heterogeneous Hardware.}},
  booktitle = {Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments},
  series = {VEE '19},
  year = {2019},
- publisher = {ACM},
+ doi = {10.1145/3313808.3313819},
+ publisher = {Association for Computing Machinery}
 }
 ```
 
