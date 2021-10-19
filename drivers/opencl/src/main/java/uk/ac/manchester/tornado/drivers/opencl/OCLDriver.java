@@ -151,7 +151,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         }
     }
 
-    protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+    private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
         String platformToIgnore = getString("tornado.ignore.platform");
         for (int i = 0; i < numPlatforms; i++) {

@@ -24,7 +24,10 @@
 package uk.ac.manchester.tornado.drivers;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.drivers.common.ColoursTerminal;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
@@ -49,6 +52,14 @@ public class TornadoDeviceQuery {
         return String.format("%.1f %sB", (double) v / (1L << (z * 10)), " KMGTPE".charAt(z));
     }
 
+    private static HashMap<TornadoVMBackend, String> colourMapping;
+
+    static {
+        colourMapping = new HashMap<>();
+        colourMapping.put(TornadoVMBackend.OpenCL, ColoursTerminal.CYAN);
+        colourMapping.put(TornadoVMBackend.PTX, ColoursTerminal.GREEN);
+    }
+
     public static void main(String[] args) {
 
         String verboseFlag = "";
@@ -63,11 +74,14 @@ public class TornadoDeviceQuery {
 
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             final TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
+            TornadoVMBackend backendType = TornadoCoreRuntime.getTornadoRuntime().getBackendType(driverIndex);
+            String colour = colourMapping.get(backendType);
             final int numDevices = driver.getDeviceCount();
-            deviceInfoBuffer.append("Total number of " + driver.getName() + " devices  : " + numDevices + "\n");
+            deviceInfoBuffer.append("Driver: " + colour + driver.getName() + ColoursTerminal.RESET + "\n");
+            deviceInfoBuffer.append("  Total number of " + driver.getName() + " devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                deviceInfoBuffer.append("Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
-                deviceInfoBuffer.append("\t" + driver.getDevice(deviceIndex)).append("\n");
+                deviceInfoBuffer.append("  Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
+                deviceInfoBuffer.append("\t" + colour + backendType.toString() + ColoursTerminal.RESET + " -- " + driver.getDevice(deviceIndex)).append("\n");
                 if (verboseFlag.equals("verbose")) {
                     deviceInfoBuffer.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
                     deviceInfoBuffer.append("\t\t" + "Local Memory Size: " + formatSize(driver.getDevice(deviceIndex).getDeviceLocalMemorySize()) + "\n");
