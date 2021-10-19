@@ -35,9 +35,11 @@ public class SPIRVTornadoDriverProvider implements TornadoDriverProvider {
 
     private final TornadoDrivers priority = TornadoDrivers.SPIRV;
 
+    private static final String DRIVER_NAME = "SPIRV Driver";
+
     @Override
     public String getName() {
-        return "SPIRV Driver";
+        return DRIVER_NAME;
     }
 
     @Override
