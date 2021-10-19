@@ -1088,6 +1088,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 break;
             case 6:
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
+                break;
             case 7:
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
                 break;
@@ -1097,6 +1098,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 9:
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
                         inputObjects.get(8));
+                break;
             case 10:
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
                         inputObjects.get(8), inputObjects.get(9));

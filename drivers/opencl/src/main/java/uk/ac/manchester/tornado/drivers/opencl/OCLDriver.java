@@ -61,7 +61,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
         backends = new OCLBackend[numPlatforms][];
         contexts = new ArrayList<>();
-        discoverDevices(options, vmRuntime, vmConfig, numPlatforms);
+        discoverDevices(options, vmRuntime, vmConfig);
         flatBackends = new OCLBackend[getDeviceCount()];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
@@ -150,7 +150,8 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         }
     }
 
-    protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig, int numPlatforms) {
+    private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+        final int numPlatforms = OpenCL.getNumPlatforms();
         String platformToIgnore = getString("tornado.ignore.platform");
         for (int i = 0; i < numPlatforms; i++) {
             final TornadoPlatform platform = OpenCL.getPlatform(i);
@@ -175,7 +176,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return checkAndInitBackend(0, index);
     }
 
-    private int getNumDevices(int platform) {
+    public int getNumDevices(int platform) {
         try {
             return backends[platform].length;
         } catch (NullPointerException e) {
