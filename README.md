@@ -244,4 +244,4 @@ Each TornadoVM module is licensed as follows:
 | Tornado-Benchmarks|  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
 | Tornado-Examples  |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| JNI LIbraries (OpenCL, PTX and LevelZero)  |  [![License](https://img.shields.io/badge/License-MIT%20-orange.svg)](https://mit-license.org/)  |
+| JNI Libraries (OpenCL, PTX and LevelZero)  |  [![License](https://img.shields.io/badge/License-MIT%20-orange.svg)](https://mit-license.org/)  |

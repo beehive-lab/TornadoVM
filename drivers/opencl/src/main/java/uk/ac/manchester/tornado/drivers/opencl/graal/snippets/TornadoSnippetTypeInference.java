@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018-2020, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
+ * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
