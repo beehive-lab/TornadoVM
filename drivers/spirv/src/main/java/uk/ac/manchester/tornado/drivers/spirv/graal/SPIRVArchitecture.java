@@ -50,8 +50,6 @@ public class SPIRVArchitecture extends Architecture {
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
 
-    public static final Register.RegisterCategory SPIRV_ABI = new Register.RegisterCategory("abi");
-
     public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase constantSpace = new SPIRVMemoryBase(2, HEAP_REF_NAME, SPIRVMemorySpace.CONSTANT, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(3, HEAP_REF_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
@@ -149,35 +147,12 @@ public class SPIRVArchitecture extends Architecture {
                 return SPIRVKind.ILLEGAL;
             default:
                 throw new RuntimeException("Java Type for SPIR-V not supported: " + javaKind.name());
-
         }
     }
 
     @Override
     public int getReturnAddressSize() {
         return this.getWordSize();
-    }
-
-    public String getABI() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < abiRegisters.length; i++) {
-            sb.append(abiRegisters[i].getDeclaration());
-            if (i < abiRegisters.length - 1) {
-                sb.append(", ");
-            }
-        }
-        return sb.toString();
-    }
-
-    public String getCallingConvention() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < abiRegisters.length; i++) {
-            sb.append(abiRegisters[i].getName());
-            if (i < abiRegisters.length - 1) {
-                sb.append(", ");
-            }
-        }
-        return sb.toString();
     }
 
 }
