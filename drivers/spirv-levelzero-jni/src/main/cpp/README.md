@@ -1,6 +1,14 @@
-#### Compilation & Configuration of the JNI Level-Zero API 
+# LevelZero JNI 
 
-###### 1) Install Level-Zero
+Baremetal GPU and FPGA programming for Java using the [LevelZero API](https://spec.oneapi.io/level-zero/latest/index.html). 
+
+
+This project is a Java Native Interface (JNI) binding for Intel's Level Zero. This library is as designed to be as closed as possible to the LevelZero API for C++. 
+
+
+## Compilation & Configuration of the JNI Level-Zero API 
+
+### 1) Install Level-Zero
 
 
 Note: Using commit `551dd5810a3cea7a7e26ac4441da31878e804b53` from `level-zero` 
@@ -16,7 +24,7 @@ $ cmake --build . --config Release --target package
 ```
 
 
-###### 2) Compile JNI Native Code 
+### 2) Compile JNI Native Code 
 
 Set the paths to the directory of Level-Zero installation. Here's an example:
 
@@ -32,11 +40,11 @@ $ cmake ..
 $ make 
 ```
 
-###### 3) Compile & Run a Java test
+### 3) Compile & Run a Java test
 
 
 ```bash
-$ ./compileAndRun.sh
+$ ./scripts/compileAndRun.sh
 ```
 
 
@@ -56,9 +64,9 @@ __kernel void copydata(__global int* input, __global int* output) {
 To compile to SPIR-V:
 
 ```bash
-$ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
+$ clang -cc1 -triple spir copy_data.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
 $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
-$ mv opencl-copy.spv /tmp/example.spv
+$ mv opencl-copy.spv /tmp/opencl-copy.spv
 ```
 
 
@@ -68,5 +76,15 @@ The clang implementation I'm currently using is the `intel/llvm`: https://github
 To run:
 
 ```bash
-$ java -Djava.library.path=./levelZeroLib/build -cp target/levelzero-1.0-SNAPSHOT.jar TestLevelZero
+$ java -Djava.library.path=./levelZeroLib/build -cp target/levelzero-1.0-SNAPSHOT.jar uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZero
 ```
+
+## License
+
+This project is developed at [The University of Manchester](https://www.manchester.ac.uk/), and it is fully open source under the [MIT](https://github.com/beehive-lab/levelzero-jni/blob/master/LICENSE) license.
+
+
+## Acknowledgments
+
+The work was partially funded by the EU Horizon 2020 [Elegant 957286](https://www.elegant-h2020.eu/) project, and Intel Coorporation (https://www.intel.it/content/www/it/it/homepage.html).
+
