@@ -28,9 +28,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Abstraction of a LevelZero Driver. A LevelZero driver is composed of one or
+ * more physical devices.
+ */
 public class LevelZeroDriver {
 
+    /**
+     * Table to keep a mapping between a driver handler and all devices that belong
+     * that this specific driver.
+     */
     private Map<ZeDriverHandle, ArrayList<LevelZeroDevice>> architectureMap;
+
+    /**
+     * Table to keep a mapping between the driver handler and pointers to a device
+     * handler.
+     */
     private Map<ZeDriverHandle, ZeDevicesHandle> architecturePointers;
 
     static {
@@ -49,26 +62,26 @@ public class LevelZeroDriver {
      * 
      * This function must be called before any other API function. - If this
      * function is not called then all other functions will return
-     * ::ZE_RESULT_ERROR_UNINITIALIZED.
+     * {@link ZeResult.ZE_RESULT_ERROR_UNINITIALIZED}
      * 
-     * Only one instance of each driver will be initialized per process. - This
-     * function is thread-safe for scenarios where multiple libraries may initialize
-     * the driver(s) simultaneously.
+     * Only one instance of each driver will be initialized per process.
      * 
-     * @returns An error code value:
+     * This function is thread-safe for scenarios where multiple libraries may
+     * initialize the driver(s) simultaneously.
      * 
-     *          <code>
-     *              ZE_RESULT_SUCCESS  
-     *              ZE_RESULT_ERROR_UNINITIALIZED 
-     *              ZE_RESULT_ERROR_DEVICE_LOST 
-     *              ZE_RESULT_ERROR_INVALID_ENUMERATION 
-     *                 + `0x1 < flags` 
-     *              ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
+     * @return int An error code value:
+     * 
+     *         <code>
+     *              ZeResult.ZE_RESULT_SUCCESS  
+     *              ZeResult.ZE_RESULT_ERROR_UNINITIALIZED 
+     *              ZeResult.ZE_RESULT_ERROR_DEVICE_LOST 
+     *              ZeResult.ZE_RESULT_ERROR_INVALID_ENUMERATION 
+     *                 + `0x3 < flags` 
+     *              ZeResult.ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
      *           </code>
      * 
      * @param init
      *            Flag: {@link ZeInitFlag}
-     * @return error code
      */
     public native int zeInit(int init);
 
@@ -107,9 +120,37 @@ public class LevelZeroDriver {
 
     private native int zeDriverGetProperties(long driverHandler, ZeDriverProperties driverProperties);
 
+    /**
+     * Retrieves driver instances
+     * 
+     * <ul>
+     * <li>A driver represents a collection of physical devices.</li>
+     * <li>Multiple calls to this function will return identical driver handles, in
+     * the same order.</li>
+     * <li>The application may pass nullptr for pDrivers when only querying the
+     * number of drivers.</li>
+     * <li>The application may call this function from simultaneous threads.</li>
+     * <li>The implementation of this function should be lock-free.</li>
+     * </ul>
+     * 
+     * Similar to the OpenCL call `clGetPlatformIDs`
+     *
+     * @return int with an error code:
+     * 
+     *         <code>
+     *         {@link ZeResult.ZE_RESULT_SUCCESS} 
+     *         {@link ZeResult.ZE_RESULT_ERROR_UNINITIALIZED}
+     *         {@link ZeResult.ZE_RESULT_ERROR_DEVICE_LOST}
+     *         {@link ZeResult.ZE_RESULT_ERROR_INVALID_NULL_POINTER}: if driverCount is null.*         
+     *       </code>
+     * @param driverCount
+     *            array with driver count
+     * @param driverHandler
+     *            Driver Handler object {@link ZeDriverHandle}
+     */
     public int zeDriverGet(int[] driverCount, ZeDriverHandle driverHandler) {
-        long[] pointers = driverHandler == null ? null : driverHandler.getZe_driver_handle_t_ptr();
-        int result = zeDriverGet_native(driverCount, pointers);
+        long[] driverNativePointers = driverHandler == null ? null : driverHandler.getZe_driver_handle_t_ptr();
+        int result = zeDriverGet_native(driverCount, driverNativePointers);
         architectureMap.put(driverHandler, null);
         return result;
     }

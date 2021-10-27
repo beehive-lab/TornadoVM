@@ -105,7 +105,7 @@ public class LevelZeroUtils {
         ZeContextDesc contextDescription = new ZeContextDesc();
         contextDescription.setSType(Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC);
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
-        result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0], 0);
+        result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0]);
         errorLog("zeContextCreate", result);
         return context;
     }

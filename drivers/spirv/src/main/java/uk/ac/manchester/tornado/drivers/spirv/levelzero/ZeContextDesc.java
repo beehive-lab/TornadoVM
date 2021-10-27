@@ -24,16 +24,14 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeContextDesc {
+public class ZeContextDesc extends ZeNativePointer {
 
     private int type;
     private long pNext;
     private int flags;
-    private long nativePointer;
 
     public ZeContextDesc() {
         this.type = Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-        this.nativePointer = -1;
     }
 
     public long getNativePointer() {

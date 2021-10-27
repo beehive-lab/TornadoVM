@@ -24,21 +24,28 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZePointer {
-    private long valuePointer;
+/**
+ * Class to keep the value of a native pointer.
+ */
+public class ZeNativePointer {
 
-    public ZePointer() {
+    public static final int INIT_NATIVE_PTR = -1;
+
+    protected long nativePointer;
+
+    public ZeNativePointer() {
+        this(INIT_NATIVE_PTR);
     }
 
-    public ZePointer(long valuePointer) {
-        this.valuePointer = valuePointer;
+    public ZeNativePointer(long valuePointer) {
+        this.nativePointer = valuePointer;
     }
 
-    public void setValuePointer(long valuePointer) {
-        this.valuePointer = valuePointer;
+    public void setNativePointer(long nativePointer) {
+        this.nativePointer = nativePointer;
     }
 
-    public long getValuePointer() {
-        return this.valuePointer;
+    public long getNativePointer() {
+        return this.nativePointer;
     }
 }

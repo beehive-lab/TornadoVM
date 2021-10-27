@@ -87,7 +87,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * <code>
  *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
  *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
- *     $ mv opencl-copy.spv /tmp
+ *     $ cp opencl-copy.spv /tmp
  * </code>
  * 
  * How to run?
@@ -99,9 +99,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  */
 public class TestLevelZero {
 
-    // Test Program
     public static void main(String[] args) throws IOException {
-        System.out.println("Level-ZERO JNI Library - Test");
+        System.out.println("Testing Level-ZERO JNI Library");
 
         // Create the Level Zero Driver
         LevelZeroDriver driver = new LevelZeroDriver();
@@ -127,7 +126,7 @@ public class TestLevelZero {
         // Create context object
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         // Call native method for creating the context
-        result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0], 0);
+        result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0]);
         LevelZeroUtils.errorLog("zeContextCreate", result);
 
         // Get number of devices in a driver

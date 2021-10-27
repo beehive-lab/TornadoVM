@@ -72,5 +72,4 @@ public class Ze_Structure_Type {
     public static final int ZE_STRUCTURE_TYPE_IMAGE_VIEW_PLANAR_EXP_DESC = 0x00020005; /// < ::ze_image_view_planar_exp_desc_t
     public static final int ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES_1_2 = 0x20006; /// < ::ze_device_properties_t
     public static final int ZE_STRUCTURE_TYPE_FORCE_UINT32 = 0x7fffffff;
-
 }

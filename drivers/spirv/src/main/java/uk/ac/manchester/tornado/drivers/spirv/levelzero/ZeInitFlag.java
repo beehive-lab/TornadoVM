@@ -24,7 +24,19 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
+/**
+ * Supported Initialization Flags
+ */
 public class ZeInitFlag {
-    public static final int ZE_INIT_FLAG_GPU_ONLY = 0; /// < only initialize GPU drivers
+    /**
+     * Only initialize GPU drivers
+     */
+    public static final int ZE_INIT_FLAG_GPU_ONLY = ZeConstants.ZE_BIT(0);
+
+    /**
+     * Only initialize VPU drivers
+     */
+    public static final int ZE_INIT_FLAG_VPU_ONLY = ZeConstants.ZE_BIT(1);
+
     public static final int ZE_INIT_FLAG_FORCE_UINT32 = 0x7fffffff;
 }

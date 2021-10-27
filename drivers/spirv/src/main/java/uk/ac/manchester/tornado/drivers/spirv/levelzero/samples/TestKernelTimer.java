@@ -123,7 +123,7 @@ public class TestKernelTimer {
         // Create context object
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         // Call native method for creating the context
-        result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0], 0);
+        result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0]);
         LevelZeroUtils.errorLog("zeContextCreate", result);
 
         // Get number of devices in a driver

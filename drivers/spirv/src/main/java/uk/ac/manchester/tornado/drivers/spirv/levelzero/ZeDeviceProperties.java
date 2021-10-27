@@ -83,7 +83,7 @@ public class ZeDeviceProperties {
         builder.append("=========================\n");
         builder.append("Device Properties\n");
         builder.append("=========================\n");
-        builder.append("SType               : " + ZeUtils.zeTypeToString(stype) + "\n");
+        builder.append("STye                : " + ZeUtils.zeTypeToString(stype) + "\n");
         builder.append("pNext               : " + pNext + "\n");
         builder.append("Type                : " + getType(type) + "\n");
         builder.append("vendorId            : " + vendorId + "\n");
