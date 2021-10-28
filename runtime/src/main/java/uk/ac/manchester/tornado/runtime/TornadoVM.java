@@ -291,7 +291,6 @@ public class TornadoVM extends TornadoLogger {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                // We accumulate the copy in for all tasks in a graph
                 for (SchedulableTask task : tasks) {
                     timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
                 }
@@ -331,7 +330,6 @@ public class TornadoVM extends TornadoLogger {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                // We accumulate the copy in for all tasks in a graph
                 for (SchedulableTask task : tasks) {
                     timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
                 }
@@ -371,7 +369,6 @@ public class TornadoVM extends TornadoLogger {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            // We accumulate the copy out for all tasks in a graph
             for (SchedulableTask task : tasks) {
                 timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
             }
@@ -409,7 +406,6 @@ public class TornadoVM extends TornadoLogger {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            // We accumulate the copy out for all tasks in a graph
             for (SchedulableTask task : tasks) {
                 timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
             }
