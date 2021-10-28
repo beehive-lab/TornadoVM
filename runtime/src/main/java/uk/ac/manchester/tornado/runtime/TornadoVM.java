@@ -291,9 +291,7 @@ public class TornadoVM extends TornadoLogger {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                for (SchedulableTask task : tasks) {
-                    timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
-                }
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
 
                 long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
                 dispatchValue += event.getDriverDispatchTime();
@@ -330,9 +328,7 @@ public class TornadoVM extends TornadoLogger {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                for (SchedulableTask task : tasks) {
-                    timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_IN_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
-                }
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
 
                 long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
                 dispatchValue += event.getDriverDispatchTime();
@@ -369,9 +365,7 @@ public class TornadoVM extends TornadoLogger {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            for (SchedulableTask task : tasks) {
-                timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
-            }
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
@@ -406,9 +400,7 @@ public class TornadoVM extends TornadoLogger {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            for (SchedulableTask task : tasks) {
-                timeProfiler.addValueToMetric(ProfilerType.TASK_COPY_OUT_SIZE_BYTES, task.getId(), objectState.getBuffer().size());
-            }
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
