@@ -159,4 +159,30 @@ public final class GraphicsKernels {
         });
     }
 
+    // Parameters for the algorithm used
+    private static final int MAX_ITERATIONS = 1000;
+    private static final float ZOOM = 1;
+    private static final float CX = -0.7f;
+    private static final float CY = 0.27015f;
+    private static final float MOVE_X = 0;
+    private static final float MOVE_Y = 0;
+
+    public static void juliaSetTornado(int size, float[] hue, float[] brightness) {
+        for (@Parallel int ix = 0; ix < size; ix++) {
+            for (@Parallel int jx = 0; jx < size; jx++) {
+                float zx = 1.5f * (ix - size / 2) / (0.5f * ZOOM * size) + MOVE_X;
+                float zy = (jx - size / 2) / (0.5f * ZOOM * size) + MOVE_Y;
+                float k = MAX_ITERATIONS;
+                while (zx * zx + zy * zy < 4 && k > 0) {
+                    float tmp = zx * zx - zy * zy + CX;
+                    zy = 2.0f * zx * zy + CY;
+                    zx = tmp;
+                    k--;
+                }
+                hue[ix * size + jx] = (MAX_ITERATIONS / k);
+                brightness[ix * size + jx] = k > 0 ? 1 : 0;
+            }
+        }
+    }
+
 }

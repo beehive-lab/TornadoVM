@@ -24,7 +24,6 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Authors: Michalis Papadimitriou
 #
 
 import argparse
@@ -85,6 +84,7 @@ __BENCHMARKS__ = [
 	"dgemm",
 	"mandelbrot",
 	"dft",
+	"juliaset",
 ]
 
 def getSize():
@@ -101,6 +101,7 @@ allSizes = {
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
 	"dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
 	"blurFilter": [[256, 512, 1024, 2048, 8192, 16384], [__MAX_ITERATIONS__]],
+	"juliaset": [[512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
 }
 
 mediumSizes = {
@@ -112,6 +113,7 @@ mediumSizes = {
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], ["getSize()"]],
 	"dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
 	"blurFilter": [[256, 512, 1024, 2048], ["getSize()"]],
+	"juliaset": [[512, 1024, 2048, 4096], ["getSize()"]],
 }
 
 ## ========================================================================================
