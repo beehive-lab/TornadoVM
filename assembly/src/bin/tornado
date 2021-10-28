@@ -53,6 +53,7 @@ function print_usage() {
   echo "          Profiling options:"
   echo "              --profiler                      Enable profiling information in silent mode. Use the profiler API to query the values"
   echo "              --profilerOutput                Enable profiling information. It prints a JSON file in STDOUT"
+  echo "              --profilerSafe <file.json>      Enable and safe profiling information into a file"
   echo ""
   echo "          TornadoVM settings:"
   echo ""
@@ -203,6 +204,11 @@ while [[ $# -gt 0 ]]; do
     ;;
   --profilerOutput)
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.profiler=True"
+    shift
+    ;;  
+  --profilerSafe)
+    shift
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir=$1"
     shift
     ;;  
   --mavenLocalInstall)
