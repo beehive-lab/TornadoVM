@@ -637,17 +637,14 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
-    private int executeBarrier(StringBuilder tornadoVMBytecodeList, int eventList, int[] waitList, int lastEvent) {
+    private int executeBarrier(StringBuilder tornadoVMBytecodeList, int eventList, int[] waitList) {
         if (TornadoOptions.printBytecodes) {
             tornadoVMBytecodeList.append(String.format("vm: BARRIER event-list %d\n", eventList));
         }
 
-        if (contexts.size() == 1) {
-            final TornadoAcceleratorDevice device = contexts.get(0);
-            lastEvent = device.enqueueMarker(waitList);
-        } else if (contexts.size() > 1) {
-            TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
-        }
+        int id = contexts.size() - 1;
+        final TornadoAcceleratorDevice device = contexts.get(id);
+        int lastEvent = device.enqueueMarker(waitList);
 
         resetEventIndexes(eventList);
         return lastEvent;
@@ -752,10 +749,13 @@ public class TornadoVM extends TornadoLogger {
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
                 final int eventList = buffer.getInt();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
+                if (TornadoOptions.printBytecodes) {
+                    tornadoVMBytecodeList.append("BARRIER\n");
+                }
                 if (isWarmup) {
                     continue;
                 }
-                executeBarrier(tornadoVMBytecodeList, eventList, waitList, lastEvent);
+                lastEvent = executeBarrier(tornadoVMBytecodeList, eventList, waitList);
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (TornadoOptions.printBytecodes) {
                     tornadoVMBytecodeList.append("END\n");
