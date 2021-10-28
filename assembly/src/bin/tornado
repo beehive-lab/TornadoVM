@@ -51,7 +51,7 @@ function print_usage() {
   echo "              --ea|--enableassertions         Enable Java assertions"
   echo ""
   echo "          Profiling options:"
-  echo "              --profiler                      Enable profiling information in silent mode"
+  echo "              --profiler                      Enable profiling information in silent mode. Use the profiler API to query the values"
   echo "              --profilerOutput                Enable profiling information. It prints a JSON file in STDOUT"
   echo ""
   echo "          TornadoVM settings:"
