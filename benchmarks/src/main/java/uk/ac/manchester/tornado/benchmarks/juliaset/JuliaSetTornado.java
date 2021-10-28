@@ -30,8 +30,6 @@ public class JuliaSetTornado extends BenchmarkDriver {
     private static float[] hue;
     private static float[] brightness;
 
-    private TaskSchedule ts;
-
     public JuliaSetTornado(int iterations, int size) {
         super(iterations);
         this.iterations = iterations;
@@ -81,6 +79,11 @@ public class JuliaSetTornado extends BenchmarkDriver {
             }
         }
         return isCorrect;
+    }
+
+    @Override
+    public TaskSchedule getTaskSchedule() {
+        return ts;
     }
 
     @Override

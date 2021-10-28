@@ -33,6 +33,8 @@ public abstract class BenchmarkRunner {
 
     private static final boolean TORNADO_ENABLED = Boolean.parseBoolean(TornadoRuntime.getProperty("tornado.enable", "True"));
 
+    private static final boolean TORNADO_PROFILER = TornadoRuntime.isProfilerEnabled();
+
     protected abstract String getName();
 
     protected abstract String getIdString();
@@ -56,20 +58,20 @@ public abstract class BenchmarkRunner {
         final double refElapsedMedian;
         final double refFirstIteration;
 
-        if (!SKIP_SERIAL) {
+        if (!TORNADO_PROFILER && !SKIP_SERIAL) {
             // Run the Java Reference
             final BenchmarkDriver referenceTest = getJavaDriver();
-            referenceTest.benchmark(null);
+            referenceTest.benchmark(null, false);
 
             System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
 
-            refElapsed = referenceTest.getMean();
+            refElapsed = referenceTest.getAverage();
             refElapsedMedian = referenceTest.getMedian();
             refFirstIteration = referenceTest.getFirstIteration();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
-                streamsTest.benchmark(null);
+                streamsTest.benchmark(null, false);
                 System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getSummary());
             }
         } else {
@@ -113,15 +115,34 @@ public abstract class BenchmarkRunner {
 
                 TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver benchmarkDriver = getTornadoDriver();
-
+                boolean isProfilerEnabled = TORNADO_PROFILER;
                 try {
-                    benchmarkDriver.benchmark(tornadoDevice);
+                    benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
-                        benchmarkDriver.getPreciseSummary(), refElapsed / benchmarkDriver.getMean(), refElapsedMedian / benchmarkDriver.getMedian(),
-                        refFirstIteration / benchmarkDriver.getFirstIteration(), benchmarkDriver.getCV(), driver.getDevice(deviceIndex));
+
+                if (!isProfilerEnabled) {
+                    System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", //
+                            id, //
+                            driverIndex + ":" + deviceIndex, //
+                            benchmarkDriver.getPreciseSummary(), //
+                            refElapsed / benchmarkDriver.getAverage(), //
+                            refElapsedMedian / benchmarkDriver.getMedian(), //
+                            refFirstIteration / benchmarkDriver.getFirstIteration(), //
+                            benchmarkDriver.getCV(), //
+                            driver.getDevice(deviceIndex));
+                } else {
+                    // Profiler enabled
+                    System.out.printf("bm=%-15s, device=%-5s, kernelMin=%.2f, kernelAvg=%.2f, copyInAvg=%.2f, copyOutAvg=%.2f, deviceName=%s\n", //
+                            id, //
+                            driverIndex + ":" + deviceIndex, //
+                            benchmarkDriver.getBestKernelTime(), //
+                            benchmarkDriver.getAverageKernelTime(), //
+                            benchmarkDriver.getAverageCopyInTime(), //
+                            benchmarkDriver.getAverageCopyOutTime(), //
+                            driver.getDevice(deviceIndex));
+                }
 
             }
         }
@@ -138,10 +159,10 @@ public abstract class BenchmarkRunner {
             final BenchmarkDriver deviceTest = getTornadoDriver();
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
-            deviceTest.benchmark(tornadoDevice);
+            deviceTest.benchmark(tornadoDevice, TORNADO_PROFILER);
 
             System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
-                    deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                    deviceTest.getPreciseSummary(), refElapsed / deviceTest.getAverage(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
                     deviceTest.getCV(), driver.getDevice(deviceIndex));
         }
     }
@@ -149,6 +170,13 @@ public abstract class BenchmarkRunner {
     public abstract void parseArgs(String[] args);
 
     public static void main(String[] args) {
+
+        if (args.length < 1) {
+            String buffer = "[ERROR] Provide a benchmark to run " + "\n Example: $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner juliaset 10 4096";
+            System.out.println(buffer);
+            System.exit(0);
+        }
+
         try {
             final String canonicalName = String.format("%s.%s.Benchmark", BenchmarkRunner.class.getPackage().getName(), args[0]);
             final BenchmarkRunner benchmarkRunner = (BenchmarkRunner) Class.forName(canonicalName).newInstance();

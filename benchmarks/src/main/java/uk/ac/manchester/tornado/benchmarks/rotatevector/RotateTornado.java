@@ -35,7 +35,6 @@ public class RotateTornado extends BenchmarkDriver {
     private VectorFloat3 input;
     private VectorFloat3 output;
     private Matrix4x4Float m;
-    private TaskSchedule graph;
 
     public RotateTornado(int iterations, int numElements) {
         super(iterations);
@@ -55,27 +54,27 @@ public class RotateTornado extends BenchmarkDriver {
             input.set(i, value);
         }
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(input);
-        graph.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
-        graph.streamOut(output);
-        graph.warmup();
+        ts = new TaskSchedule("benchmark");
+        ts.streamIn(input);
+        ts.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
+        ts.streamOut(output);
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
         input = null;
         output = null;
         m = null;
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
@@ -84,8 +83,8 @@ public class RotateTornado extends BenchmarkDriver {
         final VectorFloat3 result = new VectorFloat3(numElements);
 
         benchmarkMethod(device);
-        graph.syncObjects(output);
-        graph.clearProfiles();
+        ts.syncObjects(output);
+        ts.clearProfiles();
 
         rotateVector(result, m, input);
 

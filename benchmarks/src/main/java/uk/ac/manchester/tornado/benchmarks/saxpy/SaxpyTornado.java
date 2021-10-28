@@ -34,8 +34,6 @@ public class SaxpyTornado extends BenchmarkDriver {
     private float[] y;
     private final float alpha = 2f;
 
-    private TaskSchedule graph;
-
     public SaxpyTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
@@ -50,28 +48,28 @@ public class SaxpyTornado extends BenchmarkDriver {
             x[i] = i;
         }
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(x);
-        graph.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
-        graph.streamOut(y);
-        graph.warmup();
+        ts = new TaskSchedule("benchmark");
+        ts.streamIn(x);
+        ts.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
+        ts.streamOut(y);
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         x = null;
         y = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
@@ -80,8 +78,8 @@ public class SaxpyTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         benchmarkMethod(device);
-        graph.syncObjects(y);
-        graph.clearProfiles();
+        ts.syncObjects(y);
+        ts.clearProfiles();
 
         saxpy(alpha, x, result);
 

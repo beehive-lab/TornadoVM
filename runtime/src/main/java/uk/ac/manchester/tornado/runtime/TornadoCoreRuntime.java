@@ -199,6 +199,11 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return -1;
     }
 
+    @Override
+    public boolean isProfilerEnabled() {
+        return TornadoOptions.PROFILER_LOGS_ACCUMULATE && TornadoOptions.isProfilerEnabled();
+    }
+
     public MetaAccessProvider getMetaAccess() {
         return vmBackend.getMetaAccess();
     }

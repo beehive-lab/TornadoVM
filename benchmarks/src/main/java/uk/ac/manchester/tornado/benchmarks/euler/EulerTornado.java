@@ -31,7 +31,6 @@ public class EulerTornado extends BenchmarkDriver {
     long[] outputC;
     long[] outputD;
     long[] outputE;
-    TaskSchedule ts;
 
     public EulerTornado(int iterations, int size) {
         super(iterations);

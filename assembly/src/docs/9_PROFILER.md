@@ -1,6 +1,6 @@
 # TornadoVM Profiler
 
-To enable the TornadoVM profiler use `-Dtornado.profiler=True`.
+To enable the TornadoVM profiler use the Java flag `-Dtornado.profiler=True`.
 
 Example:
 

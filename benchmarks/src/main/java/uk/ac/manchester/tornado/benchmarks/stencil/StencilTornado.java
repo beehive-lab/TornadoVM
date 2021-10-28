@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
@@ -37,9 +36,6 @@ public class StencilTornado extends BenchmarkDriver {
     private float[] a0;
     private float[] a1;
     private float[] ainit;
-
-    private TaskSchedule graph;
-    private SchedulableTask stencilTask;
 
     public StencilTornado(int iterations, int dataSize) {
         super(iterations);
@@ -64,18 +60,17 @@ public class StencilTornado extends BenchmarkDriver {
             }
         }
         copy(sz, ainit, a0);
-        graph = new TaskSchedule("benchmark") //
+        ts = new TaskSchedule("benchmark") //
                 .streamIn(a0, a1) //
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
                 .streamOut(a0);
-        stencilTask = graph.getTask("stencil");
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
         a0 = null;
         a1 = null;
         ainit = null;
@@ -84,7 +79,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device).execute();
+        ts.mapAllTo(device).execute();
     }
 
     @Override
@@ -98,7 +93,7 @@ public class StencilTornado extends BenchmarkDriver {
             benchmarkMethod(device);
         }
         barrier();
-        graph.clearProfiles();
+        ts.clearProfiles();
 
         for (int i = 0; i < iterations; i++) {
             stencil3d(n, sz, b0, b1, FAC);
@@ -111,7 +106,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        graph.syncObjects();
+        ts.syncObjects();
     }
 
     public void printSummary() {

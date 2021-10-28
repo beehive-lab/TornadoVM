@@ -26,7 +26,6 @@ public class HilbertTornado extends BenchmarkDriver {
 
     private int size;
     private float[] hilbertMatrix;
-    private TaskSchedule s0;
 
     public HilbertTornado(int size, int iterations) {
         super(iterations);
@@ -37,18 +36,18 @@ public class HilbertTornado extends BenchmarkDriver {
     public void setUp() {
         hilbertMatrix = new float[size * size];
         // @formatter:off
-        s0 = new TaskSchedule("s0")
+        ts = new TaskSchedule("s0")
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
                 .streamOut(hilbertMatrix);
         // @formatter:on
-        s0.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        s0.dumpProfiles();
+        ts.dumpProfiles();
         hilbertMatrix = null;
-        s0.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
@@ -78,7 +77,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        s0.mapAllTo(device);
-        s0.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 }
