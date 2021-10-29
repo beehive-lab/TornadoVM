@@ -66,7 +66,7 @@ It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time,
 * `--profilerSave FILENAME`:  
 It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. TornadoVM will save the profiler information in the `FILENAME` after the execution of each task-schedule.
 
-* `--profiler`:  It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. The profiler is stored internally and it can be queried using the [TornadoVM Profiler API](https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java)
+* `--profiler`:  It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. The profiler information is stored internally and it can be queried using the [TornadoVM Profiler API](https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java)
 
 * `-Dtornado.opencl.compiler.options=LIST_OF_OPTIONS`:  
 It allows to pass the compile options specified by the OpenCL ``CLBuildProgram`` [specification](https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html) to TornadoVM at runtime. By default it doesn't enable any.
