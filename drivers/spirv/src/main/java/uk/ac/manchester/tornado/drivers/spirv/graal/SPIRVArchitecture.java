@@ -51,7 +51,6 @@ public class SPIRVArchitecture extends Architecture {
     private static final int RETURN_ADDRESS_SIZE = 0;
 
     public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
-    public static final SPIRVMemoryBase constantSpace = new SPIRVMemoryBase(2, HEAP_REF_NAME, SPIRVMemorySpace.CONSTANT, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(3, HEAP_REF_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase privateSpace = new SPIRVMemoryBase(4, HEAP_REF_NAME, SPIRVMemorySpace.PRIVATE, SPIRVKind.OP_TYPE_INT_8);
 
@@ -63,11 +62,6 @@ public class SPIRVArchitecture extends Architecture {
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
         super(BACKEND_ARCHITECTURE, wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
         sp = new SPIRVRegister(1, FRAME_BASE_NAME, wordKind);
-
-        // For future releases, we might add memory spaces/regions for each kernel
-        // abiRegisters = new SPIRVRegister[] { globalSpace, sp, constantSpace,
-        // localSpace };
-
         abiRegisters = new SPIRVRegister[] { globalSpace, sp };
     }
 

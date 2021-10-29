@@ -496,7 +496,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
         LIRKind resultKind = LIRKind.combine(op1, op2, op3);
         Variable result = getGen().newVariable(resultKind);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic.FMA, resultKind, op1, op2, op3)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA, resultKind, op1, op2, op3)));
         return result;
     }
 }

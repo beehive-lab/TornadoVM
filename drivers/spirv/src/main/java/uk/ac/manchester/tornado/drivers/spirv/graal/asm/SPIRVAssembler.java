@@ -93,8 +93,8 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVPrimitiveTypes;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
@@ -114,7 +114,7 @@ public final class SPIRVAssembler extends Assembler {
     /**
      * Control and handling for the SPIR-V builtin functions
      */
-    public final Map<SPIRVOCLBuiltIn, SPIRVId> builtinTable;
+    public final Map<SPIRVThreadBuiltIn, SPIRVId> builtinTable;
 
     private SPIRVInstScope functionScope;
     private SPIRVId mainFunctionID;
@@ -513,26 +513,26 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVMultipleOperands operands;
         if (isParallel) {
             List<SPIRVId> builtInList = new ArrayList<>();
-            if (graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID));
+            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID));
             }
 
-            if (graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
-                    || graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.LOCAL_THREAD_ID));
+            if (graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
+                    || graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.LOCAL_THREAD_ID));
             }
 
-            if (graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() //
-                    || graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.WORKGROUP_SIZE));
+            if (graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() //
+                    || graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.WORKGROUP_SIZE));
             }
 
-            if (graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GLOBAL_SIZE));
+            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_SIZE));
             }
 
-            if (graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVOCLBuiltIn.GROUP_ID));
+            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
+                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GROUP_ID));
             }
 
             SPIRVId[] array = new SPIRVId[builtInList.size()];

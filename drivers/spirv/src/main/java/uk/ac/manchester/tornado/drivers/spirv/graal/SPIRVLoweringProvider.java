@@ -145,20 +145,25 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         this.GPUReduceSnippets = new ReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
+    private boolean shouldIgnoreNode(Node node) {
+        return (node instanceof AbstractDeoptimizeNode //
+                || node instanceof UnwindNode //
+                || node instanceof RemNode //
+                || node instanceof InstanceOfNode //
+                || node instanceof IntegerDivRemNode);
+    }
+
     @Override
     public void lower(Node node, LoweringTool tool) {
+        if (shouldIgnoreNode(node)) {
+            return;
+        }
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
-        } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
-            /*
-             * No lowering, we currently generate LIR directly for these nodes.
-             */
         } else if (node instanceof LoadIndexedNode) {
             lowerLoadIndexedNode((LoadIndexedNode) node, tool);
         } else if (node instanceof NewArrayNonVirtualizableNode) {
             lowerNewArrayNode((NewArrayNonVirtualizableNode) node);
-        } else if (node instanceof InstanceOfNode) {
-            // ignore
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
@@ -171,8 +176,6 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             lowerStoreFieldNode((StoreFieldNode) node, tool);
         } else if (node instanceof ArrayLengthNode) {
             lowerArrayLengthNode((ArrayLengthNode) node, tool);
-        } else if (node instanceof IntegerDivRemNode) {
-            // lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else if (node instanceof ThreadIdFixedWithNextNode) {
             lowerThreadIdNode((ThreadIdFixedWithNextNode) node);
         } else if (node instanceof ThreadLocalIdFixedWithNextNode) {
@@ -237,11 +240,6 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
         StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
         lowerReduceSnippets(storeAtomicNode, tool);
-    }
-
-    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
-        StructuredGraph graph = integerDivRemNode.graph();
-        // FIXME:
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {

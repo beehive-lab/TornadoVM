@@ -435,7 +435,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // @formatter:on
     }
 
-    private SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module, SPIRVOCLBuiltIn builtIn) {
+    private SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module, SPIRVThreadBuiltIn builtIn) {
         SPIRVId idSPIRVBuiltin = module.getNextId();
         module.add(new SPIRVOpName(idSPIRVBuiltin, new SPIRVLiteralString(builtIn.name)));
         module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(builtIn.builtIn)));
@@ -644,38 +644,38 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         Map<String, SPIRVId> SPIRVSymbolTable = asm.getSPIRVSymbolTable();
 
         // Register Thread ID
-        if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_THREAD_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID.name, id);
-            asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_THREAD_ID, id);
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GLOBAL_THREAD_ID);
+            SPIRVSymbolTable.put(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.name, id);
+            asm.builtinTable.put(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID, id);
         }
 
         // Register Global Size
-        if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GLOBAL_SIZE);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE.name, id);
-            asm.builtinTable.put(SPIRVOCLBuiltIn.GLOBAL_SIZE, id);
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
+            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GLOBAL_SIZE);
+            SPIRVSymbolTable.put(SPIRVThreadBuiltIn.GLOBAL_SIZE.name, id);
+            asm.builtinTable.put(SPIRVThreadBuiltIn.GLOBAL_SIZE, id);
         }
 
         // Look for other builtins
-        if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
-                || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.LOCAL_THREAD_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID.name, id);
-            asm.builtinTable.put(SPIRVOCLBuiltIn.LOCAL_THREAD_ID, id);
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
+                || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
+            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.LOCAL_THREAD_ID);
+            SPIRVSymbolTable.put(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.name, id);
+            asm.builtinTable.put(SPIRVThreadBuiltIn.LOCAL_THREAD_ID, id);
         }
 
-        if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.GROUP_ID);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.GROUP_ID.name, id);
-            asm.builtinTable.put(SPIRVOCLBuiltIn.GROUP_ID, id);
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
+            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GROUP_ID);
+            SPIRVSymbolTable.put(SPIRVThreadBuiltIn.GROUP_ID.name, id);
+            asm.builtinTable.put(SPIRVThreadBuiltIn.GROUP_ID, id);
         }
 
-        if (cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
-                || cfg.graph.getNodes().filter(SPIRVOCLBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVOCLBuiltIn.WORKGROUP_SIZE);
-            SPIRVSymbolTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE.name, id);
-            asm.builtinTable.put(SPIRVOCLBuiltIn.WORKGROUP_SIZE, id);
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
+                || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
+            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.WORKGROUP_SIZE);
+            SPIRVSymbolTable.put(SPIRVThreadBuiltIn.WORKGROUP_SIZE.name, id);
+            asm.builtinTable.put(SPIRVThreadBuiltIn.WORKGROUP_SIZE, id);
         }
     }
 
@@ -822,7 +822,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
                 SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
 
-                for (Map.Entry<SPIRVOCLBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
+                for (Map.Entry<SPIRVThreadBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
                     asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
                 }
             }

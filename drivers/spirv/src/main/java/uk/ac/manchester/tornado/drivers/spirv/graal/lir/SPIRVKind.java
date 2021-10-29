@@ -34,7 +34,6 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 /**
  * SPIR-V Types:
@@ -45,7 +44,7 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
  * 
  * Note: Floating-point types are represented and stored using IEEE-754
  * semantics. All integer formats are represented and stored using
- * 2’s-complement format. 2’s-complement format.
+ * 2’s-complement format.
  * 
  */
 public enum SPIRVKind implements PlatformKind {
@@ -65,7 +64,6 @@ public enum SPIRVKind implements PlatformKind {
     // Vector types
     
     // OP_TYPE_VECTOR2
-    //OP_TYPE_VECTOR2_INT_8(2, uk.ac.manchester.tornado.api.collections.types.Byte2.TYPE, OP_TYPE_INT_8),
     OP_TYPE_VECTOR2_INT_16(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, OP_TYPE_INT_16),
     OP_TYPE_VECTOR2_INT_32(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR2_INT_64(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, OP_TYPE_INT_64),
@@ -78,22 +76,13 @@ public enum SPIRVKind implements PlatformKind {
 
     // OP_TYPE_VECTOR 4
     OP_TYPE_VECTOR4_INT_8(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, OP_TYPE_INT_8),
-    //OP_TYPE_VECTOR4_INT_16(4, uk.ac.manchester.tornado.api.collections.types.Short4.TYPE, OP_TYPE_INT_16),
     OP_TYPE_VECTOR4_INT_32(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, OP_TYPE_INT_64),
 
     // OP_TYPE_VECTOR 8
-    //OP_TYPE_VECTOR8_INT_8(8, uk.ac.manchester.tornado.api.collections.types.Byte8.TYPE, OP_TYPE_INT_8),
-    //OP_TYPE_VECTOR8_INT_16(8, uk.ac.manchester.tornado.api.collections.types.Short8.TYPE, OP_TYPE_INT_16),
     OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_64),
-
-    // OP_TYPE_VECTOR 16
-//    OP_TYPE_VECTOR16_INT_8(16, uk.ac.manchester.tornado.api.collections.types.Byte8.TYPE, OP_TYPE_INT_8),
-//    OP_TYPE_VECTOR16_INT_16(16, uk.ac.manchester.tornado.api.collections.types.Short8.TYPE, OP_TYPE_INT_16),
-//    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.collections.types.Int1.TYPE, OP_TYPE_INT_32),
-//    OP_TYPE_VECTOR16_INT_64(16, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_64),
-
+    
     // OP_TYPE_VECTOR2 Float
     OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
     OP_TYPE_VECTOR2_FLOAT_32(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, OP_TYPE_FLOAT_32),
@@ -136,19 +125,6 @@ public enum SPIRVKind implements PlatformKind {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private final EnumKey key = new EnumKey(this);
-
-    // public static SPIRVKind fromResolvedJavaType(ResolvedJavaType type) {
-    // if (!type.isArray()) {
-    // for (SPIRVKind kind : SPIRVKind.values()) {
-    // if (kind.javaClass != null &&
-    // (kind.javaClass.getSimpleName().equalsIgnoreCase(type.getJavaKind().name())
-    // || kind.javaClass.getSimpleName().equals(type.getUnqualifiedName()))) {
-    // return kind;
-    // }
-    // }
-    // }
-    // return ILLEGAL;
-    // }
 
     SPIRVKind(int sizeInBytes, Class<?> javaClass) {
         this(sizeInBytes, javaClass, null);
@@ -345,20 +321,6 @@ public enum SPIRVKind implements PlatformKind {
         return JavaConstant.NULL_POINTER;
     }
 
-    // FIXME Could be deprecated
-    public static SPIRVKind resolveToVectorKind(ResolvedJavaType type) {
-        if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
-            String typeName = type.getName();
-            int index = typeName.lastIndexOf("/");
-            String simpleName = typeName.substring(index + 1, typeName.length() - 1).toUpperCase();
-            if (simpleName.startsWith("BYTE")) {
-                simpleName = simpleName.replace("BYTE", "CHAR");
-            }
-            return SPIRVKind.valueOf(simpleName);
-        }
-        return SPIRVKind.ILLEGAL;
-    }
-
     private static Map<String, SPIRVKind> vectorTable;
 
     static {
@@ -397,48 +359,6 @@ public enum SPIRVKind implements PlatformKind {
 
     public int getByteCount() {
         return size;
-    }
-
-    public static int lookupTypeIndex(SPIRVKind kind) {
-        switch (kind) {
-            case OP_TYPE_INT_16:
-                return 0;
-            case OP_TYPE_INT_32:
-                return 1;
-            case OP_TYPE_FLOAT_32:
-                return 2;
-            case OP_TYPE_INT_8:
-                return 3;
-            case OP_TYPE_FLOAT_64:
-                return 4;
-            default:
-                return -1;
-        }
-    }
-
-    public final int lookupLengthIndex() {
-        return lookupLengthIndex(getVectorLength());
-    }
-
-    public final int lookupTypeIndex() {
-        return lookupTypeIndex(getElementKind());
-    }
-
-    public static int lookupLengthIndex(int length) {
-        switch (length) {
-            case 2:
-                return 0;
-            case 3:
-                return 1;
-            case 4:
-                return 2;
-            case 8:
-                return 3;
-            case 16:
-                return 4;
-            default:
-                return -1;
-        }
     }
 
     public JavaKind asJavaKind() {

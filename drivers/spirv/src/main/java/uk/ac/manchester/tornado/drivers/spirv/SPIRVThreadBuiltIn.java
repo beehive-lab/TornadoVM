@@ -34,7 +34,10 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdFixedNode
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
 
-public enum SPIRVOCLBuiltIn {
+/**
+ * OpenCL Thread Built-ins for SPIR-V.
+ */
+public enum SPIRVThreadBuiltIn {
 
     // @formatter:off
     GLOBAL_THREAD_ID("spirv_BuiltInGlobalInvocationId", SPIRVBuiltIn.GlobalInvocationId(), GlobalThreadIdNode.class, null), 
@@ -49,7 +52,7 @@ public enum SPIRVOCLBuiltIn {
     Class<? extends Node> nodeClass;
     Class<? extends Node> optionalNodeClass;
 
-    SPIRVOCLBuiltIn(String idName, SPIRVBuiltIn builtIn, Class<? extends Node> nodeClass, Class<? extends Node> optional) {
+    SPIRVThreadBuiltIn(String idName, SPIRVBuiltIn builtIn, Class<? extends Node> nodeClass, Class<? extends Node> optional) {
         this.name = idName;
         this.builtIn = builtIn;
         this.nodeClass = nodeClass;

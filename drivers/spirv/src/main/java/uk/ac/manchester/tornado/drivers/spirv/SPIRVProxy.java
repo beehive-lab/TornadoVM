@@ -50,7 +50,7 @@ public class SPIRVProxy {
                 dispatcher = new SPIRVLevelZeroDriver();
             } else {
                 /*
-                 * Using the OpenCL SPIRV Dispatcher
+                 * Use the OpenCL SPIRV Dispatcher
                  */
                 dispatcher = new SPIRVOpenCLDriver();
             }

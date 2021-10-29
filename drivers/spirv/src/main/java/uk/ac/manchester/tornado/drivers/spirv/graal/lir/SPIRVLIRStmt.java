@@ -583,7 +583,7 @@ public class SPIRVLIRStmt {
             SPIRVId vloadId = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();
 
-            SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLIntrinsic.VLOADN;
+            SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.VLOADN;
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
@@ -733,7 +733,7 @@ public class SPIRVLIRStmt {
             SPIRVLogger.traceCodeGen("emit StoreVectorStmt in address: " + cast + " <- " + rhs);
 
             SPIRVId set = asm.getOpenclImport();
-            SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLIntrinsic.VSTOREN;
+            SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.VSTOREN;
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());

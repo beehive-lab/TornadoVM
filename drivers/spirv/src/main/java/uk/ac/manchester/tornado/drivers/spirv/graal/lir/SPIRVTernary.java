@@ -64,9 +64,9 @@ public class SPIRVTernary {
 
     public static class TernaryIntrinsic extends TernaryConsumer {
 
-        private SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn;
+        private SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn;
 
-        public TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn, LIRKind lirKind, Value x, Value y, Value z) {
+        public TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn, LIRKind lirKind, Value x, Value y, Value z) {
             super(lirKind, x, y, z);
             this.builtIn = builtIn;
         }

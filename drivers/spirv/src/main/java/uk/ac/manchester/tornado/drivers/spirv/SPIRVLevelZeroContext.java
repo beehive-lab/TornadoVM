@@ -184,7 +184,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             int result = levelZeroContext.zeMemAllocShared(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(),
                     deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocShared", result);
-            // FIXME NOTE: Not sure if we should return the raw pointer here for Level Zero
         } else {
             int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocDevice", result);

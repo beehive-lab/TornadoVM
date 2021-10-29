@@ -242,9 +242,9 @@ public class SPIRVBinary {
 
     public static class Intrinsic extends BinaryConsumer {
 
-        private SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn;
+        private SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn;
 
-        public Intrinsic(SPIRVUnary.Intrinsic.OpenCLIntrinsic builtIn, LIRKind valueKind, Value x, Value y) {
+        public Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn, LIRKind valueKind, Value x, Value y) {
             super(null, valueKind, x, y);
             this.builtIn = builtIn;
         }

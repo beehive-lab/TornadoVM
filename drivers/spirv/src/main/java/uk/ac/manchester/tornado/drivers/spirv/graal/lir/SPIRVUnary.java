@@ -54,7 +54,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVOCLBuiltIn;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemoryBase;
@@ -487,12 +487,12 @@ public class SPIRVUnary {
         }
     }
 
-    public static class OpenCLBuiltinCallForSPIRV extends UnaryConsumer {
+    public static class ThreadBuiltinCallForSPIRV extends UnaryConsumer {
 
-        protected SPIRVOCLBuiltIn builtIn;
+        protected SPIRVThreadBuiltIn builtIn;
         protected Value dimension;
 
-        public OpenCLBuiltinCallForSPIRV(SPIRVOCLBuiltIn builtIn, LIRKind valueKind, Value dimension) {
+        public ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn builtIn, LIRKind valueKind, Value dimension) {
             super(null, valueKind, dimension);
             this.dimension = dimension;
             this.builtIn = builtIn;
@@ -515,7 +515,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit OCL-SPIRV Intrinsic: " + builtIn);
+            SPIRVLogger.traceCodeGen("emit Compute-SPIRV Intrinsic: " + builtIn);
 
             SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 
@@ -525,10 +525,10 @@ public class SPIRVUnary {
             SPIRVId v3long = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_VECTOR3_INT_64);
 
             // Call Thread-ID getGlobalId(0)
-            SPIRVId id19 = asm.module.getNextId();
+            SPIRVId idLoadResult = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpLoad( //
                     v3long, //
-                    id19, //
+                    idLoadResult, //
                     idSPIRVBuiltin, //
                     new SPIRVOptionalOperand<>( //
                             SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(32))) //
@@ -548,13 +548,12 @@ public class SPIRVUnary {
                     new SPIRVOpCompositeExtract( //
                             ulong, //
                             callIntrinsicId, //
-                            id19, //
+                            idLoadResult, //
                             new SPIRVMultipleOperands<>( //
                                     new SPIRVLiteralInteger(dimensionValue)) //
                     ));
 
             SPIRVId conv = asm.module.getNextId();
-            // FIXME check this
             SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
 
             asm.currentBlockScope().add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
@@ -866,15 +865,20 @@ public class SPIRVUnary {
         }
     }
 
+    /**
+     * OpenCL Extended Instruction Set Intrinsics. As specified in the SPIR-V 1.0
+     * standard, the following intrinsics in SPIR-V represents builtin functions
+     * from the OpenCL standard.
+     * 
+     * For obtaining the correct Int-Reference of the function:
+     * 
+     * <url>https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html</url>
+     * 
+     */
     public static class Intrinsic extends UnaryConsumer {
 
-        /**
-         * For obtaining the correct Int-Reference of the function:
-         * <p>
-         * https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html
-         */
         // @formatter:off
-        public enum OpenCLIntrinsic {
+        public enum OpenCLExtendedIntrinsic {
 
             // Math extended instructions
             // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_math_a_math_extended_instructions
@@ -924,7 +928,7 @@ public class SPIRVUnary {
             SCLAMP("s_clamp", 149),
             SMAX("s_max", 156),
             SMIN("s_min", 158),
-            POPCOPUNT("popcount", 166),
+            POPCOUNT("popcount", 166),
 
             // Vector Loads/Stores
             // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_vector_a_vector_data_load_and_store_instructions
@@ -938,7 +942,7 @@ public class SPIRVUnary {
             int value;
             String name;
 
-            OpenCLIntrinsic(String name, int value) {
+            OpenCLExtendedIntrinsic(String name, int value) {
                 this.value = value;
                 this.name = name;
             }
@@ -954,9 +958,9 @@ public class SPIRVUnary {
         // @formatter:on
 
         public static final String COS = "cos";
-        final private OpenCLIntrinsic builtIn;
+        final private OpenCLExtendedIntrinsic builtIn;
 
-        protected Intrinsic(OpenCLIntrinsic opcode, LIRKind valueKind, Value value) {
+        protected Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
             super(null, valueKind, value);
             this.builtIn = opcode;
         }
@@ -975,7 +979,6 @@ public class SPIRVUnary {
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.value, builtIn.name);
             asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
             asm.registerLIRInstructionValue(this, result);
-
         }
     }
 
