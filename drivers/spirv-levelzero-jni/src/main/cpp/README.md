@@ -6,6 +6,9 @@ Baremetal GPU and FPGA programming for Java using the [LevelZero API](https://sp
 This project is a Java Native Interface (JNI) binding for Intel's Level Zero. This library is as designed to be as closed as possible to the LevelZero API for C++. 
 
 
+Subset of LevelZero 1.2.2 supported (LevelZero Feb 2021 version)
+
+
 ## Compilation & Configuration of the JNI Level-Zero API 
 
 ### 1) Install Level-Zero
