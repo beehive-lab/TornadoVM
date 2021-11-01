@@ -75,6 +75,7 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
 
 /**
@@ -397,6 +398,25 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
 
+        /**
+         * @param accessNode
+         *            is a {@link FixedNode} that will be replaced by a
+         *            {@link FloatingNode}. This method checks if the node that is going
+         *            to be replaced has an {@link OCLBarrierNode} as next. And in this
+         *            case, it replaces that next node due to redundancy.
+         */
+        private static void replaceRedundantNextOCLBarrierNode(FloatableAccessNode accessNode) {
+            Node nextNode = accessNode.next();
+            if (nextNode instanceof OCLBarrierNode) {
+                nextNode.replaceAtUsages(nextNode.successors().first());
+                Node predecessor = nextNode.predecessor();
+                predecessor.replaceFirstSuccessor(nextNode, nextNode.successors().first());
+
+                nextNode.clearInputs();
+                // nextNode.safeDelete();
+            }
+        }
+
         @SuppressWarnings("try")
         private static void processFloatable(FloatableAccessNode accessNode, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
@@ -407,6 +427,7 @@ public class TornadoFloatingReadReplacement extends Phase {
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();
                     assert floatingNode.getLastLocationAccess() == lastLocationAccess;
+                    replaceRedundantNextOCLBarrierNode(accessNode);
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
             }
