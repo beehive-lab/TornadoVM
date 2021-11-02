@@ -52,7 +52,9 @@ function print_usage() {
   echo ""
   echo "          Profiling options:"
   echo ""
-  echo "              --enableProfiler <console|silent> Enable profiling information in silent mode. Use the profiler API to query the values"
+  echo "              --enableProfiler <console|silent> Enable profiling information in console or silent mode. 
+                                                        When using the silent mode, the profiler information can 
+                                                        be queried using the task profiler API."
   echo "              --dumpProfiler <file.json>        Enable and safe profiling information into a file"
   echo ""
   echo "          TornadoVM settings:"
