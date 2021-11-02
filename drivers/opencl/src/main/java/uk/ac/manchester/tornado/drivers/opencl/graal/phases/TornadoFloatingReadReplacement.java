@@ -402,19 +402,22 @@ public class TornadoFloatingReadReplacement extends Phase {
          * @param accessNode
          *            is a {@link FixedNode} that will be replaced by a
          *            {@link FloatingNode}. This method checks if the node that is going
-         *            to be replaced has an {@link OCLBarrierNode} as next. And in this
-         *            case, it replaces that next node due to redundancy.
+         *            to be replaced has an {@link OCLBarrierNode} as next.
          */
-        private static void replaceRedundantNextOCLBarrierNode(FloatableAccessNode accessNode) {
-            Node nextNode = accessNode.next();
-            if (nextNode instanceof OCLBarrierNode) {
-                nextNode.replaceAtUsages(nextNode.successors().first());
-                Node predecessor = nextNode.predecessor();
-                predecessor.replaceFirstSuccessor(nextNode, nextNode.successors().first());
+        private static boolean isNextNodeOCLBarrierNode(FloatableAccessNode accessNode) {
+            return (accessNode.next() instanceof OCLBarrierNode);
+        }
 
-                nextNode.clearInputs();
-                // nextNode.safeDelete();
-            }
+        /**
+         * @param nextNode
+         *            is a {@link FixedNode} that will be replaced by a
+         *            {@link FloatingNode}. This method removes the redundant
+         *            {@link OCLBarrierNode}.
+         */
+        private static void replaceRedundantNextOCLBarrierNode(Node nextNode) {
+            nextNode.replaceAtUsages(nextNode.successors().first());
+            Node predecessor = nextNode.predecessor();
+            predecessor.replaceFirstSuccessor(nextNode, nextNode.successors().first());
         }
 
         @SuppressWarnings("try")
@@ -427,7 +430,9 @@ public class TornadoFloatingReadReplacement extends Phase {
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();
                     assert floatingNode.getLastLocationAccess() == lastLocationAccess;
-                    replaceRedundantNextOCLBarrierNode(accessNode);
+                    if (isNextNodeOCLBarrierNode(accessNode)) {
+                        replaceRedundantNextOCLBarrierNode(accessNode.next());
+                    }
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
             }
