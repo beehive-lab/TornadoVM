@@ -20,6 +20,8 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -29,6 +31,9 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -73,8 +78,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         float[] cJava = new float[size * size];
         float[] cTornado = new float[size * size];
 
-        Arrays.fill(a, 2);
-        Arrays.fill(b, 4);
+        Random r = new Random();
+        IntStream.range(0, size * size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+        });
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
@@ -112,8 +120,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         float[] cJava = new float[size * size];
         float[] cTornado = new float[size * size];
 
-        Arrays.fill(a, 2);
-        Arrays.fill(b, 4);
+        Random r = new Random();
+        IntStream.range(0, size * size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+        });
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -177,8 +188,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         float[] cJava = new float[size * size];
         float[] cTornado = new float[size * size];
 
-        Arrays.fill(a, 2);
-        Arrays.fill(b, 4);
+        Random r = new Random();
+        IntStream.range(0, size * size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+        });
 
         WorkerGrid worker = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler();
