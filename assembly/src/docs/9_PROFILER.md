@@ -1,11 +1,14 @@
 # TornadoVM Profiler
 
-To enable the TornadoVM profiler use `--profilerOutput`.
+To enable the TornadoVM profiler use `--enableProfiler <silent|console>`.
+
+* `console`: It prints a JSON entry for each task-schedule executed via STDOUT.
+* `silent` : It enables profiling information in silent mode. Use the profiler API to query the values. 
 
 Example:
 
 ```bash
-$ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddInt 100000
+$ tornado --enableProfiler console  uk.ac.manchester.tornado.examples.VectorAddInt 100000
 {
     "s0": {
         "COPY_OUT_TIME": "36576",
@@ -62,11 +65,11 @@ When the task-schedule is executed multiple times, timers related to compilation
 
 ### Print timers at the end of the execution
 
-The options `--profiler` print a full report only when the method `ts.getProfileLog()` is called.
+The options `--enableProfiler silent` print a full report only when the method `ts.getProfileLog()` is called.
 
 ### Save profiler into a file
 
-Use the option `--profilerSave <FILENAME>` to store the profiler output in a JSON file.
+Use the option `--dumpProfiler <FILENAME>` to store the profiler output in a JSON file.
 
 ### Parsing Json files
 

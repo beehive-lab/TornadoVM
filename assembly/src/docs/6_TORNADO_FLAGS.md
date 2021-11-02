@@ -60,13 +60,13 @@ Enable usage of relative addresses which is a prerequisite for using DMA tranfer
 * ```-Dtornado.opencl.blocking=true```:  
 Allows to force OpenCL API blocking calls.
 
-* `--profilerOutput`:  
+* `--enableProfiler console`:  
 It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. TornadoVM will print by STDOUT a JSON string containing all profiler metrics related to the execution of each task-schedule. 
 
-* `--profilerSave FILENAME`:  
-It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. TornadoVM will save the profiler information in the `FILENAME` after the execution of each task-schedule.
+* `--enableProfiler silent`:  It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. The profiler information is stored internally and it can be queried using the [TornadoVM Profiler API](https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java)
 
-* `--profiler`:  It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. The profiler information is stored internally and it can be queried using the [TornadoVM Profiler API](https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java)
+* `--dumpProfiler FILENAME`:  
+It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. TornadoVM will save the profiler information in the `FILENAME` after the execution of each task-schedule.
 
 * `-Dtornado.opencl.compiler.options=LIST_OF_OPTIONS`:  
 It allows to pass the compile options specified by the OpenCL ``CLBuildProgram`` [specification](https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html) to TornadoVM at runtime. By default it doesn't enable any.
