@@ -30,7 +30,6 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     private float[] output;
     private int size;
-    private TaskSchedule graph;
 
     public MonteCarloTornado(int iterations, int size) {
         super(iterations);
@@ -40,24 +39,24 @@ public class MonteCarloTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         output = new float[size];
-        graph = new TaskSchedule("benchmark") //
+        ts = new TaskSchedule("benchmark") //
                 .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
                 .streamOut(output);
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
         output = null;
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
@@ -68,13 +67,13 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-        graph.warmup();
-        graph.mapAllTo(device);
+        ts.warmup();
+        ts.mapAllTo(device);
         for (int i = 0; i < 3; i++) {
-            graph.execute();
+            ts.execute();
         }
-        graph.syncObjects(output);
-        graph.clearProfiles();
+        ts.syncObjects(output);
+        ts.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {

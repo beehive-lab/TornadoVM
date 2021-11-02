@@ -583,7 +583,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
         }
 
-        if (!TornadoOptions.SOCKET_PORT.isEmpty() && TornadoOptions.isProfilerEnabled()) {
+        if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
             TornadoVMClient tornadoVMClient = new TornadoVMClient();
             try {
                 tornadoVMClient.sentLogOverSocket(timeProfiler.createJson(new StringBuffer(), this.getId()));
@@ -744,7 +744,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         compileToTornadoVMBytecode();
         vm.warmup();
 
-        timeProfiler.dumpJson(new StringBuffer(), this.getId());
+        if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
+            timeProfiler.dumpJson(new StringBuffer(), this.getId());
+        }
     }
 
     @Override

@@ -21,6 +21,10 @@ import static java.lang.Math.toIntExact;
 import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -36,7 +40,14 @@ public abstract class BenchmarkDriver {
     private double elapsed;
     private boolean validResult;
     private double[] timers;
+
+    private List<Long> deviceKernelTimers;
+    private List<Long> deviceCopyIn;
+    private List<Long> deviceCopyOut;
+
     private int startingIndex = 30;
+
+    protected TaskSchedule ts;
 
     public BenchmarkDriver(long iterations) {
         this.iterations = iterations;
@@ -58,6 +69,10 @@ public abstract class BenchmarkDriver {
 
     public abstract void benchmarkMethod(TornadoDevice device);
 
+    public TaskSchedule getTaskSchedule() {
+        return ts;
+    }
+
     protected void barrier() {
 
     }
@@ -74,7 +89,7 @@ public abstract class BenchmarkDriver {
         return true;
     }
 
-    public void benchmark(TornadoDevice device) {
+    public void benchmark(TornadoDevice device, boolean isProfilerEnabled) {
 
         setUp();
 
@@ -84,6 +99,12 @@ public abstract class BenchmarkDriver {
 
         timers = new double[size];
 
+        if (isProfilerEnabled) {
+            deviceKernelTimers = new ArrayList<>();
+            deviceCopyIn = new ArrayList<>();
+            deviceCopyOut = new ArrayList<>();
+        }
+
         if (validResult) {
             for (long i = 0; i < iterations; i++) {
                 if (!skipGC()) {
@@ -92,6 +113,21 @@ public abstract class BenchmarkDriver {
                 final long start = System.nanoTime();
                 benchmarkMethod(device);
                 final long end = System.nanoTime();
+
+                if (isProfilerEnabled) {
+
+                    // Ensure the execution was correct, so we can count for general stats.
+                    if (getTaskSchedule().getDeviceKernelTime() != 0) {
+                        deviceKernelTimers.add(getTaskSchedule().getDeviceKernelTime());
+                    }
+                    if (getTaskSchedule().getDeviceWriteTime() != 0) {
+                        deviceCopyIn.add(getTaskSchedule().getDeviceWriteTime());
+                    }
+                    if (getTaskSchedule().getDeviceReadTime() != 0) {
+                        deviceCopyOut.add(getTaskSchedule().getDeviceReadTime());
+                    }
+                }
+
                 timers[toIntExact(i)] = (end - start);
             }
             barrier();
@@ -99,22 +135,18 @@ public abstract class BenchmarkDriver {
         tearDown();
     }
 
-    public double getBestExecution() {
-        double minValue = timers[0];
-        for (int i = 1; i < timers.length; i++) {
-            if (timers[i] < minValue) {
-                minValue = timers[i];
+    public double getMin(double[] arr) {
+        double minValue = arr[0];
+        for (int i = 1; i < arr.length; i++) {
+            if (arr[i] < minValue) {
+                minValue = arr[i];
             }
         }
         return minValue;
     }
 
-    public double getFirstIteration() {
-        return timers[0];
-    }
-
-    public double getMedian() {
-        double[] temp = timers.clone();
+    public double getMedian(double[] arr) {
+        double[] temp = arr.clone();
         sort(temp);
         if (temp.length % 2 == 0) {
             return ((temp[temp.length / 2] + temp[temp.length / 2 - 1]) / 2);
@@ -123,19 +155,67 @@ public abstract class BenchmarkDriver {
         }
     }
 
-    public double getMean() {
+    public double[] toArray(List<Long> list) {
+        return list.stream().mapToDouble(i -> i).toArray();
+    }
+
+    public double getBestKernelTime() {
+        return getMin(toArray(deviceKernelTimers));
+    }
+
+    public double getMedianKernelTime() {
+        return getMedian(toArray(deviceKernelTimers));
+    }
+
+    public double getAverageKernelTime() {
+        return getAverage(toArray(deviceKernelTimers));
+    }
+
+    public double getAverageCopyInTime() {
+        return getAverage(toArray(deviceCopyIn));
+    }
+
+    public double getAverageCopyOutTime() {
+        return getAverage(toArray(deviceCopyOut));
+    }
+
+    public double getBestCopyIn() {
+        return getMin(toArray(deviceCopyIn));
+    }
+
+    public double getBestCopyOut() {
+        return getMin(toArray(deviceCopyOut));
+    }
+
+    public double getBestExecution() {
+        return getMin(timers);
+    }
+
+    public double getFirstIteration() {
+        return timers[0];
+    }
+
+    public double getMedian() {
+        return getMedian(timers);
+    }
+
+    public double getAverage(double[] arr) {
         double sum = 0.0;
-        if (timers.length <= startingIndex) {
+        if (arr.length <= startingIndex) {
             startingIndex = 0;
         }
-        for (int i = startingIndex; i < timers.length; i++) {
-            sum += timers[i];
+        for (int i = startingIndex; i < arr.length; i++) {
+            sum += arr[i];
         }
         return sum / (iterations - startingIndex);
     }
 
+    public double getAverage() {
+        return getAverage(timers);
+    }
+
     public double getVariance() {
-        double mean = getMean();
+        double mean = getAverage();
         double temp = 0;
         for (int i = startingIndex; i < timers.length; i++) {
             temp += (timers[i] - mean) * (timers[i] - mean);
@@ -148,7 +228,7 @@ public abstract class BenchmarkDriver {
     }
 
     public double getCV() {
-        return (getStdDev() / getMean()) * 100;
+        return (getStdDev() / getAverage()) * 100;
     }
 
     public double getElapsed() {
@@ -164,7 +244,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e", getMean(), getMedian(), getFirstIteration(), getBestExecution());
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
     public String getSummary() {

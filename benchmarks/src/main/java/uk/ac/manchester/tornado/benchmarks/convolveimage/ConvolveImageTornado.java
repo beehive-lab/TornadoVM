@@ -38,8 +38,6 @@ public class ConvolveImageTornado extends BenchmarkDriver {
     private ImageFloat output;
     private ImageFloat filter;
 
-    private TaskSchedule graph;
-
     public ConvolveImageTornado(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
         this.imageSizeX = imageSizeX;
@@ -56,29 +54,29 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         createImage(input);
         createFilter(filter);
 
-        graph = new TaskSchedule("benchmark");
-        graph.streamIn(input);
-        graph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
-        graph.streamOut(output);
-        graph.warmup();
+        ts = new TaskSchedule("benchmark");
+        ts.streamIn(input);
+        ts.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
+        ts.streamOut(output);
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         input = null;
         output = null;
         filter = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
@@ -87,8 +85,8 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(imageSizeX, imageSizeY);
 
         benchmarkMethod(device);
-        graph.syncObject(output);
-        graph.clearProfiles();
+        ts.syncObject(output);
+        ts.clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);
 

@@ -31,7 +31,6 @@ public class BlackScholesTornado extends BenchmarkDriver {
     private float[] randArray;
     private float[] call;
     private float[] put;
-    private TaskSchedule graph;
 
     public BlackScholesTornado(int iterations, int size) {
         super(iterations);
@@ -48,22 +47,22 @@ public class BlackScholesTornado extends BenchmarkDriver {
             randArray[i] = (i * 1.0f) / size;
         }
 
-        graph = new TaskSchedule("benchmark") //
+        ts = new TaskSchedule("benchmark") //
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                 .streamOut(put, call);
 
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         randArray = null;
         call = null;
         put = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
@@ -84,13 +83,13 @@ public class BlackScholesTornado extends BenchmarkDriver {
             randArrayTor[i] = (float) Math.random();
         }
 
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
+        ts = new TaskSchedule("benchmark");
+        ts.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
 
-        graph.warmup();
-        graph.execute();
-        graph.syncObjects(putTor, callTor);
-        graph.clearProfiles();
+        ts.warmup();
+        ts.execute();
+        ts.syncObjects(putTor, callTor);
+        ts.clearProfiles();
 
         blackscholes(randArrayTor, putSeq, calSeq);
 
@@ -110,7 +109,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 }
