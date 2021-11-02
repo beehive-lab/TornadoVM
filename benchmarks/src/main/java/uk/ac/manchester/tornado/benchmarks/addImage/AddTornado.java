@@ -17,6 +17,9 @@
  */
 package uk.ac.manchester.tornado.benchmarks.addImage;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
@@ -26,17 +29,12 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
-import java.util.Random;
-import java.util.stream.IntStream;
-
 public class AddTornado extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
     private ImageFloat4 a,b,c;
-
-    private TaskSchedule ts;
 
     public AddTornado(int iterations, int numElementsX, int numElementsY) {
         super(iterations);

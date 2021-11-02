@@ -203,6 +203,11 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         throw shouldNotReachHere("Could not find index for driver: " + driverClass);
     }
 
+    @Override
+    public boolean isProfilerEnabled() {
+        return TornadoOptions.PROFILER_LOGS_ACCUMULATE && TornadoOptions.isProfilerEnabled();
+    }
+
     public MetaAccessProvider getMetaAccess() {
         return vmBackend.getMetaAccess();
     }

@@ -27,7 +27,6 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 public class DFTTornado extends BenchmarkDriver {
 
     private int size;
-    private TaskSchedule graph;
     private double[] inReal;
     private double[] inImag;
     private double[] outReal;
@@ -52,11 +51,11 @@ public class DFTTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         initData();
-        graph = new TaskSchedule("benchmark") //
+        ts = new TaskSchedule("benchmark") //
                 .streamIn(inReal, inImag) //
                 .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                 .streamOut(outReal, outImag);
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
@@ -65,10 +64,10 @@ public class DFTTornado extends BenchmarkDriver {
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
-        graph.warmup();
-        graph.mapAllTo(device);
-        graph.execute();
-        graph.streamOut(outReal, outImag);
+        ts.warmup();
+        ts.mapAllTo(device);
+        ts.execute();
+        ts.streamOut(outReal, outImag);
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
@@ -88,19 +87,19 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         outImag = null;
         outReal = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
 
     }
 }

@@ -34,7 +34,6 @@ public class NBodyTornado extends BenchmarkDriver {
     private float[] posSeq;
     private float[] velSeq;
     private int numBodies;
-    private TaskSchedule ts;
 
     public NBodyTornado(int numBodies, int iterations) {
         super(iterations);

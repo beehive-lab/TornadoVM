@@ -31,9 +31,8 @@ public class SpmvTornado extends BenchmarkDriver {
 
     private final CSRMatrix<float[]> matrix;
 
-    private float[] v,y;
-
-    private TaskSchedule graph;
+    private float[] v;
+    private float[] y;
 
     public SpmvTornado(int iterations, CSRMatrix<float[]> matrix) {
         super(iterations);
@@ -45,28 +44,28 @@ public class SpmvTornado extends BenchmarkDriver {
         v = new float[matrix.size];
         y = new float[matrix.size];
         initData(v);
-        graph = new TaskSchedule("benchmark") //
+        ts = new TaskSchedule("benchmark") //
                 .streamIn(matrix.vals, matrix.cols, matrix.rows, v, y) //
                 .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
                 .streamOut(y);
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         v = null;
         y = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
@@ -75,7 +74,7 @@ public class SpmvTornado extends BenchmarkDriver {
         final float[] ref = new float[matrix.size];
 
         benchmarkMethod(device);
-        graph.clearProfiles();
+        ts.clearProfiles();
 
         spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, ref);
 

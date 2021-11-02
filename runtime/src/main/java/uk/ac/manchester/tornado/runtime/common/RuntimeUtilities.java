@@ -464,7 +464,7 @@ public class RuntimeUtilities {
             PrintWriter printWriter = new PrintWriter(fileWriter);
             printWriter.println(jsonProfile);
         } catch (IOException e) {
-            throw new TornadoRuntimeException("JSon profiler file cannot be appened");
+            throw new TornadoRuntimeException("JSon profiler file cannot be append");
         }
     }
 

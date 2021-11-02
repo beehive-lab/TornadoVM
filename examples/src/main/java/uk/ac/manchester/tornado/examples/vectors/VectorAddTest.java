@@ -23,6 +23,16 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 
+/**
+ * Test Using the Profiler
+ * 
+ * How to run?
+ * 
+ * <code>
+ *     tornado -Dtornado.profiler=True -Dtornado.log.profiler=True uk.ac.manchester.tornado.examples.vectors.VectorAddTest
+ * </code>
+ * 
+ */
 public class VectorAddTest {
 
     private static void test(VectorFloat3 a, VectorFloat3 b, VectorFloat3 results) {
@@ -42,16 +52,27 @@ public class VectorAddTest {
             b.set(i, new Float3(2 * i, 2 * i, 2 * i));
         }
 
-        System.out.printf("vector<float3>: %s\n", a.toString());
-        System.out.printf("vector<float3>: %s\n", b.toString());
+        System.out.printf("vector<float3>: %s\n", a);
+        System.out.printf("vector<float3>: %s\n", b);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        TaskSchedule s0 = new TaskSchedule("s0")
                 .task("t0", VectorAddTest::test, a, b, results)
-                .streamOut(results)
-                .execute();
+                .streamOut(results);
         //@formatter:on
+        s0.execute();
 
-        System.out.printf("result: %s\n", results.toString());
+        System.out.println("Profiler kernel: " + s0.getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + s0.getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + s0.getDeviceWriteTime());
+
+        System.out.printf("result: %s\n", results);
+
+        s0.execute();
+
+        System.out.println("Profiler kernel: " + s0.getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + s0.getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + s0.getDeviceWriteTime());
+
     }
 }

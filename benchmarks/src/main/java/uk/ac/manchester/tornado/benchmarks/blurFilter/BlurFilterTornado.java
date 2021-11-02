@@ -18,12 +18,12 @@
 
 package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
+import java.util.Random;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
-
-import java.util.Random;
 
 public class BlurFilterTornado extends BenchmarkDriver {
 
@@ -37,8 +37,6 @@ public class BlurFilterTornado extends BenchmarkDriver {
     int[] greenFilter;
     int[] blueFilter;
     float[] filter;
-
-    TaskSchedule ts;
 
     public BlurFilterTornado(int iterations, int size) {
         super(iterations);

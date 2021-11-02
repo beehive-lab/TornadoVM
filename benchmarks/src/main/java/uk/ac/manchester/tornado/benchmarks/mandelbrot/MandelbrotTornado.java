@@ -25,7 +25,6 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 public class MandelbrotTornado extends BenchmarkDriver {
     int size;
     short[] output;
-    TaskSchedule graph;
 
     public MandelbrotTornado(int iterations, int size) {
         super(iterations);
@@ -35,19 +34,19 @@ public class MandelbrotTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         output = new short[size * size];
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::mandelbrot, size, output);
-        graph.streamOut(output);
-        graph.warmup();
+        ts = new TaskSchedule("benchmark");
+        ts.task("t0", ComputeKernels::mandelbrot, size, output);
+        ts.streamOut(output);
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         output = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
@@ -56,8 +55,8 @@ public class MandelbrotTornado extends BenchmarkDriver {
         boolean val = true;
         short[] result = new short[size * size];
 
-        graph.syncObject(output);
-        graph.clearProfiles();
+        ts.syncObject(output);
+        ts.clearProfiles();
 
         ComputeKernels.mandelbrot(size, result);
 
@@ -75,7 +74,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 }

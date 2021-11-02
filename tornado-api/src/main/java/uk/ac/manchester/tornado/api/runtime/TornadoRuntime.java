@@ -43,7 +43,6 @@ package uk.ac.manchester.tornado.api.runtime;
 
 import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
 import uk.ac.manchester.tornado.api.TornadoCI;
-import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
@@ -68,6 +67,10 @@ public class TornadoRuntime {
 
     public static TornadoRuntimeCI getTornadoRuntime() {
         return runtimeImpl;
+    }
+
+    public static boolean isProfilerEnabled() {
+        return runtimeImpl.isProfilerEnabled();
     }
 
     public void clearObjectState() {
