@@ -65,6 +65,7 @@ __SKIP_SERIAL__   = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL__ = " -Dtornado.enable=False "
 __SKIP_DEVICES__  = " -Dtornado.blacklist.devices="
 __VALIDATE__      = " -Dtornado.benchmarks.validate=True "
+__ENABLE_PROFILER_SILENT_MODE__  = " --enableProfiler silent "
 ## ========================================================================================
 
 ## Include here benchmarks to run
@@ -127,6 +128,8 @@ def composeAllOptions(args):
 		options = options + __VALIDATE__
 	if args.skip_devices != None:
 		options = options + __SKIP_DEVICES__ + args.skip_devices  + " "
+	if args.profiler:
+		options = options + __ENABLE_PROFILER_SILENT_MODE__
 	return options
 
 def printBenchmarks(indent=""):
@@ -179,6 +182,7 @@ def parseArguments():
 	parser.add_argument('--skipParallel', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
 	parser.add_argument('--skipDevices', action="store", dest="skip_devices", default=None, help="Skip devices. Provide a list of devices (e.g., 0,1)")
 	parser.add_argument('--printBenchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
+	parser.add_argument('--profiler', action="store_true", dest="profiler", default=False, help="Run Benchmarks with the OpenCL|PTX|SPIRV profiler")
 	parser.add_argument('--jmh', action="store_true", dest="jmh", default=False, help="Run with JMH")
 	args = parser.parse_args()
 	return args
