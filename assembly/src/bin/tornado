@@ -282,7 +282,7 @@ else
   PTX_MODULE="tornado.drivers.ptx"
   OPENCL_MODULE="tornado.drivers.opencl"
 
-  if [ "$JAVA_VERSION" = "16.0" ]; then
+  if [ "$JAVA_VERSION" = "16.0" ] || [ "$JAVA_VERSION" = "17.0" ]; then
   	JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelGC @${COMMON_EXPORTS} "
   else
   	JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking @${COMMON_EXPORTS} "

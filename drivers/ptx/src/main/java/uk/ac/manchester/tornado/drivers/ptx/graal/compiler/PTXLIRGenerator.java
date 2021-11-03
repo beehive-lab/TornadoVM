@@ -359,7 +359,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public StandardOp.ZapRegistersOp createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues) {
+    public LIRInstruction createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues) {
         unimplemented();
         return null;
     }

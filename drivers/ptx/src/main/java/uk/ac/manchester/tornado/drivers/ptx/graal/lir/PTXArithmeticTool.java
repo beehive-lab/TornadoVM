@@ -137,6 +137,12 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitXorFP(Value a, Value b) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public Value emitShl(Value a, Value b) {
         trace("emitShl a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_LEFT_SHIFT, LIRKind.combine(a, b), a, b);
@@ -234,6 +240,18 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
             shouldNotReachHere();
         }
         return result;
+    }
+
+    @Override
+    public Value emitMathSignum(Value input) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitMathCopySign(Value magnitude, Value sign) {
+        unimplemented();
+        return null;
     }
 
     @Override

@@ -34,11 +34,13 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
+import java.util.Set;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
@@ -139,6 +141,19 @@ public class OCLArchitecture extends Architecture {
         }
 
         return oclKind;
+    }
+
+    /*
+    * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the return type of Architecture::getFeatures
+    * in JVMCI of JDK 17 is Set<? extends CPUFeatureName>. The method Architecture::getFeatures does not exist in the
+    * JVMCI of JDK 11, but the method getFeatures is implemented for each backend returning EnumSet<AMD64.CPUFeature>.
+    * In order to implement our own CPUFeature enum for each architecture, we would have to keep two different versions
+    * of the source code. One in which CPUFeature extends CPUFeatureName for JDK 17 and another in which it does not
+    * for JDK 11.
+    */
+    public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
+        TornadoInternalError.unimplemented();
+        return null;
     }
 
     @Override

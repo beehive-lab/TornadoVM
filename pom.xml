@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>0.12-dev</tornado.version>
-        <graal.version>21.2.0</graal.version>
+        <graal.version>21.3.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
@@ -343,55 +343,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>graal-jdk-8</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
-                        <configuration>
-                            <source>8</source>
-                            <target>8</target>
-                            <showDeprecation>true</showDeprecation>
-                            <excludes>
-                                <exclude>*module-info.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.graalvm.compiler</groupId>
-                        <artifactId>compiler</artifactId>
-                        <scope>system</scope>
-                        <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/graal.jar</systemPath>
-                        <version>${graal.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>jvmci</groupId>
-                        <artifactId>api</artifactId>
-                        <scope>system</scope>
-                        <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-                        <version>${graal.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>jvmci</groupId>
-                        <artifactId>hotspot</artifactId>
-                        <scope>system</scope>
-                        <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-                        <version>${graal.version}</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
         </profile>
 
         <profile>

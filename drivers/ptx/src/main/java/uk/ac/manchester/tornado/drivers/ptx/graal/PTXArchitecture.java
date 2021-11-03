@@ -25,6 +25,7 @@ import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 
 import java.nio.ByteOrder;
+import java.util.Set;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
@@ -33,7 +34,9 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
+import org.graalvm.nativeimage.Platform;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
@@ -126,6 +129,19 @@ public class PTXArchitecture extends Architecture {
                 throw new TornadoBailoutRuntimeException("illegal java type for " + javaKind.name());
         }
         return ptxKind;
+    }
+
+    /*
+     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the return type of Architecture::getFeatures
+     * in JVMCI of JDK 17 is Set<? extends CPUFeatureName>. The method Architecture::getFeatures does not exist in the
+     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend returning EnumSet<AMD64.CPUFeature>.
+     * In order to implement our own CPUFeature enum for each architecture, we would have to keep two different versions
+     * of the source code. One in which CPUFeature extends CPUFeatureName for JDK 17 and another in which it does not
+     * for JDK 11.
+     */
+    public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
+        TornadoInternalError.unimplemented();
+        return null;
     }
 
     public String getABI() {

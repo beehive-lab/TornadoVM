@@ -19,8 +19,8 @@ Alternatively, TornadoVM can be installed either [from source](1_INSTALL.md) or 
 TornadoVM can be currently executed with the following three configurations:
 
 * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
-* TornadoVM with GraalVM (JDK 8, JDK 11, JDK 16): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
-* TornadoVM with JDK11+ (e.g. OpenJDK 11, OpenJDK 16, Red Hat Mandrel 11, Amazon Corretto 11, Amazon Corretto 16, Windows JDK 11, Windows JDK 16): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
+* TornadoVM with GraalVM (JDK 11, JDK 17): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+* TornadoVM with JDK11+ (e.g. OpenJDK 11, OpenJDK 17, Red Hat Mandrel 11, Amazon Corretto 11, Amazon Corretto 17, Windows JDK 11, Windows JDK 17): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
 
 Note: To run TornadoVM on ARM Mali GPUs, install TornadoVM with GraalVM and JDK 11. More information [here](18_MALI.md).
 
