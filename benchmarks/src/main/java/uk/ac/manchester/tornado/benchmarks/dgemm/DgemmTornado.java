@@ -37,8 +37,6 @@ public class DgemmTornado extends BenchmarkDriver {
     private double[] b;
     private double[] c;
 
-    private TaskSchedule graph;
-
     public DgemmTornado(int iterations, int m, int n) {
         super(iterations);
         this.m = m;
@@ -61,29 +59,29 @@ public class DgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        graph = new TaskSchedule("benchmark")//
+        ts = new TaskSchedule("benchmark")//
                 .streamIn(a, b) //
                 .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
                 .streamOut(c);
-        graph.warmup();
+        ts.warmup();
     }
 
     @Override
     public void tearDown() {
-        graph.dumpProfiles();
+        ts.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        graph.getDevice().reset();
+        ts.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        graph.mapAllTo(device);
-        graph.execute();
+        ts.mapAllTo(device);
+        ts.execute();
     }
 
     @Override
@@ -92,7 +90,7 @@ public class DgemmTornado extends BenchmarkDriver {
         final double[] result = new double[m * n];
 
         benchmarkMethod(device);
-        graph.clearProfiles();
+        ts.clearProfiles();
 
         dgemm(m, n, m, a, b, result);
 
