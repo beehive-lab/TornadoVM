@@ -136,7 +136,10 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
-    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15"
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15",
+    "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm1DKernelContext",
+    "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
+    "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02"
 ]
 
 # ################################################################################################################
