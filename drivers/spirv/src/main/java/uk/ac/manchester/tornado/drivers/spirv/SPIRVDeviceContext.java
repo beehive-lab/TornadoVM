@@ -327,7 +327,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
         LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
-        spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, null, null);
+        spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, start, stop);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_SHORT, start, stop);
     }
 
