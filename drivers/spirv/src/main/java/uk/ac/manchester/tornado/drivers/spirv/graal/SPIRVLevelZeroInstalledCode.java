@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
-    public static final String WARNING_THREAD_LOCAL = "[TornadoVM SPIR-V] Warning: TornadoVM changed the user-defined local size to the suggested values by the driver.";
+    public static final String WARNING_THREAD_LOCAL = "[TornadoVM SPIR-V] Warning: TornadoVM changed the user-defined local thread sizes to the suggested values by the driver.";
 
     private static final int WARP_SIZE = 32;
     private boolean valid;

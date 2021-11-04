@@ -33,6 +33,7 @@ public class LevelZeroDevice {
     private int deviceIndex;
     private long deviceHandlerPtr;
     private ZeDeviceProperties deviceProperties;
+    private ZeCommandQueueGroupProperties[] commandQueueGroupProperties;
 
     public LevelZeroDevice(LevelZeroDriver driver, ZeDriverHandle driverHandler, int deviceIndex, long deviceHandlerPointer) {
         this.driver = driver;
@@ -101,7 +102,17 @@ public class LevelZeroDevice {
             // Initialize properties
             IntStream.range(0, numQueueGroups[0]).forEach(i -> commandQueueGroupProperties[i] = new ZeCommandQueueGroupProperties());
         }
-        return zeDeviceGetCommandQueueGroupProperties_native(deviceHandlerPtr, numQueueGroups, commandQueueGroupProperties);
+        int result = zeDeviceGetCommandQueueGroupProperties_native(deviceHandlerPtr, numQueueGroups, commandQueueGroupProperties);
+        this.commandQueueGroupProperties = commandQueueGroupProperties;
+        return result;
+    }
+
+    public ZeCommandQueueGroupProperties[] getCommandQueueGroupProperties() {
+        return this.commandQueueGroupProperties;
+    }
+
+    public ZeCommandQueueGroupProperties getCommandQueueGroupProperties(int index) {
+        return this.commandQueueGroupProperties[index];
     }
 
     public String getDeviceExtensions() {

@@ -95,17 +95,20 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
         int ordinal = numQueueGroups[0];
 
-        ZeCommandQueueGroupProperties[] commandQueueGroupProperties = new ZeCommandQueueGroupProperties[numQueueGroups[0]];
-        result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, commandQueueGroupProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
+        if (device.getCommandQueueGroupProperties() == null) {
+            ZeCommandQueueGroupProperties[] commandQueueGroupProperties = new ZeCommandQueueGroupProperties[numQueueGroups[0]];
+            result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, commandQueueGroupProperties);
+            LevelZeroUtils.errorLog("zeDeviceGetCommandQueueGroupProperties", result);
+        }
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
-            if ((commandQueueGroupProperties[i].getFlags()
-                    & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+            if ((device.getCommandQueueGroupProperties(i).getFlags() & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) //
+                    == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
                 ordinal = i;
                 break;
             }
         }
+
         return ordinal;
     }
 
