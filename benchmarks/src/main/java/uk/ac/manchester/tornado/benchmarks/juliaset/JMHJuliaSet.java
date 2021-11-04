@@ -69,7 +69,7 @@ public class JMHJuliaSet {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void convolveImageArrayJava(JMHJuliaSet.BenchmarkSetup state) {
+    public void juliaSetJava(JMHJuliaSet.BenchmarkSetup state) {
         GraphicsKernels.juliaSetTornado(state.size, state.hue, state.brightness);
     }
 
@@ -79,7 +79,7 @@ public class JMHJuliaSet {
     @Measurement(iterations = 5, time = 30, timeUnit = TimeUnit.SECONDS)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
-    public void convolveImageArrayTornado(JMHJuliaSet.BenchmarkSetup state, Blackhole blackhole) {
+    public void juliaSetTornado(JMHJuliaSet.BenchmarkSetup state, Blackhole blackhole) {
         TaskSchedule t = state.ts;
         t.execute();
         blackhole.consume(t);
