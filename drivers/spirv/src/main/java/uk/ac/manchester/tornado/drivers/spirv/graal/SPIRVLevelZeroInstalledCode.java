@@ -83,18 +83,20 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         index++;
     }
 
-    @Override
-    public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
-        LevelZeroKernel levelZeroKernel = module.getKernel();
-        ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
+    private static class DeviceThreadScheduling {
+        long[] globalWork;
+        long[] localWork;
 
-        if (!stack.isOnDevice()) {
-            setKernelArgs((SPIRVByteBuffer) stack, null, meta);
+        public DeviceThreadScheduling(long[] globalWork, long[] localWork) {
+            this.globalWork = globalWork;
+            this.localWork = localWork;
         }
 
-        final long[] globalWork = new long[3];
-        final long[] localWork = new long[3];
+    }
+
+    private DeviceThreadScheduling calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
+        long[] globalWork = new long[3];
+        long[] localWork = new long[3];
         Arrays.fill(globalWork, 1);
         Arrays.fill(localWork, 1);
 
@@ -120,14 +122,31 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
                 System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
             }
         }
+        return new DeviceThreadScheduling(globalWork, localWork);
+    }
+
+    private static class ThreadBlockDispatcher {
+        int[] groupSizeX;
+        int[] groupSizeY;
+        int[] groupSizeZ;
+
+        public ThreadBlockDispatcher(int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {
+            this.groupSizeX = groupSizeX;
+            this.groupSizeY = groupSizeY;
+            this.groupSizeZ = groupSizeZ;
+        }
+    }
+
+    private ThreadBlockDispatcher suggestThreadSchedulingToLevelZeroDriver(DeviceThreadScheduling threadScheduling, LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, TaskMetaData meta) {
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
-        int[] groupSizeX = new int[] { (int) localWork[0] };
-        int[] groupSizeY = new int[] { (int) localWork[1] };
-        int[] groupSizeZ = new int[] { (int) localWork[2] };
+        int[] groupSizeX = new int[] { (int) threadScheduling.localWork[0] };
+        int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
+        int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
 
-        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) globalWork[0], (int) globalWork[1], (int) globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
+        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) threadScheduling.globalWork[0], (int) threadScheduling.globalWork[1],
+                (int) threadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
 
         result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
@@ -141,15 +160,15 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         long[] localWorkAfterSuggestion = new long[] { groupSizeX[0], groupSizeY[0], groupSizeZ[0] };
         meta.setLocalWork(localWorkAfterSuggestion);
 
-        if (meta.isThreadInfoEnabled()) {
-            meta.printThreadDims();
-        }
+        return new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
+    }
 
+    private void launchKernelWithLevelZero(ZeKernelHandle kernel, DeviceThreadScheduling threadScheduling, ThreadBlockDispatcher dispatcher) {
         // Dispatch SPIR-V Kernel
         ZeGroupDispatch dispatch = new ZeGroupDispatch();
-        dispatch.setGroupCountX(globalWork[0] / groupSizeX[0]);
-        dispatch.setGroupCountY(globalWork[1] / groupSizeY[0]);
-        dispatch.setGroupCountZ(globalWork[2] / groupSizeZ[0]);
+        dispatch.setGroupCountX(threadScheduling.globalWork[0] / dispatcher.groupSizeX[0]);
+        dispatch.setGroupCountY(threadScheduling.globalWork[1] / dispatcher.groupSizeY[0]);
+        dispatch.setGroupCountZ(threadScheduling.globalWork[2] / dispatcher.groupSizeZ[0]);
 
         SPIRVLevelZeroCommandQueue commandQueue = (SPIRVLevelZeroCommandQueue) deviceContext.getSpirvContext().getCommandQueueForDevice(deviceContext.getDeviceIndex());
         LevelZeroCommandList commandList = commandQueue.getCommandList();
@@ -162,11 +181,32 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         ZeEventHandle kernelEventTimer = kernelTimeStamp != null ? kernelTimeStamp.getKernelEventTimer() : null;
 
         // Launch the kernel on the Intel Integrated GPU
-        result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, kernelEventTimer, 0, null);
+        int result = commandList.zeCommandListAppendLaunchKernel(commandList.getCommandListHandlerPtr(), kernel.getPtrZeKernelHandle(), dispatch, kernelEventTimer, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendLaunchKernel", result);
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
+
+    }
+
+    @Override
+    public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+        SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
+        LevelZeroKernel levelZeroKernel = module.getKernel();
+        ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
+
+        if (!stack.isOnDevice()) {
+            setKernelArgs((SPIRVByteBuffer) stack, null, meta);
+        }
+
+        DeviceThreadScheduling threadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
+        ThreadBlockDispatcher dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+
+        if (meta.isThreadInfoEnabled()) {
+            meta.printThreadDims();
+        }
+
+        launchKernelWithLevelZero(kernel, threadScheduling, dispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp.solveEvent(meta);
