@@ -64,7 +64,7 @@ public class SPIRVEventPool {
         guarantee(eventPositionIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
     }
 
-    protected int registerEvent(EventDescriptor eventDescriptor, TimeStamp start, TimeStamp stop) {
+    protected int registerEvent(EventDescriptor eventDescriptor, ProfilerTransfer profilerTransfer) {
         if (retain.get(eventPositionIndex)) {
             findNextEventSlot();
         }
@@ -73,9 +73,9 @@ public class SPIRVEventPool {
 
         LinkedList<TimeStamp> listTimeStamps = new LinkedList<>();
 
-        if (start != null && stop != null) {
-            listTimeStamps.add(start);
-            listTimeStamps.add(stop);
+        if (profilerTransfer != null) {
+            listTimeStamps.add(profilerTransfer.getStart());
+            listTimeStamps.add(profilerTransfer.getStop());
         }
 
         events.put(currentEventPosition, listTimeStamps);
