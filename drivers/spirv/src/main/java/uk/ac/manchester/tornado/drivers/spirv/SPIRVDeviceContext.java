@@ -289,6 +289,27 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         throw new RuntimeException("Unimplemented");
     }
 
+    private static class ProfilerTransfer {
+        LevelZeroTransferTimeStamp start;
+        LevelZeroTransferTimeStamp stop;
+
+        public ProfilerTransfer(LevelZeroTransferTimeStamp start, LevelZeroTransferTimeStamp stop) {
+            this.start = start;
+            this.stop = stop;
+        }
+    }
+
+    private ProfilerTransfer createStartAndStopBufferTimers() {
+        LevelZeroTransferTimeStamp start = null;
+        LevelZeroTransferTimeStamp stop = null;
+        if (TornadoOptions.isProfilerEnabled()) {
+            start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
+            stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
+
+        }
+        return new ProfilerTransfer(start, stop);
+    }
+
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
         LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
@@ -304,10 +325,15 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        LevelZeroTransferTimeStamp start = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
-        LevelZeroTransferTimeStamp stop = new LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice) device.getDevice());
-        spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, start, stop);
-        return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_FLOAT, start, stop);
+        // LevelZeroTransferTimeStamp start = new
+        // LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice)
+        // device.getDevice());
+        // LevelZeroTransferTimeStamp stop = new
+        // LevelZeroTransferTimeStamp(spirvContext, (LevelZeroDevice)
+        // device.getDevice());
+        ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
+        spirvContext.enqueueWriteBuffer(device.getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer.start, profilerTransfer.stop);
+        return spirvEventPool.registerEvent(EventDescriptor.DESC_WRITE_FLOAT, profilerTransfer.start, profilerTransfer.stop);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {

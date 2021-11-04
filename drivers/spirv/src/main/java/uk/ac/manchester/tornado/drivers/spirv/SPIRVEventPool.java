@@ -71,26 +71,17 @@ public class SPIRVEventPool {
         final int currentEventPosition = eventPositionIndex;
         guarantee(!retain.get(currentEventPosition), "overwriting retained event");
 
-        // if (events[currentEventPosition] != 0 && !retain.get(currentEventPosition)) {
-        // events[currentEventPosition] = 0;
-        // throw new RuntimeException("Not supported");
-        // }
-
         LinkedList<TimeStamp> listTimeStamps = new LinkedList<>();
-        listTimeStamps.add(start);
-        listTimeStamps.add(stop);
+
+        if (start != null && stop != null) {
+            listTimeStamps.add(start);
+            listTimeStamps.add(stop);
+        }
 
         events.put(currentEventPosition, listTimeStamps);
-
-        // events[currentEventPosition] = currentEventPosition;
         descriptors[currentEventPosition] = eventDescriptor;
         findNextEventSlot();
-
         return currentEventPosition;
-    }
-
-    private int getPoolSize() {
-        return poolSize;
     }
 
     public LinkedList<TimeStamp> getTimers(int eventId) {
