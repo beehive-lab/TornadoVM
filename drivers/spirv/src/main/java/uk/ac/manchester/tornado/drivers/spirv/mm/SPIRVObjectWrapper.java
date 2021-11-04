@@ -381,7 +381,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
                     returnEvent = internalEvents[0];
                     break;
                 default:
-                    returnEvent = deviceContext.enqueueMarker(internalEvents);
+                    returnEvent = deviceContext.enqueueMarker();
             }
 
         }
