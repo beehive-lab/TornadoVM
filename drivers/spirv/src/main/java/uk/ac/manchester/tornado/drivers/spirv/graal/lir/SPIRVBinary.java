@@ -39,9 +39,11 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpIEqual;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpINotEqual;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSGreaterThan;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSLessThan;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSelect;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
@@ -66,7 +68,7 @@ public class SPIRVBinary {
     protected static class BinaryConsumer extends SPIRVLIROp {
 
         @Opcode
-        protected SPIRVBinaryOp opcode;
+        protected SPIRVBinaryOp binaryOperation;
 
         @Use
         protected Value x;
@@ -76,16 +78,16 @@ public class SPIRVBinary {
 
         protected BinaryConsumer(SPIRVBinaryOp instruction, LIRKind valueKind, Value x, Value y) {
             super(valueKind);
-            this.opcode = instruction;
+            this.binaryOperation = instruction;
             this.x = x;
             this.y = y;
         }
 
         public SPIRVBinaryOp getInstruction() {
-            return opcode;
+            return binaryOperation;
         }
 
-        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
+        protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind convertionKind) {
             if (inputValue instanceof ConstantValue) {
                 SPIRVKind kind = (SPIRVKind) inputValue.getPlatformKind();
                 return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
@@ -109,6 +111,14 @@ public class SPIRVBinary {
                                     SPIRVMemoryAccess.Aligned( //
                                             new SPIRVLiteralInteger(spirvKind.getByteCount())))//
                     ));
+
+                    if (convertionKind != null && convertionKind != spirvKind) {
+                        SPIRVId resultConversion = asm.module.getNextId();
+                        SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
+                        asm.currentBlockScope().add(new SPIRVOpSConvert(idConversionType, resultConversion, load));
+                        load = resultConversion;
+                    }
+
                     return load;
                 } else {
                     return param;
@@ -116,28 +126,53 @@ public class SPIRVBinary {
             }
         }
 
+        private boolean isVectorType(Value x) {
+            return x instanceof SPIRVVectorElementSelect;
+        }
+
+        private boolean isThereAnyVector(Value x, Value y) {
+            return isVectorType(x) || isVectorType(y);
+        }
+
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             LIRKind lirKind = getLIRKind();
-            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
-            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVKind resultKind = (SPIRVKind) lirKind.getPlatformKind();
+
+            SPIRVKind typeConversion = null;
+            // Check the result type width fits into the result type
+            if (!(isThereAnyVector(x, y)) && binaryOperation.checkSameTypes()) {
+                // This applies for non-boolean operations
+                SPIRVKind xKind = (SPIRVKind) x.getPlatformKind();
+                SPIRVKind yKind = (SPIRVKind) y.getPlatformKind();
+                if (xKind != yKind) {
+                    if (xKind.getSizeInBytes() < yKind.getSizeInBytes()) {
+                        typeConversion = yKind;
+                    } else {
+                        typeConversion = xKind;
+                    }
+                    if (binaryOperation.resultWidthCanChange()) {
+                        resultKind = typeConversion;
+                    }
+                }
+            }
 
             SPIRVId a;
             if (x instanceof SPIRVVectorElementSelect) {
                 ((SPIRVLIROp) x).emit(crb, asm);
                 a = asm.lookUpLIRInstructions(x);
             } else {
-                a = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+                a = getId(x, asm, (SPIRVKind) x.getPlatformKind(), typeConversion);
             }
             SPIRVId b;
             if (y instanceof SPIRVVectorElementSelect) {
                 ((SPIRVLIROp) y).emit(crb, asm);
                 b = asm.lookUpLIRInstructions(y);
             } else {
-                b = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+                b = getId(y, asm, (SPIRVKind) y.getPlatformKind(), typeConversion);
             }
 
-            if (opcode instanceof SPIRVAssembler.SPIRVBinaryOpLeftShift) {
+            if (binaryOperation instanceof SPIRVAssembler.SPIRVBinaryOpLeftShift) {
                 if (y instanceof ConstantValue) {
                     SPIRVKind baseKind = (SPIRVKind) x.getPlatformKind();
                     SPIRVKind shiftKind = (SPIRVKind) y.getPlatformKind();
@@ -149,14 +184,26 @@ public class SPIRVBinary {
                 }
             }
 
-            SPIRVLogger.traceCodeGen("emitBinaryOperation " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
+            SPIRVId typeResultOperationId = asm.primitives.getTypePrimitive(resultKind);
 
-            SPIRVId addId = asm.module.getNextId();
+            SPIRVLogger.traceCodeGen("emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
 
-            SPIRVInstruction instruction = opcode.generateInstruction(typeOperation, addId, a, b);
-            asm.currentBlockScope().add(instruction);
+            SPIRVId operationId = asm.module.getNextId();
+            SPIRVInstruction instructionOperation = binaryOperation.generateInstruction(typeResultOperationId, operationId, a, b);
+            asm.currentBlockScope().add(instructionOperation);
 
-            asm.registerLIRInstructionValue(this, addId);
+            if (typeConversion != null && binaryOperation.resultWidthCanChange()) {
+                // convert back only if the final result type is different from the
+                // conversion type of the operands
+                if (resultKind != lirKind.getPlatformKind()) {
+                    typeResultOperationId = asm.primitives.getTypePrimitive((SPIRVKind) lirKind.getPlatformKind());
+                    SPIRVId conversionResultID = asm.module.getNextId();
+                    asm.currentBlockScope().add(new SPIRVOpUConvert(typeResultOperationId, conversionResultID, operationId));
+                    operationId = conversionResultID;
+                }
+            }
+
+            asm.registerLIRInstructionValue(this, operationId);
         }
 
     }
@@ -299,11 +346,11 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind.getElementKind()); /// Vector Selection -> Element Kind
 
-            SPIRVLogger.traceCodeGen("emitVectorOperation " + opcode.getInstruction() + ":  " + x + " " + opcode.getOpcode() + " " + y);
+            SPIRVLogger.traceCodeGen("emitVectorOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y);
 
             SPIRVId binaryVectorOperationResult = asm.module.getNextId();
 
-            SPIRVInstruction instruction = opcode.generateInstruction(typeOperation, binaryVectorOperationResult, resultSelect1, resultSelect2);
+            SPIRVInstruction instruction = binaryOperation.generateInstruction(typeOperation, binaryVectorOperationResult, resultSelect1, resultSelect2);
             asm.currentBlockScope().add(instruction);
 
             asm.registerLIRInstructionValue(this, binaryVectorOperationResult);
@@ -404,7 +451,7 @@ public class SPIRVBinary {
 
             SPIRVId bitWiseAnd = asm.module.getNextId();
 
-            SPIRVInstruction instruction = opcode.generateInstruction(typeOperation, bitWiseAnd, a, b);
+            SPIRVInstruction instruction = binaryOperation.generateInstruction(typeOperation, bitWiseAnd, a, b);
             asm.currentBlockScope().add(instruction);
 
             SPIRVId compEqual = asm.module.getNextId();

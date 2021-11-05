@@ -724,10 +724,27 @@ public final class SPIRVAssembler extends Assembler {
         public static final SPIRVBinaryOp BITWISE_XOR = new SPIRVBinaryOpBitwiseXor("&", "SPIRVBinaryOpBitwiseXor");
 
         protected String spirvInstruction;
+        protected boolean checkSameTypes;
+        protected boolean resultWidthCanChange;
 
         protected SPIRVBinaryOp(String opcode, String spirvInstruction) {
             super(opcode);
             this.spirvInstruction = spirvInstruction;
+        }
+
+        protected SPIRVBinaryOp(String opcode, String spirvInstruction, boolean checkSameTypes, boolean resultWidthCanChange) {
+            super(opcode);
+            this.spirvInstruction = spirvInstruction;
+            this.checkSameTypes = checkSameTypes;
+            this.resultWidthCanChange = resultWidthCanChange;
+        }
+
+        public boolean checkSameTypes() {
+            return checkSameTypes;
+        }
+
+        public boolean resultWidthCanChange() {
+            return resultWidthCanChange;
         }
 
         public String getOpcode() {
@@ -750,7 +767,7 @@ public final class SPIRVAssembler extends Assembler {
     public static class SPIRVBinaryOpIAdd extends SPIRVBinaryOp {
 
         protected SPIRVBinaryOpIAdd(String opcode, String spirvInstruction) {
-            super(opcode, spirvInstruction);
+            super(opcode, spirvInstruction, true, true);
         }
 
         @Override
@@ -942,7 +959,7 @@ public final class SPIRVAssembler extends Assembler {
     public static class SPIRVBinaryOpSLessThan extends SPIRVBinaryOp {
 
         protected SPIRVBinaryOpSLessThan(String opcode, String spirvInstruction) {
-            super(opcode, spirvInstruction);
+            super(opcode, spirvInstruction, true, false);
         }
 
         @Override

@@ -83,7 +83,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s + %s", a, b);
+        SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s + %s -- RESULT KIND: %s", a, b, resultKind);
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
