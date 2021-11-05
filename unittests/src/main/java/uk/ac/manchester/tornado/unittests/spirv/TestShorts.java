@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Run:
  * 
  * <code>
- *     tornado-test.py -V uk.ac.manchester.tornado.unittests.spirv.Vectors
+ *     tornado-test.py -V uk.ac.manchester.tornado.unittests.spirv.TestShorts
  * </code>
  */
 public class TestShorts extends TornadoTestBase {

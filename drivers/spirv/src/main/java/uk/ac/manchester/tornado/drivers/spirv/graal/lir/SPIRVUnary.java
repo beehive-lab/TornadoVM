@@ -670,21 +670,26 @@ public class SPIRVUnary {
                 ));
             }
 
-            // OpSConvert
-            SPIRVId toType;
-            if (toBits == 32) {
-                toType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
-            } else if (toBits == 16) {
-                toType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_16);
-            } else if (toBits == 8) {
-                toType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_8);
+            if ((spirvKind.getSizeInBytes() * 8) == toBits) {
+                // There is no conversion for types of the same width
+                asm.registerLIRInstructionValue(this, loadConvert);
             } else {
-                throw new RuntimeException("ToBits not supported");
-            }
-            SPIRVId result = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpSConvert(toType, result, loadConvert));
+                // OpSConvert
+                SPIRVId toType;
+                if (toBits == 32) {
+                    toType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+                } else if (toBits == 16) {
+                    toType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_16);
+                } else if (toBits == 8) {
+                    toType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_8);
+                } else {
+                    throw new RuntimeException("ToBits not supported");
+                }
+                SPIRVId result = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpSConvert(toType, result, loadConvert));
 
-            asm.registerLIRInstructionValue(this, result);
+                asm.registerLIRInstructionValue(this, result);
+            }
         }
     }
 
