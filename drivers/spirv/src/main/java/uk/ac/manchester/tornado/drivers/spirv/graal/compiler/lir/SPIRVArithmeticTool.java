@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVTernary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -493,8 +494,45 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     }
 
+    private SPIRVKind getElementKind(SPIRVVectorElementSelect vector) {
+        SPIRVKind spirvKind = (SPIRVKind) vector.getVector().getPlatformKind();
+        return spirvKind.getElementKind();
+    }
+
+    private int getFloatTypeWidth(Value op1, Value op2, Value op3) {
+        SPIRVKind kind1 = (SPIRVKind) op1.getPlatformKind();
+        if (op1 instanceof SPIRVVectorElementSelect)
+            kind1 = getElementKind((SPIRVVectorElementSelect) op1);
+
+        SPIRVKind kind2 = (SPIRVKind) op2.getPlatformKind();
+        if (op2 instanceof SPIRVVectorElementSelect)
+            kind2 = getElementKind((SPIRVVectorElementSelect) op2);
+
+        SPIRVKind kind3 = (SPIRVKind) op3.getPlatformKind();
+        if (op3 instanceof SPIRVVectorElementSelect)
+            kind3 = getElementKind((SPIRVVectorElementSelect) op3);
+
+        SPIRVKind resultKindVector = kind1;
+        if (kind1.getSizeInBytes() < kind2.getSizeInBytes()) {
+            resultKindVector = kind2;
+        }
+        if (resultKindVector.getSizeInBytes() < kind3.getSizeInBytes()) {
+            resultKindVector = kind3;
+        }
+        return resultKindVector.getSizeInBytes() * 8;
+    }
+
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
         LIRKind resultKind = LIRKind.combine(op1, op2, op3);
+
+        if ((op1 instanceof SPIRVVectorElementSelect) || (op2 instanceof SPIRVVectorElementSelect) || (op3 instanceof SPIRVVectorElementSelect)) {
+            // FMA are composed of type float (16, 32, 64) or vector types. However, if the
+            // inputs are of type VectorSelect, that means we are selecting one of the
+            // components of the vector (float).
+            int numBits = getFloatTypeWidth(op1, op2, op3);
+            resultKind = getGen().getLIRKindTool().getFloatingKind(numBits);
+        }
+
         Variable result = getGen().newVariable(resultKind);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA, resultKind, op1, op2, op3)));
         return result;

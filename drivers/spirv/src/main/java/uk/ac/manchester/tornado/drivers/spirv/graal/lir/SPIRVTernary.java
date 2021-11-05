@@ -74,8 +74,9 @@ public class SPIRVTernary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             LIRKind lirKind = getLIRKind();
-            SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
-            SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVKind resultSPIRVKind = (SPIRVKind) lirKind.getPlatformKind();
+
+            SPIRVId typeOperation = asm.primitives.getTypePrimitive(resultSPIRVKind);
 
             SPIRVId a = loadSPIRVId(crb, asm, x);
             SPIRVId b = loadSPIRVId(crb, asm, y);
