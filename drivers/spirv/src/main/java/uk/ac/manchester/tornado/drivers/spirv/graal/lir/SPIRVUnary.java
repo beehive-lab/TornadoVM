@@ -929,6 +929,8 @@ public class SPIRVUnary {
             TANH("tanh", 63),
             NATIVE_COS("native_cos", 81),  // Optimization
             NATIVE_SIN("native_sin", 92),  // Optimization
+            NATIVE_SQRT("native_sqrt", 93),  // Optimization
+            NATIVE_TAN("native_tan", 94),  // Optimization
             FCLAMP("flamp", 95),
             SABS("s_abs", 141),
             SCLAMP("s_clamp", 149),
@@ -945,6 +947,7 @@ public class SPIRVUnary {
             VSTORE_HALF("vstore_half", 175),
             VSTORE_HALFN("vstore_halfn", 176);
 
+            
             int value;
             String name;
 

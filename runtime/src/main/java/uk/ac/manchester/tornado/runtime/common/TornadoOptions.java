@@ -249,4 +249,9 @@ public class TornadoOptions {
      */
     public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "False");
 
+    /**
+     * It enables native math functions for the code generation.
+     */
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", "True");;
+
 }

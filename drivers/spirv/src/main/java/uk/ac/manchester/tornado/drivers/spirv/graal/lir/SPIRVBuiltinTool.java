@@ -30,71 +30,76 @@ import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVBuiltinTool {
 
     public Value genFloatACos(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: acos(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: acos(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ACOS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatACosh(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: acosh(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: acosh(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ACOSH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatACospi(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: acospi(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: acospi(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ACOSPI, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatASin(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: asin(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: asin(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatASinh(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: asinh(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: asinh(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatASinpi(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: asinpi(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: asinpi(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASINPI, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatATan(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: atan(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: atan(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ATAN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatATanh(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: atanh(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: atanh(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ATANH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatATanpi(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: atanpi(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: atanpi(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ATANPI, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCbrt(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: cbrt(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: cbrt(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.CBRT, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCeil(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: ceil(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: ceil(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.CEIL, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCos(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: cos(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_COS, LIRKind.value(input.getPlatformKind()), input);
+        SPIRVLogger.traceBuildLIR("gen: cos(%s)", input);
+        SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.COS;
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_COS;
+        }
+        return new SPIRVUnary.Intrinsic(intrinsic, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCosh(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: atan(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: cosh(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.COSH, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -115,7 +120,7 @@ public class SPIRVBuiltinTool {
 
     // FIXME: REVISIT
     public Value genFloatExp(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: exp(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: exp(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.EXP, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -197,7 +202,11 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatSin(Value input) {
         SPIRVLogger.traceBuildLIR("gen: sin(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_SIN, LIRKind.value(input.getPlatformKind()), input);
+        SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SIN;
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_SIN;
+        }
+        return new SPIRVUnary.Intrinsic(intrinsic, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSinh(Value input) {
@@ -212,7 +221,11 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatTan(Value input) {
         SPIRVLogger.traceBuildLIR("gen: tan(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.TAN, LIRKind.value(input.getPlatformKind()), input);
+        SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.TAN;
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_TAN;
+        }
+        return new SPIRVUnary.Intrinsic(intrinsic, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanh(Value input) {
@@ -373,7 +386,11 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatSqrt(Value input) {
         SPIRVLogger.traceBuildLIR("gen: sqrt(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SQRT, LIRKind.value(input.getPlatformKind()), input);
+        SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SQRT;
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            intrinsic = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_SQRT;
+        }
+        return new SPIRVUnary.Intrinsic(intrinsic, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genIntMax(Value x, Value y) {
@@ -417,7 +434,7 @@ public class SPIRVBuiltinTool {
     }
 
     public Value genFloatAbs(Value input) {
-        SPIRVLogger.traceBuildLIR("genCos: fabs(%s)", input);
+        SPIRVLogger.traceBuildLIR("gen: fabs(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FABS, LIRKind.value(input.getPlatformKind()), input);
     }
 
