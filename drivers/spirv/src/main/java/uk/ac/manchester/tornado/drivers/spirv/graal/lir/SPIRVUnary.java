@@ -928,6 +928,7 @@ public class SPIRVUnary {
             TAN("tan", 62),
             TANH("tanh", 63),
             NATIVE_COS("native_cos", 81),  // Optimization
+            NATIVE_SIN("native_sin", 92),  // Optimization
             FCLAMP("flamp", 95),
             SABS("s_abs", 141),
             SCLAMP("s_clamp", 149),

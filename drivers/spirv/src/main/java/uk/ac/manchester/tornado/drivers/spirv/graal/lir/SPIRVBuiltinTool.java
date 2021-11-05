@@ -197,7 +197,7 @@ public class SPIRVBuiltinTool {
 
     public Value genFloatSin(Value input) {
         SPIRVLogger.traceBuildLIR("gen: sin(%s)", input);
-        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SIN, LIRKind.value(input.getPlatformKind()), input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.NATIVE_SIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSinh(Value input) {
