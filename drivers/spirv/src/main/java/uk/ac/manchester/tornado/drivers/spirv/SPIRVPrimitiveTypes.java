@@ -24,8 +24,11 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCapability;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeBool;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeFloat;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeInt;
@@ -33,6 +36,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypePointer;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVector;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVoid;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUndef;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVCapability;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
@@ -48,15 +52,25 @@ public class SPIRVPrimitiveTypes {
 
     private final uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module;
 
+    private final Set<SPIRVKind> capabilities;
+
+    private boolean vector16Capability;
+
     public SPIRVPrimitiveTypes(uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module) {
         this.module = module;
         this.primitives = new HashMap<>();
         this.undefTable = new HashMap<>();
         this.ptrWithStorageClassToPrimitive = new HashMap<>();
+        capabilities = new HashSet<>();
     }
 
     private SPIRVId getVectorType(SPIRVKind vectorType, SPIRVId typeID) {
         SPIRVId intPrimitiveId = getTypePrimitive(vectorType.getElementKind());
+        if (vectorType.getVectorLength() == 8 && !vector16Capability) {
+            // Having 8 components for TypeVector requires the Vector16 capability
+            module.add(new SPIRVOpCapability(SPIRVCapability.Vector16()));
+            vector16Capability = true;
+        }
         module.add(new SPIRVOpTypeVector(typeID, intPrimitiveId, new SPIRVLiteralInteger(vectorType.getVectorLength())));
         primitives.put(vectorType, typeID);
         return primitives.get(vectorType);
@@ -78,13 +92,39 @@ public class SPIRVPrimitiveTypes {
                     module.add(new SPIRVOpTypeBool(typeID));
                     break;
                 case OP_TYPE_INT_8:
+                    if (!capabilities.contains(primitive)) {
+                        module.add(new SPIRVOpCapability(SPIRVCapability.Int8()));
+                    }
+                    module.add(new SPIRVOpTypeInt(typeID, new SPIRVLiteralInteger(sizeInBytes), new SPIRVLiteralInteger(0)));
+                    break;
                 case OP_TYPE_INT_16:
+                    if (!capabilities.contains(primitive)) {
+                        module.add(new SPIRVOpCapability(SPIRVCapability.Int16()));
+                    }
+                    module.add(new SPIRVOpTypeInt(typeID, new SPIRVLiteralInteger(sizeInBytes), new SPIRVLiteralInteger(0)));
+                    break;
                 case OP_TYPE_INT_64:
+                    if (!capabilities.contains(primitive)) {
+                        module.add(new SPIRVOpCapability(SPIRVCapability.Int64()));
+                    }
+                    module.add(new SPIRVOpTypeInt(typeID, new SPIRVLiteralInteger(sizeInBytes), new SPIRVLiteralInteger(0)));
+                    break;
                 case OP_TYPE_INT_32:
                     module.add(new SPIRVOpTypeInt(typeID, new SPIRVLiteralInteger(sizeInBytes), new SPIRVLiteralInteger(0)));
                     break;
+                case OP_TYPE_FLOAT_16:
+                    if (!capabilities.contains(primitive)) {
+                        module.add(new SPIRVOpCapability(SPIRVCapability.Float16()));
+                    }
+                    module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
+                    break;
                 case OP_TYPE_FLOAT_32:
+                    module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
+                    break;
                 case OP_TYPE_FLOAT_64:
+                    if (!capabilities.contains(primitive)) {
+                        module.add(new SPIRVOpCapability(SPIRVCapability.Float64()));
+                    }
                     module.add(new SPIRVOpTypeFloat(typeID, new SPIRVLiteralInteger(sizeInBytes)));
                     break;
                 default:
