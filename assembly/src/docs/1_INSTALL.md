@@ -4,18 +4,17 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Hardware support for each backend                                                                    |
+| OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            | 
 | -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device, Level-Zero >= 1.1.2  |
-| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device, Level-Zero >= 1.1.2  |
-| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device, Level-Zero >= 1.1.2  |
-| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
-| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
-| Mac OS X Big Sur 11.5.1    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                                     |
-| Windows 10                 | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device                       | 
+| CentOS >= 7.3              | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
+| Fedora >= 21               | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
+| Ubuntu >= 16.04            | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
+| Mac OS X Mojave 10.14.6    | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
+| Mac OS X Catalina 10.15.3  | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
+| Mac OS X Big Sur 11.5.1    | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
+| Windows 10                 | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported/tested      |
 
-Note: The SPIR-V backend is only supported for Linux OS.
-
+Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs). 
 
 ## 1. Installation
 
