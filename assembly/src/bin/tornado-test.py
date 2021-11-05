@@ -372,7 +372,9 @@ def runTests(args):
             print(Colors.CYAN)
             print(stats)
             coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
-            print("Coverage: " + str(round(coverage, 2)) + "%")
+            coverageTotal = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"] + stats["[UNSUPPORTED]"])) * 100.0
+            print("Coverage [PASS/(PASS+FAIL)]: " + str(round(coverage, 2)) + "%")
+            print("Coverage [PASS/(PASS+FAIL+UNSUPPORTED)]: " + str(round(coverageTotal, 2)) + "%")
             print(Colors.GREEN)
             print("==================================================")
             print(Colors.CYAN)
