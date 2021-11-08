@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNod
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SQRT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
@@ -46,10 +47,11 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrins
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FLOOR;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.ABS;
-
 
 public class PTXMathPlugins {
 
@@ -82,6 +84,14 @@ public class PTXMathPlugins {
     }
 
     private static void registerFloatMath1Plugins(Registration r, Class<?> type, JavaKind kind) {
+        r.register1("floatAtan", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, ATAN, kind)));
+                return true;
+            }
+        });
+
         r.register1("sqrt", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
@@ -142,6 +152,22 @@ public class PTXMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, SQRT, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatTan", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, TAN, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatTanh", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, TANH, kind)));
                 return true;
             }
         });
