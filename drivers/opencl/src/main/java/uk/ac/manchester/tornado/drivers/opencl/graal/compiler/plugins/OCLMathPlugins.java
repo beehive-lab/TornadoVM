@@ -131,6 +131,14 @@ public class OCLMathPlugins {
     }
 
     private static void registerTrigonometric1Plugins(Registration r, Class<?> type, JavaKind kind) {
+        r.register1("floatAtan", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, ATAN, kind)));
+                return true;
+            }
+        });
+
         r.register1("floatSin", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
@@ -147,10 +155,10 @@ public class OCLMathPlugins {
             }
         });
 
-        r.register1("floatAtan", type, new InvocationPlugin() {
+        r.register1("floatSqrt", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, ATAN, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
                 return true;
             }
         });
@@ -167,14 +175,6 @@ public class OCLMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, TANH, kind)));
-                return true;
-            }
-        });
-
-        r.register1("floatSqrt", type, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
                 return true;
             }
         });

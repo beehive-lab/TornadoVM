@@ -158,6 +158,9 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         Value input = builder.operand(getValue());
         Value result;
         switch (operation()) {
+            case ATAN:
+                result = gen.genFloatATan(input);
+                break;
             case COS:
                 result = gen.genFloatCos(input);
                 break;
@@ -170,17 +173,14 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case SIN:
                 result = gen.genFloatSin(input);
                 break;
-            case ATAN:
-                result = gen.genFloatATan(input);
+            case SQRT:
+                result = gen.genFloatSqrt(input);
                 break;
             case TAN:
                 result = gen.genFloatTan(input);
                 break;
             case TANH:
                 result = gen.genFloatTanh(input);
-                break;
-            case SQRT:
-                result = gen.genFloatSqrt(input);
                 break;
             case FLOOR:
                 result = gen.genFloatFloor(input);
