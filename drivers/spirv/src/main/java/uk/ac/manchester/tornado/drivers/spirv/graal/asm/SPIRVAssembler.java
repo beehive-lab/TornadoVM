@@ -386,7 +386,7 @@ public final class SPIRVAssembler extends Assembler {
      * @return a new label name.
      */
     public String composeUniqueLabelName(String labelName) {
-        return labelName + "F" + methodIndex;
+        return labelName + "_kernel" + methodIndex;
     }
 
     public SPIRVId registerBlockLabel(String blockName) {
