@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMath extends TornadoTestBase {
@@ -174,6 +175,8 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathAtan() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
@@ -194,6 +197,8 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTan() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
@@ -214,6 +219,8 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTanh() {
+        assertNotBackend(TornadoVMBackend.PTX);
+
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
