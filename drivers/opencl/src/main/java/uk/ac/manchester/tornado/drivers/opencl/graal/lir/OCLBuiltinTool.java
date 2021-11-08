@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.CROSS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.DOT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.FLOAT_MAX;
@@ -44,6 +45,8 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.POPCOUNT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SQRT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.TAN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.TANH;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
@@ -84,8 +87,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatATan(Value input) {
-        unimplemented();
-        return null;
+        trace("genAtan: atan(%s)", input);
+        return new OCLUnary.Intrinsic(ATAN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatATanh(Value input) {
@@ -229,13 +232,13 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatTan(Value input) {
-        unimplemented();
-        return null;
+        trace("genTan: tan(%s)", input);
+        return new OCLUnary.Intrinsic(TAN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanh(Value input) {
-        unimplemented();
-        return null;
+        trace("genTanh: tanh(%s)", input);
+        return new OCLUnary.Intrinsic(TANH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanpi(Value input) {
