@@ -197,4 +197,8 @@ public class TornadoOptions {
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", "False");
 
+    /**
+     * It enables native math functions for the code generation.
+     */
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", "True");
 }

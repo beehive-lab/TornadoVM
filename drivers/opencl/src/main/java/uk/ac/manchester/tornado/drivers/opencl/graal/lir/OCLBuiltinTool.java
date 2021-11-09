@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.CROSS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.DOT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.FLOAT_MAX;
@@ -42,14 +43,21 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.FLOAT_TRUNC;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.LOG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.POPCOUNT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_COS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_SIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_SQRT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_TAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SQRT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.TAN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.TANH;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLBuiltinTool {
 
@@ -84,8 +92,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatATan(Value input) {
-        unimplemented();
-        return null;
+        trace("genAtan: atan(%s)", input);
+        return new OCLUnary.Intrinsic(ATAN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatATanh(Value input) {
@@ -110,6 +118,9 @@ public class OCLBuiltinTool {
 
     public Value genFloatCos(Value input) {
         trace("genCos: cos(%s)", input);
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            return new OCLUnary.Intrinsic(NATIVE_COS, LIRKind.value(input.getPlatformKind()), input);
+        }
         return new OCLUnary.Intrinsic(COS, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -215,6 +226,9 @@ public class OCLBuiltinTool {
 
     public Value genFloatSin(Value input) {
         trace("genSin: sin(%s)", input);
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            return new OCLUnary.Intrinsic(NATIVE_SIN, LIRKind.value(input.getPlatformKind()), input);
+        }
         return new OCLUnary.Intrinsic(SIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -229,13 +243,16 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatTan(Value input) {
-        unimplemented();
-        return null;
+        trace("genTan: tan(%s)", input);
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            return new OCLUnary.Intrinsic(NATIVE_TAN, LIRKind.value(input.getPlatformKind()), input);
+        }
+        return new OCLUnary.Intrinsic(TAN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanh(Value input) {
-        unimplemented();
-        return null;
+        trace("genTanh: tanh(%s)", input);
+        return new OCLUnary.Intrinsic(TANH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanpi(Value input) {
@@ -390,6 +407,9 @@ public class OCLBuiltinTool {
 
     public Value genFloatSqrt(Value input) {
         trace("genAbs: sqrt(%s)", input);
+        if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
+            return new OCLUnary.Intrinsic(NATIVE_SQRT, LIRKind.value(input.getPlatformKind()), input);
+        }
         return new OCLUnary.Intrinsic(SQRT, LIRKind.value(input.getPlatformKind()), input);
     }
 

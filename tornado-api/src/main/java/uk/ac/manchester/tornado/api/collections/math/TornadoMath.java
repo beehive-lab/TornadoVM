@@ -296,6 +296,19 @@ public class TornadoMath {
         return (float) Math.cos(value);
     }
 
+    public static float floatAtan(float value) {
+        return (float) Math.atan(value);
+    }
+
+    public static float floatTan(float value) {
+        return (float) Math.tan(value);
+
+    }
+
+    public static float floatTanh(float value) {
+        return (float) Math.tanh(value);
+    }
+
     public static float floatPI() {
         return (float) Math.PI;
     }
