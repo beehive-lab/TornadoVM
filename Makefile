@@ -41,6 +41,7 @@ example:
 	tornado --printKernel --debug uk.ac.manchester.tornado.examples.VectorAddInt 8192
 
 tests:
+	tornado --devices 
 	tornado-test.py --ea --verbose
 	tornado-test.py --ea -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
