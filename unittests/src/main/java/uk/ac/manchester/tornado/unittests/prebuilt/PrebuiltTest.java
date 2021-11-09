@@ -224,7 +224,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void test05() {
+    public void testPrebuild05() {
         // Check only for the SPIR-V backend
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OpenCL);
