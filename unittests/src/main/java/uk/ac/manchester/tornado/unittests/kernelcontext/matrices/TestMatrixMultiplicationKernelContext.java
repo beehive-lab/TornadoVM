@@ -93,7 +93,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0);
+            assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
 
@@ -136,7 +136,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0);
+            assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
 
@@ -207,7 +207,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0);
+            assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
 }
