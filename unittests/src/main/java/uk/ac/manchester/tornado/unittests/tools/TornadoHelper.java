@@ -35,7 +35,6 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
-import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
@@ -94,9 +93,6 @@ public class TornadoHelper {
                 } else if (a instanceof TornadoNotSupported) {
                     testEnabled = true;
                     unsupportedMethods.add(m);
-                } else if (a instanceof SPIRVNotSupported) {
-                    testEnabled = true;
-                    spirvNotSupportedMethods.add(m);
                 }
             }
             if (testEnabled & !ignoreTest) {
@@ -153,13 +149,7 @@ public class TornadoHelper {
                 notSupported++;
                 continue;
             }
-            if (suite != null && suite.spirvUnsupportedMethods.contains(m)) {
-                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [SPIRV UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
-                bufferConsole.append(message);
-                bufferFile.append(message);
-                notSupported++;
-                continue;
-            }
+
             Request request = Request.method(klass, m.getName());
             Result result = new JUnitCore().run(request);
 
@@ -252,12 +242,10 @@ public class TornadoHelper {
     static class TestSuiteCollection {
         ArrayList<Method> methodsToTest;
         HashSet<Method> unsupportedMethods;
-        HashSet<Method> spirvUnsupportedMethods;
 
         TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods, HashSet<Method> spirvUnsupportedMethods) {
             this.methodsToTest = methodsToTest;
             this.unsupportedMethods = unsupportedMethods;
-            this.spirvUnsupportedMethods = spirvUnsupportedMethods;
         }
     }
 }

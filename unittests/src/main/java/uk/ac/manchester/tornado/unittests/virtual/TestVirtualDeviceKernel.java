@@ -33,7 +33,6 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.unittests.common.SPIRVNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestVirtualDeviceKernel extends TornadoTestBase {
@@ -94,7 +93,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testVirtualDeviceKernelGPU() {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
@@ -103,7 +101,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     }
 
     @Test
-    @SPIRVNotSupported
     public void testVirtualDeviceKernelCPU() {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.SPIRV);
