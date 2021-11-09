@@ -229,8 +229,8 @@ public class SPIRVBuiltinTool {
     }
 
     public Value genFloatTanh(Value input) {
-        unimplemented();
-        return null;
+        SPIRVLogger.traceBuildLIR("gen: tanh(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.TANH, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanpi(Value input) {

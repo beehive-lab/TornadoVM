@@ -71,13 +71,16 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     // @formatter:off
     public enum Operation {
+        ATAN,
         COS,
         EXP,
         FABS,
         FLOOR,
         LOG,
         SIN,
-        SQRT
+        SQRT,
+        TAN,
+        TANH
     }
     // @formatter:on
 
@@ -135,6 +138,9 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         }
 
         switch (operation()) {
+            case ATAN:
+                result = gen.genFloatATan(auxValue);
+                break;
             case COS:
                 result = gen.genFloatCos(auxValue);
                 break;
@@ -149,6 +155,12 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
                 break;
             case SQRT:
                 result = gen.genFloatSqrt(auxValue);
+                break;
+            case TAN:
+                result = gen.genFloatTan(auxValue);
+                break;
+            case TANH:
+                result = gen.genFloatTanh(auxValue);
                 break;
             case FLOOR:
                 result = gen.genFloatFloor(auxValue);

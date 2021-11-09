@@ -115,6 +115,30 @@ public class SPIRVMathPlugins {
                 return true;
             }
         });
+
+        r.register1("floatAtan", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.ATAN, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatTan", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.TAN, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatTanh", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.TANH, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerFloatMath2Plugins(InvocationPlugins.Registration r, Class<?> type, JavaKind kind) {

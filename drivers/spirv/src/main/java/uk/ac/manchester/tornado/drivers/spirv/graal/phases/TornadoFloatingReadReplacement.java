@@ -77,6 +77,7 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
 
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVBarrierNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorLoadElementNode;
 
 /**
@@ -399,6 +400,28 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
 
+        /**
+         * @param accessNode
+         *            is a {@link FixedNode} that will be replaced by a
+         *            {@link FloatingNode}. This method checks if the node that is going
+         *            to be replaced has an {@link SPIRVBarrierNode} as next.
+         */
+        private static boolean isNextNodeSPIRVBarrierNode(FloatableAccessNode accessNode) {
+            return (accessNode.next() instanceof SPIRVBarrierNode);
+        }
+
+        /**
+         * @param nextNode
+         *            is a {@link FixedNode} that will be replaced by a
+         *            {@link FloatingNode}. This method removes the redundant
+         *            {@link SPIRVBarrierNode}.
+         */
+        private static void replaceRedundantNextSPIRVBarrierNode(Node nextNode) {
+            nextNode.replaceAtUsages(nextNode.successors().first());
+            Node predecessor = nextNode.predecessor();
+            predecessor.replaceFirstSuccessor(nextNode, nextNode.successors().first());
+        }
+
         @SuppressWarnings("try")
         private static void processFloatable(FloatableAccessNode accessNode, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
@@ -409,6 +432,9 @@ public class TornadoFloatingReadReplacement extends Phase {
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();
                     assert floatingNode.getLastLocationAccess() == lastLocationAccess;
+                    if (isNextNodeSPIRVBarrierNode(accessNode)) {
+                        replaceRedundantNextSPIRVBarrierNode(accessNode.next());
+                    }
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
             }
