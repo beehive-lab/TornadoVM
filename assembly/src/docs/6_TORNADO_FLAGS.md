@@ -63,7 +63,7 @@ Allows to force OpenCL API blocking calls.
 * `--enableProfiler console`:  
 It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. TornadoVM will print by STDOUT a JSON string containing all profiler metrics related to the execution of each task-schedule. 
 
-* `--enableProfiler silent`:  It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. The profiler information is stored internally and it can be queried using the [TornadoVM Profiler API](https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java)
+* `--enableProfiler silent`:  It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. The profiler information is stored internally and it can be queried using the [TornadoVM Profiler API](https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/profiler/ProfileInterface.java).
 
 * `--dumpProfiler FILENAME`:  
 It enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default. TornadoVM will save the profiler information in the `FILENAME` after the execution of each task-schedule.
@@ -78,4 +78,10 @@ It enables Fused-Multiply-Add optimizations. This option is enabled by default. 
 
 * `-Dtornado.experimental.partial.unroll=True`:
 It enables the compiler to force partial unroll on counted loops with a factor of 2. The unroll factor can be configured with the `tornado.partial.unroll.factor=FACTOR` that the FACTOR value can take integer values up to 32.
+
+
+##### Mathematical Native Functions
+
+* `-Dtornado.enable.nativeFunctions=True`:
+It enables the utilization of native mathematical functions, in case that the selected backend (OpenCL, PTX) suports native functions. This option is enabled by default.
 
