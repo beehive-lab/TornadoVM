@@ -52,6 +52,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     private boolean valid;
     private boolean ADJUST_IRREGULAR = false;
     private LevelZeroKernelTimeStamp kernelTimeStamp;
+    private ThreadBlockDispatcher dispatcher;
+    private DeviceThreadScheduling threadScheduling;
 
     public SPIRVLevelZeroInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name, spirvModule, deviceContext);
@@ -198,8 +200,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             setKernelArgs((SPIRVByteBuffer) stack, null, meta);
         }
 
-        DeviceThreadScheduling threadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
-        ThreadBlockDispatcher dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+        if (threadScheduling == null || dispatcher == null || meta.isWorkerGridAvailable()) {
+            // if the worker grid is available, the user can update the number of threads to
+            // run at any point during runtime.
+            threadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
+            dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+        }
 
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();

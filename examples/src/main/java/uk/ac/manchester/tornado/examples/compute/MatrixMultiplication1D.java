@@ -70,11 +70,9 @@ public class MatrixMultiplication1D {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         workerGrid.setGlobalWork(size, size, 1);
 
-        //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
-        // @formatter:on
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size)//
+                .streamOut(matrixC);//
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
