@@ -186,7 +186,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
-
     }
 
     @Override

@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
@@ -66,18 +66,15 @@ public class MatrixMultiplication1D {
             matrixB[idx] = r.nextFloat();
         });
 
-        WorkerGrid workerGrid = new WorkerGrid1D(size);
+        WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-        // [Optional] Set the global work size
-        workerGrid.setGlobalWork(size, 1, 1);
-        // [Optional] Set the local work group
-        workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
+        workerGrid.setGlobalWork(size, size, 1);
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size)
                 .streamOut(matrixC);
-        //@formatter:on
+        // @formatter:on
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
