@@ -42,7 +42,6 @@ public class OCLReferenceMapBuilder extends ReferenceMapBuilder {
     public ReferenceMap finish(LIRFrameState lirfs) {
         unimplemented();
         return new ReferenceMap() {
-
         };
     }
 

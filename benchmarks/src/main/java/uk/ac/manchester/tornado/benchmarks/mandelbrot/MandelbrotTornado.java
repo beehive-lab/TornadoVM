@@ -34,9 +34,9 @@ public class MandelbrotTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         output = new short[size * size];
-        ts = new TaskSchedule("benchmark");
-        ts.task("t0", ComputeKernels::mandelbrot, size, output);
-        ts.streamOut(output);
+        ts = new TaskSchedule("benchmark") //
+                .task("t0", ComputeKernels::mandelbrot, size, output) //
+                .streamOut(output);
         ts.warmup();
     }
 

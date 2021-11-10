@@ -40,7 +40,6 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.Variable;
@@ -81,7 +80,6 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.PTXBuiltInRegister;
@@ -96,6 +94,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXNullary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -106,12 +105,10 @@ import java.util.Map;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind.ILLEGAL;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.ExprStmt;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     private final Map<String, Variable> builtInAllocations;
@@ -147,7 +144,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitInvoke(Invoke x) {
-        trace("emitInvoke: x=%s ", x);
+        TornadoCodeGenerator.trace("emitInvoke: x=%s ", x);
         LoweredCallTargetNode callTarget = (LoweredCallTargetNode) x.callTarget();
 
         final Stamp stamp = x.asNode().stamp(NodeView.DEFAULT);
@@ -191,7 +188,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        trace("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
+        TornadoCodeGenerator.trace("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
         if (isLegal(result) && ((PTXKind) result.getPlatformKind()).isVector()) {
             PTXKind resultKind = (PTXKind) result.getPlatformKind();
             Variable returnBuffer = getGen().newVariable(LIRKind.value(PTXKind.B8), true);
@@ -261,7 +258,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     public void doBlock(Block block, StructuredGraph graph, BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
-        trace("%s - block %s", graph.method().getName(), block);
+        TornadoCodeGenerator.trace("%s - block %s", graph.method().getName(), block);
         try (LIRGeneratorTool.BlockScope blockScope = gen.getBlockScope(block)) {
 
             if (block == gen.getResult().getLIR().getControlFlowGraph().getStartBlock()) {
@@ -326,7 +323,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitNode(final ValueNode node) {
-        trace("emitNode: %s", node);
+        TornadoCodeGenerator.trace("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
@@ -354,16 +351,17 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     /**
-     * TODO
-     * A possible optimization is to perform the loop condition check once before the first iteration
-     * and then for the rest of the iterations, have the condition check before the loop back edge.
-     * This prevents an "useless" jump when the loop condition no longer holds.
+     * TODO A possible optimization is to perform the loop condition check once
+     * before the first iteration and then for the rest of the iterations, have the
+     * condition check before the loop back edge. This prevents an "useless" jump
+     * when the loop condition no longer holds.
      *
-     * Currently, with this method, we will jump back to the loop header and perform the loop initialization on
-     * every iteration, instead of jumping to the first block in the loop body.
+     * Currently, with this method, we will jump back to the loop header and perform
+     * the loop initialization on every iteration, instead of jumping to the first
+     * block in the loop body.
      */
     private void visitLoopEndImproved(LoopEndNode node) {
-        trace("visiting loopEndNode: %s", node);
+        TornadoCodeGenerator.trace("visiting loopEndNode: %s", node);
         LoopBeginNode begin = node.loopBegin();
         final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
 
@@ -395,7 +393,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(LoopEndNode node) {
-        trace("visiting loopEndNode: %s", node);
+        TornadoCodeGenerator.trace("visiting loopEndNode: %s", node);
         LoopBeginNode begin = node.loopBegin();
         final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
 
@@ -413,7 +411,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
-        trace("visitMerge: ", mergeNode);
+        TornadoCodeGenerator.trace("visitMerge: ", mergeNode);
 
         boolean loopExitMerge = true;
         for (EndNode end : mergeNode.forwardEnds()) {
@@ -440,15 +438,15 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitIf(final IfNode x) {
-        trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
+        TornadoCodeGenerator.trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
-        /**
+        /*
          * test to see if this is an exception check need to implement this properly? or
          * omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
-            trace("emitExceptionEntry");
+            TornadoCodeGenerator.trace("emitExceptionEntry");
             shouldNotReachHere("exceptions are unimplemented");
         }
 
@@ -466,7 +464,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     private Variable emitLogicNode(final LogicNode node) {
         // Value result = null;
-        trace("emitLogicNode: %s", node);
+        TornadoCodeGenerator.trace("emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(PTXKind.S32);
         LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
         Variable pred = getGen().newVariable(LIRKind.value(PTXKind.PRED));
@@ -529,7 +527,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
-        trace("visiting emitLoopBegin %s", loopBeginNode);
+        TornadoCodeGenerator.trace("visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
         final LIR lir = getGen().getResult().getLIR();
@@ -556,7 +554,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitEndNode(final AbstractEndNode end) {
-        trace("visitEnd: %s", end);
+        TornadoCodeGenerator.trace("visitEnd: %s", end);
 
         if (end instanceof LoopEndNode) {
             return;
@@ -586,17 +584,21 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 emitSwitchBreak(end);
             }
         } else if (beginNode instanceof MergeNode) {
-            // TODO if we have nested if/else conditions then we outer condition will have a MergeNode as a successor instead of a BeginNode.
-            // I am not sure how we could check if the associated BeginNode and IfNode exist, and therefore
+            // TODO if we have nested if/else conditions then we outer condition will have a
+            // MergeNode as a successor instead of a BeginNode.
+            // I am not sure how we could check if the associated BeginNode and IfNode
+            // exist, and therefore
             // we always generate branch instructions to the next block in this case.
-            // This is to circumvent the case when we fall through the nested if/else statements.
+            // This is to circumvent the case when we fall through the nested if/else
+            // statements.
             append(new PTXControlFlow.Branch(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
 
     private void emitBranch(IfNode dominator) {
-        trace("emitBranch dominator: %s", dominator);
-        // If we have an if/else statement, we must make sure we branch to the successor block and not `accidentally`
+        TornadoCodeGenerator.trace("emitBranch dominator: %s", dominator);
+        // If we have an if/else statement, we must make sure we branch to the successor
+        // block and not `accidentally`
         // execute the whole if/else statement
         boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
 
@@ -606,7 +608,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitSwitchBreak(AbstractEndNode end) {
-        trace("emitSwitchBreak end: %s", end);
+        TornadoCodeGenerator.trace("emitSwitchBreak end: %s", end);
         append(new PTXControlFlow.Branch(getLIRBlock(end.merge()), false, false));
     }
 
@@ -645,9 +647,10 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     /**
-     * Currently we are breaking the SSA form since we are reusing the registers to which the built-in
-     * variables have been assigned previously.
-     * We do this because PTX only allows for the built-ins to be used in <b>mov</b> and <b>cvt</b> instructions.
+     * Currently we are breaking the SSA form since we are reusing the registers to
+     * which the built-in variables have been assigned previously. We do this
+     * because PTX only allows for the built-ins to be used in <b>mov</b> and
+     * <b>cvt</b> instructions.
      */
     public Variable getBuiltInAllocation(PTXBuiltInRegister builtIn) {
         if (builtInAllocations.containsKey(builtIn.getName()))

@@ -96,6 +96,7 @@ public class PTXCompiler {
     private static final TimerKey BackEnd = DebugContext.timer("PTXBackend");
     private static final TimerKey EmitLIR = DebugContext.timer("PTXEmitLIR");
     private static final TimerKey EmitCode = DebugContext.timer("PTXEmitCode");
+
     private static final PTXLIRGenerationPhase LIR_GENERATION_PHASE = new PTXLIRGenerationPhase();
 
     public static class PTXCompilationRequest {
@@ -143,6 +144,7 @@ public class PTXCompiler {
             return PTXCompiler.compile(this);
         }
 
+        // FIXME <REFACTOR> this class can be merged into PTXCompilationRequest
         public static class PTXCompilationRequestBuilder {
             private StructuredGraph graph;
             private ResolvedJavaMethod codeOwner;
@@ -430,7 +432,7 @@ public class PTXCompiler {
         final PTXSuitesProvider suitesProvider = (PTXSuitesProvider) providers.getSuitesProvider();
         PTXCompilationRequest kernelCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(kernelGraph).withCodeOwner(resolvedMethod).withArgs(args)
                 .withMetaData(taskMeta).withProviders(providers).withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts)
-                .withProfilingInfo(profilingInfo).withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(kernelCompResult).withResultBuilderFactory(factory)
+                .withProfilingInfo(profilingInfo).withSuites(suitesProvider.getSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(kernelCompResult).withResultBuilderFactory(factory)
                 .isKernel(true).buildGraph(true).includePrintf(includePrintf).withBatchThreads(batchThreads).build();
 
         kernelCompilationRequest.execute();
@@ -462,7 +464,7 @@ public class PTXCompiler {
 
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph).withCodeOwner(currentMethod).withProviders(providers)
                     .withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts).withProfilingInfo(profilingInfo)
-                    .withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(compResult).withResultBuilderFactory(factory).isKernel(false).buildGraph(false)
+                    .withSuites(suitesProvider.getSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(compResult).withResultBuilderFactory(factory).isKernel(false).buildGraph(false)
                     .includePrintf(false).withBatchThreads(0).build();
 
             methodCompilationRequest.execute();
@@ -524,7 +526,7 @@ public class PTXCompiler {
         final PTXSuitesProvider suitesProvider = (PTXSuitesProvider) providers.getSuitesProvider();
         PTXCompilationRequest kernelCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(kernelGraph).withCodeOwner(resolvedMethod).withArgs(args)
                 .withMetaData(meta).withProviders(providers).withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts)
-                .withProfilingInfo(profilingInfo).withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(kernelCompResult).withResultBuilderFactory(factory)
+                .withProfilingInfo(profilingInfo).withSuites(suitesProvider.getSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(kernelCompResult).withResultBuilderFactory(factory)
                 .isKernel(true).buildGraph(true).includePrintf(false).withBatchThreads(batchThreads).build();
 
         kernelCompilationRequest.execute();
@@ -542,7 +544,7 @@ public class PTXCompiler {
             final StructuredGraph graph = builder.build();
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph).withCodeOwner(currentMethod).withProviders(providers)
                     .withBackend(backend).withGraphBuilderSuite(suitesProvider.getGraphBuilderSuite()).withOptimizations(optimisticOpts).withProfilingInfo(profilingInfo)
-                    .withSuites(suitesProvider.createSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(compResult).withResultBuilderFactory(factory).isKernel(false).buildGraph(true)
+                    .withSuites(suitesProvider.getSuites()).withLIRSuites(suitesProvider.getLIRSuites()).withResult(compResult).withResultBuilderFactory(factory).isKernel(false).buildGraph(true)
                     .includePrintf(false).withBatchThreads(0).build();
 
             methodCompilationRequest.execute();

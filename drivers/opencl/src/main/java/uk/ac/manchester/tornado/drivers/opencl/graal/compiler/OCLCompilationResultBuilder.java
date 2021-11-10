@@ -54,6 +54,7 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
@@ -88,7 +89,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     HashSet<Block> rescheduledBasicBlocks;
 
     public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-            CompilationResult compilationResult) {
+                                       CompilationResult compilationResult) {
         super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
@@ -186,6 +187,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * Checks if the {@link OCLNodeLIRBuilder#emitLoopBegin} has been called right before
      * {@link OCLNodeLIRBuilder#emitIf}. In other words, that there is no data flow/control flow
      * between the {@link LoopBeginNode} and the corresponding {@link IfNode} loop condition.
+     *
      * @return true if the {@param loopCondIndex} is right after the LIR instructions of a loop header
      * ({@param loopPostOpIndex} and {@param loopInitOpIndex}).
      */
@@ -196,6 +198,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     /**
      * Checks if there are any LIR instructions between the loop condition and the {@link LoopInitOp} and {@link LoopPostOp}.
      * If there are no instructions, it is possible to move the loop condition to the loop header.
+     *
      * @return true if there are no instructions.
      */
     private static boolean shouldFormatLoopHeader(List<LIRInstruction> instructions) {

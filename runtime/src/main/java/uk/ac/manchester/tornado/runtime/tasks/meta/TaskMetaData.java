@@ -39,7 +39,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
@@ -147,6 +147,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public void setLocalWork(long[] values) {
+        localWork = new long[values.length];
         System.arraycopy(values, 0, localWork, 0, values.length);
         localWorkDefined = true;
     }
@@ -156,7 +157,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public long[] initLocalWork() {
-        localWork = new long[] {1, 1, 1};
+        localWork = new long[] { 1, 1, 1 };
         return localWork;
     }
 
@@ -366,7 +367,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public boolean isPTXDevice(TornadoAcceleratorDevice device) {
-        return device.getTornadoVMBackend().equals(TornadoVMBackend.PTX);
+        return device.getTornadoVMBackend().equals(TornadoVMBackendType.PTX);
     }
 
     @Override

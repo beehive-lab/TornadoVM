@@ -27,10 +27,16 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to run:
+ * 
+ * <code>
+ *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ * </code>
+ */
 public class TestMath extends TornadoTestBase {
 
     public static void testCos(double[] a) {
@@ -175,7 +181,7 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathAtan() {
-        assertNotBackend(TornadoVMBackend.PTX);
+        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         double[] data = new double[size];
@@ -197,7 +203,7 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTan() {
-        assertNotBackend(TornadoVMBackend.PTX);
+        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         double[] data = new double[size];
@@ -219,7 +225,7 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTanh() {
-        assertNotBackend(TornadoVMBackend.PTX);
+        assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
         double[] data = new double[size];

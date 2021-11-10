@@ -61,23 +61,13 @@ public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGen
 
     private static void emitBlock(final OCLNodeLIRBuilder nodeLirGen, final LIRGenerationResult lirGenRes, final Block b, final StructuredGraph graph, final BlockMap<List<Node>> blockMap,
             boolean isKernel) {
-
         if (lirGenRes.getLIR().getLIRforBlock(b) == null) {
             for (final Block pred : b.getPredecessors()) {
                 if (!b.isLoopHeader() || !pred.isLoopEnd()) {
                     emitBlock(nodeLirGen, lirGenRes, pred, graph, blockMap, isKernel);
                 }
             }
-
-            // System.out.println("nodeLirGen: " + nodeLirGen.toString());
-            // System.out.println("block: " + b.toString());
-            // System.out.println("graph: " + graph.toString());
-            // System.out.println("blockMap: " + blockMap.toString());
             nodeLirGen.doBlock(b, graph, blockMap, isKernel);
-
-            // if(b.isLoopHeader()){
-            // patchLoopHeader(lirGenRes.getLIR().getLIRforBlock(b));
-            // }
         }
     }
 

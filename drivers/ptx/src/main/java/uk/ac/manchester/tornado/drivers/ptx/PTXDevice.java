@@ -23,14 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import java.nio.ByteOrder;
-
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.ptx.enums.PTXDeviceAttribute;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
+import java.nio.ByteOrder;
+
+public class PTXDevice implements TornadoTargetDevice {
 
     private final String name;
     private final long[] maxGridSizes;
@@ -64,7 +63,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
         computeCapability = initComputeCapability();
         targetArchitecture = ptxVersion.getArchitecture(computeCapability);
 
-        // A PTXcontext for the CUDevice must be created first before cuMemGetInfo
+        // A PTXContext for the CUDevice must be created first before cuMemGetInfo
         // is invoked.
         context = new PTXContext(this);
         maxAllocationSize = cuMemGetInfo();
@@ -154,7 +153,7 @@ public class PTXDevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         return getDeviceName();
     }
 

@@ -43,7 +43,9 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment {
+public class OCLContext implements OCLExecutionEnvironment {
+
+    private TornadoLogger logger = new TornadoLogger();
 
     public static class OCLBufferResult {
 
@@ -131,12 +133,12 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
-            info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
-            info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
+            logger.info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
+            logger.info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
             queues[index] = new OCLCommandQueue(queueId, properties, deviceVersion);
         } catch (OCLException e) {
-            error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -174,7 +176,7 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
             program = new OCLProgram(clCreateProgramWithSource(contextID, source, lengths), deviceContext);
             programs.add(program);
         } catch (OCLException e) {
-            error(e.getMessage());
+            logger.error(e.getMessage());
         }
 
         return program;
@@ -186,7 +188,7 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
         try {
             program = new OCLProgram(clCreateProgramWithBinary(contextID, deviceId, binary, lengths), deviceContext);
         } catch (OCLException e) {
-            error(e.getMessage());
+            logger.error(e.getMessage());
         }
 
         return program;
@@ -230,7 +232,7 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "total", (t4 - t0) * 1e-9);
             }
         } catch (OCLException e) {
-            error(e.getMessage());
+            logger.error(e.getMessage());
             e.printStackTrace();
         }
     }
@@ -240,8 +242,9 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
         return String.format("id=0x%x, device count=%d", contextID, getNumDevices());
     }
 
+    @Override
     public OCLDeviceContext createDeviceContext(int index) {
-        debug("creating device context for device: %s", devices.get(index).toString());
+        logger.debug("creating device context for device: %s", devices.get(index).toString());
         createCommandQueue(index);
         final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), queues[index], this);
         deviceContexts.add(deviceContext);
@@ -282,9 +285,9 @@ public class OCLContext extends TornadoLogger implements OCLExecutionEnvironment
             final OCLBufferResult result = createBuffer(contextID, flags, bytes, hostPointer);
             devicePtr = result.getBuffer();
             allocatedRegions.add(devicePtr);
-            info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), devicePtr);
+            logger.info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), devicePtr);
         } catch (OCLException e) {
-            error(e.getMessage());
+            logger.error(e.getMessage());
         }
         return devicePtr;
     }

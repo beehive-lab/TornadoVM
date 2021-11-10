@@ -27,7 +27,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -86,10 +85,27 @@ public class PTXGenTool {
         return result;
     }
 
+    /**
+     * Generate code for an address access from the stack frame.
+     *
+     * PTX Code equivalent:
+     *
+     * <code>
+     *     ldu.global.u64	rud1, [rud0+24];
+     * </code>
+     *
+     * @param dst
+     *            result
+     * @param index
+     *            index from the stack frame to load.
+     */
     private void emitParameterLoad(AllocatableValue dst, int index) {
         ConstantValue stackIndex = new ConstantValue(LIRKind.value(PTXKind.S32), JavaConstant.forInt((index + STACK_BASE_OFFSET) * PTXKind.U64.getSizeInBytes()));
 
-        gen.append(new PTXLIRStmt.LoadStmt(new MemoryAccess(globalSpace, gen.getParameterAllocation(PTXArchitecture.STACK_POINTER), stackIndex), (Variable) dst, PTXAssembler.PTXNullaryOp.LDU));
+        Variable parameterAllocation = gen.getParameterAllocation(PTXArchitecture.STACK_POINTER);
+        MemoryAccess memoryAccess = new MemoryAccess(globalSpace, parameterAllocation, stackIndex);
+        PTXLIRStmt.LoadStmt loadStmt = new PTXLIRStmt.LoadStmt(memoryAccess, (Variable) dst, PTXAssembler.PTXNullaryOp.LDU);
+        gen.append(loadStmt);
     }
 
     public HashMap<ParameterNode, Variable> getParameterToVariable() {

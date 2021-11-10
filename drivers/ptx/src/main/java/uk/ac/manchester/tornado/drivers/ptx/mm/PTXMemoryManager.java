@@ -55,6 +55,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
         reset();
     }
 
+    @Override
     public void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;
@@ -128,6 +129,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
      */
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
+        // FIXME <REFACTOR> This allocate memory directly in the deviceContext
         this.deviceHeapPointer = deviceContext.getDevice().getPTXContext().allocateMemory(numBytes);
     }
 
@@ -142,7 +144,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public long toAbsoluteDeviceAddress(long address) {
         long result = address;
 
-        guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped arround: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
+        guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped around: %d + %d = %d", address, deviceHeapPointer, address + deviceHeapPointer);
         result += deviceHeapPointer;
 
         return result;

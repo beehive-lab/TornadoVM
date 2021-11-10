@@ -27,7 +27,9 @@ import org.graalvm.compiler.phases.Phase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 
+// FIXME <Refactor> Move this phase to common
 public class TornadoNewArrayDevirtualizationReplacement extends Phase {
+
     @Override
     protected void run(StructuredGraph graph) {
         graph.getNodes().filter(NewArrayNode.class).forEach(newArrayNode -> {

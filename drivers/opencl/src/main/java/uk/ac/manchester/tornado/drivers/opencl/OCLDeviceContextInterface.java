@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface OCLDeviceContextInterface extends TornadoDeviceContext {
+
     OCLTargetDevice getDevice();
 
     OCLCodeCache getCodeCache();

@@ -27,20 +27,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.ParameterNode;
-
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ParameterNode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
@@ -56,6 +52,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
 import java.util.HashMap;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
 
 public class OCLGenTool {
 
@@ -80,9 +80,7 @@ public class OCLGenTool {
         // variable via this method is not supported (and potentially a bug): "
         // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
-
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
-
         OCLTargetDescription oclTarget = gen.target();
 
         Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
@@ -131,11 +129,26 @@ public class OCLGenTool {
         return null;
     }
 
-    private void emitParameterLoad(AllocatableValue dst, int index) {
-        OCLKind oclKind = (OCLKind) dst.getPlatformKind();
+    /**
+     * This represents a load from a parameter.
+     *
+     * This an example of the target code to generate:
+     *
+     * <code>
+     *      ulong0 = (ulong) frame[3];
+     * </code>
+     *
+     * @param resultValue
+     *            result
+     * @param index
+     *            Parameter index to be loaded.
+     *
+     */
+    private void emitParameterLoad(AllocatableValue resultValue, int index) {
+        OCLKind oclKind = (OCLKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(oclKind);
         final OCLUnaryOp op = getParameterLoadOp(oclKind);
-        gen.append(new AssignStmt(dst, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
+        gen.append(new AssignStmt(resultValue, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
     }
 
     public HashMap<ParameterNode, Variable> getParameterToVariable() {

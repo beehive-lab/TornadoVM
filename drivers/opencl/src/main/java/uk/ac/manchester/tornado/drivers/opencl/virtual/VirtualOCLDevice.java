@@ -209,7 +209,7 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     }
 
     @Override
-    public Object getDeviceInfo() {
+    public String getDeviceInfo() {
         return "DummyDeviceInfo";
     }
 

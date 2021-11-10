@@ -59,6 +59,7 @@ import org.graalvm.compiler.lir.Variable;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+// FIXME <REFACTOR> Common between the 3 backends
 public class OCLBuiltinTool {
 
     public Value genFloatACos(Value input) {

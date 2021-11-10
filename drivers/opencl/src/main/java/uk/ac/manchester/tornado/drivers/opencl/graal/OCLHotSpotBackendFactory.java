@@ -100,7 +100,7 @@ public class OCLHotSpotBackendFactory {
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
-        OCLDeviceContextInterface oclDeviceContextImpl = tornadoContext.createDeviceContext(device.getIndex());
+        OCLDeviceContextInterface oclDeviceContextImpl = (OCLDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
         OCLLoweringProvider lowerer;
@@ -131,7 +131,7 @@ public class OCLHotSpotBackendFactory {
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            return new OCLBackend(options, providers, target, codeCache, tornadoContext, oclDeviceContextImpl);
+            return new OCLBackend(options, providers, target, codeCache, oclDeviceContextImpl);
         }
     }
 

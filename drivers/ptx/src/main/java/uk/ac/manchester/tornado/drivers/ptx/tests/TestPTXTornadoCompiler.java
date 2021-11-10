@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -77,8 +78,6 @@ public class TestPTXTornadoCompiler {
 
     // @formatter:on
 
-    private static final boolean PRINT_KERNEL = false;
-
     public static void main(String[] args) {
 
         PTXPlatform platform = PTX.getPlatform();
@@ -93,7 +92,7 @@ public class TestPTXTornadoCompiler {
         PTXInstalledCode code = codeCache.installSource("add", source, "add");
 
         String generatedSourceCode = code.getGeneratedSourceCode();
-        if (PRINT_KERNEL) {
+        if (TornadoOptions.PRINT_SOURCE) {
             System.out.println("Compiled code: " + generatedSourceCode);
         }
     }

@@ -60,5 +60,4 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
         tool.append(new AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.GLOBAL_ID, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
     }
-
 }

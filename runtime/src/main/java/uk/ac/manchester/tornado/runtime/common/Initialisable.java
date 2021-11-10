@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+// FIXME <REFACTOR> We can move this interface to the TornadoDeviceContext
 public interface Initialisable {
     boolean isInitialised();
 }

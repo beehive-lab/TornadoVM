@@ -17,7 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.grid;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
@@ -27,11 +33,6 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * How to run?
@@ -109,14 +110,14 @@ public class TestGrid extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t1", worker);
         ts.execute(gridScheduler);
 
-        worker.setGlobalWork(512, 512, 1);
+        worker.setLocalWork(32, 32, 1);
         ts.execute(gridScheduler);
 
         matrixMultiplication(a, b, seq, numElements);
 
         for (int i = 0; i < numElements; i++) {
             for (int j = 0; j < numElements; j++) {
-                assertEquals(seq[i * numElements + j], c[i * numElements + j], 0.01f);
+                assertEquals(seq[i * numElements + j], c[i * numElements + j], 0.1f);
             }
 
         }

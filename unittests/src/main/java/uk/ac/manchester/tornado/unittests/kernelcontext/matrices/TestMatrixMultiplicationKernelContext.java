@@ -93,7 +93,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0.1f);
+            assertEquals(cJava[i], cTornado[i], 0.01f);
         }
     }
 
@@ -136,7 +136,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0.1f);
+            assertEquals(cJava[i], cTornado[i], 0.01f);
         }
     }
 
@@ -153,11 +153,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
         // Loop over all tiles
         int numTiles = size / TS;
-        for (int t = 0; t < numTiles; t++) {
+        for (int tileIndex = 0; tileIndex < numTiles; tileIndex++) {
 
             // Load one tile of A and B into local memory
-            int tiledRow = TS * t + row;
-            int tiledCol = TS * t + col;
+            int tiledRow = TS * tileIndex + row;
+            int tiledCol = TS * tileIndex + col;
             aSub[col * TS + row] = A[tiledCol * size + globalRow];
             bSub[col * TS + row] = B[globalCol * size + tiledRow];
 
@@ -199,8 +199,6 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
                 .streamIn(a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
-        // Change the Grid
-        worker.setGlobalWork(size, size, 1);
         worker.setLocalWork(TS, TS, 1);
         s0.execute(gridScheduler);
 

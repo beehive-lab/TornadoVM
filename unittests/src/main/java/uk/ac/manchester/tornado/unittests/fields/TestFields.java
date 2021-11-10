@@ -65,7 +65,7 @@ public class TestFields extends TornadoTestBase {
 
     private static class Bar {
         final int[] output;
-        int initValue;
+        final int initValue;
 
         public Bar(int elements, int initValue) {
             output = new int[elements];

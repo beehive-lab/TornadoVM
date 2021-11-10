@@ -96,7 +96,7 @@ public class TestPTXJITCompiler {
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
-        // Get the Graal Resoved Java Method
+        // Get the Graal Resolved Java Method
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM

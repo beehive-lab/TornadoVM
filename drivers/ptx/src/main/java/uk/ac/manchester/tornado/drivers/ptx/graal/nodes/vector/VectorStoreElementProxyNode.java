@@ -54,7 +54,7 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
         return value;
     }
 
-    protected VectorStoreElementProxyNode(NodeClass<? extends VectorStoreElementProxyNode> c, PTXKind kind, ValueNode origin, ValueNode lane) {
+    private VectorStoreElementProxyNode(NodeClass<? extends VectorStoreElementProxyNode> c, PTXKind kind, ValueNode origin, ValueNode lane) {
         super(c, PTXStampFactory.getStampFor(kind));
         this.origin = origin;
         this.laneOrigin = lane;

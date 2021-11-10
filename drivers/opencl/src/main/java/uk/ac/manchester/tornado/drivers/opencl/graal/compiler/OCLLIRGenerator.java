@@ -75,6 +75,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+/**
+ * It traverses the OCL HIR and generates OCL LIR.
+ */
 public class OCLLIRGenerator extends LIRGenerator {
 
     private final OCLBuiltinTool oclBuiltinTool;
@@ -150,9 +153,9 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable newVariable(ValueKind<?> lirKind) {
-        PlatformKind pk = lirKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = lirKind;
+    public Variable newVariable(ValueKind<?> valueKind) {
+        PlatformKind pk = valueKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = valueKind;
         OCLKind oclKind = OCLKind.ILLEGAL;
         if (pk instanceof OCLKind) {
             oclKind = (OCLKind) pk;

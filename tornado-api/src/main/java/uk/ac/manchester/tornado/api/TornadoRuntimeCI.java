@@ -42,7 +42,7 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 
 public interface TornadoRuntimeCI {
@@ -55,7 +55,7 @@ public interface TornadoRuntimeCI {
 
     void setDefaultDriver(int index);
 
-    TornadoVMBackend getBackendType(int index);
+    TornadoVMBackendType getBackendType(int index);
 
     <D extends TornadoDriver> D getDriver(Class<D> type);
 

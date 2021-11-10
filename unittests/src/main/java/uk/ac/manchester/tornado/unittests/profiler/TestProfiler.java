@@ -25,11 +25,25 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestProfiler extends TornadoTestBase {
+
+    private boolean isBackendPTXOrSPIRV(int driverIndex) {
+        TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
+        switch (type) {
+            case PTX:
+            case SPIRV:
+                return true;
+            case OpenCL:
+                return false;
+            default:
+                return false;
+        }
+    }
 
     @Test
     public void testProfilerEnabled() {
@@ -43,7 +57,7 @@ public class TestProfiler extends TornadoTestBase {
 
         // testProfilerDisabled might execute first. We must make sure that the code
         // cache is reset.
-        // Otherwise we get 0 compile time.
+        // Otherwise, we get 0 compile time.
         TornadoRuntime.getTornadoRuntime().getDefaultDevice().reset();
 
         // Enable profiler
@@ -65,8 +79,8 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(ts.getDataTransfersTime() >= 0);
         assertTrue(ts.getReadTime() >= 0);
         assertTrue(ts.getWriteTime() >= 0);
-        // We do not support dispatch time on the PTX backend
-        if (!"PTX".equals(TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getName())) {
+        // We do not support dispatch timers for the PTX and SPIRV backends
+        if (!isBackendPTXOrSPIRV(driverIndex)) {
             assertTrue(ts.getDataTransferDispatchTime() > 0);
             assertTrue(ts.getKernelDispatchTime() > 0);
         }

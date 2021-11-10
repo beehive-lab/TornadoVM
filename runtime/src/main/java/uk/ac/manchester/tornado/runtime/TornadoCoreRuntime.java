@@ -57,7 +57,8 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -128,7 +129,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     }
 
     private final Map<Object, GlobalObjectState> objectMappings;
-    private TornadoAcceleratorDriver[] drivers;
+    private TornadoAcceleratorDriver[] tornadoVMDrivers;
     private int driverCount;
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
@@ -147,7 +148,8 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
         vmBackend = vmRuntime.getHostJVMCIBackend();
         vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore(), vmBackend.getMetaAccess());
-        drivers = loadDrivers();
+        tornadoVMDrivers = loadDrivers();
+
     }
 
     public void clearObjectState() {
@@ -160,20 +162,23 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
         List<TornadoDriverProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().collect(Collectors.toList());
-        TornadoAcceleratorDriver[] drivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
+        TornadoAcceleratorDriver[] tornadoVMDrivers = new TornadoAcceleratorDriver[TornadoDrivers.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : providerList) {
+            if (Tornado.FULL_DEBUG) {
+                System.out.println("Loading DRIVER: " + provider);
+            }
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
                 TornadoAcceleratorDriver driver = provider.createDriver(options, vmRuntime, vmConfig);
                 if (driver != null) {
-                    drivers[index] = driver;
+                    tornadoVMDrivers[index] = driver;
                     index++;
                 }
             }
         }
         driverCount = index;
-        return drivers;
+        return tornadoVMDrivers;
     }
 
     public static OptionValues getOptions() {
@@ -190,13 +195,12 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     @Override
     public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {
-        for (int driverIndex = 0; driverIndex < drivers.length; driverIndex++) {
-            if (drivers[driverIndex] != null && drivers[driverIndex].getClass() == driverClass) {
+        for (int driverIndex = 0; driverIndex < tornadoVMDrivers.length; driverIndex++) {
+            if (tornadoVMDrivers[driverIndex] != null && tornadoVMDrivers[driverIndex].getClass() == driverClass) {
                 return driverIndex;
             }
         }
-        shouldNotReachHere("Could not find index for driver: " + driverClass);
-        return -1;
+        throw shouldNotReachHere("Could not find index for driver: " + driverClass);
     }
 
     @Override
@@ -214,20 +218,20 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     @Override
     public TornadoAcceleratorDriver getDriver(int index) {
-        return drivers[index];
+        return tornadoVMDrivers[index];
     }
 
     @Override
     public void setDefaultDriver(int index) {
-        TornadoAcceleratorDriver tmp = drivers[0];
-        drivers[0] = drivers[index];
-        drivers[index] = tmp;
+        TornadoAcceleratorDriver tmp = tornadoVMDrivers[0];
+        tornadoVMDrivers[0] = tornadoVMDrivers[index];
+        tornadoVMDrivers[index] = tmp;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <D extends TornadoDriver> D getDriver(Class<D> type) {
-        for (TornadoAcceleratorDriver driver : drivers) {
+        for (TornadoAcceleratorDriver driver : tornadoVMDrivers) {
             if (driver.getClass() == type) {
                 return (D) driver;
             }
@@ -236,8 +240,8 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     }
 
     @Override
-    public TornadoVMBackend getBackendType(int index) {
-        return drivers[index].getBackendType();
+    public TornadoVMBackendType getBackendType(int index) {
+        return tornadoVMDrivers[index].getBackendType();
     }
 
     @Override
@@ -247,7 +251,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
-        return (drivers == null || drivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoAcceleratorDevice) drivers[DEFAULT_DRIVER].getDefaultDevice();
+        return (tornadoVMDrivers == null || tornadoVMDrivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoAcceleratorDevice) tornadoVMDrivers[DEFAULT_DRIVER].getDefaultDevice();
     }
 
     @Override

@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -46,8 +47,6 @@ public class TestOpenCLTornadoCompiler {
             "      c[idx]  =  a[idx] + b[idx]; " + 
             "}";
     // @formatter:on
-
-    private static final boolean PRINT_KERNEL = false;
 
     public static void main(String[] args) {
 
@@ -72,7 +71,7 @@ public class TestOpenCLTornadoCompiler {
         OCLInstalledCode code = codeCache.installSource(meta, "saxpy", "saxpy", source);
 
         String generatedSourceCode = code.getGeneratedSourceCode();
-        if (PRINT_KERNEL) {
+        if (TornadoOptions.PRINT_SOURCE) {
             System.out.println("Compiled code: " + generatedSourceCode);
         }
     }
