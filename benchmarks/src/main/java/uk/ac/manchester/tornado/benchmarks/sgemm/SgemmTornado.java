@@ -26,7 +26,6 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -71,23 +70,13 @@ public class SgemmTornado extends BenchmarkDriver {
             worker.setLocalWork(16, 16, 1);
             grid = new GridScheduler();
             grid.setWorkerGrid("benchmark.sgemm", worker);
-            TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-            ts = new TaskSchedule("benchmark") //
-                    .prebuiltTask("sgemm", //
-                            "sgemm", //
-                            "/tmp/mxm.spv", //
-                            new Object[] { m, n, n, a, b, c }, //
-                            new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
-                            defaultDevice, //
-                            new int[] { m, n })//
-                    .streamOut(c);//
-        } else {
-            ts = new TaskSchedule("benchmark");
-            ts.streamIn(a, b);
-            ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-            ts.streamOut(c);
-            ts.warmup();
         }
+
+        ts = new TaskSchedule("benchmark");
+        ts.streamIn(a, b);
+        ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+        ts.streamOut(c);
+        ts.warmup();
     }
 
     @Override
