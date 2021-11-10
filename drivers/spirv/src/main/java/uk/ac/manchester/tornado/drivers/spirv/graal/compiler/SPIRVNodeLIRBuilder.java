@@ -28,7 +28,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -516,7 +515,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
-            trace("emitExceptionEntry");
+            SPIRVLogger.traceBuildLIR("emitExceptionEntry");
             shouldNotReachHere("exceptions are unimplemented");
         }
 

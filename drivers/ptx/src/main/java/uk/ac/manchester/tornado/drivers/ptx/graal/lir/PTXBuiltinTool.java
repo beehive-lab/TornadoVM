@@ -20,11 +20,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Variable;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.FLOAT_MAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.FLOAT_MIN;
@@ -38,7 +33,13 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUna
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.POPCOUNT;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.SIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.SQRT;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.Variable;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
 
 public class PTXBuiltinTool {
 
@@ -98,7 +99,7 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatCos(Value input) {
-        trace("genCos: cos(%s)", input);
+        PTXLogger.traceBuildLIR("genCos: cos(%s)", input);
         return new PTXUnary.Intrinsic(COS, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -123,12 +124,12 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatExp2(Value input) {
-        trace("genExp: exp(%s)", input);
+        PTXLogger.traceBuildLIR("genExp: exp(%s)", input);
         return new PTXUnary.Intrinsic(EXP2, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatFloor(Value input) {
-        trace("genFloatFloor: floor(%s)", input);
+        PTXLogger.traceBuildLIR("genFloatFloor: floor(%s)", input);
         return new PTXUnary.Intrinsic(FLOAT_FLOOR, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -143,7 +144,7 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatLog2(Value input) {
-        trace("genFloatLog2: input=%s", input);
+        PTXLogger.traceBuildLIR("genFloatLog2: input=%s", input);
         return new PTXUnary.Intrinsic(LOG2, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -183,7 +184,7 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatSin(Value input) {
-        trace("genSin: sin(%s)", input);
+        PTXLogger.traceBuildLIR("genSin: sin(%s)", input);
         return new PTXUnary.Intrinsic(SIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -248,12 +249,12 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatMax(Value x, Value y) {
-        trace("genFloatMax: max(%s,%s)", x, y);
+        PTXLogger.traceBuildLIR("genFloatMax: max(%s,%s)", x, y);
         return new PTXBinary.Intrinsic(FLOAT_MAX, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatMin(Value x, Value y) {
-        trace("genFloatMin: min(%s,%s)", x, y);
+        PTXLogger.traceBuildLIR("genFloatMin: min(%s,%s)", x, y);
         return new PTXBinary.Intrinsic(FLOAT_MIN, LIRKind.combine(x, y), x, y);
     }
 
@@ -353,22 +354,22 @@ public class PTXBuiltinTool {
     }
 
     public Value genIntAbs(Value input) {
-        trace("genIntAbs: abs(%s)", input);
+        PTXLogger.traceBuildLIR("genIntAbs: abs(%s)", input);
         return new PTXUnary.Intrinsic(ABS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSqrt(Value input) {
-        trace("genAbs: sqrt(%s)", input);
+        PTXLogger.traceBuildLIR("genAbs: sqrt(%s)", input);
         return new PTXUnary.Intrinsic(SQRT, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genIntMax(Value x, Value y) {
-        trace("genMax: max(%s,%s)", x, y);
+        PTXLogger.traceBuildLIR("genMax: max(%s,%s)", x, y);
         return new PTXBinary.Intrinsic(INT_MAX, LIRKind.combine(x, y), x, y);
     }
 
     public Value genIntMin(Value x, Value y) {
-        trace("genMin: min(%s,%s)", x, y);
+        PTXLogger.traceBuildLIR("genMin: min(%s,%s)", x, y);
         return new PTXBinary.Intrinsic(INT_MIN, LIRKind.combine(x, y), x, y);
     }
 
@@ -378,7 +379,7 @@ public class PTXBuiltinTool {
     }
 
     public Value genIntPopcount(Value value) {
-        trace("genBitCount: bitcount(%s)", value);
+        PTXLogger.traceBuildLIR("genBitCount: bitcount(%s)", value);
         return new PTXUnary.Intrinsic(POPCOUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 
@@ -403,7 +404,7 @@ public class PTXBuiltinTool {
     }
 
     public Value genFloatAbs(Value input) {
-        trace("genFloatAbs: abs(%s)", input);
+        PTXLogger.traceBuildLIR("genFloatAbs: abs(%s)", input);
         return new PTXUnary.Intrinsic(ABS, LIRKind.value(input.getPlatformKind()), input);
     }
 

@@ -28,11 +28,11 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
-
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, MemoryKill {
@@ -50,7 +50,7 @@ public class PTXBarrierNode extends FixedWithNextNode implements LIRLowerable, M
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        trace("emitPTXBarrier: ctaInstance=%d, numberOfThreads=%d", ctaInstance, numberOfThreads);
+        PTXLogger.traceBuildLIR("emitPTXBarrier: ctaInstance=%d, numberOfThreads=%d", ctaInstance, numberOfThreads);
         gen.getLIRGeneratorTool().append(new PTXLIRStmt.ExprStmt(new PTXUnary.Barrier(PTXAssembler.PTXUnaryIntrinsic.BARRIER_SYNC, ctaInstance, numberOfThreads)));
     }
 }

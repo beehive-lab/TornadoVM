@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.ExprStmt;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +58,7 @@ import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
+import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStamp;
@@ -197,7 +197,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         DeoptimizationReason reason = getMetaAccess().decodeDeoptReason(constant);
         DeoptimizationAction action = getMetaAccess().decodeDeoptAction(constant);
         int debugId = getMetaAccess().decodeDebugId(constant);
-        trace("emitDeoptimize: id=%d, reason=%s, action=%s", debugId, reason, action);
+        PTXLogger.traceBuildLIR("emitDeoptimize: id=%d, reason=%s, action=%s", debugId, reason, action);
         append(new PTXControlFlow.DeoptOp(actionAndReason));
     }
 
@@ -223,7 +223,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-        trace("emitReturn: input=%s", input);
+        PTXLogger.traceBuildLIR("emitReturn: input=%s", input);
         if (input != null) {
             PTXKind returnKind = (PTXKind) input.getPlatformKind();
             LIRKind lirKind = LIRKind.value(returnKind);
@@ -239,12 +239,12 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitJump(LabelRef label) {
-        trace("emitJump: label=%s", label);
+        PTXLogger.traceBuildLIR("emitJump: label=%s", label);
         append(new PTXControlFlow.Branch(label, false, false));
     }
 
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
-        trace("emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
+        PTXLogger.traceBuildLIR("emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
         append(new PTXControlFlow.Branch(label, false, isLoopEdgeBack));
     }
 
@@ -266,7 +266,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        trace("emitConditionalMove?");
+        PTXLogger.traceBuildLIR("emitConditionalMove?");
 
         LIRKind kind = LIRKind.combine(trueValue, falseValue);
         Variable predicate = newVariable(LIRKind.value(PTXKind.PRED));
@@ -320,7 +320,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        trace("emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
+        PTXLogger.traceBuildLIR("emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
         LIRKind kind = LIRKind.value(PTXKind.PRED);
         Variable predicate = newVariable(kind);
         Constant[] constants = strategy.getKeyConstants();
@@ -372,7 +372,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public Variable newReturnVariable(ValueKind<?> lirKind) {
         final Variable var = super.newVariable(lirKind);
-        trace("newReturnVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+        PTXLogger.traceBuildLIR("newReturnVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
         res.setReturnVariable(var);
@@ -387,7 +387,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
         final Variable var = super.newVariable(lirKind);
-        trace("newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+        PTXLogger.traceBuildLIR("newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
         int indexForType = res.insertVariableAndGetIndex(var, isArray);
@@ -420,7 +420,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public void emitParameterAlloc() {
-        trace("emitParameterAlloc");
+        PTXLogger.traceBuildLIR("emitParameterAlloc");
         Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));

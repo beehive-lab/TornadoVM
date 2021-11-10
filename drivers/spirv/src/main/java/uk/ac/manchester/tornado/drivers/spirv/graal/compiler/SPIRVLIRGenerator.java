@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -373,7 +372,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
-        trace("emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
+        SPIRVLogger.traceBuildLIR("emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
         append(new SPIRVControlFlow.Branch(label));
     }
 }

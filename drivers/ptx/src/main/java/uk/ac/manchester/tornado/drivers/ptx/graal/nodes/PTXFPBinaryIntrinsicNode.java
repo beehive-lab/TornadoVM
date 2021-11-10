@@ -22,7 +22,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -46,6 +45,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
@@ -121,7 +121,7 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-        trace("emitPTXFPBinaryIntrinsic: op=%s, x=%s, y=%s", operation, x, y);
+        PTXLogger.traceBuildLIR("emitPTXFPBinaryIntrinsic: op=%s, x=%s, y=%s", operation, x, y);
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());

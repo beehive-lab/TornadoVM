@@ -35,15 +35,10 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
-
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo
 public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
@@ -61,7 +56,7 @@ public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        trace("emitLocalThreadId: dim=%s", index);
+        PTXLogger.traceBuildLIR("emitLocalThreadId: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
         Variable result = tool.newVariable(kind);
