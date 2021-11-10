@@ -22,7 +22,11 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -35,6 +39,10 @@ public class SgemmTornado extends BenchmarkDriver {
     private float[] a;
     private float[] b;
     private float[] c;
+    private GridScheduler grid;
+    WorkerGrid worker;
+
+    private boolean USE_GRID = Boolean.parseBoolean(TornadoRuntime.getProperty("usegrid", "False"));
 
     public SgemmTornado(int iterations, int m, int n) {
         super(iterations);
@@ -58,11 +66,28 @@ public class SgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        ts = new TaskSchedule("benchmark");
-        ts.streamIn(a, b);
-        ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-        ts.streamOut(c);
-        ts.warmup();
+        if (USE_GRID) {
+            worker = new WorkerGrid2D(m, n);
+            worker.setLocalWork(16, 16, 1);
+            grid = new GridScheduler();
+            grid.setWorkerGrid("benchmark.sgemm", worker);
+            TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+            ts = new TaskSchedule("benchmark") //
+                    .prebuiltTask("sgemm", //
+                            "sgemm", //
+                            "/tmp/mxm.spv", //
+                            new Object[] { m, n, n, a, b, c }, //
+                            new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
+                            defaultDevice, //
+                            new int[] { m, n })//
+                    .streamOut(c);//
+        } else {
+            ts = new TaskSchedule("benchmark");
+            ts.streamIn(a, b);
+            ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+            ts.streamOut(c);
+            ts.warmup();
+        }
     }
 
     @Override
@@ -80,7 +105,11 @@ public class SgemmTornado extends BenchmarkDriver {
     @Override
     public void benchmarkMethod(TornadoDevice device) {
         ts.mapAllTo(device);
-        ts.execute();
+        if (grid == null) {
+            ts.execute();
+        } else {
+            ts.execute(grid);
+        }
     }
 
     @Override

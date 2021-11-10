@@ -40,14 +40,14 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 
 public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
-    private LevelZeroDevice device;
+    private final LevelZeroDevice device;
     private String deviceName;
     private ZeMemoryProperties[] memoryProperties;
     private ZeDeviceProperties deviceProperties;
     private ZeComputeProperties computeProperties;
     ZeAPIVersion apiVersion;
 
-    private long totalMemorySize;
+    private final long totalMemorySize;
 
     private boolean queriedSupportFP64;
     private ZeDeviceModuleProperties moduleProperties;
@@ -156,7 +156,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     // FIXME - Not sure this is the max of compute UNITS
     @Override
     public int getDeviceMaxComputeUnits() {
-        return deviceProperties.getNumEUsPerSubslice();
+        return deviceProperties.getNumEUsPerSubslice() * deviceProperties.getNumSubslicesPerSlice();
     }
 
     /**
@@ -169,10 +169,14 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         return getDeviceMaxWorkgroupDimensions();
     }
 
-    // FIXME
+    /**
+     * Return the maximum number of threads for all groups.
+     *
+     * @return long[]
+     */
     @Override
     public long[] getDeviceMaxWorkGroupSize() {
-        return new long[0];
+        return new long[] { computeProperties.getMaxTotalGroupSize() };
     }
 
     @Override

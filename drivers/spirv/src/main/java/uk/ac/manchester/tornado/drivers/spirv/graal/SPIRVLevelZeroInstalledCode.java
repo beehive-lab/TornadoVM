@@ -115,14 +115,15 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);
 
-            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
-            int dims = grid.dimension();
+            WorkerGrid worker = meta.getWorkerGrid(meta.getId());
+            int dims = worker.dimension();
 
-            System.arraycopy(grid.getGlobalWork(), 0, globalWork, 0, dims);
+            System.arraycopy(worker.getGlobalWork(), 0, globalWork, 0, dims);
 
-            if (grid.getLocalWork() != null) {
-                System.arraycopy(grid.getLocalWork(), 0, localWork, 0, dims);
+            if (worker.getLocalWork() != null) {
+                System.arraycopy(worker.getLocalWork(), 0, localWork, 0, dims);
             }
+
         }
         return new DeviceThreadScheduling(globalWork, localWork);
     }
