@@ -153,6 +153,7 @@ public class PrebuiltTest extends TornadoTestBase {
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
 
         WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(256, 1, 1);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
@@ -195,6 +196,7 @@ public class PrebuiltTest extends TornadoTestBase {
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
 
         WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(32, 1, 1);
         GridScheduler gridScheduler = new GridScheduler("a.b", worker);
         KernelContext context = new KernelContext();
 

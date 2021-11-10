@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
@@ -140,6 +141,15 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         }
     }
 
+    private int setThreadSuggestionFromLevelZero(LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {
+        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) threadScheduling.globalWork[0], (int) threadScheduling.globalWork[1],
+                (int) threadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
+        LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
+        result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
+        LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
+        return result;
+    }
+
     private ThreadBlockDispatcher suggestThreadSchedulingToLevelZeroDriver(DeviceThreadScheduling threadScheduling, LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, TaskMetaData meta) {
 
         // Prepare kernel for launch
@@ -148,12 +158,23 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
         int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
 
-        int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) threadScheduling.globalWork[0], (int) threadScheduling.globalWork[1],
-                (int) threadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
-        LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
+        if (!meta.isWorkerGridAvailable()) {
+            int result = levelZeroKernel.zeKernelSuggestGroupSize(kernel.getPtrZeKernelHandle(), (int) threadScheduling.globalWork[0], (int) threadScheduling.globalWork[1],
+                    (int) threadScheduling.globalWork[2], groupSizeX, groupSizeY, groupSizeZ);
+            LevelZeroUtils.errorLog("zeKernelSuggestGroupSize", result);
+        }
 
-        result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
+        int result = levelZeroKernel.zeKernelSetGroupSize(kernel.getPtrZeKernelHandle(), groupSizeX, groupSizeY, groupSizeZ);
         LevelZeroUtils.errorLog("zeKernelSetGroupSize", result);
+
+        if (result == ZeResult.ZE_RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION) {
+            // At this point, we can only get a ZE_RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION
+            // only when using the GridScheduler API to bypass the thread scheduler
+            // suggestions of Level Zero. In this case, we call the suggestions and set up
+            // the right thread block sizes.
+            System.out.println(WARNING_THREAD_LOCAL);
+            setThreadSuggestionFromLevelZero(levelZeroKernel, kernel, groupSizeX, groupSizeY, groupSizeZ);
+        }
 
         if (meta.isGridSchedulerEnabled()) {
             WorkerGrid grid = meta.getWorkerGrid(meta.getId());
