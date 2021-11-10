@@ -45,7 +45,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
     public static void matrixMultiplicationJava(float[] a, float[] b, float[] c, int size) {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                float sum = 0;
+                float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
                     sum += a[i * size + k] * b[k * size + j];
                 }
@@ -58,7 +58,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         int idx = context.globalIdx;
 
         for (int jdx = 0; jdx < size; jdx++) {
-            float sum = 0;
+            float sum = 0.0f;
             for (int k = 0; k < size; k++) {
                 sum += a[(idx * size) + k] * b[(k * size) + jdx];
             }
@@ -93,14 +93,14 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0);
+            assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
 
     public static void matrixMultiplication2D01(KernelContext context, float[] a, float[] b, float[] c, int size) {
         int idx = context.globalIdx;
         int jdx = context.globalIdy;
-        float sum = 0;
+        float sum = 0.0f;
 
         for (int k = 0; k < size; k++) {
             sum += a[(k * size) + idx] * b[(jdx * size) + k];
@@ -136,7 +136,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0);
+            assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
 
@@ -149,7 +149,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         float[] aSub = context.allocateFloatLocalArray(TS * TS);
         float[] bSub = context.allocateFloatLocalArray(TS * TS);
 
-        float sum = 0;
+        float sum = 0.0f;
 
         // Loop over all tiles
         int numTiles = size / TS;
@@ -207,7 +207,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         matrixMultiplicationJava(a, b, cJava, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0);
+            assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
 }
