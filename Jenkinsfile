@@ -126,8 +126,8 @@ void buildAndTest(String JDK, String tornadoProfile) {
     }
     stage('PTX: Unit Tests') {
         timeout(time: 12, unit: 'MINUTES') {
-            sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0"'
-            sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+            sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0 -Dtornado.ptx.priority=100"'
+            sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0 -Dtornado.heap.allocation=1MB -Dtornado.ptx.priority=100" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
             sh 'test-native.sh'
         }
     }
@@ -135,15 +135,15 @@ void buildAndTest(String JDK, String tornadoProfile) {
         parallel (
             "OpenCL and GPU: Nvidia GeForce GTX 1060" : {
                 timeout(time: 12, unit: 'MINUTES') {
-                    sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=1:1"'
-                    sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=1:1" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test.py --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
+                    sh 'tornado-test.py -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             },
             "OpenCL and CPU: Intel Xeon E5-2620" : {
                 timeout(time: 12, unit: 'MINUTES') {
-                    sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=1:0"'
-                    sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=1:0" -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test.py --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
+                    sh 'tornado-test.py -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             }
