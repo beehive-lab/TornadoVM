@@ -46,6 +46,11 @@ public enum ZeDeviceType {
      */
     ZE_DEVICE_TYPE_MCA(4),
 
+    /**
+     * Vision Processing Unit
+     */
+    ZE_DEVICE_TYPE_VPU(5),
+
     ZE_DEVICE_TYPE_FORCE_UINT32(0x7fffffff);
 
     int value;

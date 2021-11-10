@@ -30,8 +30,8 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
 public abstract class SPIRVDevice implements TornadoTargetDevice {
 
-    private int platformIndex;
-    private int deviceIndex;
+    private final int platformIndex;
+    private final int deviceIndex;
     private SPIRVDeviceContext deviceContext;
 
     public SPIRVDevice(int platformIndex, int deviceIndex) {

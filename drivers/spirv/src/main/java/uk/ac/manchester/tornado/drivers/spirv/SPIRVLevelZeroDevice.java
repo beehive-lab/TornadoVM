@@ -55,7 +55,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     public SPIRVLevelZeroDevice(int platformIndex, int deviceIndex, LevelZeroDevice device) {
         super(platformIndex, deviceIndex);
         this.device = device;
-        this.totalMemorySize = getTotalGlobalMemory();
+        this.totalMemorySize = getTotalGlobalMemorySize();
         initDeviceProperties();
         initDeviceComputeProperties();
         initDriverVersion();
@@ -74,7 +74,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         errorLog("zeDeviceGetComputeProperties", result);
     }
 
-    private long getTotalGlobalMemory() {
+    private long getTotalGlobalMemorySize() {
         // A) Count memories
         int[] memoryCount = new int[1];
         int result = device.zeDeviceGetMemoryProperties(device.getDeviceHandlerPtr(), memoryCount, null);

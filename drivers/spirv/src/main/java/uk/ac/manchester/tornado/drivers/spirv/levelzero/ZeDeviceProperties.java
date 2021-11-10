@@ -68,6 +68,8 @@ public class ZeDeviceProperties {
                 return ZeDeviceType.ZE_DEVICE_TYPE_FPGA;
             case 4:
                 return ZeDeviceType.ZE_DEVICE_TYPE_MCA;
+            case 5:
+                return ZeDeviceType.ZE_DEVICE_TYPE_VPU;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
