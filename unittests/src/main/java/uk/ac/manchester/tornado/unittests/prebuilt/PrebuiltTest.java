@@ -211,8 +211,6 @@ public class PrebuiltTest extends TornadoTestBase {
                 .execute(gridScheduler);
         // @formatter:on
 
-        System.out.println(Arrays.toString(reduce));
-
         // Final SUM
         float finalSum = 0;
         for (int v : reduce) {
