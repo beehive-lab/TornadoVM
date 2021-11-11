@@ -35,7 +35,7 @@ import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryOp;
@@ -51,25 +51,25 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        PTXLogger.traceBuildLIR("emitAdd resultKind=%s a=%s b=%s setFlags=%b", resultKind, a, b, setFlags);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitAdd resultKind=%s a=%s b=%s setFlags=%b", resultKind, a, b, setFlags);
         return emitBinaryAssign(PTXBinaryOp.ADD, resultKind, a, b);
     }
 
     @Override
     protected Variable emitSub(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        PTXLogger.traceBuildLIR("emitSub resultKind=%s a=%s b=%s setFlags=%b", resultKind, a, b, setFlags);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitSub resultKind=%s a=%s b=%s setFlags=%b", resultKind, a, b, setFlags);
         return emitBinaryAssign(PTXBinaryOp.SUB, resultKind, a, b);
     }
 
     @Override
     public Value emitNegate(Value input) {
-        PTXLogger.traceBuildLIR("emitNegate input=%s", input);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitNegate input=%s", input);
         return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NEGATE, LIRKind.value(input.getPlatformKind()), input);
     }
 
     @Override
     public Value emitMul(Value a, Value b, boolean setFlags) {
-        PTXLogger.traceBuildLIR("emitMul a=%s b=%s setFlags=%b", a, b, setFlags);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitMul a=%s b=%s setFlags=%b", a, b, setFlags);
         LIRKind resultKind = LIRKind.combine(a, b);
         PTXBinaryOp op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXBinaryOp.MUL : PTXBinaryOp.MUL_LO;
         return emitBinaryAssign(op, resultKind, a, b);
@@ -88,7 +88,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
-        PTXLogger.traceBuildLIR("emitDiv a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitDiv a=%s b=%s", a, b);
         LIRKind resultKind = LIRKind.combine(a, b);
         PTXBinaryOp op = resultKind.getPlatformKind() == PTXKind.F32 ? PTXBinaryOp.DIV_FULL : PTXBinaryOp.DIV;
         return emitBinaryAssign(op, resultKind, a, b);
@@ -96,7 +96,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
-        PTXLogger.traceBuildLIR("emitRem: %s %% %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitRem: %s %% %s", a, b);
         return emitBinaryAssign(PTXBinaryOp.REM, LIRKind.combine(a, b), a, b);
     }
 
@@ -114,43 +114,43 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNot(Value input) {
-        PTXLogger.traceBuildLIR("emitNot input=%s", input);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitNot input=%s", input);
         return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NOT, LIRKind.value(input.getPlatformKind()), input);
     }
 
     @Override
     public Value emitAnd(Value a, Value b) {
-        PTXLogger.traceBuildLIR("emitAnd a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitAnd a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_AND, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitOr(Value a, Value b) {
-        PTXLogger.traceBuildLIR("emitOr a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitOr a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_OR, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitXor(Value a, Value b) {
-        PTXLogger.traceBuildLIR("emitXor a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitXor a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_XOR, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitShl(Value a, Value b) {
-        PTXLogger.traceBuildLIR("emitShl a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitShl a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_LEFT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitShr(Value a, Value b) {
-        PTXLogger.traceBuildLIR("emitShr a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitShr a=%s b=%s", a, b);
         return emitBinaryAssign(PTXBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
     @Override
     public Value emitUShr(Value a, Value b) {
-        PTXLogger.traceBuildLIR("emitUShr a=%s b=%s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitUShr a=%s b=%s", a, b);
         return emitShr(a, b);
     }
 
@@ -168,7 +168,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNarrow(Value inputVal, int bits) {
-        PTXLogger.traceBuildLIR("emitNarrow inputVal=%s bits=%d", inputVal, bits);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitNarrow inputVal=%s bits=%d", inputVal, bits);
         PTXLIRKindTool kindTool = getGen().getLIRKindTool();
         PTXKind kind = (PTXKind) inputVal.getPlatformKind();
         LIRKind toKind;
@@ -188,13 +188,13 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
-        PTXLogger.traceBuildLIR("emitSignExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitSignExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
         return emitZeroExtend(inputVal, fromBits, toBits);
     }
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
-        PTXLogger.traceBuildLIR("emitZeroExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitZeroExtend inputVal=%s fromBits=%d toBits=%d", inputVal, fromBits, toBits);
         PTXLIRKindTool kindTool = getGen().getLIRKindTool();
         PTXKind kind = (PTXKind) inputVal.getPlatformKind();
         LIRKind toKind;
@@ -224,7 +224,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMathSqrt(Value input) {
-        PTXLogger.traceBuildLIR("emitMathSqrt input=%s", input);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitMathSqrt input=%s", input);
         PTXBuiltinTool builtinTool = getGen().getPtxBuiltinTool();
         PTXKind ptxKind = (PTXKind) input.getPlatformKind();
         Variable result = getGen().newVariable(input.getValueKind());
@@ -255,13 +255,13 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public void emitVectorLoad(Variable result, PTXUnary.MemoryAccess address) {
-        PTXLogger.traceBuildLIR("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         getGen().append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
-        PTXLogger.traceBuildLIR("emitLoad kind=%s address=%s", kind, address);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitLoad kind=%s address=%s", kind, address);
         guarantee(kind.getPlatformKind() instanceof PTXKind, "invalid LIRKind: %s", kind);
         PTXKind ptxKind = (PTXKind) kind.getPlatformKind();
 
@@ -285,7 +285,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
         assert address instanceof PTXUnary.MemoryAccess;
         assert kind.getPlatformKind() instanceof PTXKind;
-        PTXLogger.traceBuildLIR("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         PTXUnary.MemoryAccess access = (PTXUnary.MemoryAccess) address;
         PTXKind ptxKind = (PTXKind) input.getPlatformKind();
         if (ptxKind.isVector()) {
@@ -324,7 +324,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public Value emitMultiplyAdd(Value op1, Value op2, Value op3) {
-        PTXLogger.traceBuildLIR("emitMultiplyAdd op1=%s op2=%s op3=%s", op1, op2, op3);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitMultiplyAdd op1=%s op2=%s op3=%s", op1, op2, op3);
         LIRKind resultKind = LIRKind.combine(op1, op2, op3);
         Variable result = getGen().newVariable(resultKind);
         PTXTernaryOp op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXTernaryOp.MAD : PTXTernaryOp.MAD_LO;

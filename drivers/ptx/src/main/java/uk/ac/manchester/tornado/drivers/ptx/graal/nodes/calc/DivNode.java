@@ -38,7 +38,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 
 @NodeInfo(shortName = "div_node")
 public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div> {
@@ -66,7 +66,7 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
     }
 
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
-        PTXLogger.traceBuildLIR("emtiDiv: x=%s, y=%s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emtiDiv: x=%s, y=%s", x, y);
         nodeValueMap.setResult(this, gen.emitDiv(nodeValueMap.operand(this.getX()), nodeValueMap.operand(this.getY()), null));
     }
 }

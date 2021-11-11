@@ -36,7 +36,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
@@ -73,7 +73,7 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        PTXLogger.traceBuildLIR("emitPrintf: xDim=%s, yDim=%s, zDim=%s", xDim, yDim, zDim);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPrintf: xDim=%s, yDim=%s, zDim=%s", xDim, yDim, zDim);
         PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
 
         Value stack = gen.operand(argumentStack);

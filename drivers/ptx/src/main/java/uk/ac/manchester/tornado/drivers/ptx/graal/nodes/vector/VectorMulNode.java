@@ -34,7 +34,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
@@ -64,7 +64,7 @@ public class VectorMulNode extends BinaryNode implements LIRLowerable, VectorOp 
         final Value input1 = gen.operand(x);
         final Value input2 = gen.operand(y);
 
-        PTXLogger.traceBuildLIR("emitVectorMul: %s * %s", input1, input2);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorMul: %s * %s", input1, input2);
         gen.getLIRGeneratorTool().append(new AssignStmt(result, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
         gen.setResult(this, result);
     }

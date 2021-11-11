@@ -56,7 +56,7 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.common.OCLLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 // FIXME <REFACTOR> Common between the 3 backends
@@ -93,7 +93,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatATan(Value input) {
-        OCLLogger.traceBuildLIR("genAtan: atan(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genAtan: atan(%s)", input);
         return new OCLUnary.Intrinsic(ATAN, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -118,7 +118,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatCos(Value input) {
-        OCLLogger.traceBuildLIR("genCos: cos(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genCos: cos(%s)", input);
         if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
             return new OCLUnary.Intrinsic(NATIVE_COS, LIRKind.value(input.getPlatformKind()), input);
         }
@@ -146,7 +146,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatExp(Value input) {
-        OCLLogger.traceBuildLIR("genExp: exp(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genExp: exp(%s)", input);
         return new OCLUnary.Intrinsic(EXP, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -166,7 +166,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatFloor(Value input) {
-        OCLLogger.traceBuildLIR("genFloatFloor: floor(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatFloor: floor(%s)", input);
         return new OCLUnary.Intrinsic(FLOAT_FLOOR, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -181,7 +181,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatLog(Value input) {
-        OCLLogger.traceBuildLIR("genLog: log(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genLog: log(%s)", input);
         return new OCLUnary.Intrinsic(LOG, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -226,7 +226,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatSin(Value input) {
-        OCLLogger.traceBuildLIR("genSin: sin(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genSin: sin(%s)", input);
         if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
             return new OCLUnary.Intrinsic(NATIVE_SIN, LIRKind.value(input.getPlatformKind()), input);
         }
@@ -244,7 +244,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatTan(Value input) {
-        OCLLogger.traceBuildLIR("genTan: tan(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genTan: tan(%s)", input);
         if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
             return new OCLUnary.Intrinsic(NATIVE_TAN, LIRKind.value(input.getPlatformKind()), input);
         }
@@ -252,7 +252,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatTanh(Value input) {
-        OCLLogger.traceBuildLIR("genTanh: tanh(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genTanh: tanh(%s)", input);
         return new OCLUnary.Intrinsic(TANH, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -267,7 +267,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatTrunc(Value input) {
-        OCLLogger.traceBuildLIR("genFloatTrunc: trunc(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatTrunc: trunc(%s)", input);
         return new OCLUnary.Intrinsic(FLOAT_TRUNC, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -297,12 +297,12 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatMax(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genFloatMax: max(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatMax: max(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(FLOAT_MAX, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatMin(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genFloatMin: min(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatMin: min(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(FLOAT_MIN, LIRKind.combine(x, y), x, y);
     }
 
@@ -357,7 +357,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatPow(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genFloatPow: pow(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatPow: pow(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(FLOAT_POW, LIRKind.combine(x, y), x, y);
     }
 
@@ -402,12 +402,12 @@ public class OCLBuiltinTool {
     }
 
     public Value genIntAbs(Value input) {
-        OCLLogger.traceBuildLIR("genIntAbs: abs(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genIntAbs: abs(%s)", input);
         return new OCLUnary.Intrinsic(ABS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSqrt(Value input) {
-        OCLLogger.traceBuildLIR("genAbs: sqrt(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genAbs: sqrt(%s)", input);
         if (TornadoOptions.ENABLE_NATIVE_FUNCTION) {
             return new OCLUnary.Intrinsic(NATIVE_SQRT, LIRKind.value(input.getPlatformKind()), input);
         }
@@ -415,12 +415,12 @@ public class OCLBuiltinTool {
     }
 
     public Value genIntMax(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genMax: max(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genMax: max(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(INT_MAX, LIRKind.combine(x, y), x, y);
     }
 
     public Value genIntMin(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genMin: min(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genMin: min(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(INT_MIN, LIRKind.combine(x, y), x, y);
     }
 
@@ -430,12 +430,12 @@ public class OCLBuiltinTool {
     }
 
     public Value genIntPopcount(Value value) {
-        OCLLogger.traceBuildLIR("genBitCount: bitcount(%s)", value);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genBitCount: bitcount(%s)", value);
         return new OCLUnary.Intrinsic(POPCOUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 
     public Value genIntClamp(Value x, Value y, Value z) {
-        OCLLogger.traceBuildLIR("genIntClamp: clamp(%s, %s, %s)", x, y, z);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genIntClamp: clamp(%s, %s, %s)", x, y, z);
         return new OCLTernary.Intrinsic(CLAMP, LIRKind.combine(x, y, z), x, y, z);
     }
 
@@ -455,7 +455,7 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatAbs(Value input) {
-        OCLLogger.traceBuildLIR("genFloatAbs: abs(%s)", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatAbs: abs(%s)", input);
         return new OCLUnary.Intrinsic(FLOAT_ABS, LIRKind.value(input.getPlatformKind()), input);
     }
 
@@ -475,12 +475,12 @@ public class OCLBuiltinTool {
     }
 
     public Value genGeometricDot(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genDot: dot(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genDot: dot(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(DOT, LIRKind.combine(x, y), x, y);
     }
 
     public Value genGeometricCross(Value x, Value y) {
-        OCLLogger.traceBuildLIR("genCross: cross(%s,%s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genCross: cross(%s,%s)", x, y);
         return new OCLBinary.Intrinsic(CROSS, LIRKind.combine(x, y), x, y);
     }
 

@@ -39,7 +39,7 @@ import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import uk.ac.manchester.tornado.drivers.opencl.common.OCLLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -119,25 +119,25 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Variable emitAdd(LIRKind lirKind, Value x, Value y, boolean setFlags) {
-        OCLLogger.traceBuildLIR("emitAdd: %s + %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitAdd: %s + %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.ADD, lirKind, x, y);
     }
 
     @Override
     public Value emitAnd(Value x, Value y) {
-        OCLLogger.traceBuildLIR("emitAnd: %s & %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitAnd: %s & %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_AND, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitDiv(Value x, Value y, LIRFrameState frameState) {
-        OCLLogger.traceBuildLIR("emitDiv: %s / %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitDiv: %s / %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.DIV, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
-        OCLLogger.traceBuildLIR("emitFloatConvert: (%s) %s", floatConvert, input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitFloatConvert: (%s) %s", floatConvert, input);
         switch (floatConvert) {
             case I2D:
                 return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), input);
@@ -150,7 +150,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMul(Value x, Value y, boolean setFlags) {
-        OCLLogger.traceBuildLIR("emitMul: %s * %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitMul: %s * %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.MUL, LIRKind.combine(x, y), x, y);
     }
 
@@ -162,20 +162,20 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNegate(Value x) {
-        OCLLogger.traceBuildLIR("emitNegate:  - %s", x);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegate:  - %s", x);
         return emitUnaryAssign(OCLUnaryOp.NEGATE, LIRKind.combine(x), x);
     }
 
     @Override
     public Value emitNot(Value x) {
         // TODO check that this is LOGICAL_NOT and not BITWISE_NOT
-        OCLLogger.traceBuildLIR("emitNegate:  - %s", x);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegate:  - %s", x);
         return emitUnaryAssign(OCLUnaryOp.LOGICAL_NOT, LIRKind.combine(x), x);
     }
 
     @Override
     public Value emitOr(Value x, Value y) {
-        OCLLogger.traceBuildLIR("emitOr: %s | %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitOr: %s | %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_OR, LIRKind.combine(x, y), x, y);
     }
 
@@ -187,19 +187,19 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitRem(Value x, Value y, LIRFrameState frameState) {
-        OCLLogger.traceBuildLIR("emitRem: %s %% %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitRem: %s %% %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.MOD, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitShl(Value x, Value y) {
-        OCLLogger.traceBuildLIR("emitShl: %s << %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitShl: %s << %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_LEFT_SHIFT, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitShr(Value x, Value y) {
-        OCLLogger.traceBuildLIR("emitShr: %s >> %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitShr: %s >> %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
     }
 
@@ -221,21 +221,21 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNarrow(Value x, int toBits) {
-        OCLLogger.traceBuildLIR("emitNarrow: %s, %d", x, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNarrow: %s, %d", x, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
         return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
     }
 
     @Override
     public Value emitSignExtend(Value x, int fromBits, int toBits) {
-        OCLLogger.traceBuildLIR("emitSignExtend: %s, %d, %d", x, fromBits, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitSignExtend: %s, %d, %d", x, fromBits, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
         return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
     }
 
     @Override
     public Variable emitSub(LIRKind lirKind, Value x, Value y, boolean setFlags) {
-        OCLLogger.traceBuildLIR("emitSub: %s - %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitSub: %s - %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.SUB, lirKind, x, y);
     }
 
@@ -253,25 +253,25 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitURem(Value x, Value y, LIRFrameState frameState) {
-        OCLLogger.traceBuildLIR("emitURem: %s %% %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitURem: %s %% %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.MOD, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitUShr(Value x, Value y) {
-        OCLLogger.traceBuildLIR("emitUShr: %s >>> %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitUShr: %s >>> %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_RIGHT_SHIFT, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitXor(Value x, Value y) {
-        OCLLogger.traceBuildLIR("emitXor: %s ^ %s", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitXor: %s ^ %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_XOR, LIRKind.combine(x, y), x, y);
     }
 
     @Override
     public Value emitZeroExtend(Value value, int fromBits, int toBits) {
-        OCLLogger.traceBuildLIR("emitZeroExtend: %s (from %d to %d)", value, fromBits, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitZeroExtend: %s (from %d to %d)", value, fromBits, toBits);
         OCLLIRKindTool kindTool = getGen().getLIRKindTool();
         OCLKind kind = (OCLKind) value.getPlatformKind();
         LIRKind toKind;
@@ -296,7 +296,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
-        OCLLogger.traceBuildLIR("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         if (shouldEmitIntegerIndexes(cast)) {
             getGen().append(new LoadStmt(result, cast, address, address.getIndex()));
         } else {
@@ -309,13 +309,13 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     public void emitVectorLoad(AllocatableValue result, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {
-        OCLLogger.traceBuildLIR("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         getGen().append(new VectorLoadStmt(result, op, index, cast, address));
     }
 
     @Override
     public Variable emitLoad(LIRKind lirKind, Value address, LIRFrameState state) {
-        OCLLogger.traceBuildLIR("emitLoad: %s <- %s\nstate:%s", lirKind, address, state);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLoad: %s <- %s\nstate:%s", lirKind, address, state);
         final Variable result = getGen().newVariable(lirKind);
 
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
@@ -342,7 +342,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> lirKind, Value address, Value input, LIRFrameState state) {
-        OCLLogger.traceBuildLIR("emitStore: kind=%s, address=%s, input=%s", lirKind, address, input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStore: kind=%s, address=%s, input=%s", lirKind, address, input);
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
 

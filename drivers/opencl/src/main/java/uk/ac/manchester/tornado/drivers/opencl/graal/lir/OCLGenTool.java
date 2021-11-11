@@ -42,8 +42,8 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.drivers.opencl.common.OCLLogger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
@@ -68,13 +68,13 @@ public class OCLGenTool {
     }
 
     public void emitVectorLoad(AllocatableValue result, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {
-        OCLLogger.traceBuildLIR("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         gen.append(new VectorLoadStmt(result, op, index, cast, address));
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int index) {
 
-        OCLLogger.traceBuildLIR("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
         // assert !(paramValue instanceof Variable) : "Creating a copy of a
         // variable via this method is not supported (and potentially a bug): "

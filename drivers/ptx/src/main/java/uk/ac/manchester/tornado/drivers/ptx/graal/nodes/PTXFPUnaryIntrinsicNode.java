@@ -45,7 +45,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -122,7 +122,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-        PTXLogger.traceBuildLIR("emitPTXFPUnaryIntrinsic: op=%s, x=%s", operation, getValue());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPTXFPUnaryIntrinsic: op=%s, x=%s", operation, getValue());
         PTXArithmeticTool lirGenPTX = (PTXArithmeticTool) lirGen;
         PTXBuiltinTool gen = lirGenPTX.getGen().getPtxBuiltinTool();
         Value initialInput = builder.operand(getValue());

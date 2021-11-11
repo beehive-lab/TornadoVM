@@ -35,7 +35,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
@@ -69,7 +69,7 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
         final Value input1 = gen.operand(x);
         final Value input2 = gen.operand(y);
 
-        PTXLogger.traceBuildLIR("emitVectorAdd: %s + %s", input1, input2);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorAdd: %s + %s", input1, input2);
         gen.getLIRGeneratorTool().append(new AssignStmt(result, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.ADD, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
         gen.setResult(this, result);
     }

@@ -39,8 +39,8 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
@@ -57,12 +57,12 @@ public class PTXGenTool {
     }
 
     public void emitVectorLoad(Variable result, MemoryAccess address) {
-        PTXLogger.traceBuildLIR("emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         gen.append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int paramOffset) {
-        PTXLogger.traceBuildLIR("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
 

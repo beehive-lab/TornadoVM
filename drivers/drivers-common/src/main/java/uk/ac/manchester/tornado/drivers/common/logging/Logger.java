@@ -26,6 +26,10 @@ package uk.ac.manchester.tornado.drivers.common.logging;
 import uk.ac.manchester.tornado.drivers.common.Colour;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+/**
+ * Class for logging internals of the JIT Compiler, code generation, LIR Builder
+ * and TornadoVM runtime.
+ */
 public class Logger {
 
     public enum BACKEND {

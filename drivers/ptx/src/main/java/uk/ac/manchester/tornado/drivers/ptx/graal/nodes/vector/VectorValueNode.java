@@ -45,7 +45,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -103,7 +103,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        PTXLogger.traceBuildLIR("emitVectorValue: values=%s", values);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorValue: values=%s", values);
 
         if (origin instanceof InvokeNode) {
             gen.setResult(this, gen.operand(origin));

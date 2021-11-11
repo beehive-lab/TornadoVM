@@ -33,7 +33,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.ptx.common.PTXLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
@@ -53,7 +53,7 @@ public class PrintfStringNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        PTXLogger.traceBuildLIR("emitPrintfString: inputString=%s", inputString);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPrintfString: inputString=%s", inputString);
         PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
         Value inpString = gen.operand(inputString);
 

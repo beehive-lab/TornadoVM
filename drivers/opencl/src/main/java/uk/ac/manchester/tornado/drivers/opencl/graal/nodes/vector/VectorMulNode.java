@@ -33,7 +33,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.common.OCLLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
@@ -76,7 +76,7 @@ public class VectorMulNode extends FloatingNode implements LIRLowerable, VectorO
         final Value input1 = gen.operand(x);
         final Value input2 = gen.operand(y);
 
-        OCLLogger.traceBuildLIR("emitVectorMul: %s + %s", input1, input2);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitVectorMul: %s + %s", input1, input2);
         gen.getLIRGeneratorTool().append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.MUL, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
         gen.setResult(this, result);
     }
