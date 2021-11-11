@@ -266,7 +266,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        PTXLogger.traceBuildLIR("emitConditionalMove?");
+        PTXLogger.traceBuildLIR("emitConditionalMove");
 
         LIRKind kind = LIRKind.combine(trueValue, falseValue);
         Variable predicate = newVariable(LIRKind.value(PTXKind.PRED));

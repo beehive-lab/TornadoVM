@@ -43,7 +43,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect;
@@ -114,7 +114,7 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
         Value targetVector = gen.operand(getVector());
         guarantee(targetVector != null, "vector is null");
 
-        SPIRVLogger.traceBuildLIR("emitVectorElementOp SELECT: targetVector=%s, laneId=%d", targetVector, laneId());
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitVectorElementOp SELECT: targetVector=%s, laneId=%d", targetVector, laneId());
         assert targetVector instanceof Variable;
         final SPIRVVectorElementSelect element = new SPIRVVectorElementSelect(LIRKind.value(targetVector.getPlatformKind()), (Variable) targetVector, laneId());
         gen.setResult(this, element);

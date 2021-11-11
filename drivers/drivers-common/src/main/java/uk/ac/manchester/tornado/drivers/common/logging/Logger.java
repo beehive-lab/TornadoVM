@@ -21,24 +21,43 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.spirv.common;
+package uk.ac.manchester.tornado.drivers.common.logging;
 
 import uk.ac.manchester.tornado.drivers.common.Colour;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-public class SPIRVLogger {
+public class Logger {
+
+    public enum BACKEND {
+
+        OpenCL("OpenCL"), //
+        PTX("PTX"), //
+        SPIRV("SPIRV");//
+
+        String backendName;
+
+        BACKEND(String name) {
+            this.backendName = name;
+        }
+
+        public String backendName() {
+            return this.backendName;
+        }
+    }
 
     /**
-     * Method to track SPIR-V code generation
-     * 
+     * Method to track the code generation
+     *
+     * @param backend
+     *            Backend selection
      * @param message
      *            String message with code gen trace
      * @param args
      *            Arguments to the string message
      */
-    public static void traceCodeGen(final String message, final Object... args) {
+    public static void traceCodeGen(final BACKEND backend, final String message, final Object... args) {
         if (TornadoOptions.TRACE_CODE_GEN) {
-            System.out.printf(Colour.CYAN + "[SPIRV-CodeGen] " + message + Colour.RESET + "\n", args);
+            System.out.printf(Colour.CYAN + "[" + backend.backendName() + "-CodeGen] " + message + Colour.RESET + "\n", args);
         }
     }
 
@@ -46,14 +65,16 @@ public class SPIRVLogger {
      * Method to track SPIR-V IR Builder (from last IR phase to IR Builder for
      * codegen)
      *
+     * @param backend
+     *            Backend selection
      * @param message
      *            String message with the IR Builder
      * @param args
      *            Arguments to the string message
      */
-    public static void traceBuildLIR(String message, final Object... args) {
+    public static void traceBuildLIR(final BACKEND backend, String message, final Object... args) {
         if (TornadoOptions.TRACE_BUILD_LIR) {
-            System.out.printf(Colour.GREEN + "[SPIRV-BuildLIR] " + message + Colour.RESET + "\n", args);
+            System.out.printf(Colour.GREEN + "[" + backend.backendName() + "-BuildLIR] " + message + Colour.RESET + "\n", args);
         }
     }
 
@@ -61,12 +82,14 @@ public class SPIRVLogger {
      * Method to track internal calls in the TornadoVM Runtime for running the
      * SPIR-V code.
      * 
+     * @param backend
+     *            Backend selection
      * @param message
      *            String track message
      * @param args
      *            Arguments to the string.
      */
-    public static void traceRuntime(String message, final Object... args) {
-        System.out.printf(Colour.YELLOW + "[SPIRV-Runtime] " + message + Colour.RESET + "\n", args);
+    public static void traceRuntime(final BACKEND backend, String message, final Object... args) {
+        System.out.printf(Colour.YELLOW + "[" + backend.backendName() + "-Runtime] " + message + Colour.RESET + "\n", args);
     }
 }

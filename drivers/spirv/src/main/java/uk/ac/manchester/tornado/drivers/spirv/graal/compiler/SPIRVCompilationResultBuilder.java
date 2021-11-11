@@ -52,8 +52,8 @@ import org.graalvm.compiler.options.OptionValues;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
@@ -111,11 +111,11 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         frameContext.enter(this);
 
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-        SPIRVLogger.traceCodeGen("Traversing CFG: ", cfg.graph.name);
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
         traverseControlFlowGraph(cfg, new SPIRVBlockVisitor(this));
 
-        SPIRVLogger.traceCodeGen("Finished traversing CFG");
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Finished traversing CFG");
         this.lir = null;
         this.currentBlockIndex = 0;
 
@@ -236,7 +236,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     private void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
-            SPIRVLogger.traceCodeGen("op: " + op);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "op: " + op);
             op.emitCode(crb);
         } catch (AssertionError | RuntimeException t) {
             throw new TornadoInternalError(t);
@@ -248,7 +248,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
             return;
         }
 
-        SPIRVLogger.traceCodeGen("block: %d", block.getId());
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "block: %d", block.getId());
 
         LIRInstruction breakInst = null;
 

@@ -36,7 +36,7 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
@@ -84,7 +84,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        SPIRVLogger.traceBuildLIR("[µInstructions] emitAdd: %s + %s -- RESULT KIND: %s", a, b, resultKind);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[µInstructions] emitAdd: %s + %s -- RESULT KIND: %s", a, b, resultKind);
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
@@ -122,7 +122,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     protected Variable emitSub(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        SPIRVLogger.traceBuildLIR("[µInstructions] emitSub: %s - %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[µInstructions] emitSub: %s - %s", a, b);
         SPIRVKind kind = (SPIRVKind) resultKind.getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
@@ -159,7 +159,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNegate(Value input) {
-        SPIRVLogger.traceBuildLIR("emitNegate:  - %s", input);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNegate:  - %s", input);
         final Variable result = getGen().newVariable(LIRKind.combine(input));
         SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), input);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, negateValue));
@@ -168,7 +168,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMul(Value a, Value b, boolean setFlags) {
-        SPIRVLogger.traceBuildLIR("[µInstructions] emitMul: %s * %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[µInstructions] emitMul: %s * %s", a, b);
         SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
@@ -215,7 +215,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
-        SPIRVLogger.traceBuildLIR("[µInstructions] emitDiv: %s / %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[µInstructions] emitDiv: %s / %s", a, b);
         SPIRVKind kind = (SPIRVKind) LIRKind.combine(a, b).getPlatformKind();
         SPIRVBinaryOp binaryOp;
         switch (kind) {
@@ -252,7 +252,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
-        SPIRVLogger.traceBuildLIR("emitRem: %s MOD %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitRem: %s MOD %s", a, b);
         return emitBinaryAssign(SPIRVBinaryOp.INTEGER_REM, LIRKind.combine(a, b), a, b);
     }
 
@@ -273,7 +273,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitAnd(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitAnd: %s & %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitAnd: %s & %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_AND;
@@ -283,7 +283,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitOr(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitOR: %s | %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitOR: %s | %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_OR;
@@ -293,7 +293,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitXor(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitXOR: %s ^ %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitXOR: %s ^ %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_XOR;
@@ -303,7 +303,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShl(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitShl: %s << %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitShl: %s << %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_LEFT_SHIFT;
@@ -313,7 +313,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShr(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitShiftRight: %s >> %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitShiftRight: %s >> %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_RIGHT_SHIFT;
@@ -323,7 +323,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitUShr(Value a, Value b) {
-        SPIRVLogger.traceBuildLIR("emitUnsignedShiftRight: %s >>> %s", a, b);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitUnsignedShiftRight: %s >>> %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_UNSIGNED_RIGHT_SHIFT;
@@ -343,7 +343,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNarrow(Value inputVal, int bits) {
-        SPIRVLogger.traceBuildLIR("emitNarrow: %s, %d", inputVal, bits);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNarrow: %s, %d", inputVal, bits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(bits);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVUnary.SignNarrowValue signNarrowValue = new SPIRVUnary.SignNarrowValue(lirKind, inputVal, bits);
@@ -353,7 +353,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
-        SPIRVLogger.traceBuildLIR("signExtend: %s , from %s to %s", inputVal, fromBits, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "signExtend: %s , from %s to %s", inputVal, fromBits, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, inputVal, fromBits, toBits);
@@ -363,7 +363,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
-        SPIRVLogger.traceBuildLIR("emitZeroExtend: %s (from %d to %d)", inputVal, fromBits, toBits);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitZeroExtend: %s (from %d to %d)", inputVal, fromBits, toBits);
         SPIRVLIRKindTool kindTool = getGen().getLIRKindTool();
         SPIRVKind kind = (SPIRVKind) inputVal.getPlatformKind();
 
@@ -410,18 +410,18 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     private void emitLoad(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
-        SPIRVLogger.traceBuildLIR("emitLoad STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoad STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         getGen().append(new SPIRVLIRStmt.LoadStmt(result, cast, address));
     }
 
     private void emitLoadVectorType(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
-        SPIRVLogger.traceBuildLIR("emitLoadVector STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoadVector STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
         getGen().append(new SPIRVLIRStmt.LoadVectorStmt(result, cast, address));
     }
 
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
-        SPIRVLogger.traceBuildLIR("emitLoad: %s <- %s with state:%s", kind, address, state);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoad: %s <- %s with state:%s", kind, address, state);
         final Variable result = getGen().newVariable(kind);
         if (!(kind.getPlatformKind() instanceof SPIRVKind)) {
             throw new RuntimeException("invalid LIRKind");
@@ -430,7 +430,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
         if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
             SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-            SPIRVLogger.traceBuildLIR("emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
             getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
         } else if (address instanceof MemoryAccess) {
             SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
@@ -452,7 +452,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        SPIRVLogger.traceBuildLIR("emitStore: kind=%s, address=%s, input=%s", kind, address, input);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         guarantee(kind.getPlatformKind() instanceof SPIRVKind, "invalid LIRKind: %s", kind);
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
 

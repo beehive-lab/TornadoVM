@@ -253,7 +253,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        OCLLogger.traceBuildLIR("emitConditionalMove?");
+        OCLLogger.traceBuildLIR("emitConditionalMove");
 
         final OCLBinaryOp condOp = getConditionalOp(cond);
         final OCLBinary.Expr condExpr = new OCLBinary.Expr(condOp, LIRKind.value(cmpKind), left, right);

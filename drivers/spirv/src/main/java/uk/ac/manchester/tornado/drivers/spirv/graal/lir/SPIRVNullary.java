@@ -31,7 +31,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBranch;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpReturn;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -64,7 +64,7 @@ public class SPIRVNullary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit SPIRVOpReturn for block: " + currentBLock.toString());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpReturn for block: " + currentBLock.toString());
 
             if (TornadoOptions.SPIRV_RETURN_LABEL) {
                 SPIRVInstScope blockScope = asm.currentBlockScope();

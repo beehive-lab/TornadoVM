@@ -44,7 +44,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiter
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -98,7 +98,7 @@ public class SPIRVLIRStmt {
                 performLoad = true;
             }
 
-            SPIRVLogger.traceCodeGen("emit Assignment : " + lhs + " = " + rhs.getClass());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit Assignment : " + lhs + " = " + rhs.getClass());
 
             SPIRVId storeAddressID;
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
@@ -169,9 +169,9 @@ public class SPIRVLIRStmt {
             } else {
                 asm.emitValue(crb, rhs);
             }
-            SPIRVLogger.traceCodeGen("emit IgnorableAssignment: " + lhs + " = " + rhs);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IgnorableAssignment: " + lhs + " = " + rhs);
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(rhs);
-            SPIRVLogger.traceCodeGen("Storing: " + storeAddressID);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Storing: " + storeAddressID);
             asm.registerLIRInstructionValue(lhs, storeAddressID);
         }
 
@@ -205,7 +205,7 @@ public class SPIRVLIRStmt {
             } else {
                 asm.emitValue(crb, rhs);
             }
-            SPIRVLogger.traceCodeGen("emit StoreParameter: " + lhs + " = " + rhs);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreParameter: " + lhs + " = " + rhs);
             SPIRVId storeValue = asm.lookUpLIRInstructions(rhs);
             SPIRVId lhsId = asm.lookUpLIRInstructions(lhs);
 
@@ -265,7 +265,7 @@ public class SPIRVLIRStmt {
                 asm.emitValue(crb, rhs);
             }
 
-            SPIRVLogger.traceCodeGen("emit ASSIGNWithLoad: " + lhs + " = " + rhs);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit ASSIGNWithLoad: " + lhs + " = " + rhs);
 
             SPIRVKind kindRhs = (SPIRVKind) rhs.getPlatformKind();
             SPIRVId typeRhs = asm.primitives.getTypePrimitive(kindRhs);
@@ -344,7 +344,7 @@ public class SPIRVLIRStmt {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns ASSIGNParameter");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns ASSIGNParameter");
 
             // This call will register the lhs id in case is not in the lookupTable yet.
             asm.emitValue(crb, lhs);
@@ -404,7 +404,7 @@ public class SPIRVLIRStmt {
          */
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns ASSIGNIndexedParameter");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns ASSIGNIndexedParameter");
 
             // This call will register the lhs id in case is not in the lookupTable yet.
             asm.emitValue(crb, lhs);
@@ -452,7 +452,7 @@ public class SPIRVLIRStmt {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns EXPR emitCode generation ");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns EXPR emitCode generation ");
             if (expr instanceof SPIRVLIROp) {
                 ((SPIRVLIROp) expr).emit(crb, asm);
             } else {
@@ -653,7 +653,7 @@ public class SPIRVLIRStmt {
             SPIRVKind spirvKind = (SPIRVKind) cast.getLIRKind().getPlatformKind();
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(cast);
 
-            SPIRVLogger.traceCodeGen("emit StoreStmt in address: " + cast + " <- " + rhs);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreStmt in address: " + cast + " <- " + rhs);
 
             asm.currentBlockScope().add(new SPIRVOpStore( //
                     storeAddressID, //
@@ -730,7 +730,7 @@ public class SPIRVLIRStmt {
                 value = loadID;
             }
 
-            SPIRVLogger.traceCodeGen("emit StoreVectorStmt in address: " + cast + " <- " + rhs);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreVectorStmt in address: " + cast + " <- " + rhs);
 
             SPIRVId set = asm.getOpenclImport();
             SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.VSTOREN;
@@ -828,7 +828,7 @@ public class SPIRVLIRStmt {
         }
 
         private void emitStoreIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit [Private] IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit [Private] IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
             SPIRVId privateAccessId = asm.module.getNextId();
 
@@ -873,7 +873,7 @@ public class SPIRVLIRStmt {
         }
 
         private void emitStoreIndexedAccessLocalMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit IndexedMemAccess for LOCAL MEMORY in address: " + memoryIndexedAccess + "[ " + rhs + "]");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IndexedMemAccess for LOCAL MEMORY in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
             SPIRVId loadArray = asm.module.getNextId();
 
@@ -947,7 +947,8 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV,
+                    "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
 
             address.emitForLoad(crb, asm);
 

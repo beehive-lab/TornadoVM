@@ -31,7 +31,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralExtInstInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 
@@ -82,8 +82,7 @@ public class SPIRVTernary {
             SPIRVId b = loadSPIRVId(crb, asm, y);
             SPIRVId c = loadSPIRVId(crb, asm, z);
 
-            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger (Ternary Intrinsic): " + builtIn.getName() + " (" + x + "," + y + "," + z + ")");
-            SPIRVLogger.traceCodeGen("" + x.getClass());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger (Ternary Intrinsic): " + builtIn.getName() + " (" + x + "," + y + "," + z + ")");
 
             SPIRVId result = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();
