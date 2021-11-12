@@ -45,7 +45,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVPairLiteralIntegerIdRef;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 
@@ -94,7 +94,7 @@ public class SPIRVControlFlow {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("LoopLabel : blockID " + blockId);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "LoopLabel : blockID " + blockId);
             SPIRVId branchId = getIfOfBranch(blockId, asm);
             SPIRVInstScope newScope = asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
             asm.pushScope(newScope);
@@ -140,7 +140,7 @@ public class SPIRVControlFlow {
             SPIRVId trueBranch = getIdForBranch(lirTrueBlock, asm);
             SPIRVId falseBranch = getIdForBranch(lirFalseBlock, asm);
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpBranchConditional: " + condition + "? " + lirTrueBlock + ":" + lirFalseBlock);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpBranchConditional: " + condition + "? " + lirTrueBlock + ":" + lirFalseBlock);
 
             SPIRVId bool = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
             // SPIRVId resultLoad = asm.module.getNextId();
@@ -189,7 +189,7 @@ public class SPIRVControlFlow {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVId branchId = getIdForBranch(branch, asm);
-            SPIRVLogger.traceCodeGen("emit SPIRVOpBranch: " + branch);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpBranch: " + branch);
             asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
 
         }
@@ -224,7 +224,7 @@ public class SPIRVControlFlow {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             SPIRVId branchId = getIdForBranch(branch, asm);
-            SPIRVLogger.traceCodeGen("emit IF_CASE SPIRVOpBranch: " + branch);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IF_CASE SPIRVOpBranch: " + branch);
             asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
 
         }
@@ -263,7 +263,7 @@ public class SPIRVControlFlow {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit SWITCH(" + key + ")");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SWITCH(" + key + ")");
 
             SPIRVId valueKey = asm.lookUpLIRInstructions(key);
 

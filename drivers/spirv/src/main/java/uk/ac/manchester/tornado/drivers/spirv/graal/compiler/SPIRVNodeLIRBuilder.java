@@ -28,7 +28,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -99,7 +98,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
@@ -143,7 +142,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(DirectCallTargetNode callTarget, Value result, Value[] parameters, Value[] temps, LIRFrameState callState) {
-        SPIRVLogger.traceBuildLIR("emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitDirectCall: callTarget=%s result=%s callState=%s", callTarget, result, callState);
         final SPIRVDirectCall spirvDirectCall = new SPIRVDirectCall(callTarget, result, parameters, callState);
         SPIRVKind spirvKind = ((SPIRVKind) result.getPlatformKind());
         if (isLegal(result) && spirvKind != SPIRVKind.OP_TYPE_VOID) {
@@ -202,7 +201,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         if (lirKind != LIRKind.Illegal) {
             result = gen.newVariable(lirKind);
         } else if (stamp instanceof VoidStamp) {
-            SPIRVLogger.traceBuildLIR("Generating Void Type Variable for function");
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Generating Void Type Variable for function");
             result = gen.newVariable(LIRKind.value(SPIRVKind.OP_TYPE_VOID));
         }
 
@@ -251,11 +250,11 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
-            SPIRVLogger.traceBuildLIR("Generating function");
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Generating function");
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
-                SPIRVLogger.traceBuildLIR("Generating LoadParameter : " + locals[param.index()].getName());
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Generating LoadParameter : " + locals[param.index()].getName());
                 Variable result = getGen().newVariable(lirKind);
                 getGen().append(new SPIRVLIRStmt.StoreParameter(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind, param.index())));
                 setResult(param, result);
@@ -358,7 +357,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitBranch(IfNode dominator) {
-        SPIRVLogger.traceBuildLIR("µInst emitBranch: " + dominator);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "µInst emitBranch: " + dominator);
         boolean hasElse = dominator.trueSuccessor() instanceof BeginNode && dominator.falseSuccessor() instanceof BeginNode;
 
         if (hasElse) {
@@ -378,7 +377,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitEndNode(final AbstractEndNode end) {
-        SPIRVLogger.traceBuildLIR("µInst visitEnd: " + end);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "µInst visitEnd: " + end);
 
         if (end instanceof LoopEndNode) {
             return;
@@ -416,13 +415,13 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     private void emitSwitchBreak(AbstractEndNode end) {
         LabelRef lirBlock = getLIRBlock(end.merge());
-        SPIRVLogger.traceBuildLIR("emitSwitchBreak end: %s with %s", end, lirBlock);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitSwitchBreak end: %s with %s", end, lirBlock);
         append(new SPIRVControlFlow.BranchIf(lirBlock, false, false));
     }
 
     @Override
     protected LIRKind getPhiKind(PhiNode phi) {
-        SPIRVLogger.traceBuildLIR("µInst phi node: " + phi);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "µInst phi node: " + phi);
         Stamp stamp = phi.stamp(NodeView.DEFAULT);
         if (stamp.isEmpty()) {
             for (ValueNode n : phi.values()) {
@@ -445,33 +444,33 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private Variable emitLogicNode(final LogicNode node) {
-        SPIRVLogger.traceBuildLIR("emitLogicNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLogicNode: %s", node);
         LIRKind boolLIRKind = LIRKind.value(SPIRVKind.OP_TYPE_BOOL);
         LIRKind intLIRKind = LIRKind.value(SPIRVKind.OP_TYPE_INT_32);
         Variable result = getGen().newVariable(LIRKind.value(SPIRVKind.OP_TYPE_BOOL));
         if (node instanceof IntegerLessThanNode) {
-            SPIRVLogger.traceBuildLIR("IntegerLessThanNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerLessThanNode: %s", node);
             final IntegerLessThanNode condition = (IntegerLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_LESS_THAN;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else if (node instanceof IntegerEqualsNode) {
-            SPIRVLogger.traceBuildLIR("IntegerEqualsNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerEqualsNode: %s", node);
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else if (node instanceof IntegerBelowNode) {
-            SPIRVLogger.traceBuildLIR("IntegerBelowNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerBelowNode: %s", node);
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_BELOW;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else if (node instanceof IntegerTestNode) {
-            SPIRVLogger.traceBuildLIR("IntegerTestNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerTestNode: %s", node);
             final IntegerTestNode testNode = (IntegerTestNode) node;
             final Value x = operand(testNode.getX());
             final Value y = operand(testNode.getY());
@@ -479,20 +478,20 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             // BITWISEAND in SPIRV uses an INT as s result value.
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.IntegerTestNode(op, intLIRKind, x, y)));
         } else if (node instanceof IsNullNode) {
-            SPIRVLogger.traceBuildLIR("IsNullNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IsNullNode: %s", node);
             final IsNullNode isNullNode = (IsNullNode) node;
             final Value x = operand(isNullNode.getValue());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, new ConstantValue(intLIRKind, PrimitiveConstant.NULL_POINTER))));
         } else if (node instanceof FloatLessThanNode) {
-            SPIRVLogger.traceBuildLIR("FloatLessThanNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "FloatLessThanNode: %s", node);
             final FloatLessThanNode condition = (FloatLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.FLOAT_LESS_THAN;
             append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
         } else if (node instanceof FloatEqualsNode) {
-            SPIRVLogger.traceBuildLIR("FloatEqualsNode: %s", node);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "FloatEqualsNode: %s", node);
             final FloatEqualsNode condition = (FloatEqualsNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
@@ -508,7 +507,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitIf(final IfNode x) {
-        SPIRVLogger.traceBuildLIR("emitIf: %s, condition=%s", x, x.condition().getClass().getName());
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitIf: %s, condition=%s", x, x.condition().getClass().getName());
 
         /*
          * test to see if this is an exception check need to implement this properly? or
@@ -516,7 +515,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
-            trace("emitExceptionEntry");
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitExceptionEntry");
             shouldNotReachHere("exceptions are unimplemented");
         }
 
@@ -533,7 +532,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(final LoopEndNode loopEnd) {
-        SPIRVLogger.traceBuildLIR("visiting LoopEndNode: %s", loopEnd);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visiting LoopEndNode: %s", loopEnd);
         final LoopBeginNode loopBegin = loopEnd.loopBegin();
         final List<ValuePhiNode> phis = loopBegin.valuePhis().snapshot();
 
@@ -550,7 +549,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
-        SPIRVLogger.traceBuildLIR("visitMerge %s", mergeNode);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visitMerge %s", mergeNode);
 
         boolean loopExitMerge = true;
         for (EndNode end : mergeNode.forwardEnds()) {
@@ -558,13 +557,13 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         for (MemoryPhiNode phi : mergeNode.memoryPhis()) {
-            SPIRVLogger.traceBuildLIR("MEMORY PHI:  %s", phi);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "MEMORY PHI:  %s", phi);
 
         }
 
         for (ValuePhiNode phi : mergeNode.valuePhis()) {
             final ValueNode valuePhi = phi.singleValueOrThis();
-            SPIRVLogger.traceBuildLIR("PHI NODE %s", valuePhi);
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "PHI NODE %s", valuePhi);
             if (valuePhi != phi) {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
@@ -582,7 +581,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitSwitch(SwitchNode x) {
-        SPIRVLogger.traceBuildLIR("visit emitSwitch %s", x);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visit emitSwitch %s", x);
         // We guarantee there is always a default successor
         assert x.defaultSuccessor() != null;
         LabelRef defaultTarget = getLIRBlock(x.defaultSuccessor());
@@ -611,7 +610,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
-        SPIRVLogger.traceBuildLIR("visiting emitLoopBegin %s", loopBeginNode);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
         final LIR lir = getGen().getResult().getLIR();
@@ -637,7 +636,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopExit(LoopExitNode node) {
-        SPIRVLogger.traceBuildLIR("LoopExitNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "LoopExitNode: %s", node);
         if (gen.getCurrentBlock().getSuccessors().length != 0) {
             LabelRef labelRef = LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0);
             append(new SPIRVControlFlow.BranchLoopConditional(labelRef, false, false));
@@ -646,7 +645,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitNode(final ValueNode node) {
-        SPIRVLogger.traceBuildLIR(" [emitNote] visiting: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, " [emitNote] visiting: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {

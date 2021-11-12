@@ -32,7 +32,7 @@ import org.graalvm.compiler.nodes.memory.MemoryKill;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
@@ -68,7 +68,7 @@ public class SPIRVBarrierNode extends FixedWithNextNode implements LIRLowerable,
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        SPIRVLogger.traceBuildLIR("Append Barrier of type: " + BARRIER_TYPE);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Append Barrier of type: " + BARRIER_TYPE);
         generator.getLIRGeneratorTool().append(new SPIRVLIRStmt.ExprStmt(new SPIRVUnary.Barrier(BARRIER_TYPE)));
     }
 }

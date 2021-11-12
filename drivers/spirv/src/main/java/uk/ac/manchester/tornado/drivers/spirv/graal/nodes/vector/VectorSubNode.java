@@ -37,8 +37,8 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
@@ -82,7 +82,7 @@ public class VectorSubNode extends BinaryNode implements LIRLowerable, VectorOp 
 
         final Value input1 = gen.operand(x);
         final Value input2 = gen.operand(y);
-        SPIRVLogger.traceBuildLIR("emitVectorSub: %s - %s", input1, input2);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitVectorSub: %s - %s", input1, input2);
 
         SPIRVKind kind = (SPIRVKind) lirKind.getPlatformKind();
         SPIRVAssembler.SPIRVBinaryOp binaryOp = SPIRVAssembler.SPIRVBinaryOp.SUB_INTEGER;

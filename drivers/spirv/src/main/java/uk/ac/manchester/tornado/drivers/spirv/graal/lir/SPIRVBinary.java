@@ -54,7 +54,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -98,10 +98,10 @@ public class SPIRVBinary {
                 }
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     // We need to perform a load first
-                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue + " ::: " + param);
+                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue + " ::: " + param);
                     SPIRVId load = asm.module.getNextId();
                     SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                    SPIRVLogger.traceCodeGen("\t with type: " + spirvKind);
+                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\t with type: " + spirvKind);
 
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
                             type, //
@@ -186,7 +186,8 @@ public class SPIRVBinary {
 
             SPIRVId typeResultOperationId = asm.primitives.getTypePrimitive(resultKind);
 
-            SPIRVLogger.traceCodeGen("emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV,
+                    "emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
 
             SPIRVId operationId = asm.module.getNextId();
             SPIRVInstruction instructionOperation = binaryOperation.generateInstruction(typeResultOperationId, operationId, a, b);
@@ -261,7 +262,7 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit ArrayDeclaration: " + resultArray + "[" + length + "]");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit ArrayDeclaration: " + resultArray + "[" + length + "]");
 
             SPIRVId idResult = addSPIRVIdLocalArrayInPreamble(asm);
 
@@ -306,7 +307,7 @@ public class SPIRVBinary {
             SPIRVId a = loadSPIRVId(crb, asm, x);
             SPIRVId b = loadSPIRVId(crb, asm, y);
 
-            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger: " + builtIn.getName() + " (" + x + "," + y + ")");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.getName() + " (" + x + "," + y + ")");
 
             SPIRVId result = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();
@@ -346,7 +347,7 @@ public class SPIRVBinary {
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
             SPIRVId typeOperation = asm.primitives.getTypePrimitive(spirvKind.getElementKind()); /// Vector Selection -> Element Kind
 
-            SPIRVLogger.traceCodeGen("emitVectorOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emitVectorOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y);
 
             SPIRVId binaryVectorOperationResult = asm.module.getNextId();
 
@@ -384,7 +385,7 @@ public class SPIRVBinary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
 
             SPIRVId idLeftVar = getId(leftVal, asm, (SPIRVKind) leftVal.getPlatformKind());
             SPIRVId idRightVar = getId(right, asm, (SPIRVKind) right.getPlatformKind());
@@ -428,7 +429,7 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit IntegerTestNode: (" + x + " &  " + y + ")  ==   0");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IntegerTestNode: (" + x + " &  " + y + ")  ==   0");
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();

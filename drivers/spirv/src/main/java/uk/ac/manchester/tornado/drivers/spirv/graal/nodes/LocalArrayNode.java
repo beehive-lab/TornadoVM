@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
@@ -93,7 +93,7 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
         final AllocatableValue resultArray = tool.newVariable(lirKind);
 
         final SPIRVBinary.LocalArrayAllocation localArray = new SPIRVBinary.LocalArrayAllocation(lirKind, resultArray, lengthValue);
-        SPIRVLogger.traceBuildLIR("Local Array Allocation: " + resultArray + " with type: " + lirKind);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Local Array Allocation: " + resultArray + " with type: " + lirKind);
 
         generator.setResult(this, resultArray);
         tool.append(new SPIRVLIRStmt.LocalArrayAllocation(localArray));

@@ -36,7 +36,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiter
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -69,7 +69,7 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
             if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 // We need to perform a load first
-                SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
                 SPIRVId load = asm.module.getNextId();
                 SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                 asm.currentBlockScope().add(new SPIRVOpLoad(//
@@ -93,7 +93,7 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
         SPIRVKind vectorElementKind = getSPIRVPlatformKind().getElementKind();
         SPIRVId idElementKind = asm.primitives.getTypePrimitive(vectorElementKind);
-        SPIRVLogger.traceCodeGen("emit CompositeExtract: " + vector + " lane: " + laneId);
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit CompositeExtract: " + vector + " lane: " + laneId);
         SPIRVId resultSelect1 = asm.module.getNextId();
         asm.currentBlockScope().add(new SPIRVOpCompositeExtract(idElementKind, resultSelect1, vectorId, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(getLaneId()))));
 

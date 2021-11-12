@@ -33,8 +33,8 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 
@@ -51,7 +51,7 @@ public class SPIRVGenTool {
     }
 
     public Value emitParameterLoad(ParameterNode paramNode, int index) {
-        SPIRVLogger.traceBuildLIR("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
         LIRKind lirKind = generator.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
         SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
 

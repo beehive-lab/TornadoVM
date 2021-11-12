@@ -32,7 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLevelZeroInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
@@ -144,7 +144,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         ZeKernelDesc kernelDesc = new ZeKernelDesc();
         ZeKernelHandle kernel = new ZeKernelHandle();
         if (Tornado.DEBUG) {
-            SPIRVLogger.traceRuntime("Set SPIR-V entry point: " + entryPoint);
+            Logger.traceRuntime(Logger.BACKEND.SPIRV, "Set SPIR-V entry point: " + entryPoint);
         }
         kernelDesc.setKernelName(entryPoint);
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);

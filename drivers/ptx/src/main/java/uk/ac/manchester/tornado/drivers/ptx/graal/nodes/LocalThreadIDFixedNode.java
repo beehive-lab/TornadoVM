@@ -21,8 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -36,6 +34,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
@@ -56,7 +55,7 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        trace("emitLocalThreadId: dim=%s", index);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitLocalThreadId: dim=%s", index);
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
         Variable result = tool.newVariable(kind);

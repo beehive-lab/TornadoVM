@@ -39,43 +39,4 @@ public final class TornadoCodeGenerator {
         debug(String.format(pattern, args));
     }
 
-    public static void error(final String msg) {
-        log.error(msg);
-    }
-
-    public static void error(final String pattern, final Object... args) {
-        error(String.format(pattern, args));
-    }
-
-    public static void fatal(final String msg) {
-        log.fatal(msg);
-    }
-
-    public static void fatal(final String pattern, final Object... args) {
-        fatal(String.format(pattern, args));
-    }
-
-    public static void info(final String msg) {
-        log.info(msg);
-    }
-
-    public static void info(final String pattern, final Object... args) {
-        info(String.format(pattern, args));
-    }
-
-    public static void trace(final String msg) {
-        log.trace(msg);
-    }
-
-    public static void trace(final String pattern, final Object... args) {
-        trace(String.format(pattern, args));
-    }
-
-    public static void warn(final String msg) {
-        log.warn(msg);
-    }
-
-    public static void warn(final String pattern, final Object... args) {
-        warn(String.format(pattern, args));
-    }
 }
