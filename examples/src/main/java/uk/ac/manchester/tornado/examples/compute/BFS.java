@@ -18,7 +18,6 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -162,7 +161,7 @@ public class BFS {
         return check;
     }
 
-    public void tornadoBFS(int rootNode, int numNodes) throws IOException {
+    public void tornadoBFS(int rootNode, int numNodes) {
 
         vertices = new int[numNodes];
         verticesJava = new int[numNodes];
@@ -208,15 +207,13 @@ public class BFS {
             s1.execute();
             currentDepth[0]++;
 
-            if (VALIDATION) {
-                if (!(validModifyResults = checkModify(modify, modifyJava))) {
-                    break;
-                }
+            if (VALIDATION && !(validModifyResults = checkModify(modify, modifyJava))) {
+                break;
             }
 
-            for (int i = 0; i < modify.length; i++) {
-                if (modify[i] == 0) {
-                    allDone &= false;
+            for (int j : modify) {
+                if (j == 0) {
+                    allDone = false;
                     break;
                 }
             }
@@ -228,7 +225,9 @@ public class BFS {
             Arrays.fill(modifyJava, 1);
         }
 
-        if (PRINT_SOLUTION) {
+        if (PRINT_SOLUTION)
+
+        {
             System.out.println("Solution: " + Arrays.toString(vertices));
         }
 
@@ -241,12 +240,11 @@ public class BFS {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         int size = 10000;
         if (SAMPLE) {
             size = 5;
         }
         new BFS().tornadoBFS(0, size);
     }
-
 }
