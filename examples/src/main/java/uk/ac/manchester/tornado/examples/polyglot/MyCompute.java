@@ -25,6 +25,13 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MyCompute {
+
+    private MyCompute() {
+
+    }
+
+    private static TaskSchedule ts;
+
     private static void mxm(float[] a, float[] b, float[] c, int N) {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
@@ -38,7 +45,7 @@ public class MyCompute {
     }
 
     public static float[] compute() {
-        final int N = 256;
+        final int N = 512;
         float[] a = new float[N * N];
         float[] b = new float[N * N];
         float[] c = new float[N * N];
@@ -48,13 +55,15 @@ public class MyCompute {
             b[i] = 1.4f;
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(a, b)
-                .task("t0", MyCompute::mxm, a, b, c, N)
-                .streamOut(c)
-                .execute();
-        //@formatter:on
+        if (ts == null) {
+            ts = new TaskSchedule("s0") //
+                    .streamIn(a, b)//
+                    .task("t0", MyCompute::mxm, a, b, c, N)//
+                    .streamOut(c);//
+        }
+
+        ts.execute();
+
         return c;
     }
 
