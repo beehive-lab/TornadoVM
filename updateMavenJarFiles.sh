@@ -9,11 +9,11 @@ then
 	exit 0
 fi
 
-VERSION=0.11
+VERSION=0.12
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 
-declare -a artifacts=("tornado-api" "tornado-annotation" "tornado-benchmarks" "tornado-examples" "tornado-drivers-opencl" "tornado-matrices" "tornado-runtime" "tornado-drivers-common" "tornado-drivers-ptx")
+declare -a artifacts=("tornado-api" "tornado-annotation" "tornado-benchmarks" "tornado-examples" "tornado-drivers-opencl" "tornado-matrices" "tornado-runtime" "tornado-drivers-common" "tornado-drivers-ptx" "tornado-drivers-spirv")
 
 for artifact in "${artifacts[@]}"
 do
@@ -51,4 +51,18 @@ mvn install:install-file \
 	-DgeneratePom=true \
 	-DlocalRepositoryPath=. \
 	 -DcreateChecksum=true 
+
+
+echo "Installing artifact: tornado-drivers-spirv-levelzero-jni"
+mvn install:install-file \
+	-DgroupId=${GROUPID} \
+	-DartifactId=tornado-drivers-spirv-levelzero-jni \
+	-Dversion=$VERSION \
+	-Dfile=${API_PATH}/tornado-drivers-spirv-levelzero-jni-${VERSION}-libs.jar \
+	-Dpackaging=jar \
+	-DgeneratePom=true \
+	-DlocalRepositoryPath=. \
+	 -DcreateChecksum=true 
+
+
 
