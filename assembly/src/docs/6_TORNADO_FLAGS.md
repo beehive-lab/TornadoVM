@@ -82,6 +82,6 @@ It enables the compiler to force partial unroll on counted loops with a factor o
 
 ##### Mathematical Native Functions
 
-* `-Dtornado.enable.nativeFunctions=True`:
-It enables the utilization of native mathematical functions, in case that the selected backend (OpenCL, PTX) suports native functions. This option is enabled by default.
+* `-Dtornado.enable.nativeFunctions=False`:
+It enables the utilization of native mathematical functions, in case that the selected backend (OpenCL, PTX, SPIR-V) suports native functions. This option is disabled by default.
 
