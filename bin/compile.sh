@@ -40,7 +40,7 @@ then
 	spirvToolkit="spirv-beehive-toolkit"
   if [[ ! -d spirv-beehive-toolkit ]]
   then 
-    git clone git@github.com:beehive-lab/spirv-beehive-toolkit.git
+    git clone https://github.com/beehive-lab/spirv-beehive-toolkit
   fi
   cd $spirvToolkit
   mvn clean install 
