@@ -17,7 +17,7 @@
     </scm>
 
     <properties>
-        <tornado.version>0.12</tornado.version>
+        <tornado.version>${version}</tornado.version>
         <graal.version>21.2.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
