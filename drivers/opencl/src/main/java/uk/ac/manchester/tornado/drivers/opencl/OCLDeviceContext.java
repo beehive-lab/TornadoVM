@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable, OCLDeviceContextInterface {
 
+    // FIXME: <REVISIT> Check the current utility of this buffer
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
 

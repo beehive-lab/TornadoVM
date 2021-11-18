@@ -4,26 +4,31 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | Hardware                                                              |
-| -------------------------- | --------------------------------------------------------------------- |
-| CentOS >= 7.3              | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Fedora >= 21               | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Ubuntu >= 16.04            | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
-| Mac OS X Mojave 10.14.6    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Mac OS X Catalina 10.15.3  | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Mac OS X Big Sur 11.5.1    | Any OpenCL (GPUs and CPUs >= 1.2) or CUDA 9.0+ compatible device                   |
-| Windows 10		     | Any OpenCL (GPUs and CPUs >= 1.2, FPGAs >= 1.0) or CUDA 9.0+ compatible device     |
+| OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            | 
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| CentOS >= 7.3              | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
+| Fedora >= 21               | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
+| Ubuntu >= 16.04            | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
+| Mac OS X Mojave 10.14.6    | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
+| Mac OS X Catalina 10.15.3  | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
+| Mac OS X Big Sur 11.5.1    | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
+| Windows 10                 | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported/tested      |
 
+Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs). 
 
 ## 1. Installation
 
-TornadoVM can be built with two compiler backends and is able to generate OpenCL and PTX code. At least one backend must be specified at build time to the `make` command:
+TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
+
+**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
+
+At least one backend must be specified at build time to the `make` command:
 
 ```bash
-$ make BACKENDS=opencl,ptx
+$ make BACKENDS=opencl,ptx,spirv
 ```
 
-As well as being built with two compiler backends, TornadoVM can be executed with the following three configurations:
+As well as being built with three compiler backends, TornadoVM can be executed with the following three configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
@@ -236,13 +241,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.11</version>
+         <version>0.12</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.11</version>
+         <version>0.12</version>
       </dependency>
    </dependencies>
 ```
@@ -251,6 +256,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.12
 * 0.11
 * 0.10
 * 0.9

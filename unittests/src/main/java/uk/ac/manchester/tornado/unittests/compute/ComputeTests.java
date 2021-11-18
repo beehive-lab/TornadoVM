@@ -17,7 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.compute;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -29,12 +36,6 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test to check functionality of benchmarks available in the compute-benchmark
@@ -49,8 +50,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class ComputeTests extends TornadoTestBase {
 
-    private static float DELTA = 0.005f;
-    private static float ESP_SQR = 500.0f;
+    private static final float DELTA = 0.005f;
+    private static final float ESP_SQR = 500.0f;
 
     private static void nBody(int numBodies, float[] refPos, float[] refVel) {
         for (@Parallel int i = 0; i < numBodies; i++) {
@@ -93,7 +94,7 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testNBody() {
 
-        final int numBodies = 8192;
+        final int numBodies = 16384;
         float[] posSeq = new float[numBodies * 4];
         float[] velSeq = new float[numBodies * 4];
 
@@ -115,12 +116,77 @@ public class ComputeTests extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         workerGrid.setGlobalWork(numBodies, 1, 1);
-        workerGrid.setLocalWork(1024, 1, 1);
+        workerGrid.setLocalWork(32, 1, 1);
 
         new TaskSchedule("s0") //
                 .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
                 .streamOut(posTornadoVM, velTornadoVM) //
                 .execute(gridScheduler);
+
+        validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
+    }
+
+    @Test
+    public void testNBodySmall() {
+
+        final int numBodies = 2048;
+        float[] posSeq = new float[numBodies * 4];
+        float[] velSeq = new float[numBodies * 4];
+
+        for (int i = 0; i < posSeq.length; i++) {
+            posSeq[i] = (float) Math.random();
+        }
+
+        Arrays.fill(velSeq, 0.0f);
+
+        float[] posTornadoVM = new float[numBodies * 4];
+        float[] velTornadoVM = new float[numBodies * 4];
+
+        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
+        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+
+        // Run Sequential
+        nBody(numBodies, posSeq, velSeq);
+
+        WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
+        workerGrid.setGlobalWork(numBodies, 1, 1);
+        workerGrid.setLocalWork(32, 1, 1);
+
+        new TaskSchedule("s0") //
+                .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
+                .streamOut(posTornadoVM, velTornadoVM) //
+                .execute(gridScheduler);
+
+        validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
+    }
+
+    @Test
+    public void testNBodyBigNoWorker() {
+
+        final int numBodies = 8192;
+        float[] posSeq = new float[numBodies * 4];
+        float[] velSeq = new float[numBodies * 4];
+
+        for (int i = 0; i < posSeq.length; i++) {
+            posSeq[i] = (float) Math.random();
+        }
+
+        Arrays.fill(velSeq, 0.0f);
+
+        float[] posTornadoVM = new float[numBodies * 4];
+        float[] velTornadoVM = new float[numBodies * 4];
+
+        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
+        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+
+        // Run Sequential
+        nBody(numBodies, posSeq, velSeq);
+
+        new TaskSchedule("compute") //
+                .task("nbody", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
+                .streamOut(posTornadoVM, velTornadoVM) //
+                .execute();
 
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
     }
@@ -152,7 +218,7 @@ public class ComputeTests extends TornadoTestBase {
 
     @Test
     public void testDFT() {
-        final int size = 1024;
+        final int size = 4096;
         TaskSchedule graph;
         float[] inReal = new float[size];
         float[] inImag = new float[size];
@@ -338,7 +404,7 @@ public class ComputeTests extends TornadoTestBase {
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
             for (@Parallel int x = 0; x < input.X(); x++) {
-                Byte3 pixel = null;
+                Byte3 pixel;
                 final int result = (int) input.get(x, y).getS2();
                 switch (result) {
                     case 1: // ok GREY

@@ -83,6 +83,5 @@ public interface ObjectBuffer {
     }
 
     default void setIntBuffer(int[] arr) {
-
     }
 }

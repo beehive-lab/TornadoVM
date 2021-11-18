@@ -22,7 +22,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.FloatStamp;
@@ -46,6 +45,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -71,13 +71,16 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     // @formatter:off
     public enum Operation {
+        ATAN,
         COS,
         EXP,
         FABS,
         FLOOR,
         LOG,
         SIN,
-        SQRT
+        SQRT,
+        TAN,
+        TANH
     }
     // @formatter:on
 
@@ -119,7 +122,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-        trace("emitPTXFPUnaryIntrinsic: op=%s, x=%s", operation, getValue());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPTXFPUnaryIntrinsic: op=%s, x=%s", operation, getValue());
         PTXArithmeticTool lirGenPTX = (PTXArithmeticTool) lirGen;
         PTXBuiltinTool gen = lirGenPTX.getGen().getPtxBuiltinTool();
         Value initialInput = builder.operand(getValue());
@@ -135,6 +138,9 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         }
 
         switch (operation()) {
+            case ATAN:
+                result = gen.genFloatATan(auxValue);
+                break;
             case COS:
                 result = gen.genFloatCos(auxValue);
                 break;
@@ -149,6 +155,12 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
                 break;
             case SQRT:
                 result = gen.genFloatSqrt(auxValue);
+                break;
+            case TAN:
+                result = gen.genFloatTan(auxValue);
+                break;
+            case TANH:
+                result = gen.genFloatTanh(auxValue);
                 break;
             case FLOOR:
                 result = gen.genFloatFloor(auxValue);

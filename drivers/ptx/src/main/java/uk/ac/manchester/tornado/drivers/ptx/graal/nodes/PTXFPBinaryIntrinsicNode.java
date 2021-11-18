@@ -22,7 +22,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -46,6 +45,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
@@ -121,7 +121,7 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     @Override
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
-        trace("emitPTXFPBinaryIntrinsic: op=%s, x=%s, y=%s", operation, x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPTXFPBinaryIntrinsic: op=%s, x=%s, y=%s", operation, x, y);
         PTXBuiltinTool gen = ((PTXArithmeticTool) lirGen).getGen().getPtxBuiltinTool();
         Value x = builder.operand(getX());
         Value y = builder.operand(getY());
@@ -159,6 +159,15 @@ public class PTXFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
      *
      * Because the log function only operates on single precision FPU , we must
      * convert the inputs and output to and from double precision FPU, if necessary.
+     * 
+     * This snipet generates the following code:
+     * 
+     * <code>
+     *     	cvt.rn.f32.f64	rfi1, rfd0;
+     * 	    mul.rn.f32	rfi2, rfi1, 0F3FB8AA3B;
+     * 	    ex2.approx.f32	rfi3, rfi2;
+     * </code>
+     * 
      */
     private void generatePow(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x, Value y) {
         LIRGeneratorTool genTool = builder.getLIRGeneratorTool();

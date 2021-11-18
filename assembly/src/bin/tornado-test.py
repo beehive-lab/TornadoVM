@@ -5,7 +5,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2021, 2021 APT Group, Department of Computer Science,
+# Copyright (c) 2013-2021, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -31,7 +31,6 @@ import subprocess
 import sys
 import time
 
-
 class TestEntry:
     def __init__(self, testName, testMethods=None, testParameters=None):
         self.testName = testName
@@ -41,6 +40,18 @@ class TestEntry:
 
 ## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
+
+    ## SPIR-V, OpenCL and PTX foundation tests
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIntegers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestDoubles"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.MultipleRuns"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLinearAlgebra"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLong"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestShorts"),
+    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIf"),
+
+    ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.functional.TestLambdas"),
@@ -98,8 +109,16 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
-    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
+
+    ## Test for function calls - We force not to inline methods
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
+              testParameters=[
+                  "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"]),
+
+    ## Tests for Virtual Devices
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
               testMethods=["testVirtualDeviceKernelGPU"],
               testParameters=[
@@ -123,10 +142,8 @@ __TEST_THE_WORLD__ = [
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
                   "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
-    TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
-              testParameters=[
-                  "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"])
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
+
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
@@ -136,29 +153,34 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
-    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15"
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15",
+    "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
+    "uk.ac.manchester.tornado.unittests.codegen.CodeGen#test02",
+    "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm1DKernelContext",
+    "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
+    "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02"
 ]
 
 # ################################################################################################################
 ## Options
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
-__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT_MODULE__ = " junit/"
-__MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
-__IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
-__PRINT_OPENCL_KERNEL__ = "-Dtornado.print.kernel=True "
-__DEBUG_TORNADO__ = "-Dtornado.debug=True "
-__THREAD_INFO__ = "-Dtornado.threadInfo=True "
-__PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
-__GC__ = "-Xmx6g "
-__BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
+__MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_JUNIT_MODULE__       = " junit/"
+__MAIN_TORNADO_JUNIT__              = "org.junit.runner.JUnitCore "
+__IGV_OPTIONS__                     = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
+__IGV_LAST_PHASE__                  = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
+__PRINT_OPENCL_KERNEL__             = "-Dtornado.print.kernel=True "
+__DEBUG_TORNADO__                   = "-Dtornado.debug=True "
+__THREAD_INFO__                     = "-Dtornado.threadInfo=True "
+__PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
+__GC__                              = "-Xmx6g "
+__BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.9_05082020"
+__VERSION__ = "0.11_22092021"
 
 JDK_8_VERSION = "1.8"
 try:
@@ -279,6 +301,10 @@ def processStats(out, stats):
                 ## set a flag
                 __TEST_NOT_PASSED__ = True
 
+        elif (l.find("UNSUPPORTED") != -1):
+            stats["[UNSUPPORTED]"] = stats["[UNSUPPORTED]"] + 1
+
+
     return stats
 
 
@@ -289,6 +315,15 @@ def runCommandWithStats(command, stats):
     out, err = p.communicate()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
+
+    if (err.rfind("Segmentation fault") > 0):
+        print(Colors.REVERSE)
+        print("[!] RUNNING AGAIN BECAUSE OF A SEG FAULT")
+        print(Colors.RESET)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        out = out.decode('utf-8')
+        err = err.decode('utf-8')
 
     print(err)
     print(out)
@@ -321,6 +356,7 @@ def runTests(args):
         command = appendTestRunnerClassToCmd(cmd, args)
         if (args.fast):
             command = command + " " + args.testClass
+            print(command)
             os.system(command)
         else:
             runSingleCommand(command, args)
@@ -338,7 +374,9 @@ def runTests(args):
             print(Colors.CYAN)
             print(stats)
             coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
-            print("Coverage: " + str(round(coverage, 2)) + "%")
+            coverageTotal = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"] + stats["[UNSUPPORTED]"])) * 100.0
+            print("Coverage [PASS/(PASS+FAIL)]: " + str(round(coverage, 2)) + "%")
+            print("Coverage [PASS/(PASS+FAIL+UNSUPPORTED)]: " + str(round(coverageTotal, 2)) + "%")
             print(Colors.GREEN)
             print("==================================================")
             print(Colors.CYAN)
@@ -348,7 +386,7 @@ def runTests(args):
 
 
 def runTestTheWorld(cmd, args):
-    stats = {"[PASS]": 0, "[FAILED]": 0}
+    stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]" : 0}
 
     for t in __TEST_THE_WORLD__:
         command = cmd

@@ -20,10 +20,7 @@ package uk.ac.manchester.tornado.examples.compute;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
@@ -31,26 +28,23 @@ public class MatrixMultiplication1D {
 
     private static final int WARMING_UP_ITERATIONS = 15;
 
-    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final float[] matrixA, final float[] matrixB, final float[] result, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += matrixA[(i * size) + k] * matrixB[(k * size) + j];
                 }
-                C[(i * size) + j] = sum;
+                result[(i * size) + j] = sum;
             }
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NumberFormatException {
 
         int size = 512;
         if (args.length >= 1) {
-            try {
-                size = Integer.parseInt(args[0]);
-            } catch (NumberFormatException ignored) {
-            }
+            size = Integer.parseInt(args[0]);
         }
 
         System.out.println("Computing MxM of " + size + "x" + size);
@@ -66,27 +60,18 @@ public class MatrixMultiplication1D {
             matrixB[idx] = r.nextFloat();
         });
 
-        WorkerGrid workerGrid = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-        // [Optional] Set the global work size
-        workerGrid.setGlobalWork(size, 1, 1);
-        // [Optional] Set the local work group
-        workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
-
-        //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
-        //@formatter:on
+        TaskSchedule t = new TaskSchedule("s0") //
+                .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
+                .streamOut(matrixC); //
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridScheduler);
+            t.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridScheduler);
+        t.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential
@@ -113,10 +98,14 @@ public class MatrixMultiplication1D {
 
         TornadoDeviceType deviceType = t.getDevice().getDeviceType();
 
-        System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
-        System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
-        System.out.println("\tSpeedup: " + speedup + "x");
-        System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
+        // @formatter:off
+        String buffer = "\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms" +
+                "\n\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms" +
+                "\n\tSpeedup: " + speedup + "x" +
+                "\n\tVerification " + verify(matrixC, resultSeq, size) + "\n";
+        // @formatter:on
+
+        System.out.println(buffer);
     }
 
     private static boolean verify(float[] par, float[] seq, int size) {

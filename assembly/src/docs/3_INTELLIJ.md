@@ -1,6 +1,6 @@
 # Loading TornadoVM into IntelliJ
 
-**Tested with** IntelliJ IDEA 2020.2.4, 2020.2.2, 2020.1.2, 2018.3, 2018.2.2, and 2017.3.5
+**Tested with** IntelliJ IDEA 2021.2.3, 2020.2.4, 2020.2.2, 2020.1.2, 2018.3, 2018.2.2, and 2017.3.5
 
 ## IntelliJ
 

@@ -44,4 +44,9 @@ public abstract class TornadoBackend<P extends Providers> extends Backend {
         return super.getProviders();
     }
 
+    public abstract boolean isInitialised();
+
+    public abstract void init();
+
+    public abstract int getMethodIndex();
 }

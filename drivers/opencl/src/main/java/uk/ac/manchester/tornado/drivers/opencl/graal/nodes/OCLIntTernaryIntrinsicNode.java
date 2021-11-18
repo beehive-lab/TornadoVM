@@ -108,9 +108,9 @@ public class OCLIntTernaryIntrinsicNode extends TernaryNode implements Arithmeti
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool lirGen) {
         OCLBuiltinTool gen = ((OCLArithmeticTool) lirGen).getGen().getOCLBuiltinTool();
 
-        Value x = getX().isConstant() ? builder.operand(getX()) : builder.operand(getX());
-        Value y = getY().isConstant() ? builder.operand(getY()) : builder.operand(getY());
-        Value z = getZ().isConstant() ? builder.operand(getZ()) : builder.operand(getZ());
+        Value x = builder.operand(getX());
+        Value y = builder.operand(getY());
+        Value z = builder.operand(getZ());
         LIRKind lirKind = builder.getLIRGeneratorTool().getLIRKind(stamp);
         Variable result = builder.getLIRGeneratorTool().newVariable(lirKind);
         Value expr;
@@ -137,6 +137,8 @@ public class OCLIntTernaryIntrinsicNode extends TernaryNode implements Arithmeti
 
     private static long doCompute(long x, long y, long z, Operation op) {
         switch (op) {
+            case CLAMP:
+                return TornadoMath.clamp(x, y, z);
             default:
                 throw new TornadoInternalError("unknown op %s", op);
         }

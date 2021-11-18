@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -59,6 +60,8 @@ public class TestHello extends TornadoTestBase {
 
     @Test
     public void testHello() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
         TaskSchedule task = new TaskSchedule("s0").task("t0", TestHello::printHello, 8);
         assertNotNull(task);
 

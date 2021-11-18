@@ -93,9 +93,20 @@ public class TornadoRuntime {
         tornadoImpl.loadTornadoSettings(property);
     }
 
+    /**
+     * Method used by SLAMBENCH-TornadoVM to access the device.
+     * 
+     * @param backendName
+     *            Backend to be used
+     * @param platformIndex
+     *            OpenCL|SPIRV|PTX Platform Index
+     * @param deviceIndex
+     *            Device index within the platform.
+     * @return an instance of a TornadoDevice per architecture.
+     */
+    @Deprecated
     public static TornadoDevice createDevice(String backendName, int platformIndex, int deviceIndex) {
         device = TornadoAPIProvider.loadDeviceImpl(backendName);
         return device.createDevice(platformIndex, deviceIndex);
     }
-
 }

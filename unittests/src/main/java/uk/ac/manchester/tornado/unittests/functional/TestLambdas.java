@@ -64,7 +64,7 @@ public class TestLambdas extends TornadoTestBase {
     public void testVectorFunctionLambda02() {
         final int numElements = 4096;
         double[] a = new double[numElements];
-        int[] b = new int[numElements];
+        double[] b = new double[numElements];
         double[] c = new double[numElements];
 
         Random r = new Random();
@@ -84,6 +84,37 @@ public class TestLambdas extends TornadoTestBase {
             }, a, b, c)
             .streamOut(c)
             .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] * b[i], c[i], 0.001);
+        }
+    }
+
+    @Test
+    public void testVectorFunctionLambda03() {
+        final int numElements = 4096;
+        double[] a = new double[numElements];
+        int[] b = new int[numElements];
+        double[] c = new double[numElements];
+
+        Random r = new Random();
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = r.nextDouble();
+            b[i] = r.nextInt(1000);
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", (x, y, z) -> {
+                    // Computation in a lambda expression
+                    for (@Parallel int i = 0; i < z.length; i++) {
+                        z[i] = x[i] * y[i];
+                    }
+                }, a, b, c)
+                .streamOut(c)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {

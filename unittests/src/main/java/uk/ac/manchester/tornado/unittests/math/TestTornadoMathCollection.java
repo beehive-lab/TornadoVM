@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.unittests.math;
 
 import static org.junit.Assert.assertArrayEquals;
 
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestTornadoMathCollection extends TornadoTestBase {
@@ -56,6 +58,24 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     public static void testTornadoSqrt(double[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = TornadoMath.sqrt(a[i]);
+        }
+    }
+
+    public static void testTornadoAtan(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.floatAtan(a[i]);
+        }
+    }
+
+    public static void testTornadoTan(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.floatTan(a[i]);
+        }
+    }
+
+    public static void testTornadoTanh(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.floatTanh(a[i]);
         }
     }
 
@@ -107,6 +127,20 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         }
     }
 
+    public static void testFloor(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (TornadoMath.floor(a[i]));
+        }
+    }
+
+    public static void testClamp(long[] a, long[] b) {
+        long min = 1;
+        long max = 10000;
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = TornadoMath.clamp(a[i], min, max);
+        }
+    }
+
     @Test
     public void testTornadoMathCos() {
         final int size = 128;
@@ -142,6 +176,72 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         s0.task("t0", TestTornadoMathCollection::testTornadoSin, data).streamOut(data).execute();
 
         testTornadoSin(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathAtan() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoAtan, data).streamOut(data).execute();
+
+        testTornadoAtan(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathTan() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoTan, data).streamOut(data).execute();
+
+        testTornadoTan(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathTanh() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoTanh, data).streamOut(data).execute();
+
+        testTornadoTanh(seq);
 
         assertArrayEquals(data, seq, 0.01f);
 
@@ -365,6 +465,46 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
         assertArrayEquals(data, seq, 0.01f);
 
+    }
+
+    @Test
+    public void testMathFloor() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testFloor, data).streamOut(data).execute();
+
+        testFloor(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+    }
+
+    @Test
+    public void testMathClamp() {
+        Random r = new Random();
+        final int size = 8192;
+        long[] a = new long[size];
+        long[] b = new long[size];
+        long[] seq = new long[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = r.nextLong();
+            b[i] = r.nextLong();
+            seq[i] = b[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testClamp, a, b).streamOut(b).execute();
+
+        testClamp(a, seq);
+        assertArrayEquals(b, seq);
     }
 
 }

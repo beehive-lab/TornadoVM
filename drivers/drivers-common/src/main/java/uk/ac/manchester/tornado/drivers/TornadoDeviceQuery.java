@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.drivers.common.ColoursTerminal;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -52,12 +52,13 @@ public class TornadoDeviceQuery {
         return String.format("%.1f %sB", (double) v / (1L << (z * 10)), " KMGTPE".charAt(z));
     }
 
-    private static HashMap<TornadoVMBackend, String> colourMapping;
+    private static HashMap<TornadoVMBackendType, String> colourMapping;
 
     static {
         colourMapping = new HashMap<>();
-        colourMapping.put(TornadoVMBackend.OpenCL, ColoursTerminal.CYAN);
-        colourMapping.put(TornadoVMBackend.PTX, ColoursTerminal.GREEN);
+        colourMapping.put(TornadoVMBackendType.OpenCL, ColoursTerminal.CYAN);
+        colourMapping.put(TornadoVMBackendType.PTX, ColoursTerminal.GREEN);
+        colourMapping.put(TornadoVMBackendType.SPIRV, ColoursTerminal.PURPLE);
     }
 
     public static void main(String[] args) {
@@ -74,7 +75,7 @@ public class TornadoDeviceQuery {
 
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             final TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
-            TornadoVMBackend backendType = TornadoCoreRuntime.getTornadoRuntime().getBackendType(driverIndex);
+            TornadoVMBackendType backendType = TornadoCoreRuntime.getTornadoRuntime().getBackendType(driverIndex);
             String colour = colourMapping.get(backendType);
             final int numDevices = driver.getDeviceCount();
             deviceInfoBuffer.append("Driver: " + colour + driver.getName() + ColoursTerminal.RESET + "\n");
@@ -86,6 +87,7 @@ public class TornadoDeviceQuery {
                     deviceInfoBuffer.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
                     deviceInfoBuffer.append("\t\t" + "Local Memory Size: " + formatSize(driver.getDevice(deviceIndex).getDeviceLocalMemorySize()) + "\n");
                     deviceInfoBuffer.append("\t\t" + "Workgroup Dimensions: " + driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions().length + "\n");
+                    deviceInfoBuffer.append("\t\t" + "Total Number of Block Threads: " + driver.getDevice(deviceIndex).getPhysicalDevice().getDeviceMaxWorkGroupSize()[0] + "\n");
                     deviceInfoBuffer.append("\t\t" + "Max WorkGroup Configuration: " + Arrays.toString(driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions()) + "\n");
                     deviceInfoBuffer.append("\t\t" + "Device OpenCL C version: " + driver.getDevice(deviceIndex).getDeviceOpenCLCVersion() + "\n");
                 }

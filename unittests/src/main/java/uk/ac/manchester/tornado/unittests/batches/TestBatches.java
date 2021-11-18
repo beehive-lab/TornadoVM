@@ -18,17 +18,18 @@
 
 package uk.ac.manchester.tornado.unittests.batches;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
+import static org.junit.Assert.assertEquals;
+import static uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer.getTornadoRuntime;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
-import static uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer.getTornadoRuntime;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 public class TestBatches extends TornadoTestBase {
 
@@ -77,7 +78,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test100MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(100,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(100, MemSize.MB);
 
         // Fill 800MB of float array
         int size = 200000000;
@@ -107,7 +108,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test300MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(300,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(300, MemSize.MB);
 
         // Fill 1.0GB
         int size = 250_000_000;
@@ -131,14 +132,14 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:on
 
         for (int i = 0; i < arrayB.length; i++) {
-            assertEquals(arrayA[i] + 100, arrayB[i], 0.1f);
+            assertEquals(arrayA[i] + 100, arrayB[i], 1.0f);
         }
     }
 
     @Test
     public void test512MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(512,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(512, MemSize.MB);
 
         // Fill 800MB
         int size = 200000000;
@@ -167,7 +168,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MB() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
 
         // Fill 80MB of input Array
         int size = 20000000;
@@ -201,7 +202,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBInteger() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
 
         // Fill 80MB of input Array
         int size = 20000000;
@@ -235,7 +236,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBShort() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
 
         // Fill 160MB of input Array
         int size = 80000000;
@@ -270,7 +271,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBDouble() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
 
         int size = 20000000;
         // or as much as we can
@@ -303,7 +304,7 @@ public class TestBatches extends TornadoTestBase {
     @Test
     public void test50MBLong() {
 
-        long maxAllocMemory = checkMaxHeapAllocation(50,MemSize.MB);
+        long maxAllocMemory = checkMaxHeapAllocation(50, MemSize.MB);
 
         // Fill 160MB of input Array
         int size = 20000000;
@@ -334,7 +335,6 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
-
     private long checkMaxHeapAllocation(int size, MemSize memSize) throws UnsupportedConfigurationException {
         long maxAllocMemory = getTornadoRuntime().getDefaultDevice().getDeviceContext().getMemoryManager().getHeapSize();
 
@@ -353,7 +353,7 @@ public class TestBatches extends TornadoTestBase {
 
         }
 
-        //check if there is enough memory for at least one chunk
+        // check if there is enough memory for at least one chunk
         if (maxAllocMemory < memThreshold) {
             throw new UnsupportedConfigurationException("Not enough memory to run the test");
         }
@@ -361,6 +361,8 @@ public class TestBatches extends TornadoTestBase {
         return maxAllocMemory;
     }
 
-    private enum MemSize {MB, GB, TB}
+    private enum MemSize {
+        MB, GB, TB
+    }
 
 }

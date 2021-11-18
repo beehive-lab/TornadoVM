@@ -25,30 +25,45 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MyCompute {
-    private static void vectorAddFloat(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+
+    private MyCompute() {
+
+    }
+
+    private static TaskSchedule ts;
+
+    private static void mxm(float[] a, float[] b, float[] c, int N) {
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < N; k++) {
+                    sum += a[i * N + k] + b[k + N + j];
+                }
+                c[i * N + j] = sum;
+            }
         }
     }
 
     public static float[] compute() {
-        final int numElements = 16;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        final int N = 512;
+        float[] a = new float[N * N];
+        float[] b = new float[N * N];
+        float[] c = new float[N * N];
 
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = 8;
-            b[i] = 2;
+        IntStream.range(0, N * N).sequential().forEach(i -> {
+            a[i] = 2.0f;
+            b[i] = 1.4f;
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(a, b)
-                .task("t0", MyCompute::vectorAddFloat, a, b, c)
-                .streamOut(c)
-                .execute();
-        //@formatter:on
+        if (ts == null) {
+            ts = new TaskSchedule("s0") //
+                    .streamIn(a, b)//
+                    .task("t0", MyCompute::mxm, a, b, c, N)//
+                    .streamOut(c);//
+        }
+
+        ts.execute();
+
         return c;
     }
 

@@ -69,4 +69,5 @@ public interface TornadoDeviceContext {
     String getDeviceName();
 
     int getDriverIndex();
+
 }

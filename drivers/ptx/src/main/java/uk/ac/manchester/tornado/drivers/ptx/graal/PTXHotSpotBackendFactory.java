@@ -91,7 +91,7 @@ public class PTXHotSpotBackendFactory {
         GraphBuilderConfiguration.Plugins plugins;
         PTXLoweringProvider lowerer;
 
-        try (InitTimer t = timer("create providers")) {
+        try (InitTimer ignored = timer("create providers")) {
             TornadoPlatformConfigurationProvider platformConfigurationProvider = new TornadoPlatformConfigurationProvider();
             MetaAccessExtensionProvider metaAccessExtensionProvider = new TornadoMetaAccessExtensionProvider();
             lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, platformConfigurationProvider, metaAccessExtensionProvider, constantReflection, target, vmConfig);
@@ -116,7 +116,7 @@ public class PTXHotSpotBackendFactory {
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
 
         }
-        try (InitTimer rt = timer("instantiate backend")) {
+        try (InitTimer ignored = timer("instantiate backend")) {
             return new PTXBackend(providers, deviceContext, target, codeCache, options);
         }
 

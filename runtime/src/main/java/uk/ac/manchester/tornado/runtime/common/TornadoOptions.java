@@ -93,6 +93,11 @@ public class TornadoOptions {
     public final static int PTX_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
 
     /**
+     * Sets the call stack limit in bytes for the SPIRV backend. Default is 8192.
+     */
+    public final static int SPIRV_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.spirv.callstack.limit", "8192"));
+
+    /**
      * Prints the generated code by the TornadoVM compiler. Default is False.
      */
     public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
@@ -117,6 +122,11 @@ public class TornadoOptions {
      * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
      */
     public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
+
+    /**
+     * Sets the array memory alignment for SPIRV devices. Default is 128 bytes.
+     */
+    public static final int SPIRV_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.spirv.array.align", "128"));
 
     /**
      * Enables OpenCL code generation based on a virtual device. Default is False.
@@ -196,5 +206,52 @@ public class TornadoOptions {
      * It enables inlining during Java bytecode parsing. Default is False.
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", "False");
+
+    // ================================================================================================================
+    // New Flags for SPIR-V and Intel LevelZero
+    // ================================================================================================================
+
+    /**
+     * Use Level Zero as a dispatcher for SPIRV
+     */
+    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "True");
+
+    /**
+     * Select Shared Memory allocator for SPIRV-Level Zero implementation.
+     */
+    public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", "False");
+
+    /**
+     * It optimizes loads and stores for the SPIRV backend. It uses less virtual
+     * registers. Experimental Feature.
+     */
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", "False");
+
+    /**
+     * Use return as a common label and insert the instruction before function
+     * ending.
+     */
+    public static final boolean SPIRV_RETURN_LABEL = getBooleanValue("tornado.spirv.returnlabel", "True");
+
+    /**
+     * Use the heap and frame index for any direct call invocation inside the
+     * generated SPIRV kernel.
+     */
+    public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", "False");
+
+    /**
+     * Trace code generation
+     */
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "False");
+
+    /**
+     * Trace code generation
+     */
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "False");
+
+    /**
+     * It enables native math functions for the code generation.
+     */
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", "False");;
 
 }

@@ -52,7 +52,7 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
+        int id = context.globalIdx;
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
@@ -67,8 +67,8 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
 
     @Test
     public void testFloatReductionsAddGlobalMemory() {
-        final int size = 1024;
-        final int localSize = 256;
+        final int size = 512;
+        final int localSize = 32;
         float[] input = new float[size];
         float[] reduce = new float[size / localSize];
         IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);

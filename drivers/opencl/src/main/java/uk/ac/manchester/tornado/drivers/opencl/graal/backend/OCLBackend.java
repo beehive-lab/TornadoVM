@@ -33,7 +33,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRunt
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.lang.reflect.Method;
 import java.nio.file.InvalidPathException;
@@ -86,16 +85,16 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
-import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameMap;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameMapBuilder;
@@ -139,7 +138,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
-    final OCLExecutionEnvironment tornadoContext;
     final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
@@ -152,13 +150,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
-    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLExecutionEnvironment openclContext,
-            OCLDeviceContextInterface deviceContext) {
+    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLDeviceContextInterface deviceContext) {
         super(providers);
         this.options = options;
         this.target = target;
         this.codeCache = codeCache;
-        this.tornadoContext = openclContext;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
@@ -178,6 +174,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
     }
 
+    @Override
     public boolean isInitialised() {
         return backEndInitialized;
     }
@@ -240,7 +237,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     /**
      * We explore all devices in driver 0;
      *
-     * @return
+     * @return int[]
      */
     public int[] getDriverAndDevice() {
         int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDeviceCount();
@@ -376,6 +373,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
+    @Override
     public void init() {
         if (VIRTUAL_DEVICE_ENABLED) {
             compileLookupBufferKernel();
@@ -392,6 +390,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         backEndInitialized = true;
     }
 
+    @Override
+    public int getMethodIndex() {
+        return 0;
+    }
+
     public OCLDeviceContextInterface getDeviceContext() {
         return deviceContext;
     }
@@ -400,6 +403,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLAssembler(target);
     }
 
+    // FIXME Remove this code
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
     }
@@ -448,13 +452,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         final AtomicInteger variableCount = new AtomicInteger();
 
         for (AbstractBlockBase<?> b : lir.linearScanOrder()) {
-            for (LIRInstruction insn : lir.getLIRforBlock(b)) {
+            for (LIRInstruction lirInstruction : lir.getLIRforBlock(b)) {
 
-                insn.forEachOutput((instruction, value, mode, flags) -> {
+                lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
                         if (variable.getName() != null) {
-                            addVariableDef(kindToVariable, (Variable) variable);
+                            addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
                         }
                     }
@@ -463,7 +467,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
         }
 
-        trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
+        Logger.traceCodeGen(Logger.BACKEND.OpenCL, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
         for (OCLKind type : kindToVariable.keySet()) {
             asm.indent();
@@ -533,7 +537,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.eol();
         } else {
 
-            final CallingConvention incomingArguments = OCLCodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
+            final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
 
             final JavaKind returnKind = method.getSignature().getReturnKind();
@@ -595,7 +599,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return crb;
     }
 
-    public FrameMap newFrameMap(RegisterConfig registerConfig) {
+    private FrameMap newFrameMap(RegisterConfig registerConfig) {
         return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 

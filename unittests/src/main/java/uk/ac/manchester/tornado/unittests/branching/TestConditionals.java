@@ -92,14 +92,14 @@ public class TestConditionals extends TornadoTestBase {
 
     @Test
     public void testNestedIfElseStatement() {
-        final int size = 100;
+        final int size = 128;
         int[] a = new int[size];
         int[] serial = new int[size];
 
         Random random = new Random();
 
         IntStream.range(0, size).forEach(i -> {
-            a[i] = random.nextInt();
+            a[i] = 50;
             serial[i] = a[i];
         });
 

@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 import java.nio.ByteBuffer;
 
+// FIXME <REFACTOR> Remove this class (common.mm)
 public class PrimitiveSerialiser {
 
     private static void align(ByteBuffer buffer, int align) {

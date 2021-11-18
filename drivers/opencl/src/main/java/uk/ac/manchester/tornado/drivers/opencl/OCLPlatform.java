@@ -41,6 +41,8 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
     private final int index;
     private final long id;
     private final List<OCLTargetDevice> devices;
+
+    // FIXME <REVISIT> It seems that this object is no longer needed
     private final Set<OCLContext> contexts;
 
     public OCLPlatform(int index, long id) {
@@ -75,6 +77,10 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
     native static int clGetDeviceIDs(long id, long type, long[] devices);
 
     native static long clCreateContext(long platform, long[] devices) throws OCLException;
+
+    public List<OCLTargetDevice> getDevices() {
+        return devices;
+    }
 
     public OCLContext createContext() {
         OCLContext contextObject = null;

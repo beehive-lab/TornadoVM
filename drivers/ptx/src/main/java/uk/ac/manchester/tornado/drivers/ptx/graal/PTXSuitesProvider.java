@@ -47,7 +47,7 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
             PTXCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, null, addressLowering);
-        lirSuites = createLIRSuites();
+        lirSuites = new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
     }
 
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(GraphBuilderConfiguration.Plugins plugins) {
@@ -62,11 +62,7 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
         return suite;
     }
 
-    public final TornadoLIRSuites createLIRSuites() {
-        return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
-    }
-
-    public TornadoSuites createSuites() {
+    public TornadoSuites getSuites() {
         return suites;
     }
 
@@ -77,10 +73,6 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
 
     public TornadoLIRSuites getLIRSuites() {
         return lirSuites;
-    }
-
-    public TornadoSuites getSuites() {
-        return suites;
     }
 
     @Override

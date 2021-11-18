@@ -409,7 +409,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         computeMapWithReduceValue(sequentialResult, sequentialReduce);
 
         for (int i = 0; i < data.length; i++) {
-            assertEquals(sequentialResult[i], data[i], 0.01);
+            assertEquals(sequentialResult[i], data[i], 0.01f);
         }
     }
 

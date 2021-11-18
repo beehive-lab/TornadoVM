@@ -123,8 +123,8 @@ public class TestImages extends TornadoTestBase {
     }
 
     /**
-     * Test for computing a referenced method using {@link ImageFloat} on the
-     * OpenCL device using square-matrices.
+     * Test for computing a referenced method using {@link ImageFloat} on the OpenCL
+     * device using square-matrices.
      */
     @Test
     public void testImageFloat04() {
@@ -147,8 +147,8 @@ public class TestImages extends TornadoTestBase {
     }
 
     /**
-     * Test for computing a referenced method using {@link ImageFloat} on the
-     * OpenCL device using non square matrices and small size.
+     * Test for computing a referenced method using {@link ImageFloat} on the OpenCL
+     * device using non square matrices and small size.
      */
     @Test
     public void testImageFloat05() {
@@ -172,8 +172,8 @@ public class TestImages extends TornadoTestBase {
     }
 
     /**
-     * Test for computing a referenced method using {@link ImageFloat} on the
-     * OpenCL device using non square matrices with big size.
+     * Test for computing a referenced method using {@link ImageFloat} on the OpenCL
+     * device using non square matrices with big size.
      */
     @Test
     public void testImageFloat06() {
@@ -415,7 +415,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskSchedule task = new TaskSchedule("s0").task("t0", TestImages::taskWithImagesByte3, imageA, imageB).streamOut(imageB);
+        final TaskSchedule task = new TaskSchedule("s0") //
+                .task("t0", TestImages::taskWithImagesByte3, imageA, imageB) //
+                .streamOut(imageB);
+
         task.execute();
 
         for (int i = 0; i < M; i++) {

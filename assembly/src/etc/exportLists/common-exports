@@ -25,9 +25,9 @@
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.runtime
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.runtime
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.runtime,tornado.drivers.common
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.runtime,tornado.annotation,tornado.drivers.common,jdk.internal.vm.compiler
---add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,jdk.internal.vm.compiler
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,tornado.drivers.common,jdk.internal.vm.compiler
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.runtime
@@ -38,7 +38,7 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.api.runtime=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.runtime
---add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.runtime
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.runtime,tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.target=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.runtime,tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.runtime

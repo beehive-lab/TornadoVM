@@ -24,12 +24,13 @@
 
 package uk.ac.manchester.tornado.drivers.ptx;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXHotSpotBackendFactory;
@@ -133,8 +134,8 @@ public final class PTXDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     @Override
-    public TornadoVMBackend getBackendType() {
-        return TornadoVMBackend.PTX;
+    public TornadoVMBackendType getBackendType() {
+        return TornadoVMBackendType.PTX;
     }
 
     @Override

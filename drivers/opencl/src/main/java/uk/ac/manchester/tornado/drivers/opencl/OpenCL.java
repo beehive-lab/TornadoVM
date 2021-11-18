@@ -232,14 +232,16 @@ public class OpenCL {
             System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
             final OCLExecutionEnvironment context = platform.createContext();
             for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
-                System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
+                OCLDeviceContext deviceContext = (OCLDeviceContext) context.createDeviceContext(deviceIndex);
+                System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, deviceContext.getDeviceName());
             }
         }
     }
 
     public static TornadoTargetDevice getDevice(int platformIndex, int deviceIndex) {
         final TornadoPlatform platform = platforms.get(platformIndex);
-        return platform.createContext().createDeviceContext(deviceIndex).getDevice();
+        OCLDeviceContext deviceContext = (OCLDeviceContext) platform.createContext().createDeviceContext(deviceIndex);
+        return deviceContext.getDevice();
     }
 
     public static void main(String[] args) {

@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -455,7 +456,7 @@ public class TornadoVM extends TornadoLogger {
             try {
                 task.attachProfiler(timeProfiler);
                 if (taskIndex == (tasks.size() - 1)) {
-                    // If last task within the task-schedule -> we force compilation
+                    // If it is the last task within the task-schedule -> we force compilation
                     // This is useful when compiling code for Xilinx/Altera FPGAs, that has to
                     // be a single source
                     task.forceCompilation();
@@ -466,8 +467,10 @@ public class TornadoVM extends TornadoLogger {
                 installedCodes[taskIndex] = device.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
-            } catch (Exception e) {
+            } catch (TornadoBailoutRuntimeException e) {
                 throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);
+            } catch (TornadoDeviceFP64NotSupported e) {
+                throw e;
             }
         }
         return new ExecutionInfo(stack, waitList);

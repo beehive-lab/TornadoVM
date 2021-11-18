@@ -35,7 +35,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackend;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -142,12 +142,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         contexts.add(context);
         final int numDevices = context.getNumDevices();
         info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
-
         backends[platformIndex] = new OCLBackend[numDevices];
-        for (int j = 0; j < numDevices; j++) {
-            final OCLTargetDevice device = context.devices().get(j);
+        for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
+            final OCLTargetDevice device = context.devices().get(deviceIndex);
             info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][j] = createOCLBackend(options, vmRuntime, vmConfig, context, j);
+            backends[platformIndex][deviceIndex] = createOCLBackend(options, vmRuntime, vmConfig, context, deviceIndex);
         }
     }
 
@@ -216,8 +215,8 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     @Override
-    public TornadoVMBackend getBackendType() {
-        return TornadoVMBackend.OpenCL;
+    public TornadoVMBackendType getBackendType() {
+        return TornadoVMBackendType.OpenCL;
     }
 
     public TornadoDeviceType getTypeDefaultDevice() {

@@ -99,31 +99,32 @@ public final class VectorUtil {
         }
     }
 
-    public static final OCLOp2 resolveAssignOp2(OCLKind vectorKind) {
+    public static OCLOp2 resolveAssignOp2(OCLKind vectorKind) {
         return lookupValueByType(assignOp2Table, vectorKind);
     }
 
-    public static final OCLOp3 resolveAssignOp3(OCLKind vectorKind) {
+    public static OCLOp3 resolveAssignOp3(OCLKind vectorKind) {
         return lookupValueByType(assignOp3Table, vectorKind);
     }
 
-    public static final OCLOp4 resolveAssignOp4(OCLKind vectorKind) {
+    public static OCLOp4 resolveAssignOp4(OCLKind vectorKind) {
         return lookupValueByType(assignOp4Table, vectorKind);
     }
 
-    public static final OCLOp8 resolveAssignOp8(OCLKind vectorKind) {
+    public static OCLOp8 resolveAssignOp8(OCLKind vectorKind) {
         return lookupValueByType(assignOp8Table, vectorKind);
     }
 
-    public static final OCLTernaryIntrinsic resolveStoreIntrinsic(OCLKind vectorKind) {
+    public static OCLTernaryIntrinsic resolveStoreIntrinsic(OCLKind vectorKind) {
         return lookupValueByLength(storeTable, vectorKind);
     }
 
-    public static final OCLBinaryIntrinsic resolveLoadIntrinsic(OCLKind vectorKind) {
+    public static OCLBinaryIntrinsic resolveLoadIntrinsic(OCLKind vectorKind) {
         return lookupValueByLength(loadTable, vectorKind);
     }
 
-    public static final OCLUnaryOp resolvePointerCast(OCLKind vectorKind) {
+    // FIXME: Remove this method
+    public static OCLUnaryOp resolvePointerCast(OCLKind vectorKind) {
         return lookupValueByType(pointerTable, vectorKind);
     }
 

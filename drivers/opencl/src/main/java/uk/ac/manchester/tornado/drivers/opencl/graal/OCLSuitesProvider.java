@@ -53,15 +53,11 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     private final OCLCanonicalizer canonicalizer;
 
     public OCLSuitesProvider(OptionValues options, TornadoDeviceContext deviceContext, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig,
-                             AddressLowering addressLowering) {
+            AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new OCLCanonicalizer();
         suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
-        lirSuites = createLIRSuites();
-    }
-
-    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, TaskMetaData meta) {
-        canonicalizer.setContext(metaAccess, method, args, meta);
+        lirSuites = new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
     }
 
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
@@ -76,11 +72,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         return suite;
     }
 
-    public final TornadoLIRSuites createLIRSuites() {
-        return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
-    }
-
-    public TornadoSuites createSuites() {
+    public TornadoSuites getSuites() {
         return suites;
     }
 
@@ -91,10 +83,6 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
 
     public TornadoLIRSuites getLIRSuites() {
         return lirSuites;
-    }
-
-    public TornadoSuites getSuites() {
-        return suites;
     }
 
     @Override

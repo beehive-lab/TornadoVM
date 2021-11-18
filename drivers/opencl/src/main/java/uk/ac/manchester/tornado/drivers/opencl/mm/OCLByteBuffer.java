@@ -316,6 +316,5 @@ public class OCLByteBuffer {
 
     public void zeroMemory() {
         Tornado.warn("zero memory unimplemented");
-
     }
 }

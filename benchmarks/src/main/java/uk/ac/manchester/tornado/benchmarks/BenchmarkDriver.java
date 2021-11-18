@@ -201,13 +201,14 @@ public abstract class BenchmarkDriver {
 
     public double getAverage(double[] arr) {
         double sum = 0.0;
+        int start = startingIndex;
         if (arr.length <= startingIndex) {
-            startingIndex = 0;
+            start = 0;
         }
-        for (int i = startingIndex; i < arr.length; i++) {
+        for (int i = start; i < arr.length; i++) {
             sum += arr[i];
         }
-        return sum / (iterations - startingIndex);
+        return sum / (arr.length - start);
     }
 
     public double getAverage() {

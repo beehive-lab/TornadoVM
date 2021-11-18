@@ -25,13 +25,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
+import java.util.Collection;
+import java.util.List;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -84,8 +85,17 @@ import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsicCmp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
@@ -103,23 +113,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IntelUnrollPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.XilinxPipeliningPragmaNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-
-import java.util.Collection;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -206,7 +207,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
-        trace("%s - block %s", graph.method().getName(), block);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "%s - block %s", graph.method().getName(), block);
         try (BlockScope blockScope = gen.getBlockScope(block)) {
 
             if (block == gen.getResult().getLIR().getControlFlowGraph().getStartBlock()) {
@@ -301,7 +302,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private Value emitNegatedLogicNode(final LogicNode node) {
         Value result;
-        trace("emitLogicNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
         if (node instanceof LogicalEqualsNode) {
@@ -352,7 +353,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private OCLLIROp emitLogicNode(final LogicNode node) {
         Value result;
-        trace("emitLogicNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
         if (node instanceof LogicalEqualsNode) {
@@ -448,15 +449,15 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitIf(final IfNode x) {
-        trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
-        /**
+        /*
          * test to see if this is an exception check need to implement this properly? or
          * omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
-            trace("emitExceptionEntry");
+            Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitExceptionEntry");
             shouldNotReachHere("exceptions are unimplemented");
         }
 
@@ -464,7 +465,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final boolean invertedLoop = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
         final Value condition = (invertedLoop) ? emitNegatedLogicNode(x.condition()) : emitLogicNode(x.condition());
-        trace("condition: %s -> %s", x.condition(), condition);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "condition: %s -> %s", x.condition(), condition);
 
         if (isLoop) {
             // HERE NEED TO ADD THE PRAGMA UNROLL
@@ -481,7 +482,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
 
-        trace("visiting emitLoopBegin %s", loopBeginNode);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
         final Block currentBlockDominator = block.getDominator();
@@ -509,7 +510,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(final LoopEndNode loopEnd) {
-        trace("visiting LoopEndNode: %s", loopEnd);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "visiting LoopEndNode: %s", loopEnd);
 
         final LoopBeginNode loopBegin = loopEnd.loopBegin();
         final List<ValuePhiNode> phis = loopBegin.valuePhis().snapshot();
@@ -526,7 +527,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
-        trace("visitMerge: ", mergeNode);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "visitMerge: ", mergeNode);
 
         boolean loopExitMerge = true;
         for (EndNode end : mergeNode.forwardEnds()) {
@@ -553,7 +554,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitNode(final ValueNode node) {
-        trace("emitNode: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
@@ -569,6 +570,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitSwitch(SwitchNode x) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "SWITCH NODE OCL:");
         assert x.defaultSuccessor() != null;
         LabelRef defaultTarget = getLIRBlock(x.defaultSuccessor());
         int keyCount = x.keyCount();
@@ -643,6 +645,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         return false;
     }
 
+    // FIXME: Remove this code
     public String toOpenCLSymbol(final Condition condition) {
         switch (condition) {
             case AE:
@@ -677,7 +680,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitEndNode(final AbstractEndNode end) {
-        trace("visitEnd: %s", end);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "visitEnd: %s", end);
 
         if (end instanceof LoopEndNode) {
             return;

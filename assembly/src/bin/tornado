@@ -4,10 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2020, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2021, APT Group, Department of Computer Science,
 # School of Engineering, The University of Manchester. All rights reserved.
-# Copyright (c) 2013-2019, APT Group, School of Computer Science,
-# The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -258,6 +256,7 @@ PROVIDERS=" \
 -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
 -Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
 -Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
+-Dtornado.load.device.implementation.spirv=uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVDeviceFactory \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
@@ -276,6 +275,7 @@ else
   COMMON_EXPORTS="${TORNADO_SDK}/etc/exportLists/common-exports"
   OPENCL_EXPORTS="${TORNADO_SDK}/etc/exportLists/opencl-exports"
   PTX_EXPORTS="${TORNADO_SDK}/etc/exportLists/ptx-exports"
+  SPIRV_EXPORTS="${TORNADO_SDK}/etc/exportLists/spirv-exports"
   UPGRADE_MODULE_PATH="--upgrade-module-path ${TORNADO_SDK}/share/java/graalJars"
 
   TORNADO_ADD_MODULES="--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
@@ -301,6 +301,11 @@ else
     JAVA_FLAGS="${JAVA_FLAGS} @${OPENCL_EXPORTS}"
     TORNADO_ADD_MODULES="${TORNADO_ADD_MODULES},${OPENCL_MODULE}"
   fi
+  if [[ ${selected_backends} == *"spirv-backend"* ]]; then
+    JAVA_FLAGS="${JAVA_FLAGS} @${OPENCL_EXPORTS} @${SPIRV_EXPORTS}"
+    TORNADO_ADD_MODULES="${TORNADO_ADD_MODULES},${OPENCL_MODULE}"
+  fi
+  
   JAVA_FLAGS="${JAVA_FLAGS} ${TORNADO_ADD_MODULES}"
 fi
 
@@ -310,7 +315,7 @@ if [ $printflags -eq 1 ]; then
 fi
 
 if [ $printdevices -eq 1 ]; then
-  tornado uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose
+  ${JAVA_CMD} ${JAVA_FLAGS} $@ uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose
   exit 0
 fi
 

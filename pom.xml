@@ -5,7 +5,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.12-dev</version>
+    <version>0.13-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -17,7 +17,7 @@
     </scm>
 
     <properties>
-        <tornado.version>0.12-dev</tornado.version>
+        <tornado.version>0.12</tornado.version>
         <graal.version>21.3.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
@@ -302,6 +302,7 @@
                                 <arg>@${user.dir}/assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/assembly/src/etc/exportLists/ptx-exports</arg>
+                                <arg>@${user.dir}/assembly/src/etc/exportLists/spirv-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -338,6 +339,7 @@
                                 <arg>@${user.dir}/assembly/src/etc/exportLists/common-exports</arg>
                                 <arg>@${user.dir}/assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/assembly/src/etc/exportLists/ptx-exports</arg>
+                                <arg>@${user.dir}/assembly/src/etc/exportLists/spirv-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
