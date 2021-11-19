@@ -27,7 +27,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -56,6 +55,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLIRKindTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
@@ -164,7 +164,7 @@ public class OCLLIRGenerator extends LIRGenerator {
         }
 
         final Variable var = super.newVariable(actualLIRKind);
-        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         var.setName(oclKind.getTypePrefix() + "_" + var.index);
         OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
@@ -253,7 +253,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        trace("emitConditionalMove?");
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitConditionalMove");
 
         final OCLBinaryOp condOp = getConditionalOp(cond);
         final OCLBinary.Expr condExpr = new OCLBinary.Expr(condOp, LIRKind.value(cmpKind), left, right);
@@ -272,7 +272,7 @@ public class OCLLIRGenerator extends LIRGenerator {
         DeoptimizationReason reason = getMetaAccess().decodeDeoptReason(constant);
         DeoptimizationAction action = getMetaAccess().decodeDeoptAction(constant);
         int debugId = getMetaAccess().decodeDebugId(constant);
-        trace("emitDeoptimize: id=%d, reason=%s, action=%s", debugId, reason, action);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitDeoptimize: id=%d, reason=%s, action=%s", debugId, reason, action);
         append(new OCLControlFlow.DeoptOp(actionAndReason));
     }
 
@@ -348,7 +348,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-        trace("emitReturn: input=%s", input);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitReturn: input=%s", input);
         if (input != null) {
             LIRKind lirKind = LIRKind.value(input.getPlatformKind());
             ExprStmt stmt = new ExprStmt(new OCLUnary.Expr(OCLUnaryOp.RETURN, lirKind, input));
@@ -360,7 +360,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy ss, Variable value, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        trace("emitStrategySwitch: key=%s", value);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", value);
         append(new OCLControlFlow.SwitchOp(value, ss.getKeyConstants(), keyTargets, defaultTarget));
     }
 

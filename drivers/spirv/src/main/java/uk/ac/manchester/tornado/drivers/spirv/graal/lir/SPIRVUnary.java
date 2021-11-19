@@ -54,8 +54,8 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture.SPIRVMemoryBase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
@@ -138,7 +138,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns LoadFromStackFrame ");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns LoadFromStackFrame ");
             SPIRVId loadID = asm.module.getNextId();
 
             SPIRVId ptrCrossWorkGroupULong = null;
@@ -195,7 +195,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("µIns LoadIndexValueFromSPIRVStack ");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns LoadIndexValueFromSPIRVStack ");
             SPIRVId loadID = asm.module.getNextId();
 
             SPIRVId ptrCrossWorkGroupULong = asm.getPTrCrossWorkULong();
@@ -302,7 +302,7 @@ public class SPIRVUnary {
         }
 
         private void emitPrivateMemoryIndexedAccess(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("\temit Private memory access");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\temit Private memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
@@ -337,7 +337,7 @@ public class SPIRVUnary {
         }
 
         private void emitLocalMemoryIndexedAccess(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit LOCAL memory access");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOCAL memory access");
             SPIRVId arrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
@@ -461,7 +461,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit SPIRVAddressCast with LIRKIND: " + getLIRKind().getPlatformKind());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVAddressCast with LIRKIND: " + getLIRKind().getPlatformKind());
             SPIRVId idLoad = asm.module.getNextId();
 
             // We force to load a pointer to long
@@ -515,7 +515,7 @@ public class SPIRVUnary {
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit Compute-SPIRV Intrinsic: " + builtIn);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit Compute-SPIRV Intrinsic: " + builtIn);
 
             SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 
@@ -581,7 +581,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : " + fromBits + " -> " + toBits);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpSConvert : " + fromBits + " -> " + toBits);
 
             SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
@@ -648,7 +648,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpSConvert : -> " + toBits);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpSConvert : -> " + toBits);
 
             SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
@@ -712,7 +712,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpConvertSToF : -> ");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpConvertSToF : -> ");
 
             SPIRVKind spirvKind = toType;
             SPIRVId fromTypeID = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
@@ -755,7 +755,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpFConvert from " + value.getPlatformKind() + " -> " + toType);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpFConvert from " + value.getPlatformKind() + " -> " + toType);
 
             SPIRVKind spirvKind = toType;
             SPIRVId fromType = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
@@ -798,7 +798,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpConvertSToF");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpConvertSToF");
 
             SPIRVKind spirvKind = toType;
             SPIRVId fromTypeID = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
@@ -841,7 +841,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpConvertFToS");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpConvertFToS");
 
             SPIRVKind spirvKind = toType;
             SPIRVId fromTypeID = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
@@ -977,7 +977,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit SPIRVLiteralExtInstInteger: " + builtIn.name);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.name);
 
             SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
 
@@ -1016,7 +1016,7 @@ public class SPIRVUnary {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     // We need to perform a load first
-                    SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
                     SPIRVId load = asm.module.getNextId();
                     SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
@@ -1037,7 +1037,7 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVLogger.traceCodeGen("emit " + nameDebugInstruction + getValue() + " with type: " + getSPIRVPlatformKind());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit " + nameDebugInstruction + getValue() + " with type: " + getSPIRVPlatformKind());
 
             SPIRVId valueID = getId(getValue(), asm, getSPIRVPlatformKind());
             SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
@@ -1064,7 +1064,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getMemorySemantics());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit Barrier with FLAGS" + flags.toString() + " SEMANTICS: " + flags.getMemorySemantics());
             SPIRVId constant2 = asm.lookUpConstant("2", SPIRVKind.OP_TYPE_INT_32);
             SPIRVId constantSemantics = asm.lookUpConstant(Integer.toString(flags.getMemorySemantics()), SPIRVKind.OP_TYPE_INT_32);
             asm.currentBlockScope().add(new SPIRVOpControlBarrier(constant2, constant2, constantSemantics));
@@ -1086,7 +1086,7 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVLogger.traceCodeGen("Loading Method Parameter:" + local.getName());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Loading Method Parameter:" + local.getName());
             String variableName = local.getName() + "F" + asm.getMethodIndex();
             SPIRVId idLocal = asm.lookUpLIRInstructionsName(variableName);
             asm.registerLIRInstructionValue(this, idLocal);
@@ -1116,7 +1116,7 @@ public class SPIRVUnary {
             SPIRVKind spirvKind = (SPIRVKind) input.getPlatformKind();
             SPIRVId valueToReturn = getId(input, asm, spirvKind);
 
-            SPIRVLogger.traceCodeGen("emit SPIRVOpReturnValue : " + currentBlock.toString() + " with value: " + input);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpReturnValue : " + currentBlock.toString() + " with value: " + input);
             asm.setReturnWithValue(true);
             blockScope.add(new SPIRVOpReturnValue(valueToReturn));
         }

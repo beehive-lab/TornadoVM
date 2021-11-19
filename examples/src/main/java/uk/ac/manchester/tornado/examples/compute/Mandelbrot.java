@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class Mandelbrot {
 
-    public final static int SIZE = 256;
+    public static final int SIZE = 1024;
     public static final boolean USE_TORNADO = true;
 
     @SuppressWarnings("serial")

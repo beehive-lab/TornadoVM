@@ -59,7 +59,7 @@ public class OCLControlFlow {
 
         public static final LIRInstructionClass<ReturnOp> TYPE = LIRInstructionClass.create(ReturnOp.class);
         @Use
-        protected Value x;
+        private Value x;
 
         public ReturnOp(Value x) {
             super(TYPE);

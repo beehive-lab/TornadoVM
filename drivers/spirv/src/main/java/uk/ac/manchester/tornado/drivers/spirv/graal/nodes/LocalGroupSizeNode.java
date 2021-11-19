@@ -37,8 +37,8 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
@@ -58,7 +58,7 @@ public class LocalGroupSizeNode extends FixedWithNextNode implements LIRLowerabl
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        SPIRVLogger.traceBuildLIR("emitLocalGroupSize: dim=%s", dimensionIndex);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLocalGroupSize: dim=%s", dimensionIndex);
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         Value valueDimension = generator.operand(dimensionIndex);

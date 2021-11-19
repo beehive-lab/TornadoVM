@@ -29,7 +29,7 @@
 cd $TORNADO_SDK
 cd share/java/tornado/
 
-TORNADOVM_VERSION="0.11"
+TORNADOVM_VERSION="0.12"
 
 read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
 
@@ -45,6 +45,10 @@ fi
 if [[ ${selected_backends} == *"ptx-backend"* ]]; then
   mvn install:install-file -Dfile=tornado-drivers-ptx-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-drivers-ptx -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
   mvn install:install-file -Dfile=tornado-drivers-ptx-jni-${TORNADOVM_VERSION}-libs.jar -DgroupId=tornado -DartifactId=tornado-drivers-ptx-jni -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
+fi
+if [[ ${selected_backends} == *"spirv-backend"* ]]; then
+  mvn install:install-file -Dfile=tornado-drivers-spirv-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-drivers-spirv -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
+  mvn install:install-file -Dfile=tornado-drivers-spirv-levelzero-jni-${TORNADOVM_VERSION}-libs.jar -DgroupId=tornado -DartifactId=tornado-drivers-spirv-levelzero-jni -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
 fi
 mvn install:install-file -Dfile=tornado-annotation-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-annotation -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
 

@@ -84,17 +84,9 @@ public class TornadoLogger {
         LOGGER.info(msg);
     }
 
-    public static void trace(final String pattern, final Object... args) {
-        trace(String.format(pattern, args));
-    }
-
     public static void warn(final String msg) {
         LOGGER.setLevel(Level.WARNING);
         LOGGER.warning(msg);
-    }
-
-    public static void warn(final String pattern, final Object... args) {
-        warn(String.format(pattern, args));
     }
 
 }

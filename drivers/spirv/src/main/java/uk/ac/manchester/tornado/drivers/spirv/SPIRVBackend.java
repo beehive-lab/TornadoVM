@@ -120,9 +120,9 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptio
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVFrameContext;
@@ -155,7 +155,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         public static final int SPIRV_VERSION_FOR_OPENCL = 300000;
         public static final int SPIRV_MAJOR_VERSION = 1;
         public static final int SPIRV_MINOR_VERSION = 2;
-        public static final int SPIRV_GENERATOR_ID = 32;
+        public static final int SPIRV_GENERATOR_ID = 33;
         public static final int SPIRV_INITIAL_BOUND = 0;
         public static final int SPIRV_SCHEMA = 0;
     }
@@ -612,18 +612,18 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         if (Tornado.FULL_DEBUG) {
-            SPIRVLogger.traceCodeGen("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "found %d variable, expected (%d)", variableCount.get(), expectedVariables);
         }
 
         int index = 0;
         for (SPIRVKind spirvKind : kindToVariable.keySet()) {
             if (Tornado.FULL_DEBUG) {
-                SPIRVLogger.traceCodeGen("VARIABLES -------------- ");
-                SPIRVLogger.traceCodeGen("\tTYPE: " + spirvKind);
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "VARIABLES -------------- ");
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tTYPE: " + spirvKind);
             }
             for (Variable var : kindToVariable.get(spirvKind)) {
                 if (Tornado.FULL_DEBUG) {
-                    SPIRVLogger.traceCodeGen("\tNAME: " + var);
+                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tNAME: " + var);
                 }
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);
@@ -699,7 +699,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (returnKind == SPIRVKind.ILLEGAL) {
             returnKind = SPIRVKind.fromJavaKind(method.getSignature().getReturnKind());
         }
-        SPIRVLogger.traceCodeGen("Return TYPE: " + returnKind);
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Return TYPE: " + returnKind);
 
         SPIRVId returnId = asm.primitives.getTypePrimitive(returnKind);
 
@@ -977,7 +977,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         asm.intializeScopeStack();
         String methodName = crb.compilationResult.getName();
-        SPIRVLogger.traceCodeGen("[SPIR-V CodeGen] Generating SPIRV-Header for method: %s", methodName);
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "[SPIR-V CodeGen] Generating SPIRV-Header for method: %s", methodName);
         if (crb.isKernel()) {
             emitPrologueForMainKernelEntry(crb, asm, method, lir, module);
         } else {
@@ -988,12 +988,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private void emitEpilogue(SPIRVAssembler asm) {
         if (TornadoOptions.SPIRV_RETURN_LABEL) {
             if (!asm.returnWithValue() && asm.getReturnLabel() != null) {
-                SPIRVLogger.traceCodeGen("emit SPIRVOpReturn");
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpReturn");
                 SPIRVInstScope block = asm.getFunctionScope().add(new SPIRVOpLabel(asm.getReturnLabel()));
                 block.add(new SPIRVOpReturn());
             }
         }
-        SPIRVLogger.traceCodeGen("emit SPIRVOpFunctionEnd");
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpFunctionEnd");
         asm.closeFunction(asm.getFunctionScope());
     }
 }

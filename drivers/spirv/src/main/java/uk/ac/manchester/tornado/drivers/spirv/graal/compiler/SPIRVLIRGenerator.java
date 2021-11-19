@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -53,8 +52,8 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
@@ -172,7 +171,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-        SPIRVLogger.traceBuildLIR("emitReturn: input=%s", input);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitReturn: input=%s", input);
         AbstractBlockBase<?> currentBlock = getCurrentBlock();
         if (input != null) {
             LIRKind lirKind = LIRKind.value(input.getPlatformKind());
@@ -205,7 +204,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value leftVal, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        SPIRVLogger.traceBuildLIR("emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emit TernaryBranch: " + leftVal + " " + cond + right + " ? " + trueValue + " : " + falseValue);
         final Variable resultConditionalMove = newVariable(LIRKind.combine(trueValue, falseValue));
         SPIRVBinary.TernaryCondition ternaryInstruction = new SPIRVBinary.TernaryCondition(LIRKind.combine(trueValue, falseValue), leftVal, cond, right, trueValue, falseValue);
         append(new SPIRVLIRStmt.AssignStmt(resultConditionalMove, ternaryInstruction));
@@ -256,7 +255,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        SPIRVLogger.traceBuildLIR("emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
         append(new SPIRVControlFlow.SwitchStatement(key, strategy, keyTargets, defaultTarget));
     }
 
@@ -295,7 +294,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
         // Create a new variable
         final Variable variable = super.newVariable(actualLIRKind);
-        SPIRVLogger.traceBuildLIR("[SPIR-V] newVariable: %s <- %s (%s)", variable.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[SPIR-V] newVariable: %s <- %s (%s)", variable.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         // Format of the variable "<type>_<number>"
         variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index + "F" + methodIndex);
@@ -373,7 +372,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
-        trace("emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
         append(new SPIRVControlFlow.Branch(label));
     }
 }

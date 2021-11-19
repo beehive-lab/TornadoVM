@@ -252,6 +252,6 @@ public class TornadoOptions {
     /**
      * It enables native math functions for the code generation.
      */
-    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", "True");;
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", "False");;
 
 }

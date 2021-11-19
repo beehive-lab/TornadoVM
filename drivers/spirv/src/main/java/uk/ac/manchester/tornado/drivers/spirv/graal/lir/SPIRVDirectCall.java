@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunctionCall;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVUtils;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
@@ -61,7 +61,7 @@ public class SPIRVDirectCall extends SPIRVLIROp {
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-        SPIRVLogger.traceCodeGen("emit OpFunctionCall for method: " + targetNode.targetMethod().getName());
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit OpFunctionCall for method: " + targetNode.targetMethod().getName());
 
         final String methodName = SPIRVUtils.makeMethodName(targetNode.targetMethod());
 

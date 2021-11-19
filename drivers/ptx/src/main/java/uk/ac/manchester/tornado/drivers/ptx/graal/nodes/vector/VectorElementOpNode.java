@@ -23,7 +23,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -41,6 +40,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStamp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
@@ -113,7 +113,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     public void generate(NodeLIRBuilderTool gen) {
         guarantee(vector != null, "vector is null");
         Value targetVector = gen.operand(getVector());
-        trace("emitVectorElementOp: targetVector=%s, laneId=%d", targetVector, laneId());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorElementOp: targetVector=%s, laneId=%d", targetVector, laneId());
 
         assert targetVector instanceof Variable;
 

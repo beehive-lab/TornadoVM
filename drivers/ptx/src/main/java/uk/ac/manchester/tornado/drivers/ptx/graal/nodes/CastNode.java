@@ -22,8 +22,6 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -38,6 +36,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -72,7 +71,7 @@ public class CastNode extends FloatingNode implements LIRLowerable, MarkCastNode
      */
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
-        trace("emitCast: convertOp=%s, value=%s", op, value);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitCast: convertOp=%s, value=%s", op, value);
         PTXLIRGenerator gen = (PTXLIRGenerator) nodeLIRBuilderTool.getLIRGeneratorTool();
         LIRKind lirKind = gen.getLIRKind(stamp);
         final Variable result = gen.newVariable(lirKind);

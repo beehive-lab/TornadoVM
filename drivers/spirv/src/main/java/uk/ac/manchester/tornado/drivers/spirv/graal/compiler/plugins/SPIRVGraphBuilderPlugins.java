@@ -28,7 +28,7 @@ import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
@@ -277,7 +277,7 @@ public class SPIRVGraphBuilderPlugins {
 
     private static void registerTornadoVMIntrinsicsPlugins(Plugins plugins) {
         if (Tornado.DEBUG) {
-            SPIRVLogger.traceRuntime("SPIRV Registering VM Intrinsics Plugins - pending");
+            Logger.traceRuntime(Logger.BACKEND.SPIRV, "SPIRV Registering VM Intrinsics Plugins - pending");
         }
     }
 }

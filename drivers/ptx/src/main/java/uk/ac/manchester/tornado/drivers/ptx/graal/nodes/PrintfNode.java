@@ -21,8 +21,6 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.IterableNodeType;
@@ -38,6 +36,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
@@ -74,7 +73,7 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable, Itera
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        trace("emitPrintf: xDim=%s, yDim=%s, zDim=%s", xDim, yDim, zDim);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitPrintf: xDim=%s, yDim=%s, zDim=%s", xDim, yDim, zDim);
         PTXLIRGenerator genTool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
 
         Value stack = gen.operand(argumentStack);

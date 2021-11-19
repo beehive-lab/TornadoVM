@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.utils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -323,7 +323,7 @@ public class LevelZeroUtils {
         long baseAddress = allocate.getLong(0);
         output[0] = baseAddress;
         if (Tornado.DEBUG) {
-            SPIRVLogger.traceRuntime("Base Address: " + Long.toUnsignedString(baseAddress));
+            Logger.traceRuntime(Logger.BACKEND.SPIRV, "Base Address: " + Long.toUnsignedString(baseAddress));
         }
         commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);

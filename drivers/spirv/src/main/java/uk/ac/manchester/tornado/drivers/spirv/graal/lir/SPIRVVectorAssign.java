@@ -35,7 +35,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiter
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -56,7 +56,7 @@ public class SPIRVVectorAssign {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     // We need to perform a load first
-                    SPIRVLogger.traceCodeGen("emit LOAD Variable from AssignVector :" + inputValue);
+                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable from AssignVector :" + inputValue);
                     SPIRVId load = asm.module.getNextId();
                     SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
@@ -114,7 +114,7 @@ public class SPIRVVectorAssign {
             for (int i = 0; i < values.length; i++) {
                 composite0 = emitCompositeInsertN(asm, composite0, vectorType, i);
             }
-            SPIRVLogger.traceCodeGen("emit VectorComposite: " + this + ": " + values.length + getSPIRVPlatformKind());
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit VectorComposite: " + this + ": " + values.length + getSPIRVPlatformKind());
             asm.registerLIRInstructionValue(this, composite0);
         }
     }

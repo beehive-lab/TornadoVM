@@ -35,7 +35,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
-import uk.ac.manchester.tornado.drivers.spirv.common.SPIRVLogger;
+import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -76,7 +76,7 @@ public abstract class SPIRVLIROp extends Value {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
             if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 // We need to perform a load first
-                SPIRVLogger.traceCodeGen("emit LOAD Variable: " + inputValue);
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
                 SPIRVId load = asm.module.getNextId();
                 SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                 asm.currentBlockScope().add(new SPIRVOpLoad(//
