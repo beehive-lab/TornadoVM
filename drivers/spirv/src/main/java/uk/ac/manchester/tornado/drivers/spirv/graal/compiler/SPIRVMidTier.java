@@ -91,7 +91,7 @@ public class SPIRVMidTier extends TornadoMidTier {
 
         appendPhase(canonicalizer);
 
-        if (TornadoOptions.PARTIAL_UNROLL()) {
+        if (TornadoOptions.isPartialUnrollEnabled()) {
             appendPhase(new TornadoPartialLoopUnroll());
         }
 
