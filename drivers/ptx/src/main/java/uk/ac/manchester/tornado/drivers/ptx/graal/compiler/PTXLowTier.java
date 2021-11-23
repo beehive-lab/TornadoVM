@@ -42,6 +42,7 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.PTXFMAPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
@@ -81,7 +82,13 @@ public class PTXLowTier extends TornadoLowTier {
 
         appendPhase(new TornadoLoopCanonicalization());
 
-        appendPhase(new PTXFMAPhase());
+        if (TornadoOptions.ENABLE_FMA) {
+            appendPhase(new PTXFMAPhase());
+        }
+
+        if (TornadoOptions.MATH_OPTIMIZATIONS) {
+            appendPhase(new InverseSquareRootPhase());
+        }
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 

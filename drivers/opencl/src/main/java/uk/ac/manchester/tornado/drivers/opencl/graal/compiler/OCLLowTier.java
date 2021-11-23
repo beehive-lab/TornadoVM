@@ -44,6 +44,7 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.common.graal.compiler.DumpLowTierGraph;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFMAPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
@@ -52,7 +53,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLLowTier extends TornadoLowTier {
 
@@ -98,6 +98,10 @@ public class OCLLowTier extends TornadoLowTier {
 
         if (TornadoOptions.ENABLE_FMA) {
             appendPhase(new OCLFMAPhase());
+        }
+
+        if (TornadoOptions.MATH_OPTIMIZATIONS) {
+            appendPhase(new InverseSquareRootPhase());
         }
 
         appendPhase(new TornadoAtomicsParametersPhase());

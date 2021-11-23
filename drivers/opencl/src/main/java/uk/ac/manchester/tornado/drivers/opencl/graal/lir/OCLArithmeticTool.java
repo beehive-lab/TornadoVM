@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.RSQRT;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -466,6 +467,13 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = getGen().newVariable(resultKind);
         OCLAssembler.OCLTernaryOp operation = OCLTernaryIntrinsic.FMA;
         getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLTernary.Expr(operation, resultKind, op1, op2, op3)));
+        return result;
+    }
+
+    public Value emitRSQRT(Value op) {
+        LIRKind resultKind = LIRKind.value(op.getPlatformKind());
+        Variable result = getGen().newVariable(resultKind);
+        getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(RSQRT, LIRKind.value(op.getPlatformKind()), op)));
         return result;
     }
 

@@ -37,7 +37,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -59,7 +58,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public final class OCLAssembler extends Assembler {
 
@@ -246,6 +244,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic EXP = new OCLUnaryIntrinsic("exp");
         public static final OCLUnaryIntrinsic SQRT = new OCLUnaryIntrinsic("sqrt");
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
+        public static final OCLUnaryIntrinsic RSQRT = new OCLUnaryIntrinsic("rsqrt");
         public static final OCLUnaryIntrinsic NATIVE_COS = new OCLUnaryIntrinsic("native_cos");
         public static final OCLUnaryIntrinsic NATIVE_SIN = new OCLUnaryIntrinsic("native_sin");
         public static final OCLUnaryIntrinsic NATIVE_SQRT = new OCLUnaryIntrinsic("native_sqrt");

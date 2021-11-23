@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.RSQRT;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -329,6 +330,14 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = getGen().newVariable(resultKind);
         PTXTernaryOp op = ((PTXKind) resultKind.getPlatformKind()).isFloating() ? PTXTernaryOp.MAD : PTXTernaryOp.MAD_LO;
         getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(op, resultKind, op1, op2, op3)));
+        return result;
+    }
+
+    public Value emitRSQRT(Value operand) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emit rsqrt op1=%s ", operand);
+        LIRKind resultKind = LIRKind.value(operand.getPlatformKind());
+        Variable result = getGen().newVariable(resultKind);
+        getGen().append(new PTXLIRStmt.AssignStmt(result, new PTXUnary.Intrinsic(RSQRT, LIRKind.value(operand.getPlatformKind()), operand)));
         return result;
     }
 }
