@@ -256,6 +256,6 @@ public class TornadoOptions {
     /**
      * It enables more aggressive math optimizations
      */
-    public static final boolean MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.mathOptimizations", TRUE);;
+    public static final boolean MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.mathOptimizations", TRUE);
 
 }
