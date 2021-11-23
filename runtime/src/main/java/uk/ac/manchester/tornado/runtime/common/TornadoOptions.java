@@ -29,43 +29,46 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 public class TornadoOptions {
 
+    public static final String FALSE = "FALSE";
+    public static final String TRUE = "TRUE";
+
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */
-    public static boolean printBytecodes = getBooleanValue("tornado.print.bytecodes", "False");
+    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
 
     /**
      * Option to debug dynamic reconfiguration policies.
      * <p>
      * Use `-Dtornado.dynamic.verbose=True`.
      */
-    public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", "False");
+    public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", FALSE);
 
     /**
      * Option to enable experimental and new option for performing automatic full
      * reductions.
      */
-    public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", "True");
+    public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", TRUE);
 
     /**
      * Option to load FPGA pre-compiled binaries.
      */
-    public static StringBuffer FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuffer(System.getProperty("tornado.precompiled.binary", null)) : null;
+    public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
 
     /**
      * Temporal option for disabling null checks for Apache-Flink.
      */
-    public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", "False");
+    public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", FALSE);
 
     /**
      * Option for enabling saving the profiler into a file.
      */
-    public static final boolean PROFILER_LOGS_ACCUMULATE = getBooleanValue("tornado.log.profiler", "False");
+    public static final boolean PROFILER_LOGS_ACCUMULATE = getBooleanValue("tornado.log.profiler", FALSE);
 
     /**
      * Option to enable profiler-feature extractions.
      */
-    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
+    public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
 
     /**
      * Enable/Disable FMA Optimizations. True by default.
@@ -75,32 +78,32 @@ public class TornadoOptions {
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
-    public static final boolean ENABLE_FIX_READS = getBooleanValue("tornado.enable.fix.reads", "True");
+    public static final boolean ENABLE_FIX_READS = getBooleanValue("tornado.enable.fix.reads", TRUE);
 
     /**
      * Enable/Disable events dumping on program finish. False by default.
      */
-    public final static boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", "False"));
+    public static final boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", FALSE));
 
     /**
      * Sets the call stack limit in bytes for the OpenCL backend. Default is 8192.
      */
-    public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
+    public static final int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
 
     /**
      * Sets the call stack limit in bytes for the PTX backend. Default is 8192.
      */
-    public final static int PTX_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
+    public static final int PTX_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
 
     /**
      * Sets the call stack limit in bytes for the SPIRV backend. Default is 8192.
      */
-    public final static int SPIRV_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.spirv.callstack.limit", "8192"));
+    public static final int SPIRV_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.spirv.callstack.limit", "8192"));
 
     /**
      * Prints the generated code by the TornadoVM compiler. Default is False.
      */
-    public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", "False"));
+    public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", FALSE));
 
     /**
      * Prints the generated code by the TornadoVM compiler. Default is False.
@@ -111,7 +114,7 @@ public class TornadoOptions {
      * Once the internal buffers storing events are full, it will start to circulate
      * old events and overwrite them with new ones. Default is True.
      */
-    public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", "True"));
+    public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", TRUE));
 
     /**
      * Sets the array memory alignment for PTX devices. Default is 128 bytes.
@@ -131,7 +134,7 @@ public class TornadoOptions {
     /**
      * Enables OpenCL code generation based on a virtual device. Default is False.
      */
-    public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", "False");
+    public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", FALSE);
 
     /**
      * Specifies the virtual device properties file. Default value is
@@ -145,26 +148,26 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", "False");
+        return getBooleanValue("tornado.profiler", FALSE);
     }
 
     /**
      * Option to redirect profiler output.
      */
-    public static String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
+    public static final String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
 
     /**
      * Dump the Control-Flow-Graph with IGV for the compiled-graph after the last
      * phase in the Low-Tier.
      */
-    public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", "False");
+    public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
 
-    public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", "True");
+    public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", TRUE);
 
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
-    public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", "False");
+    public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", FALSE);
 
     /**
      * Option to sent the feature extraction and/or profiler logs to a specific
@@ -181,7 +184,7 @@ public class TornadoOptions {
      * It enables automatic discovery and parallelisation of loops. Please note that
      * this option is experimental and may cause issues if enabled.
      */
-    public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", "False");
+    public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", FALSE);
 
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be
@@ -189,8 +192,8 @@ public class TornadoOptions {
      *
      * @return boolean.
      */
-    public static boolean PARTIAL_UNROLL() {
-        return getBooleanValue("tornado.experimental.partial.unroll", "False");
+    public static boolean isPartialUnrollEnabled() {
+        return getBooleanValue("tornado.experimental.partial.unroll", FALSE);
     }
 
     private static boolean getBooleanValue(String property, String defaultValue) {
@@ -200,58 +203,54 @@ public class TornadoOptions {
     /**
      * Full Inlining Policy with the TornadoVM JIT compiler. Default is False.
      */
-    public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", "False");;
+    public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", FALSE);
 
     /**
      * It enables inlining during Java bytecode parsing. Default is False.
      */
-    public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", "False");
-
-    // ================================================================================================================
-    // New Flags for SPIR-V and Intel LevelZero
-    // ================================================================================================================
+    public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
 
     /**
      * Use Level Zero as a dispatcher for SPIRV
      */
-    public static boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", "True");
+    public static final boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", TRUE);
 
     /**
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
-    public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", "False");
+    public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", FALSE);
 
     /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
      */
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", "False");
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", FALSE);
 
     /**
      * Use return as a common label and insert the instruction before function
      * ending.
      */
-    public static final boolean SPIRV_RETURN_LABEL = getBooleanValue("tornado.spirv.returnlabel", "True");
+    public static final boolean SPIRV_RETURN_LABEL = getBooleanValue("tornado.spirv.returnlabel", TRUE);
 
     /**
      * Use the heap and frame index for any direct call invocation inside the
      * generated SPIRV kernel.
      */
-    public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", "False");
+    public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", FALSE);
 
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", "False");
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", FALSE);
 
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", "False");
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", FALSE);
 
     /**
      * It enables native math functions for the code generation.
      */
-    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", "False");;
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", TRUE);
 
 }

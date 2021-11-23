@@ -96,7 +96,7 @@ class ReduceTaskSchedule {
 
     private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
         String idTaskName = tsName + "." + taskName;
-        StringBuffer originalBinaries = TornadoOptions.FPGA_BINARIES;
+        StringBuilder originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
             String[] binaries = originalBinaries.toString().split(",");
             if (binaries.length == 1) {
@@ -106,7 +106,7 @@ class ReduceTaskSchedule {
                     sb.append(binary.replaceAll(" ", "")).append(",");
                 }
                 sb = sb.deleteCharAt(sb.length() - 1);
-                originalBinaries = new StringBuffer(sb.toString());
+                originalBinaries = new StringBuilder(sb.toString());
             }
 
             for (int i = 0; i < binaries.length; i += 2) {
