@@ -537,4 +537,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA, resultKind, op1, op2, op3)));
         return result;
     }
+
+    public Value emitRSQRT(Value op) {
+        LIRKind resultKind = LIRKind.value(op.getPlatformKind());
+        Variable result = getGen().newVariable(resultKind);
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.RSQRT, LIRKind.value(op.getPlatformKind()), op)));
+        return result;
+    }
 }

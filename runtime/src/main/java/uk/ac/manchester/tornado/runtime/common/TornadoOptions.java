@@ -253,4 +253,9 @@ public class TornadoOptions {
      */
     public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", TRUE);
 
+    /**
+     * It enables more aggressive math optimizations
+     */
+    public static final boolean MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.mathOptimizations", TRUE);;
+
 }
