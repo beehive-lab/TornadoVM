@@ -108,6 +108,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVConte
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVDecoration;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionControl;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionParameterAttribute;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLinkageType;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralContextDependentNumber;
@@ -952,6 +953,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // --------------------------------------
         // All variable declaration + Lookup buffer access
         // --------------------------------------
+
+        asm.module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.FuncParamAttr(SPIRVFunctionParameterAttribute.NoCapture())));
+        asm.module.add(new SPIRVOpDecorate(heapBaseAddrId, SPIRVDecoration.FuncParamAttr(SPIRVFunctionParameterAttribute.NoWrite())));
+
         blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
         blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
         for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
@@ -986,12 +991,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     private void emitEpilogue(SPIRVAssembler asm) {
-        if (TornadoOptions.SPIRV_RETURN_LABEL) {
-            if (!asm.returnWithValue() && asm.getReturnLabel() != null) {
-                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpReturn");
-                SPIRVInstScope block = asm.getFunctionScope().add(new SPIRVOpLabel(asm.getReturnLabel()));
-                block.add(new SPIRVOpReturn());
-            }
+        if (TornadoOptions.SPIRV_RETURN_LABEL && !asm.returnWithValue() && asm.getReturnLabel() != null) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpReturn");
+            SPIRVInstScope block = asm.getFunctionScope().add(new SPIRVOpLabel(asm.getReturnLabel()));
+            block.add(new SPIRVOpReturn());
         }
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpFunctionEnd");
         asm.closeFunction(asm.getFunctionScope());

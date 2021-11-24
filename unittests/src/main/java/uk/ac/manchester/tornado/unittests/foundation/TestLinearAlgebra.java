@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.spirv;
+package uk.ac.manchester.tornado.unittests.foundation;
 
 import static org.junit.Assert.assertArrayEquals;
 
