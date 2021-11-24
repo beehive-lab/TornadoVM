@@ -479,6 +479,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic LOG2 = new PTXUnaryIntrinsic("lg2.approx", null);
         public static final PTXUnaryIntrinsic SIN = new PTXUnaryIntrinsic("sin.approx", null);
         public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", null);
+        public static final PTXUnaryIntrinsic RSQRT = new PTXUnaryIntrinsic("rsqrt.approx", null);
         public static final PTXUnaryIntrinsic FLOAT_FLOOR = new PTXUnaryIntrinsic(CONVERT, ROUND_NEGATIVE_INFINITY_INTEGER, true, false);
 
         public static final PTXUnaryIntrinsic POPCOUNT = new PTXUnaryIntrinsic("popc") {
