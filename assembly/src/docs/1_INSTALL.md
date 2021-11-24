@@ -4,7 +4,7 @@
 
 The following table includes the platforms that TornadoVM can be executed.
 
-| OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            | 
+| OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            |
 | -------------------------- | ---------------------------------------------------------------------------------------------------- |
 | CentOS >= 7.3              | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
 | Fedora >= 21               | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
@@ -14,11 +14,11 @@ The following table includes the platforms that TornadoVM can be executed.
 | Mac OS X Big Sur 11.5.1    | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
 | Windows 10                 | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported/tested      |
 
-Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs). 
+Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs).
 
 ## 1. Installation
 
-TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
+TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code.
 
 **Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](22_SPIRV_BACKEND_INSTALL.md).
 
@@ -30,11 +30,9 @@ $ make BACKENDS=opencl,ptx,spirv
 
 As well as being built with three compiler backends, TornadoVM can be executed with the following three configurations:
 
-* TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
-* TornadoVM with GraalVM (either with JDK 8, JDK 11 and JDK 16): see the installation
-  guide [here](10_INSTALL_WITH_GRAALVM.md).
-* TornadoVM with JDK11+ (e.g. OpenJDK [11-16], Red Hat Mandrel, Amazon Corretto): see the installation
-  guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
+  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
+  * TornadoVM with GraalVM (either with JDK 11 or JDK 17): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
 
 Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More
 information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).

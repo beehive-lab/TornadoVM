@@ -30,23 +30,6 @@
                 </dependency>
             </dependencies>
         </profile>
-
-        <profile>
-            <id>graal-jdk-8</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>jvmci</groupId>
-                    <artifactId>api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>jvmci</groupId>
-                    <artifactId>hotspot</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
 
     <dependencies>

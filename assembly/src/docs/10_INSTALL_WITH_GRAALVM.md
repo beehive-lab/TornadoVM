@@ -1,4 +1,4 @@
-# Installing TornadoVM with GraalVM 21.2.0
+# Installing TornadoVM with GraalVM 21.3.0
 
 **Pre-requisites**
 
@@ -13,42 +13,37 @@
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
 
-### 1. Download GraalVM Community Edition 21.2.0
+### 1. Download GraalVM Community Edition 21.3.0
 
-GraalVM 21.2.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.2.0).
+GraalVM 21.3.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.3.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.3.0).
 
-The examples below show how to download and extract GraalVM based on JDK 8, 11 and 16 for Linux.
+The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
 
-* Example for GraalVM based on JDK 8:
-```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java8-linux-amd64-21.2.0.tar.gz
-$ tar -xf graalvm-ce-java8-linux-amd64-21.2.0.tar.gz
-```
 * Example for GraalVM based on JDK 11:
 ```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
-$ tar -xf graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java11-linux-amd64-21.3.0.tar.gz
+$ tar -xf graalvm-ce-java11-linux-amd64-21.3.0.tar.gz
 ```
-* Example for GraalVM based on JDK 16:
+* Example for GraalVM based on JDK 17:
 ```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java16-linux-amd64-21.2.0.tar.gz
-$ tar -xf graalvm-ce-java16-linux-amd64-21.2.0.tar.gz
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java17-linux-amd64-21.3.0.tar.gz
+$ tar -xf graalvm-ce-java17-linux-amd64-21.3.0.tar.gz
 ```
 
 
-The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-21.2.0` directory. This directory is used as the JAVA_HOME (See step 2).
+The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-21.3.0` directory. This directory is used as the JAVA_HOME (See step 2).
 
 
 For OSX:
 
 * Example for GraalVM based on JDK 11:
 ```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-darwin-amd64-21.2.0.tar.gz
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java11-darwin-amd64-21.3.0.tar.gz
 ```
 
-* Example for GraalVM based on JDK 16:
+* Example for GraalVM based on JDK 17:
 ```bash
-$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java16-darwin-amd64-21.2.0.tar.gz
+$ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java17-darwin-amd64-21.3.0.tar.gz
 ```
 
 then untar it to the OSX standard JDK location `/Library/Java/JavaVirtualMachines/` or to a folder of your choice.
@@ -71,7 +66,7 @@ The first time you need to create the `etc/sources.env` file and add the followi
 
 ```bash
 #!/bin/bash
-export JAVA_HOME=<path to GraalVM 21.2.0 jdk> ## This path is produced in Step 1
+export JAVA_HOME=<path to GraalVM 21.3.0 jdk> ## This path is produced in Step 1
 export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
 export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -135,13 +130,7 @@ $ cd ~/tornadovm
 $ . etc/sources.env
 ```
 
-To build with GraalVM and JDK 8
-
-```bash
-$ make graal-jdk-8 BACKEND={ptx,opencl}
-```
-
-To build with GraalVM and JDK 11 and JDK 16:
+To build with GraalVM and JDK 11 and JDK 17:
 
 ```bash
 $ make graal-jdk-11-plus BACKEND={ptx,opencl}

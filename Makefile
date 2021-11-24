@@ -11,9 +11,6 @@ build jdk-8:
 jdk-11-plus:
 	./bin/compile.sh jdk-11-plus $(BACKENDS)
 
-graal-jdk-8:
-	./bin/compile.sh graal-jdk-8 $(BACKENDS)
-
 graal-jdk-11-plus:
 	./bin/compile.sh graal-jdk-11-plus $(BACKENDS)
 
@@ -41,7 +38,7 @@ example:
 	tornado --printKernel --debug uk.ac.manchester.tornado.examples.VectorAddInt 8192
 
 tests:
-	tornado --devices 
+	tornado --devices
 	tornado-test.py --ea --verbose
 	tornado-test.py --ea -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh

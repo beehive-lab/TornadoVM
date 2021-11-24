@@ -18,18 +18,19 @@
   TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```bash
-  Red Hat Mandrel 11.0.12 (Mandrel 21.2.0.1 Final) 
-  Amazon Corretto >= 11.0.12+6
-  GraalVM LabsJDK 11.0.11+8 (GraalVM 21.2.0)
-  OpenJDK 11.0.11+9
-  OpenJDK 16.0.2
-  Microsoft Build of OpenJDK (OpenJDK 11.0.12+7)
+  Red Hat Mandrel 11.0.12 (Mandrel 21.3.0.0 Final)
+  Amazon Corretto >= 11.0.12.7
+  GraalVM LabsJDK 11.0.13+7 (GraalVM 21.3.0)
+  OpenJDK 11.0.13+7
+  OpenJDK 17.0.1
+  Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
+  Microsoft Build of OpenJDK (OpenJDK 17.0.1)
   ```
 
 
 ### 1. Download a JDK 11+ distribution
 
-OpenJDK distributions are available to download at [https://adoptopenjdk.net/releases.html](https://adoptopenjdk.net/releases.html).<br/>
+OpenJDK distributions are available to download at [https://adoptium.net/](https://adoptium.net/).<br/>
 Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
 Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).<br/>
 Microsoft OpenJDK releases are available at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download).
@@ -40,7 +41,7 @@ Example:
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
- $ export JAVA_HOME=$PWD/amazon-corretto-11.0.12.7.1-linux-x64
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.13.8.1-linux-x64
 ```
 
 ### 2. Download TornadoVM
