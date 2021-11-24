@@ -77,7 +77,7 @@ Using any text editor create file `<TornadoVM>/etc/sources.env`  with the follow
 #!/bin/bash
 
 # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-export JAVA_HOME="C:/graalvm-ce-java8-21.3.0"
+export JAVA_HOME="C:/graalvm-ce-java11-21.3.0"
 
 ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
 ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD

@@ -19,11 +19,12 @@
 
   ```bash
   Red Hat Mandrel 11.0.12 (Mandrel 21.3.0.0 Final)
-  Amazon Corretto >= 11.0.13+8
+  Amazon Corretto >= 11.0.12.7
   GraalVM LabsJDK 11.0.13+7 (GraalVM 21.3.0)
   OpenJDK 11.0.13+7
   OpenJDK 17.0.1
   Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
+  Microsoft Build of OpenJDK (OpenJDK 17.0.1)
   ```
 
 
