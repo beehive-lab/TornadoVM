@@ -31,7 +31,7 @@ $ make BACKENDS=opencl,ptx,spirv
 As well as being built with three compiler backends, TornadoVM can be executed with the following three configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
-  * TornadoVM with GraalVM (with JDK 11 and JDK 17): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with GraalVM (either with JDK 11 or JDK 17): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
   * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
 
 Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More

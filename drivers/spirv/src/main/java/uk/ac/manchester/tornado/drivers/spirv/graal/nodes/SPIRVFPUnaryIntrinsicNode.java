@@ -113,6 +113,10 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         return operation.toString();
     }
 
+    public SPIRVUnaryOperation getIntrinsicOperation() {
+        return operation;
+    }
+
     public SPIRVUnaryOperation operation() {
         return operation;
     }

@@ -967,9 +967,9 @@ public class SPIRVUnary {
         // @formatter:on
 
         public static final String COS = "cos";
-        final private OpenCLExtendedIntrinsic builtIn;
+        private final OpenCLExtendedIntrinsic builtIn;
 
-        protected Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
+        public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
             super(null, valueKind, value);
             this.builtIn = opcode;
         }
