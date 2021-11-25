@@ -14,12 +14,8 @@ if [[ ! $JAVA_VERSION == "1.8" && ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
   bash ./bin/pullGraalJars.sh
 fi
 
-python scripts/updateMavenSettings.py
-if [ $? -eq 1 ]; then
-  exit 1
-fi
-
 ## Maven clean-up
+echo "mvn -Popencl-backend,ptx-backend,spirv-backend clean"
 mvn -Popencl-backend,ptx-backend,spirv-backend clean
 
 # The maven profiles of each backend use the naming {ptx,opencl}-backend
@@ -70,10 +66,13 @@ options="-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P$1,${selected_backends} "
 if [[ $3 == "OFFLINE" ]]; then
   options="-o $options"
 fi
+
 echo "mvn $options install"
 mvn $options install
 
-if [ $? -eq 0 ]; then
+## Post installation
+if [ $? -eq 0 ]; 
+then
   ## Update all PATHs 
   bash ./bin/updatePATHS.sh
 
