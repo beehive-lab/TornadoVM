@@ -23,6 +23,7 @@
 
 --add-opens java.base/java.lang=tornado.drivers.ptx
 --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.ptx
+--add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.ptx
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.ptx
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.drivers.ptx

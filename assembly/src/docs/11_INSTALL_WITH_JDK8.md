@@ -16,16 +16,48 @@
 ### 1. Download or build JDK 8 with JVMCI support
 TornadoVM is built by using a JDK 1.8 version with JVMCI support. The directory which contains the JDK installation is used as the `JAVA_HOME` (Step 2).
 
-Prebuilt versions of the required JDK are available to download at [https://github.com/graalvm/graal-jvmci-8/releases/tag/jvmci-21.2-b08](https://github.com/graalvm/graal-jvmci-8/releases/tag/jvmci-21.2-b08).
+Prebuilt versions of the required JDK are available to download at [https://github.com/graalvm/graal-jvmci-8/releases/tag/jvmci-21.3-b05](https://github.com/graalvm/graal-jvmci-8/releases/tag/jvmci-21.3-b05).
 
 Example for Linux:
 
 ```bash
- $ wget https://github.com/graalvm/graal-jvmci-8/releases/download/jvmci-21.2-b08/openjdk-8u302+07-jvmci-21.2-b08-linux-amd64.tar.gz
- $ tar -xf openjdk-8u302+07-jvmci-21.2-b08-linux-amd64.tar.gz
+ $ wget https://github.com/graalvm/graal-jvmci-8/releases/download/jvmci-21.3-b05/openjdk-8u302+06-jvmci-21.3-b05-linux-amd64.tar.gz
+ $ tar -xf openjdk-8u302+06-jvmci-21.3-b05-linux-amd64.tar.gz
 ```
-The JDK installation will be found in the `openjdk1.8.0_302-jvmci-21.2-b08` directory. This directory is used as the JAVA_HOME.
+The JDK installation will be found in the `openjdk1.8.0_302-jvmci-21.3-b05` directory. This directory is used as the `JAVA_HOME.`
 
+Complete the `$HOME/.m2/settings.xml` file with the path for the `openjdk1.8.0_302-jvmci-21.3-b05` directory. Fill the `<properties>` with your path to the OpenJDK 8 with JVMCI support. For instance: 
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+	https://maven.apache.org/xsd/settings-1.0.0.xsd">
+ <interactiveMode/>
+ <usePluginRegistry/>
+ 	<offline/>
+		 <pluginGroups/>
+	 <servers/>
+ 	<mirrors/>
+	 <proxies/>
+	 <profiles>
+
+	 <profile>
+		 <id>tornado-jvmci</id>
+		 <activation>
+		 <activeByDefault>true</activeByDefault>
+		 </activation>
+		 <properties>
+			<!-- Your PATH TO JDK with JVMCI Support -->
+			<jvmci.root>/PATH/TO/openjdk1.8.0_302-jvmci-21.3-b05</jvmci.root>  
+			<jvmci.version>1.8.0_302</jvmci.version>
+		 </properties>
+	 </profile>
+
+	 </profiles>
+	 <activeProfiles/>
+</settings>
+```
 
 ### 2. Download TornadoVM
 

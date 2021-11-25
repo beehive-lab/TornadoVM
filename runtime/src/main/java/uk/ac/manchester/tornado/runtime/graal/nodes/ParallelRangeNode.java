@@ -29,6 +29,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 
 @NodeInfo(nameTemplate = "Range")
 public class ParallelRangeNode extends AbstractParallelNode {
@@ -36,9 +37,9 @@ public class ParallelRangeNode extends AbstractParallelNode {
     public static final NodeClass<ParallelRangeNode> TYPE = NodeClass.create(ParallelRangeNode.class);
 
     @Input(InputType.Association)
-    private ParallelOffsetNode offset;
+    private FloatingNode offset;
     @Input(InputType.Association)
-    private ParallelStrideNode stride;
+    private FloatingNode stride;
 
     public ParallelRangeNode(int index, ValueNode range, ParallelOffsetNode offset, ParallelStrideNode stride) {
         super(TYPE, index, range);
@@ -47,11 +48,13 @@ public class ParallelRangeNode extends AbstractParallelNode {
     }
 
     public ParallelOffsetNode offset() {
-        return offset;
+        assert offset instanceof ParallelOffsetNode;
+        return (ParallelOffsetNode) offset;
     }
 
     public ParallelStrideNode stride() {
-        return stride;
+        assert stride instanceof ParallelStrideNode;
+        return (ParallelStrideNode) stride;
     }
 
 }

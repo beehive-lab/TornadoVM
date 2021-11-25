@@ -25,6 +25,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -302,6 +303,12 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitXorFP(Value a, Value b) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public Value emitShl(Value a, Value b) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitShl: %s << %s", a, b);
         LIRKind lirKind = LIRKind.combine(a, b);
@@ -520,6 +527,18 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             resultKindVector = kind3;
         }
         return resultKindVector.getSizeInBytes() * 8;
+    }
+
+    @Override
+    public Value emitMathSignum(Value input) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitMathCopySign(Value magnitude, Value sign) {
+        unimplemented();
+        return null;
     }
 
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {

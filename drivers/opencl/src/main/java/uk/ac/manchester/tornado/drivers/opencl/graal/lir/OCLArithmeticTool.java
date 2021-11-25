@@ -271,6 +271,12 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitXorFP(Value a, Value b) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public Value emitZeroExtend(Value value, int fromBits, int toBits) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitZeroExtend: %s (from %d to %d)", value, fromBits, toBits);
         OCLLIRKindTool kindTool = getGen().getLIRKindTool();
@@ -460,6 +466,18 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             shouldNotReachHere();
         }
         return result;
+    }
+
+    @Override
+    public Value emitMathSignum(Value input) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitMathCopySign(Value magnitude, Value sign) {
+        unimplemented();
+        return null;
     }
 
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
