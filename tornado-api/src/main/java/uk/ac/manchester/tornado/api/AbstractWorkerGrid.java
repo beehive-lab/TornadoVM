@@ -48,7 +48,7 @@ public abstract class AbstractWorkerGrid implements WorkerGrid {
     protected long[] numOfWorkgroups;
     protected long[] globalOffset;
 
-    public AbstractWorkerGrid(long x, long y, long z) {
+    protected AbstractWorkerGrid(long x, long y, long z) {
         globalWork = new long[] { x, y, z };
         globalOffset = new long[] { 0, 0, 0 };
     }
