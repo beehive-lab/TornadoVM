@@ -68,6 +68,7 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -320,7 +321,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 result = createArrayWrapper(type, getDeviceContext(), batchSize);
             } else {
                 final Class<?> componentType = type.getComponentType();
-                if (!RuntimeUtilities.isPrimitiveArray(componentType)) {
+                if (RuntimeUtilities.isPrimitiveArray(componentType)) {
+                    result = createMultiArrayWrapper(componentType, type, batchSize);
+                } else {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }
@@ -349,6 +352,30 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             result = new PTXLongArrayWrapper(deviceContext);
         } else if (type == char[].class) {
             result = new PTXCharArrayWrapper(deviceContext);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
+    }
+
+    private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, long batchSize) {
+        ObjectBuffer result = null;
+        PTXDeviceContext deviceContext = getDeviceContext();
+
+        if (componentType == int[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXIntArrayWrapper::new, batchSize);
+        } else if (componentType == short[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXShortArrayWrapper::new, batchSize);
+        } else if (componentType == char[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXCharArrayWrapper::new, batchSize);
+        } else if (componentType == byte[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXByteArrayWrapper::new, batchSize);
+        } else if (componentType == float[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXFloatArrayWrapper::new, batchSize);
+        } else if (componentType == double[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXDoubleArrayWrapper::new, batchSize);
+        } else if (componentType == long[].class) {
+            result = new PTXMultiDimArrayWrapper<>(deviceContext, PTXLongArrayWrapper::new, batchSize);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }

@@ -162,7 +162,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
     // FIXME <REFACTOR> <Same for all backends>
     private SPIRVByteBuffer getArrayHeader() {
-        final SPIRVByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) bufferOffset, arrayHeaderSize);
+        final SPIRVByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) getBufferOffset(), arrayHeaderSize);
         header.buffer.clear();
         return header;
     }
