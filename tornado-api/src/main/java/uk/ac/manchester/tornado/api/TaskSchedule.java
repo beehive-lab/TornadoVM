@@ -70,9 +70,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 /**
  * Tornado Task Schedule API.
  * <p>
- * Task-based parallel API to express code to be compiled and executed from Java
- * to OpenCL a t runtime. The Tornado runtime executes the generated OpenCL
- * program on any OpenCL-compatible device.
+ * Task-based parallel API to express methods to be accelerated
+ * on any OpenCL, PTX or SPIRV compatible device.
  * </p>
  */
 public class TaskSchedule implements TornadoAPI, ProfileInterface {
