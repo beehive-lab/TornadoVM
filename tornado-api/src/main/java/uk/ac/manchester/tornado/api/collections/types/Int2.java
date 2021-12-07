@@ -52,25 +52,25 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     public static final Class<Int2> TYPE = Int2.class;
 
-    private static final String numberFormat = "{ x=%-7d, y=%-7d }";
+    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d }";
 
     /**
      * backing array
      */
     @Payload
-    final protected int[] storage;
+    private final int[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 2;
+    private static final int NUM_ELEMENTS = 2;
 
     public Int2(int[] storage) {
         this.storage = storage;
     }
 
     public Int2() {
-        this(new int[numElements]);
+        this(new int[NUM_ELEMENTS]);
     }
 
     public Int2(int x, int y) {
@@ -137,17 +137,17 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public String toString() {
-        return toString(numberFormat);
+        return toString(NUMBER_FORMAT);
     }
 
-    protected static Int2 loadFromArray(final int[] array, int index) {
+    static Int2 loadFromArray(final int[] array, int index) {
         final Int2 result = new Int2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         return result;
     }
 
-    protected final void storeToArray(final int[] array, int index) {
+    void storeToArray(final int[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
     }
@@ -164,7 +164,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**

@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 @Vector
 public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
 
-    private static final String numberFormat = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
+    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
 
     public static final Class<Byte4> TYPE = Byte4.class;
 
@@ -58,19 +58,19 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
      * backing array
      */
     @Payload
-    final protected byte[] storage;
+    final byte[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 4;
+    private static final int NUM_ELEMENTS = 4;
 
     public Byte4(byte[] storage) {
         this.storage = storage;
     }
 
     public Byte4() {
-        this(new byte[numElements]);
+        this(new byte[NUM_ELEMENTS]);
     }
 
     public Byte4(byte x, byte y, byte z, byte w) {
@@ -149,10 +149,10 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public String toString() {
-        return toString(numberFormat);
+        return toString(NUMBER_FORMAT);
     }
 
-    protected static Byte4 loadFromArray(final byte[] array, int index) {
+    static Byte4 loadFromArray(final byte[] array, int index) {
         final Byte4 result = new Byte4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -161,7 +161,7 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final byte[] array, int index) {
+    void storeToArray(final byte[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -180,7 +180,7 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /*

@@ -37,7 +37,7 @@ public class ASMMethodVisitor extends MethodVisitor {
 
     @Override
     public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
-        String annotationName = descriptor.replaceFirst("L", "").replaceAll(";", "").replaceAll("/", ".");
+        String annotationName = descriptor.replaceFirst("L", "").replace(";", "").replace("/", ".");
 
         if (parallelAnnotationClassPath.equals(annotationName)) {
             ParallelAnnotationProvider parallelAnnotation = new ParallelAnnotation(start[0].getOffset(), end[0].getOffset() - start[0].getOffset(), index[0]);

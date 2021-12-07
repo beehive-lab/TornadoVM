@@ -43,10 +43,10 @@ package uk.ac.manchester.tornado.api.exceptions;
 
 public class TornadoBailoutRuntimeException extends RuntimeException {
 
-    private String message;
+    private final String message;
     private Exception e;
-    final String RESET = "\u001B[0m";
-    final String RED = "\u001B[31m";
+    static final String RESET = "\u001B[0m";
+    static final String RED = "\u001B[31m";
 
     public TornadoBailoutRuntimeException(final String msg) {
         message = RED + msg + RESET;

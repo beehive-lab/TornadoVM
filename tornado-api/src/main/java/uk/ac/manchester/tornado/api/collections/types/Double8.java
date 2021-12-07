@@ -56,19 +56,19 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      * backing array
      */
     @Payload
-    final protected double[] storage;
+    final double[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 8;
+    private static final int NUM_ELEMENTS = 8;
 
-    protected Double8(double[] storage) {
+    private Double8(double[] storage) {
         this.storage = storage;
     }
 
     public Double8() {
-        this(new double[numElements]);
+        this(new double[NUM_ELEMENTS]);
     }
 
     public Double8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
@@ -193,16 +193,16 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_8);
     }
 
-    protected static Double8 loadFromArray(final double[] array, int index) {
+    static Double8 loadFromArray(final double[] array, int index) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, array[index + i]);
         }
         return result;
     }
 
-    protected final void storeToArray(final double[] array, int index) {
-        for (int i = 0; i < numElements; i++) {
+    void storeToArray(final double[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             array[index + i] = get(i);
         }
     }
@@ -219,7 +219,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**
@@ -227,7 +227,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      */
     public static Double8 add(Double8 a, Double8 b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
@@ -235,7 +235,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 add(Double8 a, double b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
@@ -243,7 +243,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 sub(Double8 a, Double8 b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
@@ -251,7 +251,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 sub(Double8 a, double b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
@@ -259,7 +259,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 div(Double8 a, Double8 b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
@@ -267,7 +267,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 div(Double8 a, double value) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
@@ -275,7 +275,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 mult(Double8 a, Double8 b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
@@ -283,7 +283,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 mult(Double8 a, double value) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
@@ -291,7 +291,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 min(Double8 a, Double8 b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
@@ -299,7 +299,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static double min(Double8 value) {
         double result = Double.MAX_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
@@ -307,7 +307,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 max(Double8 a, Double8 b) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
@@ -315,7 +315,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static double max(Double8 value) {
         double result = Double.MIN_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
@@ -323,7 +323,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static Double8 sqrt(Double8 a) {
         final Double8 result = new Double8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;

@@ -114,72 +114,72 @@ public class FloatSE3 {
         final float one_6th = 1f / 6f;
         final float one_20th = 1f / 20f;
 
-        // VectorFloat3 result = new VectorFloat3(v.());
-        Float3 mu_lo = mu.getHigh();
+        Float3 muLo = mu.getHigh();
         Float3 w = mu.getLow();
         final float theta_sq = dot(w, w);
         final float theta = sqrt(theta_sq);
 
-        float A,B,C;
+        float a;
+        float b;
+        float c;
 
-        Float3 crossProduct = cross(w, mu_lo);
+        Float3 crossProduct = cross(w, muLo);
 
-        // final Float3 translation = result.get(0);
         if (theta_sq < 1e-8f) {
-            A = 1f - one_6th * theta_sq;
-            B = 0.5f;
-            translation = add(mu_lo, mult(crossProduct, 0.5f));
+            a = 1f - one_6th * theta_sq;
+            b = 0.5f;
+            translation = add(muLo, mult(crossProduct, 0.5f));
         } else {
             if (theta_sq < 1e-6f) {
-                C = one_6th * (1 - one_20th * theta_sq);
-                A = 1 - theta_sq * C;
-                B = (float) (0.5 - 0.25 * one_6th * theta_sq);
+                c = one_6th * (1 - one_20th * theta_sq);
+                a = 1 - theta_sq * c;
+                b = (float) (0.5 - 0.25 * one_6th * theta_sq);
             } else {
                 final float inv_theta = 1f / theta;
-                A = (float) (sin(theta) * inv_theta);
-                B = (float) ((1 - cos(theta)) * (sq(inv_theta)));
-                C = (1 - A) * (sq(inv_theta));
+                a = (float) (sin(theta) * inv_theta);
+                b = (float) ((1 - cos(theta)) * (sq(inv_theta)));
+                c = (1 - a) * (sq(inv_theta));
             }
 
             Float3 wcp = cross(w, crossProduct);
-            Float3 Btmp = add(mult(crossProduct, B), mult(wcp, C));
-            translation = add(mu_lo, Btmp);
+            Float3 bTemp = add(mult(crossProduct, b), mult(wcp, c));
+            translation = add(muLo, bTemp);
 
         }
-        rodrigues_so3_exp(w, A, B);
+        rodriguesSo3Exp(w, a, b);
 
     }
 
-    private void rodrigues_so3_exp(Float3 w, float A, float B) {
+    private void rodriguesSo3Exp(Float3 w, float a, float b) {
         {
             final float wx2 = sq(w.getX());
             final float wy2 = sq(w.getY());
             final float wz2 = sq(w.getZ());
 
-            matrix.set(0, 0, 1f - B * (wy2 + wz2));
-            matrix.set(1, 1, 1f - B * (wx2 + wz2));
-            matrix.set(2, 2, 1f - B * (wx2 + wy2));
+            matrix.set(0, 0, 1f - b * (wy2 + wz2));
+            matrix.set(1, 1, 1f - b * (wx2 + wz2));
+            matrix.set(2, 2, 1f - b * (wx2 + wy2));
         }
 
         {
-            final float a = A * w.getZ();
-            final float b = B * (w.getX() * w.getY());
-            matrix.set(0, 1, b - a);
-            matrix.set(1, 0, b + a);
+            final float aTemporal = a * w.getZ();
+            final float bTemporal = b * (w.getX() * w.getY());
+            matrix.set(0, 1, bTemporal - aTemporal);
+            matrix.set(1, 0, bTemporal + aTemporal);
         }
 
         {
-            final float a = A * w.getY();
-            final float b = B * (w.getX() * w.getZ());
-            matrix.set(0, 2, b + a);
-            matrix.set(2, 0, b - a);
+            final float aTemporal = a * w.getY();
+            final float bTemporal = b * (w.getX() * w.getZ());
+            matrix.set(0, 2, bTemporal + aTemporal);
+            matrix.set(2, 0, bTemporal - aTemporal);
         }
 
         {
-            final float a = A * w.getX();
-            final float b = B * (w.getY() * w.getZ());
-            matrix.set(1, 2, b - a);
-            matrix.set(2, 1, b + a);
+            final float aTemporal = a * w.getX();
+            final float bTemporal = b * (w.getY() * w.getZ());
+            matrix.set(1, 2, bTemporal - aTemporal);
+            matrix.set(2, 1, bTemporal + aTemporal);
         }
     }
 
@@ -207,13 +207,10 @@ public class FloatSE3 {
 
     // converts a SE3 into a 4x4 matrix
     public Matrix4x4Float toMatrix4() {
-
-        Matrix4x4Float R = new Matrix4x4Float();
-        R.set(matrix);
-
-        R.set(3, 3, 1f);
-
-        return R;
+        Matrix4x4Float newMatrix = new Matrix4x4Float();
+        newMatrix.set(this.matrix);
+        newMatrix.set(3, 3, 1f);
+        return newMatrix;
     }
 
     @Override

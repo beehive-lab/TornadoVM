@@ -44,12 +44,12 @@ package uk.ac.manchester.tornado.api.collections.types;
 public class IntOps {
 
     public static final float EPSILON = 1e-7f;
-    public static final String fmt = "%d";
-    public static final String fmt2 = "{%d,%d}";
-    public static final String fmt3 = "{%d,%d,%d}";
-    public static final String fmt4 = "{%d,%d,%d,%d}";
-    public static final String fmt6 = "{%d,%d,%d,%d,%d,%d}";
-    public static final String fmt8 = "{%d,%d,%d,%d,%d,%d,%d,%d}";
+    public static final String FMT = "%d";
+    public static final String FMT_2 = "{%d,%d}";
+    public static final String FMT_3 = "{%d,%d,%d}";
+    public static final String FMT_4 = "{%d,%d,%d,%d}";
+    public static final String FMT_6 = "{%d,%d,%d,%d,%d,%d}";
+    public static final String FMT_8 = "{%d,%d,%d,%d,%d,%d,%d,%d}";
 
     public static boolean compare(float a, float b) {
         return (a == b);

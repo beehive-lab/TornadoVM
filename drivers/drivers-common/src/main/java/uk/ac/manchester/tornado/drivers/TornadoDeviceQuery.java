@@ -56,7 +56,7 @@ public class TornadoDeviceQuery {
 
     static {
         colourMapping = new HashMap<>();
-        colourMapping.put(TornadoVMBackendType.OpenCL, ColoursTerminal.CYAN);
+        colourMapping.put(TornadoVMBackendType.OPENCL, ColoursTerminal.CYAN);
         colourMapping.put(TornadoVMBackendType.PTX, ColoursTerminal.GREEN);
         colourMapping.put(TornadoVMBackendType.SPIRV, ColoursTerminal.PURPLE);
     }

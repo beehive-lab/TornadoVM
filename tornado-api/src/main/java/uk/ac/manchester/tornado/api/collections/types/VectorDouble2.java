@@ -49,13 +49,13 @@ public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    final protected double[] storage;
+    protected final double[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
-    final private static int elementSize = 2;
+    private final int numElements;
+    private static final int ELEMENT_SIZE = 2;
 
     /**
      * Creates a vector using the provided backing array
@@ -72,7 +72,7 @@ public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
      * Creates a vector using the provided backing array
      */
     public VectorDouble2(double[] array) {
-        this(array.length / elementSize, array);
+        this(array.length / ELEMENT_SIZE, array);
     }
 
     /**
@@ -81,11 +81,11 @@ public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      */
     public VectorDouble2(int numElements) {
-        this(numElements, new double[numElements * elementSize]);
+        this(numElements, new double[numElements * ELEMENT_SIZE]);
     }
 
     private int toIndex(int index) {
-        return (index * elementSize);
+        return (index * ELEMENT_SIZE);
     }
 
     /**
@@ -149,7 +149,7 @@ public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public String toString() {
-        if (this.numElements > elementSize) {
+        if (this.numElements > ELEMENT_SIZE) {
             return String.format("VectorDouble2 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();

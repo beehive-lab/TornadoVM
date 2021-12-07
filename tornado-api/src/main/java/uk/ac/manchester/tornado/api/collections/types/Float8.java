@@ -56,19 +56,19 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
      * backing array
      */
     @Payload
-    final protected float[] storage;
+    final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 8;
+    private static final int NUM_ELEMENTS = 8;
 
     public Float8(float[] storage) {
         this.storage = storage;
     }
 
     public Float8() {
-        this(new float[numElements]);
+        this(new float[NUM_ELEMENTS]);
     }
 
     public Float8(float s0, float s1, float s2, float s3, float s4, float s5, float s6, float s7) {
@@ -193,16 +193,16 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return toString(FloatOps.FMT_8);
     }
 
-    protected static Float8 loadFromArray(final float[] array, int index) {
+    static Float8 loadFromArray(final float[] array, int index) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, array[index + i]);
         }
         return result;
     }
 
-    protected final void storeToArray(final float[] array, int index) {
-        for (int i = 0; i < numElements; i++) {
+    void storeToArray(final float[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             array[index + i] = get(i);
         }
     }
@@ -219,7 +219,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**
@@ -227,7 +227,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
      */
     public static Float8 add(Float8 a, Float8 b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
@@ -235,7 +235,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 add(Float8 a, float b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
@@ -243,7 +243,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 sub(Float8 a, Float8 b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
@@ -251,7 +251,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 sub(Float8 a, float b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
@@ -259,7 +259,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 div(Float8 a, Float8 b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
@@ -267,7 +267,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 div(Float8 a, float value) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
@@ -275,7 +275,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 mult(Float8 a, Float8 b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
@@ -283,7 +283,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 mult(Float8 a, float value) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
@@ -291,7 +291,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 min(Float8 a, Float8 b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
@@ -299,7 +299,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static float min(Float8 value) {
         float result = Float.MAX_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
@@ -307,7 +307,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 max(Float8 a, Float8 b) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
@@ -315,7 +315,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static float max(Float8 value) {
         float result = Float.MIN_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
@@ -323,7 +323,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float8 sqrt(Float8 a) {
         final Float8 result = new Float8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;

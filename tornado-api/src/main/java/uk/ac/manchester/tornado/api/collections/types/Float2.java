@@ -56,19 +56,19 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
      * backing array
      */
     @Payload
-    final protected float[] storage;
+    final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 2;
+    private static final int NUM_ELEMENTS = 2;
 
-    protected Float2(float[] storage) {
+    private Float2(float[] storage) {
         this.storage = storage;
     }
 
     public Float2() {
-        this(new float[numElements]);
+        this(new float[NUM_ELEMENTS]);
     }
 
     public Float2(float x, float y) {
@@ -130,14 +130,14 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return toString(FloatOps.FMT_2);
     }
 
-    protected static Float2 loadFromArray(final float[] array, int index) {
+    static Float2 loadFromArray(final float[] array, int index) {
         final Float2 result = new Float2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         return result;
     }
 
-    protected final void storeToArray(final float[] array, int index) {
+    void storeToArray(final float[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
     }
@@ -154,7 +154,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**
