@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
+ * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2021, APT Group, Department of Computer Science,
@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.spirv.mm;
+package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 
@@ -31,25 +31,25 @@ import java.util.function.Function;
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
-public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
+public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
 
-    private Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory;
-    private SPIRVLongArrayWrapper tableWrapper;
+    private Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> innerWrapperFactory;
+    private PTXLongArrayWrapper tableWrapper;
     private long[] addresses;
-    private SPIRVArrayWrapper<E>[] wrappers;
-    private SPIRVDeviceContext deviceContext;
+    private PTXArrayWrapper<E>[] wrappers;
+    private PTXDeviceContext deviceContext;
 
-    public SPIRVMultiDimArrayWrapper(SPIRVDeviceContext deviceContext, Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory, long batchSize) {
-        this(deviceContext, innerWrapperFactory, false, batchSize);
+    public PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, long batchSize) {
+        this(device, factory, false, batchSize);
     }
 
-    private SPIRVMultiDimArrayWrapper(SPIRVDeviceContext deviceContext, Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory, boolean isFinal, long batchSize) {
-        super(deviceContext, JavaKind.Object, isFinal, batchSize);
-        this.deviceContext = deviceContext;
-        this.innerWrapperFactory = innerWrapperFactory;
-        this.tableWrapper = new SPIRVLongArrayWrapper(deviceContext, false, batchSize);
+    private PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
+        super(device, JavaKind.Object, isFinal);
+        this.deviceContext = device;
+        innerWrapperFactory = factory;
+        tableWrapper = new PTXLongArrayWrapper(device);
     }
 
     @Override
@@ -87,8 +87,20 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         return tableWrapper.size();
     }
 
-    private E[] innerCast(T value) {
-        return (E[]) value;
+    @Override
+    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+
+        if (batchSize > 0) {
+            throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported. BatchSize = " + batchSize + " (bytes)");
+        }
+
+        if (Array.getLength(value) < 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + Array.getLength(value));
+        }
+        addresses = new long[Array.getLength(value)];
+        wrappers = new PTXArrayWrapper[Array.getLength(value)];
+        tableWrapper.allocate(addresses, batchSize);
+        allocateElements((T) value, batchSize);
     }
 
     private void allocateElements(T values, long batchSize) {
@@ -101,38 +113,8 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());
-            throw new RuntimeException(e);
+            System.exit(-1);
         }
-    }
-
-    @Override
-    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        if (batchSize > 0) {
-            throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported. BatchSize = " + batchSize + " (bytes)");
-        }
-
-        if (Array.getLength(value) < 0) {
-            throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + Array.getLength(value));
-        }
-        addresses = new long[Array.getLength(value)];
-        wrappers = new SPIRVArrayWrapper[Array.getLength(value)];
-        tableWrapper.allocate(addresses, batchSize);
-        allocateElements((T) value, batchSize);
-    }
-
-    private int readElements(T values) {
-        final E[] elements = innerCast(values);
-        // XXX: Offset is 0
-        for (int i = 0; i < elements.length; i++) {
-            wrappers[i].read(elements[i], 0, null, false);
-        }
-        deviceContext.enqueueBarrier(deviceContext.getDeviceIndex());
-        return 0;
-    }
-
-    @Override
-    protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
-        return readElements(value);
     }
 
     private int writeElements(T values) {
@@ -140,12 +122,44 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         for (int i = 0; i < elements.length; i++) {
             wrappers[i].enqueueWrite(elements[i], 0, 0, null, false);
         }
-        deviceContext.enqueueBarrier(deviceContext.getDeviceIndex());
-        return 0;
+        return deviceContext.enqueueBarrier();
+    }
+
+    private int readElements(T values) {
+        final E[] elements = innerCast(values);
+        // XXX: Offset is 0
+        for (int i = 0; i < elements.length; i++) {
+            wrappers[i].enqueueRead(elements[i], 0, null, false);
+        }
+        return deviceContext.enqueueBarrier();
+    }
+
+    @SuppressWarnings("unchecked")
+    private E[] innerCast(T value) {
+        return (E[]) value;
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
+    protected int enqueueReadArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents) {
+        return readElements(value);
+    }
+
+    @Override
+    protected int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents) {
+        if (hostOffset > 0) {
+            System.out.println("[WARNING] writing in offset 0");
+        }
+        tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
+        return writeElements(value);
+    }
+
+    @Override
+    protected int readArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents) {
+        return readElements(value);
+    }
+
+    @Override
+    protected void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents) {
         if (hostOffset > 0) {
             System.out.println("[WARNING] writing in offset 0");
         }
@@ -153,17 +167,4 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         writeElements(value);
     }
 
-    @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
-        return readElements(value);
-    }
-
-    @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
-        if (hostOffset > 0) {
-            System.out.println("[WARNING] writing in offset 0");
-        }
-        tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
-        return writeElements(value);
-    }
 }
