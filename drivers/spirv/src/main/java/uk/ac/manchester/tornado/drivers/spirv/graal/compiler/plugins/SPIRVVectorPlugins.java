@@ -20,7 +20,10 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.GetArrayNode;
@@ -107,6 +110,20 @@ public class SPIRVVectorPlugins {
                 return true;
             }
         });
+
+        r.register2("set", Receiver.class, spirvVectorKind.getJavaClass(), new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                if (receiver.get() instanceof ParameterNode) {
+                    final AddressNode address = new OffsetAddressNode(receiver.get(), null);
+                    final VectorStoreGlobalMemory store = new VectorStoreGlobalMemory(spirvVectorKind, address, value);
+                    b.add(b.append(store));
+                    return true;
+                }
+                return false;
+            }
+        });
+
 
         r.register3("set", Receiver.class, int.class, elementType, new InvocationPlugin() {
             @Override

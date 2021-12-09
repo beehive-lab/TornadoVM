@@ -235,8 +235,6 @@ static jbyteArray array_from_stream(JNIEnv *env, CUstream *stream) {
     CUresult result = cuMemcpyDtoHAsync(native_array + hostOffset, devicePtr, (size_t) length, stream);\
     LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsync", result);                                               \
     record_event(&afterEvent, &stream);                                                     \
-    result = cuMemFreeHost(native_array);                                                   \
-    LOG_PTX_AND_VALIDATE("cuMemFreeHost", result);                                                   \
     env->ReleasePrimitiveArrayCritical(array, native_array, 0);                             \
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 
