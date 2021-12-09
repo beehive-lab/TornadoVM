@@ -58,12 +58,12 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
      * backing array
      */
     @Payload
-    protected final int[] storage;
+    private final int[] storage;
 
     /**
      * number of elements in the storage
      */
-    static final private int NUM_ELEMENTS = 4;
+    private static final int NUM_ELEMENTS = 4;
 
     public Int4(int[] storage) {
         this.storage = storage;
@@ -160,7 +160,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return toString(NUMBER_FORMAT);
     }
 
-    protected static Int4 loadFromArray(final int[] array, int index) {
+    static Int4 loadFromArray(final int[] array, int index) {
         final Int4 result = new Int4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -169,7 +169,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final int[] array, int index) {
+    void storeToArray(final int[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();

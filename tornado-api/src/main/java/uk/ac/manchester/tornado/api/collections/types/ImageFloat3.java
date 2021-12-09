@@ -49,23 +49,23 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected float[] storage;
+    protected final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
-    final private static int elementSize = 3;
+    private final int numElements;
+    private static final int ELEMENT_SIZE = 3;
 
     /**
      * Number of rows
      */
-    final protected int Y;
+    protected final int Y;
 
     /**
      * Number of columns
      */
-    final protected int X;
+    protected final int X;
 
     /**
      * Storage format for matrix
@@ -81,7 +81,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
         storage = array;
         X = width;
         Y = height;
-        numElements = X * Y * elementSize;
+        numElements = X * Y * ELEMENT_SIZE;
     }
 
     /**
@@ -93,11 +93,11 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
      *            number of columns
      */
     public ImageFloat3(int width, int height) {
-        this(width, height, new float[width * height * elementSize]);
+        this(width, height, new float[width * height * ELEMENT_SIZE]);
     }
 
     public ImageFloat3(float[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+        this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
     }
 
     public float[] getArray() {
@@ -105,7 +105,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     private int toIndex(int x, int y) {
-        return elementSize * (x + (y * X));
+        return ELEMENT_SIZE * (x + (y * X));
     }
 
     public Float3 get(int x) {

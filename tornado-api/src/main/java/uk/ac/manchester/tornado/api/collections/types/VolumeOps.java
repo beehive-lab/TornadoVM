@@ -53,7 +53,6 @@ public class VolumeOps {
 
         final Int3 base = new Int3((int) tmp.getX(), (int) tmp.getY(), (int) tmp.getZ());
 
-        // factor.frac();
         final Int3 zeros = new Int3();
         final Int3 limits = Int3.sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
 

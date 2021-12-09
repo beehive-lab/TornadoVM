@@ -56,19 +56,19 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
      * backing array
      */
     @Payload
-    final protected short[] storage;
+    private final short[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 2;
+    private static final int NUM_ELEMENTS = 2;
 
     public Short2(short[] storage) {
         this.storage = storage;
     }
 
     public Short2() {
-        this(new short[numElements]);
+        this(new short[NUM_ELEMENTS]);
     }
 
     public Short2(short x, short y) {
@@ -130,14 +130,14 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
         return toString(ShortOps.FMT_2);
     }
 
-    protected static Short2 loadFromArray(final short[] array, int index) {
+    static Short2 loadFromArray(final short[] array, int index) {
         final Short2 result = new Short2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         return result;
     }
 
-    protected final void storeToArray(final short[] array, int index) {
+    void storeToArray(final short[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
     }
@@ -154,7 +154,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /*
@@ -233,5 +233,4 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     public static boolean isEqual(Short2 a, Short2 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
-
 }

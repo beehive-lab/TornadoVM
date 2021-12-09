@@ -242,7 +242,7 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
     public String toString() {
         String result = String.format("ImageByte4 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(ByteOps.fmt4);
+            result += "\n" + toString(ByteOps.FMT_4);
         }
         return result;
     }

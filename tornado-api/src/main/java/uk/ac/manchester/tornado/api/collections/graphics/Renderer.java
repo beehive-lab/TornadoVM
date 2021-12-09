@@ -180,16 +180,16 @@ public class Renderer {
     }
 
     public static void renderDepth(ImageByte4 output, ImageFloat depthMap, float nearPlane, float farPlane) {
-        final Byte4 BLACK = new Byte4((byte) 255, (byte) 255, (byte) 255, (byte) 0);
-        final Byte4 ZERO = new Byte4();
+        final Byte4 blackPixel = new Byte4((byte) 255, (byte) 255, (byte) 255, (byte) 0);
+        final Byte4 zero = new Byte4();
         for (@Parallel int y = 0; y < depthMap.Y(); y++) {
             for (@Parallel int x = 0; x < depthMap.X(); x++) {
                 float depth = depthMap.get(x, y);
                 Byte4 pixel = null;
                 if (depth < nearPlane) {
-                    pixel = BLACK; // black
+                    pixel = blackPixel; // black
                 } else if (depth >= farPlane) {
-                    pixel = ZERO;
+                    pixel = zero;
                 } else {
                     final float h = ((depth - nearPlane) / (farPlane - nearPlane)) * 6f;
                     final int sextant = (int) h;
@@ -216,7 +216,7 @@ public class Renderer {
                             pixel = new Byte4((byte) 191, (byte) 64, (byte) (255f * mid2), (byte) 0);
                             break;
                         default:
-                            pixel = ZERO;
+                            pixel = zero;
                     }
                 }
                 output.set(x, y, pixel);
@@ -272,6 +272,8 @@ public class Renderer {
                 r = v;
                 g = m;
                 b = mid2;
+                break;
+            default:
                 break;
         }
         rgb.setX((short) (r * 255));

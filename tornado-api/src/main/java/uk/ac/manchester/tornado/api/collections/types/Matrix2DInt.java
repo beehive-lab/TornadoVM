@@ -220,7 +220,7 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     public String toString() {
         String result = String.format("MatrixInt <%d x %d>", M, N);
         if (M < 16 && N < 16) {
-            result += "\n" + toString(IntOps.fmt);
+            result += "\n" + toString(IntOps.FMT);
         }
         return result;
     }

@@ -53,9 +53,9 @@ public class ChromeEventJSonWriter extends JSonWriter<ChromeEventJSonWriter> {
         objectStart();
         arrayStart("traceEvents");
         object(() -> {
-            object("args", () -> {
-                kv("name", "Tornado");
-            });
+            object("args", () ->
+                kv("name", "Tornado")
+            );
             kv("ph", "M");
             pidAndTid();
             kv("name", "tornadovm");

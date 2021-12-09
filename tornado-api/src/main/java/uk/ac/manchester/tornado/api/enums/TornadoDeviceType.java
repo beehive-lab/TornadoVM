@@ -44,7 +44,7 @@ package uk.ac.manchester.tornado.api.enums;
 public enum TornadoDeviceType {
 
     // @formatter:off
-    Unknown,
+    UNKNOWN,
     DEFAULT,
     CPU,
     GPU,
