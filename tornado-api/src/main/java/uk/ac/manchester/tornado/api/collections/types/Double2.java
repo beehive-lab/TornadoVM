@@ -56,19 +56,19 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
      * backing array
      */
     @Payload
-    final protected double[] storage;
+    final double[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 2;
+    private static final int NUM_ELEMENTS = 2;
 
     public Double2(double[] storage) {
         this.storage = storage;
     }
 
     public Double2() {
-        this(new double[numElements]);
+        this(new double[NUM_ELEMENTS]);
     }
 
     public Double2(double x, double y) {
@@ -130,14 +130,14 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_2);
     }
 
-    protected static Double2 loadFromArray(final double[] array, int index) {
+    static Double2 loadFromArray(final double[] array, int index) {
         final Double2 result = new Double2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         return result;
     }
 
-    protected final void storeToArray(final double[] array, int index) {
+    void storeToArray(final double[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
     }
@@ -154,7 +154,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**

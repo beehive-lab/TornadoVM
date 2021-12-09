@@ -51,22 +51,22 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected float[] storage;
+    protected final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
+    private final int numElements;
 
     /**
      * Number of rows
      */
-    final protected int Y;
+    protected final int Y;
 
     /**
      * Number of columns
      */
-    final protected int X;
+    protected final int X;
 
     /**
      * Storage format for matrix
@@ -200,7 +200,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
         for (float v : storage) {
             result += v;
         }
-        return result / (float) (X * Y);
+        return result / (X * Y);
     }
 
     public float min() {
@@ -226,7 +226,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
             float v = storage[i];
             v -= mean;
             v *= v;
-            varience = v / (float) X;
+            varience = v / X;
         }
         return TornadoMath.sqrt(varience);
     }

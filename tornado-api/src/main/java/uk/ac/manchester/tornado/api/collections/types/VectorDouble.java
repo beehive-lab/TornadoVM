@@ -50,7 +50,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     private final int numElements;
     private final double[] storage;
-    private static final int elementSize = 1;
+    private static final int ELEMENT_SIZE = 1;
 
     protected VectorDouble(int numElements, double[] array) {
         this.numElements = numElements;
@@ -74,7 +74,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *            vector to be stored
      */
     public VectorDouble(double[] storage) {
-        this(storage.length / elementSize, storage);
+        this(storage.length / ELEMENT_SIZE, storage);
     }
 
     public double[] getArray() {
@@ -218,7 +218,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * @return String
      */
     public String toString(String fmt) {
-        StringBuffer sb = new StringBuffer("[");
+        StringBuilder sb = new StringBuilder("[");
         sb.append("[ ");
         for (int i = 0; i < numElements; i++) {
             sb.append(String.format(fmt, get(i)) + " ");

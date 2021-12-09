@@ -49,13 +49,13 @@ public class VectorInt8 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    final protected int[] storage;
+    protected final int[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
-    final private static int elementSize = 8;
+    private final int numElements;
+    private static final int elementSizELEMENT_SIZE = 8;
 
     /**
      * Creates a vector using the provided backing arrayR R
@@ -72,7 +72,7 @@ public class VectorInt8 implements PrimitiveStorage<DoubleBuffer> {
      * Creates a vector using the provided backing array
      */
     public VectorInt8(int[] array) {
-        this(array.length / elementSize, array);
+        this(array.length / elementSizELEMENT_SIZE, array);
     }
 
     /**
@@ -81,11 +81,11 @@ public class VectorInt8 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      */
     public VectorInt8(int numElements) {
-        this(numElements, new int[numElements * elementSize]);
+        this(numElements, new int[numElements * elementSizELEMENT_SIZE]);
     }
 
     private int toIndex(int index) {
-        return (index * elementSize);
+        return (index * elementSizELEMENT_SIZE);
     }
 
     /**
@@ -151,7 +151,7 @@ public class VectorInt8 implements PrimitiveStorage<DoubleBuffer> {
 
 
     public String toString() {
-        if (this.numElements > elementSize) {
+        if (this.numElements > elementSizELEMENT_SIZE) {
             return String.format("VectorInt8 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();

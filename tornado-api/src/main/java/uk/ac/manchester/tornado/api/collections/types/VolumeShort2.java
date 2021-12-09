@@ -48,35 +48,35 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * backing array
      */
-    final protected short[] storage;
+    protected final short[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
-    final private static int elementSize = 2;
+    private final int numElements;
+    private static final int ELEMENT_SIZE = 2;
 
     /**
      * Size in Y dimension
      */
-    final protected int Y;
+    protected final int Y;
 
     /**
      * Size in X dimension
      */
-    final protected int X;
+    protected final int X;
 
     /**
      * Size in Y dimension
      */
-    final protected int Z;
+    protected final int Z;
 
     public VolumeShort2(int width, int height, int depth, short[] array) {
         storage = array;
         X = width;
         Y = height;
         Z = depth;
-        numElements = X * Y * Z * elementSize;
+        numElements = X * Y * Z * ELEMENT_SIZE;
     }
 
     /**
@@ -88,7 +88,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
      *            number of rows
      */
     public VolumeShort2(int width, int height, int depth) {
-        this(width, height, depth, new short[width * height * depth * elementSize]);
+        this(width, height, depth, new short[width * height * depth * ELEMENT_SIZE]);
     }
 
     public short[] getArray() {
@@ -96,7 +96,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     private int toIndex(int x, int y, int z) {
-        return (z * X * Y * elementSize) + (y * elementSize * X) + (x * elementSize);
+        return (z * X * Y * ELEMENT_SIZE) + (y * ELEMENT_SIZE * X) + (x * ELEMENT_SIZE);
     }
 
     public Short2 get(int x, int y, int z) {
@@ -140,20 +140,18 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        String str = "";
-
+        StringBuilder str = new StringBuilder("");
         for (int z = 0; z < Z(); z++) {
-            str += String.format("z = %d\n", z);
+            str.append(String.format("z = %d%n", z));
             for (int y = 0; y < Y(); y++) {
                 for (int x = 0; x < X(); x++) {
                     final Short2 point = get(x, y, z);
-                    str += String.format(fmt, point.getX(), point.getY()) + " ";
+                    str.append(String.format(fmt, point.getX(), point.getY()) + " ");
                 }
-                str += "\n";
+                str.append("\n");
             }
         }
-
-        return str;
+        return str.toString();
     }
 
     public String toString() {

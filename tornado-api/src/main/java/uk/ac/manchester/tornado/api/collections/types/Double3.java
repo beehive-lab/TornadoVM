@@ -56,19 +56,19 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
      * backing array
      */
     @Payload
-    final protected double[] storage;
+    final double[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 3;
+    private static final int NUM_ELEMENTS = 3;
 
     public Double3(double[] storage) {
         this.storage = storage;
     }
 
     public Double3() {
-        this(new double[numElements]);
+        this(new double[NUM_ELEMENTS]);
     }
 
     public Double3(double x, double y, double z) {
@@ -161,7 +161,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getX(), getY());
     }
 
-    protected static Double3 loadFromArray(final double[] array, int index) {
+    static Double3 loadFromArray(final double[] array, int index) {
         final Double3 result = new Double3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -169,7 +169,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final double[] array, int index) {
+    void storeToArray(final double[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -187,7 +187,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**

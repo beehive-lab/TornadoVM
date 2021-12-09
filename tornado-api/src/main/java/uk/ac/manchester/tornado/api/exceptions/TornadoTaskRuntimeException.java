@@ -45,8 +45,8 @@ public class TornadoTaskRuntimeException extends RuntimeException {
 
     private final String message;
     private Exception e;
-    final String RESET = "\u001B[0m";
-    final String RED = "\u001B[31m";
+    static final String RESET = "\u001B[0m";
+    static final String RED = "\u001B[31m";
 
     public TornadoTaskRuntimeException(final String msg) {
         message = RED + msg + RESET;

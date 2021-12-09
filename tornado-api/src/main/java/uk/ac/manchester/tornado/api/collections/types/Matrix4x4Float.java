@@ -48,25 +48,25 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected float[] storage;
+    protected final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 16;
+    private static final int NUM_ELEMENTS = 16;
 
     /**
      * Number of rows
      */
-    final protected int M = 4;
+    protected static final int M = 4;
 
     /**
      * Number of columns
      */
-    final protected int N = 4;
+    protected static final int N = 4;
 
     public Matrix4x4Float() {
-        this(new float[numElements]);
+        this(new float[NUM_ELEMENTS]);
     }
 
     public Matrix4x4Float(float[] array) {
@@ -166,14 +166,12 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        String str = "";
+        StringBuilder str = new StringBuilder("");
 
         for (int i = 0; i < M; i++) {
-            str += row(i).toString(fmt) + "\n";
+            str.append(row(i).toString(fmt) + "\n");
         }
-        str.trim();
-
-        return str;
+        return str.toString().trim();
     }
 
     public String toString() {
@@ -205,7 +203,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     public FloatingPointError calculateULP(Matrix4x4Float ref) {
