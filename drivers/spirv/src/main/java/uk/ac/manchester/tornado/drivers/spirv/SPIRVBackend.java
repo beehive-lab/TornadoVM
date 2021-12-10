@@ -155,7 +155,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         public static final int SPIRV_VERSION_FOR_OPENCL = 300000;
         public static final int SPIRV_MAJOR_VERSION = 1;
         public static final int SPIRV_MINOR_VERSION = 2;
-        public static final int SPIRV_GENERATOR_ID = 33;
+        public static final int SPIRV_GENERATOR_ID = 32;
         public static final int SPIRV_INITIAL_BOUND = 0;
         public static final int SPIRV_SCHEMA = 0;
     }
