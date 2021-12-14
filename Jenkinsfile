@@ -11,7 +11,7 @@ pipeline {
     }
 
     environment {
-        JDK_8_JAVA_HOME="/opt/jenkins/jdks/openjdk1.8.0_302-jvmci-21.3-b04"
+        JDK_8_JAVA_HOME="/opt/jenkins/jdks/openjdk1.8.0_302-jvmci-21.3-b05"
         CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.13.8.1-linux-x64"
         JDK_17_JAVA_HOME="/opt/jenkins/jdks/jdk-17.0.1+12"
         GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java11-21.3.0"
