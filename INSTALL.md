@@ -5,7 +5,7 @@
 The following table includes the platforms that TornadoVM can be executed.
 
 | OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            | 
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| -------------------------- | ---------------------------------------------------------- | ----------- | ------------------------- |
 | CentOS >= 7.3              | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
 | Fedora >= 21               | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
 | Ubuntu >= 16.04            | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
