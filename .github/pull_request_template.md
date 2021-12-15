@@ -1,14 +1,15 @@
-Thank you for contributing to TornadoVM. This template provides checkpoints before the PR and a template to be filled when submitting a PR on Github.
+Thank you for contributing to TornadoVM. This template provides checkpoints before opening PR, and a template to be filled when submitting a PR on GitHub.
 
 ## IMPORTANT: Before submitting the PR
 
-Before continuing with the PR, **please check our code style and guidelines** for contributing to the project.
+At first, **please check our code style and guidelines** for contributing to the project.
 
 * Guidelines: [link](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTING.md)
 
 All PRs must be open to merge into the `develop` branch of TornadoVM. Please, do not push the PR into `master`.
 
-All unittests must pass.
+All unittests must pass. Note that some unittests may fail depending on the driver and runtime used. 
+They are listed in a white-list in the `tornado-test.py` script. 
 
 ```bash
 $ make tests
@@ -32,7 +33,7 @@ $ make BACKEND=spirv
 $ make tests 
 ```
 
-Once this passes, please fill the following template for the Pull Request:
+Once all unit-tests pass, please fill the following template for the Pull Request:
 
 ----------------------------------------------------------------------------
 
@@ -48,7 +49,7 @@ If the patch provides a fix for a bug, please describe what was the issue and ho
 
 #### Backend/s tested
 
-Mark the affected backends by the PR. 
+Mark the backends affected by this PR.
 
 - [ ] OpenCL
 - [ ] PTX
@@ -56,7 +57,7 @@ Mark the affected backends by the PR.
 
 #### OS tested
 
-Mark the affected OS/s by the PR. 
+Mark the OS where this PR is tested.
 
 - [ ] Linux
 - [ ] OSx
@@ -64,7 +65,7 @@ Mark the affected OS/s by the PR.
 
 #### Did you check on FPGAs?
 
-If applicable and if possible, check your changes on FPGAs.
+If it is applicable, check your changes on FPGAs.
 
 - [ ] Yes
 - [ ] No
