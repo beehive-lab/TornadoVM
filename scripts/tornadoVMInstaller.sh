@@ -459,6 +459,7 @@ function printHelp() {
 }
 
 function setBackend() {
+  # shellcheck disable=SC2068
   for i in ${args[@]}
   do
     flag=$i
@@ -484,6 +485,7 @@ args=( "$@" )
 
 setBackend
 
+# shellcheck disable=SC2068
 for i in ${args[@]}
 do
   key=$i
