@@ -1,9 +1,8 @@
-Thank you for contributing to TornadoVM. This template provides checkpoints before the PR and a template to be filled
-when submitting a PR on Github.
+Thank you for contributing to TornadoVM. This template provides checkpoints before the PR and a template to be filled when submitting a PR on Github.
 
-## Before submitting the PR
+## IMPORTANT: Before submitting the PR
 
-Before continuing with the PR, please check our code style and guidelines for contributing to the project.
+Before continuing with the PR, **please check our code style and guidelines** for contributing to the project.
 
 * Guidelines: [link](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTING.md)
 
@@ -22,12 +21,22 @@ TornadoVM currently supports two backends. When possible, please check that the 
 $ make
 $ make tests
 
+## If applicable to your PR, 
 ## Pass unittests using the PTX backend
-$ make BACKEND=ptx,opencl
-$ make tests # It will select the PTX by default 
+$ make BACKEND=ptx
+$ make tests 
+
+## If applicable to your PR, 
+## Pass unittests using the SPIRV backend
+$ make BACKEND=spirv
+$ make tests 
 ```
 
-## Template to be used in the PR description
+Once this passes, please fill the following template for the Pull Request:
+
+----------------------------------------------------------------------------
+
+## Template to be used in the PR description (remove this part when submitted the PR)
 
 #### Description
 
@@ -39,10 +48,15 @@ If the patch provides a fix for a bug, please describe what was the issue and ho
 
 #### Backend/s tested
 
+Mark the affected backends by the PR. 
+
 - [ ] OpenCL
 - [ ] PTX
+- [ ] SPIRV
 
 #### OS tested
+
+Mark the affected OS/s by the PR. 
 
 - [ ] Linux
 - [ ] OSx
@@ -50,7 +64,7 @@ If the patch provides a fix for a bug, please describe what was the issue and ho
 
 #### Did you check on FPGAs?
 
-If possible, check your changes on FPGAs.
+If applicable and if possible, check your changes on FPGAs.
 
 - [ ] Yes
 - [ ] No
@@ -58,3 +72,5 @@ If possible, check your changes on FPGAs.
 #### How to test the new patch?
 
 Provide instructions about how to test the new patch. 
+
+----------------------------------------------------------------------------
