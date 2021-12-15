@@ -67,6 +67,7 @@ public class OCLCodeCache {
 
     private static final String FALSE = "False";
     private static final String TRUE = "True";
+    public static String fpgaBinLocation;
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
@@ -78,19 +79,6 @@ public class OCLCodeCache {
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
-    private String fpgaName;
-    private String fpgaCompiler;
-    private String compilationFlags;
-    private String directoryBitstream;
-    private boolean isFPGAInAWS;
-    public static String fpgaBinLocation;
-    private String fpgaSourceDir;
-
-    // ID -> KernelName (TaskName)
-    private ConcurrentHashMap<String, ArrayList<Pair>> pendingTasks;
-
-    private ArrayList<String> linkObjectFiles;
-
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      *
@@ -103,25 +91,21 @@ public class OCLCodeCache {
      * </p>
      */
     private final StringBuilder OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
-
     private final boolean PRINT_WARNINGS = false;
-
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContextInterface deviceContext;
-
+    private String fpgaName;
+    private String fpgaCompiler;
+    private String compilationFlags;
+    private String directoryBitstream;
+    private boolean isFPGAInAWS;
+    private String fpgaSourceDir;
+    // ID -> KernelName (TaskName)
+    private ConcurrentHashMap<String, ArrayList<Pair>> pendingTasks;
+    private ArrayList<String> linkObjectFiles;
     private boolean kernelAvailable;
 
     private HashMap<String, String> precompiledBinariesPerDevice;
-
-    private static class Pair {
-        private String taskName;
-        private String entryPoint;
-
-        public Pair(String id, String entryPoint) {
-            this.taskName = id;
-            this.entryPoint = entryPoint;
-        }
-    }
 
     public OCLCodeCache(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
@@ -592,7 +576,7 @@ public class OCLCodeCache {
             // properly, this causes a sigfault.
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
                 final Path outDir = resolveCacheDirectory();
-                program.dumpBinaries(outDir.toAbsolutePath().toString() + "/" + entryPoint);
+                program.dumpBinaries(outDir.toAbsolutePath() + "/" + entryPoint);
             }
         } else {
             warn("\tunable to compile %s", entryPoint);
@@ -705,5 +689,15 @@ public class OCLCodeCache {
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
         return cache.get(id + "-" + entryPoint);
+    }
+
+    private static class Pair {
+        private String taskName;
+        private String entryPoint;
+
+        public Pair(String id, String entryPoint) {
+            this.taskName = id;
+            this.entryPoint = entryPoint;
+        }
     }
 }
