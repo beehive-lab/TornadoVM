@@ -47,7 +47,8 @@ public class TornadoGraphAssembler {
         CONTEXT((byte) 20),             // CONTEXT(ctx)
         END((byte) 21),                 // END(ctx)
         CONSTANT_ARGUMENT((byte) 22),
-        REFERENCE_ARGUMENT((byte) 23);
+        REFERENCE_ARGUMENT((byte) 23),
+        DEALLOCATE((byte) 24);          // DEALLOCATE(obj,dest)
         // @formatter:on
 
         private byte value;
@@ -106,6 +107,12 @@ public class TornadoGraphAssembler {
         buffer.putInt(object);
         buffer.putInt(ctx);
         buffer.putLong(size);
+    }
+
+    public void deallocate(int object, int ctx) {
+        buffer.put(TornadoVMBytecodes.DEALLOCATE.value);
+        buffer.putInt(object);
+        buffer.putInt(ctx);
     }
 
     void copyToContext(int obj, int ctx, int dep, long offset, long size) {

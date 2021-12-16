@@ -31,11 +31,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLCharArrayWrapper extends OCLArrayWrapper<char[]> {
 
     public OCLCharArrayWrapper(OCLDeviceContext device, long batchSize) {
-        this(device, false, batchSize);
-    }
-
-    public OCLCharArrayWrapper(OCLDeviceContext device, boolean isFinal, long batchSize) {
-        super(device, JavaKind.Char, isFinal, batchSize);
+        super(device, JavaKind.Char, batchSize);
     }
 
     @Override

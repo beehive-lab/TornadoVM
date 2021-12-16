@@ -24,11 +24,14 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -37,6 +40,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
@@ -105,40 +109,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     /**
-     * It executes a kernel with 1 thread (the equivalent of calling clEnqueueTask.
-     *
-     * @param stack
-     *            {@link OCLByteBuffer} stack
-     * @param meta
-     *            {@link TaskMetaData} netadata
-     * @return int with the event ID.
-     */
-    public int executeTask(final OCLByteBuffer stack, final ObjectBuffer atomicSpace, final TaskMetaData meta) {
-        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
-        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
-
-        setKernelArgs(stack, atomicSpace, meta);
-
-        int task;
-        if (meta == null) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, internalEvents);
-            deviceContext.flush();
-            deviceContext.finish();
-        } else {
-            if (meta.isParallel()) {
-                if (meta.enableThreadCoarsener()) {
-                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null, 0);
-                } else {
-                    task = scheduler.submit(kernel, meta, null, 0);
-                }
-            } else {
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
-            }
-        }
-        return task;
-    }
-
-    /**
      * stack needs to be read so that the return value is transferred back to the
      * host.- As this is blocking then no clFinish() is needed
      */
@@ -181,7 +151,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * @param meta
      *            task metadata {@link TaskMetaData}
      */
-    private void setKernelArgs(final OCLByteBuffer stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final OCLCallStack stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -199,7 +169,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // stack pointer
         buffer.clear();
-        buffer.putLong(stack.toRelativeAddress());
+//        buffer.putLong(stack.toRelativeAddress());
+        buffer.putLong(stack.getOffset());
         kernel.setArg(index, buffer);
         index++;
 
@@ -228,6 +199,17 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         kernel.setArg(index, buffer);
         index++;
 
+        // Parameters
+        for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
+            CallStack.CallArgument arg = stack.getCallArguments().get(argIndex);
+            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+                buffer.clear();
+                PrimitiveSerialiser.put(buffer, arg.getValue());
+                kernel.setArg(index + argIndex, buffer);
+            } else {
+                shouldNotReachHere();
+            }
+        }
     }
 
     public int submitWithEvents(final OCLCallStack stack, final ObjectBuffer atomicSpace, final TaskMetaData meta, final int[] events, long batchThreads) {
@@ -235,21 +217,16 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
-            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
         /*
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
-        if (!stack.isOnDevice()) {
-            setKernelArgs(stack, atomicSpace, meta);
-            internalEvents[0] = stack.enqueueWrite(events);
-            waitEvents = internalEvents;
-            updateProfilerStackWrite(internalEvents[0], meta, stack);
-        } else {
-            waitEvents = events;
-        }
+        setKernelArgs(stack, atomicSpace, meta);
+        internalEvents[0] = stack.enqueueWrite(events);
+        waitEvents = internalEvents;
+        updateProfilerStackWrite(internalEvents[0], meta, stack);
 
         int task;
         if (meta == null) {
@@ -367,17 +344,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
-            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
-        /*
-         * Only set the kernel arguments if they are either: - not set or - have changed
-         */
-        if (!stack.isOnDevice()) {
-            setKernelArgs(stack, atomicSpace, meta);
-            int stackWriteEventId = stack.enqueueWrite();
-            updateProfilerStackWrite(stackWriteEventId, meta, stack);
-        }
+        setKernelArgs(stack, atomicSpace, meta);
+        int stackWriteEventId = stack.enqueueWrite();
+        updateProfilerStackWrite(stackWriteEventId, meta, stack);
 
         guarantee(kernel != null, "kernel is null");
         if (meta == null) {

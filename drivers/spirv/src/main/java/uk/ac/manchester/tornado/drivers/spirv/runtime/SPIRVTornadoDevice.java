@@ -113,12 +113,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] buffer) {
+    public ObjectBuffer createAtomicsBuffer(int[] buffer) {
         return null;
     }
 
     @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
         return null;
     }
 

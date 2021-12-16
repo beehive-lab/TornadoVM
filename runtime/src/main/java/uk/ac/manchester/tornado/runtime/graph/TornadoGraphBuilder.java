@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,6 +41,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
@@ -213,6 +215,31 @@ public class TornadoGraphBuilder {
                 context.addUse(streamInNode);
             }
         }
+
+        // Add deallocate nodes to the graph for each copy-in/allocate/stream-in
+        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+        int dependencyIndex = asyncNodes.previousSetBit(asyncNodes.length() - 1);
+        ContextOpNode dependencyNode = (ContextOpNode) graph.getNode(dependencyIndex);
+        for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
+            ContextOpNode node = (ContextOpNode) graph.getNode(i);
+            if (node instanceof CopyInNode || node instanceof AllocateNode || node instanceof StreamInNode) {
+                ObjectNode objectNode;
+                if (node instanceof CopyInNode) {
+                    objectNode = ((CopyInNode) node).getValue();
+                } else if (node instanceof AllocateNode) {
+                    objectNode = ((AllocateNode) node).getValue();
+                } else {
+                    objectNode = ((StreamInNode) node).getValue();
+                }
+                ContextNode contextNode = node.getContext();
+                DeallocateNode deallocateNode = new DeallocateNode(contextNode);
+                deallocateNode.setValue(objectNode);
+                deallocateNode.setDependent(dependencyNode);
+                graph.add(deallocateNode);
+                contextNode.addUse(deallocateNode);
+            }
+        }
+
         return graph;
     }
 }

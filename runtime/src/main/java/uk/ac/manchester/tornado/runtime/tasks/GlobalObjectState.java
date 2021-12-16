@@ -34,23 +34,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class GlobalObjectState implements TornadoGlobalObjectState {
 
-    private boolean shared;
-    private boolean exclusive;
-
     private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
-        shared = false;
-        exclusive = false;
         deviceStates = new ConcurrentHashMap<>();
-    }
-
-    public boolean isShared() {
-        return shared;
-    }
-
-    public boolean isExclusive() {
-        return exclusive;
     }
 
     public DeviceObjectState getDeviceState(TornadoDevice device) {
@@ -66,7 +53,7 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
     public void invalidate() {
         for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
             final DeviceObjectState deviceState = deviceStates.get(device);
-            deviceState.invalidate();
+//            deviceState.invalidate();
         }
     }
 
@@ -77,10 +64,6 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-
-        sb.append((isExclusive()) ? "X" : "-");
-        sb.append((isShared()) ? "S" : "-");
-        sb.append(" ");
 
         for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
             sb.append(device.toString()).append(" ");

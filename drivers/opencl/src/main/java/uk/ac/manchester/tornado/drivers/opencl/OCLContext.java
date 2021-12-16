@@ -77,7 +77,6 @@ public class OCLContext implements OCLExecutionEnvironment {
     private final List<OCLDeviceContext> deviceContexts;
     private final OCLCommandQueue[] queues;
     private final List<OCLProgram> programs;
-    private final ArrayList<Long> allocatedRegions;
     private final OCLPlatform platform;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLTargetDevice> devices) {
@@ -87,7 +86,6 @@ public class OCLContext implements OCLExecutionEnvironment {
         this.deviceContexts = new ArrayList<>(devices.size());
         this.queues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
-        this.allocatedRegions = new ArrayList<>();
     }
 
     native static void clReleaseContext(long id) throws OCLException;
@@ -207,11 +205,6 @@ public class OCLContext implements OCLExecutionEnvironment {
             for (OCLProgram program : programs) {
                 program.cleanup();
             }
-            long t1 = System.nanoTime();
-
-            for (Long allocatedRegion : allocatedRegions) {
-                clReleaseMemObject(allocatedRegion);
-            }
             long t2 = System.nanoTime();
 
             for (OCLCommandQueue queue : queues) {
@@ -225,8 +218,7 @@ public class OCLContext implements OCLExecutionEnvironment {
             long t4 = System.nanoTime();
 
             if (Tornado.FULL_DEBUG) {
-                System.out.printf("cleanup: %-10s..........%.9f s\n", "programs", (t1 - t0) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s\n", "memory", (t2 - t1) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s\n", "programs", (t2 - t0) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "queues", (t3 - t2) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "context", (t4 - t3) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "total", (t4 - t0) * 1e-9);
@@ -284,12 +276,20 @@ public class OCLContext implements OCLExecutionEnvironment {
         try {
             final OCLBufferResult result = createBuffer(contextID, flags, bytes, hostPointer);
             devicePtr = result.getBuffer();
-            allocatedRegions.add(devicePtr);
             logger.info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), devicePtr);
         } catch (OCLException e) {
             logger.error(e.getMessage());
         }
         return devicePtr;
+    }
+
+    public void releaseBuffer(long bufferId) {
+        try {
+            clReleaseMemObject(bufferId);
+            logger.info("buffer released 0x%x", bufferId);
+        } catch (OCLException e) {
+            logger.error(e.getMessage());
+        }
     }
 
     public int getPlatformIndex() {

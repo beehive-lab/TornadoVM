@@ -31,11 +31,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLFloatArrayWrapper extends OCLArrayWrapper<float[]> {
 
     public OCLFloatArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
-        this(deviceContext, false, batchSize);
-    }
-
-    public OCLFloatArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal, long batchSize) {
-        super(deviceContext, JavaKind.Float, isFinal, batchSize);
+        super(deviceContext, JavaKind.Float, batchSize);
     }
 
     @Override

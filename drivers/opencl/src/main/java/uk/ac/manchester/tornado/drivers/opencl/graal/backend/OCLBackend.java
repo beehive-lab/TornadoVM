@@ -82,6 +82,7 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
@@ -140,15 +141,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final OCLArchitecture architecture;
     final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
-    OCLInstalledCode lookupCode;
-
-    final ScheduleMetaData scheduleMeta;
-
-    private boolean lookupCodeAvailable;
-
-    private static boolean isFPGAInit = false;
-
-    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLDeviceContextInterface deviceContext) {
         super(providers);
@@ -157,14 +149,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         this.codeCache = codeCache;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
-        scheduleMeta = new ScheduleMetaData("oclbackend");
-
-        if (KERNEL_WARMUP != null) {
-            if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
-                initFPGA();
-                isFPGAInit = true;
-            }
-        }
     }
 
     @Override
@@ -204,34 +188,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return method;
     }
 
-    public long readHeapBaseAddress(TaskMetaData meta) {
-        final OCLByteBuffer parameters = deviceContext.getMemoryManager().getSubBuffer(0, 16);
-        parameters.putLong(0);
-
-        int task = lookupCode.executeTask(parameters, null, meta);
-        lookupCode.readValue(parameters, meta, task);
-        lookupCode.resolveEvent(parameters, meta, task);
-
-        final long address = parameters.getLong(0);
-        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getDeviceName());
-        return address;
-    }
-
     /**
      * It allocates the smallest of the requested heap size or the max global memory
      * size.
      */
     public void allocateHeapMemoryOnDevice() {
-        long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
-        if (memorySize < DEFAULT_HEAP_ALLOCATION) {
-            Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
-        }
-        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
-        deviceContext.getMemoryManager().allocateDeviceMemoryRegions(memorySize);
-    }
-
-    private String getDriverAndDevice(TaskMetaData task, int[] deviceInfo) {
-        return task.getId() + ".device=" + deviceInfo[0] + ":" + deviceInfo[1];
+        deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
     }
 
     /**
@@ -253,122 +215,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new int[] { driverIndex, deviceIndex };
     }
 
-    private boolean isJITCompilationForFPGAs(String deviceFullName) {
-        String deviceDriver = deviceFullName.split("=")[1];
-        int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
-        int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
-        TornadoDevice device = getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
-        String platformName = device.getPlatformName();
-        if (!isDeviceAnFPGAAccelerator(deviceContext) || !isFPGA(platformName)) {
-            return false;
-        } else {
-            return isDeviceAnFPGAAccelerator(deviceContext) && (isFPGA(platformName));
-        }
-    }
-
-    private boolean isFPGA(String platformName) {
-        return ((platformName.contains("FPGA") || platformName.contains("Xilinx")));
-    }
-
-    /*
-     * Retrieve the address of the heap on the device
-     */
-    public TaskMetaData compileLookupBufferKernel() {
-
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        meta.setDevice(deviceContext.asMapping());
-
-        OCLCodeCache codeCache = deviceContext.getCodeCache();
-        int[] deviceInfo = getDriverAndDevice();
-        String deviceFullName = getDriverAndDevice(meta, deviceInfo);
-
-        if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-            // Option 1) Getting the lookupBufferAddress from the cache
-            lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            if (lookupCode != null) {
-                lookupCodeAvailable = true;
-            }
-        } else if (codeCache.isLoadBinaryOptionEnabled() && codeCache.getOpenCLBinary(deviceFullName) != null) {
-
-            // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
-            Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
-            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            if (lookupCode != null) {
-                lookupCodeAvailable = true;
-            }
-        } else {
-            // Option 3) JIT Compilation of the lookupBufferAddress kernel
-            // Avoid JIT compilation for FPGAs due to unsupported feature
-            ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
-            OCLProviders providers = (OCLProviders) getProviders();
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-
-            if (VIRTUAL_DEVICE_ENABLED) {
-                RuntimeUtilities.maybePrintSource(result.getTargetCode());
-            }
-
-            boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
-
-            if (isDeviceAnFPGAAccelerator(deviceContext)) {
-                lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
-            } else {
-                lookupCode = deviceContext.installCode(result);
-            }
-
-            if (deviceContext.isKernelAvailable() && !isCompilationForFPGAs) {
-                lookupCodeAvailable = true;
-            }
-        }
-        return meta;
-    }
-
-    public void runLookUpBufferAddressKernel() {
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
-        OCLCodeCache codeCache = deviceContext.getCodeCache();
-        if (deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
-            lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        } else {
-            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), Paths.get(OCLCodeCache.fpgaBinLocation), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        }
-
-        if (lookupCode != null) {
-            lookupCodeAvailable = true;
-            runAndReadLookUpKernel(meta);
-        }
-    }
-
-    public boolean isLookupCodeAvailable() {
-        return lookupCodeAvailable;
-    }
-
-    private void runAndReadLookUpKernel(TaskMetaData meta) {
-        deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
-    }
-
-    private void initFPGA() {
-        OCLCodeCache check = deviceContext.getCodeCache();
-        try {
-            Path lookupPath = Paths.get(KERNEL_WARMUP);
-            check.installEntryPointForBinaryForFPGAs("oclbackend", lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        } catch (InvalidPathException e) {
-            throw new TornadoRuntimeException(e);
-        }
-    }
-
-    /**
-     * JIT compilation of the Look Up Buffer Address into the FPGA
-     *
-     * @return {@link TaskMetaData}
-     */
-    private TaskMetaData fpgaInstallCodeLookUpBuffer() {
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
-        OCLProviders providers = (OCLProviders) getProviders();
-        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
-        return meta;
-    }
-
     public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
@@ -376,17 +222,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     @Override
     public void init() {
         if (VIRTUAL_DEVICE_ENABLED) {
-            compileLookupBufferKernel();
             backEndInitialized = true;
             return;
         }
 
         allocateHeapMemoryOnDevice();
-        TaskMetaData meta = compileLookupBufferKernel();
-        if (isLookupCodeAvailable()) {
-            // Only run kernel is the compilation was correct.
-            runAndReadLookUpKernel(meta);
-        }
         backEndInitialized = true;
     }
 
@@ -499,6 +339,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
 
         if (crb.isKernel()) {
             /*
@@ -519,11 +360,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
-            asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
+//            asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
+            asm.emit("%s void %s(%s%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
+            emitMethodParameters(asm, method, incomingArguments, true);
+            asm.emitLine(")");
+
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
             asm.eol();
-            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+//            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+//                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
+            asm.emitStmt("%s ulong *%s = (%s ulong *) (%s + %s)", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
                     OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
             asm.eol();
 
@@ -537,7 +384,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.eol();
         } else {
 
-            final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
 
             final JavaKind returnKind = method.getSignature().getReturnKind();
@@ -552,14 +398,38 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             // getTarget().getLIRKind(returnKind);
             asm.emit("%s %s(%s", returnStr, methodName, architecture.getABI());
 
-            final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
-            final Value[] params = new Value[incomingArguments.getArgumentCount()];
+            emitMethodParameters(asm, method, incomingArguments, false);
+            asm.emit(")");
+            asm.eol();
+            asm.beginScope();
+            emitVariableDefs(crb, asm, lir);
+            asm.eol();
+        }
+    }
 
-            if (params.length > 0) {
-                asm.emit(", ");
-            }
+    private void emitMethodParameters(OCLAssembler asm, ResolvedJavaMethod method, CallingConvention incomingArguments, boolean isKernel) {
+        final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
 
-            for (int i = 0; i < params.length; i++) {
+        for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
+            if (isKernel) {
+                if (locals[i].getType().getJavaKind().isPrimitive()) {
+                    final AllocatableValue param = incomingArguments.getArgument(i);
+                    OCLKind kind = (OCLKind) param.getPlatformKind();
+                    asm.emit(", ");
+                    asm.emit("__private %s %s", kind.toString(), locals[i].getName());
+                } else {
+                    // Skip the kernel context object
+                    if (locals[i].getType().toJavaName().equals(KernelContext.class.getName())) {
+                        continue;
+                    }
+                    // Skip atomic integers
+                    if (locals[i].getType().toJavaName().equals(AtomicInteger.class.getName())) {
+                        continue;
+                    }
+                    asm.emit(", ");
+                    asm.emit("__global %s *%s", "uchar", locals[i].getName());
+                }
+            } else {
                 final AllocatableValue param = incomingArguments.getArgument(i);
                 OCLKind oclKind = (OCLKind) param.getPlatformKind();
                 if (locals[i].getType().getJavaKind().isObject()) {
@@ -569,16 +439,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                     }
                 }
                 guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+                asm.emit(", ");
                 asm.emit("%s %s", oclKind.toString(), locals[i].getName());
-                if (i < params.length - 1) {
-                    asm.emit(", ");
-                }
             }
-            asm.emit(")");
-            asm.eol();
-            asm.beginScope();
-            emitVariableDefs(crb, asm, lir);
-            asm.eol();
         }
     }
 

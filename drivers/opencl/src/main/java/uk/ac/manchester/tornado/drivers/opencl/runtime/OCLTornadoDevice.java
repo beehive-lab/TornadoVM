@@ -25,9 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,13 +66,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLLongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
@@ -196,24 +192,20 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
-    private void runLookUpBufferAddressKernel() {
-        getBackend().runLookUpBufferAddressKernel();
-    }
-
     @Override
     public CallStack createStack(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] array) {
-        return getDeviceContext().getMemoryManager().createDeviceBuffer(array);
+    public ObjectBuffer createAtomicsBuffer(int[] array) {
+        return getDeviceContext().getMemoryManager().createAtomicsBuffer(array);
     }
 
     @Override
-    public ObjectBuffer createOrReuseBuffer(int[] array) {
+    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] array) {
         if (reuseBuffer == null) {
-            reuseBuffer = getDeviceContext().getMemoryManager().createDeviceBuffer(array);
+            reuseBuffer = getDeviceContext().getMemoryManager().createAtomicsBuffer(array);
         }
         reuseBuffer.setIntBuffer(array);
         return reuseBuffer;
@@ -286,6 +278,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             System.out.println(e.getMessage());
             driver.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
             driver.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
+            e.printStackTrace();
             throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ");
         }
     }
@@ -435,7 +428,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private TornadoInstalledCode compileJavaForFPGAs(SchedulableTask task) {
         TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(task);
         if (tornadoInstalledCode != null) {
-            runLookUpBufferAddressKernel();
             return loadPreCompiledBinaryForTask(task);
         }
         return null;
@@ -527,10 +519,16 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
-    private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
+    @Override
+    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+        final ObjectBuffer buffer;
+        if (state.hasBuffer()) {
+            buffer = state.getBuffer();
+        } else {
+            buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
+            state.setBuffer(buffer);
+        }
         buffer.allocate(object, batchSize);
-        state.setBuffer(buffer);
 
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
@@ -540,56 +538,21 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         if (!type.isArray()) {
             checkBatchSize(batchSize);
         }
-
-        state.setValid(true);
-    }
-
-    private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if the buffer size has changed
-        final ObjectBuffer buffer = state.getBuffer();
-        try {
-            buffer.allocate(object, batchSize);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        try {
-            state.getBuffer().allocate(object, batchSize);
-            final Class<?> type = object.getClass();
-            if (!type.isArray()) {
-                checkBatchSize(batchSize);
-                state.getBuffer().write(object);
-            }
-            state.setValid(true);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
-        }
+        return -1;
     }
 
     @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
-        if (!state.hasBuffer()) {
-            reserveMemory(object, batchSize, state);
-        } else {
-            checkForResizeBuffer(object, batchSize, state);
-        }
-
-        if (!state.isValid()) {
-            reAllocateInvalidBuffer(object, batchSize, state);
-        }
+    public int deallocate(Object object, TornadoDeviceObjectState state) {
+        state.getBuffer().deallocate();
+        state.setBuffer(null);
         return -1;
     }
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
-        if (!state.isValid()) {
-            ensureAllocated(object, batchSize, state);
-        }
+        allocate(object, batchSize, state);
 
-        if (BENCHMARKING_MODE || !state.hasContents()) {
-            state.setContents(true);
+        if (BENCHMARKING_MODE) {
             return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }
         return null;
@@ -597,16 +560,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
-        if (batchSize > 0 || !state.isValid()) {
-            ensureAllocated(object, batchSize, state);
-        }
-        state.setContents(true);
+        allocate(object, batchSize, state);
         return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
     }
 
     @Override
     public int streamOut(Object object, long offset, TornadoDeviceObjectState state, int[] events) {
-        TornadoInternalError.guarantee(state.isValid(), "invalid variable");
+        TornadoInternalError.guarantee(state.hasBuffer(), "invalid variable");
         int event = state.getBuffer().enqueueRead(object, offset, events, events == null);
         if (events != null) {
             return event;
@@ -625,20 +585,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
             return eventID;
         } else {
-            TornadoInternalError.guarantee(state.isValid(), "invalid variable");
+            TornadoInternalError.guarantee(state.hasBuffer(), "invalid variable");
             return state.getBuffer().read(object, hostOffset, events, events == null);
         }
-    }
-
-    public void sync(Object... objects) {
-        for (Object obj : objects) {
-            sync(obj);
-        }
-    }
-
-    public void sync(Object object) {
-        final DeviceObjectState state = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object).getDeviceState(this);
-        resolveEvent(streamOut(object, 0, state, null)).waitOn();
     }
 
     @Override
@@ -686,20 +635,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int enqueueMarker(int[] events) {
         return getDeviceContext().enqueueMarker(events);
-    }
-
-    @Override
-    public void dumpMemory(String file) {
-        final OCLMemoryManager mm = getDeviceContext().getMemoryManager();
-        final OCLByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());
-        buffer.read();
-
-        try (FileOutputStream fos = new FileOutputStream(file); FileChannel channel = fos.getChannel()) {
-            channel.write(buffer.buffer());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
     @Override

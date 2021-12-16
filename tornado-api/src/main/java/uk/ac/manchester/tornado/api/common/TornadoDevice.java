@@ -67,7 +67,9 @@ public interface TornadoDevice {
      *            {@link TornadoDeviceObjectState}
      * @return an event ID
      */
-    int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state);
+    int allocate(Object object, long batchSize, TornadoDeviceObjectState state);
+
+    int deallocate(Object object, TornadoDeviceObjectState state);
 
     /**
      * It allocates and copy in the content of the object to the target device.
@@ -174,8 +176,6 @@ public interface TornadoDevice {
     void reset();
 
     void dumpEvents();
-
-    void dumpMemory(String file);
 
     // Getters
 

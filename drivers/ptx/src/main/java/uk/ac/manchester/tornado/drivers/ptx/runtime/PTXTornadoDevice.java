@@ -112,12 +112,12 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createAtomicsBuffer(int[] arr) {
         throw new TornadoRuntimeException("[PTX] Atomics not implemented !");
     }
 
     @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
         return null;
     }
 

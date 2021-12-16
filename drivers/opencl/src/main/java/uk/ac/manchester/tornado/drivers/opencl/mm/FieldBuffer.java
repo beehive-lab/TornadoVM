@@ -58,6 +58,10 @@ public class FieldBuffer {
         objectBuffer.allocate(getFieldValue(ref), batchSize);
     }
 
+    public void deallocate() throws TornadoOutOfMemoryException, TornadoMemoryException {
+        objectBuffer.deallocate();
+    }
+
     public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
@@ -73,14 +77,6 @@ public class FieldBuffer {
         return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
     }
 
-    public int getAlignment() {
-        return objectBuffer.getAlignment();
-    }
-
-    public long getBufferOffset() {
-        return objectBuffer.getBufferOffset();
-    }
-
     private Object getFieldValue(final Object container) {
         Object value = null;
         try {
@@ -89,10 +85,6 @@ public class FieldBuffer {
             warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
         }
         return value;
-    }
-
-    public boolean onDevice() {
-        return objectBuffer.isValid();
     }
 
     public void read(final Object ref) {
@@ -107,20 +99,15 @@ public class FieldBuffer {
         return objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
     }
 
-    public long toAbsoluteAddress() {
-        return objectBuffer.toAbsoluteAddress();
-    }
-
     public long toBuffer() {
         return objectBuffer.toBuffer();
     }
 
-    public long toRelativeAddress() {
-        return objectBuffer.toRelativeAddress();
-    }
-
+//    public boolean needsWrite() {
+//        return !onDevice() || !RuntimeUtilities.isPrimitive(field.getType());
+//    }
     public boolean needsWrite() {
-        return !onDevice() || !RuntimeUtilities.isPrimitive(field.getType());
+        return true;
     }
 
     public void write(final Object ref) {

@@ -72,7 +72,7 @@ public class DataMovement {
                     final TornadoGlobalObjectState globalState = runtime.resolveObject(array);
                     final TornadoDeviceObjectState deviceState = globalState.getDeviceState(device);
 
-                    device.ensureAllocated(array, 0, deviceState);
+                    device.allocate(array, 0, deviceState);
 
                     final long t0 = System.nanoTime();
                     for (int i = 0; i < iterations; i++) {

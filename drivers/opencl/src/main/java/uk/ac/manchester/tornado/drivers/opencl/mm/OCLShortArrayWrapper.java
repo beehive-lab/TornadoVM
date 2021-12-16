@@ -31,11 +31,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLShortArrayWrapper extends OCLArrayWrapper<short[]> {
 
     public OCLShortArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
-        this(deviceContext, false, batchSize);
-    }
-
-    public OCLShortArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal, long batchSize) {
-        super(deviceContext, JavaKind.Short, isFinal, batchSize);
+        super(deviceContext, JavaKind.Short, batchSize);
     }
 
     @Override

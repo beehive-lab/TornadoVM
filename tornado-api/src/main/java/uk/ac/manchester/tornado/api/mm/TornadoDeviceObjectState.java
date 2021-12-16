@@ -51,23 +51,5 @@ public interface TornadoDeviceObjectState {
 
     boolean isAtomicRegionPresent();
 
-    boolean isValid();
-
-    boolean isModified();
-
-    void invalidate();
-
-    boolean hasContents();
-
-    void setContents(boolean value);
-
-    void setModified(boolean value);
-
-    void setValid(boolean value);
-
-    long getAddress();
-
-    long getOffset();
-
     void setAtomicRegion();
 }

@@ -52,21 +52,6 @@ public class AtomicsBuffer implements ObjectBuffer {
     }
 
     @Override
-    public long getBufferOffset() {
-        throw new TornadoRuntimeException("Not implemented");
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        throw new TornadoRuntimeException("Not implemented");
-    }
-
-    @Override
-    public long toRelativeAddress() {
-        throw new TornadoRuntimeException("Not implemented");
-    }
-
-    @Override
     public void read(Object reference) {
         throw new TornadoRuntimeException("Not implemented");
     }
@@ -101,23 +86,8 @@ public class AtomicsBuffer implements ObjectBuffer {
     }
 
     @Override
-    public int getAlignment() {
-        throw new TornadoRuntimeException("Not implemented");
-    }
-
-    @Override
-    public boolean isValid() {
-        return true;
-    }
-
-    @Override
-    public void invalidate() {
-
-    }
-
-    @Override
-    public void printHeapTrace() {
-        throw new TornadoRuntimeException("Not implemented");
+    public void deallocate() throws TornadoMemoryException {
+        deviceContext.getMemoryManager().deallocateAtomicRegion();
     }
 
     @Override

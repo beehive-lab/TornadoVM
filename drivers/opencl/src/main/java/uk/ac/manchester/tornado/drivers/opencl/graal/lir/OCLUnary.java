@@ -256,7 +256,8 @@ public class OCLUnary {
         }
 
         private boolean shouldEmitRelativeAddress(OCLCompilationResultBuilder crb) {
-            return needsBase || (!keepIntegerIndexing() && crb.getDeviceContext().useRelativeAddresses());
+//            return needsBase || (!keepIntegerIndexing() && crb.getDeviceContext().useRelativeAddresses());
+            return needsBase;
         }
 
         private boolean keepIntegerIndexing() {

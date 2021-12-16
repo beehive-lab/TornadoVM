@@ -247,7 +247,24 @@ public class TornadoVM extends TornadoLogger {
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-        return device.ensureAllocated(object, sizeBatch, objectState);
+        return device.allocate(object, sizeBatch, objectState);
+    }
+
+    private int executeDeallocate(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex) {
+        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+        final Object object = objects.get(objectIndex);
+
+        if (isObjectKernelContext(object)) {
+            return 0;
+        }
+
+        if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
+            String verbose = String.format("vm: DEALLOCATE [0x%x] %s on %s", object.hashCode(), object, device);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
+
+        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+        return device.deallocate(object, objectState);
     }
 
     private boolean isObjectAtomic(Object object) {
@@ -273,15 +290,7 @@ public class TornadoVM extends TornadoLogger {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        List<Integer> allEvents;
-        if (sizeBatch > 0) {
-            // We need to stream-in when using batches, because the
-            // whole data is not copied yet.
-            allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
-        } else {
-            allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
-        }
-
+        List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
         resetEventIndexes(eventList);
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
@@ -442,6 +451,10 @@ public class TornadoVM extends TornadoLogger {
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
 
+        // Check if a different batch size was used for the same kernel. If true, then the kernel needs to be recompiled.
+        if (!shouldCompile(installedCodes[taskIndex]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
+            installedCodes[taskIndex].invalidate();
+        }
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
         task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
@@ -480,11 +493,6 @@ public class TornadoVM extends TornadoLogger {
         return installedCode == null || !installedCode.isValid();
     }
 
-    private void setObjectState(DeviceObjectState objectState, boolean flag) {
-        objectState.setContents(flag);
-        objectState.setModified(flag);
-    }
-
     private boolean isObjectInAtomicRegion(DeviceObjectState objectState, TornadoAcceleratorDevice device, SchedulableTask task) {
         return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
     }
@@ -494,7 +502,6 @@ public class TornadoVM extends TornadoLogger {
 
         final SchedulableTask task = tasks.get(taskIndex);
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        boolean redeployOnDevice = graphContext.redeployOnDevice();
         CallStack stack = info.stack;
         int[] waitList = info.waitList;
 
@@ -518,10 +525,8 @@ public class TornadoVM extends TornadoLogger {
         }
 
         final Access[] accesses = task.getArgumentsAccess();
-        if (redeployOnDevice || !stack.isOnDevice()) {
-            stack.reset();
-        }
 
+        stack.reset();
         HashMap<Integer, Integer> map = new HashMap<>();
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             WorkerGrid workerGrid = gridScheduler.get(task.getId());
@@ -539,25 +544,12 @@ public class TornadoVM extends TornadoLogger {
             final byte argType = buffer.get();
             final int argIndex = buffer.getInt();
 
-            if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
-                final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
-                final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
-
-                if (isObjectInAtomicRegion(objectState, device, task)) {
-                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
-                    setObjectState(objectState, true);
-                }
-            }
-
-            if (stack.isOnDevice()) {
-                continue;
-            }
-
             if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
-                stack.push(constants.get(argIndex));
+//                stack.push(constants.get(argIndex));
+                stack.addCallArgument(constants.get(argIndex));
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                 if (isObjectKernelContext(objects.get(argIndex))) {
-                    stack.push(null);
+//                    stack.push(null);
                     continue;
                 }
 
@@ -565,12 +557,10 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
                 if (!isObjectInAtomicRegion(objectState, device, task)) {
-                    final String ERROR_MESSAGE = "object is not valid: %s %s";
-                    TornadoInternalError.guarantee(objectState.isValid(), ERROR_MESSAGE, objects.get(argIndex), objectState);
-                    stack.push(objects.get(argIndex), objectState);
-                    if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {
-                        setObjectState(objectState, true);
-                    }
+//                    stack.push(objects.get(argIndex), objectState);
+                    stack.addCallArgument(objectState.getBuffer().toBuffer());
+                } else {
+                    atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                 }
             } else {
                 TornadoInternalError.shouldNotReachHere();
@@ -578,7 +568,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (atomicsArray != null) {
-            bufferAtomics = device.createOrReuseBuffer(atomicsArray);
+            bufferAtomics = device.createOrReuseBufferAtomicsBuffer(atomicsArray);
             List<Integer> allEvents = bufferAtomics.enqueueWrite(null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {
@@ -686,6 +676,13 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
                 lastEvent = executeAllocate(tornadoVMBytecodeList, objectIndex, contextIndex, sizeBatch);
+            } else if (op == TornadoVMBytecodes.DEALLOCATE.value()) {
+                final int objectIndex = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                if (isWarmup) {
+                    continue;
+                }
+                lastEvent = executeDeallocate(tornadoVMBytecodeList, objectIndex, contextIndex);
             } else if (op == TornadoVMBytecodes.COPY_IN.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();

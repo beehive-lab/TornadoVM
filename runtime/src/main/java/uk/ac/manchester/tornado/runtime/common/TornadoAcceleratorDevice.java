@@ -36,9 +36,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     CallStack createStack(int numArgs);
 
-    ObjectBuffer createBuffer(int[] buffer);
+    ObjectBuffer createAtomicsBuffer(int[] buffer);
 
-    ObjectBuffer createOrReuseBuffer(int[] arr);
+    ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr);
 
     TornadoInstalledCode installCode(SchedulableTask task);
 

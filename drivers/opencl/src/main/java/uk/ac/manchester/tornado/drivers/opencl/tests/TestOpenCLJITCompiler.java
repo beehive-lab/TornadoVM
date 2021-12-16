@@ -136,7 +136,7 @@ public class TestOpenCLJITCompiler {
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
         // Alloc C
-        tornadoDevice.ensureAllocated(c, 0, objectStateC);
+        tornadoDevice.allocate(c, 0, objectStateC);
 
         // Create stack
         CallStack stack = tornadoDevice.createStack(3);

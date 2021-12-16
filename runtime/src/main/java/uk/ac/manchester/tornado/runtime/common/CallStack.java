@@ -26,24 +26,35 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 import java.util.HashMap;
+import java.util.List;
 
 public interface CallStack {
 
     void reset();
 
-    long getDeoptValue();
-
     long getReturnValue();
-
-    int getArgCount();
 
     void push(Object arg);
 
     void push(Object arg, DeviceObjectState state);
 
-    boolean isOnDevice();
-
     void dump();
 
     void setHeader(HashMap<Integer, Integer> map);
+
+    public static class CallArgument {
+        private final Object value;
+
+        public CallArgument(Object value) {
+            this.value = value;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+    }
+
+    List<CallArgument> getCallArguments();
+
+    void addCallArgument(Object value);
 }

@@ -32,11 +32,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
 
     public OCLIntArrayWrapper(OCLDeviceContext device, long size) {
-        this(device, false, size);
-    }
-
-    public OCLIntArrayWrapper(OCLDeviceContext device, boolean isFinal, long size) {
-        super(device, JavaKind.Int, isFinal, size);
+        super(device, JavaKind.Int, size);
     }
 
     @Override

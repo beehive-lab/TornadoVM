@@ -3,7 +3,9 @@ __kernel void add(__global uchar *_heap_base,
                   const ulong _frame_base, 
                   __constant uchar *_constant_region, 
                   __local uchar *_local_region,
-                  __global int* atomics
+                  __global int* atomics,
+                  __global uchar *a,
+                  __global uchar *b
                  )
 {
   ulong ul_8, ul_10, ul_1, ul_0, ul_2, ul_12; 
@@ -13,8 +15,8 @@ __kernel void add(__global uchar *_heap_base,
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
   
   int ul_atomic = _frame[0];
-  ul_0  =  (ulong) _frame[3];
-  ul_1  =  (ulong) _frame[4];
+  ul_0  =  a;
+  ul_1  =  b;
   i_3  =  get_global_id(0);
   i_4  =  i_3;
   

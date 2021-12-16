@@ -27,11 +27,13 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAPI extends TornadoTestBase {
 
     @Test
+    @TornadoNotSupported
     public void testSyncObject() {
         final int N = 1024;
         int size = 20;
@@ -53,6 +55,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
+    @TornadoNotSupported
     public void testSyncObjects() {
         final int N = 128;
         int size = 20;
@@ -90,9 +93,9 @@ public class TestAPI extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.task("t0", TestArrays::addAccumulator, data, 1);
+        s0.streamOut(data);
         s0.warmup();
         s0.execute();
-        s0.syncObject(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

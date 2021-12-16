@@ -35,4 +35,6 @@ public interface TornadoInstalledCode {
     int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
 
     boolean isValid();
+
+    void invalidate();
 }

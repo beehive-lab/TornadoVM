@@ -44,12 +44,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.Initialisable;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLDeviceContext extends TornadoLogger implements Initialisable, OCLDeviceContextInterface {
+public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
 
     // FIXME: <REVISIT> Check the current utility of this buffer
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
@@ -64,7 +62,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     private final OCLCodeCache codeCache;
     private boolean wasReset;
-    private boolean useRelativeAddresses;
     private boolean printOnce = true;
 
     private final OCLEventPool oclEventPool;
@@ -75,8 +72,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
-
-        setRelativeAddressesFlag();
 
         this.oclEventPool = new OCLEventPool(EVENT_WINDOW);
 
@@ -95,14 +90,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
             bumpBuffer = -1;
         }
         this.device.setDeviceContext(this);
-    }
-
-    private void setRelativeAddressesFlag() {
-        if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
-            useRelativeAddresses = true;
-        } else {
-            useRelativeAddresses = Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-        }
     }
 
     private static String[] parseDevices(String str) {
@@ -368,14 +355,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, queue);
     }
 
-    @Override
-    public boolean isInitialised() {
-        return memoryManager.isInitialised();
-    }
-
     public void reset() {
         oclEventPool.reset();
-        memoryManager.reset();
         codeCache.reset();
         wasReset = true;
     }
@@ -428,16 +409,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     @Override
     public boolean isPlatformXilinxFPGA() {
         return getPlatformContext().getPlatform().getName().toLowerCase().contains("xilinx");
-    }
-
-    @Override
-    public boolean useRelativeAddresses() {
-        if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES && printOnce) {
-            System.out.println("Warning: -Dtornado.opencl.userelative was set to False. TornadoVM changed it to True because it is required for FPGA execution.");
-            printOnce = false;
-        }
-
-        return useRelativeAddresses;
     }
 
     @Override

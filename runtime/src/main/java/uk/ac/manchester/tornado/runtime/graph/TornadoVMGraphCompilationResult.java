@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
@@ -83,6 +84,8 @@ public class TornadoVMGraphCompilationResult {
             }
         } else if (node instanceof StreamInNode) {
             bitcodeASM.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+        } else if (node instanceof DeallocateNode) {
+            bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
             bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);

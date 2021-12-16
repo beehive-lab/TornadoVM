@@ -167,12 +167,12 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createAtomicsBuffer(int[] arr) {
         return null;
     }
 
     @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -272,7 +272,13 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+        unimplemented();
+        return -1;
+    }
+
+    @Override
+    public int deallocate(Object object, TornadoDeviceObjectState state) {
         unimplemented();
         return -1;
     }
@@ -346,11 +352,6 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int enqueueMarker(int[] events) {
         return getDeviceContext().enqueueMarker(events);
-    }
-
-    @Override
-    public void dumpMemory(String file) {
-        unimplemented();
     }
 
     @Override

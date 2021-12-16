@@ -58,8 +58,6 @@ public interface TornadoDeviceContext {
 
     boolean isPlatformXilinxFPGA();
 
-    boolean useRelativeAddresses();
-
     boolean isCached(String methodName, SchedulableTask task);
 
     int getDeviceIndex();

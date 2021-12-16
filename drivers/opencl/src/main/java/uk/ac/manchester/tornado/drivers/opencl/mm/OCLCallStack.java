@@ -31,7 +31,9 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPr
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -46,31 +48,30 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     private final int numArgs;
     private OCLDeviceContext deviceContext;
 
-    private boolean onDevice;
+    private final ArrayList<CallArgument> callArguments;
 
-    OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
-        super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
+    OCLCallStack(long bufferId, long offset, int numArgs, OCLDeviceContext device) {
+        super(device, bufferId, offset, (numArgs + RESERVED_SLOTS) << 3);
         this.numArgs = numArgs;
         this.deviceContext = device;
+        this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();
-        onDevice = false;
     }
 
     @Override
-    public boolean isOnDevice() {
-        return onDevice;
+    public void addCallArgument(Object value) {
+        callArguments.add(new CallArgument(value));
     }
 
     @Override
-    public long getBufferOffset() {
-        return 0;
+    public List<CallArgument> getCallArguments() {
+        return callArguments;
     }
 
     @Override
     public void write() {
         super.write();
-        onDevice = true;
     }
 
     @Override
@@ -80,24 +81,14 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public int enqueueWrite(int[] events) {
-        onDevice = true;
         return super.enqueueWrite(events);
-    }
-
-    public int getSlotCount() {
-        return (int) bytes >> 3;
     }
 
     @Override
     public void reset() {
         buffer.mark();
         buffer.reset();
-        onDevice = false;
-    }
-
-    @Override
-    public long getDeoptValue() {
-        return buffer.getLong(8);
+        callArguments.clear();
     }
 
     @Override
@@ -107,14 +98,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     }
 
     @Override
-    public int getArgCount() {
-        return buffer.getInt(10);
-    }
-
-    @Override
     public String toString() {
-        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getDeviceName(), humanReadableByteCount(bytes, true),
-                toAbsoluteAddress(), toRelativeAddress());
+        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getDeviceName(), humanReadableByteCount(bytes, true));
     }
 
     @Override
@@ -160,13 +145,9 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
             buffer.putLong(0);
         } else {
             if (DEBUG) {
-                debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass().getSimpleName(), arg, state.getAddress(), state.getOffset());
+                debug("arg : [0x%x] type=%s, value=%s, bufferId=0x%x (0x%x)", arg.hashCode(), arg.getClass().getSimpleName(), arg, state.getBuffer().toBuffer());
             }
-            if (deviceContext.useRelativeAddresses()) {
-                buffer.putLong(state.getOffset());
-            } else {
-                buffer.putLong(state.getAddress());
-            }
+            buffer.putLong(state.getBuffer().toBuffer());
         }
     }
 }

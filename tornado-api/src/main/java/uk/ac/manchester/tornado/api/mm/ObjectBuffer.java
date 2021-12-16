@@ -50,12 +50,6 @@ public interface ObjectBuffer {
 
     long toBuffer();
 
-    long getBufferOffset();
-
-    long toAbsoluteAddress();
-
-    long toRelativeAddress();
-
     void read(Object reference);
 
     int read(Object reference, long hostOffset, int[] events, boolean useDeps);
@@ -68,13 +62,7 @@ public interface ObjectBuffer {
 
     void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
-    int getAlignment();
-
-    boolean isValid();
-
-    void invalidate();
-
-    void printHeapTrace();
+    void deallocate() throws TornadoMemoryException;
 
     long size();
 

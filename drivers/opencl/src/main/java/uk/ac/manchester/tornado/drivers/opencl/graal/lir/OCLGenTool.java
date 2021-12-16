@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import java.util.HashMap;
 
+import jdk.vm.ci.meta.Local;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
@@ -72,7 +73,7 @@ public class OCLGenTool {
         gen.append(new VectorLoadStmt(result, op, index, cast, address));
     }
 
-    public Value emitParameterLoad(ParameterNode paramNode, int index) {
+    public Value emitParameterLoad(Local[] locals, ParameterNode paramNode) {
 
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
@@ -84,7 +85,8 @@ public class OCLGenTool {
         OCLTargetDescription oclTarget = gen.target();
 
         Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
-        emitParameterLoad(result, index);
+//        emitParameterLoad(result, index);
+        emitParameterLoad(result, locals[paramNode.index()].getName());
         parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {
@@ -144,11 +146,13 @@ public class OCLGenTool {
      *            Parameter index to be loaded.
      *
      */
-    private void emitParameterLoad(AllocatableValue resultValue, int index) {
+//    private void emitParameterLoad(AllocatableValue resultValue, int index) {
+    private void emitParameterLoad(AllocatableValue resultValue, String paramName) {
         OCLKind oclKind = (OCLKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(oclKind);
         final OCLUnaryOp op = getParameterLoadOp(oclKind);
-        gen.append(new AssignStmt(resultValue, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
+//        gen.append(new AssignStmt(resultValue, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
+        gen.append(new AssignStmt(resultValue, new OCLNullary.Parameter(paramName, lirKind)));
     }
 
     public HashMap<ParameterNode, Variable> getParameterToVariable() {

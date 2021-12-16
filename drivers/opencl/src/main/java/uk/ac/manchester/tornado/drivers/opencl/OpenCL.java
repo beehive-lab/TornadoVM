@@ -185,7 +185,7 @@ public class OpenCL {
                     tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
                     break;
                 case WRITE:
-                    tornadoDevice.ensureAllocated(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState);
                 default:
                     break;
             }

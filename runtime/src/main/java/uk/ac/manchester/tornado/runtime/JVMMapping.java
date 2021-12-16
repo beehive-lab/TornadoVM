@@ -52,11 +52,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void dumpMemory(String file) {
-        TornadoInternalError.unimplemented();
-    }
-
-    @Override
     public int enqueueBarrier(int[] events) {
         TornadoInternalError.unimplemented();
         return -1;
@@ -133,12 +128,12 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] arr) {
+    public ObjectBuffer createAtomicsBuffer(int[] arr) {
         return null;
     }
 
     @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -148,8 +143,13 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         return -1;
+    }
+
+    @Override
+    public int deallocate(Object object, TornadoDeviceObjectState state) {
+        return 0;
     }
 
     @Override
