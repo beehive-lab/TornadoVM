@@ -39,6 +39,7 @@ then
     git clone https://github.com/beehive-lab/spirv-beehive-toolkit
   fi
   cd $spirvToolkit
+  git pull origin master 
   mvn clean install
   cd $current
 
