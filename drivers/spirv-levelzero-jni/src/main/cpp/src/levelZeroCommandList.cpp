@@ -495,3 +495,48 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeCommandListAppendWriteGlobalTimestamp", result);
     return result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemoryPrefetch_native
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;I)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryPrefetch_1native
+        (JNIEnv *env, jobject, jlong javaCommandListHandlePtr, jobject levelZeroBufferInteger, jint size) {
+
+    ze_command_list_handle_t commandList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandlePtr);
+
+    jclass classLevelZeroIntegerBuffer = env->GetObjectClass(levelZeroBufferInteger);
+    jfieldID fieldBufferPtr = env->GetFieldID(classLevelZeroIntegerBuffer, "ptrBuffer", "J");
+    long bufferPtr = env->GetLongField(levelZeroBufferInteger, fieldBufferPtr);
+    const void *ptr = reinterpret_cast<const void *>(bufferPtr);
+
+    ze_result_t result = zeCommandListAppendMemoryPrefetch(commandList, ptr, size);
+    LOG_ZE_JNI("zeCommandListAppendMemoryPrefetch", result);
+
+    return result;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList
+ * Method:    zeCommandListAppendMemAdvise_native
+ * Signature: (JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;II)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemAdvise_1native
+        (JNIEnv *env, jobject object, jlong javaCommandListHandlePtr, jlong javaDeviceHandlePtr, jobject levelZeroBufferInteger, jint size, jint advice) {
+
+    ze_command_list_handle_t commandList = reinterpret_cast<ze_command_list_handle_t>(javaCommandListHandlePtr);
+    ze_device_handle_t deviceHandle = reinterpret_cast<ze_device_handle_t>(javaDeviceHandlePtr);
+
+    ze_memory_advice_t memoryAdvice = static_cast<ze_memory_advice_t>(advice);
+
+    jclass classLevelZeroIntegerBuffer = env->GetObjectClass(levelZeroBufferInteger);
+    jfieldID fieldBufferPtr = env->GetFieldID(classLevelZeroIntegerBuffer, "ptrBuffer", "J");
+    long bufferPtr = env->GetLongField(levelZeroBufferInteger, fieldBufferPtr);
+    const void *ptr = reinterpret_cast<const void *>(bufferPtr);
+
+    ze_result_t result = zeCommandListAppendMemAdvise(commandList, deviceHandle, ptr, size, memoryAdvice);
+    LOG_ZE_JNI("zeCommandListAppendMemAdvise", result);
+
+    return result;
+}

@@ -62,4 +62,16 @@ public class LevelZeroKernel {
     public int zeKernelSetArgumentValue(long ptrZeKernelHandle, int argIndex, int argSize, long ptrBuffer) {
         return zeKernelSetArgumentValue_nativePtrArg(ptrZeKernelHandle, argIndex, argSize, ptrBuffer);
     }
+
+    private native int zeKernelSetCacheConfig_native(long ptrZeKernelHandle, int zeCacheConfigFlagLargeSlm);
+
+    /**
+     * Sets the preferred cache configuration.
+     *
+     * @param ptrZeKernelHandle
+     * @param flag
+     */
+    public int zeKernelSetCacheConfig(long ptrZeKernelHandle, int flag) {
+        return zeKernelSetCacheConfig_native(ptrZeKernelHandle, flag);
+    }
 }
