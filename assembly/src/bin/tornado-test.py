@@ -42,14 +42,14 @@ class TestEntry:
 __TEST_THE_WORLD__ = [
 
     ## SPIR-V, OpenCL and PTX foundation tests
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIntegers"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestFloats"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestDoubles"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.MultipleRuns"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLinearAlgebra"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLong"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestShorts"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIf"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIntegers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestDoubles"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.MultipleRuns"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLong"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestShorts"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIf"),
 
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),

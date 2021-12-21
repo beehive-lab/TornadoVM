@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.spirv;
+package uk.ac.manchester.tornado.unittests.foundation;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
