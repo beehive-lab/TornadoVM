@@ -121,7 +121,7 @@ export CMAKE_ROOT=/opt/cmake-3.10.1
 ```bash
 $ cd ~/tornadovm
 $ . etc/sources.env
-$ make BACKEND={ptx,opencl}
+$ make BACKEND={ptx,opencl,spirv}
 ```
 and done!!
 
