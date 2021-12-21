@@ -22,16 +22,14 @@ TornadoVM can be built with three compiler backends and is able to generate Open
 
 **Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
 
-There are two ways to install TornadoVM: a) fully automatic, which triggers all dependencies; and b) manually, with the dependencies installed by the developer. 
-
-Option a) is the recommended if you only need to use TornadoVM, so it will build all dependencies and configure TornadoVM.
-Option b) is the recommended for developing the TornadoVM. 
+There are two ways to install TornadoVM: 
 
 ### A) Automatic Installation
 
-The script provided in this repository will compile/download OpenJDK, `cmake` and it will build TornadoVM.
-
+The `tornadoVMInstaller.sh` script provided in this repository will compile/download OpenJDK, `cmake` and it will build TornadoVM.
 This installation script has been tested on Linux and OSx.
+Additionally, this installation type will automatically trigger all dependencies, therefore it is recommended if users only need to invoke TornadoVM as a library.
+
 Note that GraalVM Community Edition releases based on JDK8 are no longer being built for Mac OSx.
 
 ```bash
@@ -83,110 +81,16 @@ After the script finished the installation, set the env variables needed by usin
 $ source source.sh
 ```
 
-##### Post-installation
-
-After the installation, you only need to setup the `source.sh` file and you can recompile the whole project using `make`. 
-For instance:
-
-```bash
-$ source source.sh
-$ make BACKEND=spirv,opencl   ## recompile TornadoVM for using SPIRV and OpenCL
-```
-
-
-##### Example
-
-For example:
-
-```bash
-# Install with Graal JDK 17 and all backends
-$ ./scripts/tornadovmInstaller.sh  --graal-jdk-17 --opencl --spirv --ptx
-$ source source.sh
-
-$ tornado --version
-version=0.13-dev
-branch=master
-commit=256f715
-
-
-$ tornado -version
-openjdk version "11.0.12" 2021-07-20
-OpenJDK Runtime Environment 18.9 (build 11.0.12+7)
-OpenJDK 64-Bit Server VM 18.9 (build 11.0.12+7, mixed mode)
-
-$ tornado -version
-WARNING: Using incubator modules: jdk.incubator.foreign, jdk.incubator.vector
-openjdk version "17.0.1" 2021-10-19
-OpenJDK Runtime Environment GraalVM CE 21.3.0 (build 17.0.1+12-jvmci-21.3-b05)
-OpenJDK 64-Bit Server VM GraalVM CE 21.3.0 (build 17.0.1+12-jvmci-21.3-b05, mixed mode)
-
-
-$ tornado --devices
-
-Number of Tornado drivers: 3
-Driver: SPIRV
-  Total number of SPIRV devices  : 1
-  Tornado device=0:0
-	SPIRV -- SPIRV LevelZero - Intel(R) UHD Graphics [0x9bc4]
-		Global Memory Size: 24.9 GB
-		Local Memory Size: 64.0 KB
-		Workgroup Dimensions: 3
-		Total Number of Block Threads: 256
-		Max WorkGroup Configuration: [256, 256, 256]
-		Device OpenCL C version:  (LEVEL ZERO) 1.1
-
-Driver: OpenCL
-  Total number of OpenCL devices  : 3
-  Tornado device=1:0
-	OPENCL --  [NVIDIA CUDA] -- NVIDIA GeForce RTX 2060 with Max-Q Design
-		Global Memory Size: 5.8 GB
-		Local Memory Size: 48.0 KB
-		Workgroup Dimensions: 3
-		Total Number of Block Threads: 1024
-		Max WorkGroup Configuration: [1024, 1024, 64]
-		Device OpenCL C version: OpenCL C 1.2
-
-  Tornado device=1:1
-	OPENCL --  [Intel(R) OpenCL HD Graphics] -- Intel(R) UHD Graphics [0x9bc4]
-		Global Memory Size: 24.9 GB
-		Local Memory Size: 64.0 KB
-		Workgroup Dimensions: 3
-		Total Number of Block Threads: 256
-		Max WorkGroup Configuration: [256, 256, 256]
-		Device OpenCL C version: OpenCL C 3.0
-
-  Tornado device=1:2
-	OPENCL --  [Intel(R) CPU Runtime for OpenCL(TM) Applications] -- Intel(R) Core(TM) i9-10885H CPU @ 2.40GHz
-		Global Memory Size: 31.1 GB
-		Local Memory Size: 32.0 KB
-		Workgroup Dimensions: 3
-		Total Number of Block Threads: 8192
-		Max WorkGroup Configuration: [8192, 8192, 8192]
-		Device OpenCL C version: OpenCL C 2.0
-
-Driver: PTX
-  Total number of PTX devices  : 1
-  Tornado device=2:0
-	PTX -- PTX -- NVIDIA GeForce RTX 2060 with Max-Q Design
-		Global Memory Size: 5.8 GB
-		Local Memory Size: 48.0 KB
-		Workgroup Dimensions: 3
-		Total Number of Block Threads: 2147483647
-		Max WorkGroup Configuration: [1024, 1024, 64]
-		Device OpenCL C version: N/A
-```
-
-
 ### B) Manual Installation
 
-
+This installation type requires users to manually install the dependencies, therefore it is recommended for developing the TornadoVM.
 At least one backend must be specified at build time to the `make` command:
 
 ```bash
 $ make BACKENDS=opencl,ptx,spirv
 ```
 
-As well as being built with three compiler backends, TornadoVM can be executed with the following three configurations:
+Besides the three compiler backends, TornadoVM can be executed with the following three configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
@@ -196,7 +100,18 @@ Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More infor
 
 Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/18_MALI.md).
 
-## 2. Running Examples
+
+## 2. Post-installation
+
+After the installation, you only need to load the `source.sh` file and you can recompile the whole project using `make` as well as run the examples. 
+For instance:
+
+```bash
+$ source source.sh
+$ make BACKEND=spirv,opencl,ptx   ## recompile TornadoVM for using SPIRV, OpenCL and PTX
+```
+
+## 3. Running Examples
 
 ```bash
 $ tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
@@ -266,9 +181,9 @@ To run on a specific device use the following option:
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
 ```
 
-Where `s` is the *schedule name* and `t` is the task name.
+Where `s` is the *TaskSchedule name* and `t` is the *task name*.
 
-For example running on `driver:device` [1][1] (Intel HD Graphics in our example) will look like this:
+For example running on `driver:device` `1:1` (Intel HD Graphics in our example) will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
@@ -276,7 +191,7 @@ $ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMul
 
 The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
 
-## 3. Running Benchmarks
+## 4. Running Benchmarks
 
 
 ###### Running all benchmarks with default values
@@ -310,7 +225,7 @@ List of benchmarks:
 $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
 ```
 
-## 4. Running Unittests
+## 5. Running Unittests
 
 To run all unittests in Tornado:
 
@@ -356,7 +271,7 @@ task info: s0.t0
 ```
 
 
-## 5. IDE Code Formatter
+## 6. IDE Code Formatter
 
 ### Using Eclipse and Netbeans
 
@@ -382,7 +297,7 @@ Then :
  3. Set the Java formatter profile in Tornado
 
 
-## 6. TornadoVM Maven Projects
+## 7. TornadoVM Maven Projects
 
 To use the TornadoVM API in your projects, you can checkout our maven repository as follows:
 
