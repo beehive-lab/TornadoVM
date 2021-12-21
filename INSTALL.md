@@ -20,7 +20,7 @@ Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V bac
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
 
-**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
+**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](22_SPIRV_BACKEND_INSTALL.md).
 
 There are two ways to install TornadoVM: 
 
@@ -83,35 +83,26 @@ $ source source.sh
 
 ### B) Manual Installation
 
+TornadoVM can be executed with the following three configurations:
+
+  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](11_INSTALL_WITH_JDK8.md).
+  * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](12_INSTALL_WITH_JDK11_PLUS.md).
+
+_Note 1_: To run TornadoVM on **Windows OS**, install TornadoVM with GraalVM. More information [here](20_INSTALL_WINDOWS_WITH_GRAALVM.md).
+
+_Note 2_: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](18_MALI.md).
+
+
 This installation type requires users to manually install the dependencies, therefore it is recommended for developing the TornadoVM.
 At least one backend must be specified at build time to the `make` command:
 
 ```bash
+## Choose the desired backend
 $ make BACKENDS=opencl,ptx,spirv
 ```
 
-Besides the three compiler backends, TornadoVM can be executed with the following three configurations:
-
-  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
-  * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
-  * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](assembly/src/docs/12_INSTALL_WITH_JDK11_PLUS.md).
-
-Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
-
-Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/18_MALI.md).
-
-
-## 2. Post-installation
-
-After the installation, you only need to load the `source.sh` file and you can recompile the whole project using `make` as well as run the examples. 
-For instance:
-
-```bash
-$ source source.sh
-$ make BACKEND=spirv,opencl,ptx   ## recompile TornadoVM for using SPIRV, OpenCL and PTX
-```
-
-## 3. Running Examples
+## 2. Running Examples
 
 ```bash
 $ tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
