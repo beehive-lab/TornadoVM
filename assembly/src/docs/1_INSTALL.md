@@ -182,7 +182,7 @@ $ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMul
 
 The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
 
-## 4. Running Benchmarks
+## 3. Running Benchmarks
 
 
 ###### Running all benchmarks with default values
@@ -216,7 +216,7 @@ List of benchmarks:
 $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
 ```
 
-## 5. Running Unittests
+## 4. Running Unittests
 
 To run all unittests in Tornado:
 
@@ -262,7 +262,7 @@ task info: s0.t0
 ```
 
 
-## 6. IDE Code Formatter
+## 5. IDE Code Formatter
 
 ### Using Eclipse and Netbeans
 
@@ -288,7 +288,7 @@ Then :
  3. Set the Java formatter profile in Tornado
 
 
-## 7. TornadoVM Maven Projects
+## 6. TornadoVM Maven Projects
 
 To use the TornadoVM API in your projects, you can checkout our maven repository as follows:
 
