@@ -25,6 +25,9 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import java.lang.reflect.Method;
+import java.util.Objects;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -34,17 +37,13 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.lang.reflect.Method;
-import java.util.Objects;
-
 public class CompilableTask implements SchedulableTask {
 
     protected final Object[] args;
-    protected TaskMetaData meta;
     protected final Method method;
-    protected boolean shouldCompile;
-
     private final Object[] resolvedArgs;
+    protected TaskMetaData meta;
+    protected boolean shouldCompile;
     private long batchNumThreads;
 
     private TornadoProfiler profiler;
@@ -64,7 +63,7 @@ public class CompilableTask implements SchedulableTask {
         buffer.append("task: ").append(meta.getId()).append(" ").append(method.getName()).append("()\n");
         Access[] argumentsAccess = meta.getArgumentsAccess();
         for (int i = 0; i < args.length; i++) {
-            buffer.append(String.format("arg  : [%s] %s -> %s\n", argumentsAccess[i], args[i], resolvedArgs[i]));
+            buffer.append(String.format("arg  : [%s] %s -> %s%n", argumentsAccess[i], args[i], resolvedArgs[i]));
         }
         buffer.append("meta : ").append(meta.toString());
         return buffer.toString();
@@ -133,13 +132,13 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public void setBatchThreads(long batchThreads) {
-        this.batchNumThreads = batchThreads;
+    public long getBatchThreads() {
+        return batchNumThreads;
     }
 
     @Override
-    public long getBatchThreads() {
-        return batchNumThreads;
+    public void setBatchThreads(long batchThreads) {
+        this.batchNumThreads = batchThreads;
     }
 
     @Override

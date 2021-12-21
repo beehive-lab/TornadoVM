@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -28,14 +28,14 @@ package uk.ac.manchester.tornado.runtime.tasks;
 public enum TornadoGraphBitcodes {
 
     // @formatter:off
-    LOAD_REF ((byte)1), 
-    LOAD_PRIM((byte)2), 
-    LAUNCH   ((byte)3), 
+    LOAD_REF ((byte)1),
+    LOAD_PRIM((byte)2),
+    LAUNCH   ((byte)3),
     ARG_LIST ((byte)4),
     CONTEXT  ((byte)5);
     // @formatter:on
 
-    public byte index;
+    byte index;
 
     TornadoGraphBitcodes(byte index) {
         this.index = index;
