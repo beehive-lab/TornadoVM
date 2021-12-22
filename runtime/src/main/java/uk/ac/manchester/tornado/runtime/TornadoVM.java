@@ -38,7 +38,6 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -92,8 +91,6 @@ public class TornadoVM extends TornadoLogger {
     private final TornadoExecutionContext graphContext;
     private final List<Object> objects;
 
-    private ConcurrentHashMap<Object, Integer> mappingAtomics;
-
     private final GlobalObjectState[] globalStates;
     private final CallStack[] stacks;
     private final int[][] events;
@@ -119,7 +116,7 @@ public class TornadoVM extends TornadoLogger {
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
 
-        useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
+        useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
 
@@ -173,7 +170,6 @@ public class TornadoVM extends TornadoLogger {
         debug("%s - vm ready to go", graphContext.getId());
         buffer.mark();
 
-        mappingAtomics = new ConcurrentHashMap<>();
     }
 
     public void setCompileUpdate() {
@@ -410,16 +406,6 @@ public class TornadoVM extends TornadoLogger {
         resetEventIndexes(eventList);
     }
 
-    private static class ExecutionInfo {
-        CallStack stack;
-        int[] waitList;
-
-        public ExecutionInfo(CallStack stack, int[] waitList) {
-            this.stack = stack;
-            this.waitList = waitList;
-        }
-    }
-
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
         if (task instanceof PrebuiltTask && timeProfiler instanceof TimeProfiler) {
             PrebuiltTask prebuiltTask = (PrebuiltTask) task;
@@ -604,7 +590,7 @@ public class TornadoVM extends TornadoLogger {
         if (task.meta() instanceof TaskMetaData) {
             metadata = (TaskMetaData) task.meta();
         } else {
-            throw new RuntimeException("task.meta is not instanceof TaskMetadata");
+            throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
         }
 
         // We attach the profiler
@@ -645,7 +631,7 @@ public class TornadoVM extends TornadoLogger {
 
     private int executeBarrier(StringBuilder tornadoVMBytecodeList, int eventList, int[] waitList) {
         if (TornadoOptions.PRINT_BYTECODES) {
-            tornadoVMBytecodeList.append(String.format("vm: BARRIER event-list %d\n", eventList));
+            tornadoVMBytecodeList.append(String.format("vm: BARRIER event-list %d%n", eventList));
         }
 
         int id = contexts.size() - 1;
@@ -826,7 +812,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void printTimes() {
-        System.out.printf("vm: complete %d iterations - %.9f s mean and %.9f s total\n", invocations, (totalTime / invocations), totalTime);
+        System.out.printf("vm: complete %d iterations - %.9f s mean and %.9f s total%n", invocations, (totalTime / invocations), totalTime);
     }
 
     public void clearProfiles() {
@@ -865,11 +851,21 @@ public class TornadoVM extends TornadoLogger {
                     TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventSet.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
+                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
                                 profile.getStartTime(), profile.getEndTime());
                     }
                 }
             }
+        }
+    }
+
+    private static class ExecutionInfo {
+        CallStack stack;
+        int[] waitList;
+
+        public ExecutionInfo(CallStack stack, int[] waitList) {
+            this.stack = stack;
+            this.waitList = waitList;
         }
     }
 

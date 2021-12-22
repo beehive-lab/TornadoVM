@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -25,19 +25,19 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 public class GlobalObjectState implements TornadoGlobalObjectState {
 
+    private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
     private boolean shared;
     private boolean exclusive;
-
-    private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
         shared = false;
@@ -55,11 +55,9 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
 
     public DeviceObjectState getDeviceState(TornadoDevice device) {
         if (!(device instanceof TornadoAcceleratorDevice)) {
-            throw new RuntimeException("Device not compatible");
+            throw new TornadoRuntimeException("Device not compatible");
         }
-        if (!deviceStates.containsKey(device)) {
-            deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
-        }
+        deviceStates.computeIfAbsent((TornadoAcceleratorDevice) device, k -> new DeviceObjectState());
         return deviceStates.get(device);
     }
 
