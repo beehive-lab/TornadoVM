@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCacheConfigFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
@@ -63,6 +64,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryAdvice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
@@ -220,6 +222,12 @@ public class TestKernelTimer {
         result = context.zeMemAllocShared(context.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, bufferSize, 1, device.getDeviceHandlerPtr(), bufferB);
         LevelZeroUtils.errorLog("zeMemAllocShared", result);
 
+        result = commandList.zeCommandListAppendMemoryPrefetch(commandList.getCommandListHandlerPtr(), bufferA, bufferSize);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryPrefetch", result);
+
+        result = commandList.zeCommandListAppendMemAdvise(commandList.getCommandListHandlerPtr(), device.getDeviceHandlerPtr(), bufferA, bufferSize, ZeMemoryAdvice.ZE_MEMORY_ADVICE_SET_PREFERRED_LOCATION);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryPrefetch", result);
+
         bufferA.memset(100, elements);
         bufferB.memset(0, elements);
 
@@ -260,6 +268,9 @@ public class TestKernelTimer {
 
         // We create a kernel Object
         LevelZeroKernel levelZeroKernel = new LevelZeroKernel(kernelDesc, kernel, levelZeroModule);
+
+        result = levelZeroKernel.zeKernelSetCacheConfig(kernel.getPtrZeKernelHandle(), ZeCacheConfigFlag.ZE_CACHE_CONFIG_FLAG_LARGE_SLM);
+        LevelZeroUtils.errorLog("zeKernelSetCacheConfig", result);
 
         // Prepare kernel for launch
         // A) Suggest scheduling parameters to level-zero
