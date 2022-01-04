@@ -14,11 +14,11 @@ __kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base,
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
 {
-  long l_31, l_29, l_30, l_7, l_8, l_9;
-  ulong ul_10, ul_1, ul_0, ul_32;
-  int i_5, i_6, i_33, i_3, i_4, i_13, i_14, i_15, i_16, i_12, i_22, i_23, i_24, i_19, i_27, i_28;
   bool z_17, z_25;
-  float f_20, f_18, f_11, f_26, f_21;
+  ulong ul_1, ul_0, ul_32, ul_10;
+  float f_18, f_21, f_20, f_11, f_26;
+  int i_19, i_16, i_14, i_15, i_12, i_13, i_27, i_24, i_22, i_23, i_3, i_33, i_28, i_6, i_4, i_5;
+  long l_8, l_9, l_7, l_29, l_30, l_31;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -30,7 +30,8 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
-  for(;i_4 < 8192;)  {
+  for(;i_4 < 8192;)
+  {
     // BLOCK 2
     i_5  =  get_local_id(0);
     i_6  =  get_local_size(0);
@@ -45,7 +46,8 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
     i_14  =  i_13 >> 1;
     // BLOCK 3 MERGES [2 11 ]
     i_15  =  i_14;
-    for(;i_15 >= 1;)    {
+    for(;i_15 >= 1;)
+    {
       // BLOCK 8
       barrier(CLK_LOCAL_MEM_FENCE);
       i_16  =  i_15 >> 1;
@@ -58,7 +60,6 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
         f_20  =  f_2[i_19];
         f_21  =  fmax(f_18, f_20);
         f_2[i_5]  =  f_21;
-        f_18  =  f_21;
       }  // B9
       else
       {
@@ -101,8 +102,8 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
 {
-  ulong ul_9, ul_11, ul_5, ul_7, ul_1, ul_17, ul_3, ul_13, ul_15, ul_0;
-  float f_20, f_19, f_18, f_16, f_14, f_12, f_10, f_8, f_6, f_4, f_2, f_26, f_25, f_24, f_23, f_22, f_21;
+  ulong ul_15, ul_13, ul_3, ul_1, ul_17, ul_0, ul_7, ul_5, ul_11, ul_9;
+  float f_6, f_8, f_2, f_4, f_26, f_23, f_22, f_25, f_24, f_19, f_18, f_21, f_20, f_14, f_16, f_10, f_12;
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -136,6 +137,5 @@ __kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uch
   f_25  =  fmax(f_24, f_18);
   f_26  =  fmax(f_25, f_2);
   *((__global float *) ul_3)  =  f_26;
-  f_4  =  f_26;
   return;
 }  //  kernel

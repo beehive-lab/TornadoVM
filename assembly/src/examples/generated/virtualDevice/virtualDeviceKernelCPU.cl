@@ -60,7 +60,6 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
       f_22  =  *((__global float *) ul_21);
       f_23  =  fmax(f_17, f_22);
       *((__global float *) ul_16)  =  f_23;
-      f_17  =  f_23;
     }  // B4
     // BLOCK 5 MERGES [3 4 ]
     i_24  =  i_10;
@@ -121,6 +120,5 @@ __kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uch
   f_37  =  fmax(f_36, f_26);
   f_38  =  fmax(f_37, f_2);
   *((__global float *) ul_3)  =  f_38;
-  f_4  =  f_38;
   return;
 }  //  kernel
