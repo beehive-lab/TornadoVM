@@ -484,7 +484,6 @@ public class SPIRVLIRStmt {
             this.result = result;
             this.cast = cast;
             this.base = memoryRegion;
-            memoryRegion.assignTo((Variable) result);
         }
 
         @Override
@@ -551,7 +550,6 @@ public class SPIRVLIRStmt {
             this.result = result;
             this.cast = cast;
             this.base = memoryRegion;
-            memoryRegion.assignTo((Variable) result);
         }
 
         @Override
@@ -941,7 +939,6 @@ public class SPIRVLIRStmt {
             super(TYPE);
             this.address = address;
             this.result = result;
-            address.assignTo((Variable) result);
         }
 
         @Override

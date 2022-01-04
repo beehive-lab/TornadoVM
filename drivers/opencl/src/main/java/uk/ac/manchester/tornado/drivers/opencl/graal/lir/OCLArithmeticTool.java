@@ -406,12 +406,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                     } else {
                         getGen().append(new StoreStmt(cast, memAccess, input, memAccess.getIndex()));
                     }
-
-                    // Store back to register if it was loaded to a register first
-                    AllocatableValue valueHolder = memAccess.assignedTo();
-                    if (valueHolder != null) {
-                        getGen().append(new OCLLIRStmt.AssignStmt(valueHolder, input));
-                    }
                 } else {
                     getGen().append(new StoreAtomicAddStmt(accumulator, input));
                 }

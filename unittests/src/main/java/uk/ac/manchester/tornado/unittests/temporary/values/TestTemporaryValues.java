@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestTmpValues extends TornadoTestBase {
+public class TestTemporaryValues extends TornadoTestBase {
     private static void computeWithTemporaryValues(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             float valueA = a[i];
@@ -41,7 +41,7 @@ public class TestTmpValues extends TornadoTestBase {
     }
 
     @Test
-    public void testTempValues01() {
+    public void testTemporaryValues01() {
         final int numElements = 8;
         float[] aTornado = new float[numElements];
         float[] bTornado = new float[numElements];
@@ -60,7 +60,7 @@ public class TestTmpValues extends TornadoTestBase {
 
         TaskSchedule s0 = new TaskSchedule("s0") //
                 .streamIn(aTornado, bTornado) //
-                .task("t0", TestTmpValues::computeWithTemporaryValues, aTornado, bTornado, cTornado) //
+                .task("t0", TestTemporaryValues::computeWithTemporaryValues, aTornado, bTornado, cTornado) //
                 .streamOut(aTornado, bTornado, cTornado);
 
         s0.execute();
