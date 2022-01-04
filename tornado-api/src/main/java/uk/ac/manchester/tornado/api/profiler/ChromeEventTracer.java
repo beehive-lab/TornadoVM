@@ -73,46 +73,45 @@ public class ChromeEventTracer {
         return new ChromeEventTracer();
     }
 
-    static public final ChromeEventJSonWriter json = new ChromeEventJSonWriter();
+    public static final ChromeEventJSonWriter json = new ChromeEventJSonWriter();
     static {
         if (isEnabled()) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> json.write(new File(getChromeEventTracerFileName()))));
         }
     }
 
-    static public boolean isEnabled() {
+    public static boolean isEnabled() {
         return isChromeEventTracerEnabled();
     }
 
-    static public void enqueueWriteIfEnabled(String tag, long bytes, long startNs, long endNs) {
+    public static void enqueueWriteIfEnabled(String tag, long bytes, long startNs, long endNs) {
         if (isEnabled()) {
-            json.x(tag, "write", startNs, endNs, () -> {
-                json.kv("bytes", bytes);
-            });
+            json.x(tag, "write", startNs, endNs, () ->
+                json.kv("bytes", bytes)
+            );
         }
     }
 
-    static public void enqueueReadIfEnabled(String tag, long bytes, long startNs, long endNs) {
+    public static void enqueueReadIfEnabled(String tag, long bytes, long startNs, long endNs) {
         if (isEnabled()) {
-            json.x(tag, "read", startNs, endNs, () -> {
-                json.kv("bytes", bytes);
-            });
+            json.x(tag, "read", startNs, endNs, () ->
+                json.kv("bytes", bytes));
         }
     }
 
-    static public void enqueueNDRangeKernelIfEnabled(String tag, long startNs, long endNs) {
+    public static void enqueueNDRangeKernelIfEnabled(String tag, long startNs, long endNs) {
         if (isEnabled()) {
             json.x(tag, "NDRangeKernel", startNs, endNs, null);
         }
     }
 
-    static public void enqueueTaskIfEnabled(String tag, long startNs, long endNs) {
+    public static void enqueueTaskIfEnabled(String tag, long startNs, long endNs) {
         if (isEnabled()) {
             json.x(tag, "exec", startNs, endNs, null);
         }
     }
 
-    static public void trace(String tag, Runnable r) {
+    public static void trace(String tag, Runnable r) {
         long startNs = System.nanoTime();
         r.run();
         if (isEnabled()) {
@@ -124,7 +123,7 @@ public class ChromeEventTracer {
         T build();
     }
 
-    static public <T> T trace(String tag, Builder<T> b) {
+    public static <T> T trace(String tag, Builder<T> b) {
         long startNs = System.nanoTime();
         T value = b.build();
         if (isEnabled()) {
@@ -137,7 +136,7 @@ public class ChromeEventTracer {
 
     }
 
-    static public void opencltimes(int localId, long queuedNs, long submitNs, long startNs, long endNs, Map<String, ?> meta) {
+    public static void opencltimes(int localId, long queuedNs, long submitNs, long startNs, long endNs, Map<String, ?> meta) {
         json.x("queued", null, queuedNs, endNs, meta == null ? null : () -> {
             for (String k : meta.keySet()) {
                 json.kv(k, (String) meta.get(k));

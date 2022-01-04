@@ -48,14 +48,14 @@ public enum Policy {
     LATENCY("Latency"), //
     ENERGY("Energy"); //
 
-    private final String policy;
+    private final String policyName;
 
-    Policy(String policy) {
-        this.policy = policy;
+    Policy(String policyName) {
+        this.policyName = policyName;
     }
 
     @Override
     public String toString() {
-        return policy;
+        return policyName;
     }
 }

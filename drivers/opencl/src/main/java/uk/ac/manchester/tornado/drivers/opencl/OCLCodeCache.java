@@ -27,16 +27,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -53,13 +50,16 @@ import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
 
@@ -67,6 +67,7 @@ public class OCLCodeCache {
 
     private static final String FALSE = "False";
     private static final String TRUE = "True";
+    public static String fpgaBinLocation;
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
@@ -78,19 +79,6 @@ public class OCLCodeCache {
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
-    private String fpgaName;
-    private String fpgaCompiler;
-    private String compilationFlags;
-    private String directoryBitstream;
-    private boolean isFPGAInAWS;
-    public static String fpgaBinLocation;
-    private String fpgaSourceDir;
-
-    // ID -> KernelName (TaskName)
-    private ConcurrentHashMap<String, ArrayList<Pair>> pendingTasks;
-
-    private ArrayList<String> linkObjectFiles;
-
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      *
@@ -102,26 +90,22 @@ public class OCLCodeCache {
      * </code>
      * </p>
      */
-    private final StringBuffer OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
-
+    private final StringBuilder OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
     private final boolean PRINT_WARNINGS = false;
-
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContextInterface deviceContext;
-
+    private String fpgaName;
+    private String fpgaCompiler;
+    private String compilationFlags;
+    private String directoryBitstream;
+    private boolean isFPGAInAWS;
+    private String fpgaSourceDir;
+    // ID -> KernelName (TaskName)
+    private ConcurrentHashMap<String, ArrayList<Pair>> pendingTasks;
+    private ArrayList<String> linkObjectFiles;
     private boolean kernelAvailable;
 
     private HashMap<String, String> precompiledBinariesPerDevice;
-
-    private static class Pair {
-        private String taskName;
-        private String entryPoint;
-
-        public Pair(String id, String entryPoint) {
-            this.taskName = id;
-            this.entryPoint = entryPoint;
-        }
-    }
 
     public OCLCodeCache(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
@@ -592,7 +576,7 @@ public class OCLCodeCache {
             // properly, this causes a sigfault.
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
                 final Path outDir = resolveCacheDirectory();
-                program.dumpBinaries(outDir.toAbsolutePath().toString() + "/" + entryPoint);
+                program.dumpBinaries(outDir.toAbsolutePath() + "/" + entryPoint);
             }
         } else {
             warn("\tunable to compile %s", entryPoint);
@@ -705,5 +689,15 @@ public class OCLCodeCache {
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
         return cache.get(id + "-" + entryPoint);
+    }
+
+    private static class Pair {
+        private String taskName;
+        private String entryPoint;
+
+        public Pair(String id, String entryPoint) {
+            this.taskName = id;
+            this.entryPoint = entryPoint;
+        }
     }
 }

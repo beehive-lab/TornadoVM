@@ -56,19 +56,19 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      * backing array
      */
     @Payload
-    final protected float[] storage;
+    final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 4;
+    private static final int NUM_ELEMENTS = 4;
 
     public Float4(float[] storage) {
         this.storage = storage;
     }
 
     public Float4() {
-        this(new float[numElements]);
+        this(new float[NUM_ELEMENTS]);
     }
 
     public float get(int index) {
@@ -171,7 +171,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return new Float2(getZ(), getW());
     }
 
-    protected static Float4 loadFromArray(final float[] array, int index) {
+    static Float4 loadFromArray(final float[] array, int index) {
         final Float4 result = new Float4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -180,7 +180,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final float[] array, int index) {
+    void storeToArray(final float[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -199,7 +199,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     public void fill(float value) {

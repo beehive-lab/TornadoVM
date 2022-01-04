@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.spirv;
+package uk.ac.manchester.tornado.unittests.foundation;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -26,27 +26,34 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class MultipleRuns extends TornadoTestBase {
+/**
+ * Run:
+ * 
+ * <code>
+ *     tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestShorts
+ * </code>
+ */
+public class TestShorts extends TornadoTestBase {
 
     @Test
-    public void multipleRuns() {
+    public void testShortAdd() {
+        final int numElements = 256;
+        short[] a = new short[numElements];
+        short[] b = new short[numElements];
+        short[] c = new short[numElements];
 
-        final int numElements = 512;
-        int[] a = new int[numElements];
+        Arrays.fill(b, (short) 1);
+        Arrays.fill(c, (short) 3);
 
-        final int iterations = 50;
+        short[] expectedResult = new short[numElements];
+        Arrays.fill(expectedResult, (short) 4);
 
-        int[] expectedResult = new int[numElements];
-        Arrays.fill(expectedResult, iterations * 50);
+        new TaskSchedule("s0") //
+                .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
+                .streamOut(a) //
+                .execute(); //
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
-                .task("t0", TestKernels::addValue, a) //
-                .streamOut(a); //
-
-        for (int i = 0; i < iterations; i++) {
-            ts.execute();
-        }
         assertArrayEquals(expectedResult, a);
     }
+
 }

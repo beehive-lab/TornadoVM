@@ -30,6 +30,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.spi.CanonicalizerTool;
@@ -39,6 +40,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
@@ -57,6 +59,10 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+        Stamp currentStamp = stamp(NodeView.DEFAULT);
+        if (currentStamp instanceof SPIRVStamp) {
+            return currentStamp;
+        }
         return (stampX instanceof OCLStamp) ? stampX.join(stampY) : stampY.join(stampX);
     }
 

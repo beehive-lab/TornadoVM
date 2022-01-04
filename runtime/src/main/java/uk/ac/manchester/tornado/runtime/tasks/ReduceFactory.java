@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -27,6 +27,8 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 class ReduceFactory {
+
+    private static final String ERROR_MESSAGE = "[ERROR] Reduce data type not supported yet: ";
 
     private static void rAdd(int[] array, final int size) {
         int acc = array[0];
@@ -171,7 +173,7 @@ class ReduceFactory {
                 task.task(taskName, ReduceFactory::rAdd, (double[]) newArray, sizeReduceArray);
                 break;
             default:
-                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+                throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
         }
     }
 
@@ -190,7 +192,7 @@ class ReduceFactory {
                 task.task(taskName, ReduceFactory::rMul, (double[]) newArray, sizeReduceArray);
                 break;
             default:
-                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+                throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
         }
     }
 
@@ -209,7 +211,7 @@ class ReduceFactory {
                 task.task(taskName, ReduceFactory::rMax, (double[]) newArray, sizeReduceArray);
                 break;
             default:
-                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+                throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
         }
     }
 
@@ -228,7 +230,7 @@ class ReduceFactory {
                 task.task(taskName, ReduceFactory::rMin, (double[]) newArray, sizeReduceArray);
                 break;
             default:
-                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+                throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
         }
     }
 }

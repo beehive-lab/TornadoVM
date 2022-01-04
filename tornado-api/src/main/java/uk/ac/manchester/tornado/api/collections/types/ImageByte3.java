@@ -156,7 +156,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     public String toString() {
         String result = String.format("ImageByte3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(ByteOps.fmt3);
+            result += "\n" + toString(ByteOps.FMT_3);
         }
         return result;
     }

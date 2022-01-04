@@ -54,19 +54,19 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      * backing array
      */
     @Payload
-    final protected float[] storage;
+    final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 6;
+    private static final int NUM_ELEMENTS = 6;
 
     public Float6(float[] storage) {
         this.storage = storage;
     }
 
     public Float6() {
-        this(new float[numElements]);
+        this(new float[NUM_ELEMENTS]);
     }
 
     public Float6(float s0, float s1, float s2, float s3, float s4, float s5) {
@@ -178,14 +178,14 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 loadFromArray(final float[] array, int index) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, array[index + i]);
         }
         return result;
     }
 
     public final void storeToArray(final float[] array, int index) {
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             array[index + i] = get(i);
         }
     }
@@ -202,7 +202,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**
@@ -213,7 +213,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      */
     public static Float6 add(Float6 a, Float6 b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
@@ -221,7 +221,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 sub(Float6 a, Float6 b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
@@ -229,7 +229,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 div(Float6 a, Float6 b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
@@ -237,7 +237,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 mult(Float6 a, Float6 b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
@@ -245,7 +245,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 min(Float6 a, Float6 b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
@@ -253,7 +253,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 max(Float6 a, Float6 b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
@@ -264,7 +264,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      */
     public static Float6 add(Float6 a, float b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
@@ -272,7 +272,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 sub(Float6 a, float b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
@@ -280,7 +280,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 mult(Float6 a, float b) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b);
         }
         return result;
@@ -307,7 +307,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      */
     public static Float6 sqrt(Float6 a) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;
@@ -315,7 +315,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 floor(Float6 a) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.floor(a.get(i)));
         }
         return result;
@@ -323,7 +323,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 fract(Float6 a) {
         final Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.fract(a.get(i)));
         }
         return result;
@@ -331,7 +331,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static Float6 clamp(Float6 a, float min, float max) {
         Float6 result = new Float6();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.clamp(a.get(i), min, max));
         }
         return result;
@@ -342,7 +342,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      */
     public static float min(Float6 value) {
         float result = Float.MAX_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
@@ -350,7 +350,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static float max(Float6 value) {
         float result = Float.MIN_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
@@ -359,7 +359,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     public static float dot(Float6 a, Float6 b) {
         float result = 0f;
         final Float6 m = mult(a, b);
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result += m.get(i);
         }
         return result;

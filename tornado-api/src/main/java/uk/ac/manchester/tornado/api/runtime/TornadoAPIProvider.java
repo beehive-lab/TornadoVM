@@ -50,8 +50,8 @@ import java.lang.reflect.Method;
 import uk.ac.manchester.tornado.api.AbstractFactoryDevice;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.TornadoCI;
-import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
+import uk.ac.manchester.tornado.api.exceptions.TornadoAPIException;
 
 public class TornadoAPIProvider {
 
@@ -63,7 +63,7 @@ public class TornadoAPIProvider {
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (AbstractTaskGraph) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("[ERROR] Tornado API Implementation class not found", e);
+            throw new TornadoAPIException("[ERROR] Tornado API Implementation class not found", e);
         }
         return taskGraphImpl;
     }
@@ -76,7 +76,7 @@ public class TornadoAPIProvider {
             Method method = klass.getDeclaredMethod("getTornadoRuntime");
             runtime = (TornadoRuntimeCI) method.invoke(null);
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("[ERROR] Tornado Runtime Implementation class not found");
+            throw new TornadoAPIException("[ERROR] Tornado Runtime Implementation class not found", e);
         }
         return runtime;
     }
@@ -89,7 +89,7 @@ public class TornadoAPIProvider {
             Constructor<?> constructor = klass.getConstructor();
             tornado = (TornadoCI) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
-            throw new RuntimeException("[ERROR] Tornado Implementation class not found");
+            throw new TornadoAPIException("[ERROR] Tornado Implementation class not found", e);
         }
         return tornado;
     }
@@ -103,7 +103,7 @@ public class TornadoAPIProvider {
             Constructor<?> constructor = klass.getConstructor();
             device = (AbstractFactoryDevice) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
-            throw new RuntimeException("[ERROR] Tornado Device Implementation class not found");
+            throw new TornadoAPIException("[ERROR] Tornado Device Implementation class not found", e);
         }
         return device;
     }

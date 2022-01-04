@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -37,7 +37,7 @@ public class Coarseness {
     }
 
     public void applyConfig(String config) {
-        String str[] = config.split(",");
+        String[] str = config.split(",");
         for (int i = 0; i < values.length; i++) {
             values[i] = Integer.parseInt(str[i]);
         }

@@ -76,12 +76,10 @@ It allows to pass the compile options specified by the OpenCL ``CLBuildProgram``
 * `-Dtornado.enable.fma=True`:  
 It enables Fused-Multiply-Add optimizations. This option is enabled by default. However, for some platforms, such as the Xilinx FPGA using SDAccel 2018.2 and OpenCL 1.0, this option must be disabled as it causes runtime errors. See issue on [Github](https://github.com/beehive-lab/TornadoVM/issues/24).
 
+* `-Dtornado.enable.mathOptimizations`: It enables math optimizations. For instance, `1/sqrt(x)` is transformed into `rsqrt` instruction for the corresponding backend (OpenCL, SPIRV and PTX). It is enabled by default. 
+
 * `-Dtornado.experimental.partial.unroll=True`:
 It enables the compiler to force partial unroll on counted loops with a factor of 2. The unroll factor can be configured with the `tornado.partial.unroll.factor=FACTOR` that the FACTOR value can take integer values up to 32.
 
-
-##### Mathematical Native Functions
-
 * `-Dtornado.enable.nativeFunctions=False`:
 It enables the utilization of native mathematical functions, in case that the selected backend (OpenCL, PTX, SPIR-V) suports native functions. This option is disabled by default.
-

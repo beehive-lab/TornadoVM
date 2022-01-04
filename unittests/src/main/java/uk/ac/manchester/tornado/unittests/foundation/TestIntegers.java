@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.unittests.spirv;
+package uk.ac.manchester.tornado.unittests.foundation;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * tornado-test.py -V uk.ac.manchester.tornado.unittests.spirv.TestIntegers
+ * tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestIntegers
  */
 public class TestIntegers extends TornadoTestBase {
 

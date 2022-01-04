@@ -68,6 +68,10 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         return operation.toString();
     }
 
+    public Operation getIntrinsicOperation() {
+        return operation;
+    }
+
     // @formatter:off
     public enum Operation {
         ACOS, 

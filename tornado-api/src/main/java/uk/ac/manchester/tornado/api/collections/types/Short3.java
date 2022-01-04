@@ -52,25 +52,25 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
 
     public static final Class<Short3> TYPE = Short3.class;
 
-    private static final String numberFormat = "{ x=%-7d, y=%-7d, z=%-7d }";
+    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
 
     /**
      * backing array
      */
     @Payload
-    final protected short[] storage;
+    private final short[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 3;
+    private static final int NUM_ELEMENTS = 3;
 
     public Short3(short[] storage) {
         this.storage = storage;
     }
 
     public Short3() {
-        this(new short[numElements]);
+        this(new short[NUM_ELEMENTS]);
     }
 
     public Short3(short x, short y, short z) {
@@ -134,10 +134,10 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public String toString() {
-        return toString(numberFormat);
+        return toString(NUMBER_FORMAT);
     }
 
-    protected static Short3 loadFromArray(final short[] array, int index) {
+    private static Short3 loadFromArray(final short[] array, int index) {
         final Short3 result = new Short3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -145,7 +145,7 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final short[] array, int index) {
+    private void storeToArray(final short[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -163,7 +163,7 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /*

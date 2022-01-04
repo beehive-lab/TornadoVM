@@ -52,25 +52,25 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     public static final Class<Int3> TYPE = Int3.class;
 
-    private static final String numberFormat = "{ x=%-7d, y=%-7d, z=%-7d }";
+    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
 
     /**
      * backing array
      */
     @Payload
-    final protected int[] storage;
+    private final int[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 3;
+    private static final int NUM_ELEMENTS = 3;
 
     public Int3(int[] storage) {
         this.storage = storage;
     }
 
     public Int3() {
-        this(new int[numElements]);
+        this(new int[NUM_ELEMENTS]);
     }
 
     public Int3(int x, int y, int z) {
@@ -143,10 +143,10 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public String toString() {
-        return toString(numberFormat);
+        return toString(NUMBER_FORMAT);
     }
 
-    protected static Int3 loadFromArray(final int[] array, int index) {
+    static Int3 loadFromArray(final int[] array, int index) {
         final Int3 result = new Int3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -154,7 +154,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final int[] array, int index) {
+    void storeToArray(final int[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -172,7 +172,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /*

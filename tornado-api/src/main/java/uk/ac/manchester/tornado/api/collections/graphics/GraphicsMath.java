@@ -153,9 +153,9 @@ public class GraphicsMath {
      * translation (column vector) [ R31 R32 R33 t3 ] [ 0 0 0 1 ] P = [ x ] column
      * vector representing the point to be transformed [ y ] [ z ] [ 1 ]
      */
-    public static Float3 rigidTransform(Matrix4x4Float T, Float3 point) {
-        final Float3 translation = T.column(3).asFloat3();
-        final Float3 rotation = new Float3(dot(T.row(0).asFloat3(), point), dot(T.row(1).asFloat3(), point), dot(T.row(2).asFloat3(), point));
+    public static Float3 rigidTransform(Matrix4x4Float matrix, Float3 point) {
+        final Float3 translation = matrix.column(3).asFloat3();
+        final Float3 rotation = new Float3(dot(matrix.row(0).asFloat3(), point), dot(matrix.row(1).asFloat3(), point), dot(matrix.row(2).asFloat3(), point));
         return add(rotation, translation);
     }
 
@@ -189,28 +189,28 @@ public class GraphicsMath {
 
             Float3 pos = add(mult(direction, t), origin);
 
-            float f_t = interp(volume, dim, pos);
+            float interp = interp(volume, dim, pos);
 
-            float f_tt = 0f;
-            if (f_t > 0) {
+            float interpChanged = 0f;
+            if (interp > 0) {
                 for (; t < tfar; t += stepsize) {
                     pos = add(mult(direction, t), origin);
 
-                    f_tt = interp(volume, dim, pos);
+                    interpChanged = interp(volume, dim, pos);
 
-                    if (f_tt < 0f) {
+                    if (interpChanged < 0f) {
                         break;
                     }
 
-                    if (f_tt < 0.8f) {
+                    if (interpChanged < 0.8f) {
                         stepsize = smallStep;
                     }
 
-                    f_t = f_tt;
+                    interp = interpChanged;
                 }
 
-                if (f_tt < 0) {
-                    t = t + ((stepsize * f_tt) / (f_t - f_tt));
+                if (interpChanged < 0) {
+                    t = t + ((stepsize * interpChanged) / (interp - interpChanged));
                     pos = add(mult(direction, t), origin);
                     return new Float4(pos.getX(), pos.getY(), pos.getZ(), t);
                 }

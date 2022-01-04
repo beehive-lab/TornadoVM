@@ -216,7 +216,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public TornadoVMBackendType getBackendType() {
-        return TornadoVMBackendType.OpenCL;
+        return TornadoVMBackendType.OPENCL;
     }
 
     public TornadoDeviceType getTypeDefaultDevice() {

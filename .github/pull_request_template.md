@@ -1,15 +1,15 @@
-Thank you for contributing to TornadoVM. This template provides checkpoints before the PR and a template to be filled
-when submitting a PR on Github.
+Thank you for contributing to TornadoVM. This template provides checkpoints before opening PR, and a template to be filled when submitting a PR on GitHub.
 
-## Before submitting the PR
+## IMPORTANT: Before submitting the PR
 
-Before continuing with the PR, please check our code style and guidelines for contributing to the project.
+At first, **please check our code style and guidelines** for contributing to the project.
 
 * Guidelines: [link](https://github.com/beehive-lab/TornadoVM/blob/master/CONTRIBUTING.md)
 
 All PRs must be open to merge into the `develop` branch of TornadoVM. Please, do not push the PR into `master`.
 
-All unittests must pass.
+All unittests must pass. Note that some unittests may fail depending on the driver and runtime used. 
+They are listed in a white-list in the `tornado-test.py` script. 
 
 ```bash
 $ make tests
@@ -22,12 +22,22 @@ TornadoVM currently supports two backends. When possible, please check that the 
 $ make
 $ make tests
 
+## If applicable to your PR, 
 ## Pass unittests using the PTX backend
-$ make BACKEND=ptx,opencl
-$ make tests # It will select the PTX by default 
+$ make BACKEND=ptx
+$ make tests 
+
+## If applicable to your PR, 
+## Pass unittests using the SPIRV backend
+$ make BACKEND=spirv
+$ make tests 
 ```
 
-## Template to be used in the PR description
+Once all unit-tests pass, please fill the following template for the Pull Request:
+
+----------------------------------------------------------------------------
+
+## Template to be used in the PR description (remove this part when submitted the PR)
 
 #### Description
 
@@ -39,10 +49,15 @@ If the patch provides a fix for a bug, please describe what was the issue and ho
 
 #### Backend/s tested
 
+Mark the backends affected by this PR.
+
 - [ ] OpenCL
 - [ ] PTX
+- [ ] SPIRV
 
 #### OS tested
+
+Mark the OS where this PR is tested.
 
 - [ ] Linux
 - [ ] OSx
@@ -50,7 +65,7 @@ If the patch provides a fix for a bug, please describe what was the issue and ho
 
 #### Did you check on FPGAs?
 
-If possible, check your changes on FPGAs.
+If it is applicable, check your changes on FPGAs.
 
 - [ ] Yes
 - [ ] No
@@ -58,3 +73,5 @@ If possible, check your changes on FPGAs.
 #### How to test the new patch?
 
 Provide instructions about how to test the new patch. 
+
+----------------------------------------------------------------------------

@@ -423,7 +423,7 @@ public class LevelZeroCommandList {
 
     /**
      * Reset a command list to initial (empty) state; ready for appending commands.
-     * 
+     *
      * <ul>
      * <li>The application must ensure the device is not currently referencing the
      * command list before it is reset</li>
@@ -431,11 +431,11 @@ public class LevelZeroCommandList {
      * with the same command list handle.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * @param commandListHandlerPtr
      *            [in] handle of command list object to reset
      * @return
-     * 
+     *
      *         ZE_RESULT_SUCCESS
      *
      *         ZE_RESULT_ERROR_UNINITIALIZED
@@ -462,7 +462,7 @@ public class LevelZeroCommandList {
     /**
      * Appends a memory write of the device's global timestamp value into a command
      * list.
-     * 
+     *
      * @param commandListHandlerPtr
      *            Pointer to the command list handler
      * @param bufferTimeStamp
@@ -475,7 +475,7 @@ public class LevelZeroCommandList {
      * @param phWaitEvents
      *            handle of the events to wait on before executing query
      * @return Error code
-     * 
+     *
      *         <code>
      *  - ZE_RESULT_SUCCESS
      *  - ZE_RESULT_ERROR_UNINITIALIZED
@@ -488,9 +488,32 @@ public class LevelZeroCommandList {
      *  - ZE_RESULT_ERROR_INVALID_SIZE
      *   + `(null == phWaitEvents) && (0 < numWaitEvents)`
      *      </code>
-     * 
+     *
      */
     public int zeCommandListAppendWriteGlobalTimestamp(long commandListHandlerPtr, LevelZeroByteBuffer bufferTimeStamp, ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
         return zeCommandListAppendWriteGlobalTimestamp_native(commandListHandlerPtr, bufferTimeStamp, hSignalEvents, numWaitEvents, phWaitEvents);
+    }
+
+    private native int zeCommandListAppendMemoryPrefetch_native(long commandListHandlerPtr, LevelZeroBufferInteger bufferA, int bufferSize);
+
+    /**
+     * Asynchronously prefetches shared memory to the device associated with the specified command list.
+     *
+     * @param commandListHandlerPtr
+     *         Pointer Handler to the command list
+     * @param bufferA
+     *         LevelZeroBufferInteger - pointer to start of the memory range to prefetch.
+     * @param bufferSize
+     *        Size in bytes of the memory range to prefetch.
+     * @return
+     */
+    public int zeCommandListAppendMemoryPrefetch(long commandListHandlerPtr, LevelZeroBufferInteger bufferA, int bufferSize) {
+        return zeCommandListAppendMemoryPrefetch_native(commandListHandlerPtr, bufferA, bufferSize);
+    }
+
+    private native int zeCommandListAppendMemAdvise_native(long commandListHandlerPtr, long deviceHandlerPtr, LevelZeroBufferInteger bufferA, int bufferSize, int memoryAdvice);
+
+    public int zeCommandListAppendMemAdvise(long commandListHandlerPtr, long deviceHandlerPtr, LevelZeroBufferInteger bufferA, int bufferSize, int memoryAdvice) {
+        return zeCommandListAppendMemAdvise_native(commandListHandlerPtr, deviceHandlerPtr, bufferA, bufferSize, memoryAdvice);
     }
 }

@@ -52,7 +52,7 @@ public class TornadoVM_Intrinsics {
      * @param value
      * @return old value
      */
-    public synchronized static int atomic_add(int[] array, int index, int value) {
+    public static synchronized int atomic_add(int[] array, int index, int value) {
         int old = array[index];
         array[index] = array[index] + value;
         return old;

@@ -86,6 +86,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDynamicReconfigurationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -120,20 +121,41 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
-    private TornadoExecutionContext executionContext;
+    /**
+     * Options for Dynamic Reconfiguration
+     */
+    private static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
+    private static final int DEFAULT_DRIVER_INDEX = 0;
+    private static final int PERFORMANCE_WARMUP = 3;
+    private static final boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
+    private static final String TASK_SCHEDULE_PREFIX = "XXX";
+    private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
+    private static final int HISTORY_POINTS_PREDICTION = 5;
+    private static final boolean USE_GLOBAL_TASK_CACHE = false;
 
+    private static final String RESET = "\u001B[0m";
+    private static final String RED = "\u001B[31m";
+    private static final String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
+    private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
+    private static final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
+    private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
+    private static final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+
+    private static ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
+    private static int baseGlobalIndex = 0;
+    private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
+    MetaReduceCodeAnalysis analysisTaskSchedule;
+    private TornadoExecutionContext executionContext;
     private byte[] highLevelCode = new byte[2048];
     private ByteBuffer hlBuffer;
     private TornadoVMGraphCompilationResult result;
     private long batchSizeBytes = -1;
     private boolean bailout = false;
-
     // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
     private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
     private Event event;
     private String taskScheduleName;
-
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
@@ -141,42 +163,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
-
-    private static ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
-    private static int baseGlobalIndex = 0;
-    private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
-
-    private StringBuffer bufferLogProfiler = new StringBuffer();
+    private StringBuilder bufferLogProfiler = new StringBuilder();
     private CachedGraph<?> graph;
-
-    /**
-     * Options for Dynamic Reconfiguration
-     */
-    private static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
-    private static final int DEFAULT_DRIVER_INDEX = 0;
-    private static final int PERFORMANCE_WARMUP = 3;
-    private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
-    private static final String TASK_SCHEDULE_PREFIX = "XXX";
-    private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
-    private static final int HISTORY_POINTS_PREDICTION = 5;
-    private static final boolean USE_GLOBAL_TASK_CACHE = false;
-
     /**
      * Options for new reductions - experimental
      */
     private boolean reduceExpressionRewritten = false;
     private ReduceTaskSchedule reduceTaskScheduleMeta;
     private boolean reduceAnalysis = false;
-    MetaReduceCodeAnalysis analysisTaskSchedule;
-
     private TornadoProfiler timeProfiler;
     private boolean updateData;
     private boolean isFinished;
     private GridScheduler gridScheduler;
-
-    private static String RESET = "\u001B[0m";
-    private static String RED = "\u001B[31m";
-    private static String WARNING_DEOPT_MESSAGE = RED + "WARNING: Code Bailout to Java sequential. Use --debug to see the reason" + RESET;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -199,6 +197,132 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         event = null;
         this.taskScheduleName = taskScheduleName;
         vmTable = new HashMap<>();
+    }
+
+    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+        int numObjectsCopyIn = inputObjects.size();
+        switch (numObjectsCopyIn) {
+            case 0:
+                break;
+            case 1:
+                task.streamIn(inputObjects.get(0));
+                break;
+            case 2:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1));
+                break;
+            case 3:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
+                break;
+            case 4:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
+                break;
+            case 5:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
+                break;
+            case 6:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
+                break;
+            case 7:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
+                break;
+            case 8:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
+                break;
+            case 9:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8));
+                break;
+            case 10:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9));
+                break;
+            case 11:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10));
+                break;
+            case 12:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11));
+                break;
+            case 13:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12));
+                break;
+            case 14:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13));
+                break;
+            case 15:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13), inputObjects.get(14));
+                break;
+            default:
+                System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
+                break;
+        }
+    }
+
+    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+        int numObjectsCopyOut = outputArrays.size();
+        switch (numObjectsCopyOut) {
+            case 0:
+                break;
+            case 1:
+                task.streamOut(outputArrays.get(0));
+                break;
+            case 2:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1));
+                break;
+            case 3:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
+                break;
+            case 4:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
+                break;
+            case 5:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
+                break;
+            case 6:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
+                break;
+            case 7:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
+                break;
+            case 8:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7));
+                break;
+            case 9:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8));
+                break;
+            case 10:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9));
+                break;
+            case 11:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10));
+                break;
+            case 12:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11));
+                break;
+            case 13:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12));
+                break;
+            case 14:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13));
+                break;
+            case 15:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13), outputArrays.get(14));
+                break;
+            default:
+                System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
+                break;
+        }
     }
 
     @Override
@@ -273,27 +397,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * executes all tasks that belong to the same task-schedule on the same device.
      * Therefore, this call returns the device attached to the first task or the
      * first task is planning to be executed.
-     * 
+     *
      * @return {@link TornadoDevice}
      */
     @Override
     public TornadoDevice getDevice() {
         return executionContext.getDeviceFirstTask();
-    }
-
-    private void triggerRecompile() {
-        // 1. Force to recompile the task-sketcher
-        int i = 0;
-        for (TaskPackage tp : taskPackages) {
-            updateTask(tp, i);
-            i++;
-        }
-
-        // 2. Clear the code cache of the TornadoVM instance
-        if (vm != null) {
-            vm.clearInstalledCode();
-            vm.setCompileUpdate();
-        }
     }
 
     @Override
@@ -310,6 +419,21 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
+        }
+    }
+
+    private void triggerRecompile() {
+        // 1. Force to recompile the task-sketcher
+        int i = 0;
+        for (TaskPackage tp : taskPackages) {
+            updateTask(tp, i);
+            i++;
+        }
+
+        // 2. Clear the code cache of the TornadoVM instance
+        if (vm != null) {
+            vm.clearInstalledCode();
+            vm.setCompileUpdate();
         }
     }
 
@@ -389,30 +513,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         hlBuffer.put(TornadoGraphBitcodes.LAUNCH.index());
     }
 
-    // Timer implementation within the Task Schedule
-    private static abstract class Timer {
-        abstract long time();
-    }
-
     private void logTaskMethodHandle(SchedulableTask task) {
-        if (!(task.getTaskName() == null) && !(task.getId() == null)) {
+        if ((task.getTaskName() != null) && (task.getId() != null)) {
             String methodName = (task instanceof PrebuiltTask) ? ((PrebuiltTask) task).getFilename()
                     : ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + task.getTaskName();
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
-        }
-    }
-
-    private static class MilliSecTimer extends Timer {
-        @Override
-        long time() {
-            return System.currentTimeMillis();
-        }
-    }
-
-    private static class NanoSecTimer extends Timer {
-        @Override
-        long time() {
-            return System.nanoTime();
         }
     }
 
@@ -434,51 +539,32 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
-        final TornadoGraph graph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
+        final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
         if (setNewDevice) {
-            updateDeviceContext(graph);
+            updateDeviceContext(tornadoGraph);
         }
 
         // TornadoVM byte-code generation
-        result = TornadoVMGraphCompiler.compile(graph, executionContext, batchSizeBytes);
+        result = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext, batchSizeBytes);
 
-        TornadoVM vm = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
+        TornadoVM tornadoVM = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
 
         if (meta().shouldDumpSchedule()) {
             executionContext.print();
-            graph.print();
+            tornadoGraph.print();
             result.dump();
         }
 
-        return vm;
+        return tornadoVM;
     }
 
     private boolean compareDevices(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
         return lastDevices.contains(device2);
     }
 
-    private boolean notEqual(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
-        return lastDevices.contains(device2);
-    }
-
-    private static class CompileInfo {
-
-        private boolean compile;
-        private boolean updateDevice;
-
-        private CompileInfo(boolean compile, boolean updateDevice) {
-            this.compile = compile;
-            this.updateDevice = updateDevice;
-        }
-    }
-
-    private final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
-    private final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
-    private final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
-
     @Override
     public boolean isLastDeviceListEmpty() {
-        return executionContext.getLastDevices().size() == 0;
+        return executionContext.getLastDevices().isEmpty();
     }
 
     /**
@@ -503,7 +589,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             /*
              * TornadoVM should not recompile if there is a worker grid for each task.
              * Otherwise, there is a combination of the
-             * 
+             *
              * @Parallel API and the Grid Task. The @Parallel task might need the loop bound
              * updated. TODO This check will no longer be needed once we pass the loop
              * bounds via the call stack instead of constant folding.
@@ -522,8 +608,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (compileInfo.compile) {
             timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
             executionContext.assignToDevices();
-            TornadoVM vm = compile(compileInfo.updateDevice);
-            vmTable.put(meta().getLogicDevice(), vm);
+            TornadoVM tornadoVM = compile(compileInfo.updateDevice);
+            vmTable.put(meta().getLogicDevice(), tornadoVM);
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
         executionContext.addLastDevice(meta().getLogicDevice());
@@ -600,8 +686,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void dumpDeoptReason(TornadoBailoutRuntimeException e) {
-        final String RESET = "\u001B[0m";
-        final String RED = "\u001B[31m";
         if (!Tornado.DEBUG) {
             System.err.println(RED + "[Bailout] Running the sequential implementation. Enable --debug to see the reason." + RESET);
         } else {
@@ -722,7 +806,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void dump() {
         final int width = 16;
-        System.out.printf("code  : capacity = %s, in use = %s \n", humanReadableByteCount(hlBuffer.capacity(), true), humanReadableByteCount(hlBuffer.position(), true));
+        System.out.printf("code  : capacity = %s, in use = %s %n", humanReadableByteCount(hlBuffer.capacity(), true), humanReadableByteCount(hlBuffer.position(), true));
         for (int i = 0; i < hlBuffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(hlBuffer.capacity() - i, width); j++) {
@@ -809,8 +893,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             events[i] = syncObjectInner(object);
         }
 
-        for (Event event : events) {
-            event.waitOn();
+        for (Event e : events) {
+            e.waitOn();
         }
 
         if (TornadoOptions.isProfilerEnabled()) {
@@ -857,27 +941,27 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private AbstractTaskGraph reduceAnalysis() {
-        AbstractTaskGraph graph = null;
+        AbstractTaskGraph abstractTaskGraph = null;
         if (analysisTaskSchedule == null && !reduceAnalysis) {
             analysisTaskSchedule = ReduceCodeAnalysis.analysisTaskSchedule(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskSchedule != null && analysisTaskSchedule.isValid()) {
                 rewriteTaskForReduceSkeleton(analysisTaskSchedule);
-                graph = this;
+                abstractTaskGraph = this;
             }
         }
-        return graph;
+        return abstractTaskGraph;
     }
 
     private AbstractTaskGraph analyzeSkeletonAndRun() {
-        AbstractTaskGraph graph;
+        AbstractTaskGraph abstractTaskGraph;
         if (!reduceExpressionRewritten) {
-            graph = reduceAnalysis();
+            abstractTaskGraph = reduceAnalysis();
         } else {
             runReduceTaskSchedule();
-            graph = this;
+            abstractTaskGraph = this;
         }
-        return graph;
+        return abstractTaskGraph;
     }
 
     private void cleanUp() {
@@ -1010,8 +1094,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         taskPackage.getTaskParameters()[13], taskPackage.getTaskParameters()[14], taskPackage.getTaskParameters()[15]);
                 break;
             default:
-                System.out.println("Sequential Runner not supported yet. Number of parameters: " + type);
-                break;
+                throw new TornadoRuntimeException("Sequential Runner not supported yet. Number of parameters: " + type);
         }
     }
 
@@ -1037,7 +1120,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 deviceWinnerIndex = position;
                 break;
             default:
-                throw new RuntimeException("Policy " + policy + " not defined yet");
+                throw new TornadoDynamicReconfigurationException("Policy " + policy + " not defined yet");
         }
 
         return deviceWinnerIndex;
@@ -1066,132 +1149,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
         return winner;
-    }
-
-    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
-        int numObjectsCopyIn = inputObjects.size();
-        switch (numObjectsCopyIn) {
-            case 0:
-                break;
-            case 1:
-                task.streamIn(inputObjects.get(0));
-                break;
-            case 2:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1));
-                break;
-            case 3:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
-                break;
-            case 4:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
-                break;
-            case 5:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
-                break;
-            case 6:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
-                break;
-            case 7:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
-                break;
-            case 8:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
-                break;
-            case 9:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8));
-                break;
-            case 10:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9));
-                break;
-            case 11:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10));
-                break;
-            case 12:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11));
-                break;
-            case 13:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12));
-                break;
-            case 14:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13));
-                break;
-            case 15:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13), inputObjects.get(14));
-                break;
-            default:
-                System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
-                break;
-        }
-    }
-
-    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
-        int numObjectsCopyOut = outputArrays.size();
-        switch (numObjectsCopyOut) {
-            case 0:
-                break;
-            case 1:
-                task.streamOut(outputArrays.get(0));
-                break;
-            case 2:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1));
-                break;
-            case 3:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
-                break;
-            case 4:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
-                break;
-            case 5:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
-                break;
-            case 6:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
-                break;
-            case 7:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
-                break;
-            case 8:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7));
-                break;
-            case 9:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8));
-                break;
-            case 10:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9));
-                break;
-            case 11:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10));
-                break;
-            case 12:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11));
-                break;
-            case 13:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12));
-                break;
-            case 14:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13));
-                break;
-            case 15:
-                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
-                        outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13), outputArrays.get(14));
-                break;
-            default:
-                System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
-                break;
-        }
     }
 
     private void runAllTasksJavaSequential() {
@@ -1224,8 +1181,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (int i = 0; i < numDevices; i++) {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
-                String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
-                TaskSchedule task = new TaskSchedule(taskScheduleName);
+                String newTaskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
+                TaskSchedule task = new TaskSchedule(newTaskScheduleName);
 
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
 
@@ -1233,9 +1190,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 performStreamInThread(task, streamInObjects);
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
-                    TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
+                    TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
                     if (Tornado.DEBUG) {
-                        System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
+                        System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
                     }
                     task.addTask(taskPackages.get(k));
                 }
@@ -1300,7 +1257,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             try {
                 t.join();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new TornadoDynamicReconfigurationException(e);
             }
         }
 
@@ -1322,12 +1279,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TaskSchedule taskRecompilation(int deviceWinnerIndex) {
         // Force re-compilation in device <deviceWinnerIndex>
-        String taskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
-        TaskSchedule taskToCompile = new TaskSchedule(taskScheduleName);
+        String newTaskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
+        TaskSchedule taskToCompile = new TaskSchedule(newTaskScheduleName);
         performStreamInThread(taskToCompile, streamInObjects);
         for (TaskPackage taskPackage : taskPackages) {
             String taskID = taskPackage.getId();
-            TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
+            TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
             taskToCompile.addTask(taskPackage);
         }
         performStreamOutThreads(taskToCompile, streamOutObjects);
@@ -1432,8 +1389,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // Running sequentially for all the devices
         for (int taskNumber = 0; taskNumber < numDevices; taskNumber++) {
-            String taskScheduleName = TASK_SCHEDULE_PREFIX + taskNumber;
-            TaskSchedule task = new TaskSchedule(taskScheduleName);
+            String newTaskScheduleName = TASK_SCHEDULE_PREFIX + taskNumber;
+            TaskSchedule task = new TaskSchedule(newTaskScheduleName);
 
             long start = timer.time();
             performStreamInThread(task, streamInObjects);
@@ -1442,7 +1399,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
 
-                String name = taskScheduleName + "." + taskID;
+                String name = newTaskScheduleName + "." + taskID;
                 for (String s : ignoreTaskNames) {
                     if (s.equals(name)) {
                         totalTimers[taskNumber] = Long.MAX_VALUE;
@@ -1451,9 +1408,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     }
                 }
 
-                TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
+                TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
                 if (Tornado.DEBUG) {
-                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskNumber);
+                    System.out.println("SET DEVICE: " + newTaskScheduleName + "." + taskID + ".device=0:" + taskNumber);
                 }
                 task.addTask(taskPackages.get(k));
             }
@@ -1529,7 +1486,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         int num = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
         for (int i = 0; i < num; i++) {
             TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i).getDeviceType();
-            String type = "JAVA";
+            String type;
             switch (deviceType) {
                 case CPU:
                     type = "CPU  ";
@@ -1543,6 +1500,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 case ACCELERATOR:
                     type = "ACCELERATOR";
                     break;
+                default:
+                    type = "JAVA";
             }
             str.append(type + " ,");
         }
@@ -1628,40 +1587,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } else {
             // It runs the parallel in the corresponding device
             runTaskScheduleParallelSelected(deviceWinnerIndex);
-        }
-    }
-
-    /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
-     */
-    private static class HistoryTable {
-        /**
-         * TreeMap between input size -> device index
-         */
-        private TreeMap<Integer, Integer> table = new TreeMap<>();
-
-        private int getClosestKey(int goal) {
-            Set<Integer> keySet = table.keySet();
-            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
-        }
-
-        private TreeMap<Integer, Integer> getTree() {
-            return table;
-        }
-
-        private int getNumKeys() {
-            return table.keySet().size();
-        }
-
-        private int getDeviceNumber(int key) {
-            return table.get(key);
-        }
-
-        private boolean isKeyInTable(int key) {
-            return table.containsKey(key);
         }
     }
 
@@ -1804,7 +1729,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
-                throw new RuntimeException("Task not supported yet. Type: " + type);
+                throw new TornadoRuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
@@ -1868,7 +1793,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
-                throw new RuntimeException("Task not supported yet. Type: " + type);
+                throw new TornadoRuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
@@ -1942,8 +1867,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void addScalaTask(String id, Object function, Object[] args) {
         addInner(TaskUtils.scalaTask(id, function, args));
     }
-
-    private final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
 
     @Override
     public void batch(String batchSize) {
@@ -2033,5 +1956,69 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public String getProfileLog() {
         return bufferLogProfiler.toString();
+    }
+
+    // Timer implementation within the Task Schedule
+    private interface Timer {
+        long time();
+    }
+
+    private static class MilliSecTimer implements Timer {
+        @Override
+        public long time() {
+            return System.currentTimeMillis();
+        }
+    }
+
+    private static class NanoSecTimer implements Timer {
+        @Override
+        public long time() {
+            return System.nanoTime();
+        }
+    }
+
+    private static class CompileInfo {
+
+        private boolean compile;
+        private boolean updateDevice;
+
+        private CompileInfo(boolean compile, boolean updateDevice) {
+            this.compile = compile;
+            this.updateDevice = updateDevice;
+        }
+    }
+
+    /**
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
+     */
+    private static class HistoryTable {
+        /**
+         * TreeMap between input size -> device index
+         */
+        private TreeMap<Integer, Integer> table = new TreeMap<>();
+
+        private int getClosestKey(int goal) {
+            Set<Integer> keySet = table.keySet();
+            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
+        }
+
+        private TreeMap<Integer, Integer> getTree() {
+            return table;
+        }
+
+        private int getNumKeys() {
+            return table.keySet().size();
+        }
+
+        private int getDeviceNumber(int key) {
+            return table.get(key);
+        }
+
+        private boolean isKeyInTable(int key) {
+            return table.containsKey(key);
+        }
     }
 }

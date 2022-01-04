@@ -5,26 +5,23 @@ all: build
 BACKEND?=opencl
 BACKENDS?=$(BACKEND)
 
-build jdk-8:
+jdk-8:
 	./bin/compile.sh jdk-8 $(BACKENDS)
 
-jdk-11-plus:
+build jdk-11-plus:
 	./bin/compile.sh jdk-11-plus $(BACKENDS)
-
-graal-jdk-8:
-	./bin/compile.sh graal-jdk-8 $(BACKENDS)
 
 graal-jdk-11-plus:
 	./bin/compile.sh graal-jdk-11-plus $(BACKENDS)
 
 ptx:
-	./bin/compile.sh jdk-8 BACKENDS=ptx,opencl
+	./bin/compile.sh jdk-11-plus BACKENDS=ptx,opencl
 
 spirv:
-	./bin/compile.sh jdk-8 BACKENDS=spirv,ptx,opencl
+	./bin/compile.sh jdk-11-plus BACKENDS=spirv,ptx,opencl
 
 offline:
-	./bin/compile.sh jdk-8 $(BACKENDS) OFFLINE
+	./bin/compile.sh jdk-11-plus $(BACKENDS) OFFLINE
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
@@ -41,7 +38,7 @@ example:
 	tornado --printKernel --debug uk.ac.manchester.tornado.examples.VectorAddInt 8192
 
 tests:
-	tornado --devices 
+	tornado --devices
 	tornado-test.py --ea --verbose
 	tornado-test.py --ea -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh

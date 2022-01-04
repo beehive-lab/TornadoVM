@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.annotation;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.objectweb.asm.*;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
 import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
             return visitor.parallelAnnotations.toArray(parallelAnnotation);
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("[ERROR] Class reader could not be instantiated for class file: " + methodClassFile);
+            throw new TornadoRuntimeException("[ERROR] Class reader could not be instantiated for class file: " + methodClassFile);
         }
     }
 }

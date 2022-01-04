@@ -1,4 +1,4 @@
-## Build TornadoVM with Graal 21.2.0 JDK 8/11/16 on Windows 10 (x64)
+## Build TornadoVM with Graal 21.3.0 JDK 11/17 on Windows 10 (x64)
 
 
 _**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10, it is still experimental.**_
@@ -58,12 +58,11 @@ cd TornadoVM
 ```
 We will refer hereafter the directory with TornadoVM sources as `<TornadoVM>`.
 
-#### 3. Download Graal 21.2.0
+#### 3. Download Graal 21.3.0
 
-Download the version you prefer. TornadoVM can run with JDK 8, 11 and 16. Visit [GraalVM Community Edition 21.2.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.2.0) and download either of the following builds:
-- [Download for JDK 8](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java8-windows-amd64-21.2.0.zip)
-- [Download for JDK 11](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-windows-amd64-21.2.0.zip)
-- [Download for JDK 16](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java16-windows-amd64-21.2.0.zip) 
+Download the version you prefer. TornadoVM can run with JDK 11 and 17. Visit [GraalVM Community Edition 21.3.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.3.0) and download either of the following builds:
+- [Download for JDK 11](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java11-windows-amd64-21.3.0.zip)
+- [Download for JDK 17](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java17-windows-amd64-21.3.0.zip)
 
 Extract the downloaded file to any directory.
 
@@ -78,7 +77,7 @@ Using any text editor create file `<TornadoVM>/etc/sources.env`  with the follow
 #!/bin/bash
 
 # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-export JAVA_HOME="C:/graalvm-ce-java8-21.2.0"  
+export JAVA_HOME="C:/graalvm-ce-java11-21.3.0"
 
 ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
 ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
@@ -102,11 +101,8 @@ Start `<MSYS2>/mingw64.exe` terminal, navigate to the `<TornadoVM>`  directory a
 ```bash
 cd D:/MyProjects/TornadoVM
 source etc/sources.env
-make graal-jdk-8 BACKEND=ptx,opencl
+make graal-jdk-11-plus BACKEND=ptx,opencl
 ```
-The latest command, `make`, depends on the Graal version you are using:
-1. For Graal JDK 8 use `make graal-jdk-8 BACKEND=ptx,opencl` (as above)
-2. For Graal JDK 11 use `make graal-jdk-11 BACKEND=ptx,opencl` 
 
 The `BACKEND` parameter has to be a comma-separated list of `ptx` and `opencl` options. You may build `ptx` only when NVIDIA GPU Computing Toolkit (CUDA) is installed.
 
@@ -128,9 +124,9 @@ To run individual tests:
 tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
 ```
 
-To run examples with Graal JDK 8:
+To run examples with Graal JDK 11 or 17:
 ```bash 
-tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
+tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
 ```
 
 To run individual tests:

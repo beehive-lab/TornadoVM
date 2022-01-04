@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.RSQRT;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -270,6 +271,12 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
+    public Value emitXorFP(Value a, Value b) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public Value emitZeroExtend(Value value, int fromBits, int toBits) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitZeroExtend: %s (from %d to %d)", value, fromBits, toBits);
         OCLLIRKindTool kindTool = getGen().getLIRKindTool();
@@ -461,11 +468,30 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return result;
     }
 
+    @Override
+    public Value emitMathSignum(Value input) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitMathCopySign(Value magnitude, Value sign) {
+        unimplemented();
+        return null;
+    }
+
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {
         LIRKind resultKind = LIRKind.combine(op1, op2, op3);
         Variable result = getGen().newVariable(resultKind);
         OCLAssembler.OCLTernaryOp operation = OCLTernaryIntrinsic.FMA;
         getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLTernary.Expr(operation, resultKind, op1, op2, op3)));
+        return result;
+    }
+
+    public Value emitRSQRT(Value op) {
+        LIRKind resultKind = LIRKind.value(op.getPlatformKind());
+        Variable result = getGen().newVariable(resultKind);
+        getGen().append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(RSQRT, LIRKind.value(op.getPlatformKind()), op)));
         return result;
     }
 
