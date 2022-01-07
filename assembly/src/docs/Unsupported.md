@@ -30,6 +30,22 @@ On GPUs there is little support for exceptions. For example, on a division by 0 
 
 However, there is no such mechanisms on GPUs ([link](https://docs.nvidia.com/cuda/floating-point/index.html#differences-from-x86)), which means that TornadoVM must insert extra control-flow to guarantee those exceptions never happen. Currently, since TornadoVM compiles at runtime, many of those checks can be assured at runtime. However, we plan to integrate exception support for TornadoVM in the future.
 
+##### 5. No Support for static TaskSchedules and Tasks
+
+TornadoVM currently does not support static TaskSchedules and Tasks. For example, the code below is not considered valid:
+```
+    public static void testMethod(int[] in) {
+        // ... some code ...
+    }
+
+    static int[] inTor = new int[] { 0 };
+    static TaskSchedule ts = new TaskSchedule("s0");
+    static {
+        ts.task("t0", Main::testMethod, inTor);
+    }
+```
+The reason for not supporting this is that a deadlock might occur between the user thread running class initialization and the Tornado compiler thread performing JIT compilation of the Task method.
+Note that detecting such a deadlock is not trivial and therefore currently, TornadoVM will not issue any error or warning. 
 
 ### Note
 
