@@ -313,12 +313,6 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         } else {
             getGen().append(new PTXLIRStmt.StoreStmt(access, input));
         }
-
-        // Store back to register if it was loaded to a register first
-        Variable valueHolder = access.assignedTo();
-        if (valueHolder != null) {
-            getGen().append(new PTXLIRStmt.AssignStmt(valueHolder, input));
-        }
     }
 
     @Override

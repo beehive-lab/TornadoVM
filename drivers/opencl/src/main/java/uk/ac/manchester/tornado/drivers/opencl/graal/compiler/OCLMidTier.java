@@ -47,7 +47,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUn
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
 
 public class OCLMidTier extends TornadoMidTier {
 
@@ -71,7 +70,6 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
         }
 
-        appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
         appendPhase(canonicalizer);

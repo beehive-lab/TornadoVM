@@ -238,18 +238,8 @@ public class SPIRVUnary {
 
     public static class AbstractMemoryAccess extends UnaryConsumer {
 
-        protected Variable assignedTo;
-
         protected AbstractMemoryAccess(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
             super(opcode, valueKind, value);
-        }
-
-        public void assignTo(Variable loadedTo) {
-            this.assignedTo = loadedTo;
-        }
-
-        public Variable assignedTo() {
-            return assignedTo;
         }
     }
 

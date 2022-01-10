@@ -44,7 +44,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.phases.BoundCheckEliminationPh
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
 
 public class PTXMidTier extends TornadoMidTier {
     public PTXMidTier(OptionValues options) {
@@ -66,7 +65,6 @@ public class PTXMidTier extends TornadoMidTier {
             appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
         }
 
-        appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
         appendPhase(canonicalizer);
