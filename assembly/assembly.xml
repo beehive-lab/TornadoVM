@@ -64,7 +64,6 @@
             </includes>
             <fileMode>0444</fileMode>
         </fileSet>
-
         <fileSet>
             <directory>src/docs</directory>
             <outputDirectory>../</outputDirectory>
