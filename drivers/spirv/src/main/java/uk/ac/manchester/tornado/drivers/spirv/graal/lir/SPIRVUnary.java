@@ -874,13 +874,37 @@ public class SPIRVUnary {
      * OpenCL Extended Instruction Set Intrinsics. As specified in the SPIR-V 1.0
      * standard, the following intrinsics in SPIR-V represents builtin functions
      * from the OpenCL standard.
-     * 
+     *
      * For obtaining the correct Int-Reference of the function:
-     * 
+     *
      * <url>https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html</url>
-     * 
+     *
      */
     public static class Intrinsic extends UnaryConsumer {
+
+        public static final String COS = "cos";
+        // @formatter:on
+        private final OpenCLExtendedIntrinsic builtIn;
+        public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
+            super(null, valueKind, value);
+            this.builtIn = opcode;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.name);
+
+            SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
+
+            SPIRVId loadParam = loadSPIRVId(crb, asm, getValue());
+
+            SPIRVId result = asm.module.getNextId();
+            SPIRVId set = asm.getOpenclImport();
+            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.value, builtIn.name);
+            asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
+            asm.registerLIRInstructionValue(this, result);
+        }
 
         // @formatter:off
         public enum OpenCLExtendedIntrinsic {
@@ -920,6 +944,7 @@ public class SPIRVUnary {
             LOG("log", 37),
             LOG2("log2", 38),
             LOG10("log10", 39),
+            MAD("mad", 42),
             POW("pow", 48),
             REMAINDER("remainder", 51),
             RSQRT("rsqrt", 56),
@@ -947,7 +972,7 @@ public class SPIRVUnary {
             VSTORE_HALF("vstore_half", 175),
             VSTORE_HALFN("vstore_halfn", 176);
 
-            
+
             int value;
             String name;
 
@@ -963,31 +988,6 @@ public class SPIRVUnary {
             public int getValue() {
                 return this.value;
             }
-        }
-        // @formatter:on
-
-        public static final String COS = "cos";
-        private final OpenCLExtendedIntrinsic builtIn;
-
-        public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
-            super(null, valueKind, value);
-            this.builtIn = opcode;
-        }
-
-        @Override
-        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.name);
-
-            SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
-
-            SPIRVId loadParam = loadSPIRVId(crb, asm, getValue());
-
-            SPIRVId result = asm.module.getNextId();
-            SPIRVId set = asm.getOpenclImport();
-            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.value, builtIn.name);
-            asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
-            asm.registerLIRInstructionValue(this, result);
         }
     }
 

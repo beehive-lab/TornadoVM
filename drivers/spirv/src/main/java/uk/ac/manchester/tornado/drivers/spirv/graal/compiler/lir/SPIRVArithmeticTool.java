@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -553,7 +554,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         Variable result = getGen().newVariable(resultKind);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA, resultKind, op1, op2, op3)));
+        SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic operation = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA;
+        if (TornadoOptions.FAST_MATH_OPTIMIZATIONS) {
+            operation = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.MAD;
+        }
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(operation, resultKind, op1, op2, op3)));
         return result;
     }
 

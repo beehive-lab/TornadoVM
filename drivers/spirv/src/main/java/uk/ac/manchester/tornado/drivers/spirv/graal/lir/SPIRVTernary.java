@@ -40,7 +40,7 @@ public class SPIRVTernary {
     /**
      * Abstract operation which consumes two inputs
      */
-    protected static class TernaryConsumer extends SPIRVLIROp {
+    abstract static class TernaryConsumer extends SPIRVLIROp {
 
         @LIRInstruction.Use
         protected Value x;
@@ -54,11 +54,6 @@ public class SPIRVTernary {
             this.x = x;
             this.y = y;
             this.z = z;
-        }
-
-        @Override
-        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
         }
     }
 
