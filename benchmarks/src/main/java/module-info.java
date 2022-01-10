@@ -1,5 +1,5 @@
 module tornado.benchmarks {
-    requires commons.lang3;
+    requires org.apache.commons.lang3;
     requires java.logging;
     requires org.apache.logging.log4j;
     requires jmh.core;
