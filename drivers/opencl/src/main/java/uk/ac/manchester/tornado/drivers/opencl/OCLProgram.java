@@ -45,6 +45,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLProgram extends TornadoLogger {
 
@@ -103,6 +104,11 @@ public class OCLProgram extends TornadoLogger {
     }
 
     public void build(String options) {
+
+        if (TornadoOptions.FAST_MATH_OPTIMIZATIONS) {
+            options += " -cl-fast-relaxed-math";
+        }
+
         buffer.clear();
 
         try {
