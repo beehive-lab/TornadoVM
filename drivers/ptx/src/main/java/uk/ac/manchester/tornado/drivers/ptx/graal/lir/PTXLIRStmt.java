@@ -210,7 +210,6 @@ public class PTXLIRStmt {
             this.dest = dest;
             this.loadOp = op;
             this.address = address;
-            address.assignTo(dest);
         }
 
         @Override
@@ -246,7 +245,6 @@ public class PTXLIRStmt {
             super(TYPE);
             this.dest = dest;
             this.address = address;
-            address.assignTo(dest);
         }
 
         @Override

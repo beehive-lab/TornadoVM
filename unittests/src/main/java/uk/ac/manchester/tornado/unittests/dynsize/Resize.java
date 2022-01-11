@@ -24,13 +24,14 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-public class Resize {
+public class Resize extends TornadoTestBase {
 
     public static void resize01(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {

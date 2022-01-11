@@ -240,7 +240,6 @@ public class OCLUnary {
         private final OCLMemoryBase base;
         private final boolean needsBase;
         private Value index;
-        private AllocatableValue assignedTo;
 
         MemoryAccess(OCLMemoryBase base, Value value, boolean needsBase) {
             super(null, LIRKind.Illegal, value);
@@ -282,14 +281,6 @@ public class OCLUnary {
 
         public Value getIndex() {
             return index;
-        }
-
-        public void assignTo(AllocatableValue loadedTo) {
-            assignedTo = loadedTo;
-        }
-
-        public AllocatableValue assignedTo() {
-            return assignedTo;
         }
 
         @Override

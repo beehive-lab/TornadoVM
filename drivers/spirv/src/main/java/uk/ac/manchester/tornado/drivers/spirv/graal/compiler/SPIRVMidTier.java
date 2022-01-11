@@ -46,7 +46,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoPartialLoopUnr
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
 
 /**
  * SPIR-V backend reuses from the OCL the following phases:
@@ -78,7 +77,6 @@ public class SPIRVMidTier extends TornadoMidTier {
             appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
         }
 
-        appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
         appendPhase(canonicalizer);
