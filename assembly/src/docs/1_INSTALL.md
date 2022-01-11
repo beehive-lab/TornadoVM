@@ -46,7 +46,7 @@ Usage:
        --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)
        --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)
        --windows-jdk-11 : Install TornadoVM with Windows JDK 11
-       --windows-jdk-17 : Install TornadoVM with Windows JDK 16
+       --windows-jdk-17 : Install TornadoVM with Windows JDK 17
        --opencl         : Install TornadoVM and build the OpenCL backend
        --ptx            : Install TornadoVM and build the PTX backend
        --spirv          : Install TornadoVM and build the SPIR-V backend
