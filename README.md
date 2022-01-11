@@ -18,7 +18,7 @@ Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 ## 1. Installation
 
-In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](assembly/src/docs/1_INSTALL.md#a-automatic-installation). For example:
+In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](INSTALL.md#a-automatic-installation). For example:
 ```bash
 ./scripts/tornadovmInstaller.sh 
 TornadoVM installer for Linux and OSx
@@ -45,7 +45,7 @@ Usage:
   * `--ptx`: Enables the PTX backend (requires NVIDIA CUDA drivers)
   * `--spirv`: Enables the SPIRV backend (requires Intel Level Zero drivers)
 
-Alternatively, TornadoVM can be installed either manually [from source](assembly/src/docs/1_INSTALL.md#b-manual-installation) or 
+Alternatively, TornadoVM can be installed either manually [from source](INSTALL.md#b-manual-installation) or 
 by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the
