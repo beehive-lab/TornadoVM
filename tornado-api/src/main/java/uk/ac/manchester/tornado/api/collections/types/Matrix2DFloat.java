@@ -54,22 +54,22 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected float[] storage;
+    protected final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
+    private final int numElements;
 
     /**
      * Number of rows
      */
-    final protected int M;
+    protected final int M;
 
     /**
      * Number of columns
      */
-    final protected int N;
+    protected final int N;
 
     /**
      * Storage format for matrix
@@ -196,15 +196,13 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        String str = "";
+        StringBuilder str = new StringBuilder("");
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                str += format(fmt, get(i, j)) + " ";
-            }
-            str += "\n";
+                str.append(format(fmt, get(i, j)) + " ");            }
+            str.append("\n");
         }
-        str.trim();
-        return str;
+        return str.toString().trim();
     }
 
     @Override

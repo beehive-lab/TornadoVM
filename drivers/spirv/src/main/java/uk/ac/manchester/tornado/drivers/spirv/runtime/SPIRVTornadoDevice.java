@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -277,29 +278,24 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, SPIRVDeviceContext device, long batchSize) {
         ObjectBuffer result = null;
-        // if (componentType == int[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVIntArrayWrapper(context, batchSize), batchSize);
-        // } else if (componentType == float[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVFloatArrayWrapper(context, batchSize), batchSize);
-        // } else if (componentType == double[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVDoubleArrayWrapper(context, batchSize), batchSize);
-        // } else if (componentType == long[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVLongArrayWrapper(context, batchSize), batchSize);
-        // } else if (componentType == short[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVShortArrayWrapper(context, batchSize), batchSize);
-        // } else if (componentType == char[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVCharArrayWrapper(context, batchSize), batchSize);
-        // } else if (componentType == byte[].class) {
-        // return new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context)
-        // -> new SPIRVByteArrayWrapper(context, batchSize), batchSize);
-        // }
-        TornadoInternalError.unimplemented("[SPIRV] Array of type %s", componentType.getName());
+
+        if (componentType == int[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVIntArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == short[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVShortArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == char[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVCharArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == byte[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVByteArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == float[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVFloatArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == double[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVDoubleArrayWrapper(context, batchSize), batchSize);
+        } else if (componentType == long[].class) {
+            result = new SPIRVMultiDimArrayWrapper<>(device, (SPIRVDeviceContext context) -> new SPIRVLongArrayWrapper(context, batchSize), batchSize);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
         return result;
     }
 

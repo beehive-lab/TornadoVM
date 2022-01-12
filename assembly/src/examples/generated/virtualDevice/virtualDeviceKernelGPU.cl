@@ -48,7 +48,6 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
         f_20  =  f_2[i_19];
         f_21  =  fmax(f_18, f_20);
         f_2[i_5]  =  f_21;
-        f_18  =  f_21;
       }  // B9
       else
       {
@@ -126,6 +125,5 @@ __kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uch
   f_25  =  fmax(f_24, f_18);
   f_26  =  fmax(f_25, f_2);
   *((__global float *) ul_3)  =  f_26;
-  f_4  =  f_26;
   return;
 }  //  kernel

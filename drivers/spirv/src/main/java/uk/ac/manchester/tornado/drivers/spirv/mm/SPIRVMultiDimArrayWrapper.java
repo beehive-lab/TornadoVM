@@ -124,7 +124,7 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
         final E[] elements = innerCast(values);
         // XXX: Offset is 0
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].enqueueRead(elements[i], 0, null, false);
+            wrappers[i].read(elements[i], 0, null, false);
         }
         deviceContext.enqueueBarrier(deviceContext.getDeviceIndex());
         return 0;

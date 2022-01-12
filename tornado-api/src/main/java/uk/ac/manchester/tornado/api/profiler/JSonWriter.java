@@ -54,13 +54,13 @@ public class JSonWriter<T extends JSonWriter> {
     private StringBuilder sb;
     private int scope = 0;
     private boolean compactMode = false;
-    public final static long epochUs = System.nanoTime() / 1000;
+    public static final long EPOCH_US = System.nanoTime() / 1000;
 
     enum State {
         NONE, AFTER_COMMA, AFTER_OBRACE, AFTER_CBRACE, AFTER_COLON, AFTER_VALUE;
 
-        static final private EnumSet<State> needsComma = EnumSet.of(State.AFTER_CBRACE, State.AFTER_VALUE);
-        static final private EnumSet<State> needsNewline = EnumSet.of(State.AFTER_CBRACE, State.AFTER_COMMA, State.AFTER_OBRACE);
+        private static final EnumSet<State> needsComma = EnumSet.of(State.AFTER_CBRACE, State.AFTER_VALUE);
+        private static final EnumSet<State> needsNewline = EnumSet.of(State.AFTER_CBRACE, State.AFTER_COMMA, State.AFTER_OBRACE);
 
         boolean needsComma() {
             return needsComma.contains(this);
@@ -262,7 +262,7 @@ public class JSonWriter<T extends JSonWriter> {
     }
 
     T us(String k, long valueUs) {
-        return (T) kv(k, valueUs - epochUs);
+        return (T) kv(k, valueUs - EPOCH_US);
     }
 
     T ns(String k, long valueNs) {

@@ -56,19 +56,19 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
      * backing array
      */
     @Payload
-    final protected double[] storage;
+    final double[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 4;
+    private static final int NUM_ELEMENTS = 4;
 
     public Double4(double[] storage) {
         this.storage = storage;
     }
 
     public Double4() {
-        this(new double[numElements]);
+        this(new double[NUM_ELEMENTS]);
     }
 
     public double get(int index) {
@@ -171,7 +171,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getZ(), getW());
     }
 
-    protected static Double4 loadFromArray(final double[] array, int index) {
+    static Double4 loadFromArray(final double[] array, int index) {
         final Double4 result = new Double4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -180,7 +180,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final double[] array, int index) {
+    void storeToArray(final double[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -199,7 +199,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     public void fill(double value) {

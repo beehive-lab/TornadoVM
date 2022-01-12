@@ -730,6 +730,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
-        return TornadoVMBackendType.OpenCL;
+        return TornadoVMBackendType.OPENCL;
     }
 }

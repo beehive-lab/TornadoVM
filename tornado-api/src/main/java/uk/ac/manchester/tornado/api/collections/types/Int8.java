@@ -56,19 +56,19 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
      * backing array
      */
     @Payload
-    final protected int[] storage;
+    private final int[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private static int numElements = 8;
+    private static final int NUM_ELEMENTS = 8;
 
     public Int8(int[] storage) {
         this.storage = storage;
     }
 
     public Int8() {
-        this(new int[numElements]);
+        this(new int[NUM_ELEMENTS]);
     }
 
     public Int8(int s0, int s1, int s2, int s3, int s4, int s5, int s6, int s7) {
@@ -190,19 +190,19 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public String toString() {
-        return toString(IntOps.fmt8);
+        return toString(IntOps.FMT_8);
     }
 
-    protected static Int8 loadFromArray(final int[] array, int index) {
+    static Int8 loadFromArray(final int[] array, int index) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, array[index + i]);
         }
         return result;
     }
 
-    protected final void storeToArray(final int[] array, int index) {
-        for (int i = 0; i < numElements; i++) {
+    void storeToArray(final int[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             array[index + i] = get(i);
         }
     }
@@ -219,7 +219,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public int size() {
-        return numElements;
+        return NUM_ELEMENTS;
     }
 
     /**
@@ -227,7 +227,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
      */
     public static Int8 add(Int8 a, Int8 b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
@@ -235,7 +235,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 add(Int8 a, int b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
@@ -243,7 +243,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 sub(Int8 a, Int8 b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
@@ -251,7 +251,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 sub(Int8 a, int b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
@@ -259,7 +259,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 div(Int8 a, Int8 b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
@@ -267,7 +267,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 div(Int8 a, int value) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
@@ -275,7 +275,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 mult(Int8 a, Int8 b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
@@ -283,7 +283,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 mult(Int8 a, int value) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
@@ -291,7 +291,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 min(Int8 a, Int8 b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
@@ -299,7 +299,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static int min(Int8 value) {
         int result = Integer.MAX_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
@@ -307,7 +307,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 max(Int8 a, Int8 b) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
@@ -315,7 +315,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static int max(Int8 value) {
         int result = Integer.MIN_VALUE;
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
@@ -323,7 +323,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static Int8 sqrt(Int8 a) {
         final Int8 result = new Int8();
-        for (int i = 0; i < numElements; i++) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, (int) TornadoMath.sqrt(a.get(i)));
         }
         return result;

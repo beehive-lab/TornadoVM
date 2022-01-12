@@ -27,6 +27,8 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -34,6 +36,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryIndexedAccess;
@@ -81,11 +84,20 @@ public class SPIRVAddressNode extends AddressNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool generator) {
         SPIRVLIRGenerator tool = (SPIRVLIRGenerator) generator.getLIRGeneratorTool();
         Value baseValue = genValue(generator, base);
+        if (base instanceof ParameterNode && base.stamp(NodeView.DEFAULT) instanceof SPIRVStamp) {
+            SPIRVStamp stamp = (SPIRVStamp) base.stamp(NodeView.DEFAULT);
+            SPIRVKind kind = stamp.getSPIRVKind();
+            if (kind.isVector()) {
+                baseValue = tool.getSPIRVGenTool().getParameterToVariable().get(base);
+            }
+        }
+
         Value indexValue = genValue(generator, index);
         if (index == null) {
-            throw new RuntimeException("Operation not supported -- INDEX IS NULL");
+            generator.setResult(this, new SPIRVUnary.MemoryAccess(memoryRegion, baseValue));
+        } else {
+            setMemoryAccess(generator, baseValue, indexValue, tool);
         }
-        setMemoryAccess(generator, baseValue, indexValue, tool);
     }
 
     private boolean isPrivateMemoryAccess() {

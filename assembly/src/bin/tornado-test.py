@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 
+
 class TestEntry:
     def __init__(self, testName, testMethods=None, testParameters=None):
         self.testName = testName
@@ -42,14 +43,14 @@ class TestEntry:
 __TEST_THE_WORLD__ = [
 
     ## SPIR-V, OpenCL and PTX foundation tests
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIntegers"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestFloats"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestDoubles"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.MultipleRuns"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLinearAlgebra"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestLong"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestShorts"),
-    TestEntry("uk.ac.manchester.tornado.unittests.spirv.TestIf"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIntegers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestDoubles"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.MultipleRuns"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestLong"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestShorts"),
+    TestEntry("uk.ac.manchester.tornado.unittests.foundation.TestIf"),
 
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
@@ -63,6 +64,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
+    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
     TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
@@ -304,7 +306,6 @@ def processStats(out, stats):
         elif (l.find("UNSUPPORTED") != -1):
             stats["[UNSUPPORTED]"] = stats["[UNSUPPORTED]"] + 1
 
-
     return stats
 
 
@@ -386,7 +387,7 @@ def runTests(args):
 
 
 def runTestTheWorld(cmd, args):
-    stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]" : 0}
+    stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
 
     for t in __TEST_THE_WORLD__:
         command = cmd

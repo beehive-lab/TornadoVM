@@ -50,7 +50,6 @@ public class TornadoRuntime {
 
     private static TornadoRuntimeCI runtimeImpl;
     private static TornadoCI tornadoImpl;
-    private static AbstractFactoryDevice device;
 
     static {
         init();
@@ -106,7 +105,7 @@ public class TornadoRuntime {
      */
     @Deprecated
     public static TornadoDevice createDevice(String backendName, int platformIndex, int deviceIndex) {
-        device = TornadoAPIProvider.loadDeviceImpl(backendName);
+        AbstractFactoryDevice device = TornadoAPIProvider.loadDeviceImpl(backendName);
         return device.createDevice(platformIndex, deviceIndex);
     }
 }

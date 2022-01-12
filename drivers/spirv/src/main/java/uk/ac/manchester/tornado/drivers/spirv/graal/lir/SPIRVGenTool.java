@@ -38,6 +38,8 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 
+import java.util.HashMap;
+
 /**
  * This class specifies how to load a parameter to the kernel from the TornadoVM
  * Stack-Frame.
@@ -45,6 +47,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 public class SPIRVGenTool {
 
     protected SPIRVLIRGenerator generator;
+
+    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
 
     public SPIRVGenTool(SPIRVLIRGenerator gen) {
         this.generator = gen;
@@ -59,6 +63,7 @@ public class SPIRVGenTool {
 
         Variable result = (spirvKind.isVector()) ? generator.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : generator.newVariable(lirKind);
         emitParameterLoad(result, index);
+        parameterToVariable.put(paramNode, result);
 
         if (spirvKind.isVector()) {
             Variable vectorToLoad = generator.newVariable(lirKind);
@@ -88,6 +93,10 @@ public class SPIRVGenTool {
                 index); //
 
         generator.append(assignStmt);
+    }
+
+    public HashMap<ParameterNode, Variable> getParameterToVariable() {
+        return parameterToVariable;
     }
 
 }

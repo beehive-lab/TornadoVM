@@ -50,13 +50,13 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected float[] storage;
+    protected final float[] storage;
 
     /**
      * number of elements in the storage
      */
-    final private int numElements;
-    final private static int elementSize = 2;
+    private final int numElements;
+    private static final int ELEMENT_SIZE = 2;
 
     /**
      * Creates a vector using the provided backing array
@@ -73,7 +73,7 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
      * Creates a vector using the provided backing array
      */
     public VectorFloat2(float[] array) {
-        this(array.length / elementSize, array);
+        this(array.length / ELEMENT_SIZE, array);
     }
 
     /**
@@ -82,11 +82,11 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
      * @param numElements
      */
     public VectorFloat2(int numElements) {
-        this(numElements, new float[numElements * elementSize]);
+        this(numElements, new float[numElements * ELEMENT_SIZE]);
     }
 
     private int toIndex(int index) {
-        return (index * elementSize);
+        return (index * ELEMENT_SIZE);
     }
 
     /**
@@ -150,7 +150,7 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString() {
-        if (this.numElements > elementSize) {
+        if (this.numElements > ELEMENT_SIZE) {
             return String.format("VectorFloat2 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();

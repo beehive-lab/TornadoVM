@@ -83,3 +83,16 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeKernelSetArgumentValue [PTR]", result);
     return result;
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel
+ * Method:    zeKernelSetCacheConfig_native
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroKernel_zeKernelSetCacheConfig_1native
+    (JNIEnv *, jobject, jlong javaKernelHandlerPtr, jint flag) {
+    ze_kernel_handle_t kernel = reinterpret_cast<ze_kernel_handle_t>(javaKernelHandlerPtr);
+    ze_result_t result = zeKernelSetCacheConfig(kernel, flag);
+    LOG_ZE_JNI("zeKernelSetCacheConfig", result);
+    return result;
+}

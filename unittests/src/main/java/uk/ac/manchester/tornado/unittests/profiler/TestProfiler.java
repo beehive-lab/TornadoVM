@@ -38,7 +38,7 @@ public class TestProfiler extends TornadoTestBase {
             case PTX:
             case SPIRV:
                 return true;
-            case OpenCL:
+            case OPENCL:
                 return false;
             default:
                 return false;

@@ -123,7 +123,6 @@ public class PTXUnary {
         private final PTXMemoryBase base;
         private Value index;
         private String name;
-        private Variable assignedTo;
 
         MemoryAccess(PTXMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
@@ -190,20 +189,8 @@ public class PTXUnary {
             return base.memorySpace.index() == PTXMemorySpace.SHARED.index();
         }
 
-        private boolean isVector() {
-            return assignedTo != null && ((PTXKind) assignedTo.getPlatformKind()).isVector();
-        }
-
         public PTXMemoryBase getBase() {
             return base;
-        }
-
-        public void assignTo(Variable loadedTo) {
-            assignedTo = loadedTo;
-        }
-
-        public Variable assignedTo() {
-            return assignedTo;
         }
 
         @Override

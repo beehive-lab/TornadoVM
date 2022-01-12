@@ -60,7 +60,7 @@ public class PrebuiltTest extends TornadoTestBase {
             case PTX:
                 filePath += "add.ptx";
                 break;
-            case OpenCL:
+            case OPENCL:
                 filePath += "add.cl";
                 break;
             case SPIRV:
@@ -109,7 +109,7 @@ public class PrebuiltTest extends TornadoTestBase {
             case PTX:
                 filePath += "add.ptx";
                 break;
-            case OpenCL:
+            case OPENCL:
                 filePath += "add.cl";
                 break;
             case SPIRV:
@@ -140,7 +140,7 @@ public class PrebuiltTest extends TornadoTestBase {
     @Test
     public void testPrebuild03() {
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.OpenCL);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         String tornadoSDK = System.getenv("TORNADO_SDK");
@@ -183,7 +183,7 @@ public class PrebuiltTest extends TornadoTestBase {
     @Test
     public void testPrebuild04() {
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.OpenCL);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
 
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         String tornadoSDK = System.getenv("TORNADO_SDK");
@@ -227,7 +227,7 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuild05() {
         // Check only for the SPIR-V backend
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.OpenCL);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
 
         final int numElements = 8192 * 16;
         int[] a = new int[numElements];

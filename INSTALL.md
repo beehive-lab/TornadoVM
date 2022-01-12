@@ -5,7 +5,7 @@
 The following table includes the platforms that TornadoVM can be executed.
 
 | OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            | 
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| -------------------------- | ---------------------------------------------------------- | ----------- | ------------------------- |
 | CentOS >= 7.3              | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
 | Fedora >= 21               | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
 | Ubuntu >= 16.04            | OpenCL for GPUs and CPUs >= 1.2, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
@@ -22,21 +22,85 @@ TornadoVM can be built with three compiler backends and is able to generate Open
 
 **Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
 
-At least one backend must be specified at build time to the `make` command:
+There are two ways to install TornadoVM: 
+
+### A) Automatic Installation
+
+The `tornadoVMInstaller.sh` script provided in this repository will compile/download OpenJDK, `cmake` and it will build TornadoVM.
+This installation script has been tested on Linux and OSx.
+Additionally, this installation type will automatically trigger all dependencies, therefore it is recommended if users only need to invoke TornadoVM as a library.
+
+Note that GraalVM Community Edition releases based on JDK8 are no longer being built for Mac OSx.
 
 ```bash
-$ make BACKENDS=opencl,ptx,spirv
+./scripts/tornadovmInstaller.sh 
+TornadoVM installer for Linux and OSx
+Usage:
+       --jdk8           : Install TornadoVM with OpenJDK 8
+       --jdk11          : Install TornadoVM with OpenJDK 11
+       --jdk17          : Install TornadoVM with OpenJDK 17
+       --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 21.3.0)
+       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 16 (GraalVM 21.3.0)
+       --corretto-11    : Install TornadoVM with Corretto JDK 11
+       --corretto-17    : Install TornadoVM with Corretto JDK 16
+       --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)
+       --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)
+       --windows-jdk-11 : Install TornadoVM with Windows JDK 11
+       --windows-jdk-17 : Install TornadoVM with Windows JDK 16
+       --opencl         : Install TornadoVM and build the OpenCL backend
+       --ptx            : Install TornadoVM and build the PTX backend
+       --spirv          : Install TornadoVM and build the SPIR-V backend
+       --help           : Print this help
 ```
 
-As well as being built with three compiler backends, TornadoVM can be executed with the following three configurations:
+**NOTE** Select the desired backend:
+  * `--opencl`: Enables the OpenCL backend (requires OpenCL drivers)
+  * `--ptx`: Enables the PTX backend (requires NVIDIA CUDA drivers)
+  * `--spirv`: Enables the SPIRV backend (requires Intel Level Zero drivers)
+
+###### Installation 
+
+To build TornadoVM with GraalVM and JDK 11:
+
+```bash
+## Install with Graal JDK 17 using PTX, OpenCL and SPIRV backends
+./scripts/tornadovmInstaller.sh --graal-jdk-17 --opencl --ptx --spirv
+```
+
+To build TornadoVM with Red Hat Mandrel JDK 11 with OpenCL and PTX backends:
+
+```bash
+./scripts/tornadovmInstaller.sh --mandrel-11 --opencl --ptx
+```
+
+After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM. 
+
+After the script finished the installation, set the env variables needed by using:
+
+```bash
+$ source source.sh
+```
+
+### B) Manual Installation
+
+TornadoVM can be executed with the following three configurations:
 
   * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
   * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](assembly/src/docs/12_INSTALL_WITH_JDK11_PLUS.md).
 
-Note: To run TornadoVM in Windows OS, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
+_Note 1_: To run TornadoVM on **Windows OS**, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
 
-Note: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/18_MALI.md).
+_Note 2_: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/18_MALI.md).
+
+
+This installation type requires users to manually install the dependencies, therefore it is recommended for developing the TornadoVM.
+At least one backend must be specified at build time to the `make` command:
+
+```bash
+## Choose the desired backend
+$ make BACKENDS=opencl,ptx,spirv
+```
 
 ## 2. Running Examples
 
@@ -108,9 +172,9 @@ To run on a specific device use the following option:
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
 ```
 
-Where `s` is the *schedule name* and `t` is the task name.
+Where `s` is the *TaskSchedule name* and `t` is the *task name*.
 
-For example running on `driver:device` [1][1] (Intel HD Graphics in our example) will look like this:
+For example running on `driver:device` `1:1` (Intel HD Graphics in our example) will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D

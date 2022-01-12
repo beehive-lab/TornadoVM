@@ -47,6 +47,6 @@ public class ParallelAnnotation implements ParallelAnnotationProvider {
 
     @Override
     public String toString() {
-        return String.format("[local @ index %d]: %s", index);
+        return String.format("[local @ index %d]: %s", index, start);
     }
 }
