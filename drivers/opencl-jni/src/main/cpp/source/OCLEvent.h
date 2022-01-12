@@ -61,6 +61,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
         (JNIEnv *, jclass, jlong);
 
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_dumpEventInfo
+        (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

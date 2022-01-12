@@ -357,7 +357,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
 
     public void reset() {
         oclEventPool.reset();
-        codeCache.reset();
+//        codeCache.reset();
         wasReset = true;
     }
 
@@ -372,18 +372,15 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     public void dumpEvents() {
         List<OCLEvent> events = oclEventPool.getEvents();
 
-        final String deviceName = "opencl-" + context.getPlatformIndex() + "-" + device.getIndex();
+        final String deviceName = "OpenCL-" + context.getPlatformIndex() + "-" + device.getIndex();
         System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
         if (events.isEmpty()) {
             return;
         }
 
-        events.sort(Comparator.comparingLong(OCLEvent::getCLSubmitTime).thenComparingLong(OCLEvent::getCLStartTime));
+        events.sort(Comparator.comparingLong(OCLEvent::getCLQueuedTime));
 
-        long base = events.get(0).getCLSubmitTime();
-        System.out.println("event: device,type,info,queued,submitted,start,end,status");
-        events.forEach(event -> System.out.printf("event: %s,%s,%s,0x%x,%d,%d,%d,%s\n", deviceName, event.getName(), event.getOclEventID(), event.getCLQueuedTime() - base,
-                event.getCLSubmitTime() - base, event.getCLStartTime() - base, event.getCLEndTime() - base, event.getStatus()));
+        events.forEach(event -> OCLEvent.dumpEventInfo(event.getOclEventID()));
     }
 
     @Override
