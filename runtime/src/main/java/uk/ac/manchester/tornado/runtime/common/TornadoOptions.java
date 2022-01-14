@@ -198,6 +198,11 @@ public class TornadoOptions {
      * It enables more fast math optimizations
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
+
+    /**
+     * Optimizes Loads/Stores, V2
+     */
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", TRUE);
     /**
      * Option to load FPGA pre-compiled binaries.
      */

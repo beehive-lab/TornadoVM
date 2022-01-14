@@ -96,6 +96,11 @@ public class SPIRVBinary {
                 if (param == null) {
                     throw new RuntimeException("LOADING PARAMETER: " + inputValue + " with NULL VALUE in SPIR-V Table");
                 }
+
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    return param;
+                }
+
                 if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     // We need to perform a load first
                     Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue + " ::: " + param);
@@ -205,6 +210,7 @@ public class SPIRVBinary {
             }
 
             asm.registerLIRInstructionValue(this, operationId);
+            System.out.println("THIS: " + this);
         }
 
     }

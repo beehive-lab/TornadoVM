@@ -28,7 +28,6 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.AllocatableValue;
@@ -54,7 +53,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVLIRStmt {
 
-    protected static abstract class AbstractInstruction extends LIRInstruction {
+    protected abstract static class AbstractInstruction extends LIRInstruction {
 
         public AbstractInstruction(LIRInstructionClass<? extends LIRInstruction> c) {
             super(c);
@@ -101,7 +100,8 @@ public class SPIRVLIRStmt {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit Assignment : " + lhs + " = " + rhs.getClass());
 
             SPIRVId storeAddressID;
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            System.out.println("ASSIGN RHS: " + rhs);
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                 storeAddressID = asm.lookUpLIRInstructions(rhs);
             } else {
                 SPIRVId value;
@@ -320,14 +320,11 @@ public class SPIRVLIRStmt {
 
         protected int alignment;
 
-        protected int parameterIndex;
-
         public ASSIGNParameter(AllocatableValue lhs, Value rhs, int alignment, int parameterIndex) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = rhs;
             this.alignment = alignment;
-            this.parameterIndex = parameterIndex;
         }
 
         /**
@@ -365,6 +362,55 @@ public class SPIRVLIRStmt {
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
             ));
             asm.registerLIRInstructionValue(lhs, parameterID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+    }
+
+    @Opcode("ASSIGNParameter")
+    public static class ASSIGNParameterWithNoStore extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ASSIGNParameterWithNoStore> TYPE = LIRInstructionClass.create(ASSIGNParameterWithNoStore.class);
+
+        @Def
+        private AllocatableValue lhs;
+        @Use
+        private Value rhs;
+
+        public ASSIGNParameterWithNoStore(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        /**
+         * Emit the following SPIR-V structure:
+         *
+         * Loads the stack frame. This version optimizes Loads/Stores.
+         *
+         * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
+         * @param asm
+         *            {@link SPIRVAssembler}
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns ASSIGNParameterWithNoStore");
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            SPIRVId rightSideParameterID = asm.lookUpLIRInstructions(rhs);
+            asm.registerLIRInstructionValue(lhs, rightSideParameterID);
         }
 
         public AllocatableValue getResult() {

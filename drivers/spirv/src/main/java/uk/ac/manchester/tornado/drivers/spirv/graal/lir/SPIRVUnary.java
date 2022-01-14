@@ -28,7 +28,6 @@ import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.Value;
@@ -459,14 +458,16 @@ public class SPIRVUnary {
 
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
 
-            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            System.out.println("ADDRESS TO LOAD: " + addressToLoad);
+
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                idLoad = addressToLoad;
+            } else {
                 asm.currentBlockScope().add(new SPIRVOpLoad( //
                         typeLoad, //
                         idLoad, //
                         addressToLoad, //
                         new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
-            } else {
-                idLoad = addressToLoad;
             }
 
             SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
@@ -875,6 +876,7 @@ public class SPIRVUnary {
         public static final String COS = "cos";
         // @formatter:on
         private final OpenCLExtendedIntrinsic builtIn;
+
         public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
             super(null, valueKind, value);
             this.builtIn = opcode;
