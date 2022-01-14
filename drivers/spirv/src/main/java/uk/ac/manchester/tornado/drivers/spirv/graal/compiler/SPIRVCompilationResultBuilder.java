@@ -68,8 +68,6 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult) {
         super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
-        // super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
-        // options, getDebugContext(), compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
 

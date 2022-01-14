@@ -44,10 +44,10 @@ import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.Variable;
@@ -269,21 +269,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private void platformPatch(boolean isKernel) {
-        final List<LIRInstruction> insns = getLIRGeneratorTool().getResult().getLIR().getLIRforBlock(gen.getCurrentBlock());
-        final int index = insns.size() - 1;
-        final LIRInstruction op = insns.get(index);
-
-        if (!isKernel) {
-            return;
-        }
-
-        if (op instanceof SPIRVLIRStmt.ExprStmt) {
-            throw new RuntimeException(">>>>>>>>>>>>>>>>>> MISSING PLATFORM PATCH FOR RETURN STATEMENT WITH VALUE");
-        }
-
-    }
-
     public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
         try (BlockScope ignored = gen.getBlockScope(block)) {
@@ -377,7 +362,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitEndNode(final AbstractEndNode end) {
-        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "µInst visitEnd: " + end);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[µInst visitEnd (SPIRVNodeLIRBuilder#visitEndNode)]: " + end);
 
         if (end instanceof LoopEndNode) {
             return;
@@ -618,6 +603,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
         List<ValuePhiNode> valuePhis = loopBeginNode.valuePhis().snapshot();
         for (ValuePhiNode phi : valuePhis) {
+            NodeInputList<ValueNode> values = phi.values();
             final Value value = operand(phi.firstValue());
             if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
                 /*
@@ -645,7 +631,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitNode(final ValueNode node) {
-        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, " [emitNote] visiting: %s", node);
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, " [emitNode (SPIRVNodeLIRBuilder#emitNode)] visiting: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {

@@ -94,10 +94,11 @@ public class SPIRVControlFlow {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "LoopLabel : blockID " + blockId);
             SPIRVId branchId = getIfOfBranch(blockId, asm);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tOpBranch: " + blockId);
             SPIRVInstScope newScope = asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
             asm.pushScope(newScope);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tLoopLabel : blockID " + blockId);
             SPIRVInstScope newScope2 = newScope.add(new SPIRVOpLabel(branchId));
             asm.pushScope(newScope2);
         }
@@ -122,11 +123,11 @@ public class SPIRVControlFlow {
 
         /**
          * It emits the following pattern:
-         * 
+         *
          * <code>
          *     OpBranchConditional %condition %trueBranch %falseBranch
          * </code>
-         * 
+         *
          * @param crb
          *            {@link SPIRVCompilationResultBuilder crb}
          * @param asm
@@ -198,11 +199,10 @@ public class SPIRVControlFlow {
     public static class BranchIf extends BaseControlFlow {
 
         public static final LIRInstructionClass<BranchIf> TYPE = LIRInstructionClass.create(BranchIf.class);
-
-        @Use
-        private LabelRef branch;
         private final boolean isConditional;
         private final boolean isLoopEdgeBack;
+        @Use
+        private LabelRef branch;
 
         public BranchIf(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
             super(TYPE);
