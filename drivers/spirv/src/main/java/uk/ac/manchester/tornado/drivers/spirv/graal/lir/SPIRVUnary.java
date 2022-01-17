@@ -446,7 +446,9 @@ public class SPIRVUnary {
          * </code>
          *
          * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
          * @param asm
+         *            {@link SPIRVAssembler}
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -457,8 +459,6 @@ public class SPIRVUnary {
             SPIRVId typeLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
 
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
-
-            System.out.println("ADDRESS TO LOAD: " + addressToLoad);
 
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 idLoad = addressToLoad;

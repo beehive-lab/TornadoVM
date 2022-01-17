@@ -210,7 +210,6 @@ public class SPIRVBinary {
             }
 
             asm.registerLIRInstructionValue(this, operationId);
-            System.out.println("THIS: " + this);
         }
 
     }

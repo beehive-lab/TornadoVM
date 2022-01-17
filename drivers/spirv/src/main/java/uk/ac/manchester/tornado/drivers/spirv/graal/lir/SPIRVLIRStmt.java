@@ -100,7 +100,6 @@ public class SPIRVLIRStmt {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit Assignment : " + lhs + " = " + rhs.getClass());
 
             SPIRVId storeAddressID;
-            System.out.println("ASSIGN RHS: " + rhs);
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                 storeAddressID = asm.lookUpLIRInstructions(rhs);
             } else {

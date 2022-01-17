@@ -288,7 +288,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 final Node node = nodes.get(i);
                 if (node instanceof ValueNode) {
                     final ValueNode valueNode = (ValueNode) node;
-                    // System.out.printf("do block: node=%s\n", valueNode);
                     if (LIRGenerator.Options.TraceLIRGeneratorLevel.getValue(options) >= 3) {
                         TTY.println("LIRGen for " + valueNode);
                     }
@@ -297,7 +296,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                         if (!peephole(valueNode)) {
                             try {
                                 doRoot(valueNode);
-                                // platformPatch(isKernel);
                             } catch (final Throwable e) {
                                 e.printStackTrace();
                                 throw new TornadoInternalError(e).addContext(valueNode.toString());
