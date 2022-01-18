@@ -453,16 +453,15 @@ public class SPIRVUnary {
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVAddressCast with LIRKIND: " + getLIRKind().getPlatformKind());
-            SPIRVId idLoad = asm.module.getNextId();
 
+            final SPIRVId idLoad;
             SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
-
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 idLoad = addressToLoad;
             } else {
                 // We force to load a pointer to long
                 SPIRVId typeLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
-
+                idLoad = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpLoad( //
                         typeLoad, //
                         idLoad, //
@@ -472,9 +471,9 @@ public class SPIRVUnary {
 
             SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
 
-            SPIRVId storeAddressID = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, storeAddressID, idLoad));
-            asm.registerLIRInstructionValue(this, storeAddressID);
+            SPIRVId convertToPtrId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, convertToPtrId, idLoad));
+            asm.registerLIRInstructionValue(this, convertToPtrId);
         }
     }
 

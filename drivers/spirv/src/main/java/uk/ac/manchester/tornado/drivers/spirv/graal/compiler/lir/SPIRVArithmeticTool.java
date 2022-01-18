@@ -438,10 +438,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
         if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
             SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
             getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
         } else if (address instanceof MemoryAccess) {
             SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit SPIRVAddressCast in address: " + address);
             SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
             if (spirvKind.isVector()) {
                 emitLoadVectorType(result, cast, (MemoryAccess) address);
@@ -480,12 +481,14 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             if (memAccess != null) {
                 if (address instanceof MemoryAccess) {
                     MemoryAccess memoryAccess2 = (MemoryAccess) address;
+                    Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit SPIRVAddressCast in address: " + address);
                     SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memoryAccess2.getMemoryRegion(), LIRKind.value(spirvKind));
                     if (memoryAccess2.getIndex() == null) {
                         getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memoryAccess2, input));
                     }
                 } else if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
                     SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
+                    Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreIndexedMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
                     getGen().append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, input));
                 }
             }
