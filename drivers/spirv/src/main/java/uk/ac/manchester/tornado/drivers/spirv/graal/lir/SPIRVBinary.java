@@ -195,9 +195,8 @@ public class SPIRVBinary {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
                     "emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
 
-            boolean isResultInPhiMap = asm.isResultInPhiMap(result);
             SPIRVId operationId;
-            if (asm.isResultInPhiMap(result)) {
+            if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
                 operationId = asm.getPhiId(result);
             } else {
                 operationId = asm.module.getNextId();

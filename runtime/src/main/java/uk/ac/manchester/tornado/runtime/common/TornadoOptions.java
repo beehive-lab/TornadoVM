@@ -202,7 +202,7 @@ public class TornadoOptions {
     /**
      * Optimizes Loads/Stores, V2
      */
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", TRUE);
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", FALSE);
     /**
      * Option to load FPGA pre-compiled binaries.
      */

@@ -689,6 +689,10 @@ public final class SPIRVAssembler extends Assembler {
         return this.phiMap.containsKey(result);
     }
 
+    public boolean isPhiMapEmpty() {
+        return (this.phiMap == null);
+    }
+
     public SPIRVId getPhiId(Variable result) {
         return this.phiMap.get(result);
     }
