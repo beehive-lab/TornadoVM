@@ -608,6 +608,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
         final Block block = (Block) gen.getCurrentBlock();
         final Block predBlock = block.getFirstPredecessor();
+        final Block blockFirstSuccessor = block.getFirstSuccessor();
         final LIR lir = getGen().getResult().getLIR();
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -643,10 +644,8 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
         // Insert Phi Value
         if (insertPhiValue) {
-            String currentBlockName = block.toString();
-            String previousBlockName = predBlock.toString();
             phiTrace.put(resultPhi, null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, currentBlockName, previousBlockName, phiMap, phiTrace));
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, blockFirstSuccessor.toString(), predBlock.toString(), phiMap, phiTrace));
         }
 
         label.clearIncomingValues();

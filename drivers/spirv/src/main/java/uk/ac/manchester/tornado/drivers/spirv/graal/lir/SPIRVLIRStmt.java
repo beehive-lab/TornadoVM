@@ -373,19 +373,27 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
         protected ValuePhiNode phiNode;
-        String currentBlockName;
+        String blockFirstSuccessor;
         String previousBlockName;
 
-        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, ValuePhiNode phiNode, String currentBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, ValuePhiNode phiNode, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
                 Map<AllocatableValue, AllocatableValue> phiTrace) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = previousValue;
             this.phiNode = phiNode;
-            this.currentBlockName = currentBlockName;
+            this.blockFirstSuccessor = firstSuccessorBlockName;
             this.previousBlockName = previousBlockName;
             this.phiMap = phiMap;
             this.phiTrace = phiTrace;
+        }
+
+        protected SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
+            SPIRVId branch = asm.getLabel(blockName);
+            if (branch == null) {
+                branch = asm.registerBlockLabel(blockName);
+            }
+            return branch;
         }
 
         @Override
@@ -405,16 +413,13 @@ public class SPIRVLIRStmt {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit OpPhi: " + lhs + " = " + rhs);
 
-            SPIRVId currentBranch = asm.getLabel(currentBlockName);
+            SPIRVId currentBranch = getIfOfBranch(blockFirstSuccessor, asm);
             SPIRVId previousBranch = asm.getLabel(previousBlockName);
             SPIRVId previousID = asm.lookUpLIRInstructions(rhs);
 
             SPIRVId newID = asm.module.getNextId();
-
             SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands = new SPIRVMultipleOperands<>(new SPIRVPairIdRefIdRef(previousID, previousBranch), new SPIRVPairIdRefIdRef(newID, currentBranch));
-
             AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
-
             asm.updatePhiMap(trace, newID);
 
             SPIRVId phiResultId = asm.module.getNextId();
