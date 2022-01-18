@@ -44,7 +44,6 @@ import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -97,6 +96,7 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
@@ -110,6 +110,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.SPIRVVectorValueNode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * It traverses the HIR instructions from the Graal CFP and it generates LIR for
@@ -121,9 +122,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     private final Map<String, Variable> builtInAllocations;
 
+    private final Map<AllocatableValue, SPIRVId> phiMap;
+    private final Map<AllocatableValue, AllocatableValue> phiTrace;
+
     public SPIRVNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
         super(graph, gen, nodeMatchRules);
         this.builtInAllocations = new HashMap<>();
+        this.phiMap = new HashMap<>();
+        this.phiTrace = new HashMap<>();
     }
 
     @Override
@@ -437,21 +443,21 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_LESS_THAN;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(result, op, boolLIRKind, x, y)));
         } else if (node instanceof IntegerEqualsNode) {
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerEqualsNode: %s", node);
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(result, op, boolLIRKind, x, y)));
         } else if (node instanceof IntegerBelowNode) {
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerBelowNode: %s", node);
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_BELOW;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(result, op, boolLIRKind, x, y)));
         } else if (node instanceof IntegerTestNode) {
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "IntegerTestNode: %s", node);
             final IntegerTestNode testNode = (IntegerTestNode) node;
@@ -465,21 +471,21 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final IsNullNode isNullNode = (IsNullNode) node;
             final Value x = operand(isNullNode.getValue());
             SPIRVBinaryOp op = SPIRVBinaryOp.INTEGER_EQUALS;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, new ConstantValue(intLIRKind, PrimitiveConstant.NULL_POINTER))));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(result, op, boolLIRKind, x, new ConstantValue(intLIRKind, PrimitiveConstant.NULL_POINTER))));
         } else if (node instanceof FloatLessThanNode) {
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "FloatLessThanNode: %s", node);
             final FloatLessThanNode condition = (FloatLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.FLOAT_LESS_THAN;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(result, op, boolLIRKind, x, y)));
         } else if (node instanceof FloatEqualsNode) {
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "FloatEqualsNode: %s", node);
             final FloatEqualsNode condition = (FloatEqualsNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             SPIRVBinaryOp op = SPIRVBinaryOp.FLOAT_EQUALS;
-            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(op, boolLIRKind, x, y)));
+            append(new SPIRVLIRStmt.IgnorableAssignStmt(result, new SPIRVBinary.Expr(result, op, boolLIRKind, x, y)));
         } else {
             throw new RuntimeException("Condition Not implemented yet: " + node.getClass());
         }
@@ -522,9 +528,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         for (ValuePhiNode phi : phis) {
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
             Value src = operand(phi.valueAt(loopEnd));
-
             if (!dest.equals(src)) {
-                append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    append(new SPIRVLIRStmt.PassValuePhi(dest, src));
+                    phiTrace.put(dest, (AllocatableValue) src);
+                    phiMap.put((AllocatableValue) src, null);
+                } else {
+                    append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+                }
             }
         }
         getGen().emitJump(getLIRBlock(loopBegin), true);
@@ -596,25 +607,47 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
+        final Block predBlock = block.getFirstPredecessor();
         final LIR lir = getGen().getResult().getLIR();
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
         List<ValuePhiNode> valuePhis = loopBeginNode.valuePhis().snapshot();
+        boolean insertPhiValue = false;
+        AllocatableValue resultPhi = null;
+        Value valPhiOpt = null;
+        ValuePhiNode phiNodeOpt = null;
         for (ValuePhiNode phi : valuePhis) {
-            NodeInputList<ValueNode> values = phi.values();
-            final Value value = operand(phi.firstValue());
+            final Value value = operand(phi.firstValue()); // Why is only one phi (the first in the list)
             if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
                 /*
                  * preserve loop-carried dependencies outside of loops
                  */
                 setResult(phi, value);
             } else {
-                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
-                append(new SPIRVLIRStmt.AssignStmtWithLoad(result, value));
+                // Assign the Phi to a new value
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                    append(new SPIRVLIRStmt.PassValuePhi(result, value));
+                    resultPhi = result;
+                    valPhiOpt = value;
+                    phiNodeOpt = phi;
+                    insertPhiValue = true;
+                } else {
+                    final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                    append(new SPIRVLIRStmt.AssignStmtWithLoad(result, value));
+                }
             }
         }
 
         append(new SPIRVControlFlow.LoopBeginLabel(block.toString()));
+
+        // Insert Phi Value
+        if (insertPhiValue) {
+            String currentBlockName = block.toString();
+            String previousBlockName = predBlock.toString();
+            phiTrace.put(resultPhi, null);
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, currentBlockName, previousBlockName, phiMap, phiTrace));
+        }
 
         label.clearIncomingValues();
     }

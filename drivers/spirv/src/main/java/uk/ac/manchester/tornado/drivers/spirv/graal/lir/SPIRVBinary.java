@@ -29,6 +29,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -76,11 +77,15 @@ public class SPIRVBinary {
         @Use
         protected Value y;
 
-        protected BinaryConsumer(SPIRVBinaryOp instruction, LIRKind valueKind, Value x, Value y) {
+        @Use
+        protected Variable result;
+
+        protected BinaryConsumer(SPIRVBinaryOp instruction, Variable result, LIRKind valueKind, Value x, Value y) {
             super(valueKind);
             this.binaryOperation = instruction;
             this.x = x;
             this.y = y;
+            this.result = result;
         }
 
         public SPIRVBinaryOp getInstruction() {
@@ -97,37 +102,33 @@ public class SPIRVBinary {
                     throw new RuntimeException("LOADING PARAMETER: " + inputValue + " with NULL VALUE in SPIR-V Table");
                 }
 
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return param;
                 }
 
-                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                    // We need to perform a load first
-                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue + " ::: " + param);
-                    SPIRVId load = asm.module.getNextId();
-                    SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\t with type: " + spirvKind);
+                // We need to perform a load first
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue + " ::: " + param);
+                SPIRVId load = asm.module.getNextId();
+                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\t with type: " + spirvKind);
 
-                    asm.currentBlockScope().add(new SPIRVOpLoad(//
-                            type, //
-                            load, //
-                            param, //
-                            new SPIRVOptionalOperand<>( //
-                                    SPIRVMemoryAccess.Aligned( //
-                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                    ));
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        type, //
+                        load, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
 
-                    if (convertionKind != null && convertionKind != spirvKind) {
-                        SPIRVId resultConversion = asm.module.getNextId();
-                        SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
-                        asm.currentBlockScope().add(new SPIRVOpSConvert(idConversionType, resultConversion, load));
-                        load = resultConversion;
-                    }
-
-                    return load;
-                } else {
-                    return param;
+                if (convertionKind != null && convertionKind != spirvKind) {
+                    SPIRVId resultConversion = asm.module.getNextId();
+                    SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
+                    asm.currentBlockScope().add(new SPIRVOpSConvert(idConversionType, resultConversion, load));
+                    load = resultConversion;
                 }
+
+                return load;
             }
         }
 
@@ -194,7 +195,14 @@ public class SPIRVBinary {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
                     "emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
 
-            SPIRVId operationId = asm.module.getNextId();
+            boolean isResultInPhiMap = asm.isResultInPhiMap(result);
+            SPIRVId operationId;
+            if (asm.isResultInPhiMap(result)) {
+                operationId = asm.getPhiId(result);
+            } else {
+                operationId = asm.module.getNextId();
+            }
+
             SPIRVInstruction instructionOperation = binaryOperation.generateInstruction(typeResultOperationId, operationId, a, b);
             asm.currentBlockScope().add(instructionOperation);
 
@@ -215,8 +223,8 @@ public class SPIRVBinary {
     }
 
     public static class Expr extends BinaryConsumer {
-        public Expr(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
+        public Expr(Variable result, SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, result, lirKind, x, y);
         }
     }
 
@@ -228,7 +236,7 @@ public class SPIRVBinary {
         private AllocatableValue resultArray;
 
         public PrivateArrayAllocation(LIRKind lirKind, AllocatableValue resultArray) {
-            super(null, lirKind, null, null);
+            super(null, null, lirKind, null, null);
             this.lirKind = lirKind;
             this.resultArray = resultArray;
         }
@@ -251,7 +259,7 @@ public class SPIRVBinary {
         private Value length;
 
         public LocalArrayAllocation(LIRKind lirKind, AllocatableValue resultArray, Value lengthValue) {
-            super(null, lirKind, null, null);
+            super(null, null, lirKind, null, null);
             this.lirKind = lirKind;
             this.resultArray = resultArray;
             this.length = lengthValue;
@@ -298,7 +306,7 @@ public class SPIRVBinary {
         private SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn;
 
         public Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn, LIRKind valueKind, Value x, Value y) {
-            super(null, valueKind, x, y);
+            super(null, null, valueKind, x, y);
             this.builtIn = builtIn;
         }
 
@@ -326,7 +334,7 @@ public class SPIRVBinary {
     public static class VectorOperation extends BinaryConsumer {
 
         public VectorOperation(SPIRVBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
+            super(opcode, null, lirKind, x, y);
         }
 
         @Override
@@ -379,7 +387,7 @@ public class SPIRVBinary {
         private Value falseValue;
 
         public TernaryCondition(LIRKind lirKind, Value leftVal, Condition cond, Value right, Value trueValue, Value falseValue) {
-            super(null, lirKind, trueValue, falseValue);
+            super(null, null, lirKind, trueValue, falseValue);
             this.cond = cond;
             this.leftVal = leftVal;
             this.right = right;
@@ -429,7 +437,7 @@ public class SPIRVBinary {
 
     public static class IntegerTestNode extends BinaryConsumer {
         public IntegerTestNode(SPIRVBinaryOp binaryOp, LIRKind lirKind, Value x, Value y) {
-            super(binaryOp, lirKind, x, y);
+            super(binaryOp, null, lirKind, x, y);
         }
 
         @Override

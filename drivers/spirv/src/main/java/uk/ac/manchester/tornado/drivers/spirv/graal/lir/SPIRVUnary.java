@@ -583,15 +583,20 @@ public class SPIRVUnary {
                 loadConvert = asm.lookUpLIRInstructions(value);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        type, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
+
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    loadConvert = param;
+                } else {
+                    loadConvert = asm.module.getNextId();
+                    asm.currentBlockScope().add(new SPIRVOpLoad(//
+                            type, //
+                            loadConvert, //
+                            param, //
+                            new SPIRVOptionalOperand<>( //
+                                    SPIRVMemoryAccess.Aligned( //
+                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                    ));
+                }
             }
 
             SPIRVId toTypeId;

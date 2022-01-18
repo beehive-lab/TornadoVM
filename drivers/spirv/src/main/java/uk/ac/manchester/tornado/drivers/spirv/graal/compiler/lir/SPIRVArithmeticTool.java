@@ -59,13 +59,13 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return (SPIRVLIRGenerator) getLIRGen();
     }
 
-    public SPIRVLIROp genBinaryExpr(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
-        return new SPIRVBinary.Expr(op, lirKind, x, y);
+    public SPIRVLIROp genBinaryExpr(Variable result, SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new SPIRVBinary.Expr(result, op, lirKind, x, y);
     }
 
     public Variable emitBinaryAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
         final Variable result = getGen().newVariable(lirKind);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, x, y)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, x, y)));
         return result;
     }
 
@@ -279,7 +279,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_AND;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -289,7 +289,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_OR;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -299,7 +299,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_XOR;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -315,7 +315,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_LEFT_SHIFT;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -325,7 +325,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_RIGHT_SHIFT;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -335,7 +335,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_UNSIGNED_RIGHT_SHIFT;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 

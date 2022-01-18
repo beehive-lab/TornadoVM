@@ -56,7 +56,7 @@ public class SPIRVControlFlow {
 
     public abstract static class BaseControlFlow extends SPIRVLIRStmt.AbstractInstruction {
 
-        public BaseControlFlow(LIRInstructionClass<? extends LIRInstruction> c) {
+        BaseControlFlow(LIRInstructionClass<? extends LIRInstruction> c) {
             super(c);
         }
 

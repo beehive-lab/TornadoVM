@@ -24,17 +24,22 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
+import java.util.Map;
+
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.nodes.ValuePhiNode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpPhi;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
@@ -43,6 +48,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiter
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVPairIdRefIdRef;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
@@ -55,7 +61,7 @@ public class SPIRVLIRStmt {
 
     protected abstract static class AbstractInstruction extends LIRInstruction {
 
-        public AbstractInstruction(LIRInstructionClass<? extends LIRInstruction> c) {
+        protected AbstractInstruction(LIRInstructionClass<? extends LIRInstruction> c) {
             super(c);
         }
 
@@ -304,6 +310,118 @@ public class SPIRVLIRStmt {
         public AllocatableValue getResult() {
             return lhs;
         }
+    }
+
+    @Opcode("PassValuePhi")
+    public static class PassValuePhi extends AbstractInstruction {
+
+        public static final LIRInstructionClass<PassValuePhi> TYPE = LIRInstructionClass.create(PassValuePhi.class);
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected Value rhs;
+
+        public PassValuePhi(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit PassValuePhi: " + lhs + " = " + rhs);
+
+            SPIRVId storeAddressID;
+            if (rhs instanceof ConstantValue) {
+                // If the right hand side expression is a constant, we don't need to load the
+                // constant, but rather just use is in the store
+                ConstantValue constantValue = (ConstantValue) rhs;
+                storeAddressID = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+            } else {
+                storeAddressID = asm.lookUpLIRInstructions(rhs);
+            }
+            asm.registerLIRInstructionValue(lhs, storeAddressID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+    }
+
+    @Opcode("PhiValueOptimization")
+    public static class OpPhiValueOptimization extends AbstractInstruction {
+
+        public static final LIRInstructionClass<OpPhiValueOptimization> TYPE = LIRInstructionClass.create(OpPhiValueOptimization.class);
+
+        final Map<AllocatableValue, SPIRVId> phiMap;
+        final Map<AllocatableValue, AllocatableValue> phiTrace;
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected Value rhs;
+        protected ValuePhiNode phiNode;
+        String currentBlockName;
+        String previousBlockName;
+
+        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, ValuePhiNode phiNode, String currentBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+                Map<AllocatableValue, AllocatableValue> phiTrace) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = previousValue;
+            this.phiNode = phiNode;
+            this.currentBlockName = currentBlockName;
+            this.previousBlockName = previousBlockName;
+            this.phiMap = phiMap;
+            this.phiTrace = phiTrace;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
+            asm.setPhiMap(phiMap);
+            asm.setPhiTrace(phiTrace);
+
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit OpPhi: " + lhs + " = " + rhs);
+
+            SPIRVId currentBranch = asm.getLabel(currentBlockName);
+            SPIRVId previousBranch = asm.getLabel(previousBlockName);
+            SPIRVId previousID = asm.lookUpLIRInstructions(rhs);
+
+            SPIRVId newID = asm.module.getNextId();
+
+            SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands = new SPIRVMultipleOperands<>(new SPIRVPairIdRefIdRef(previousID, previousBranch), new SPIRVPairIdRefIdRef(newID, currentBranch));
+
+            AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
+
+            asm.updatePhiMap(trace, newID);
+
+            SPIRVId phiResultId = asm.module.getNextId();
+            SPIRVId typePrimitive = asm.primitives.getTypePrimitive((SPIRVKind) lhs.getPlatformKind());
+            asm.currentBlockScope().add(new SPIRVOpPhi(typePrimitive, phiResultId, operands));
+            asm.registerLIRInstructionValue(lhs, phiResultId);
+        }
 
     }
 
@@ -369,7 +487,7 @@ public class SPIRVLIRStmt {
 
     }
 
-    @Opcode("ASSIGNParameter")
+    @Opcode("ASSIGNParameterWithNoStore")
     public static class ASSIGNParameterWithNoStore extends AbstractInstruction {
 
         public static final LIRInstructionClass<ASSIGNParameterWithNoStore> TYPE = LIRInstructionClass.create(ASSIGNParameterWithNoStore.class);
@@ -1021,4 +1139,5 @@ public class SPIRVLIRStmt {
 
         }
     }
+
 }
