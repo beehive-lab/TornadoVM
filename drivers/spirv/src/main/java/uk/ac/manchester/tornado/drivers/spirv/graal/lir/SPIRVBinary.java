@@ -198,6 +198,11 @@ public class SPIRVBinary {
             SPIRVId operationId;
             if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
                 operationId = asm.getPhiId(result);
+                while (operationId == null) {
+                    // Nested IF, We Keep Looking into the trace
+                    AllocatableValue v = asm.getPhiTraceValue(result);
+                    operationId = asm.getPhiId((Variable) v);
+                }
             } else {
                 operationId = asm.module.getNextId();
             }

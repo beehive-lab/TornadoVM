@@ -86,7 +86,6 @@ import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
-import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
@@ -393,7 +392,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 emitBranch((IfNode) dominator);
             }
             if (dominator instanceof IntegerSwitchNode) {
-                // throw new RuntimeException("SWITCH CASE not supported");
                 emitSwitchBreak(end);
             }
         } else if (beginNode instanceof MergeNode) {
@@ -531,6 +529,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             if (!dest.equals(src)) {
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                     append(new SPIRVLIRStmt.PassValuePhi(dest, src));
+
+                    if (phiTrace.get(src) != null) {
+                        // Keep trace PHI values with nested control-flow
+                        AllocatableValue v = phiTrace.get(src);
+                        phiTrace.put(v, (AllocatableValue) src);
+                        phiMap.put(v, null);
+                    }
+
                     phiTrace.put(dest, (AllocatableValue) src);
                     phiMap.put((AllocatableValue) src, null);
                 } else {
@@ -550,11 +556,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             loopExitMerge &= end.predecessor() instanceof LoopExitNode;
         }
 
-        for (MemoryPhiNode phi : mergeNode.memoryPhis()) {
-            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "MEMORY PHI:  %s", phi);
-
-        }
-
         for (ValuePhiNode phi : mergeNode.valuePhis()) {
             final ValueNode valuePhi = phi.singleValueOrThis();
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "PHI NODE %s", valuePhi);
@@ -563,7 +564,12 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(valuePhi);
 
                 if (!dest.equals(src)) {
-                    append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+                    if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                        append(new SPIRVLIRStmt.PassValuePhi(dest, src));
+                        phiTrace.put(dest, (AllocatableValue) src);
+                    } else {
+                        append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+                    }
                 }
             } else if (loopExitMerge) {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));

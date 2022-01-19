@@ -176,7 +176,6 @@ public class SPIRVLIRStmt {
             }
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IgnorableAssignment: " + lhs + " = " + rhs);
             SPIRVId storeAddressID = asm.lookUpLIRInstructions(rhs);
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Storing: " + storeAddressID);
             asm.registerLIRInstructionValue(lhs, storeAddressID);
         }
 
