@@ -609,12 +609,23 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
+    private Block getPhiDependentBlock(Block block) {
+        Block dependentPhiValueBlock = block.getFirstSuccessor();
+        for (Block b : block.getPredecessors()) {
+            if (!b.equals(block.getDominator())) {
+                dependentPhiValueBlock = b;
+                break;
+            }
+        }
+        return dependentPhiValueBlock;
+    }
+
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
         final Block predBlock = block.getFirstPredecessor();
-        final Block blockFirstSuccessor = block.getFirstSuccessor();
+        Block dependentPhiValueBlock = getPhiDependentBlock(block);
         final LIR lir = getGen().getResult().getLIR();
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -651,7 +662,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         // Insert Phi Value
         if (insertPhiValue) {
             phiTrace.put(resultPhi, null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, blockFirstSuccessor.toString(), predBlock.toString(), phiMap, phiTrace));
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace));
         }
 
         label.clearIncomingValues();
