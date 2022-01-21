@@ -40,13 +40,13 @@ Usage:
        --jdk11          : Install TornadoVM with OpenJDK 11
        --jdk17          : Install TornadoVM with OpenJDK 17
        --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 21.3.0)
-       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 16 (GraalVM 21.3.0)
+       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 21.3.0)
        --corretto-11    : Install TornadoVM with Corretto JDK 11
-       --corretto-17    : Install TornadoVM with Corretto JDK 16
+       --corretto-17    : Install TornadoVM with Corretto JDK 17
        --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)
        --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)
        --windows-jdk-11 : Install TornadoVM with Windows JDK 11
-       --windows-jdk-17 : Install TornadoVM with Windows JDK 16
+       --windows-jdk-17 : Install TornadoVM with Windows JDK 17
        --opencl         : Install TornadoVM and build the OpenCL backend
        --ptx            : Install TornadoVM and build the PTX backend
        --spirv          : Install TornadoVM and build the SPIR-V backend
