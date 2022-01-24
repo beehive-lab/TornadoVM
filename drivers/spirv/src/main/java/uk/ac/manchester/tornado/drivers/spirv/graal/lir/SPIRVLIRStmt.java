@@ -735,6 +735,17 @@ public class SPIRVLIRStmt {
             this.base = memoryRegion;
         }
 
+        /**
+         * It emits the following set of SPIRV µInstructions.
+         *
+         * <code>
+         *     
+         *
+         * </code>
+         *
+         * @param crb
+         * @param asm
+         */
         @Override
         public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 

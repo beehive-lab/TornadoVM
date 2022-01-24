@@ -71,15 +71,19 @@ public class SPIRVGenTool {
         parameterToVariable.put(paramNode, result);
 
         if (spirvKind.isVector()) {
-            Variable vectorToLoad = generator.newVariable(lirKind);
-            SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
-            SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
-            SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
-            generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
-            result = vectorToLoad;
+            result = emitLoadParameterForVectorType(result, lirKind);
         }
 
         return result;
+    }
+
+    private Variable emitLoadParameterForVectorType(Variable result, LIRKind lirKind) {
+        Variable vectorToLoad = generator.newVariable(lirKind);
+        SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
+        SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
+        SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
+        generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
+        return vectorToLoad;
     }
 
     private void emitParameterLoad(AllocatableValue resultValue, int index) {

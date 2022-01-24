@@ -251,10 +251,12 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     protected void emitPrologue(final StructuredGraph graph, boolean isKernel) {
         if (isKernel) {
+            // Load Parameters for the main kernel method
             for (ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
+            // Load parameters for a functions (not main kernel).
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Generating function");
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {

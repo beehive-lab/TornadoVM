@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float2> TYPE = Float2.class;
-
+    /**
+     * number of elements in the storage
+     */
+    private static final int NUM_ELEMENTS = 2;
     /**
      * backing array
      */
     @Payload
     final float[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 2;
 
     private Float2(float[] storage) {
         this.storage = storage;
@@ -77,59 +75,6 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         setY(y);
     }
 
-    public float[] getArray() {
-        return storage;
-    }
-
-    public float get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, float value) {
-        storage[index] = value;
-    }
-
-    public void set(Float2 value) {
-        setX(value.getX());
-        setY(value.getY());
-    }
-
-    public float getX() {
-        return get(0);
-    }
-
-    public float getY() {
-        return get(1);
-    }
-
-    public void setX(float value) {
-        set(0, value);
-    }
-
-    public void setY(float value) {
-        set(1, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Float2}
-     */
-    public Float2 duplicate() {
-        Float2 vector = new Float2();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
-    }
-
-    @Override
-    public String toString() {
-        return toString(FloatOps.FMT_2);
-    }
-
     static Float2 loadFromArray(final float[] array, int index) {
         final Float2 result = new Float2();
         result.setX(array[index]);
@@ -137,31 +82,8 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    void storeToArray(final float[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-    }
-
-    @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
      * * Operations on Float2 vectors
-     */
-    /*
-     * vector = op( vector, vector )
      */
     public static Float2 add(Float2 a, Float2 b) {
         return new Float2(a.getX() + b.getX(), a.getY() + b.getY());
@@ -309,6 +231,79 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public static boolean isEqual(Float2 a, Float2 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public float[] getArray() {
+        return storage;
+    }
+
+    public float get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, float value) {
+        storage[index] = value;
+    }
+
+    public void set(Float2 value) {
+        setX(value.getX());
+        setY(value.getY());
+    }
+
+    public float getX() {
+        return get(0);
+    }
+
+    public void setX(float value) {
+        set(0, value);
+    }
+
+    public float getY() {
+        return get(1);
+    }
+
+    public void setY(float value) {
+        set(1, value);
+    }
+
+    /**
+     * Duplicates this vector
+     *
+     * @return {@link Float2}
+     */
+    public Float2 duplicate() {
+        Float2 vector = new Float2();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY());
+    }
+
+    @Override
+    public String toString() {
+        return toString(FloatOps.FMT_2);
+    }
+
+    void storeToArray(final float[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+    }
+
+    @Override
+    public void loadFromBuffer(FloatBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public FloatBuffer asBuffer() {
+        return FloatBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }
