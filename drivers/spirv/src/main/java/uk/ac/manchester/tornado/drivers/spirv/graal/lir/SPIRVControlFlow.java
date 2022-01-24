@@ -48,6 +48,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVPairL
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * SPIR-V Code Generation for all control-flow constructs.
@@ -271,15 +272,20 @@ public class SPIRVControlFlow {
             SPIRVId typeKind = asm.primitives.getTypePrimitive(spirvKind);
 
             // Perform a Load of the key value
-            SPIRVId loadId = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
-                    typeKind, //
-                    loadId, //
-                    valueKey, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
-            ));
+            SPIRVId loadId;
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                loadId = valueKey;
+            } else {
+                loadId = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        typeKind, //
+                        loadId, //
+                        valueKey, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
+                ));
+            }
 
             SPIRVId defaultSelector = getIdForBranch(defaultTarget, asm);
 
