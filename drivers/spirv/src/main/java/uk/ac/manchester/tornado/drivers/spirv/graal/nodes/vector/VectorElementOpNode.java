@@ -52,14 +52,11 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect
 public class VectorElementOpNode extends FloatingNode implements LIRLowerable, Comparable<VectorElementOpNode> {
 
     public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
-
+    protected final SPIRVKind kind;
     @Input(InputType.Extension)
     protected ValueNode vector;
-
     @Input
     protected ValueNode lane;
-
-    protected final SPIRVKind kind;
 
     public VectorElementOpNode(NodeClass<? extends FloatingNode> c, SPIRVKind kind, ValueNode vector, ValueNode lane) {
         super(c, StampFactory.forKind(kind.asJavaKind()));
@@ -85,7 +82,7 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
 
     }
 
-    final public int laneId() {
+    public final int laneId() {
         guarantee(lane instanceof ConstantNode, "Invalid lane: %s", lane);
         return (lane instanceof ConstantNode) ? lane.asJavaConstant().asInt() : -1;
     }
