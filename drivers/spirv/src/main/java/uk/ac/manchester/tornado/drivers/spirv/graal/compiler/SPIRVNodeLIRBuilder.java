@@ -378,7 +378,15 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new SPIRVLIRStmt.AssignStmtWithLoad(result, operand(value)));
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    Value operand = operand(value);
+                    if (!(operand instanceof ConstantValue)) {
+                        phiTrace.put((AllocatableValue) operand, result);
+                    }
+                    append(new SPIRVLIRStmt.PassValuePhi(result, operand(value)));
+                } else {
+                    append(new SPIRVLIRStmt.AssignStmtWithLoad(result, operand(value)));
+                }
             }
         }
 
@@ -577,6 +585,15 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(phi.valueAt(1));
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
+            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
+                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+                Value src = operand(valuePhi);
+                Value forwardId = operand(phi.valueAt(0));
+                phiTrace.put(dest, null);
+                final Block block = (Block) gen.getCurrentBlock();
+                final Block predBlock = block.getFirstPredecessor();
+                Block dependentPhiValueBlock = block.getPredecessors()[1];
+                append(new SPIRVLIRStmt.OpPhiValueOptimization(dest, src, phi, predBlock.toString(), dependentPhiValueBlock.toString(), phiMap, phiTrace, forwardId));
             }
         }
     }
@@ -664,7 +681,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         // Insert Phi Value
         if (insertPhiValue) {
             phiTrace.put(resultPhi, null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace));
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null));
         }
 
         label.clearIncomingValues();

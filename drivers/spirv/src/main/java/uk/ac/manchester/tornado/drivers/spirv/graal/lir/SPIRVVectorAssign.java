@@ -57,8 +57,6 @@ public class SPIRVVectorAssign {
                 SPIRVId load;
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                     load = param;
-                    System.out.println("SPIRVAssignVector: param is null? " + param);
-                    System.out.println("INPUT VALUE ? " + inputValue);
                 } else {
                     // We need to perform a load first
                     Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable from AssignVector :" + inputValue);

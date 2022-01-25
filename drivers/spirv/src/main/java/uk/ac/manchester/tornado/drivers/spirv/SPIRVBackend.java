@@ -388,6 +388,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         asm.setReturnLabel(null);
         incrementMethodIndex();
         asm.clearLIRTable();
+        asm.clearPhiTables();
     }
 
     private void emitFP64Capability(SPIRVModule module) {

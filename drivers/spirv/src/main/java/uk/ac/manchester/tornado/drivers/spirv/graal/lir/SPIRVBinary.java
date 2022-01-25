@@ -227,8 +227,14 @@ public class SPIRVBinary {
             }
 
             asm.registerLIRInstructionValue(this, operationId);
-        }
 
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                // Forward Phi Value if needed
+                if (!asm.isPhiTraceNull() && asm.getPhiTraceValue(result) != null) {
+                    asm.setPhiValueId(asm.getPhiTraceValue(result), operationId);
+                }
+            }
+        }
     }
 
     public static class Expr extends BinaryConsumer {

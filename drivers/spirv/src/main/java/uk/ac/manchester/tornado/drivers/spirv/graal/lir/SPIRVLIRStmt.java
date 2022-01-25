@@ -369,12 +369,15 @@ public class SPIRVLIRStmt {
         protected AllocatableValue lhs;
         @Use
         protected Value rhs;
+        @Use
+        protected Value fordwaredId;
+
         protected ValuePhiNode phiNode;
         String blockFirstSuccessor;
         String previousBlockName;
 
         public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, ValuePhiNode phiNode, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
-                Map<AllocatableValue, AllocatableValue> phiTrace) {
+                Map<AllocatableValue, AllocatableValue> phiTrace, Value fordwaredId) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = previousValue;
@@ -383,6 +386,7 @@ public class SPIRVLIRStmt {
             this.previousBlockName = previousBlockName;
             this.phiMap = phiMap;
             this.phiTrace = phiTrace;
+            this.fordwaredId = fordwaredId;
         }
 
         protected SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
@@ -412,9 +416,27 @@ public class SPIRVLIRStmt {
 
             SPIRVId currentBranch = getIfOfBranch(blockFirstSuccessor, asm);
             SPIRVId previousBranch = asm.getLabel(previousBlockName);
-            SPIRVId previousID = asm.lookUpLIRInstructions(rhs);
 
-            SPIRVId newID = asm.module.getNextId();
+            SPIRVId previousID;
+            if (rhs instanceof ConstantValue) {
+                ConstantValue constantValue = (ConstantValue) rhs;
+                previousID = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+            } else {
+                previousID = asm.lookUpLIRInstructions(rhs);
+            }
+
+            SPIRVId newID;
+            if (fordwaredId != null) {
+                if (fordwaredId instanceof ConstantValue) {
+                    ConstantValue constantValue = (ConstantValue) fordwaredId;
+                    newID = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) fordwaredId.getPlatformKind());
+                } else {
+                    newID = asm.lookUpLIRInstructions(fordwaredId);
+                }
+            } else {
+                newID = asm.module.getNextId();
+            }
+
             SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands = new SPIRVMultipleOperands<>(new SPIRVPairIdRefIdRef(previousID, previousBranch), new SPIRVPairIdRefIdRef(newID, currentBranch));
             AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
             asm.updatePhiMap(trace, newID);

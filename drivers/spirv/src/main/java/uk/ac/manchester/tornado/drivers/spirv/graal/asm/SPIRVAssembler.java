@@ -709,6 +709,25 @@ public final class SPIRVAssembler extends Assembler {
         this.phiTrace = phiTrace;
     }
 
+    public void setPhiValueId(AllocatableValue phiTraceValue, SPIRVId operationId) {
+        this.phiMap.put(phiTraceValue, operationId);
+    }
+
+    public boolean isPhiTraceNull() {
+        return this.phiTrace == null;
+    }
+
+    public void clearPhiTables() {
+        if (phiTrace != null) {
+            phiTrace.clear();
+            phiTrace = null;
+        }
+        if (phiMap != null) {
+            phiMap.clear();
+            phiMap = null;
+        }
+    }
+
     public static class ConstantKeyPair {
         private String name;
         private SPIRVKind kind;
