@@ -55,22 +55,9 @@ public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements Arithme
     public static final NodeClass<SPIRVIntTernaryIntrinsicNode> TYPE = NodeClass.create(SPIRVIntTernaryIntrinsicNode.class);
     protected final Operation operation;
 
-    public enum Operation {
-        CLAMP, MAD_HI, MAD_SAT, MAD24
-    }
-
     protected SPIRVIntTernaryIntrinsicNode(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
         super(TYPE, StampFactory.forKind(kind), x, y, z);
         this.operation = op;
-    }
-
-    public Operation operation() {
-        return operation;
-    }
-
-    @Override
-    public String getOperation() {
-        return operation.toString();
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, ValueNode z, Operation op, JavaKind kind) {
@@ -107,6 +94,15 @@ public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements Arithme
         return result;
     }
 
+    public Operation operation() {
+        return operation;
+    }
+
+    @Override
+    public String getOperation() {
+        return operation.toString();
+    }
+
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY, Stamp stampZ) {
         return stamp(NodeView.DEFAULT);
@@ -134,7 +130,7 @@ public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements Arithme
         Value expr;
         switch (operation()) {
             case CLAMP:
-                expr = gen.genIntClamp(x, y, z);
+                expr = gen.genIntClamp(result, x, y, z);
                 break;
             default:
                 throw new RuntimeException("Ternary Intrinsic not supported: " + operation);
@@ -143,6 +139,10 @@ public class SPIRVIntTernaryIntrinsicNode extends TernaryNode implements Arithme
         builder.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, expr));
         builder.setResult(this, result);
 
+    }
+
+    public enum Operation {
+        CLAMP, MAD_HI, MAD_SAT, MAD24
     }
 
 }

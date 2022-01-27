@@ -337,7 +337,7 @@ public class SPIRVBinary {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.getName() + " (" + x + "," + y + ")");
 
-            SPIRVId result = obtainPhiValueIfNeeded(asm);
+            SPIRVId result = asm.module.getNextId();
             SPIRVId set = asm.getOpenclImport();
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
             asm.currentBlockScope().add(new SPIRVOpExtInst(typeOperation, result, set, intrinsic, new SPIRVMultipleOperands<>(a, b)));

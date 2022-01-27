@@ -413,9 +413,9 @@ public class SPIRVBuiltinTool {
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.POPCOUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 
-    public Value genIntClamp(Value x, Value y, Value z) {
+    public Value genIntClamp(Variable result, Value x, Value y, Value z) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "genIntClamp: clamp(%s, %s, %s)", x, y, z);
-        return new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SCLAMP, LIRKind.combine(x, y, z), x, y, z);
+        return new SPIRVTernary.TernaryIntrinsic(result, SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SCLAMP, LIRKind.combine(x, y, z), x, y, z);
     }
 
     public Value genIntMad24(Value x, Value y, Value z) {

@@ -143,6 +143,7 @@ public final class SPIRVAssembler extends Assembler {
 
     private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
     private Map<AllocatableValue, SPIRVId> phiMap;
+    private Map<AllocatableValue, SPIRVId> phiNamesAcrossBlocks;
     private Map<AllocatableValue, AllocatableValue> phiTrace;
 
     public SPIRVAssembler(TargetDescription target) {
@@ -160,6 +161,7 @@ public final class SPIRVAssembler extends Assembler {
         functionPtrToArrayLocal = new HashMap<>();
         SPIRVSymbolTable = new HashMap<>();
         opFunctionTable = new HashMap<>();
+        phiNamesAcrossBlocks = new HashMap<>();
     }
 
     public SPIRVInstScope getFunctionScope() {
@@ -697,6 +699,12 @@ public final class SPIRVAssembler extends Assembler {
         return this.phiMap.get(result);
     }
 
+    // This is just for debugging
+    public void printContentPhiTables() {
+        System.out.println("PhiTable: " + phiMap);
+        System.out.println("PhiTrace: " + phiTrace);
+    }
+
     public AllocatableValue getPhiTraceValue(Variable result) {
         return this.phiTrace.get(result);
     }
@@ -726,6 +734,18 @@ public final class SPIRVAssembler extends Assembler {
             phiMap.clear();
             phiMap = null;
         }
+    }
+
+    public void registerPhiNameInstruction(AllocatableValue lhs, SPIRVId phiResultId) {
+        phiNamesAcrossBlocks.put(lhs, phiResultId);
+    }
+
+    public boolean isPhiAcrossBlocksPresent(AllocatableValue lhs) {
+        return phiNamesAcrossBlocks.containsKey(lhs);
+    }
+
+    public SPIRVId getPhiIdAcrossBlock(AllocatableValue lhs) {
+        return phiNamesAcrossBlocks.get(lhs);
     }
 
     public static class ConstantKeyPair {

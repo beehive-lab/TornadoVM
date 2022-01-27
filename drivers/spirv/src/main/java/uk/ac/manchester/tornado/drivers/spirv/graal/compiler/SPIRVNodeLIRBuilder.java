@@ -100,6 +100,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.LIRPhiVars;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVControlFlow;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVDirectCall;
@@ -586,14 +587,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(phi.valueAt(1));
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
             } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
-                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+                AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
                 Value forwardId = operand(phi.valueAt(0));
-                phiTrace.put(dest, null);
+                phiTrace.put(result, null);
                 final Block block = (Block) gen.getCurrentBlock();
                 final Block predBlock = block.getFirstPredecessor();
                 Block dependentPhiValueBlock = block.getPredecessors()[1];
-                append(new SPIRVLIRStmt.OpPhiValueOptimization(dest, src, phi, predBlock.toString(), dependentPhiValueBlock.toString(), phiMap, phiTrace, forwardId));
+                append(new SPIRVLIRStmt.OpPhiValueOptimization(result, src, predBlock.toString(), dependentPhiValueBlock.toString(), phiMap, phiTrace, forwardId));
             }
         }
     }
@@ -649,10 +650,8 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
         List<ValuePhiNode> valuePhis = loopBeginNode.valuePhis().snapshot();
-        boolean insertPhiValue = false;
-        AllocatableValue resultPhi = null;
-        Value valPhiOpt = null;
-        ValuePhiNode phiNodeOpt = null;
+        LIRPhiVars phiVars = null;
+
         for (ValuePhiNode phi : valuePhis) {
             final Value value = operand(phi.firstValue()); // Why is only one phi (the first in the list)
             if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
@@ -663,12 +662,12 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             } else {
                 // Assign the Phi to a new value
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    if (phiVars == null) {
+                        phiVars = new LIRPhiVars();
+                    }
                     final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
                     append(new SPIRVLIRStmt.PassValuePhi(result, value));
-                    resultPhi = result;
-                    valPhiOpt = value;
-                    phiNodeOpt = phi;
-                    insertPhiValue = true;
+                    phiVars.insertPhiValue(result, value);
                 } else {
                     final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
                     append(new SPIRVLIRStmt.AssignStmtWithLoad(result, value));
@@ -678,10 +677,14 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
         append(new SPIRVControlFlow.LoopBeginLabel(block.toString()));
 
-        // Insert Phi Value
-        if (insertPhiValue) {
-            phiTrace.put(resultPhi, null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(resultPhi, valPhiOpt, phiNodeOpt, dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null));
+        // When we optimize the code, we need to insert all OpPhi Values after the
+        // loop-header label. Therefore, if the list of OpPhi vars is not null, that
+        // means that we need to generate that instruction.
+        if (phiVars != null) {
+            for (LIRPhiVars.PhiMeta meta : phiVars.getPhiVars()) {
+                phiTrace.put(meta.getResultPhi(), null);
+                append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null));
+            }
         }
 
         label.clearIncomingValues();

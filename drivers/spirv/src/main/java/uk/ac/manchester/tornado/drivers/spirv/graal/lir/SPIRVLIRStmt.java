@@ -32,7 +32,6 @@ import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.nodes.ValuePhiNode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
@@ -372,21 +371,19 @@ public class SPIRVLIRStmt {
         @Use
         protected Value fordwaredId;
 
-        protected ValuePhiNode phiNode;
         String blockFirstSuccessor;
         String previousBlockName;
 
-        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, ValuePhiNode phiNode, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
-                Map<AllocatableValue, AllocatableValue> phiTrace, Value fordwaredId) {
+        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+                Map<AllocatableValue, AllocatableValue> phiTrace, Value forwardedId) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = previousValue;
-            this.phiNode = phiNode;
             this.blockFirstSuccessor = firstSuccessorBlockName;
             this.previousBlockName = previousBlockName;
             this.phiMap = phiMap;
             this.phiTrace = phiTrace;
-            this.fordwaredId = fordwaredId;
+            this.fordwaredId = forwardedId;
         }
 
         protected SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
@@ -444,7 +441,11 @@ public class SPIRVLIRStmt {
             SPIRVId phiResultId = asm.module.getNextId();
             SPIRVId typePrimitive = asm.primitives.getTypePrimitive((SPIRVKind) lhs.getPlatformKind());
             asm.currentBlockScope().add(new SPIRVOpPhi(typePrimitive, phiResultId, operands));
+
             asm.registerLIRInstructionValue(lhs, phiResultId);
+
+            asm.registerPhiNameInstruction(lhs, phiResultId);
+
         }
 
     }
@@ -880,6 +881,10 @@ public class SPIRVLIRStmt {
                             new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(rhs.getPlatformKind().getSizeInBytes()))) //
                     ));
                     value = loadID;
+                } else {
+                    if (asm.isPhiAcrossBlocksPresent((AllocatableValue) rhs)) {
+                        value = asm.getPhiIdAcrossBlock((AllocatableValue) rhs);
+                    }
                 }
             }
 

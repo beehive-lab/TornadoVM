@@ -556,7 +556,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         if (TornadoOptions.FAST_MATH_OPTIMIZATIONS) {
             operation = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.MAD;
         }
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(operation, resultKind, op1, op2, op3)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(result, operation, resultKind, op1, op2, op3)));
         return result;
     }
 

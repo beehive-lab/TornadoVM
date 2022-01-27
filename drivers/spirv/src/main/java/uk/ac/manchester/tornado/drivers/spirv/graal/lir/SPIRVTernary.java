@@ -25,7 +25,9 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInst;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
@@ -61,9 +63,27 @@ public class SPIRVTernary {
 
         private SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn;
 
-        public TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn, LIRKind lirKind, Value x, Value y, Value z) {
+        private Variable result;
+
+        public TernaryIntrinsic(Variable result, SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn, LIRKind lirKind, Value x, Value y, Value z) {
             super(lirKind, x, y, z);
             this.builtIn = builtIn;
+            this.result = result;
+        }
+
+        protected SPIRVId obtainPhiValueIfNeeded(SPIRVAssembler asm) {
+            SPIRVId operationId;
+            if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
+                operationId = asm.getPhiId(result);
+                while (operationId == null) {
+                    // Nested IF, We Keep Looking into the trace
+                    AllocatableValue v = asm.getPhiTraceValue(result);
+                    operationId = asm.getPhiId((Variable) v);
+                }
+            } else {
+                operationId = asm.module.getNextId();
+            }
+            return operationId;
         }
 
         @Override
@@ -79,11 +99,14 @@ public class SPIRVTernary {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger (Ternary Intrinsic): " + builtIn.getName() + " (" + x + "," + y + "," + z + ")");
 
-            SPIRVId result = asm.module.getNextId();
+            SPIRVId result = obtainPhiValueIfNeeded(asm);
+
             SPIRVId set = asm.getOpenclImport();
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
             asm.currentBlockScope().add(new SPIRVOpExtInst(typeOperation, result, set, intrinsic, new SPIRVMultipleOperands<>(a, b, c)));
+
             asm.registerLIRInstructionValue(this, result);
+
         }
 
     }

@@ -837,8 +837,6 @@ public class SPIRVUnary {
      */
     public static class Intrinsic extends UnaryConsumer {
 
-        public static final String COS = "cos";
-        // @formatter:on
         private final OpenCLExtendedIntrinsic builtIn;
 
         public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {

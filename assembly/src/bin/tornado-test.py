@@ -70,15 +70,15 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrices"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
     # TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),     ### Working
-    # TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),     ### Working
+    # TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),     ### Working with SPIRV Optimizer
+    # TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),    ### Working with SPIRV Optimizer
+    # TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),                 ### Working with SPIRV Optimizer
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskSchedule"),
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
@@ -88,7 +88,7 @@ __TEST_THE_WORLD__ = [
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     # TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
     # TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
+    # TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),         ### Working with SPIRV Optimizer
     # TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
     # TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     # TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
