@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
@@ -107,6 +108,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
 
     @Override
     public OCLMemoryManager getMemoryManager() {
+        return null;
+    }
+
+    @Override
+    public TornadoBufferProvider getBufferProvider() {
         return null;
     }
 

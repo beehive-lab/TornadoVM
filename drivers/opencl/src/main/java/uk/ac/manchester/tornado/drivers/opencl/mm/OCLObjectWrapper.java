@@ -183,7 +183,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         }
 
         int headerSize = 32;
-        this.bufferId = deviceContext.getMemoryManager().createBuffer(bytesToAllocate + headerSize, OCLMemFlags.CL_MEM_READ_WRITE);
+        this.bufferId = deviceContext.getMemoryManager().createBuffer(bytesToAllocate + headerSize, OCLMemFlags.CL_MEM_READ_WRITE).getBuffer();
         this.bufferOffset = 0;
 
         if (DEBUG) {

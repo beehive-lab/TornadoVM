@@ -267,20 +267,19 @@ public class OCLContext implements OCLExecutionEnvironment {
         return buffer;
     }
 
-    public long createBuffer(long flags, long bytes) {
+    public OCLBufferResult createBuffer(long flags, long bytes) {
         return createBuffer(flags, bytes, 0L);
     }
 
-    private long createBuffer(long flags, long bytes, long hostPointer) {
-        long devicePtr = 0;
+    private OCLBufferResult createBuffer(long flags, long bytes, long hostPointer) {
         try {
             final OCLBufferResult result = createBuffer(contextID, flags, bytes, hostPointer);
-            devicePtr = result.getBuffer();
-            logger.info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), devicePtr);
+            logger.info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), result.getBuffer());
+            return result;
         } catch (OCLException e) {
             logger.error(e.getMessage());
         }
-        return devicePtr;
+        return null;
     }
 
     public void releaseBuffer(long bufferId) {

@@ -98,7 +98,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getMemoryManager().createBuffer(bufferSize, OCLMemFlags.CL_MEM_READ_WRITE);
+        this.bufferId = deviceContext.getBufferProvider().getBuffer(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
             info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
@@ -112,7 +112,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public void deallocate() {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-        deviceContext.getMemoryManager().releaseBuffer(bufferId);
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 

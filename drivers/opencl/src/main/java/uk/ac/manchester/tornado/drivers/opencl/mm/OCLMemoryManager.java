@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -51,7 +52,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         this.deviceContext = deviceContext;
         this.callStackPosition = 0;
         this.callStackLimit = OCL_CALL_STACK_LIMIT;
-        this.callStackBufferId = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, callStackLimit);
+        this.callStackBufferId = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, callStackLimit).getBuffer();
     }
 
     @Override
@@ -85,11 +86,11 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      * Allocate regions on the device.
      */
     public void allocateDeviceMemoryRegions() {
-        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
+        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4).getBuffer();
         allocateAtomicRegion();
     }
 
-    public long createBuffer(long size, long flags) {
+    public OCLContext.OCLBufferResult createBuffer(long size, long flags) {
         return deviceContext.getPlatformContext().createBuffer(flags, size);
     }
 
@@ -108,7 +109,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     void allocateAtomicRegion() {
         if (this.atomicsRegion == -1) {
             this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
-                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL);
+                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
         }
     }
 

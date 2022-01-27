@@ -37,12 +37,14 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -65,6 +67,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     private boolean printOnce = true;
 
     private final OCLEventPool oclEventPool;
+    private final TornadoBufferProvider bufferProvider;
 
     protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -84,11 +87,13 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         }
 
         if (needsBump) {
-            bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE);
+            bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE).getBuffer();
             info("device requires bump buffer: %s", device.getDeviceName());
         } else {
             bumpBuffer = -1;
         }
+        bufferProvider = new OCLBufferProvider(this);
+
         this.device.setDeviceContext(this);
     }
 
@@ -122,6 +127,11 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     @Override
     public OCLMemoryManager getMemoryManager() {
         return memoryManager;
+    }
+
+    @Override
+    public TornadoBufferProvider getBufferProvider() {
+        return bufferProvider;
     }
 
     public void sync() {
