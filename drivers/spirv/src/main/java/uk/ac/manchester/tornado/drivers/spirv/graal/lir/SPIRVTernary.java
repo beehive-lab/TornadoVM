@@ -71,7 +71,7 @@ public class SPIRVTernary {
             this.result = result;
         }
 
-        protected SPIRVId obtainPhiValueIfNeeded(SPIRVAssembler asm) {
+        protected SPIRVId obtainPhiValueIdIfNeeded(SPIRVAssembler asm) {
             SPIRVId operationId;
             if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
                 operationId = asm.getPhiId(result);
@@ -99,7 +99,7 @@ public class SPIRVTernary {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger (Ternary Intrinsic): " + builtIn.getName() + " (" + x + "," + y + "," + z + ")");
 
-            SPIRVId result = obtainPhiValueIfNeeded(asm);
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
 
             SPIRVId set = asm.getOpenclImport();
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());

@@ -704,7 +704,7 @@ public class SPIRVLIRStmt {
         @Override
         public void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            // Thy key part is in the casting.
+            // The key part is in the casting.
             asm.emitValue(crb, cast);
             asm.emitValue(crb, base.value);
             asm.emitValue(crb, result);

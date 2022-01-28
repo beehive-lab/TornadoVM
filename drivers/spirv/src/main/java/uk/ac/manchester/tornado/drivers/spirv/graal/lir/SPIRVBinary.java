@@ -140,7 +140,7 @@ public class SPIRVBinary {
             return isVectorType(x) || isVectorType(y);
         }
 
-        protected SPIRVId obtainPhiValueIfNeeded(SPIRVAssembler asm) {
+        protected SPIRVId obtainPhiValueIdIfNeeded(SPIRVAssembler asm) {
             SPIRVId operationId;
             if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
                 operationId = asm.getPhiId(result);
@@ -210,7 +210,7 @@ public class SPIRVBinary {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
                     "emitBinaryOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y + "  Result Kind: " + resultKind);
 
-            SPIRVId operationId = obtainPhiValueIfNeeded(asm);
+            SPIRVId operationId = obtainPhiValueIdIfNeeded(asm);
 
             SPIRVInstruction instructionOperation = binaryOperation.generateInstruction(typeResultOperationId, operationId, a, b);
             asm.currentBlockScope().add(instructionOperation);
@@ -377,7 +377,7 @@ public class SPIRVBinary {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emitVectorOperation " + binaryOperation.getInstruction() + ":  " + x + " " + binaryOperation.getOpcode() + " " + y);
 
-            SPIRVId binaryVectorOperationResult = obtainPhiValueIfNeeded(asm);
+            SPIRVId binaryVectorOperationResult = obtainPhiValueIdIfNeeded(asm);
 
             SPIRVInstruction instruction = binaryOperation.generateInstruction(typeOperation, binaryVectorOperationResult, resultSelect1, resultSelect2);
             asm.currentBlockScope().add(instruction);
@@ -443,7 +443,7 @@ public class SPIRVBinary {
 
             SPIRVKind kind = (SPIRVKind) getLIRKind().getPlatformKind();
             SPIRVId resultType = asm.primitives.getTypePrimitive(kind);
-            SPIRVId resultSelectId = obtainPhiValueIfNeeded(asm);
+            SPIRVId resultSelectId = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpSelect(resultType, resultSelectId, comparisonResult, trueValueId, falseValueId));
 
             asm.registerLIRInstructionValue(this, resultSelectId);
@@ -483,7 +483,7 @@ public class SPIRVBinary {
             SPIRVInstruction instruction = binaryOperation.generateInstruction(typeOperation, bitWiseAnd, a, b);
             asm.currentBlockScope().add(instruction);
 
-            SPIRVId compEqual = obtainPhiValueIfNeeded(asm);
+            SPIRVId compEqual = obtainPhiValueIdIfNeeded(asm);
 
             SPIRVId booleanType = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
             SPIRVId zeroConstant = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_32);

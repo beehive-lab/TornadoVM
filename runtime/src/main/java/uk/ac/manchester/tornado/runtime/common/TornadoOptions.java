@@ -167,6 +167,7 @@ public class TornadoOptions {
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
      */
+    @Deprecated
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", FALSE);
     /**
      * Use return as a common label and insert the instruction before function
