@@ -203,12 +203,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             // if the worker grid is available, the user can update the number of threads to
             // run at any point during runtime.
             threadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
-            // dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling,
-            // levelZeroKernel, kernel, meta);
-            int[] groupSizeX = new int[] { (int) threadScheduling.localWork[0] };
-            int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
-            int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
-            dispatcher = new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
+            if (TornadoOptions.USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS) {
+                dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+            } else {
+                int[] groupSizeX = new int[] { (int) threadScheduling.localWork[0] };
+                int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
+                int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
+                dispatcher = new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
+            }
         }
 
         if (meta.isThreadInfoEnabled()) {

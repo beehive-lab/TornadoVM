@@ -204,6 +204,11 @@ public class TornadoOptions {
      * Optimizes Loads/Stores, V2
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", FALSE);
+
+    /**
+     * Use Level Zero Thread Suggestions for the Thread Dispatcher. True by default.
+     */
+    public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);;
     /**
      * Option to load FPGA pre-compiled binaries.
      */
