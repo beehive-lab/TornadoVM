@@ -1070,7 +1070,7 @@ public class SPIRVLIRStmt {
         private void emitStoreIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit [Private] IndexedMemAccess in address: " + memoryIndexedAccess + "[ " + rhs + "]");
 
-            SPIRVId privateAccessId = asm.module.getNextId();
+            SPIRVId privateAccessId;
 
             SPIRVKind spirvKind = (SPIRVKind) rhs.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
@@ -1091,6 +1091,7 @@ public class SPIRVLIRStmt {
                     privateAccessId = input;
                 } else {
                     // Emit LOAD before generating local access
+                    privateAccessId = asm.module.getNextId();
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
                             type, //
                             privateAccessId, //
@@ -1197,7 +1198,7 @@ public class SPIRVLIRStmt {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
                     "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
 
-            address.emitForLoad(crb, asm);
+            address.emitForLoad(asm);
 
             SPIRVId addressId = asm.lookUpLIRInstructions(address);
             SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
@@ -1216,13 +1217,16 @@ public class SPIRVLIRStmt {
             asm.emitValue(crb, result);
             SPIRVId storeId = asm.lookUpLIRInstructions(result);
 
-            asm.currentBlockScope().add(new SPIRVOpStore( //
-                    storeId, //
-                    loadId, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
-            ));
-
-            asm.registerLIRInstructionValue(result, storeId);
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                asm.registerLIRInstructionValue(result, loadId);
+            } else {
+                asm.currentBlockScope().add(new SPIRVOpStore( //
+                        storeId, //
+                        loadId, //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
+                ));
+                asm.registerLIRInstructionValue(result, storeId);
+            }
 
         }
     }

@@ -182,7 +182,7 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", FALSE);
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", TRUE);
     /**
      * Trace code generation
      */
@@ -190,7 +190,7 @@ public class TornadoOptions {
     /**
      * It enables native math functions for the code generation.
      */
-    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", TRUE);
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", FALSE);
     /**
      * It enables more aggressive math optimizations
      */
