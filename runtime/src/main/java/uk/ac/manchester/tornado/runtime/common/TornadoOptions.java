@@ -182,7 +182,7 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", TRUE);
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", FALSE);
     /**
      * Trace code generation
      */
@@ -190,9 +190,9 @@ public class TornadoOptions {
     /**
      * It enables native math functions for the code generation.
      */
-    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", FALSE);
+    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", TRUE);
     /**
-     * It enables more aggressive math optimizations
+     * - It enables more aggressive math optimizations
      */
     public static final boolean MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.mathOptimizations", TRUE);
     /**
@@ -203,7 +203,7 @@ public class TornadoOptions {
     /**
      * Optimizes Loads/Stores, V2
      */
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", FALSE);
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", TRUE);
 
     /**
      * Use Level Zero Thread Suggestions for the Thread Dispatcher. True by default.
