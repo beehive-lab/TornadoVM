@@ -444,6 +444,10 @@ public class SPIRVLIRStmt {
 
             asm.registerLIRInstructionValue(lhs, phiResultId);
 
+            // Register the PHI-instruction in the phiName Across Blocks instruction
+            // Quite likely, I need a table for tracing these variables as well.
+            // One Phi Variable can depend on another one of a wider outer basic block, then
+            // we need to pass the outer block variable.
             asm.registerPhiNameInstruction(lhs, phiResultId);
 
         }
