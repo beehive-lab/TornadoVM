@@ -97,9 +97,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     # TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     # TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
     # TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
@@ -165,6 +165,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 # ################################################################################################################
 ## Options
+# ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT_MODULE__       = " junit/"
@@ -182,7 +183,7 @@ __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.11_22092021"
+__VERSION__ = "0.12_31012022"
 
 JDK_8_VERSION = "1.8"
 try:
