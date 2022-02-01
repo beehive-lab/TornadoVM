@@ -108,12 +108,12 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),              
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),                     
     # TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
+    # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),                       ## Passing Test SPIR-V opt 
     # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),              ## Passing Test SPIR-V opt 
     # TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     # TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     # TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
+    # TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),         ## Passing Test SPIR-V opt 
 
     ## Test for function calls - We force not to inline methods
     # TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
