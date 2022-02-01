@@ -615,12 +615,17 @@ public class SPIRVLIRStmt {
             SPIRVId convertId = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpUConvert(resultType, convertId, idExpression));
 
-            asm.currentBlockScope().add(new SPIRVOpStore( //
-                    parameterID, //
-                    convertId, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4))) //
-            ));
-            asm.registerLIRInstructionValue(lhs, parameterID);
+            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                asm.currentBlockScope().add(new SPIRVOpStore( //
+                        parameterID, //
+                        convertId, //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4))) //
+                ));
+                asm.registerLIRInstructionValue(lhs, parameterID);
+            } else {
+                asm.registerLIRInstructionValue(lhs, convertId);
+            }
+
         }
 
         public AllocatableValue getResult() {
