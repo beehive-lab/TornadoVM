@@ -382,13 +382,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         cleanUp(asm);
     }
 
+    private void cleanPhiTables(SPIRVAssembler asm) {
+        asm.clearLIRTable();
+        asm.clearPhiTables();
+        asm.clearForwardPhiTable();
+    }
+
     private void cleanUp(SPIRVAssembler asm) {
-        // this.blockScope = null;
         asm.setReturnWithValue(false);
         asm.setReturnLabel(null);
         incrementMethodIndex();
-        asm.clearLIRTable();
-        asm.clearPhiTables();
+        cleanPhiTables(asm);
     }
 
     private void emitFP64Capability(SPIRVModule module) {

@@ -107,44 +107,44 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),                 
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),              
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),                     
-    # TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),                       ## Passing Test SPIR-V opt 
-    # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),              ## Passing Test SPIR-V opt 
-    # TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),         ## Passing Test SPIR-V opt 
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),                       
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),              
+    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
+    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
 
     ## Test for function calls - We force not to inline methods
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
-    #           testParameters=[
-    #               "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
+              testParameters=[
+                  "-XX:CompileCommand=dontinline,uk/ac/manchester/tornado/unittests/tasks/TestMultipleFunctions.*"]),
 
-    # ## Tests for Virtual Devices
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-    #           testMethods=["testVirtualDeviceKernelGPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-    #               "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
-    #               "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
-    #           testMethods=["testVirtualDeviceKernelCPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-    #               "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
-    #               "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-    #           testMethods=["testVirtualDeviceFeaturesGPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-    #               "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-    #               "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
-    # TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-    #           testMethods=["testVirtualDeviceFeaturesCPU"],
-    #           testParameters=[
-    #               "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
-    #               "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
-    #               "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
+    ## Tests for Virtual Devices
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
+              testMethods=["testVirtualDeviceKernelGPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
+                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
+              testMethods=["testVirtualDeviceKernelCPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
+                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
+              testMethods=["testVirtualDeviceFeaturesGPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
+                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"]),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
+              testMethods=["testVirtualDeviceFeaturesCPU"],
+              testParameters=[
+                  "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-CPU.json",
+                  "-Dtornado.virtual.device=True", "-Dtornado.feature.extraction=True",
+                  "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
 
 ]
 

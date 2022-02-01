@@ -748,6 +748,11 @@ public final class SPIRVAssembler extends Assembler {
         return phiNamesAcrossBlocks.get(lhs);
     }
 
+    public void clearForwardPhiTable() {
+        phiNamesAcrossBlocks.clear();
+        phiNamesAcrossBlocks = new HashMap<>();
+    }
+
     public static class ConstantKeyPair {
         private String name;
         private SPIRVKind kind;

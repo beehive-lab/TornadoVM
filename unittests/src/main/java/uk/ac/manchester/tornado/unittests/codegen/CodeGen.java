@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -40,24 +41,6 @@ public class CodeGen extends TornadoTestBase {
                 int gradient = grayIntegralImage[(y * imageWidth) + x];
             }
         }
-    }
-
-    @Test
-    public void test01() {
-
-        TaskSchedule ts = new TaskSchedule("foo");
-
-        int imageWidth = 512;
-        int imageHeight = 512;
-        int[] grayIntegralImage = new int[imageHeight * imageWidth];
-        int[] resultsXY = new int[imageHeight * imageWidth];
-
-        IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage[x] = x);
-
-        ts.task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
-                .streamOut(resultsXY);
-
-        ts.execute();
     }
 
     public static void badCascadeKernel2() {
@@ -93,6 +76,40 @@ public class CodeGen extends TornadoTestBase {
         }
     }
 
+    /*
+     * The following test is not intended to execute in parallel. This test shows
+     * more complex control flow, in which there is an exit block followed by a
+     * merge to represent the break in the first if-condition.
+     *
+     */
+    private static void breakStatement(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] == 5) {
+                break;
+            }
+            a[i] += 5;
+        }
+        a[0] = 0;
+    }
+
+    @Test
+    public void test01() {
+
+        TaskSchedule ts = new TaskSchedule("foo");
+
+        int imageWidth = 512;
+        int imageHeight = 512;
+        int[] grayIntegralImage = new int[imageHeight * imageWidth];
+        int[] resultsXY = new int[imageHeight * imageWidth];
+
+        IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage[x] = x);
+
+        ts.task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
+                .streamOut(resultsXY);
+
+        ts.execute();
+    }
+
     private boolean isRunningOnCPU() {
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         return device.getDeviceType() == TornadoDeviceType.CPU;
@@ -121,28 +138,13 @@ public class CodeGen extends TornadoTestBase {
 
     @Test
     public void test04() {
+        assertNotBackendOptimization(TornadoVMBackendType.SPIRV);
         if (isRunningOnCPU()) {
             return;
         }
         TaskSchedule ts = new TaskSchedule("s0") //
                 .task("t0", CodeGen::badCascadeKernel4);
         ts.warmup();
-    }
-
-    /*
-     * The following test is not intended to execute in parallel. This test shows
-     * more complex control flow, in which there is an exit block followed by a
-     * merge to represent the break in the first if-condition.
-     * 
-     */
-    private static void breakStatement(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] == 5) {
-                break;
-            }
-            a[i] += 5;
-        }
-        a[0] = 0;
     }
 
     @Test

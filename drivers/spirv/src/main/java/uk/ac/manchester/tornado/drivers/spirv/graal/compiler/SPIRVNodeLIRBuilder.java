@@ -264,7 +264,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
                 Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Generating LoadParameter : " + locals[param.index()].getName());
                 Variable result = getGen().newVariable(lirKind);
-                getGen().append(new SPIRVLIRStmt.StoreParameter(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind, param.index())));
+                getGen().append(new SPIRVLIRStmt.StoreFunctionParameter(result, new SPIRVUnary.LoadParameter(locals[param.index()], lirKind, param.index())));
                 setResult(param, result);
             }
         }

@@ -182,17 +182,17 @@ public class SPIRVLIRStmt {
 
     }
 
-    @Opcode("StoreParameter")
-    public static class StoreParameter extends AbstractInstruction {
+    @Opcode("StoreFunctionParameter")
+    public static class StoreFunctionParameter extends AbstractInstruction {
 
-        public static final LIRInstructionClass<StoreParameter> TYPE = LIRInstructionClass.create(StoreParameter.class);
+        public static final LIRInstructionClass<StoreFunctionParameter> TYPE = LIRInstructionClass.create(StoreFunctionParameter.class);
 
         @Def
         protected AllocatableValue lhs;
         @Use
         protected Value rhs;
 
-        public StoreParameter(AllocatableValue lhs, Value rhs) {
+        public StoreFunctionParameter(AllocatableValue lhs, Value rhs) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = rhs;
@@ -206,30 +206,40 @@ public class SPIRVLIRStmt {
             } else {
                 asm.emitValue(crb, rhs);
             }
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreParameter: " + lhs + " = " + rhs);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreFunctionParameter: " + lhs + " = " + rhs);
             SPIRVId storeValue = asm.lookUpLIRInstructions(rhs);
             SPIRVId lhsId = asm.lookUpLIRInstructions(lhs);
 
-            asm.currentBlockScope().add(new SPIRVOpStore( //
-                    lhsId, //
-                    storeValue, //
-                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(lhs.getPlatformKind().getSizeInBytes())) //
-                    )));
+            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                asm.currentBlockScope().add(new SPIRVOpStore( //
+                        lhsId, //
+                        storeValue, //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(lhs.getPlatformKind().getSizeInBytes())) //
+                        )));
+                // We register the left part because we want the disassociation from the right
+                // part (a not valid ID) from the left part.
+                // From this point in the execution, we need the new ID (registered with Graal).
+                // This is only for function parameters.
 
-            // We register the left part because we want the disassociation from the right
-            // part (a not valid ID) from the left part.
-            // From this point in the execution, we need the new ID (registered with Graal).
-            // This is only for function parameters.
+                // Example:
+                // OpStore %spirv_i_0F1 %aF1 Aligned 4 // aF1 and aF2 are parameters, not
+                // variables.
+                // OpStore %spirv_i_1F1 %bF1 Aligned 4
 
-            // Example:
-            // OpStore %spirv_i_0F1 %aF1 Aligned 4 // aF1 and aF2 are parameters, not
-            // variables.
-            // OpStore %spirv_i_1F1 %bF1 Aligned 4
+                // In order to use later the spirv_XXX variables, we register the current ID
+                // (left part) with its ID.
+                asm.registerLIRInstructionValue(lhs, lhsId);
+            } else {
+                // Example:
+                // ------------------------------------------------------
+                // %arrF34 = OpFunctionParameter %ulong // We pass this valueID along
+                // %arrF35 = OpFunctionParameter %ulong // We pass this valueID along
+                // %B0_kernel34 = OpLabel
+                // %50 = OpIAdd %ulong %arrF34 %arrF35
+                // ------------------------------------------------------
+                asm.registerLIRInstructionValue(lhs, storeValue);
+            }
 
-            // In order to use later the spirv_XXX variables, we register the current ID
-            // (left part) with its ID.
-
-            asm.registerLIRInstructionValue(lhs, lhsId);
         }
 
         public AllocatableValue getResult() {

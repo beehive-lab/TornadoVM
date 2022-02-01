@@ -98,7 +98,6 @@ public class TestNewArrays extends TornadoTestBase {
                     acc[2] = j;
                 }
             }
-            a[i] = acc[2] + a[i];
         }
     }
 
