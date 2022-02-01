@@ -102,11 +102,11 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
-    # TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),  ## Passing Test SPIR-V opt 
-    # TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),                 ## Passing Test SPIR-V opt 
-    # TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),              ## Passing Test SPIR-V opt 
-    # TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),                     ## Passing Test SPIR-V opt 
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),                 
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),              
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),                     
     # TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
     # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     # TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),              ## Passing Test SPIR-V opt 

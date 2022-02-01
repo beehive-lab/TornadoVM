@@ -182,11 +182,11 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", TRUE);
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", FALSE);
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", TRUE);
+    public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", FALSE);
     /**
      * It enables native math functions for the code generation.
      */
