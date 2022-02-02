@@ -128,7 +128,15 @@ public class TornadoOptions {
      * phase in the Low-Tier.
      */
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
+
+    /**
+     * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL,
+     * PTX or SPIRV), this option allows users to automatically execute the code
+     * with plain Java if an exception occurs when running the parallel code. This
+     * option is True by default.
+     */
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", TRUE);
+
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
