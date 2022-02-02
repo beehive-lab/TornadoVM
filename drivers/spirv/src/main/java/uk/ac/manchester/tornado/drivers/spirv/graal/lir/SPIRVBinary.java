@@ -102,7 +102,7 @@ public class SPIRVBinary {
                     throw new RuntimeException("LOADING PARAMETER: " + inputValue + " with NULL VALUE in SPIR-V Table");
                 }
 
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return param;
                 }
 
@@ -228,7 +228,7 @@ public class SPIRVBinary {
 
             asm.registerLIRInstructionValue(this, operationId);
 
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 // Forward Phi Value if needed
                 if (!asm.isPhiTraceNull() && asm.getPhiTraceValue(result) != null) {
                     asm.setPhiValueId(asm.getPhiTraceValue(result), operationId);

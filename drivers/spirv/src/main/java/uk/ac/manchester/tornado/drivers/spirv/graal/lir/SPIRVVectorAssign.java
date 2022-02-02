@@ -55,7 +55,7 @@ public class SPIRVVectorAssign {
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
                 SPIRVId load;
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     load = param;
                 } else {
                     // We need to perform a load first

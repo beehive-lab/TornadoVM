@@ -379,7 +379,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
                 final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     Value operand = operand(value);
                     if (!(operand instanceof ConstantValue)) {
                         phiTrace.put((AllocatableValue) operand, result);
@@ -538,7 +538,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
             Value src = operand(phi.valueAt(loopEnd));
             if (!dest.equals(src)) {
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     append(new SPIRVLIRStmt.PassValuePhi(dest, src));
 
                     if (phiTrace.get(src) != null) {
@@ -575,7 +575,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(valuePhi);
 
                 if (!dest.equals(src)) {
-                    if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                    if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                         append(new SPIRVLIRStmt.PassValuePhi(dest, src));
                         phiTrace.put(dest, (AllocatableValue) src);
                     } else {
@@ -586,7 +586,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(phi.valueAt(1));
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
-            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
+            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
                 AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
                 Value forwardId = operand(phi.valueAt(0));
@@ -661,7 +661,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(phi, value);
             } else {
                 // Assign the Phi to a new value
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     if (phiVars == null) {
                         phiVars = new LIRPhiVars();
                     }

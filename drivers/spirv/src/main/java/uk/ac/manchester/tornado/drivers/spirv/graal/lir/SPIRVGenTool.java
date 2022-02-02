@@ -63,7 +63,7 @@ public class SPIRVGenTool {
 
         Variable result = (spirvKind.isVector()) ? generator.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : generator.newVariable(lirKind);
 
-        if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+        if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
             emitParameterLoadWithNoStore(result, index);
         } else {
             emitParameterLoad(result, index);

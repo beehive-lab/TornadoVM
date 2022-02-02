@@ -273,7 +273,7 @@ public class SPIRVControlFlow {
 
             // Perform a Load of the key value
             SPIRVId loadId;
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 loadId = valueKey;
             } else {
                 loadId = asm.module.getNextId();

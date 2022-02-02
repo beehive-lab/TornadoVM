@@ -301,7 +301,7 @@ public class SPIRVUnary {
             } else {
                 SPIRVId loadId;
                 indexId = asm.lookUpLIRInstructions(index);
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     loadId = indexId;
                 } else {
                     SPIRVKind kindIndex = (SPIRVKind) index.getPlatformKind();
@@ -342,7 +342,7 @@ public class SPIRVUnary {
             } else {
                 SPIRVId loadId;
                 indexId = asm.lookUpLIRInstructions(index);
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     loadId = indexId;
                 } else {
                     loadId = asm.module.getNextId();
@@ -402,7 +402,7 @@ public class SPIRVUnary {
 
                 SPIRVId loadId;
                 indexId = asm.lookUpLIRInstructions(index);
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     loadId = indexId;
                 } else {
                     loadId = asm.module.getNextId();
@@ -471,7 +471,7 @@ public class SPIRVUnary {
 
             final SPIRVId idLoad;
             SPIRVId addressId = asm.lookUpLIRInstructions(this.address);
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 idLoad = addressId;
             } else {
                 // We force to load a pointer to long
@@ -581,7 +581,7 @@ public class SPIRVUnary {
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(value);
 
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return param;
                 } else {
                     SPIRVId loadConvert = asm.module.getNextId();
@@ -712,7 +712,7 @@ public class SPIRVUnary {
                 return asm.lookUpLIRInstructions(value);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(value);
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return param;
                 }
                 SPIRVId loadConvert = asm.module.getNextId();
@@ -983,7 +983,7 @@ public class SPIRVUnary {
                 return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return param;
                 }
                 // We need to perform a load first

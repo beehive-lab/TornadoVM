@@ -70,7 +70,7 @@ public class GetArrayNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+        if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
             tool.append(new SPIRVLIRStmt.PassValuePhi(result, generator.operand(arrayNode)));
         } else {
             tool.append(new SPIRVLIRStmt.AssignStmtWithLoad(result, generator.operand(arrayNode)));
