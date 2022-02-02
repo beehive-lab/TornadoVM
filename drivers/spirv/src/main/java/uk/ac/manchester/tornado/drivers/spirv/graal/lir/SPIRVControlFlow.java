@@ -48,6 +48,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVPairL
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * SPIR-V Code Generation for all control-flow constructs.
@@ -56,7 +57,7 @@ public class SPIRVControlFlow {
 
     public abstract static class BaseControlFlow extends SPIRVLIRStmt.AbstractInstruction {
 
-        public BaseControlFlow(LIRInstructionClass<? extends LIRInstruction> c) {
+        BaseControlFlow(LIRInstructionClass<? extends LIRInstruction> c) {
             super(c);
         }
 
@@ -94,10 +95,11 @@ public class SPIRVControlFlow {
 
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "LoopLabel : blockID " + blockId);
             SPIRVId branchId = getIfOfBranch(blockId, asm);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tOpBranch: " + blockId);
             SPIRVInstScope newScope = asm.currentBlockScope().add(new SPIRVOpBranch(branchId));
             asm.pushScope(newScope);
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "\tLoopLabel : blockID " + blockId);
             SPIRVInstScope newScope2 = newScope.add(new SPIRVOpLabel(branchId));
             asm.pushScope(newScope2);
         }
@@ -122,11 +124,11 @@ public class SPIRVControlFlow {
 
         /**
          * It emits the following pattern:
-         * 
+         *
          * <code>
          *     OpBranchConditional %condition %trueBranch %falseBranch
          * </code>
-         * 
+         *
          * @param crb
          *            {@link SPIRVCompilationResultBuilder crb}
          * @param asm
@@ -198,11 +200,10 @@ public class SPIRVControlFlow {
     public static class BranchIf extends BaseControlFlow {
 
         public static final LIRInstructionClass<BranchIf> TYPE = LIRInstructionClass.create(BranchIf.class);
-
-        @Use
-        private LabelRef branch;
         private final boolean isConditional;
         private final boolean isLoopEdgeBack;
+        @Use
+        private LabelRef branch;
 
         public BranchIf(LabelRef branch, boolean isConditional, boolean isLoopEdgeBack) {
             super(TYPE);
@@ -271,15 +272,20 @@ public class SPIRVControlFlow {
             SPIRVId typeKind = asm.primitives.getTypePrimitive(spirvKind);
 
             // Perform a Load of the key value
-            SPIRVId loadId = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpLoad(//
-                    typeKind, //
-                    loadId, //
-                    valueKey, //
-                    new SPIRVOptionalOperand<>( //
-                            SPIRVMemoryAccess.Aligned( //
-                                    new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
-            ));
+            SPIRVId loadId;
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                loadId = valueKey;
+            } else {
+                loadId = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        typeKind, //
+                        loadId, //
+                        valueKey, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
+                ));
+            }
 
             SPIRVId defaultSelector = getIdForBranch(defaultTarget, asm);
 

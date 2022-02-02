@@ -59,35 +59,56 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
+    HashSet<Block> rescheduledBasicBlocks;
     private boolean isKernel;
     private int loops = 0;
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
 
-    HashSet<Block> rescheduledBasicBlocks;
-
     public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult) {
         super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
-        // super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
-        // options, getDebugContext(), compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
+    }
+
+    private static boolean isLoopBlock(Block block, Block loopHeader) {
+
+        Set<Block> visited = new HashSet<>();
+        Stack<Block> stack = new Stack<>();
+        stack.push(block);
+
+        while (!stack.isEmpty()) {
+
+            Block b = stack.pop();
+            visited.add(b);
+
+            if (b.getId() < loopHeader.getId()) {
+                return false;
+            } else if (b == loopHeader) {
+                return true;
+            } else {
+                Block[] successors = b.getSuccessors();
+                for (Block bl : successors) {
+                    if (!visited.contains(bl)) {
+                        stack.push(bl);
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public Set<ResolvedJavaMethod> getNonInlinedMethods() {
         return nonInlinedMethods;
     }
 
-    public void setKernel(boolean isKernel) {
-        this.isKernel = isKernel;
+    public boolean isParallel() {
+        return isParallel;
     }
 
     public void setParallel(boolean isParallel) {
         this.isParallel = isParallel;
-    }
-
-    public boolean isParallel() {
-        return isParallel;
     }
 
     public void setDeviceContext(SPIRVDeviceContext deviceContext) {
@@ -96,6 +117,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     public boolean isKernel() {
         return isKernel;
+    }
+
+    public void setKernel(boolean isKernel) {
+        this.isKernel = isKernel;
     }
 
     /**
@@ -138,34 +163,6 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
             rescheduledBasicBlocks = new HashSet<>();
         }
         rescheduledBasicBlocks.add(block);
-    }
-
-    private static boolean isLoopBlock(Block block, Block loopHeader) {
-
-        Set<Block> visited = new HashSet<>();
-        Stack<Block> stack = new Stack<>();
-        stack.push(block);
-
-        while (!stack.isEmpty()) {
-
-            Block b = stack.pop();
-            visited.add(b);
-
-            if (b.getId() < loopHeader.getId()) {
-                return false;
-            } else if (b == loopHeader) {
-                return true;
-            } else {
-                Block[] successors = b.getSuccessors();
-                for (Block bl : successors) {
-                    if (!visited.contains(bl)) {
-                        stack.push(bl);
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 
     private void traverseControlFlowGraph(Block basicBlock, SPIRVBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
@@ -254,12 +251,6 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
             if (op != null) {
-
-                // if (op instanceof PTXControlFlow.LoopBreakOp) {
-                // breakInst = op;
-                // continue;
-                // }
-
                 try {
                     emitOp(this, op);
                 } catch (TornadoInternalError e) {

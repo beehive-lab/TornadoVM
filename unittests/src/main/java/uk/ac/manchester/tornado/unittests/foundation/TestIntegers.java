@@ -42,7 +42,7 @@ public class TestIntegers extends TornadoTestBase {
                 .streamOut(a) //
                 .execute(); //
 
-        assertEquals(a[0], 50);
+        assertEquals(50, a[0]);
     }
 
     @Test

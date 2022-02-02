@@ -43,6 +43,11 @@ tests:
 	tornado-test.py --ea -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
+tests-opt:
+	tornado --devices
+	tornado-test.py -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel  
+
+
 test-slam:
 	tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 
 

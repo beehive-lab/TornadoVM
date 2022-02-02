@@ -76,9 +76,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
-    TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
-    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),     
+    TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),    
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),                 
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskSchedule"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
@@ -88,7 +88,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
-    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
+    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),         
     TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
     TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
@@ -103,13 +103,13 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),                 
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),              
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),                     
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),                       
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),              
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
@@ -165,6 +165,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 # ################################################################################################################
 ## Options
+# ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT_MODULE__       = " junit/"
@@ -182,7 +183,7 @@ __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.11_22092021"
+__VERSION__ = "0.12_31012022"
 
 JDK_8_VERSION = "1.8"
 try:

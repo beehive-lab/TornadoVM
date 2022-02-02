@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.common;
 
-public class TornadoVMSPIRVNotSupported extends RuntimeException {
+/**
+ * Annotation at the method level for expressing optimizations that are still
+ * not supported.
+ */
+public class SPIRVOptNotSupported extends RuntimeException {
 
-    public TornadoVMSPIRVNotSupported(String message) {
+    public SPIRVOptNotSupported(String message) {
         super(message);
     }
 

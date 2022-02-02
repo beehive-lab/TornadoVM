@@ -103,6 +103,7 @@ public class OCLProgram extends TornadoLogger {
     }
 
     public void build(String options) {
+
         buffer.clear();
 
         try {

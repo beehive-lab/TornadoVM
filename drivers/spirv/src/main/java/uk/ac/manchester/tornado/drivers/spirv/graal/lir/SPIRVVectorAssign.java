@@ -54,10 +54,13 @@ public class SPIRVVectorAssign {
                 return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                SPIRVId load;
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    load = param;
+                } else {
                     // We need to perform a load first
                     Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable from AssignVector :" + inputValue);
-                    SPIRVId load = asm.module.getNextId();
+                    load = asm.module.getNextId();
                     SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
                     asm.currentBlockScope().add(new SPIRVOpLoad(//
                             type, //
@@ -67,21 +70,19 @@ public class SPIRVVectorAssign {
                                     SPIRVMemoryAccess.Aligned( //
                                             new SPIRVLiteralInteger(spirvKind.getByteCount())))//
                     ));
-
-                    // If the type loaded differ from the element kind type, then we need to do a
-                    // type conversion (OpUConvert)
-                    SPIRVKind kind = ((SPIRVKind) getLIRKind().getPlatformKind()).getElementKind();
-                    if (spirvKind.getByteCount() != kind.getByteCount()) {
-                        SPIRVId resultConvert = asm.module.getNextId();
-                        SPIRVId toKind = asm.primitives.getTypePrimitive(kind);
-                        asm.currentBlockScope().add(new SPIRVOpUConvert(toKind, resultConvert, load));
-                        load = resultConvert;
-                    }
-
-                    return load;
-                } else {
-                    return param;
                 }
+
+                // If the type loaded differ from the element kind type, then we need to do a
+                // type conversion (OpUConvert)
+                SPIRVKind kind = ((SPIRVKind) getLIRKind().getPlatformKind()).getElementKind();
+                if (spirvKind.getByteCount() != kind.getByteCount()) {
+                    SPIRVId resultConvert = asm.module.getNextId();
+                    SPIRVId toKind = asm.primitives.getTypePrimitive(kind);
+                    asm.currentBlockScope().add(new SPIRVOpUConvert(toKind, resultConvert, load));
+                    load = resultConvert;
+                }
+
+                return load;
             }
         }
     }
