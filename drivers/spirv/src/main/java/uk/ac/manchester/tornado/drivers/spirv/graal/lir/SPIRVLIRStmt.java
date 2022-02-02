@@ -267,7 +267,7 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            // This call will register the lhs id in case is not in the lookupTable yet.
+            // This call will register the lhs id in case it is not in the lookupTable yet.
             asm.emitValue(crb, lhs);
 
             if (rhs instanceof SPIRVLIROp) {
@@ -454,10 +454,21 @@ public class SPIRVLIRStmt {
 
             asm.registerLIRInstructionValue(lhs, phiResultId);
 
-            // Register the PHI-instruction in the phiName Across Blocks instruction
-            // Quite likely, I need a table for tracing these variables as well.
-            // One Phi Variable can depend on another one of a wider outer basic block, then
-            // we need to pass the outer block variable.
+            // Register the PHI-instruction in the PhiTable that has all forwarded Phi
+            // Value. This table is maintained for passing PhiValues across basic blocks in
+            // the case a PhiValue depends on another outer basic block.
+            // Example:
+            // -------------
+            // Label header:
+            // %phi1 = OpPhi ...
+            // Label Block01
+            // %operation = OpIAdd %phi1 .. //
+            // ....
+            // Label Block02
+            // %operation2 = OpIAdd %phi1 ... // <<< This fordwared table allows us to pass
+            // the phi1 across outer basic blocks. Otherwise, we get %operation ID, which is
+            // not correct.
+            // -------------
             asm.registerPhiNameInstruction(lhs, phiResultId);
 
         }
@@ -509,7 +520,6 @@ public class SPIRVLIRStmt {
             }
 
             // Emit Store
-            // SPIRVId parameterID = asm.getParameterId(parameterIndex);
             SPIRVId parameterID = asm.lookUpLIRInstructions(lhs);
             SPIRVId idExpression = asm.lookUpLIRInstructions(rhs);
             asm.currentBlockScope().add(new SPIRVOpStore( //
@@ -625,15 +635,15 @@ public class SPIRVLIRStmt {
             SPIRVId convertId = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpUConvert(resultType, convertId, idExpression));
 
-            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                asm.registerLIRInstructionValue(lhs, convertId);
+            } else {
                 asm.currentBlockScope().add(new SPIRVOpStore( //
                         parameterID, //
                         convertId, //
                         new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4))) //
                 ));
                 asm.registerLIRInstructionValue(lhs, parameterID);
-            } else {
-                asm.registerLIRInstructionValue(lhs, convertId);
             }
 
         }
@@ -708,15 +718,15 @@ public class SPIRVLIRStmt {
         }
 
         private void emitStoreIfNeeded(SPIRVAssembler asm, SPIRVId loadID) {
-            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                asm.registerLIRInstructionValue(result, loadID);
+            } else {
                 SPIRVId resultID = asm.lookUpLIRInstructions(result);
                 asm.currentBlockScope().add(new SPIRVOpStore( //
                         resultID, //
                         loadID, //
                         new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(cast.getSPIRVPlatformKind().getByteCount())) //
                         )));
-            } else {
-                asm.registerLIRInstructionValue(result, loadID);
             }
         }
 
@@ -890,7 +900,11 @@ public class SPIRVLIRStmt {
                 value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
             } else {
                 value = asm.lookUpLIRInstructions(rhs);
-                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    if (asm.isPhiAcrossBlocksPresent((AllocatableValue) rhs)) {
+                        value = asm.getPhiIdAcrossBlock((AllocatableValue) rhs);
+                    }
+                } else {
                     SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());
                     SPIRVId loadID = asm.module.getNextId();
                     asm.currentBlockScope().add(new SPIRVOpLoad( //
@@ -900,10 +914,6 @@ public class SPIRVLIRStmt {
                             new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(rhs.getPlatformKind().getSizeInBytes()))) //
                     ));
                     value = loadID;
-                } else {
-                    if (asm.isPhiAcrossBlocksPresent((AllocatableValue) rhs)) {
-                        value = asm.getPhiIdAcrossBlock((AllocatableValue) rhs);
-                    }
                 }
             }
 

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -541,6 +541,13 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     append(new SPIRVLIRStmt.PassValuePhi(dest, src));
 
+                    // When minimizing the number of Loads/Stores, we need to pass the phi value to
+                    // the next instruction.Additionally, we have two phases in the JIT compiler in
+                    // order to build SPIRV Binary. In the first pass, we annotate the phi variables
+                    // in a table. Since a phi value can have multiple assigns (and new names), we
+                    // track in a table all names associated with the same phi value. We use the
+                    // phiTrace table for this. Additionally, we register in the phiMap table (table
+                    // that handles the SPIRVIds for each phi Variable from the Graal IR).
                     if (phiTrace.get(src) != null) {
                         // Keep trace of PHI values with nested control-flow
                         AllocatableValue v = phiTrace.get(src);
@@ -587,6 +594,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(phi.valueAt(1));
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
             } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
+                // We look up of if the first phi-value is in the phiTrace table. In that case,
+                // we need to generate a new OpPhi instruction with a value that is forwarded to
+                // another basic block.
                 AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
                 Value forwardId = operand(phi.valueAt(0));
@@ -640,6 +650,16 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         return dependentPhiValueBlock;
     }
 
+    private void generateOpPhiInstruction(LIRPhiVars phiVars, Block dependentPhiValueBlock, final Block predBlock) {
+        // When we optimize the code, we need to insert all OpPhi Values after the
+        // loop-header label. Therefore, if the list of OpPhi variables is not null,
+        // that means that we need to generate the OpPhi instruction.
+        for (LIRPhiVars.PhiMeta meta : phiVars.getPhiVars()) {
+            phiTrace.put(meta.getResultPhi(), null);
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null));
+        }
+    }
+
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visiting emitLoopBegin %s", loopBeginNode);
 
@@ -653,38 +673,31 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         LIRPhiVars phiVars = null;
 
         for (ValuePhiNode phi : valuePhis) {
-            final Value value = operand(phi.firstValue()); // Why is only one phi (the first in the list)
+            final Value value = operand(phi.firstValue());
             if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
                 /*
                  * preserve loop-carried dependencies outside of loops
                  */
                 setResult(phi, value);
-            } else {
-                // Assign the Phi to a new value
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                    if (phiVars == null) {
-                        phiVars = new LIRPhiVars();
-                    }
-                    final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
-                    append(new SPIRVLIRStmt.PassValuePhi(result, value));
-                    phiVars.insertPhiValue(result, value);
-                } else {
-                    final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
-                    append(new SPIRVLIRStmt.AssignStmtWithLoad(result, value));
+            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                if (phiVars == null) {
+                    phiVars = new LIRPhiVars();
                 }
+                // Assign the Phi to a new value and pass-over the result to the next
+                // instruction.
+                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                append(new SPIRVLIRStmt.PassValuePhi(result, value));
+                phiVars.insertPhiValue(result, value);
+            } else {
+                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                append(new SPIRVLIRStmt.AssignStmtWithLoad(result, value));
             }
         }
 
         append(new SPIRVControlFlow.LoopBeginLabel(block.toString()));
 
-        // When we optimize the code, we need to insert all OpPhi Values after the
-        // loop-header label. Therefore, if the list of OpPhi vars is not null, that
-        // means that we need to generate that instruction.
         if (phiVars != null) {
-            for (LIRPhiVars.PhiMeta meta : phiVars.getPhiVars()) {
-                phiTrace.put(meta.getResultPhi(), null);
-                append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null));
-            }
+            generateOpPhiInstruction(phiVars, dependentPhiValueBlock, predBlock);
         }
 
         label.clearIncomingValues();
