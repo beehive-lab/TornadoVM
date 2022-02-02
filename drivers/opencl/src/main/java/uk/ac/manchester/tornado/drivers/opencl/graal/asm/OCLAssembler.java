@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,455 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 
 public final class OCLAssembler extends Assembler {
+
+    private static final boolean EMIT_INTRINSICS = false;
+    private int indent;
+    private int lastIndent;
+    private String delimiter;
+    private boolean emitEOL;
+    private List<String> operandStack;
+    private boolean pushToStack;
+
+    public OCLAssembler(TargetDescription target) {
+        super(target);
+        indent = 0;
+        delimiter = OCLAssemblerConstants.STMT_DELIMITER;
+        emitEOL = true;
+        operandStack = new ArrayList<>(10);
+        pushToStack = false;
+
+        if (((OCLTargetDescription) target).supportsFP64()) {
+            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
+        }
+
+        if (((OCLTargetDescription) target).supportsInt64Atomics()) {
+            emitLine("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  ");
+        }
+
+        if (EMIT_INTRINSICS) {
+            emitAtomicIntrinsics();
+        }
+    }
+
+    private void emitAtomicIntrinsics() {
+        //@formatter:off
+        emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       float floatVal;\n" +
+                "   } newVal;\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       float floatVal;\n" +
+                "   } prevVal;\n" +
+                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
+                "   do {\n" +
+                "       prevVal.floatVal = *source;\n" +
+                "       newVal.floatVal = prevVal.floatVal + operand;\n" +
+                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
+                "   newVal.intVal) != prevVal.intVal);" +
+                "}");
+
+        emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" +
+                "{\n" +
+                "    union {\n" +
+                "        unsigned int u32;\n" +
+                "        float f32;\n" +
+                "    } next, expected, current;\n" +
+                "    current.f32 = *addr;\n" +
+                "barrier(CLK_GLOBAL_MEM_FENCE);\n" +
+                "    do {\n" +
+                "       expected.f32 = current.f32;\n" +
+                "       next.f32 = expected.f32 + val;\n" +
+                "       current.u32 = atomic_cmpxchg( (volatile __global unsigned int *)addr,\n" +
+                "       expected.u32, next.u32);\n" +
+                "    } while( current.u32 != expected.u32 );\n" +
+                "}");
+
+        emitLine("inline void atomicMul_Tornado_Int(volatile __global int *source, const float operand) {\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       int value;\n" +
+                "   } newVal;\n" +
+                "   union {\n" +
+                "       unsigned int intVal;\n" +
+                "       int value;\n" +
+                "   } prevVal;\n" +
+                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
+                "   do {\n" +
+                "       prevVal.value = *source;\n" +
+                "       newVal.value = prevVal.value * operand;\n" +
+                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
+                "   newVal.intVal) != prevVal.intVal);" +
+                "}");
+        //@formatter:on
+    }
+
+    @Override
+    public void align(int arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void ensureUniquePC() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public AbstractAddress getPlaceholder(int i) {
+        unimplemented("Place holder not implemented yet.");
+        return null;
+    }
+
+    @Override
+    public void jmp(Label arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    protected void patchJumpTarget(int arg0, int arg1) {
+        unimplemented("Patch jump target not implemented yet.");
+    }
+
+    @Override
+    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
+        unimplemented("Make address not implemented yet.");
+        return null;
+    }
+
+    /**
+     * Used to emit instructions within a method. i.e. ones that terminal with a ';'
+     *
+     * @param fmt
+     * @param args
+     */
+    public void emitStmt(String fmt, Object... args) {
+        indent();
+        emit("%s", String.format(fmt, args));
+        delimiter();
+        eol();
+    }
+
+    /**
+     * Used to emit function defs and control flow statements. i.e. strings that do
+     * not terminate with a ';'
+     *
+     * @param fmt
+     * @param args
+     */
+    public void emitString(String fmt, Object... args) {
+        indent();
+        emitString(String.format(fmt, args));
+    }
+
+    public void emitSubString(String str) {
+        guarantee(str != null, "emitting null string");
+        if (pushToStack) {
+            operandStack.add(str);
+        } else {
+            for (byte b : str.getBytes()) {
+                emitByte(b);
+            }
+        }
+    }
+
+    public List<String> getOperandStack() {
+        return operandStack;
+    }
+
+    public void beginStackPush() {
+        pushToStack = true;
+    }
+
+    public void endStackPush() {
+        pushToStack = false;
+    }
+
+    public String getLastOp() {
+        StringBuilder sb = new StringBuilder();
+        for (String str : operandStack) {
+            sb.append(str);
+        }
+        operandStack.clear();
+        return sb.toString();
+    }
+
+    public void pushIndent() {
+        assert (indent >= 0);
+        indent++;
+    }
+
+    public void popIndent() {
+        assert (indent > 0);
+        indent--;
+    }
+
+    public void indentOff() {
+        lastIndent = indent;
+        indent = 0;
+    }
+
+    public void indentOn() {
+        indent = lastIndent;
+    }
+
+    public void indent() {
+        for (int i = 0; i < indent; i++) {
+            emitSymbol(OCLAssemblerConstants.TAB);
+        }
+    }
+
+    public void comment(String comment) {
+        emit(" /* " + comment + " */ ");
+        eol();
+    }
+
+    public void loopBreak() {
+        emit(OCLAssemblerConstants.BREAK);
+    }
+
+    public void emitSymbol(String sym) {
+        for (byte b : sym.getBytes()) {
+            emitByte(b);
+        }
+    }
+
+    public void eolOff() {
+        emitEOL = false;
+    }
+
+    public void eolOn() {
+        emitEOL = true;
+    }
+
+    public void eol() {
+        if (emitEOL) {
+            emitSymbol(OCLAssemblerConstants.EOL);
+        } else {
+            space();
+        }
+    }
+
+    public void setDelimiter(String value) {
+        delimiter = value;
+    }
+
+    public void delimiter() {
+        emitSymbol(delimiter);
+    }
+
+    public void emitLine(String fmt, Object... args) {
+        emitLine(String.format(fmt, args));
+    }
+
+    public void emitLine(String str) {
+        indent();
+        emitSubString(str);
+        eol();
+    }
+
+    public void emit(String str) {
+        emitSubString(str);
+    }
+
+    public void emitLineGlobal(String str) {
+        int size = position();
+        byte[] codeCopy = copy(0, size);
+        String s = new String(codeCopy);
+        str += s;
+        emitString(str, 0);
+    }
+
+    public void emit(String fmt, Object... args) {
+        emitSubString(String.format(fmt, args));
+    }
+
+    public void dump() {
+        for (int i = 0; i < position(); i++) {
+            System.out.printf("%c", (char) getByte(i));
+        }
+    }
+
+    public void ret() {
+        emitStmt("return");
+
+    }
+
+    public void endScope(String blockName) {
+        popIndent();
+        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE + "  // " + blockName);
+    }
+
+    public void endScope() {
+        popIndent();
+        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE);
+    }
+
+    public void beginScope() {
+        emitLine(OCLAssemblerConstants.CURLY_BRACKET_OPEN);
+        pushIndent();
+    }
+
+    private String encodeString(String str) {
+        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
+    }
+
+    private String addLiteralSuffix(OCLKind oclKind, String value) {
+        String result = value;
+        if (oclKind == FLOAT) {
+            result += "F";
+        } else if (oclKind.isInteger()) {
+            if (oclKind.isUnsigned()) {
+                result += "U";
+            }
+
+            if (oclKind == LONG || oclKind == ULONG) {
+                result += "L";
+            }
+        }
+        return result;
+    }
+
+    public void emitConstant(ConstantValue cv) {
+        emit(formatConstant(cv));
+    }
+
+    public void emitConstant(Constant constant) {
+        emit(constant.toValueString());
+    }
+
+    public String formatConstant(ConstantValue cv) {
+        String result = "";
+        JavaConstant javaConstant = cv.getJavaConstant();
+        Constant constant = cv.getConstant();
+        OCLKind oclKind = (OCLKind) cv.getPlatformKind();
+        if (javaConstant.isNull()) {
+            result = addLiteralSuffix(oclKind, "0");
+            if (oclKind.isVector()) {
+                result = String.format("(%s)(%s)", oclKind.name(), result);
+            }
+        } else if (constant instanceof HotSpotObjectConstant) {
+            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
+            // TODO should this be replaced with isInternedString()?
+            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
+                result = encodeString(objConst.toValueString());
+            }
+        } else {
+            result = constant.toValueString();
+            result = addLiteralSuffix(oclKind, result);
+        }
+        return result;
+    }
+
+    public String toString(Value value) {
+        String result = "";
+        if (value instanceof Variable) {
+            Variable var = (Variable) value;
+            return var.getName();
+        } else if (value instanceof ConstantValue) {
+            if (!((ConstantValue) value).isJavaConstant()) {
+                shouldNotReachHere("constant value: ", value);
+            }
+            ConstantValue cv = (ConstantValue) value;
+            return formatConstant(cv);
+        } else if (value instanceof OCLNullary.Parameter) {
+            /*
+             * This case covers when we want to pass a caller method parameter further down
+             * to a callee and there is no assignment of the parameter inside the caller.
+             */
+            return value.toString();
+        } else {
+            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
+        }
+        return result;
+    }
+
+    public void emitValue(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLReturnSlot) {
+            ((OCLReturnSlot) value).emit(crb, this);
+        } else {
+            emit(toString(value));
+        }
+    }
+
+    public String getStringValue(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLReturnSlot) {
+            return ((OCLReturnSlot) value).getStringFormat();
+        } else {
+            return toString(value);
+        }
+    }
+
+    public void assign() {
+        emitSymbol(OCLAssemblerConstants.ASSIGN);
+    }
+
+    public void ifStmt(OCLCompilationResultBuilder crb, Value condition) {
+
+        indent();
+
+        emitSymbol(OCLAssemblerConstants.IF_STMT);
+        emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+
+        emit(toString(condition));
+        if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
+            emit(" == 1");
+        }
+        // value(crb, condition);
+
+        emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+        eol();
+
+    }
+
+    public void loadParam(Variable result, int index) {
+        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, OCLCallStack.RESERVED_SLOTS + index);
+    }
+
+    @Deprecated
+    public void loadParam64(Variable result, int paramIndex) {
+        loadParam(result, paramIndex);
+    }
+
+    @Deprecated
+    public void loadParam32(Variable result, int paramIndex) {
+        loadParam(result, paramIndex);
+    }
+
+    public void space() {
+        emitSymbol(" ");
+    }
+
+    public void elseIfStmt(OCLCompilationResultBuilder crb, Value condition) {
+
+        indent();
+
+        emitSymbol(OCLAssemblerConstants.ELSE);
+        space();
+        emitSymbol(OCLAssemblerConstants.IF_STMT);
+        emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
+
+        emitValue(crb, condition);
+
+        emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
+        eol();
+
+    }
+
+    public void elseStmt() {
+        emitSymbol(OCLAssemblerConstants.ELSE);
+    }
+
+    public void emitValueOrOp(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLLIROp) {
+            ((OCLLIROp) value).emit(crb, this);
+        } else {
+            emitValue(crb, value);
+        }
+    }
 
     /**
      * Base class for OpenCL opcodes.
@@ -232,6 +681,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic ATOMIC_ADD = new OCLUnaryIntrinsic("atomic_add");
         public static final OCLUnaryIntrinsic ATOMIC_VAR_INIT = new OCLUnaryIntrinsic("ATOMIC_VAR_INIT");
         public static final OCLUnaryIntrinsic ATOMIC_DEC = new OCLUnaryIntrinsic("atomic_dec");
+        public static final OCLUnaryIntrinsic ATOMIC_GET = new OCLUnaryIntrinsic("atomic[0]");
 
         public static final OCLUnaryIntrinsic MEMORY_ORDER_RELAXED = new OCLUnaryIntrinsic("memory_order_relaxed");
 
@@ -755,457 +1205,6 @@ public final class OCLAssembler extends Assembler {
             asm.emit(", ");
             asm.emitValue(crb, s15);
             asm.emit(")");
-        }
-    }
-
-    private static final boolean EMIT_INTRINSICS = false;
-
-    private int indent;
-    private int lastIndent;
-    private String delimiter;
-    private boolean emitEOL;
-
-    private List<String> operandStack;
-    private boolean pushToStack;
-
-    private void emitAtomicIntrinsics() {
-        //@formatter:off
-        emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       float floatVal;\n" +
-                "   } newVal;\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       float floatVal;\n" +
-                "   } prevVal;\n" +
-                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "   do {\n" +
-                "       prevVal.floatVal = *source;\n" +
-                "       newVal.floatVal = prevVal.floatVal + operand;\n" +
-                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
-                "   newVal.intVal) != prevVal.intVal);" +
-                "}");
-
-        emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" +
-                "{\n" +
-                "    union {\n" +
-                "        unsigned int u32;\n" +
-                "        float f32;\n" +
-                "    } next, expected, current;\n" +
-                "    current.f32 = *addr;\n" +
-                "barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "    do {\n" +
-                "       expected.f32 = current.f32;\n" +
-                "       next.f32 = expected.f32 + val;\n" +
-                "       current.u32 = atomic_cmpxchg( (volatile __global unsigned int *)addr,\n" +
-                "       expected.u32, next.u32);\n" +
-                "    } while( current.u32 != expected.u32 );\n" +
-                "}");
-
-        emitLine("inline void atomicMul_Tornado_Int(volatile __global int *source, const float operand) {\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       int value;\n" +
-                "   } newVal;\n" +
-                "   union {\n" +
-                "       unsigned int intVal;\n" +
-                "       int value;\n" +
-                "   } prevVal;\n" +
-                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
-                "   do {\n" +
-                "       prevVal.value = *source;\n" +
-                "       newVal.value = prevVal.value * operand;\n" +
-                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" +
-                "   newVal.intVal) != prevVal.intVal);" +
-                "}");
-        //@formatter:on
-    }
-
-    public OCLAssembler(TargetDescription target) {
-        super(target);
-        indent = 0;
-        delimiter = OCLAssemblerConstants.STMT_DELIMITER;
-        emitEOL = true;
-        operandStack = new ArrayList<>(10);
-        pushToStack = false;
-
-        if (((OCLTargetDescription) target).supportsFP64()) {
-            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
-        }
-
-        if (((OCLTargetDescription) target).supportsInt64Atomics()) {
-            emitLine("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  ");
-        }
-
-        if (EMIT_INTRINSICS) {
-            emitAtomicIntrinsics();
-        }
-    }
-
-    @Override
-    public void align(int arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void ensureUniquePC() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public AbstractAddress getPlaceholder(int i) {
-        unimplemented("Place holder not implemented yet.");
-        return null;
-    }
-
-    @Override
-    public void jmp(Label arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    protected void patchJumpTarget(int arg0, int arg1) {
-        unimplemented("Patch jump target not implemented yet.");
-    }
-
-    @Override
-    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
-        unimplemented("Make address not implemented yet.");
-        return null;
-    }
-
-    /**
-     * Used to emit instructions within a method. i.e. ones that terminal with a ';'
-     *
-     * @param fmt
-     * @param args
-     */
-    public void emitStmt(String fmt, Object... args) {
-        indent();
-        emit("%s", String.format(fmt, args));
-        delimiter();
-        eol();
-    }
-
-    /**
-     * Used to emit function defs and control flow statements. i.e. strings that do
-     * not terminate with a ';'
-     *
-     * @param fmt
-     * @param args
-     */
-    public void emitString(String fmt, Object... args) {
-        indent();
-        emitString(String.format(fmt, args));
-    }
-
-    public void emitSubString(String str) {
-        guarantee(str != null, "emitting null string");
-        if (pushToStack) {
-            operandStack.add(str);
-        } else {
-            for (byte b : str.getBytes()) {
-                emitByte(b);
-            }
-        }
-    }
-
-    public List<String> getOperandStack() {
-        return operandStack;
-    }
-
-    public void beginStackPush() {
-        pushToStack = true;
-    }
-
-    public void endStackPush() {
-        pushToStack = false;
-    }
-
-    public String getLastOp() {
-        StringBuilder sb = new StringBuilder();
-        for (String str : operandStack) {
-            sb.append(str);
-        }
-        operandStack.clear();
-        return sb.toString();
-    }
-
-    public void pushIndent() {
-        assert (indent >= 0);
-        indent++;
-    }
-
-    public void popIndent() {
-        assert (indent > 0);
-        indent--;
-    }
-
-    public void indentOff() {
-        lastIndent = indent;
-        indent = 0;
-    }
-
-    public void indentOn() {
-        indent = lastIndent;
-    }
-
-    public void indent() {
-        for (int i = 0; i < indent; i++) {
-            emitSymbol(OCLAssemblerConstants.TAB);
-        }
-    }
-
-    public void comment(String comment) {
-        emit(" /* " + comment + " */ ");
-        eol();
-    }
-
-    public void loopBreak() {
-        emit(OCLAssemblerConstants.BREAK);
-    }
-
-    public void emitSymbol(String sym) {
-        for (byte b : sym.getBytes()) {
-            emitByte(b);
-        }
-    }
-
-    public void eolOff() {
-        emitEOL = false;
-    }
-
-    public void eolOn() {
-        emitEOL = true;
-    }
-
-    public void eol() {
-        if (emitEOL) {
-            emitSymbol(OCLAssemblerConstants.EOL);
-        } else {
-            space();
-        }
-    }
-
-    public void setDelimiter(String value) {
-        delimiter = value;
-    }
-
-    public void delimiter() {
-        emitSymbol(delimiter);
-    }
-
-    public void emitLine(String fmt, Object... args) {
-        emitLine(String.format(fmt, args));
-    }
-
-    public void emitLine(String str) {
-        indent();
-        emitSubString(str);
-        eol();
-    }
-
-    public void emit(String str) {
-        emitSubString(str);
-    }
-
-    public void emitLineGlobal(String str) {
-        int size = position();
-        byte[] codeCopy = copy(0, size);
-        String s = new String(codeCopy);
-        str += s;
-        emitString(str, 0);
-    }
-
-    public void emit(String fmt, Object... args) {
-        emitSubString(String.format(fmt, args));
-    }
-
-    public void dump() {
-        for (int i = 0; i < position(); i++) {
-            System.out.printf("%c", (char) getByte(i));
-        }
-    }
-
-    public void ret() {
-        emitStmt("return");
-
-    }
-
-    public void endScope(String blockName) {
-        popIndent();
-        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE + "  // " + blockName);
-    }
-
-    public void endScope() {
-        popIndent();
-        emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE);
-    }
-
-    public void beginScope() {
-        emitLine(OCLAssemblerConstants.CURLY_BRACKET_OPEN);
-        pushIndent();
-    }
-
-    private String encodeString(String str) {
-        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
-    }
-
-    private String addLiteralSuffix(OCLKind oclKind, String value) {
-        String result = value;
-        if (oclKind == FLOAT) {
-            result += "F";
-        } else if (oclKind.isInteger()) {
-            if (oclKind.isUnsigned()) {
-                result += "U";
-            }
-
-            if (oclKind == LONG || oclKind == ULONG) {
-                result += "L";
-            }
-        }
-        return result;
-    }
-
-    public void emitConstant(ConstantValue cv) {
-        emit(formatConstant(cv));
-    }
-
-    public void emitConstant(Constant constant) {
-        emit(constant.toValueString());
-    }
-
-    public String formatConstant(ConstantValue cv) {
-        String result = "";
-        JavaConstant javaConstant = cv.getJavaConstant();
-        Constant constant = cv.getConstant();
-        OCLKind oclKind = (OCLKind) cv.getPlatformKind();
-        if (javaConstant.isNull()) {
-            result = addLiteralSuffix(oclKind, "0");
-            if (oclKind.isVector()) {
-                result = String.format("(%s)(%s)", oclKind.name(), result);
-            }
-        } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
-            // TODO should this be replaced with isInternedString()?
-            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
-                result = encodeString(objConst.toValueString());
-            }
-        } else {
-            result = constant.toValueString();
-            result = addLiteralSuffix(oclKind, result);
-        }
-        return result;
-    }
-
-    public String toString(Value value) {
-        String result = "";
-        if (value instanceof Variable) {
-            Variable var = (Variable) value;
-            return var.getName();
-        } else if (value instanceof ConstantValue) {
-            if (!((ConstantValue) value).isJavaConstant()) {
-                shouldNotReachHere("constant value: ", value);
-            }
-            ConstantValue cv = (ConstantValue) value;
-            return formatConstant(cv);
-        } else if (value instanceof OCLNullary.Parameter) {
-            /*
-             * This case covers when we want to pass a caller method parameter further down
-             * to a callee and there is no assignment of the parameter inside the caller.
-             */
-            return value.toString();
-        } else {
-            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
-        }
-        return result;
-    }
-
-    public void emitValue(OCLCompilationResultBuilder crb, Value value) {
-        if (value instanceof OCLReturnSlot) {
-            ((OCLReturnSlot) value).emit(crb, this);
-        } else {
-            emit(toString(value));
-        }
-    }
-
-    public String getStringValue(OCLCompilationResultBuilder crb, Value value) {
-        if (value instanceof OCLReturnSlot) {
-            return ((OCLReturnSlot) value).getStringFormat();
-        } else {
-            return toString(value);
-        }
-    }
-
-    public void assign() {
-        emitSymbol(OCLAssemblerConstants.ASSIGN);
-    }
-
-    public void ifStmt(OCLCompilationResultBuilder crb, Value condition) {
-
-        indent();
-
-        emitSymbol(OCLAssemblerConstants.IF_STMT);
-        emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
-
-        emit(toString(condition));
-        if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
-            emit(" == 1");
-        }
-        // value(crb, condition);
-
-        emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
-        eol();
-
-    }
-
-    public void loadParam(Variable result, int index) {
-        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, OCLCallStack.RESERVED_SLOTS + index);
-    }
-
-    @Deprecated
-    public void loadParam64(Variable result, int paramIndex) {
-        loadParam(result, paramIndex);
-    }
-
-    @Deprecated
-    public void loadParam32(Variable result, int paramIndex) {
-        loadParam(result, paramIndex);
-    }
-
-    public void space() {
-        emitSymbol(" ");
-    }
-
-    public void elseIfStmt(OCLCompilationResultBuilder crb, Value condition) {
-
-        indent();
-
-        emitSymbol(OCLAssemblerConstants.ELSE);
-        space();
-        emitSymbol(OCLAssemblerConstants.IF_STMT);
-        emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
-
-        emitValue(crb, condition);
-
-        emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
-        eol();
-
-    }
-
-    public void elseStmt() {
-        emitSymbol(OCLAssemblerConstants.ELSE);
-    }
-
-    public void emitValueOrOp(OCLCompilationResultBuilder crb, Value value) {
-        if (value instanceof OCLLIROp) {
-            ((OCLLIROp) value).emit(crb, this);
-        } else {
-            emitValue(crb, value);
         }
     }
 }

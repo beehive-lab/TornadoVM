@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.atomics;
@@ -42,7 +42,7 @@ public class TestAtomics extends TornadoTestBase {
 
     /**
      * Approach using a compiler-instrinsic in TornadoVM.
-     * 
+     *
      * @param a
      *            Input array. It stores the addition with an atomic variable.
      */
@@ -51,6 +51,107 @@ public class TestAtomics extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             int j = i % SIZE;
             a[j] = TornadoVM_Intrinsics.atomic_add(a, j, 1);
+        }
+    }
+
+    /**
+     * Approach using an API for Atomics. This provides atomics using the Java
+     * semantics (block a single elements). Note that, in OpenCL, this single
+     * elements has to be present in the device's global memory.
+     *
+     * @param input
+     *            input array
+     */
+    public static void atomic04(int[] input) {
+        AtomicInteger tai = new AtomicInteger(200);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = tai.incrementAndGet();
+        }
+    }
+
+    public static void atomic04Get(int[] input) {
+        AtomicInteger tai = new AtomicInteger(200);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = tai.incrementAndGet();
+            int a = tai.get();
+            if (a == 201) {
+                input[i] = 0;
+            }
+        }
+    }
+
+    public static void atomic06(int[] a, int[] b) {
+        AtomicInteger taiA = new AtomicInteger(200);
+        AtomicInteger taiB = new AtomicInteger(100);
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = taiA.incrementAndGet();
+            b[i] = taiB.incrementAndGet();
+        }
+    }
+
+    public static void atomic07(int[] input) {
+        AtomicInteger ai = new AtomicInteger(200);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = ai.incrementAndGet();
+        }
+    }
+
+    public static void atomic08(int[] input) {
+        AtomicInteger ai = new AtomicInteger(200);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = ai.decrementAndGet();
+        }
+    }
+
+    public static int callAtomic(int[] input, int i, AtomicInteger ai) {
+        return input[i] + ai.incrementAndGet();
+    }
+
+    public static void atomic09(int[] input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = callAtomic(input, i, ai);
+        }
+    }
+
+    public static void atomic10(int[] input, AtomicInteger ai, AtomicInteger bi) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet() + bi.incrementAndGet();
+        }
+    }
+
+    public static void atomic13(int[] input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.decrementAndGet();
+        }
+    }
+
+    public static void atomic14(int[] input, AtomicInteger ai, AtomicInteger bi) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+            input[i] = input[i] + bi.decrementAndGet();
+        }
+    }
+
+    /**
+     * This example combines an atomic created inside the compute kernel with an
+     * atomic passed as an argument.
+     *
+     * @param input
+     *            Input array
+     * @param ai
+     *            Atomic Integer stored in Global Memory (atomic-region)
+     */
+    public static void atomic15(int[] input, AtomicInteger ai) {
+        AtomicInteger bi = new AtomicInteger(500);
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
+            input[i] = input[i] + bi.incrementAndGet();
+        }
+    }
+
+    public static void atomic16(int[] input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + ai.incrementAndGet();
         }
     }
 
@@ -71,21 +172,6 @@ public class TestAtomics extends TornadoTestBase {
         atomic03(b);
         for (int i = 0; i < a.length; i++) {
             assertEquals(b[i], a[i]);
-        }
-    }
-
-    /**
-     * Approach using an API for Atomics. This provides atomics using the Java
-     * semantics (block a single elements). Note that, in OpenCL, this single
-     * elements has to be present in the device's global memory.
-     * 
-     * @param input
-     *            input array
-     */
-    public static void atomic04(int[] input) {
-        AtomicInteger tai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = tai.incrementAndGet();
         }
     }
 
@@ -116,10 +202,37 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
     }
 
+    @Test
+    public void testAtomic04Get() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        final int size = 32;
+        int[] a = new int[size];
+        Arrays.fill(a, 1);
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", TestAtomics::atomic04Get, a) //
+                .streamOut(a); //
+
+        ts.execute();
+
+        if (!ts.isFinished()) {
+            assertTrue(false);
+        }
+
+        // On GPUs and FPGAs, threads within the same work-group run in parallel.
+        // Increments will be performed atomically when using TornadoAtomicInteger.
+        // However the order is not guaranteed. For this test, we need to check that
+        // there are not repeated values in the output array.
+        boolean repeated = isValueRepeated(a);
+        assertTrue(!repeated);
+    }
+
     /**
      * How to test?
-     * 
-     * <code>    
+     *
+     * <code>
      * $ tornado-test.py -V -pk --debug -J"-Ddevice=0" uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
      * </code>
      */
@@ -147,7 +260,7 @@ public class TestAtomics extends TornadoTestBase {
                         new Object[] { a, b },
                         new Access[] { Access.WRITE, Access.WRITE },
                         defaultDevice,
-                        new int[] { 32 }, 
+                        new int[] { 32 },
                         new int[]{155}     // Atomics - Initial Value
                         )
                 .streamOut(a)
@@ -156,15 +269,6 @@ public class TestAtomics extends TornadoTestBase {
 
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
-    }
-
-    public static void atomic06(int[] a, int[] b) {
-        AtomicInteger taiA = new AtomicInteger(200);
-        AtomicInteger taiB = new AtomicInteger(100);
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = taiA.incrementAndGet();
-            b[i] = taiB.incrementAndGet();
-        }
     }
 
     @Test
@@ -195,13 +299,6 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
     }
 
-    public static void atomic07(int[] input) {
-        AtomicInteger ai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = ai.incrementAndGet();
-        }
-    }
-
     @Test
     public void testAtomic07() {
         assertNotBackend(TornadoVMBackendType.PTX);
@@ -222,13 +319,6 @@ public class TestAtomics extends TornadoTestBase {
         }
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
-    }
-
-    public static void atomic08(int[] input) {
-        AtomicInteger ai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = ai.decrementAndGet();
-        }
     }
 
     @Test
@@ -265,16 +355,6 @@ public class TestAtomics extends TornadoTestBase {
             }
         }
         return repeated;
-    }
-
-    public static int callAtomic(int[] input, int i, AtomicInteger ai) {
-        return input[i] + ai.incrementAndGet();
-    }
-
-    public static void atomic09(int[] input, AtomicInteger ai) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = callAtomic(input, i, ai);
-        }
     }
 
     @Test
@@ -356,12 +436,6 @@ public class TestAtomics extends TornadoTestBase {
         assertEquals(initialValue + size, lastValue);
     }
 
-    public static void atomic10(int[] input, AtomicInteger ai, AtomicInteger bi) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet() + bi.incrementAndGet();
-        }
-    }
-
     @Test
     public void testAtomic12() {
         // Calling multiple atomics
@@ -394,12 +468,6 @@ public class TestAtomics extends TornadoTestBase {
 
     }
 
-    public static void atomic13(int[] input, AtomicInteger ai) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.decrementAndGet();
-        }
-    }
-
     @Test
     public void testAtomic13() {
         // Calling multiple atomics
@@ -423,13 +491,6 @@ public class TestAtomics extends TornadoTestBase {
         int lastValue = ai.get();
         assertTrue(!repeated);
         assertEquals(initialValueA - size, lastValue);
-    }
-
-    public static void atomic14(int[] input, AtomicInteger ai, AtomicInteger bi) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
-            input[i] = input[i] + bi.decrementAndGet();
-        }
     }
 
     @Test
@@ -459,23 +520,6 @@ public class TestAtomics extends TornadoTestBase {
         assertEquals(initialValueB - size, lastValue);
     }
 
-    /**
-     * This example combines an atomic created inside the compute kernel with an
-     * atomic passed as an argument.
-     * 
-     * @param input
-     *            Input array
-     * @param ai
-     *            Atomic Integer stored in Global Memory (atomic-region)
-     */
-    public static void atomic15(int[] input, AtomicInteger ai) {
-        AtomicInteger bi = new AtomicInteger(500);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
-            input[i] = input[i] + bi.incrementAndGet();
-        }
-    }
-
     @Test
     public void testAtomic15() {
         // Calling multiple atomics
@@ -499,12 +543,6 @@ public class TestAtomics extends TornadoTestBase {
 
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
-    }
-
-    public static void atomic16(int[] input, AtomicInteger ai) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
-        }
     }
 
     @Test

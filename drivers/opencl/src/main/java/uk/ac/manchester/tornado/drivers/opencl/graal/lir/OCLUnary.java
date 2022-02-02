@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -29,14 +29,12 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
 
-import jdk.vm.ci.meta.AllocatableValue;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -126,8 +124,8 @@ public class OCLUnary {
 
     public static class IntrinsicAtomicInc extends UnaryConsumer {
 
-        private int index;
         private static final String arrayName = OCLArchitecture.atomicSpace.getName();
+        private int index;
 
         public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
             super(opcode, lirKind, value);
@@ -142,6 +140,27 @@ public class OCLUnary {
         @Override
         public String toString() {
             return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+        }
+    }
+
+    public static class IntrinsicAtomicGet extends UnaryConsumer {
+
+        private static final String arrayName = OCLArchitecture.atomicSpace.getName();
+        private int index;
+
+        public IntrinsicAtomicGet(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
+            super(opcode, lirKind, value);
+            this.index = index;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(toString());
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s[%s]", arrayName, index);
         }
     }
 

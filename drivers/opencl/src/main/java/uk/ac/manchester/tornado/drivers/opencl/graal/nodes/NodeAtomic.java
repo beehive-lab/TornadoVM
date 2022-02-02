@@ -31,7 +31,7 @@ public abstract class NodeAtomic extends ValueNode {
 
     public static final NodeClass<NodeAtomic> TYPE = NodeClass.create(NodeAtomic.class);
 
-    public NodeAtomic(NodeClass<? extends ValueNode> c, Stamp stamp) {
+    protected NodeAtomic(NodeClass<? extends ValueNode> c, Stamp stamp) {
         super(c, stamp);
     }
 

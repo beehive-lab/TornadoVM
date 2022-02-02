@@ -25,10 +25,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
@@ -69,10 +69,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
@@ -154,6 +153,14 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.addPush(returnedJavaKind, b.append(new DecAtomicNode(receiver.get())));
+                return true;
+            }
+        });
+
+        r.register1("get", Receiver.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                b.addPush(returnedJavaKind, b.append(new GetAtomicNode(receiver.get())));
                 return true;
             }
         });
