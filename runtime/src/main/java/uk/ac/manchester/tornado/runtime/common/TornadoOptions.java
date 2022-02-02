@@ -163,12 +163,7 @@ public class TornadoOptions {
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
     public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", FALSE);
-    /**
-     * It optimizes loads and stores for the SPIRV backend. It uses less virtual
-     * registers. Experimental Feature.
-     */
-    @Deprecated
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.opt.loadstores", FALSE);
+
     /**
      * Use return as a common label and insert the instruction before function
      * ending.
@@ -201,7 +196,9 @@ public class TornadoOptions {
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
 
     /**
-     * Optimizes Loads/Stores, V2
+     * It optimizes loads and stores for the SPIRV backend. It uses less virtual
+     * registers. Experimental Feature.
+     *
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = getBooleanValue("tornado.spirv.loadstore", FALSE);
 

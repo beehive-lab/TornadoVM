@@ -102,7 +102,7 @@ public class SPIRVBinary {
                     throw new RuntimeException("LOADING PARAMETER: " + inputValue + " with NULL VALUE in SPIR-V Table");
                 }
 
-                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                     return param;
                 }
 

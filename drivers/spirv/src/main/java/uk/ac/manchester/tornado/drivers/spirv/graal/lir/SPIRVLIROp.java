@@ -74,7 +74,7 @@ public abstract class SPIRVLIROp extends Value {
             return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
         } else {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                 // Do not generate a load if Load/Store optimization is enabled.
                 return param;
             }

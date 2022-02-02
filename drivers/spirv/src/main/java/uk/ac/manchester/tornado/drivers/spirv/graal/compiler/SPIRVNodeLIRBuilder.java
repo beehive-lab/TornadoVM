@@ -257,7 +257,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
-            // Load parameters for a functions (not main kernel).
+            // Load parameters for a GPU function (not the main kernel).
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "Generating function");
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
@@ -542,7 +542,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                     append(new SPIRVLIRStmt.PassValuePhi(dest, src));
 
                     if (phiTrace.get(src) != null) {
-                        // Keep trace PHI values with nested control-flow
+                        // Keep trace of PHI values with nested control-flow
                         AllocatableValue v = phiTrace.get(src);
                         phiTrace.put(v, (AllocatableValue) src);
                         phiMap.put(v, null);

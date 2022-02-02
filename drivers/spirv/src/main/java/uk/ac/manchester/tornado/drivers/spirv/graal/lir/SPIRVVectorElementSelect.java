@@ -67,7 +67,7 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
             return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
         } else {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                 return param;
             }
 

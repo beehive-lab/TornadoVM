@@ -471,7 +471,7 @@ public class SPIRVUnary {
 
             final SPIRVId idLoad;
             SPIRVId addressId = asm.lookUpLIRInstructions(this.address);
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2 || TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
                 idLoad = addressId;
             } else {
                 // We force to load a pointer to long
