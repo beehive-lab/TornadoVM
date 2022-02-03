@@ -4,10 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
 # Department of Engineering, The University of Manchester. All rights reserved.
-# Copyright (c) 2013-2019, APT Group, Department of Computer Science,
-# The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,23 +50,24 @@ JDK_8_VERSION = "1.8"
 __JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
 
 ## ========================================================================================
-## Script Options
+## TornadoVM/JVM Options
 ## ========================================================================================
 __RUNNER__ = ""
 if (__JAVA_VERSION__ != JDK_8_VERSION):
-    __RUNNER__ = " -m tornado.benchmarks/"
-__RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-__TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
-__JVM_FLAGS__ = "-Xms24G -Xmx24G -server "
-__TORNADO_COMMAND__ = "tornado "
-__SKIP_SERIAL__   = " -Dtornado.benchmarks.skipserial=True "
-__SKIP_PARALLEL__ = " -Dtornado.enable=False "
-__SKIP_DEVICES__  = " -Dtornado.blacklist.devices="
-__VALIDATE__      = " -Dtornado.benchmarks.validate=True "
-__ENABLE_PROFILER_SILENT_MODE__  = " --enableProfiler silent "
+    __RUNNER__					= " -m tornado.benchmarks/"
+__RUNNER__					   += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
+__JVM_FLAGS__ 					= "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
+__TORNADO_COMMAND__				= "tornado "
+__SKIP_SERIAL__   				= " -Dtornado.benchmarks.skipserial=True "
+__SKIP_PARALLEL__ 				= " -Dtornado.enable=False "
+__SKIP_DEVICES__  				= " -Dtornado.blacklist.devices="
+__VALIDATE__      				= " -Dtornado.benchmarks.validate=True "
+__ENABLE_PROFILER_SILENT_MODE__ = " --enableProfiler silent "
 ## ========================================================================================
 
+## ========================================================================================
 ## Include here benchmarks to run
+## ========================================================================================
 __BENCHMARKS__ = [
 	"saxpy",
 	"addImage",
@@ -87,6 +86,7 @@ __BENCHMARKS__ = [
 	"dft",
 	"juliaset",
 ]
+## ========================================================================================
 
 def getSize():
 	return ITERATIONS
