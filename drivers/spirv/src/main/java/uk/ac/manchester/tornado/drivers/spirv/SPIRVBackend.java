@@ -707,7 +707,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
             // Only emit variables for all names that are needed. For instance private
             // memory, local memory and constants in the case that the SPIRV optimizer on.
-            // If the SPIR-V optimizer is off, then we emit all variable registered through
+            // If the SPIR-V optimizer is off, then we emit all variables registered through
             // Graal.
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
                 SPIRVKind kind = id.second;
@@ -890,7 +890,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // Only emit variables for all names that are needed. For instance private
         // memory, local memory and constants in the case that the SPIRV optimizer on.
-        // If the SPIR-V optimizer is off, then we emit all variable registered through
+        // If the SPIR-V optimizer is off, then we emit all variables registered through
         // Graal.
         if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
