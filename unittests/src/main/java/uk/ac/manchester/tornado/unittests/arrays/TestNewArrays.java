@@ -229,8 +229,6 @@ public class TestNewArrays extends TornadoTestBase {
 
     @Test
     public void testInitNewArrayInsideParallelWithComplexAccesses() {
-        assertNotBackendOptimization(TornadoVMBackendType.SPIRV);
-
         final int N = 256;
         float[] data = new float[N];
         float[] dataSeq = new float[N];

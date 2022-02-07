@@ -554,9 +554,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 SPIRVId variable = asm.module.getNextId();
                 asm.insertParameterId(index, variable);
                 index++;
-                asm.module.add(new SPIRVOpName(variable, new SPIRVLiteralString(var.toString())));
-                asm.module.add(new SPIRVOpDecorate(variable, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(spirvKind.getByteCount()))));
-                asm.registerLIRInstructionValue(var.toString(), variable);
+                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    asm.module.add(new SPIRVOpName(variable, new SPIRVLiteralString(var.toString())));
+                    asm.module.add(new SPIRVOpDecorate(variable, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(spirvKind.getByteCount()))));
+                    asm.registerLIRInstructionValue(var.toString(), variable);
+                }
                 ids.add(new Tuple2<>(variable, spirvKind));
             }
         }
@@ -702,11 +704,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // --------------------------------------
         // All variable declaration
         // --------------------------------------
-        for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
-            SPIRVKind kind = id.second;
-            // we need a pointer to kind
-            SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
-            blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+        if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            // Only emit variables for all names that are needed. For instance private
+            // memory, local memory and constants in the case that the SPIRV optimizer on.
+            // If the SPIR-V optimizer is off, then we emit all variables registered through
+            // Graal.
+            for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
+                SPIRVKind kind = id.second;
+                // we need a pointer to kind
+                SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
+                blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            }
         }
         // We declare the arrays for private memory (if any)
         for (AllocatableValue value : idTable.resultArrays) {
@@ -879,11 +887,17 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         blockScope.add(new SPIRVOpVariable(ptrFunctionPTRCrossWorkGroupUChar, heapBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
         blockScope.add(new SPIRVOpVariable(pointerToULongFunction, frameBaseAddrId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-        for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
-            SPIRVKind kind = id.second;
-            // we need a pointer to kind
-            SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
-            blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+
+        // Only emit variables for all names that are needed. For instance private
+        // memory, local memory and constants in the case that the SPIRV optimizer on.
+        // If the SPIR-V optimizer is off, then we emit all variables registered through
+        // Graal.
+        if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
+                SPIRVKind kind = id.second;
+                SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
+                blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            }
         }
         // We declare the arrays for private memory (if any)
         for (AllocatableValue value : idTable.resultArrays) {
