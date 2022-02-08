@@ -23,7 +23,7 @@
  */
 #include <jni.h>
 
-#define CL_TARGET_OPENCL_VERSION 120
+#define CL_TARGET_OPENCL_VERSION 210
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -209,6 +209,25 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
         std::cout << "[TornadoVM JNI] OCL> loading multiple binaries not supported\n";
     }
     env->ReleasePrimitiveArrayCritical(array1, binary, 0);
+    env->ReleasePrimitiveArrayCritical(array2, lengths, 0);
+    return (jlong) program;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
+ * Method:    clCreateProgramWithIL
+ * Signature: (J[B[J)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithIL
+        (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2) {
+    jbyte *source = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array1, NULL));
+    jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array2, NULL));
+    jsize numLengths = env->GetArrayLength(array2);
+
+    cl_int status;
+    cl_program program = clCreateProgramWithIL((cl_context) context_id, (const char *) &source, (size_t*) lengths, &status);
+    LOG_OCL_AND_VALIDATE("clCreateProgramWithIL", status);
+    env->ReleasePrimitiveArrayCritical(array1, source, 0);
     env->ReleasePrimitiveArrayCritical(array2, lengths, 0);
     return (jlong) program;
 }

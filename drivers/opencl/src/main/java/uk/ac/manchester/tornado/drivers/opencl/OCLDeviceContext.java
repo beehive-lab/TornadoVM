@@ -59,15 +59,13 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
     private final OCLCommandQueue queue;
     private final OCLContext context;
     private final OCLMemoryManager memoryManager;
-    private boolean needsBump;
     private final long bumpBuffer;
-
     private final OCLCodeCache codeCache;
+    private final OCLEventPool oclEventPool;
+    private boolean needsBump;
     private boolean wasReset;
     private boolean useRelativeAddresses;
     private boolean printOnce = true;
-
-    private final OCLEventPool oclEventPool;
 
     protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -97,16 +95,23 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         this.device.setDeviceContext(this);
     }
 
+    private static String[] parseDevices(String str) {
+        return str.split(";");
+    }
+
+    public static String checkKernelName(String entryPoint) {
+        if (entryPoint.contains("$")) {
+            return entryPoint.replace("$", "_");
+        }
+        return entryPoint;
+    }
+
     private void setRelativeAddressesFlag() {
         if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
             useRelativeAddresses = true;
         } else {
             useRelativeAddresses = Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
         }
-    }
-
-    private static String[] parseDevices(String str) {
-        return str.split(";");
     }
 
     public OCLTargetDevice getDevice() {
@@ -164,6 +169,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
         return context.createProgramWithBinary(device.getId(), binary, lengths, this);
+    }
+
+    public OCLProgram createProgramWithIL(byte[] spirvBinary, long[] lengths) {
+        return context.createProgramWithIL(spirvBinary, lengths, this);
     }
 
     public int enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
@@ -483,13 +492,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
 
     public OCLInstalledCode installCode(OCLCompilationResult result) {
         return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
-    }
-
-    public static String checkKernelName(String entryPoint) {
-        if (entryPoint.contains("$")) {
-            return entryPoint.replace("$", "_");
-        }
-        return entryPoint;
     }
 
     public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {

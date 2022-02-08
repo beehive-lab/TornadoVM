@@ -593,7 +593,7 @@ public class OCLCodeCache {
             entryPoint = entryPoint.split("-")[1];
         }
 
-        OCLProgram program = null;
+        OCLProgram program;
         OCLBuildStatus status = CL_BUILD_SUCCESS;
         if (shouldReuseProgramObject(entryPoint)) {
             program = cache.get(LOOKUP_BUFFER_KERNEL_NAME).getProgram();
