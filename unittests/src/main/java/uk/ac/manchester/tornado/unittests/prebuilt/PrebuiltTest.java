@@ -141,7 +141,20 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuild03() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(1);
+        // Check if SPIRV is supported for the current device
+        TornadoDevice device = null;
+        int maxDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        for (int i = 0; i < maxDevices; i++) {
+            device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
+            if (device.isSPIRVSupported()) {
+                break;
+            }
+        }
+
+        if (device == null) {
+            assertNotBackend(TornadoVMBackendType.OPENCL);
+        }
+
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/reduce03.spv";
 
@@ -163,7 +176,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         filePath,
                         new Object[]{context, input, reduce},
                         new Access[]{Access.READ, Access.READ, Access.WRITE},
-                        defaultDevice,
+                        device,
                         new int[]{size})
                 .streamOut(reduce)
                 .execute(gridScheduler);

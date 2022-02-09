@@ -69,19 +69,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
+    private static OCLDriver driver = null;
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
-    private static OCLDriver driver = null;
     private final String platformName;
-
-    private static OCLDriver findDriver() {
-        if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
-            TornadoInternalError.guarantee(driver != null, "unable to find OpenCL driver");
-        }
-        return driver;
-    }
 
     public VirtualOCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
@@ -89,6 +81,14 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
 
         platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
         device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
+    }
+
+    private static OCLDriver findDriver() {
+        if (driver == null) {
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
+            TornadoInternalError.guarantee(driver != null, "unable to find OpenCL driver");
+        }
+        return driver;
     }
 
     @Override
@@ -453,4 +453,10 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.VIRTUAL;
     }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        return false;
+    }
+
 }
