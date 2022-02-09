@@ -219,15 +219,15 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
  * Signature: (J[B[J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithIL
-        (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2) {
-    jbyte *source = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(array1, NULL));
-    jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(array2, NULL));
-    jsize numLengths = env->GetArrayLength(array2);
+        (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray javaSourceBinaryArray, jlongArray javaSizeArray) {
+    jbyte *source = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(javaSourceBinaryArray, NULL));
+    jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(javaSizeArray, NULL));
+    size_t binarySize = lengths[0];
 
     cl_int status;
-    cl_program program = clCreateProgramWithIL((cl_context) context_id, (const char *) &source, (size_t*) lengths, &status);
+    cl_program program = clCreateProgramWithIL((cl_context) context_id, (const void *) source, binarySize, &status);
     LOG_OCL_AND_VALIDATE("clCreateProgramWithIL", status);
-    env->ReleasePrimitiveArrayCritical(array1, source, 0);
-    env->ReleasePrimitiveArrayCritical(array2, lengths, 0);
+    env->ReleasePrimitiveArrayCritical(javaSourceBinaryArray, source, 0);
+    env->ReleasePrimitiveArrayCritical(javaSizeArray, lengths, 0);
     return (jlong) program;
 }

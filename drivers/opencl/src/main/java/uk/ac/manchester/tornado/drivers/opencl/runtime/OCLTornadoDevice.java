@@ -94,13 +94,12 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
+    private static OCLDriver driver = null;
+    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
-    private static OCLDriver driver = null;
     private final String platformName;
-
-    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
@@ -301,6 +300,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
+
             OCLInstalledCode installedCode;
             if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA

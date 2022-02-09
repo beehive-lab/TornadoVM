@@ -54,24 +54,21 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
-    private final OCLKernelScheduler DEFAULT_SCHEDULER;
-
     private static final int CL_MEM_SIZE = 8;
-
+    private final OCLKernelScheduler DEFAULT_SCHEDULER;
     private final ByteBuffer buffer = ByteBuffer.allocate(CL_MEM_SIZE);
     private final byte[] code;
     private final OCLProgram program;
     private final OCLDeviceContext deviceContext;
     private final OCLKernel kernel;
-    private boolean valid;
-
     private final OCLKernelScheduler scheduler;
     private final int[] internalEvents = new int[1];
-
     private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
     private final long[] singleThreadLocalWorkSize = new long[] { 1 };
+    private final boolean isSPIRVBinary;
+    private boolean valid;
 
-    public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel) {
+    public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel, boolean isSPIRVBinary) {
         super(entryPoint);
         this.code = code;
         this.deviceContext = deviceContext;
@@ -81,6 +78,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.program = program;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
+        this.isSPIRVBinary = isSPIRVBinary;
     }
 
     @Override
@@ -98,10 +96,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     @Override
     public boolean isValid() {
         return valid;
-    }
-
-    public OCLKernel getKernel() {
-        return kernel;
     }
 
     /**
@@ -202,6 +196,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         buffer.putLong(stack.toRelativeAddress());
         kernel.setArg(index, buffer);
         index++;
+
+        if (isSPIRVBinary) {
+            return;
+        }
 
         // constant memory
         if (meta != null && meta.getConstantSize() > 0) {

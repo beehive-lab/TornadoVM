@@ -45,11 +45,10 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     private final OCLTargetDevice device;
     private final VirtualOCLContext context;
-
+    private final OCLCodeCache codeCache;
     private boolean wasReset;
     private boolean useRelativeAddresses;
     private boolean printOnce = true;
-    private final OCLCodeCache codeCache;
 
     protected VirtualOCLDeviceContext(OCLTargetDevice device, VirtualOCLContext context) {
         this.device = device;
@@ -103,6 +102,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     @Override
     public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
+        return null;
+    }
+
+    @Override
+    public OCLProgram createProgramWithIL(byte[] binary, long[] lengths) {
         return null;
     }
 

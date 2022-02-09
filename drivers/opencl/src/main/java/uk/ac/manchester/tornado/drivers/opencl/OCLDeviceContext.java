@@ -114,6 +114,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         }
     }
 
+    @Override
     public OCLTargetDevice getDevice() {
         return device;
     }
@@ -133,6 +134,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         return TornadoRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
     }
 
+    @Override
     public OCLContext getPlatformContext() {
         return context;
     }
@@ -142,6 +144,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         return memoryManager;
     }
 
+    @Override
     public void sync() {
         if (USE_SYNC_FLUSH) {
             queue.flush();
@@ -149,28 +152,34 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, OC
         queue.finish();
     }
 
+    @Override
     public long getDeviceId() {
         return device.getId();
     }
 
+    @Override
     public int enqueueBarrier() {
         long oclEvent = queue.enqueueBarrier();
         return (queue.getOpenclVersion() < 120) ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, queue);
     }
 
+    @Override
     public int enqueueMarker() {
         long oclEvent = queue.enqueueMarker();
         return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, queue);
     }
 
+    @Override
     public OCLProgram createProgramWithSource(byte[] source, long[] lengths) {
         return context.createProgramWithSource(source, lengths, this);
     }
 
+    @Override
     public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
         return context.createProgramWithBinary(device.getId(), binary, lengths, this);
     }
 
+    @Override
     public OCLProgram createProgramWithIL(byte[] spirvBinary, long[] lengths) {
         return context.createProgramWithIL(spirvBinary, lengths, this);
     }
