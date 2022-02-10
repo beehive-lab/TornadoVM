@@ -36,13 +36,13 @@ public class SgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    WorkerGrid worker;
+    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
+    private WorkerGrid worker;
     private float[] a;
     private float[] b;
     private float[] c;
     private GridScheduler grid;
     private boolean USE_GRID = Boolean.parseBoolean(TornadoRuntime.getProperty("usegrid", "False"));
-    private boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
 
     public SgemmTornado(int iterations, int m, int n) {
         super(iterations);

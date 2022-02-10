@@ -33,7 +33,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    private boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
+    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
     private double[] a;
     private double[] b;
     private double[] c;
