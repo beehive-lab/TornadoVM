@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -295,6 +295,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.JAVA;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        return false;
     }
 
 }

@@ -85,9 +85,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
-
-    private SPIRVDevice device;
     private static SPIRVDriver driver = null;
+    private SPIRVDevice device;
     private int deviceIndex;
     private int platformIndex;
 
@@ -101,6 +100,14 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         this.platformIndex = lowLevelDevice.getPlatformIndex();
         this.deviceIndex = lowLevelDevice.getDeviceIndex();
         device = lowLevelDevice;
+    }
+
+    public static SPIRVDriver findDriver() {
+        if (driver == null) {
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class);
+            TornadoInternalError.guarantee(driver != null, "unable to find the SPIR-V driver");
+        }
+        return driver;
     }
 
     @Override
@@ -153,14 +160,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     public SPIRVBackend getBackend() {
         return findDriver().getBackend(platformIndex, deviceIndex);
-    }
-
-    public static SPIRVDriver findDriver() {
-        if (driver == null) {
-            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class);
-            TornadoInternalError.guarantee(driver != null, "unable to find the SPIR-V driver");
-        }
-        return driver;
     }
 
     private TornadoInstalledCode compileTask(CompilableTask task) {
@@ -598,6 +597,11 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.SPIRV;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        return true;
     }
 
     @Override

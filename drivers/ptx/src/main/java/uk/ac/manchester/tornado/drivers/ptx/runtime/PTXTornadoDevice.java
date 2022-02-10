@@ -88,9 +88,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
-
-    private final PTXDevice device;
     private static PTXDriver driver = null;
+    private final PTXDevice device;
     private final int deviceIndex;
 
     public PTXTornadoDevice(final int deviceIndex) {
@@ -667,6 +666,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.PTX;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        return false;
     }
 
     /**

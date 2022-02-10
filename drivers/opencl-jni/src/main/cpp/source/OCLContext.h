@@ -117,6 +117,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithBinary
         (JNIEnv *, jclass, jlong, jlong, jbyteArray, jlongArray);
 
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
+ * Method:    clCreateProgramWithIL
+ * Signature: (J[B[J)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithIL
+        (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray javaSourceBinaryArray, jlongArray javaSizeArray);
+
 #ifdef __cplusplus
 }
 #endif

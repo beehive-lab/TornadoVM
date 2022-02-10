@@ -80,4 +80,6 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
     OCLProgram createProgramWithSource(byte[] source, long[] lengths);
 
     OCLProgram createProgramWithBinary(byte[] binary, long[] lengths);
+
+    OCLProgram createProgramWithIL(byte[] binary, long[] lengths);
 }

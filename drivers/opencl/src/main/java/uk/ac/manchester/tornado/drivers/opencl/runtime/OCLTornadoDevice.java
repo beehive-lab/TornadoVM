@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -94,13 +96,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
+    private static OCLDriver driver = null;
+    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
+    private static Pattern namePattern = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
     private final OCLTargetDevice device;
     private final int deviceIndex;
     private final int platformIndex;
-    private static OCLDriver driver = null;
     private final String platformName;
-
-    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
@@ -301,6 +303,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
+
             OCLInstalledCode installedCode;
             if (OCLBackend.isDeviceAnFPGAAccelerator(deviceContext)) {
                 // A) for FPGA
@@ -796,5 +799,31 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public TornadoVMBackendType getTornadoVMBackend() {
         return TornadoVMBackendType.OPENCL;
+    }
+
+    @Override
+    public boolean isSPIRVSupported() {
+        // An OpenCL device supports SPIRV if the version is >= 2.1
+        String version = device.getDeviceContext().getPlatformContext().getPlatform().getVersion();
+
+        if (version.contains("CUDA")) {
+            // Currently, the CUDA platform does not allow dispatching SPIRV kernels
+            return false;
+        }
+
+        Matcher matcher = namePattern.matcher(version);
+        int major = 0;
+        int minor = 0;
+        if (matcher.find()) {
+            major = Integer.parseInt(matcher.group(1));
+            minor = Integer.parseInt(matcher.group(2));
+        }
+        if (major > 2) {
+            return true;
+        }
+        if (major == 2 && minor >= 1) {
+            return true;
+        }
+        return false;
     }
 }

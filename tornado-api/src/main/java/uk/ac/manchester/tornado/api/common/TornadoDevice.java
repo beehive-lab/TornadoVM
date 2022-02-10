@@ -221,4 +221,6 @@ public interface TornadoDevice {
     void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics);
 
     TornadoVMBackendType getTornadoVMBackend();
+
+    boolean isSPIRVSupported();
 }
