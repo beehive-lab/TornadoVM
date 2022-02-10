@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,8 +61,6 @@ public class DgemmTornado extends BenchmarkDriver {
         }
 
         ts = new TaskSchedule("benchmark");
-
-        ts = new TaskSchedule("benchmark");
         if (!USE_PREBUILT) {
 
             ts.streamIn(a, b) //
@@ -88,8 +86,7 @@ public class DgemmTornado extends BenchmarkDriver {
                             new Access[]{Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE},
                             device,
                             new int[]{n, n})
-                    .streamOut(c)
-                    .execute();
+                    .streamOut(c);
             // @formatter:on
         }
     }
