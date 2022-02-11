@@ -74,6 +74,7 @@ function print_usage() {
 
 function print_version() {
   cat "${TORNADO_SDK}/etc/tornado.release"
+  python ${TORNADO_SDK}/bin/printInstalledBackends.py
   exit 0
 }
 
