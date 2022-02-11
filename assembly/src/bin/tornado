@@ -74,6 +74,21 @@ function print_usage() {
 
 function print_version() {
   cat "${TORNADO_SDK}/etc/tornado.release"
+
+  # Process and print the installed backends
+  IFS='=' read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
+  selected_backends=${selected_backends[1]}
+  IFS=',' read -ra selected_backends <<< "${selected_backends}"
+  backends="backends="
+  for ((i=0;i<${#selected_backends[@]};i++)); do
+      IFS='-' read -ra backend <<< ${selected_backends[i]}
+      backends=${backends}${backend}
+      if ((i!=${#selected_backends[@]}-1)); then
+        backends=${backends}","
+      fi
+  done
+  echo ${backends}
+
   exit 0
 }
 
