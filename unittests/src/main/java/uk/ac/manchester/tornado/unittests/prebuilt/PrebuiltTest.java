@@ -141,15 +141,7 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuild03() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        // Check if SPIRV is supported for the current device
-        TornadoDevice device = null;
-        int maxDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-        for (int i = 0; i < maxDevices; i++) {
-            device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
-            if (device.isSPIRVSupported()) {
-                break;
-            }
-        }
+        TornadoDevice device = checkSPIRVSupport();
 
         if (device == null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
