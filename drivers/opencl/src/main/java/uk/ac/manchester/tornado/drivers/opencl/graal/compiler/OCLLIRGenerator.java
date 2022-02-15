@@ -289,7 +289,7 @@ public class OCLLIRGenerator extends LIRGenerator {
         assert trueValue.getPlatformKind() == falseValue.getPlatformKind();
 
         final OCLBinary.Expr condExpr = new OCLBinary.Expr(OCLBinaryOp.BITWISE_AND, null, left, right);
-        final OCLTernary.Select selectExpr = new OCLTernary.Select(LIRKind.combine(trueValue, falseValue), condExpr, trueValue, falseValue);
+        final OCLTernary.Select selectExpr = new OCLTernary.Select(LIRKind.combine(trueValue, falseValue), condExpr, falseValue, trueValue);
 
         final Variable variable = newVariable(LIRKind.combine(trueValue, falseValue));
         final AssignStmt assignStmt = new AssignStmt(variable, selectExpr);
