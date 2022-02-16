@@ -98,24 +98,35 @@ public abstract class TornadoTestBase {
         }
     }
 
+    private void assertIfNeeded(TornadoDevice device, int driverIndex) {
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
+        if (backendType != TornadoVMBackendType.OPENCL || !device.isSPIRVSupported()) {
+            assertNotBackend(TornadoVMBackendType.OPENCL);
+        }
+    }
+
     protected TornadoDevice checkSPIRVSupport() {
         TornadoDevice device = null;
         TornadoTestBase.Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
         if (driverAndDeviceIndex.f0() != 0) {
-            // If another device has been selected for testing, it has been swapped with
+            // If another device has been selected for testing, TornadoVM has swapped with
             // another device using the position 0 for the selected device. In this case, we
             // select the chosen device instead of looking for a device with SPIRV support.
             device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-            if (!device.isSPIRVSupported()) {
-                assertNotBackend(TornadoVMBackendType.OPENCL);
-            }
+            assertIfNeeded(device, 0);
         } else {
-            // Check if SPIRV is supported for the current device
-            int maxDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-            for (int i = 0; i < maxDevices; i++) {
-                device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
-                if (device.isSPIRVSupported()) {
-                    break;
+            // Check if SPIRV is supported. We search for a suitable device to run on
+            int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
+            for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
+                if (TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType() != TornadoVMBackendType.PTX) {
+                    int maxDevices = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDeviceCount();
+                    for (int i = 0; i < maxDevices; i++) {
+                        // Search for the device with SPIRV Support
+                        device = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(i);
+                        if (device.isSPIRVSupported()) {
+                            return device;
+                        }
+                    }
                 }
             }
         }
