@@ -283,7 +283,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitIntegerTestMove");
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitIntegerTestMove: " + left + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
         assert left.getPlatformKind() == right.getPlatformKind() && ((OCLKind) left.getPlatformKind()).isInteger();
 
         assert trueValue.getPlatformKind() == falseValue.getPlatformKind();

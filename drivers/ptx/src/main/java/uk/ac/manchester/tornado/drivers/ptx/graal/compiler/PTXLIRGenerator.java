@@ -322,19 +322,19 @@ public class PTXLIRGenerator extends LIRGenerator {
      */
     @Override
     public Variable emitIntegerTestMove(Value leftVal, Value right, Value trueValue, Value falseValue) {
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitIntegerTestMove");
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitIntegerTestMove: " + leftVal + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
         assert leftVal.getPlatformKind() == right.getPlatformKind() && ((PTXKind) leftVal.getPlatformKind()).isInteger();
 
         assert trueValue.getPlatformKind() == falseValue.getPlatformKind();
 
         LIRKind kind = LIRKind.combine(trueValue, falseValue);
         final Variable andResult = newVariable(LIRKind.combine(leftVal, right));
-        final ConstantValue constant = new ConstantValue(andResult.getValueKind(), JavaConstant.forInt(0));
+        final ConstantValue zeroConstant = new ConstantValue(andResult.getValueKind(), JavaConstant.forInt(0));
         final Variable predicate = newVariable(LIRKind.value(PTXKind.PRED));
         final Variable result = newVariable(kind);
 
         append(new PTXLIRStmt.AssignStmt(andResult, new PTXBinary.Expr(PTXBinaryOp.BITWISE_AND, kind, leftVal, right)));
-        append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, andResult, constant)));
+        append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, andResult, zeroConstant)));
         append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind, trueValue, falseValue, predicate)));
 
         return result;
