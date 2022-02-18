@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,7 +49,7 @@ public class ArrayAddIntPrebuilt {
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         String filePath = tornadoSDK + "/examples/generated/";
-        filePath += device.getPlatformName().contains("CUDA") ? "add.ptx" : "add.cl";
+        filePath += device.getPlatformName().contains("PTX") ? "add.ptx" : "add.cl";
 
         // @formatter:off
         new TaskSchedule("s0")

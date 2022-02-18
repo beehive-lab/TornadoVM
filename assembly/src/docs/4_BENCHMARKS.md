@@ -104,7 +104,7 @@ The script runs all benchmarks using JMH. This process takes ~3.5h.
 Additionally, each benchmark has a JMH configuration. Users can execute any benchmark from the list as follows:
 
 ```bash
-$ tornado uk.ac.manchester.tornado.benchmarks.<benchmark>.JMH<BENCHMARK>
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.<benchmark>.JMH<BENCHMARK>
 ```
 
 This process takes ~10mins per benchmark.
@@ -112,7 +112,7 @@ This process takes ~10mins per benchmark.
 For example:
 
 ```bash
-$ tornado uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
 # JMH version: 1.23
 ...
 Benchmark          Mode  Cnt   Score   Error  Units
