@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -168,6 +168,18 @@ public class TestConditionals extends TornadoTestBase {
     public static void ternaryComplexCondition2(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (a[i] == 20) ? a[i] + b[i] : 5;
+        }
+    }
+
+    public static void integerTestMove(int[] output, int dimensionSize) {
+        for (@Parallel int i = 0; i < dimensionSize; i++) {
+            for (@Parallel int j = 0; j < dimensionSize; j++) {
+                if ((i % 2 == 0) & (j % 2 == 0)) {
+                    output[i + j * dimensionSize] = 10;
+                } else {
+                    output[i + j * dimensionSize] = -1;
+                }
+            }
         }
     }
 
@@ -426,6 +438,29 @@ public class TestConditionals extends TornadoTestBase {
 
         for (int value : a) {
             assertEquals(10, value);
+        }
+    }
+
+    @Test
+    public void testIntegerTestMove() {
+        final int N = 1024;
+        int[] output = new int[N * N];
+        int[] sequential = new int[N * N];
+
+        IntStream.range(0, sequential.length).sequential().forEach(i -> sequential[i] = i);
+        IntStream.range(0, output.length).sequential().forEach(i -> output[i] = i);
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+
+        // @formatter:off
+        s0.task("t0", TestConditionals::integerTestMove, output, N).streamOut(output);
+        // @formatter:on
+        s0.execute();
+
+        integerTestMove(sequential, N);
+
+        for (int i = 0; i < N * N; i++) {
+            assertEquals(sequential[i], output[i]);
         }
     }
 }

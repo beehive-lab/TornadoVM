@@ -282,9 +282,20 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitIntegerTestMove(Value value, Value value1, Value value2, Value value3) {
-        unimplemented();
-        return null;
+    public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitIntegerTestMove: " + left + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
+        assert left.getPlatformKind() == right.getPlatformKind() && ((OCLKind) left.getPlatformKind()).isInteger();
+
+        assert trueValue.getPlatformKind() == falseValue.getPlatformKind();
+
+        final OCLBinary.Expr condExpr = new OCLBinary.Expr(OCLBinaryOp.BITWISE_AND, null, left, right);
+        final OCLTernary.Select selectExpr = new OCLTernary.Select(LIRKind.combine(trueValue, falseValue), condExpr, falseValue, trueValue);
+
+        final Variable variable = newVariable(LIRKind.combine(trueValue, falseValue));
+        final AssignStmt assignStmt = new AssignStmt(variable, selectExpr);
+        append(assignStmt);
+
+        return variable;
     }
 
     @Override

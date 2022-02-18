@@ -56,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
@@ -161,12 +162,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitMembar(int barriers) {
-
+        unimplemented();
     }
 
     @Override
     public void emitUnwind(Value operand) {
-
+        unimplemented();
     }
 
     @Override
@@ -189,12 +190,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
             double trueDestinationProbability) {
-
+        unimplemented();
     }
 
     @Override
     public void emitOverflowCheckBranch(LabelRef overflow, LabelRef noOverflow, LIRKind cmpKind, double overflowProbability) {
-
+        unimplemented();
     }
 
     @Override
@@ -211,18 +212,45 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return resultConditionalMove;
     }
 
+    /**
+     * It generates an IntegerTestMove operation, which moves a value to a parameter
+     * based on a bitwise and operation between two values.
+     *
+     * @param leftVal
+     *            the left value of a condition
+     * @param right
+     *            the right value of a condition
+     * @param trueValue
+     *            the true value to move in the result
+     * @param falseValue
+     *            the false value to move in the result
+     * @return Variable: reference to the variable that contains the result
+     */
     @Override
     public Variable emitIntegerTestMove(Value leftVal, Value right, Value trueValue, Value falseValue) {
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitIntegerTestMove: " + leftVal + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
+        assert leftVal.getPlatformKind() == right.getPlatformKind() && ((SPIRVKind) leftVal.getPlatformKind()).isInteger();
+
+        assert trueValue.getPlatformKind() == falseValue.getPlatformKind();
+
+        LIRKind kind = LIRKind.combine(trueValue, falseValue);
+        final Variable result = newVariable(kind);
+
+        SPIRVBinary.IntegerTestNode integerTestNode = new SPIRVBinary.IntegerTestNode(SPIRVAssembler.SPIRVBinaryOp.BITWISE_AND, kind, leftVal, right);
+        SPIRVBinary.IntegerTestMoveNode moveNode = new SPIRVBinary.IntegerTestMoveNode(integerTestNode, result, kind, trueValue, falseValue);
+        append(new SPIRVLIRStmt.AssignStmt(result, moveNode));
+
+        return result;
     }
 
     @Override
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
-
+        unimplemented();
     }
 
     @Override
     public Variable emitByteSwap(Value operand) {
+        unimplemented();
         return null;
     }
 
@@ -233,7 +261,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitPrefetchAllocate(Value address) {
-
+        unimplemented();
     }
 
     @Override
@@ -250,7 +278,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitSpeculationFence() {
-
+        unimplemented();
     }
 
     @Override
