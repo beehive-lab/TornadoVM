@@ -236,8 +236,9 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         LIRKind kind = LIRKind.combine(trueValue, falseValue);
         final Variable result = newVariable(kind);
 
-        SPIRVBinary.IntegerTestNode ternaryInstruction = new SPIRVBinary.IntegerTestNode(SPIRVAssembler.SPIRVBinaryOp.BITWISE_AND, LIRKind.combine(leftVal, right), leftVal, right);
-        append(new SPIRVLIRStmt.AssignStmt(result, ternaryInstruction));
+        SPIRVBinary.IntegerTestNode integerTestNode = new SPIRVBinary.IntegerTestNode(SPIRVAssembler.SPIRVBinaryOp.BITWISE_AND, kind, leftVal, right);
+        SPIRVBinary.IntegerTestMoveNode moveNode = new SPIRVBinary.IntegerTestMoveNode(integerTestNode, result, kind, trueValue, falseValue);
+        append(new SPIRVLIRStmt.AssignStmt(result, moveNode));
 
         return result;
     }
