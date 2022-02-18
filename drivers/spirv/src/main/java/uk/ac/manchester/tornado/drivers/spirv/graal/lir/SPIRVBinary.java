@@ -457,7 +457,7 @@ public class SPIRVBinary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IntegerTestNode: (" + x + " &  " + y + ")  ==   0");
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IntegerTestNode: (" + x + " & " + y + ") ==  0");
 
             LIRKind lirKind = getLIRKind();
             SPIRVKind spirvKind = (SPIRVKind) lirKind.getPlatformKind();
@@ -491,6 +491,48 @@ public class SPIRVBinary {
             asm.currentBlockScope().add(new SPIRVOpIEqual(booleanType, compEqual, bitWiseAnd, zeroConstant));
 
             asm.registerLIRInstructionValue(this, compEqual);
+        }
+    }
+
+    public static class IntegerTestMoveNode extends BinaryConsumer {
+
+        IntegerTestNode testNode;
+
+        public IntegerTestMoveNode(IntegerTestNode testNode, Variable result, LIRKind lirKind, Value trueValue, Value falseValue) {
+            super(null, result, lirKind, trueValue, falseValue);
+            this.testNode = testNode;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit IntegerTestMoveNode: (condition from IntegerTestNode)" + " ? " + x + " : " + y);
+
+            if (testNode instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) testNode).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, testNode);
+            }
+
+            SPIRVId trueValueId;
+            if (x instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) x).emit(crb, asm);
+                trueValueId = asm.lookUpLIRInstructions(x);
+            } else {
+                trueValueId = getId(x, asm, (SPIRVKind) x.getPlatformKind());
+            }
+            SPIRVId falseValueId;
+            if (y instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) y).emit(crb, asm);
+                falseValueId = asm.lookUpLIRInstructions(y);
+            } else {
+                falseValueId = getId(y, asm, (SPIRVKind) y.getPlatformKind());
+            }
+
+            SPIRVId comparisonID = asm.lookUpLIRInstructions(testNode);
+
+            SPIRVId resultID = obtainPhiValueIdIfNeeded(asm);
+            asm.currentBlockScope().add(new SPIRVOpSelect(asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32), resultID, comparisonID, trueValueId, falseValueId));
+            asm.registerLIRInstructionValue(this, resultID);
         }
     }
 }
