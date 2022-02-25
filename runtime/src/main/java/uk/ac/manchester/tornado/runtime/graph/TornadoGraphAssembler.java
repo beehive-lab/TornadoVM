@@ -27,8 +27,10 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.List;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 public class TornadoGraphAssembler {
 
@@ -48,7 +50,8 @@ public class TornadoGraphAssembler {
         END((byte) 21),                 // END(ctx)
         CONSTANT_ARGUMENT((byte) 22),
         REFERENCE_ARGUMENT((byte) 23),
-        DEALLOCATE((byte) 24);          // DEALLOCATE(obj,dest)
+        DEALLOCATE((byte) 24),          // DEALLOCATE(obj,dest)
+        PERSIST((byte) 25);             // PERSIST(dest, numObjects, objects)
         // @formatter:on
 
         private byte value;
@@ -100,6 +103,16 @@ public class TornadoGraphAssembler {
     public void context(int index) {
         buffer.put(TornadoVMBytecodes.CONTEXT.value);
         buffer.putInt(index);
+    }
+
+    public void persist(List<AbstractNode> values, int ctx, long batchSize) {
+        buffer.put(TornadoVMBytecodes.PERSIST.value);
+        buffer.putInt(ctx);
+        buffer.putLong(batchSize);
+        buffer.putInt(values.size());
+        for (AbstractNode node : values) {
+            buffer.putInt(node.getIndex());
+        }
     }
 
     public void allocate(int object, int ctx, long size) {

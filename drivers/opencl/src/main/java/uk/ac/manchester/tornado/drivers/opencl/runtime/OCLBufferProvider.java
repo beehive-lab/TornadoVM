@@ -89,6 +89,16 @@ public class OCLBufferProvider implements TornadoBufferProvider {
     }
 
     @Override
+    public boolean canAllocate(int allocationsRequired) {
+        return freeBuffers.size() >= allocationsRequired;
+    }
+
+    @Override
+    public void resetBuffers() {
+        freeBuffers(Long.MAX_VALUE);
+    }
+
+    @Override
     public long getBuffer(long size) {
         OCLTargetDevice targetDevice = deviceContext.getDevice();
         if (size <= availableMemory && size < targetDevice.getDeviceMaxAllocationSize()) {

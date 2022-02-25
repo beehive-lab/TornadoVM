@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
@@ -520,6 +521,18 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+        TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
+        if (!bufferProvider.canAllocate(objects.length)) {
+            bufferProvider.resetBuffers();
+        }
+        for (int i = 0; i < objects.length; i++) {
+            allocate(objects[i], batchSize, states[i]);
+        }
+        return -1;
+    }
+
+    @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
         if (state.hasBuffer()) {
@@ -550,7 +563,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
-        allocate(object, batchSize, state);
+//        allocate(object, batchSize, state);
 
         if (BENCHMARKING_MODE) {
             return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
@@ -560,7 +573,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
-        allocate(object, batchSize, state);
+//        allocate(object, batchSize, state);
         return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
     }
 

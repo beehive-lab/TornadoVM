@@ -278,6 +278,12 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+        unimplemented();
+        return -1;
+    }
+
+    @Override
     public int deallocate(Object object, TornadoDeviceObjectState state) {
         unimplemented();
         return -1;

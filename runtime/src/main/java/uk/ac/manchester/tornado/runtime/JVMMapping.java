@@ -148,6 +148,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+        return -1;
+    }
+
+    @Override
     public int deallocate(Object object, TornadoDeviceObjectState state) {
         return 0;
     }

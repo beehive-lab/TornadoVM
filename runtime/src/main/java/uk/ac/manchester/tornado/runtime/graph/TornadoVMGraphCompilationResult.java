@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.PersistNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
@@ -73,7 +74,9 @@ public class TornadoVMGraphCompilationResult {
     }
 
     void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
-        if (node instanceof CopyInNode) {
+        if (node instanceof PersistNode) {
+            bitcodeASM.persist(((PersistNode) node).getValues(), contextID, batchSize);
+        } else if (node instanceof CopyInNode) {
             bitcodeASM.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
             bitcodeASM.allocate(((AllocateNode) node).getValue().getIndex(), contextID, batchSize);
