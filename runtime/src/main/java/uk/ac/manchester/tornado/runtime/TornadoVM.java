@@ -250,20 +250,6 @@ public class TornadoVM extends TornadoLogger {
         return device.allocateBulk(objects, sizeBatch, objectStates);
     }
 
-    private int executeAllocate(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long sizeBatch) {
-        final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        final Object object = objects.get(objectIndex);
-
-        if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
-            String verbose = String.format("vm: ALLOCATE [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
-            tornadoVMBytecodeList.append(verbose).append("\n");
-        }
-
-        final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-//        return device.allocate(object, sizeBatch, objectState);
-        return -1;
-    }
-
     private int executeDeallocate(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         final Object object = objects.get(objectIndex);
@@ -684,15 +670,6 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
                 lastEvent = executePersist(tornadoVMBytecodeList, args, contextIndex, sizeBatch);
-            } else if (op == TornadoVMBytecodes.ALLOCATE.value()) {
-                final int objectIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
-                final long sizeBatch = buffer.getLong();
-                if (isWarmup) {
-                    continue;
-                }
-//                lastEvent = executeAllocate(tornadoVMBytecodeList, objectIndex, contextIndex, sizeBatch);
-                lastEvent = -1;
             } else if (op == TornadoVMBytecodes.DEALLOCATE.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();

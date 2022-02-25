@@ -36,7 +36,7 @@ public class TornadoGraphAssembler {
 
     public enum TornadoVMBytecodes {
         // @formatter:off
-        ALLOCATE((byte) 10),            // ALLOCATE(obj,dest)
+        PERSIST((byte) 10),             // PERSIST(dest, numObjects, objects)
         COPY_IN((byte) 11),             // COPY(obj, src, dest)
         STREAM_IN((byte) 12),           // STREAM_IN(obj, src, dest)
         STREAM_OUT((byte) 13),          // STREAM_OUT(obj, src, dest)
@@ -50,8 +50,7 @@ public class TornadoGraphAssembler {
         END((byte) 21),                 // END(ctx)
         CONSTANT_ARGUMENT((byte) 22),
         REFERENCE_ARGUMENT((byte) 23),
-        DEALLOCATE((byte) 24),          // DEALLOCATE(obj,dest)
-        PERSIST((byte) 25);             // PERSIST(dest, numObjects, objects)
+        DEALLOCATE((byte) 24);          // DEALLOCATE(obj,dest)
         // @formatter:on
 
         private byte value;
@@ -113,13 +112,6 @@ public class TornadoGraphAssembler {
         for (AbstractNode node : values) {
             buffer.putInt(node.getIndex());
         }
-    }
-
-    public void allocate(int object, int ctx, long size) {
-        buffer.put(TornadoVMBytecodes.ALLOCATE.value);
-        buffer.putInt(object);
-        buffer.putInt(ctx);
-        buffer.putLong(size);
     }
 
     public void deallocate(int object, int ctx) {
