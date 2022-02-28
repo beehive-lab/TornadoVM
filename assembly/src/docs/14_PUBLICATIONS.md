@@ -1,5 +1,9 @@
 ## Selected Publications
 
+* Florin Blanaru, Athanasios Stratikopoulos, Juan Fumero, Christos Kotselidis. [**Enabling Pipeline Parallelism in Heterogeneous
+Managed Runtime Environments via Batch Processing**](https://www.research.manchester.ac.uk/portal/files/211004987/VEE2022_ENABLING_PIPELINE_PARALLELISM_Preprint.pdf)
+  . Virtual Execution Environments (VEE) 2022.
+
 * Michail Papadimitriou, Juan Fumero, Athanasios Stratikopoulos, Christos Kotselidis. [**Automatically Exploiting the
   Memory Hierarchy of GPUs through Just-in-Time
   Compilation**](https://www.research.manchester.ac.uk/portal/en/publications/automatically-exploiting-the-memory-hierarchy-of-gpus-through-justintime-compilation(8c2ba9c6-cef3-42c5-9f49-a87c97eaecd7).html)
