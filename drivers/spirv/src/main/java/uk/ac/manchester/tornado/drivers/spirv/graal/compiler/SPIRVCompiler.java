@@ -99,7 +99,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 /**
  * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
  * generates SPIRV code.
- * 
+ *
  */
 public class SPIRVCompiler {
 
@@ -112,50 +112,6 @@ public class SPIRVCompiler {
     private static final TimerKey EmitCode = DebugContext.timer("SPIRVEmitCode");
 
     private static final SPIRVIRGenerationPhase LIR_GENERATION_PHASE = new SPIRVIRGenerationPhase();
-
-    public static class SPIRVCompilationRequest {
-        public final StructuredGraph graph;
-        public final ResolvedJavaMethod installedCodeOwner;
-        public final Object[] args;
-        public final TaskMetaData meta;
-        public final Providers providers;
-        public final SPIRVBackend backend;
-        public final PhaseSuite<HighTierContext> graphBuilderSuite;
-        public final OptimisticOptimizations optimisticOpts;
-        public final ProfilingInfo profilingInfo;
-        public final TornadoSuites suites;
-        public final TornadoLIRSuites lirSuites;
-        public final SPIRVCompilationResult compilationResult;
-        public final CompilationResultBuilderFactory factory;
-        public final boolean isKernel;
-        public final boolean buildGraph;
-        public final long batchThreads;
-
-        public SPIRVCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, SPIRVBackend backend,
-                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads) {
-            this.graph = graph;
-            this.installedCodeOwner = installedCodeOwner;
-            this.args = args;
-            this.meta = meta;
-            this.providers = providers;
-            this.backend = backend;
-            this.graphBuilderSuite = graphBuilderSuite;
-            this.optimisticOpts = optimisticOpts;
-            this.profilingInfo = profilingInfo;
-            this.suites = suites;
-            this.lirSuites = lirSuites;
-            this.compilationResult = compilationResult;
-            this.factory = factory;
-            this.isKernel = isKernel;
-            this.buildGraph = buildGraph;
-            this.batchThreads = batchThreads;
-        }
-
-        public SPIRVCompilationResult execute() {
-            return SPIRVCompiler.compile(this);
-        }
-    }
 
     private static SPIRVCompilationResult compile(SPIRVCompilationRequest r) {
         assert !r.graph.isFrozen();
@@ -391,16 +347,16 @@ public class SPIRVCompiler {
 
         // @formatter:off
         SPIRVCompilationRequest kernelCompilationRequest = new SPIRVCompilationRequest(
-                kernelGraph, 
-                resolvedJavaMethod, 
-                args, 
+                kernelGraph,
+                resolvedJavaMethod,
+                args,
                 taskMeta,
                 providers,
                 backend,
                 suitesProvider.getGraphBuilderSuite(),
-                optimisticOptimizations, 
-                profilingInfo, 
-                suitesProvider.getSuites(), 
+                optimisticOptimizations,
+                profilingInfo,
+                suitesProvider.getSuites(),
                 suitesProvider.getLIRSuites(),
                 kernelCompilationResult,
                 factory,
@@ -505,6 +461,50 @@ public class SPIRVCompiler {
         }
 
         return kernelCompilationResult;
+    }
+
+    public static class SPIRVCompilationRequest {
+        public final StructuredGraph graph;
+        public final ResolvedJavaMethod installedCodeOwner;
+        public final Object[] args;
+        public final TaskMetaData meta;
+        public final Providers providers;
+        public final SPIRVBackend backend;
+        public final PhaseSuite<HighTierContext> graphBuilderSuite;
+        public final OptimisticOptimizations optimisticOpts;
+        public final ProfilingInfo profilingInfo;
+        public final TornadoSuites suites;
+        public final TornadoLIRSuites lirSuites;
+        public final SPIRVCompilationResult compilationResult;
+        public final CompilationResultBuilderFactory factory;
+        public final boolean isKernel;
+        public final boolean buildGraph;
+        public final long batchThreads;
+
+        public SPIRVCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, SPIRVBackend backend,
+                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
+                SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads) {
+            this.graph = graph;
+            this.installedCodeOwner = installedCodeOwner;
+            this.args = args;
+            this.meta = meta;
+            this.providers = providers;
+            this.backend = backend;
+            this.graphBuilderSuite = graphBuilderSuite;
+            this.optimisticOpts = optimisticOpts;
+            this.profilingInfo = profilingInfo;
+            this.suites = suites;
+            this.lirSuites = lirSuites;
+            this.compilationResult = compilationResult;
+            this.factory = factory;
+            this.isKernel = isKernel;
+            this.buildGraph = buildGraph;
+            this.batchThreads = batchThreads;
+        }
+
+        public SPIRVCompilationResult execute() {
+            return SPIRVCompiler.compile(this);
+        }
     }
 
 }

@@ -110,7 +110,6 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVDecor
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionParameterAttribute;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLinkageType;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralContextDependentNumber;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
@@ -333,9 +332,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         SPIRVFrameContext frameContext = new SPIRVFrameContext();
         DataBuilder dataBuilder = new SPIRVDataBuilder();
         SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
-        // SPIRVCompilationResultBuilder crb = new
-        // SPIRVCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm,
-        // dataBuilder, frameContext, options, compilationResult);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);
@@ -425,15 +421,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 new SPIRVLiteralInteger(version), //
                 new SPIRVOptionalOperand<>(), //
                 new SPIRVOptionalOperand<>()));//
-    }
-
-    private SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module, SPIRVThreadBuiltIn builtIn) {
-        SPIRVId idSPIRVBuiltin = module.getNextId();
-        module.add(new SPIRVOpName(idSPIRVBuiltin, new SPIRVLiteralString(builtIn.name)));
-        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(builtIn.builtIn)));
-        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.Constant()));
-        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(builtIn.name), SPIRVLinkageType.Import())));
-        return idSPIRVBuiltin;
     }
 
     private SPIRVLiteralContextDependentNumber buildLiteralContextNumber(SPIRVKind kind, Constant value) {
@@ -571,14 +558,14 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // Register Thread ID
         if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GLOBAL_THREAD_ID);
+            SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GLOBAL_THREAD_ID);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID, id);
         }
 
         // Register Global Size
         if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GLOBAL_SIZE);
+            SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GLOBAL_SIZE);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.GLOBAL_SIZE.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.GLOBAL_SIZE, id);
         }
@@ -586,20 +573,20 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // Look for other builtins
         if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
                 || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.LOCAL_THREAD_ID);
+            SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.LOCAL_THREAD_ID);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.LOCAL_THREAD_ID, id);
         }
 
         if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GROUP_ID);
+            SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.GROUP_ID);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.GROUP_ID.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.GROUP_ID, id);
         }
 
         if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
                 || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
-            SPIRVId id = emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.WORKGROUP_SIZE);
+            SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.WORKGROUP_SIZE);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.WORKGROUP_SIZE.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.WORKGROUP_SIZE, id);
         }
@@ -722,6 +709,27 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
+    public void emitBuiltinVariables(SPIRVAssembler asm) {
+        // If the kernel is parallel, we need to declare a vector 3 (ThreadID-0,
+        // ThreadID-1, ThreadID-2) that will be used in the OCL builtins for thread id
+        // and global sizes.
+        SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
+        for (Map.Entry<SPIRVThreadBuiltIn, SPIRVId> entry : asm.getBuiltinTableEntrySet()) {
+            asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
+        }
+    }
+
+    /**
+     * Emit the prologue for a SPIR-V compute kernel for OpenCL and Level-Zero. It
+     * returns if the kernel is parallel or not.
+     *
+     * @param crb
+     * @param asm
+     * @param method
+     * @param lir
+     * @param module
+     * @return Flag that indicates if the kernel is parallel or not.
+     */
     private void emitPrologueForMainKernelEntry(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
 
@@ -739,11 +747,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitOpenCLAddressingMode(module);
         emitOpSourceForOpenCL(module, SPIRV_HEADER_VALUES.SPIRV_VERSION_FOR_OPENCL);
 
-        boolean isParallel = crb.isParallel();
-        // Generate this only if the kernel is parallel (it uses the get_global_id)
-        if (isParallel) {
-            registerParallelIntrinsics(cfg, asm, module);
-        }
+        registerParallelIntrinsics(cfg, asm, module);
 
         // Decorate for heap_base
         SPIRVId heapBaseAddrId = module.getNextId();
@@ -774,7 +778,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         if (fp64CapabilityEnabled && !supportsFP64) {
             throw new TornadoDeviceFP64NotSupported("Error - The current SPIR-V device does not support FP64");
         }
-        asm.emitEntryPointMainKernel(cfg.graph, method.getName(), isParallel, fp64CapabilityEnabled);
+        asm.emitEntryPointMainKernel(cfg.graph, method.getName(), fp64CapabilityEnabled);
 
         // ----------------------------------
         // OpNames for the heap and frame
@@ -847,17 +851,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         pointerToFrameAccess = module.getNextId();
         module.add(new SPIRVOpTypePointer(pointerToFrameAccess, SPIRVStorageClass.Function(), asm.getPTrCrossWorkULong()));
 
-        if (isParallel) {
-            // If the kernel is parallel, we need to declare a vector 3 (ThreadID-0,
-            // ThreadID-1, ThreadID-2) that will be used in the OCL builtins for thread id
-            // and global sizes.
-
-            SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
-
-            for (Map.Entry<SPIRVThreadBuiltIn, SPIRVId> entry : asm.builtinTable.entrySet()) {
-                asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
-            }
-        }
+        emitBuiltinVariables(asm);
 
         // --------------------------------------
         // Main kernel Begins

@@ -441,40 +441,39 @@ public final class SPIRVAssembler extends Assembler {
         return functionSignature;
     }
 
-    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean isParallel, boolean fp64Capability) {
+    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean fp64Capability) {
         mainFunctionID = module.getNextId();
 
         SPIRVMultipleOperands operands;
-        if (isParallel) {
-            List<SPIRVId> builtInList = new ArrayList<>();
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID));
-            }
+        List<SPIRVId> builtInList = new ArrayList<>();
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
-                    || graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.LOCAL_THREAD_ID));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
+                || graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.LOCAL_THREAD_ID));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() //
-                    || graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.WORKGROUP_SIZE));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() //
+                || graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.WORKGROUP_SIZE));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_SIZE));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_SIZE));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GROUP_ID));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GROUP_ID));
+        }
 
+        if (builtInList.size() == 0) {
+            operands = new SPIRVMultipleOperands();
+        } else {
             SPIRVId[] array = new SPIRVId[builtInList.size()];
             builtInList.toArray(array);
             operands = new SPIRVMultipleOperands(array);
-
-        } else {
-            operands = new SPIRVMultipleOperands();
         }
 
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
@@ -482,7 +481,6 @@ public final class SPIRVAssembler extends Assembler {
         if (fp64Capability) {
             module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
         }
-
     }
 
     public SPIRVId getFunctionSignature() {
@@ -751,6 +749,19 @@ public final class SPIRVAssembler extends Assembler {
     public void clearForwardPhiTable() {
         phiNamesAcrossBlocks.clear();
         phiNamesAcrossBlocks = new HashMap<>();
+    }
+
+    public SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module, SPIRVThreadBuiltIn builtIn) {
+        SPIRVId idSPIRVBuiltin = module.getNextId();
+        module.add(new SPIRVOpName(idSPIRVBuiltin, new SPIRVLiteralString(builtIn.getName())));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(builtIn.getBuiltIn())));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.Constant()));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(builtIn.getName()), SPIRVLinkageType.Import())));
+        return idSPIRVBuiltin;
+    }
+
+    public Iterable<? extends Map.Entry<SPIRVThreadBuiltIn, SPIRVId>> getBuiltinTableEntrySet() {
+        return builtinTable.entrySet();
     }
 
     public static class ConstantKeyPair {

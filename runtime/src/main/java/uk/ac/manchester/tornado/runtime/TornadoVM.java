@@ -251,7 +251,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private boolean isObjectKernelContext(Object object) {
-        return object instanceof KernelContext;
+        return (object instanceof KernelContext);
     }
 
     private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
@@ -432,7 +432,7 @@ public class TornadoVM extends TornadoLogger {
         task.setBatchThreads(batchThreads);
         task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
-        if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
+        if ((gridScheduler != null && gridScheduler.get(task.getId()) != null)) {
             task.setUseGridScheduler(true);
             task.setGridScheduler(gridScheduler);
         }
