@@ -205,8 +205,6 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     @Test
     public void testTornadoMathTan() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         float[] data = new float[size];
         float[] seq = new float[size];
@@ -227,8 +225,6 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     @Test
     public void testTornadoMathTanh() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         float[] data = new float[size];
         float[] seq = new float[size];

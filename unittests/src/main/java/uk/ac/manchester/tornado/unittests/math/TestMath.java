@@ -203,8 +203,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTan() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
@@ -225,8 +223,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTanh() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
