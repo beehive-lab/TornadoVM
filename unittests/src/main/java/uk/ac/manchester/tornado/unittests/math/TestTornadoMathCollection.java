@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -205,8 +205,6 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     @Test
     public void testTornadoMathTan() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         float[] data = new float[size];
         float[] seq = new float[size];
@@ -227,8 +225,6 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     @Test
     public void testTornadoMathTanh() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         float[] data = new float[size];
         float[] seq = new float[size];

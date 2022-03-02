@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -479,6 +479,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryIntrinsic LOG2 = new PTXUnaryIntrinsic("lg2.approx", null);
         public static final PTXUnaryIntrinsic SIN = new PTXUnaryIntrinsic("sin.approx", null);
         public static final PTXUnaryIntrinsic COS = new PTXUnaryIntrinsic("cos.approx", null);
+        public static final PTXUnaryIntrinsic TANH = new PTXUnaryIntrinsic("tanh.approx", null);
         public static final PTXUnaryIntrinsic RSQRT = new PTXUnaryIntrinsic("rsqrt.approx", null);
         public static final PTXUnaryIntrinsic FLOAT_FLOOR = new PTXUnaryIntrinsic(CONVERT, ROUND_NEGATIVE_INFINITY_INTEGER, true, false);
 

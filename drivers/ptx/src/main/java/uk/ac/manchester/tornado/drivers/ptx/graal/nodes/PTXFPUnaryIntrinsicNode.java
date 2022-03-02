@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -157,8 +157,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
                 result = gen.genFloatSqrt(auxValue);
                 break;
             case TAN:
-                result = gen.genFloatTan(auxValue);
-                break;
+                generateTan(builder, lirGenPTX, gen, initialInput);
+                return;
             case TANH:
                 result = gen.genFloatTanh(auxValue);
                 break;
@@ -182,6 +182,28 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         }
 
         builder.setResult(this, auxVar);
+    }
+
+    private void generateTan(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, PTXBuiltinTool gen, Value x) {
+        Value auxValue = x;
+        Variable auxVar;
+        if (shouldConvertInput(x)) {
+            auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
+            auxValue = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, x)).getResult();
+        }
+
+        // we use tan(a) = sin(a) / cos(a)
+        Variable sinVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
+        Variable cosVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32));
+        Value sin = builder.getLIRGeneratorTool().append(new AssignStmt(sinVar, gen.genFloatSin(auxValue))).getResult();
+        Value cos = builder.getLIRGeneratorTool().append(new AssignStmt(cosVar, gen.genFloatCos(auxValue))).getResult();
+        Value result = lirGen.emitDiv(sin, cos, null);
+
+        if (shouldConvertInput(x)) {
+            auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(x.getPlatformKind()));
+            result = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, result)).getResult();
+        }
+        builder.setResult(this, result);
     }
 
     /**
@@ -249,7 +271,9 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     private boolean shouldConvertInput(Value input) {
-        return (operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP || operation() == Operation.LOG) && !((PTXKind) input.getPlatformKind()).isF32();
+        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS ||
+                operation() == Operation.SIN || operation() == Operation.EXP || operation() == Operation.LOG)
+                && !((PTXKind) input.getPlatformKind()).isF32();
     }
 
     private static double doCompute(double value, Operation op) {
