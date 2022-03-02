@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -709,27 +709,30 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
+    /**
+     * This method emits the global variables (Storage Class set to Input) for
+     * OpenCL thread access, such as get_global_id, global_size, etc.
+     *
+     * This is due to if the kernel is parallel, we need to declare a vector 3
+     * elements (ThreadID-0, ThreadID-1, ThreadID-2) that will be used in the OCL
+     * builtins for thread id and global sizes.
+     *
+     * Example:
+     *
+     * <code>
+     *     %spirv_BuiltinGlobalSize = OpVariable %ptr_Input_v3long Input
+     * </code>
+     *
+     * @param asm
+     *            {@link SPIRVAssembler}
+     */
     public void emitBuiltinVariables(SPIRVAssembler asm) {
-        // If the kernel is parallel, we need to declare a vector 3 (ThreadID-0,
-        // ThreadID-1, ThreadID-2) that will be used in the OCL builtins for thread id
-        // and global sizes.
         SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());
         for (Map.Entry<SPIRVThreadBuiltIn, SPIRVId> entry : asm.getBuiltinTableEntrySet()) {
             asm.module.add(new SPIRVOpVariable(ptrV3ulong, entry.getValue(), SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
         }
     }
 
-    /**
-     * Emit the prologue for a SPIR-V compute kernel for OpenCL and Level-Zero. It
-     * returns if the kernel is parallel or not.
-     *
-     * @param crb
-     * @param asm
-     * @param method
-     * @param lir
-     * @param module
-     * @return Flag that indicates if the kernel is parallel or not.
-     */
     private void emitPrologueForMainKernelEntry(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
 

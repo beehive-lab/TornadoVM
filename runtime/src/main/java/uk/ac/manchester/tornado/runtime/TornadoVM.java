@@ -432,7 +432,7 @@ public class TornadoVM extends TornadoLogger {
         task.setBatchThreads(batchThreads);
         task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
-        if ((gridScheduler != null && gridScheduler.get(task.getId()) != null)) {
+        if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             task.setUseGridScheduler(true);
             task.setGridScheduler(gridScheduler);
         }
