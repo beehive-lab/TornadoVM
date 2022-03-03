@@ -159,14 +159,14 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private ZeDeviceMemAllocDesc createDeviceDescription() {
         ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
-        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
         deviceMemAllocDesc.setOrdinal(0);
         return deviceMemAllocDesc;
     }
 
     private ZeHostMemAllocDesc createHostMemDescription() {
         ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
-        hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
+        hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_CACHED);
         return hostMemAllocDesc;
     }
 
