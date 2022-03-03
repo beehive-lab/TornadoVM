@@ -189,7 +189,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
                     levelZeroContext.getDefaultContextPtr(), //
                     deviceMemAllocDesc, //
                     hostMemAllocDesc, //
-                    (int) numBytes, //
+                    numBytes, //
                     TornadoOptions.LEVEL_ZERO_BUFFER_ALIGNMENT, //
                     l0Device.getDeviceHandlerPtr(), //
                     deviceBuffer);
@@ -199,7 +199,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             int result = levelZeroContext.zeMemAllocDevice(//
                     levelZeroContext.getDefaultContextPtr(), //
                     deviceMemAllocDesc, //
-                    (int) numBytes, //
+                    numBytes, //
                     TornadoOptions.LEVEL_ZERO_BUFFER_ALIGNMENT, //
                     l0Device.getDeviceHandlerPtr(), //
                     deviceBuffer);
