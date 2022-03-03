@@ -171,7 +171,6 @@ public class TornadoOptions {
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
     public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", FALSE);
-
     /**
      * Use return as a common label and insert the instruction before function
      * ending.
@@ -202,18 +201,21 @@ public class TornadoOptions {
      * It enables more fast math optimizations
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
-
     /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
      *
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", FALSE);
-
     /**
      * Use Level Zero Thread Suggestions for the Thread Dispatcher. True by default.
      */
-    public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);;
+    public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);
+    /**
+     * Memory Alignment for the Level Zero buffers (shared memory and or device
+     * memory)
+     */
+    public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
     /**
      * Option to load FPGA pre-compiled binaries.
      */
@@ -240,6 +242,10 @@ public class TornadoOptions {
 
     private static boolean getBooleanValue(String property, String defaultValue) {
         return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
+    }
+
+    private static int getIntValue(String property, String defaultValue) {
+        return Integer.parseInt(Tornado.getProperty(property, defaultValue));
     }
 
 }
