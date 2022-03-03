@@ -81,10 +81,6 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
     }
 
-    public LevelZeroContext getLevelZeroContext() {
-        return levelZeroContext;
-    }
-
     public static int getCommandQueueOrdinal(LevelZeroDevice device) {
         int[] numQueueGroups = new int[1];
         int result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, null);
@@ -110,6 +106,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         }
 
         return ordinal;
+    }
+
+    public LevelZeroContext getLevelZeroContext() {
+        return levelZeroContext;
     }
 
     private LevelZeroCommandQueue createCommandQueue(LevelZeroContext context, SPIRVDevice spirvDevice) {
@@ -183,12 +183,25 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
         ZeDeviceMemAllocDesc deviceMemAllocDesc = createDeviceDescription();
         if (TornadoOptions.LEVEL_ZERO_SHARED_MEMORY) {
+            // Buffer Allocation in Shared Memory
             ZeHostMemAllocDesc hostMemAllocDesc = createHostMemDescription();
-            int result = levelZeroContext.zeMemAllocShared(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, hostMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(),
+            int result = levelZeroContext.zeMemAllocShared( //
+                    levelZeroContext.getDefaultContextPtr(), //
+                    deviceMemAllocDesc, hostMemAllocDesc, //
+                    (int) numBytes, //
+                    TornadoOptions.LEVEL_ZERO_BUFFER_ALIGNMENT, //
+                    l0Device.getDeviceHandlerPtr(), //
                     deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocShared", result);
         } else {
-            int result = levelZeroContext.zeMemAllocDevice(levelZeroContext.getDefaultContextPtr(), deviceMemAllocDesc, (int) numBytes, 1, l0Device.getDeviceHandlerPtr(), deviceBuffer);
+            // Buffer Allocation in Device Memory
+            int result = levelZeroContext.zeMemAllocDevice(//
+                    levelZeroContext.getDefaultContextPtr(), //
+                    deviceMemAllocDesc, //
+                    (int) numBytes, //
+                    TornadoOptions.LEVEL_ZERO_BUFFER_ALIGNMENT, //
+                    l0Device.getDeviceHandlerPtr(), //
+                    deviceBuffer);
             LevelZeroUtils.errorLog("zeMemAllocDevice", result);
         }
         return deviceBuffer.getPtrBuffer();
