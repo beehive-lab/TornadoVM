@@ -89,9 +89,9 @@ It enables the utilization of native mathematical functions, in case that the se
 
 * `-Dtornado.spirv.levelzero.alignment=64`: Memory alignment (in bytes) for Level Zero buffers. It is set to 64 by default. 
 
-*  `-Dtornado.spirv.levelzero.thread.dispatcher=TRUE`: If it is enabled, it uses the Level Zero suggested thread block for the thread dispatcher. True by default.
+*  `-Dtornado.spirv.levelzero.thread.dispatcher=True`: If it is enabled, it uses the Level Zero suggested thread block for the thread dispatcher. True by default.
 
-* `-Dtornado.spirv.loadstore=False`: it optimizes Loads/Stores and simplifies the generated SPIR-V binary. This option is still experimental. It is set to `False` by default. 
+* `-Dtornado.spirv.loadstore=False`: It optimizes Loads/Stores and simplifies the generated SPIR-V binary. This option is still experimental. It is set to `False` by default. 
 
 * `-Dtornado.spirv.levelzero.memoryAlloc.shared=False`: If it is enabled, then it uses shared memory buffers between the accelerator and the host. It is set to false by default. 
 

@@ -187,7 +187,8 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             ZeHostMemAllocDesc hostMemAllocDesc = createHostMemDescription();
             int result = levelZeroContext.zeMemAllocShared( //
                     levelZeroContext.getDefaultContextPtr(), //
-                    deviceMemAllocDesc, hostMemAllocDesc, //
+                    deviceMemAllocDesc, //
+                    hostMemAllocDesc, //
                     (int) numBytes, //
                     TornadoOptions.LEVEL_ZERO_BUFFER_ALIGNMENT, //
                     l0Device.getDeviceHandlerPtr(), //
