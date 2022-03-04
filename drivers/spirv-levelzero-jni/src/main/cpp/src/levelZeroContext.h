@@ -66,34 +66,34 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocShared_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocShared_1native
-        (JNIEnv *, jobject, jlong, jobject, jobject, jint, jint, jlong, jobject);
+        (JNIEnv *, jobject, jlong, jobject, jobject, jlong, jlong, jlong, jobject);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocShared_nativeByte
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocShared_1nativeByte
-        (JNIEnv *, jobject, jlong, jobject, jobject, jint, jint, jlong, jobject);
+        (JNIEnv *, jobject, jlong, jobject, jobject, jlong, jlong, jlong, jobject);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocDevice_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1native
-        (JNIEnv *, jobject, jlong, jobject, jint, jint, jlong, jobject);
+        (JNIEnv *, jobject, jlong, jobject, jlong, jlong, jlong, jobject);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocDevice_nativeLong
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferLong;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferLong;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1nativeLong
-        (JNIEnv *, jobject, jlong, jobject, jint, jint, jlong, jobject);
+        (JNIEnv *, jobject, jlong, jobject, jlong, jlong, jlong, jobject);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
@@ -171,10 +171,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocHost_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocHost_1native
-        (JNIEnv *, jobject, jlong, jobject, jint, jint, jobject);
+        (JNIEnv *, jobject, jlong, jobject, jlong, jlong, jobject);
 #ifdef __cplusplus
 }
 #endif

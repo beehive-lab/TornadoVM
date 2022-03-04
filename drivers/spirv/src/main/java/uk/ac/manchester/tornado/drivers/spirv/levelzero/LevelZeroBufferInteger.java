@@ -36,7 +36,7 @@ public class LevelZeroBufferInteger {
         return ptrBuffer;
     }
 
-    public void memset(int value, int bufferSize) {
+    public void memset(int value, long bufferSize) {
         memset_native(this, value, bufferSize);
     }
 
@@ -48,7 +48,7 @@ public class LevelZeroBufferInteger {
         this.ptrBuffer = -1;
     }
 
-    native void memset_native(LevelZeroBufferInteger javaBuffer, int value, int bufferSize);
+    native void memset_native(LevelZeroBufferInteger javaBuffer, int value, long bufferSize);
 
-    native boolean isEqual(long bufferAPtr, long bufferBPtr, int size);
+    native boolean isEqual(long bufferAPtr, long bufferBPtr, long size);
 }
