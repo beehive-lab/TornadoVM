@@ -116,7 +116,7 @@ available by using [NVIDIA GEFORCE Experience](https://www.nvidia.com/it-it/gefo
 Alternatively, all NVIDIA drivers can be found
 here: [NVIDIA Driver Downloads](https://www.nvidia.com/Download/index.aspx).
 
-##### B) NVIDIA PTX
+##### B) OpenCL and NVIDIA PTX
 
 If you plan to only use the OpenCL backend from TornadoVM, then you only need the NVIDIA driver from the previous step.
 
