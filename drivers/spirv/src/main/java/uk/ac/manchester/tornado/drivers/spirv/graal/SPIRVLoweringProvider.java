@@ -111,15 +111,17 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNo
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
+/**
+ * Lower IR from one representation to another (e.g., from TornadoVM High-IR to
+ * TornadoVM Mid-IR).
+ */
 public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
-
+    private static boolean gpuSnippet = false;
     private ConstantReflectionProvider constantReflectionProvider;
     private TornadoVMConfig vmConfig;
-
-    private static boolean gpuSnippet = false;
-    private ReduceGPUSnippets.Templates GPUReduceSnippets;
+    private ReduceGPUSnippets.Templates gpuReduceSnippets;
 
     public SPIRVLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig,
             MetaAccessExtensionProvider metaAccessExtensionProvider, ConstantReflectionProvider constantReflectionProvider, TornadoVMConfig vmConfig, SPIRVTargetDescription target,
@@ -137,12 +139,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     public void initialize(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
         super.initialize(options, debugHandlersFactories, factory, providers, snippetReflection);
-        initializeSnippets(options, debugHandlersFactories, factory, providers, snippetReflection);
+        initializeSnippets(options, debugHandlersFactories, providers, snippetReflection);
     }
 
-    private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
-            SnippetReflectionProvider snippetReflection) {
-        this.GPUReduceSnippets = new ReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+    private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection) {
+        this.gpuReduceSnippets = new ReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
     private boolean shouldIgnoreNode(Node node) {
@@ -229,7 +230,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         if (cpuScheduler) {
             throw new RuntimeException("CPU Snippets for SPIR-V not implemented yet");
         } else {
-            GPUReduceSnippets.lower(storeIndexed, threadID, spirvGlobalSize, tool);
+            gpuReduceSnippets.lower(storeIndexed, threadID, spirvGlobalSize, tool);
         }
 
         // We append this phase to move floating reads close to their actual usage and
@@ -454,12 +455,12 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(loadIndexed, memoryRead);
     }
 
-    private boolean isPrivateIdNode(StoreIndexedNode storeIndexed) {
-        Node nd = storeIndexed.inputs().first().asNode();
-        return (nd instanceof FixedArrayNode);
+    private boolean isPrivateMemoryAccessNode(StoreIndexedNode storeIndexed) {
+        Node node = storeIndexed.inputs().first().asNode();
+        return (node instanceof FixedArrayNode);
     }
 
-    private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+    private boolean isLocalMemoryAccessNode(StoreIndexedNode storeIndexed) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
@@ -474,7 +475,7 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
     private AbstractWriteNode createMemWriteNode(JavaKind elementKind, ValueNode value, ValueNode array, AddressNode address, StructuredGraph graph, StoreIndexedNode storeIndexed) {
         AbstractWriteNode memoryWrite;
-        if (isLocalIdNode(storeIndexed) || isPrivateIdNode(storeIndexed)) {
+        if (isLocalMemoryAccessNode(storeIndexed) || isPrivateMemoryAccessNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
         }
         ValueNode storeConvertValue = value;
