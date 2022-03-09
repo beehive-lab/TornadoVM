@@ -278,14 +278,14 @@ public class OCLUnary {
         }
 
         private boolean keepIntegerIndexing() {
-            return (base.memorySpace == OCLMemorySpace.PRIVATE || base.memorySpace == OCLMemorySpace.LOCAL);
+            return (base.getMemorySpace() == OCLMemorySpace.PRIVATE || base.getMemorySpace() == OCLMemorySpace.LOCAL);
         }
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             if (shouldEmitRelativeAddress(crb)) {
                 asm.emitSymbol(ADDRESS_OF);
-                asm.emit(base.name);
+                asm.emit(base.getName());
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 asm.emitValue(crb, value);
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
@@ -320,11 +320,11 @@ public class OCLUnary {
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             OCLKind oclKind = getOCLPlatformKind();
-            asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
+            asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.getMemorySpace().name() + " " + oclKind.toString());
         }
 
         OCLMemorySpace getMemorySpace() {
-            return base.memorySpace;
+            return base.getMemorySpace();
         }
 
     }

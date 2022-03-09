@@ -88,11 +88,11 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
     }
 
     private boolean isLocalMemoryAccess() {
-        return this.memoryRegister.name.equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
+        return this.memoryRegister.getName().equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
     }
 
     private boolean isPrivateMemoryAccess() {
-        return this.memoryRegister.name.equals(OCLAssemblerConstants.PRIVATE_REGION_NAME);
+        return this.memoryRegister.getName().equals(OCLAssemblerConstants.PRIVATE_REGION_NAME);
     }
 
     @Override

@@ -33,7 +33,7 @@ public abstract class SPIRVCodeCache {
     protected final SPIRVDeviceContext deviceContext;
     protected final ConcurrentHashMap<String, SPIRVInstalledCode> cache;
 
-    public SPIRVCodeCache(SPIRVDeviceContext deviceContext) {
+    protected SPIRVCodeCache(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
     }

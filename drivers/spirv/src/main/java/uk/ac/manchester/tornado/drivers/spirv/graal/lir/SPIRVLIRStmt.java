@@ -1089,11 +1089,11 @@ public class SPIRVLIRStmt {
         }
 
         private boolean isPrivateMemoryAccess() {
-            return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.privateSpace.number;
+            return this.memoryIndexedAccess.getMemoryRegion().getNumber() == SPIRVArchitecture.privateSpace.getNumber();
         }
 
         private boolean isLocalMemoryAccess() {
-            return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.localSpace.number;
+            return this.memoryIndexedAccess.getMemoryRegion().getNumber() == SPIRVArchitecture.localSpace.getNumber();
         }
 
         private void emitStoreIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -1225,7 +1225,7 @@ public class SPIRVLIRStmt {
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
-                    "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
+                    "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
 
             address.emitForLoad(asm);
 

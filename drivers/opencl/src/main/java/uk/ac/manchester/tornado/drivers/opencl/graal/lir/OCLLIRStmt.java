@@ -221,7 +221,7 @@ public class OCLLIRStmt {
          * @return boolean This returns if the memory base is private or local.
          */
         private boolean isLocalOrPrivateLoad() {
-            return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
+            return this.cast.getMemorySpace().getBase().getMemorySpace() == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().getMemorySpace() == OCLMemorySpace.PRIVATE;
         }
 
         public AllocatableValue getResult() {
@@ -330,14 +330,14 @@ public class OCLLIRStmt {
 
         /**
          * It emits code in the form:
-         * 
+         *
          * <code>
          *     ul_12[index] = value;
          * </code>
-         * 
+         *
          * @param crb
          *            OpenCL Compilation Result Builder
-         * 
+         *
          * @param asm
          *            OpenCL Assembler
          */
@@ -394,11 +394,11 @@ public class OCLLIRStmt {
         /**
          * This method is used to check if emitting a store to a local or private memory
          * space.
-         * 
+         *
          * @return It returns true if the memory base is private or local.
          */
         private boolean isLocalOrPrivateStore() {
-            return this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.PRIVATE;
+            return this.cast.getMemorySpace().getBase().getMemorySpace() == OCLMemorySpace.LOCAL || this.cast.getMemorySpace().getBase().getMemorySpace() == OCLMemorySpace.PRIVATE;
         }
 
         public Value getRhs() {

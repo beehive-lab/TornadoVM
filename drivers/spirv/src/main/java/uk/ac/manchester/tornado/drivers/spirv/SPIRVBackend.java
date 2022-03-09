@@ -185,10 +185,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
         buffer.flip();
         File out = new File(filepath);
-        try {
-            FileChannel channel = new FileOutputStream(out, false).getChannel();
+        try (FileChannel channel = new FileOutputStream(out, false).getChannel()) {
             channel.write(buffer);
-            channel.close();
         } catch (IOException e) {
             System.err.println("IO exception: " + e.getMessage());
         }
@@ -275,7 +273,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     public SPIRVDeviceContext getDeviceContext() {
-        return context;
+        return this.context;
     }
 
     public void reset() {
