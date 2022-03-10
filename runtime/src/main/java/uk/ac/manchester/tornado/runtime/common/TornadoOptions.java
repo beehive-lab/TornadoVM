@@ -33,6 +33,17 @@ public class TornadoOptions {
     public static final String TRUE = "TRUE";
 
     /**
+     * Option to set the device heap's size. It is set to 1GB by default.
+     */
+    public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "1GB"));
+
+    /**
+     * Option to enable exceptions for the OpenCL generated code. This is
+     * experimental.
+     */
+    public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", FALSE));
+
+    /**
      * Option to print TornadoVM Internal Bytecodes.
      */
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);

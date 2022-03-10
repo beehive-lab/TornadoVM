@@ -38,7 +38,6 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -73,9 +72,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
  */
 public class SPIRVLIRGenerator extends LIRGenerator {
 
+    private final int methodIndex;
     private SPIRVGenTool spirvGenTool;
     private SPIRVBuiltinTool spirvBuiltinTool;
-    private final int methodIndex;
 
     public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
         super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVMoveFactory(), providers, lirGenRes);
@@ -327,35 +326,9 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
         // Format of the variable "<type>_<number>"
         variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index + "F" + methodIndex);
-        SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
+        SPIRVLIRGenerationResult res = (SPIRVLIRGenerationResult) getResult();
         res.insertVariable(variable);
         return variable;
-    }
-
-    public static class ArrayVariable extends Variable {
-
-        private Variable variable;
-        private Value length;
-
-        public ArrayVariable(Variable variable, Value length) {
-            super(variable.getValueKind(), variable.index);
-            this.variable = variable;
-            this.length = length;
-            this.setName(variable.getName());
-        }
-
-        public Value getLength() {
-            return length;
-        }
-
-        public Variable getVariable() {
-            return variable;
-        }
-
-        @Override
-        public String getName() {
-            return variable.getName();
-        }
     }
 
     public Variable newArrayVariable(Variable variable, Value length) {
@@ -403,5 +376,31 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
         append(new SPIRVControlFlow.Branch(label));
+    }
+
+    public static class ArrayVariable extends Variable {
+
+        private Variable variable;
+        private Value length;
+
+        public ArrayVariable(Variable variable, Value length) {
+            super(variable.getValueKind(), variable.index);
+            this.variable = variable;
+            this.length = length;
+            this.setName(variable.getName());
+        }
+
+        public Value getLength() {
+            return length;
+        }
+
+        public Variable getVariable() {
+            return variable;
+        }
+
+        @Override
+        public String getName() {
+            return variable.getName();
+        }
     }
 }

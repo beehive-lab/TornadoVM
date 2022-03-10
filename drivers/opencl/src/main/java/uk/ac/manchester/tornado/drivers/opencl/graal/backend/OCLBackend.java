@@ -32,6 +32,8 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEAP_ALLOCATION;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCEPTIONS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.lang.reflect.Method;
@@ -184,11 +186,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLReferenceMapBuilder();
     }
 
-    @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
-        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
-    }
-
     private Method getLookupMethod() {
         Method method = null;
         try {
@@ -216,6 +213,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * It allocates the smallest of the requested heap size or the max global memory
      * size.
      */
+    @Override
     public void allocateHeapMemoryOnDevice() {
         long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
@@ -386,6 +384,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return 0;
     }
 
+    @Override
     public OCLDeviceContextInterface getDeviceContext() {
         return deviceContext;
     }
@@ -394,7 +393,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLAssembler(target);
     }
 
-    // FIXME Remove this code
+    @Override
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
     }
@@ -409,7 +408,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
         emitEpilogue(asm);
-
     }
 
     private void emitEpilogue(OCLAssembler asm) {
@@ -573,6 +571,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
+    @Override
     public OCLSuitesProvider getTornadoSuites() {
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
@@ -594,20 +593,23 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 
+    @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
-            StructuredGraph graph, Object stub) {
+    @Override
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
         return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
+    @Override
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {
         return new OCLLIRGenerator(getProviders(), lirGenResult);
     }
 
+    @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }
