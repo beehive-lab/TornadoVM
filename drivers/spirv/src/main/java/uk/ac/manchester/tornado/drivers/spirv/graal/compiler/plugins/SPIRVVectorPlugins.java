@@ -1,3 +1,26 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
@@ -16,14 +39,13 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.GetArrayNode;
@@ -34,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorDivNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorLoadElementNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorMultNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElementProxyNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
@@ -123,7 +146,6 @@ public class SPIRVVectorPlugins {
                 return false;
             }
         });
-
 
         r.register3("set", Receiver.class, int.class, elementType, new InvocationPlugin() {
             @Override
@@ -227,7 +249,7 @@ public class SPIRVVectorPlugins {
     /**
      * If the parameter passed is a vector, we attach vector information (SPIRVKind)
      * to the parameter node.
-     * 
+     *
      * @param plugins
      *            {@link Plugins}
      */

@@ -73,9 +73,6 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -120,6 +117,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptio
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
@@ -192,12 +190,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
-    // FIXME <REFACTOR> <S>
     @Override
     public String decodeDeopt(long value) {
-        DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
-        DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
-        return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
+        return BackendDeopt.decodeDeopt(value, getProviders());
     }
 
     @Override

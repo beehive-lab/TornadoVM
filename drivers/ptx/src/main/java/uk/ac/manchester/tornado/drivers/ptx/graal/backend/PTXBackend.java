@@ -59,6 +59,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
@@ -87,11 +88,11 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final PTXDeviceContext deviceContext;
-    private boolean isInitialised;
     final PTXTargetDescription target;
     private final PTXArchitecture architecture;
     private final PTXCodeProvider codeCache;
     private final OptionValues options;
+    private boolean isInitialised;
 
     public PTXBackend(PTXProviders providers, PTXDeviceContext deviceContext, PTXTargetDescription target, PTXCodeProvider codeCache, OptionValues options) {
         super(providers);
@@ -106,7 +107,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     @Override
     public String decodeDeopt(long value) {
-        return null;
+        return BackendDeopt.decodeDeopt(value, getProviders());
     }
 
     @Override

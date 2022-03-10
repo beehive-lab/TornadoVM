@@ -74,9 +74,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -85,6 +82,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
@@ -127,28 +125,18 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    private boolean backEndInitialized;
-
-    @Override
-    public OCLTargetDescription getTarget() {
-        return target;
-    }
-
+    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
+    private static boolean isFPGAInit = false;
     final OptionValues options;
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
     final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
-    OCLInstalledCode lookupCode;
-
     final ScheduleMetaData scheduleMeta;
-
+    OCLInstalledCode lookupCode;
+    private boolean backEndInitialized;
     private boolean lookupCodeAvailable;
-
-    private static boolean isFPGAInit = false;
-
-    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLDeviceContextInterface deviceContext) {
         super(providers);
@@ -167,21 +155,28 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
+    @SuppressWarnings("unused")
+    private static Object lookupBufferAddress() {
+        return CompilerInternals.getSlotsAddress();
+    }
+
+    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
+        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
+    }
+
+    @Override
+    public OCLTargetDescription getTarget() {
+        return target;
+    }
+
     @Override
     public String decodeDeopt(long value) {
-        DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
-        DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
-        return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
+        return BackendDeopt.decodeDeopt(value, getProviders());
     }
 
     @Override
     public boolean isInitialised() {
         return backEndInitialized;
-    }
-
-    @SuppressWarnings("unused")
-    private static Object lookupBufferAddress() {
-        return CompilerInternals.getSlotsAddress();
     }
 
     @Override
@@ -367,10 +362,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
         lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
         return meta;
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
-        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
     @Override
