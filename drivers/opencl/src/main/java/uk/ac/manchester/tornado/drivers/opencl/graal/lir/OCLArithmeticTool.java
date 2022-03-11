@@ -494,8 +494,8 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         if (memoryAccess.getIndex() instanceof ConstantValue) {
             ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
             int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
-            int s = parsedIntegerIndex / oclKind.getVectorLength();
-            privateOffsetValue = new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(s));
+            int index = parsedIntegerIndex / oclKind.getVectorLength();
+            privateOffsetValue = new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
         }
         return privateOffsetValue;
     }
