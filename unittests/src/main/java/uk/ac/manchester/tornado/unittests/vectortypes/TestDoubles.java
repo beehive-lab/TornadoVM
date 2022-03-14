@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,9 +34,12 @@ import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
+import uk.ac.manchester.tornado.api.collections.types.VectorDouble8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {
+
+    public static final double DELTA = 0.001;
 
     private static void addDouble2(Double2 a, Double2 b, VectorDouble results) {
         Double2 d2 = Double2.add(a, b);
@@ -59,7 +62,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(8.0, output.get(i), 0.001);
+            assertEquals(8.0, output.get(i), DELTA);
         }
     }
 
@@ -84,7 +87,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(12.0, output.get(i), 0.001);
+            assertEquals(12.0, output.get(i), DELTA);
         }
     }
 
@@ -109,7 +112,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(20.0, output.get(i), 0.001);
+            assertEquals(20.0, output.get(i), DELTA);
         }
     }
 
@@ -134,7 +137,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(72., output.get(i), 0.001);
+            assertEquals(72., output.get(i), DELTA);
         }
     }
 
@@ -165,7 +168,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + i, output[i], 0.001);
+            assertEquals(i + i, output[i], DELTA);
         }
     }
 
@@ -213,7 +216,7 @@ public class TestDoubles extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        assertEquals(seqReduce[0], outputReduce[0], 0.001);
+        assertEquals(seqReduce[0], outputReduce[0], DELTA);
     }
 
     public static void addVectorDouble2(VectorDouble2 a, VectorDouble2 b, VectorDouble2 results) {
@@ -244,8 +247,8 @@ public class TestDoubles extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             Double2 sequential = new Double2(i + (size - i), i + (size - i));
-            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
-            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getX(), output.get(i).getX(), DELTA);
+            assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
         }
     }
 
@@ -277,9 +280,9 @@ public class TestDoubles extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             Double3 sequential = new Double3(i + (size - i), i + (size - i), i + (size - i));
-            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
-            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
-            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+            assertEquals(sequential.getX(), output.get(i).getX(), DELTA);
+            assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), DELTA);
         }
     }
 
@@ -311,10 +314,126 @@ public class TestDoubles extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             Double4 sequential = new Double4(i + (size - i), i + (size - i), i + (size - i), i + (size - i));
-            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
-            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
-            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
-            assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+            assertEquals(sequential.getX(), output.get(i).getX(), DELTA);
+            assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), DELTA);
+            assertEquals(sequential.getW(), output.get(i).getW(), DELTA);
+        }
+    }
+
+    public static void testPrivateVectorDouble2(VectorDouble2 output) {
+        VectorDouble2 vectorDouble2 = new VectorDouble2(output.getLength());
+
+        for (int i = 0; i < vectorDouble2.getLength(); i++) {
+            vectorDouble2.set(i, new Double2(i, i));
+        }
+
+        Double2 sum = new Double2(0, 0);
+
+        for (int i = 0; i < vectorDouble2.getLength(); i++) {
+            Double2 f = vectorDouble2.get(i);
+            sum = Double2.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    @Test
+    public void privateVectorDouble2() {
+        int size = 16;
+        VectorDouble2 sequentialOutput = new VectorDouble2(size);
+        VectorDouble2 tornadoOutput = new VectorDouble2(size);
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestDoubles::testPrivateVectorDouble2, tornadoOutput);
+        ts.streamOut(tornadoOutput);
+        ts.execute();
+
+        testPrivateVectorDouble2(sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
+        }
+    }
+
+    public static void testPrivateVectorDouble4(VectorDouble4 output) {
+        VectorDouble4 vectorDouble4 = new VectorDouble4(output.getLength());
+
+        for (int i = 0; i < vectorDouble4.getLength(); i++) {
+            vectorDouble4.set(i, new Double4(i, i, i, i));
+        }
+
+        Double4 sum = new Double4(0, 0, 0, 0);
+
+        for (int i = 0; i < vectorDouble4.getLength(); i++) {
+            Double4 f = vectorDouble4.get(i);
+            sum = Double4.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    @Test
+    public void privateVectorDouble4() {
+        int size = 16;
+        VectorDouble4 sequentialOutput = new VectorDouble4(size);
+        VectorDouble4 tornadoOutput = new VectorDouble4(size);
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestDoubles::testPrivateVectorDouble4, tornadoOutput);
+        ts.streamOut(tornadoOutput);
+        ts.execute();
+
+        testPrivateVectorDouble4(sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
+            assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ(), DELTA);
+            assertEquals(sequentialOutput.get(i).getW(), tornadoOutput.get(i).getW(), DELTA);
+        }
+    }
+
+    public static void testPrivateVectorDouble8(VectorDouble8 output) {
+        VectorDouble8 vectorDouble8 = new VectorDouble8(output.getLength());
+
+        for (int i = 0; i < vectorDouble8.getLength(); i++) {
+            vectorDouble8.set(i, new Double8(i, i, i, i, i, i, i, i));
+        }
+
+        Double8 sum = new Double8(0, 0, 0, 0, 0, 0, 0, 0);
+
+        for (int i = 0; i < vectorDouble8.getLength(); i++) {
+            Double8 f = vectorDouble8.get(i);
+            sum = Double8.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    @Test
+    public void privateVectorDouble8() {
+        int size = 16;
+        VectorDouble8 sequentialOutput = new VectorDouble8(16);
+        VectorDouble8 tornadoOutput = new VectorDouble8(16);
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestDoubles::testPrivateVectorDouble8, tornadoOutput);
+        ts.streamOut(tornadoOutput);
+        ts.execute();
+
+        testPrivateVectorDouble8(sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getS0(), tornadoOutput.get(i).getS0(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS1(), tornadoOutput.get(i).getS1(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS2(), tornadoOutput.get(i).getS2(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS3(), tornadoOutput.get(i).getS3(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS4(), tornadoOutput.get(i).getS4(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS5(), tornadoOutput.get(i).getS5(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS6(), tornadoOutput.get(i).getS6(), DELTA);
+            assertEquals(sequentialOutput.get(i).getS7(), tornadoOutput.get(i).getS7(), DELTA);
         }
     }
 
