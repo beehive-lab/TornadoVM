@@ -24,14 +24,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.ATAN2;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVBuiltinTool {
