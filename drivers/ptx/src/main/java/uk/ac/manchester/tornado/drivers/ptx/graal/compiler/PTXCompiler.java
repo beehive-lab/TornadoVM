@@ -287,14 +287,19 @@ public class PTXCompiler {
             methods.addAll(Arrays.asList(kernelCompResult.getMethods()));
         }
 
+        // @formatter:off
         /*
          * Given the non-inlined methods A, B, C, D and the call graph below, method D
-         * can be compiled twice. A → B → D ↘ C ↗ We use hash set below to prevent this.
+         * can be compiled twice.
+         *     A → B → D
+         *       ↘ C ↗
+         * We use hash set below to prevent this.
          */
+        // @formatter:on
         final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
-        final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
-        while (!worklist.isEmpty()) {
-            final ResolvedJavaMethod currentMethod = worklist.pop();
+        final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
+        while (!workList.isEmpty()) {
+            final ResolvedJavaMethod currentMethod = workList.pop();
             if (nonInlinedCompiledMethods.contains(currentMethod)) {
                 continue;
             } else {
@@ -310,7 +315,7 @@ public class PTXCompiler {
                     .includePrintf(false).withBatchThreads(0).build();
 
             methodCompilationRequest.execute();
-            worklist.addAll(compResult.getNonInlinedMethods());
+            workList.addAll(compResult.getNonInlinedMethods());
 
             if (DUMP_COMPILED_METHODS) {
                 methods.add(graph.method());

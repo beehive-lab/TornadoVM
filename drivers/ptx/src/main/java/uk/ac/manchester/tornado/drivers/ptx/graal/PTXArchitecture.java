@@ -156,11 +156,9 @@ public class PTXArchitecture extends Architecture {
     }
 
     private abstract static class PTXRegister extends ArchitectureRegister {
-        public final PTXKind ptxKind;
 
         public PTXRegister(String name, PTXKind ptxKind) {
             super(0, name, ptxKind);
-            this.ptxKind = ptxKind;
         }
     }
 
@@ -172,7 +170,7 @@ public class PTXArchitecture extends Architecture {
 
         @Override
         public String getDeclaration() {
-            return String.format(".param .%s %s", ptxKind.toString(), name);
+            return String.format(".param .%s %s", getLirKind().toString(), name);
         }
     }
 
