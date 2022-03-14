@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -162,6 +162,12 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         Value input = builder.operand(getValue());
         Value result;
         switch (operation()) {
+            case ASIN:
+                result = gen.genFloatASin(input);
+                break;
+            case ACOS:
+                result = gen.genFloatACos(input);
+                break;
             case ATAN:
                 result = gen.genFloatATan(input);
                 break;
@@ -203,6 +209,10 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     private static double doCompute(double value, Operation op) {
         switch (op) {
+            case ASIN:
+                return Math.asin(value);
+            case ACOS:
+                return Math.acos(value);
             case FABS:
                 return Math.abs(value);
             case EXP:
@@ -220,6 +230,10 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     private static float doCompute(float value, Operation op) {
         switch (op) {
+            case ASIN:
+                return (float) Math.asin(value);
+            case ACOS:
+                return (float) Math.acos(value);
             case FABS:
                 return Math.abs(value);
             case EXP:

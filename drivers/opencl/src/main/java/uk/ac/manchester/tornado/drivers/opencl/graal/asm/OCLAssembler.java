@@ -704,6 +704,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic TAN = new OCLUnaryIntrinsic("tan");
         public static final OCLUnaryIntrinsic TANH = new OCLUnaryIntrinsic("tanh");
         public static final OCLUnaryIntrinsic ATAN = new OCLUnaryIntrinsic("atan");
+        public static final OCLUnaryIntrinsic ASIN = new OCLUnaryIntrinsic("asin");
+        public static final OCLUnaryIntrinsic ACOS = new OCLUnaryIntrinsic("acos");
 
         public static final OCLUnaryIntrinsic LOCAL_MEMORY = new OCLUnaryIntrinsic("__local");
 
@@ -842,6 +844,8 @@ public final class OCLAssembler extends Assembler {
 
         public static final OCLBinaryIntrinsic INT_MIN = new OCLBinaryIntrinsic("min");
         public static final OCLBinaryIntrinsic INT_MAX = new OCLBinaryIntrinsic("max");
+
+        public static final OCLBinaryIntrinsic ATAN2 = new OCLBinaryIntrinsic("atan2");
 
         public static final OCLBinaryIntrinsic FLOAT_MIN = new OCLBinaryIntrinsic("fmin");
         public static final OCLBinaryIntrinsic FLOAT_MAX = new OCLBinaryIntrinsic("fmax");

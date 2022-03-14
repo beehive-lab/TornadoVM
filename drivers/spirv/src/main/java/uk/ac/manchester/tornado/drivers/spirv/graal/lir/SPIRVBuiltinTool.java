@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -250,8 +250,8 @@ public class SPIRVBuiltinTool {
     }
 
     public Value genFloatATan2(Value x, Value y) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatAtan2: atan(%s, %s)", x, y);
+        return new SPIRVBinary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ATAN2, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatATan2pi(Value x, Value y) {

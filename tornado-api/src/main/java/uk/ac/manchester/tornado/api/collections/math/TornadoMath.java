@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -329,4 +329,15 @@ public class TornadoMath {
         return (float) Math.sqrt(value);
     }
 
+    public static float floatAtan2(float a, float b) {
+        return (float) Math.atan2(a, b);
+    }
+
+    public static float floatAcos(float a) {
+        return (float) Math.acos(a);
+    }
+
+    public static float floatAsin(float a) {
+        return (float) Math.asin(a);
+    }
 }

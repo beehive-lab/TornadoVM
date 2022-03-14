@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -25,6 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.ATAN2;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ACOS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ASIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
@@ -131,6 +134,14 @@ public class OCLMathPlugins {
     }
 
     private static void registerTrigonometric1Plugins(Registration r, Class<?> type, JavaKind kind) {
+        r.register2("floatAtan2", type, type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, ATAN2, kind)));
+                return true;
+            }
+        });
+
         r.register1("floatAtan", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
@@ -151,6 +162,22 @@ public class OCLMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, COS, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatAcos", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, ACOS, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatAsin", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, ASIN, kind)));
                 return true;
             }
         });
