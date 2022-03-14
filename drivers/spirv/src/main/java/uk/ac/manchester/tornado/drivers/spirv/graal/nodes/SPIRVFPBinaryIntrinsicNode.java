@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -106,6 +106,8 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
 
     private static double doCompute(double x, double y, SPIRVOperation op) {
         switch (op) {
+            case ATAN2:
+                return Math.atan2(x, y);
             case FMIN:
                 return Math.min(x, y);
             case FMAX:
@@ -119,6 +121,8 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
 
     private static float doCompute(float x, float y, SPIRVOperation op) {
         switch (op) {
+            case ATAN2:
+                return (float) Math.atan2(x, y);
             case FMIN:
                 return Math.min(x, y);
             case FMAX:
@@ -175,6 +179,9 @@ public class SPIRVFPBinaryIntrinsicNode extends BinaryNode implements Arithmetic
         Value y = builder.operand(getY());
         Value result;
         switch (operation()) {
+            case ATAN2:
+                result = gen.genFloatATan2(x, y);
+                break;
             case FMIN:
                 result = gen.genFloatMin(x, y);
                 break;

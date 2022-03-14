@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -160,6 +160,12 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         Value input = builder.operand(getValue());
         Value result;
         switch (operation()) {
+            case ASIN:
+                result = gen.genFloatASin(input);
+                break;
+            case ACOS:
+                result = gen.genFloatACos(input);
+                break;
             case FABS:
                 result = gen.genFloatAbs(input);
                 break;
@@ -200,6 +206,10 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
 
     private static double doCompute(double value, SPIRVUnaryOperation op) {
         switch (op) {
+            case ASIN:
+                return Math.asin(value);
+            case ACOS:
+                return Math.acos(value);
             case FABS:
                 return Math.abs(value);
             case EXP:
@@ -223,6 +233,10 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
 
     private static float doCompute(float value, SPIRVUnaryOperation op) {
         switch (op) {
+            case ASIN:
+                return (float) Math.asin(value);
+            case ACOS:
+                return (float) Math.acos(value);
             case FABS:
                 return Math.abs(value);
             case EXP:
