@@ -508,7 +508,6 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
         if (spirvKind.isVector()) {
             if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
-
                 // Use a vector intrinsic within private/local memory with index value.
                 SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
                 SPIRVAddressCast cast = new SPIRVAddressCast(indexedAccess.getValue(), indexedAccess.getMemoryRegion(), LIRKind.value(spirvKind));
