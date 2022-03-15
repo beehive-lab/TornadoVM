@@ -37,8 +37,10 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInst;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpPhi;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpPtrCastToGeneric;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpStore;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
@@ -957,7 +959,7 @@ public class SPIRVLIRStmt {
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
-            SPIRVId idLoad = asm.module.getNextId();
+            SPIRVId idLoad;
 
             // We force to load a pointer to long since the arrays from a ptr to the
             // device's heap
@@ -967,6 +969,7 @@ public class SPIRVLIRStmt {
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 idLoad = addressToLoad;
             } else {
+                idLoad = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpLoad( //
                         typeLoad, //
                         idLoad, //
@@ -1007,6 +1010,93 @@ public class SPIRVLIRStmt {
 
             SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
             SPIRVMultipleOperands operandsIntrinsic = new SPIRVMultipleOperands(value, baseIndex, ptrConversionId);
+
+            SPIRVId idVoid = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_VOID);
+            SPIRVId result = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpExtInst(idVoid, //
+                    result, //
+                    set, //
+                    intrinsic, //
+                    operandsIntrinsic));
+        }
+    }
+
+    @Opcode("STORE_VECTOR_COLLECTION")
+    public static class StoreVectorCollectionStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<StoreVectorCollectionStmt> TYPE = LIRInstructionClass.create(StoreVectorCollectionStmt.class);
+
+        @Use
+        protected Value rhs;
+
+        @Use
+        protected SPIRVAddressCast cast;
+
+        @Use
+        protected SPIRVUnary.AbstractMemoryAccess address;
+
+        @Use
+        protected Value index;
+
+        public StoreVectorCollectionStmt(SPIRVAddressCast cast, SPIRVUnary.AbstractMemoryAccess address, Value rhs, Value index) {
+            super(TYPE);
+            this.cast = cast;
+            this.address = address;
+            this.rhs = rhs;
+            this.index = index;
+        }
+
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            SPIRVId addressToLoad = asm.lookUpLIRInstructions(address.getValue());
+
+            SPIRVKind vectorElementKind = ((SPIRVKind) cast.getLIRKind().getPlatformKind()).getElementKind();
+
+            SPIRVId ptrConversionId = asm.module.getNextId();
+            SPIRVId re = asm.primitives.getPtrToTypeFunctionPrimitive(vectorElementKind);
+
+            SPIRVId element = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+            SPIRVMultipleOperands op = new SPIRVMultipleOperands(element);
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(re, ptrConversionId, addressToLoad, element, op));
+            asm.registerLIRInstructionValue(cast, ptrConversionId);
+
+            SPIRVId value;
+            if (rhs instanceof ConstantValue) {
+                value = asm.lookUpConstant(((ConstantValue) this.rhs).getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+            } else {
+                value = asm.lookUpLIRInstructions(rhs);
+                SPIRVId resultType = asm.primitives.getTypePrimitive((SPIRVKind) rhs.getPlatformKind());
+                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    SPIRVId loadID = asm.module.getNextId();
+                    asm.currentBlockScope().add(new SPIRVOpLoad( //
+                            resultType, // type of load
+                            loadID, // new id
+                            value, // pointer
+                            new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(rhs.getPlatformKind().getSizeInBytes()))) //
+                    ));
+                    value = loadID;
+                }
+            }
+
+            SPIRVId genericResult = asm.module.getNextId();
+            SPIRVId ptrGeneric = asm.primitives.getPtrGenericPrimitive(vectorElementKind);
+            asm.currentBlockScope().add(new SPIRVOpPtrCastToGeneric(ptrGeneric, genericResult, ptrConversionId));
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit StoreVectorCollectionStmt in address: " + cast + " <- " + rhs);
+
+            SPIRVId set = asm.getOpenclImport();
+            SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.VSTOREN;
+
+            SPIRVId baseIndex;
+            if (index instanceof ConstantValue) {
+                baseIndex = asm.lookUpConstant(((ConstantValue) this.index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
+            } else {
+                baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+            }
+
+            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
+            SPIRVMultipleOperands operandsIntrinsic = new SPIRVMultipleOperands(value, baseIndex, genericResult);
 
             SPIRVId idVoid = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_VOID);
             SPIRVId result = asm.module.getNextId();
@@ -1201,24 +1291,42 @@ public class SPIRVLIRStmt {
         }
     }
 
-    @Opcode("INDEXED_LOAD_ACCESS")
-    public static class IndexedLoadMemAccess extends AbstractInstruction {
-
-        public static final LIRInstructionClass<IndexedLoadMemAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemAccess.class);
+    protected abstract static class AbstractIndexedLoadAccess extends AbstractInstruction {
 
         @Def
         protected AllocatableValue result;
 
+        protected AbstractIndexedLoadAccess(LIRInstructionClass<? extends LIRInstruction> c, AllocatableValue result) {
+            super(c);
+            this.result = result;
+        }
+
+        protected void emitStoreIfNeeded(SPIRVAssembler asm, SPIRVId loadId, SPIRVKind spirvKind) {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                asm.registerLIRInstructionValue(result, loadId);
+            } else {
+                SPIRVId storeId = asm.lookUpLIRInstructions(result);
+                asm.currentBlockScope().add(new SPIRVOpStore( //
+                        storeId, //
+                        loadId, //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
+                ));
+                asm.registerLIRInstructionValue(result, storeId);
+            }
+        }
+    }
+
+    @Opcode("INDEXED_LOAD_ACCESS")
+    public static class IndexedLoadMemAccess extends AbstractIndexedLoadAccess {
+
+        public static final LIRInstructionClass<IndexedLoadMemAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemAccess.class);
+
         @Use
         protected SPIRVUnary.MemoryIndexedAccess address;
 
-        @Use
-        protected Value index;
-
         public IndexedLoadMemAccess(SPIRVUnary.MemoryIndexedAccess address, AllocatableValue result) {
-            super(TYPE);
+            super(TYPE, result);
             this.address = address;
-            this.result = result;
         }
 
         @Override
@@ -1227,12 +1335,12 @@ public class SPIRVLIRStmt {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
                     "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
 
-            address.emitForLoad(asm);
-
-            SPIRVId addressId = asm.lookUpLIRInstructions(address);
             SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
 
+            address.emitForLoad(asm, spirvKind);
+
+            SPIRVId addressId = asm.lookUpLIRInstructions(address);
             SPIRVId loadId = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpLoad( //
                     type, //
@@ -1244,19 +1352,84 @@ public class SPIRVLIRStmt {
             ));
 
             asm.emitValue(crb, result);
-            SPIRVId storeId = asm.lookUpLIRInstructions(result);
 
-            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                asm.registerLIRInstructionValue(result, loadId);
+            emitStoreIfNeeded(asm, loadId, spirvKind);
+        }
+    }
+
+    @Opcode("INDEXED_LOAD_COLLECTION_ACCESS")
+    public static class IndexedLoadMemCollectionAccess extends AbstractIndexedLoadAccess {
+
+        public static final LIRInstructionClass<IndexedLoadMemCollectionAccess> TYPE = LIRInstructionClass.create(IndexedLoadMemCollectionAccess.class);
+
+        @Use
+        protected SPIRVUnary.MemoryIndexedAccess address;
+
+        @Use
+        protected Value offsetIndex;
+
+        public IndexedLoadMemCollectionAccess(SPIRVUnary.MemoryIndexedAccess address, AllocatableValue result, Value offset) {
+            super(TYPE, result);
+            this.address = address;
+            this.offsetIndex = offset;
+        }
+
+        /**
+         * This method generates the following structure for TornadoVM collections
+         * (e.g., VectorFloat2)
+         *
+         * <code>
+         *         %301 = OpInBoundsPtrAccessChain %_ptr_Function_double %spirv_d_1F0 %ulong_0 %ulong_0
+         *         %302 = OpPtrCastToGeneric %_ptr_Generic_double %301
+         *         %303 = OpExtInst %v2double %1 vloadn %ulong_0 %302 2
+         *                OpStore %spirv_v2d_50F0 %303 Aligned 16
+         * </code>
+         *
+         * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
+         * @param asm
+         *            {@link SPIRVAssembler}
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV,
+                    "emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
+
+            SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
+
+            address.emitForLoad(asm, spirvKind);
+
+            SPIRVId inBoundsAccess = asm.lookUpLIRInstructions(address);
+
+            SPIRVId genericResult = asm.module.getNextId();
+            SPIRVId ptrGeneric = asm.primitives.getPtrGenericPrimitive(spirvKind.getElementKind());
+            asm.currentBlockScope().add(new SPIRVOpPtrCastToGeneric(ptrGeneric, genericResult, inBoundsAccess));
+
+            SPIRVId setOpenCLImportId = asm.getOpenclImport();
+            SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic builtIn = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.VLOADN;
+
+            SPIRVId baseIndex;
+            if (offsetIndex instanceof ConstantValue) {
+                baseIndex = asm.lookUpConstant(((ConstantValue) offsetIndex).getConstant().toValueString(), (SPIRVKind) offsetIndex.getPlatformKind());
             } else {
-                asm.currentBlockScope().add(new SPIRVOpStore( //
-                        storeId, //
-                        loadId, //
-                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(spirvKind.getByteCount()))) //
-                ));
-                asm.registerLIRInstructionValue(result, storeId);
+                baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
             }
 
+            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.getValue(), builtIn.getName());
+            SPIRVMultipleOperands operandsIntrinsic = new SPIRVMultipleOperands(baseIndex, genericResult, new SPIRVLiteralInteger(spirvKind.getVectorLength()));
+
+            SPIRVId vectorTypeID = asm.primitives.getTypePrimitive(spirvKind);
+            SPIRVId loadId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpExtInst(vectorTypeID, //
+                    loadId, //
+                    setOpenCLImportId, //
+                    intrinsic, //
+                    operandsIntrinsic));
+
+            asm.emitValue(crb, result);
+
+            emitStoreIfNeeded(asm, loadId, spirvKind);
         }
     }
 

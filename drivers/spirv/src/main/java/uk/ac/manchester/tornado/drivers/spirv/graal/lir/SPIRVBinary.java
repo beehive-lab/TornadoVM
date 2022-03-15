@@ -92,6 +92,26 @@ public class SPIRVBinary {
             return binaryOperation;
         }
 
+        private SPIRVId genTypeConversionIfNeeded(SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind convertionKind, SPIRVId instructionToConvert) {
+            if (convertionKind != null && convertionKind != spirvKind) {
+                SPIRVId resultConversion = asm.module.getNextId();
+                SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
+                asm.currentBlockScope().add(new SPIRVOpSConvert(idConversionType, resultConversion, instructionToConvert));
+                return resultConversion;
+            }
+            return instructionToConvert;
+        }
+
+        private SPIRVId genTypeUConversionIfNeeded(SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind convertionKind, SPIRVId instructionToConvert) {
+            if (convertionKind != null && convertionKind != spirvKind) {
+                SPIRVId resultConversion = asm.module.getNextId();
+                SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
+                asm.currentBlockScope().add(new SPIRVOpUConvert(idConversionType, resultConversion, instructionToConvert));
+                return resultConversion;
+            }
+            return instructionToConvert;
+        }
+
         protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind convertionKind) {
             if (inputValue instanceof ConstantValue) {
                 SPIRVKind kind = (SPIRVKind) inputValue.getPlatformKind();
@@ -103,7 +123,7 @@ public class SPIRVBinary {
                 }
 
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                    return param;
+                    return genTypeUConversionIfNeeded(asm, spirvKind, convertionKind, param);
                 }
 
                 // We need to perform a load first
@@ -121,14 +141,7 @@ public class SPIRVBinary {
                                         new SPIRVLiteralInteger(spirvKind.getByteCount())))//
                 ));
 
-                if (convertionKind != null && convertionKind != spirvKind) {
-                    SPIRVId resultConversion = asm.module.getNextId();
-                    SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
-                    asm.currentBlockScope().add(new SPIRVOpSConvert(idConversionType, resultConversion, load));
-                    load = resultConversion;
-                }
-
-                return load;
+                return genTypeConversionIfNeeded(asm, spirvKind, convertionKind, load);
             }
         }
 

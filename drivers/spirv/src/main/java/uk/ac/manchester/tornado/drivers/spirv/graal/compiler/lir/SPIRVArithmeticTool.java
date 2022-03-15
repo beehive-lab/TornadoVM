@@ -29,15 +29,19 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
@@ -51,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect;
+import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
@@ -438,8 +443,14 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
         if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
             SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
-            getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
+            if (spirvKind.isVector() && indexedAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+                Value offset = getOffsetValue(spirvKind, indexedAccess);
+                getGen().append(new SPIRVLIRStmt.IndexedLoadMemCollectionAccess(indexedAccess, result, offset));
+            } else {
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+                getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
+            }
         } else if (address instanceof MemoryAccess) {
             SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
             Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit SPIRVAddressCast in address: " + address);
@@ -459,6 +470,28 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return null;
     }
 
+    private Value getOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
+        if (memoryAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.GLOBAL) {
+            return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
+        } else {
+            return getPrivateOffsetValue(spirvKind, memoryAccess);
+        }
+    }
+
+    private Value getPrivateOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
+        Value privateOffsetValue = null;
+        if (memoryAccess == null) {
+            return null;
+        }
+        if (memoryAccess.getIndex() instanceof ConstantValue) {
+            ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
+            int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
+            int index = parsedIntegerIndex / spirvKind.getVectorLength();
+            privateOffsetValue = new ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_64), JavaConstant.forInt(index));
+        }
+        return privateOffsetValue;
+    }
+
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
@@ -474,9 +507,18 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         if (spirvKind.isVector()) {
-            MemoryAccess memoryAccess2 = (MemoryAccess) address;
-            SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memoryAccess2.getMemoryRegion(), LIRKind.value(spirvKind));
-            getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, memoryAccess2, input));
+            if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
+                // Use a vector intrinsic within private/local memory with index value.
+                SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
+                SPIRVAddressCast cast = new SPIRVAddressCast(indexedAccess.getValue(), indexedAccess.getMemoryRegion(), LIRKind.value(spirvKind));
+                Value offset = getOffsetValue(spirvKind, indexedAccess);
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreVectorCollectionStmt in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+                getGen().append(new SPIRVLIRStmt.StoreVectorCollectionStmt(cast, indexedAccess, input, offset));
+            } else {
+                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreVectorStmt in address: " + address);
+                getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, (MemoryAccess) memAccess, input));
+            }
         } else {
             if (memAccess != null) {
                 if (address instanceof MemoryAccess) {

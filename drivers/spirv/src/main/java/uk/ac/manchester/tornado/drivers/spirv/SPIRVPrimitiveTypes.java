@@ -55,6 +55,7 @@ public class SPIRVPrimitiveTypes {
     private final Set<SPIRVKind> capabilities;
 
     private boolean vector16Capability;
+    private boolean genericCapability;
 
     public SPIRVPrimitiveTypes(uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module) {
         this.module = module;
@@ -145,6 +146,11 @@ public class SPIRVPrimitiveTypes {
 
     public SPIRVId getPtrOpTypePointerWithStorage(SPIRVKind primitive, SPIRVStorageClass storageClass) {
         SPIRVId primitiveId = getTypePrimitive(primitive);
+        if (storageClass.equals(SPIRVStorageClass.Generic()) && !genericCapability) {
+            // Requires Capability Generic Pointer
+            module.add(new SPIRVOpCapability(SPIRVCapability.GenericPointer()));
+            genericCapability = true;
+        }
         if (!ptrWithStorageClassToPrimitive.containsKey(primitive)) {
             HashMap<String, SPIRVId> spirvStorageClassSPIRVIdMap = new HashMap<>();
             SPIRVId resultType = module.getNextId();
@@ -182,5 +188,9 @@ public class SPIRVPrimitiveTypes {
             undefTable.put(vectorType, undefId);
             return undefId;
         }
+    }
+
+    public SPIRVId getPtrGenericPrimitive(SPIRVKind primitiveKind) {
+        return getPtrOpTypePointerWithStorage(primitiveKind, SPIRVStorageClass.Generic());
     }
 }

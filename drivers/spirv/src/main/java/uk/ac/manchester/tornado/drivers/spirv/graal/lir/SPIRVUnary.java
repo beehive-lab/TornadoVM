@@ -235,11 +235,13 @@ public class SPIRVUnary {
         }
     }
 
-    public static class AbstractMemoryAccess extends UnaryConsumer {
+    public abstract static class AbstractMemoryAccess extends UnaryConsumer {
 
         protected AbstractMemoryAccess(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
             super(opcode, valueKind, value);
         }
+
+        public abstract SPIRVMemoryBase getMemoryRegion();
     }
 
     public static class MemoryAccess extends AbstractMemoryAccess {
@@ -390,8 +392,8 @@ public class SPIRVUnary {
 
         }
 
-        public void emitForLoad(SPIRVAssembler asm) {
-            SPIRVId arrayAccessId = asm.module.getNextId();
+        public void emitForLoad(SPIRVAssembler asm, SPIRVKind resultKind) {
+            SPIRVId resultArrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
@@ -436,8 +438,14 @@ public class SPIRVUnary {
                 throw new RuntimeException("Memory access not valid for a SPIRVOpInBoundsPtrAccessChain instruction");
             }
 
-            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
-            asm.registerLIRInstructionValue(this, arrayAccessId);
+            if (resultKind.isVector() && getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
+                // When we copy a collection from private to local, the index is set in the
+                // VLOAD intrinsic. Thus, as index, we choose 0 to comply with CLANG/LLVM
+                indexId = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+            }
+            // } else {
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, resultArrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
+            asm.registerLIRInstructionValue(this, resultArrayAccessId);
         }
     }
 
