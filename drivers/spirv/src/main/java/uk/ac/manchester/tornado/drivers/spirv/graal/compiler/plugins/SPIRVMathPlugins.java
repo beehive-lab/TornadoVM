@@ -39,6 +39,10 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsi
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntTernaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntUnaryIntrinsicNode;
 
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.ATAN2;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.ACOS;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.ASIN;
+
 public class SPIRVMathPlugins {
 
     public static void registerTornadoMathPlugins(final InvocationPlugins plugins) {
@@ -143,6 +147,30 @@ public class SPIRVMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.ATAN, kind)));
+                return true;
+            }
+        });
+
+        r.register2("floatAtan2", type, type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
+                b.push(kind, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, ATAN2, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatAcos", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, ACOS, kind)));
+                return true;
+            }
+        });
+
+        r.register1("floatAsin", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, ASIN, kind)));
                 return true;
             }
         });
