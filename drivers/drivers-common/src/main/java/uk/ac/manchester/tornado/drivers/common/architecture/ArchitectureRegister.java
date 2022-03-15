@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -18,35 +18,39 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.meta;
+package uk.ac.manchester.tornado.drivers.common.architecture;
 
-import org.graalvm.compiler.core.common.LIRKind;
+import jdk.vm.ci.meta.PlatformKind;
 
-import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLRegister;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+/**
+ * Base Class for holding a Register for each architecture in TornadoVM.
+ */
+public abstract class ArchitectureRegister {
 
-public class OCLStack extends Value {
+    protected final int number;
+    protected final String name;
+    protected final PlatformKind lirKind;
 
-    public static final OCLStack STACK = new OCLStack(OCLAssemblerConstants.FRAME_REF_NAME);
-
-    private final String name;
-
-    protected OCLStack(String name) {
-        super(LIRKind.Illegal);
+    protected ArchitectureRegister(int number, String name, PlatformKind lirKind) {
+        this.number = number;
         this.name = name;
+        this.lirKind = lirKind;
     }
 
-    public OCLRegister getBase() {
-        return OCLArchitecture.stackPointer;
-
+    public String getDeclaration() {
+        return String.format("%s %s", lirKind.toString(), name);
     }
 
-    public String name() {
+    public String getName() {
         return name;
+    }
+
+    public int getNumber() {
+        return number;
+    }
+
+    public PlatformKind getLirKind() {
+        return lirKind;
     }
 }

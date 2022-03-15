@@ -90,6 +90,35 @@ public class PTXLIRGenerator extends LIRGenerator {
         ptxBuiltinTool = new PTXBuiltinTool();
     }
 
+    public static PTXBinaryOp getConditionalOp(Condition condition) {
+        switch (condition) {
+            case AE:
+            case GE:
+                return PTXBinaryOp.SETP_GE;
+            case AT:
+            case GT:
+                return PTXBinaryOp.SETP_GT;
+
+            case EQ:
+                return PTXBinaryOp.SETP_EQ;
+
+            case BE:
+            case LE:
+                return PTXBinaryOp.SETP_LE;
+
+            case BT:
+            case LT:
+                return PTXBinaryOp.SETP_LT;
+            case NE:
+                return PTXBinaryOp.SETP_NE;
+            default:
+                shouldNotReachHere();
+                break;
+
+        }
+        return null;
+    }
+
     @Override
     public PTXLIRKindTool getLIRKindTool() {
         return (PTXLIRKindTool) super.getLIRKindTool();
@@ -277,35 +306,6 @@ public class PTXLIRGenerator extends LIRGenerator {
         return result;
     }
 
-    public static PTXBinaryOp getConditionalOp(Condition condition) {
-        switch (condition) {
-            case AE:
-            case GE:
-                return PTXBinaryOp.SETP_GE;
-            case AT:
-            case GT:
-                return PTXBinaryOp.SETP_GT;
-
-            case EQ:
-                return PTXBinaryOp.SETP_EQ;
-
-            case BE:
-            case LE:
-                return PTXBinaryOp.SETP_LE;
-
-            case BT:
-            case LT:
-                return PTXBinaryOp.SETP_LT;
-            case NE:
-                return PTXBinaryOp.SETP_NE;
-            default:
-                shouldNotReachHere();
-                break;
-
-        }
-        return null;
-    }
-
     /**
      * It generates an IntegerTestMove operation, which moves a value to a parameter
      * based on a bitwise and operation between two values.
@@ -448,7 +448,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public void emitParameterAlloc() {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitParameterAlloc");
-        Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
+        Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.getLirKind()));
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));
     }

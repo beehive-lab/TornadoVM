@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -116,57 +116,6 @@ public class OCLCompiler {
     private static final TimerKey EmitCode = DebugContext.timer("OpenCLEmitCode");
 
     private static final OCLLIRGenerationPhase LIR_GENERATION_PHASE = new OCLLIRGenerationPhase();
-
-    // FIXME <REFACTOR> Remove the inheritance (See SPIRV and PTX)
-    public static class Request<T extends OCLCompilationResult> {
-
-        public final StructuredGraph graph;
-        public final ResolvedJavaMethod installedCodeOwner;
-        public final Object[] args;
-        public final TaskMetaData meta;
-        public final Providers providers;
-        public final OCLBackend backend;
-        public final PhaseSuite<HighTierContext> graphBuilderSuite;
-        public final OptimisticOptimizations optimisticOpts;
-        public final ProfilingInfo profilingInfo;
-        public final TornadoSuites suites;
-        public final TornadoLIRSuites lirSuites;
-        public final T compilationResult;
-        public final CompilationResultBuilderFactory factory;
-        public final boolean isKernel;
-        public final boolean buildGraph;
-        public final long batchThreads;
-
-        public Request(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, OCLBackend backend,
-                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads) {
-            this.graph = graph;
-            this.installedCodeOwner = installedCodeOwner;
-            this.args = args;
-            this.meta = meta;
-            this.providers = providers;
-            this.backend = backend;
-            this.graphBuilderSuite = graphBuilderSuite;
-            this.optimisticOpts = optimisticOpts;
-            this.profilingInfo = profilingInfo;
-            this.suites = suites;
-            this.lirSuites = lirSuites;
-            this.compilationResult = compilationResult;
-            this.factory = factory;
-            this.isKernel = isKernel;
-            this.buildGraph = buildGraph;
-            this.batchThreads = batchThreads;
-        }
-
-        /**
-         * Executes this compilation request.
-         *
-         * @return the result of the compilation
-         */
-        public T execute() {
-            return OCLCompiler.compile(this);
-        }
-    }
 
     /**
      * Services a given compilation request.
@@ -307,7 +256,7 @@ public class OCLCompiler {
             }
             RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
-            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig, graph, stub);
+            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
             LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
 
@@ -445,12 +394,15 @@ public class OCLCompiler {
             Collections.addAll(methods, kernelCompResult.getMethods());
         }
 
+        // @formatter:off
         /*
-         * Given the non-inlined methods A, B, C, D and the call graph below, method D can be compiled twice.
-         * A  → B → D
-         *    ↘ C ↗
+         * Given the non-inlined methods A, B, C, D and the call graph below, method D
+         * can be compiled twice.
+         *           A → B → D
+         *             ↘ C ↗
          * We use hash set below to prevent this.
          */
+        // @formatter:on
         final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
         final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
         while (!workList.isEmpty()) {
@@ -506,5 +458,56 @@ public class OCLCompiler {
         }
 
         return kernelCompResult;
+    }
+
+    // FIXME <REFACTOR> Remove the inheritance (See SPIRV and PTX)
+    public static class Request<T extends OCLCompilationResult> {
+
+        public final StructuredGraph graph;
+        public final ResolvedJavaMethod installedCodeOwner;
+        public final Object[] args;
+        public final TaskMetaData meta;
+        public final Providers providers;
+        public final OCLBackend backend;
+        public final PhaseSuite<HighTierContext> graphBuilderSuite;
+        public final OptimisticOptimizations optimisticOpts;
+        public final ProfilingInfo profilingInfo;
+        public final TornadoSuites suites;
+        public final TornadoLIRSuites lirSuites;
+        public final T compilationResult;
+        public final CompilationResultBuilderFactory factory;
+        public final boolean isKernel;
+        public final boolean buildGraph;
+        public final long batchThreads;
+
+        public Request(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, OCLBackend backend,
+                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
+                T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads) {
+            this.graph = graph;
+            this.installedCodeOwner = installedCodeOwner;
+            this.args = args;
+            this.meta = meta;
+            this.providers = providers;
+            this.backend = backend;
+            this.graphBuilderSuite = graphBuilderSuite;
+            this.optimisticOpts = optimisticOpts;
+            this.profilingInfo = profilingInfo;
+            this.suites = suites;
+            this.lirSuites = lirSuites;
+            this.compilationResult = compilationResult;
+            this.factory = factory;
+            this.isKernel = isKernel;
+            this.buildGraph = buildGraph;
+            this.batchThreads = batchThreads;
+        }
+
+        /**
+         * Executes this compilation request.
+         *
+         * @return the result of the compilation
+         */
+        public T execute() {
+            return OCLCompiler.compile(this);
+        }
     }
 }

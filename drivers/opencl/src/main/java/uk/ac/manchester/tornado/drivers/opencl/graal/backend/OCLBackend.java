@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -32,6 +32,8 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEAP_ALLOCATION;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCEPTIONS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 import java.lang.reflect.Method;
@@ -74,9 +76,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -85,6 +84,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
@@ -127,28 +127,18 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    private boolean backEndInitialized;
-
-    @Override
-    public OCLTargetDescription getTarget() {
-        return target;
-    }
-
+    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
+    private static boolean isFPGAInit = false;
     final OptionValues options;
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
     final OCLDeviceContextInterface deviceContext;
     final OCLCodeProvider codeCache;
-    OCLInstalledCode lookupCode;
-
     final ScheduleMetaData scheduleMeta;
-
+    OCLInstalledCode lookupCode;
+    private boolean backEndInitialized;
     private boolean lookupCodeAvailable;
-
-    private static boolean isFPGAInit = false;
-
-    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
 
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLDeviceContextInterface deviceContext) {
         super(providers);
@@ -167,11 +157,23 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
+    @SuppressWarnings("unused")
+    private static Object lookupBufferAddress() {
+        return CompilerInternals.getSlotsAddress();
+    }
+
+    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
+        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
+    }
+
+    @Override
+    public OCLTargetDescription getTarget() {
+        return target;
+    }
+
     @Override
     public String decodeDeopt(long value) {
-        DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
-        DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
-        return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
+        return BackendDeopt.decodeDeopt(value, getProviders());
     }
 
     @Override
@@ -179,19 +181,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return backEndInitialized;
     }
 
-    @SuppressWarnings("unused")
-    private static Object lookupBufferAddress() {
-        return CompilerInternals.getSlotsAddress();
-    }
-
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return new OCLReferenceMapBuilder();
-    }
-
-    @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
-        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
     }
 
     private Method getLookupMethod() {
@@ -221,6 +213,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * It allocates the smallest of the requested heap size or the max global memory
      * size.
      */
+    @Override
     public void allocateHeapMemoryOnDevice() {
         long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
@@ -369,10 +362,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
-    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
-        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
-    }
-
     @Override
     public void init() {
         if (VIRTUAL_DEVICE_ENABLED) {
@@ -395,6 +384,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return 0;
     }
 
+    @Override
     public OCLDeviceContextInterface getDeviceContext() {
         return deviceContext;
     }
@@ -403,7 +393,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLAssembler(target);
     }
 
-    // FIXME Remove this code
+    @Override
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
     }
@@ -418,7 +408,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
         emitEpilogue(asm);
-
     }
 
     private void emitEpilogue(OCLAssembler asm) {
@@ -582,6 +571,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
+    @Override
     public OCLSuitesProvider getTornadoSuites() {
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
@@ -603,20 +593,23 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 
+    @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
-            StructuredGraph graph, Object stub) {
+    @Override
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
         return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
+    @Override
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {
         return new OCLLIRGenerator(getProviders(), lirGenResult);
     }
 
+    @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }

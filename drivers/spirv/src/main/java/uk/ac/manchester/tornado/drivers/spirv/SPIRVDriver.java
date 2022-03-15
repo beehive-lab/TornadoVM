@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -86,14 +86,14 @@ public final class SPIRVDriver implements TornadoAcceleratorDriver {
             backends[platformIndex] = new SPIRVBackend[numDevices];
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 SPIRVDevice device = platform.getDevice(deviceIndex);
-                backends[platformIndex][deviceIndex] = createSPIRVBackend(options, vmRuntime, vmCon, device, context);
+                backends[platformIndex][deviceIndex] = createSPIRVJITCompiler(options, vmRuntime, vmCon, device, context);
             }
         }
         deviceCount = getNumDevices();
     }
 
-    private SPIRVBackend createSPIRVBackend(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
-        return SPIRVHotSpotBackendFactory.createBackend(options, vmRuntime, vmConfig, device, context);
+    private SPIRVBackend createSPIRVJITCompiler(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
+        return SPIRVHotSpotBackendFactory.createJITCompiler(options, vmRuntime, vmConfig, device, context);
     }
 
     private SPIRVBackend checkAndInitBackend(int platformIndex, int deviceIndex) {

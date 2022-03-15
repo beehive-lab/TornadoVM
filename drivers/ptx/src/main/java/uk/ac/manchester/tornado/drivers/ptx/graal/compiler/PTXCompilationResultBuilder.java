@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -57,13 +57,14 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXControlFlow;
 
 public class PTXCompilationResultBuilder extends CompilationResultBuilder {
+    HashSet<Block> rescheduledBasicBlocks;
     private boolean isKernel;
     private boolean isParallel;
     private Set<ResolvedJavaMethod> nonInlinedMethods;
     private PTXAssembler asm;
     private PTXDeviceContext deviceContext;
-    HashSet<Block> rescheduledBasicBlocks;
     private boolean includePrintf;
+    private PTXLIRGenerationResult lirGenRes;
 
     public PTXCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult) {
@@ -72,28 +73,68 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         this.asm = (PTXAssembler) asm;
     }
 
+    private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
+        try {
+            trace("op: " + op);
+            op.emitCode(crb);
+        } catch (AssertionError | RuntimeException t) {
+            throw new TornadoInternalError(t);
+        }
+    }
+
+    private static boolean isLoopBlock(Block block, Block loopHeader) {
+
+        Set<Block> visited = new HashSet<>();
+        Stack<Block> stack = new Stack<>();
+        stack.push(block);
+
+        while (!stack.isEmpty()) {
+
+            Block b = stack.pop();
+            visited.add(b);
+
+            if (b.getId() < loopHeader.getId()) {
+                return false;
+            } else if (b == loopHeader) {
+                return true;
+            } else {
+                Block[] successors = b.getSuccessors();
+                for (Block bl : successors) {
+                    if (!visited.contains(bl)) {
+                        stack.push(bl);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public PTXLIRGenerationResult getPTXLIRGenerationResult() {
+        return this.lirGenRes;
+    }
+
+    public void setPTXLIRGenerationResult(PTXLIRGenerationResult result) {
+        this.lirGenRes = result;
+    }
+
     public PTXAssembler getAssembler() {
         return asm;
-    }
-
-    public void setKernel(boolean value) {
-        isKernel = value;
-    }
-
-    public void setParallel(boolean value) {
-        isParallel = value;
-    }
-
-    public void setIncludePrintf(boolean value) {
-        this.includePrintf = value;
     }
 
     public boolean getIncludePrintf() {
         return includePrintf;
     }
 
+    public void setIncludePrintf(boolean value) {
+        this.includePrintf = value;
+    }
+
     public boolean getParallel() {
         return isParallel;
+    }
+
+    public void setParallel(boolean value) {
+        isParallel = value;
     }
 
     public void addNonInlinedMethod(ResolvedJavaMethod method) {
@@ -106,6 +147,10 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
     public boolean isKernel() {
         return isKernel;
+    }
+
+    public void setKernel(boolean value) {
+        isKernel = value;
     }
 
     /**
@@ -179,15 +224,6 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
             } catch (TornadoInternalError e) {
                 throw e.addContext("lir instruction", block + "@" + breakInst.id() + " " + breakInst + "\n");
             }
-        }
-    }
-
-    private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
-        try {
-            trace("op: " + op);
-            op.emitCode(crb);
-        } catch (AssertionError | RuntimeException t) {
-            throw new TornadoInternalError(t);
         }
     }
 
@@ -275,38 +311,11 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private static boolean isLoopBlock(Block block, Block loopHeader) {
-
-        Set<Block> visited = new HashSet<>();
-        Stack<Block> stack = new Stack<>();
-        stack.push(block);
-
-        while (!stack.isEmpty()) {
-
-            Block b = stack.pop();
-            visited.add(b);
-
-            if (b.getId() < loopHeader.getId()) {
-                return false;
-            } else if (b == loopHeader) {
-                return true;
-            } else {
-                Block[] successors = b.getSuccessors();
-                for (Block bl : successors) {
-                    if (!visited.contains(bl)) {
-                        stack.push(bl);
-                    }
-                }
-            }
-        }
-        return false;
+    public PTXDeviceContext getDeviceContext() {
+        return this.deviceContext;
     }
 
     public void setDeviceContext(PTXDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-    }
-
-    public PTXDeviceContext getDeviceContext() {
-        return this.deviceContext;
     }
 }

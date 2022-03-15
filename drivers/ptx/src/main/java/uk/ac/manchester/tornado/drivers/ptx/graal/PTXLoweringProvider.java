@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -107,22 +107,36 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNo
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
+/**
+ * Lower IR from one representation to another (e.g., from TornadoVM High-IR to
+ * TornadoVM Mid-IR).
+ */
 public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
 
     private static final boolean USE_ATOMICS = false;
+    private static boolean gpuSnippet = false;
     private final ConstantReflectionProvider constantReflection;
     private TornadoVMConfig vmConfig;
-    private static boolean gpuSnippet = false;
-
-    private PTXGPUReduceSnippets.Templates GPUReduceSnippets;
+    private PTXGPUReduceSnippets.Templates gpuReduceSnippets;
 
     public PTXLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
             ConstantReflectionProvider constantReflection, TargetDescription target, TornadoVMConfig vmConfig) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
+    }
+
+    /**
+     * {@link PTXLoweringProvider#gpuSnippet} is set during the lowering phase.
+     * Therefore, this method must be called after a lowering phase in order to get
+     * the correct result.
+     *
+     * @return boolean
+     */
+    public static boolean isGPUSnippet() {
+        return gpuSnippet;
     }
 
     @Override
@@ -134,7 +148,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
-        this.GPUReduceSnippets = new PTXGPUReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+        this.gpuReduceSnippets = new PTXGPUReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
     @Override
@@ -333,7 +347,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 break;
             }
         }
-        GPUReduceSnippets.lower(storeIndexed, threadID, tool);
+        gpuReduceSnippets.lower(storeIndexed, threadID, tool);
 
         // We append this phase to move floating reads close to their actual usage and
         // set the FixedAccessNode::lastLocationAccess
@@ -499,13 +513,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
-    }
-
-    public static boolean isGPUSnippet() {
-        // PTXLoweringProvider::gpuSnippet gets set during the lowering phase.
-        // Therefore, this getter must be called after a lowering phase in order to get
-        // the correct result
-        return gpuSnippet;
     }
 
     private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {

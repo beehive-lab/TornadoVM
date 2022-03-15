@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1179,11 +1179,11 @@ public class SPIRVLIRStmt {
         }
 
         private boolean isPrivateMemoryAccess() {
-            return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.privateSpace.number;
+            return this.memoryIndexedAccess.getMemoryRegion().getNumber() == SPIRVArchitecture.privateSpace.getNumber();
         }
 
         private boolean isLocalMemoryAccess() {
-            return this.memoryIndexedAccess.getMemoryRegion().number == SPIRVArchitecture.localSpace.number;
+            return this.memoryIndexedAccess.getMemoryRegion().getNumber() == SPIRVArchitecture.localSpace.getNumber();
         }
 
         private void emitStoreIndexedAccessPrivateMemory(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -1333,7 +1333,7 @@ public class SPIRVLIRStmt {
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
-                    "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
+                    "emit IndexedLoadMemAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
 
             SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);

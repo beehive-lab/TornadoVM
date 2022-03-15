@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEAP_ALLOCATION;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,6 +54,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
@@ -73,9 +75,6 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -120,6 +119,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptio
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
@@ -135,7 +135,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVDataBuilder;
-import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator.ArrayVariable;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder;
@@ -185,21 +185,16 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
         buffer.flip();
         File out = new File(filepath);
-        try {
-            FileChannel channel = new FileOutputStream(out, false).getChannel();
+        try (FileChannel channel = new FileOutputStream(out, false).getChannel()) {
             channel.write(buffer);
-            channel.close();
         } catch (IOException e) {
             System.err.println("IO exception: " + e.getMessage());
         }
     }
 
-    // FIXME <REFACTOR> <S>
     @Override
     public String decodeDeopt(long value) {
-        DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
-        DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
-        return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
+        return BackendDeopt.decodeDeopt(value, getProviders());
     }
 
     @Override
@@ -213,6 +208,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
      * It allocates the smallest of the requested heap size or the max global memory
      * size.
      */
+    @Override
     public void allocateHeapMemoryOnDevice() {
         long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, context.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
@@ -245,14 +241,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         methodIndex.incrementAndGet();
     }
 
+    @Override
     public SPIRVSuitesProvider getTornadoSuites() {
         return ((SPIRVProviders) getProviders()).getSuitesProvider();
-    }
-
-    // FIXME <REFACTOR> Common method
-    @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
-        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
     }
 
     @Override
@@ -274,8 +265,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVReferenceMapBuilder();
     }
 
+    @Override
     public SPIRVDeviceContext getDeviceContext() {
-        return context;
+        return this.context;
     }
 
     public void reset() {
@@ -301,21 +293,24 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVFrameMap(getCodeCache(), registerConfig, this);
     }
 
-    // FIXME <Refactor> common method
+    @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         return new SPIRVFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
-            StructuredGraph graph, Object stub) {
-        return new SPIRVIRGenerationResult(compilationId, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+    @Override
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
+        return new SPIRVLIRGenerationResult(compilationId, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
-    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes, final int methodIndex) {
-        return new SPIRVLIRGenerator(getProviders(), lirGenRes, methodIndex);
+    @Override
+    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
+        SPIRVLIRGenerationResult spirvlirGenerationResult = (SPIRVLIRGenerationResult) lirGenRes;
+        return new SPIRVLIRGenerator(getProviders(), lirGenRes, spirvlirGenerationResult.getMethodIndex());
     }
 
+    @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
         return new SPIRVNodeLIRBuilder(graph, lirGen, new SPIRVNodeMatchRules(lirGen));
     }
@@ -342,8 +337,10 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVAssembler(targetDescription);
     }
 
-    public void emitCode(SPIRVCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
+    @Override
+    public void emitCode(CompilationResultBuilder resultBuilder, LIR lir, ResolvedJavaMethod method) {
 
+        SPIRVCompilationResultBuilder crb = (SPIRVCompilationResultBuilder) resultBuilder;
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
 
         asm.setMethodIndex(methodIndex.get());

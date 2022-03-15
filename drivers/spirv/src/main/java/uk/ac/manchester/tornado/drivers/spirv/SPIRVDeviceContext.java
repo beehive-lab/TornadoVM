@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
@@ -63,6 +64,11 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     protected boolean wasReset;
     protected SPIRVEventPool spirvEventPool;
 
+    protected SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
+        init(device, queue);
+        this.spirvContext = context;
+    }
+
     private void init(SPIRVDevice device, SPIRVCommandQueue queue) {
         this.device = device;
         this.queue = queue;
@@ -76,11 +82,6 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         this.wasReset = false;
         this.spirvEventPool = new SPIRVEventPool(Tornado.EVENT_WINDOW);
 
-    }
-
-    public SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
-        init(device, queue);
-        this.spirvContext = context;
     }
 
     public SPIRVContext getSpirvContext() {
@@ -227,59 +228,59 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents) {
-        throw new RuntimeException("Unimplemented");
+        throw new TornadoRuntimeException("Unimplemented");
     }
 
     private ProfilerTransfer createStartAndStopBufferTimers() {
