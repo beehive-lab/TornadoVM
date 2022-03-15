@@ -157,8 +157,11 @@ public class PTXArchitecture extends Architecture {
 
     private abstract static class PTXRegister extends ArchitectureRegister {
 
+        // Constant to represent an unused value for this backend.
+        private static final int UNUSED_NUMBER = 0;
+
         public PTXRegister(String name, PTXKind ptxKind) {
-            super(0, name, ptxKind);
+            super(UNUSED_NUMBER, name, ptxKind);
         }
     }
 

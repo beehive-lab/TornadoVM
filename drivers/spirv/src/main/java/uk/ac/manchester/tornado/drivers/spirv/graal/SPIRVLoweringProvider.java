@@ -131,6 +131,13 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         this.vmConfig = vmConfig;
     }
 
+    /**
+     * {@link SPIRVLoweringProvider#gpuSnippet} is set during the lowering phase.
+     * Therefore, this method must be called after a lowering phase in order to get
+     * the correct result.
+     *
+     * @return boolean
+     */
     public static boolean isGPUSnippet() {
         return gpuSnippet;
     }

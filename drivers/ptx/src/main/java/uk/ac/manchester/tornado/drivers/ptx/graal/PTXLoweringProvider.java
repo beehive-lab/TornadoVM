@@ -128,10 +128,14 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         this.constantReflection = constantReflection;
     }
 
+    /**
+     * {@link PTXLoweringProvider#gpuSnippet} is set during the lowering phase.
+     * Therefore, this method must be called after a lowering phase in order to get
+     * the correct result.
+     *
+     * @return boolean
+     */
     public static boolean isGPUSnippet() {
-        // PTXLoweringProvider::gpuSnippet gets set during the lowering phase.
-        // Therefore, this getter must be called after a lowering phase in order to get
-        // the correct result
         return gpuSnippet;
     }
 
