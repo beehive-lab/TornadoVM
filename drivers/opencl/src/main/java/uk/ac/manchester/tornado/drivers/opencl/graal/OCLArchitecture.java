@@ -113,7 +113,6 @@ public class OCLArchitecture extends Architecture {
      * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
      * and another in which it does not for JDK 11.
      */
-    @Override
     public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();
         return null;
