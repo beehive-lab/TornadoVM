@@ -42,7 +42,7 @@ public class OCLStack extends Value {
     }
 
     public OCLRegister getBase() {
-        return OCLArchitecture.sp;
+        return OCLArchitecture.stackPointer;
 
     }
 

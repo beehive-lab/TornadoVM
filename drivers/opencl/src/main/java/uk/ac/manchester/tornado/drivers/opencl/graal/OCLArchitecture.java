@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2018-2022 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -53,13 +53,13 @@ public class OCLArchitecture extends Architecture {
     public static final OCLMemoryBase localSpace = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL, OCLKind.UCHAR);
     public static final OCLMemoryBase privateSpace = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.PRIVATE, OCLKind.UCHAR);
     public static final OCLMemoryBase atomicSpace = new OCLMemoryBase(5, ATOMICS_REGION_NAME, OCLMemorySpace.GLOBAL, OCLKind.INT);
-    public static OCLRegister sp;
+    public static OCLRegister stackPointer;
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
-        sp = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new OCLRegister[] { globalSpace, sp, constantSpace, localSpace, atomicSpace };
+        stackPointer = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
+        abiRegisters = new OCLRegister[] { globalSpace, stackPointer, constantSpace, localSpace, atomicSpace };
     }
 
     @Override
