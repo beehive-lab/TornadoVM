@@ -124,7 +124,6 @@ public class SPIRVBinary {
 
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return genTypeUConversionIfNeeded(asm, spirvKind, convertionKind, param);
-                    // return param;
                 }
 
                 // We need to perform a load first
