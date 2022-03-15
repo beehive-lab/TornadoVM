@@ -28,7 +28,6 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.RSQRT;
 
-import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -37,6 +36,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
@@ -501,7 +501,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     private Value getOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
-        if (memoryAccess.getBase().memorySpace == OCLMemorySpace.GLOBAL.getBase().memorySpace) {
+        if (memoryAccess.getBase().getMemorySpace() == OCLMemorySpace.GLOBAL.getBase().getMemorySpace()) {
             return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
         } else {
             return getPrivateOffsetValue(oclKind, memoryAccess);

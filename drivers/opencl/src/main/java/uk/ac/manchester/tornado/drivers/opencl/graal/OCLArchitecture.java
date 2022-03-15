@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018-2022 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,65 +41,25 @@ import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
 public class OCLArchitecture extends Architecture {
 
     public static final RegisterCategory OCL_ABI = new RegisterCategory("abi");
-
-    public static class OCLRegister {
-
-        // FIXME: THis field can be removed
-        public final int number;
-        public final String name;
-        public final OCLKind lirKind;
-
-        public OCLRegister(int number, String name, OCLKind lirKind) {
-            this.number = number;
-            this.name = name;
-            this.lirKind = lirKind;
-
-        }
-
-        public String getDeclaration() {
-            return String.format("%s %s", lirKind.toString(), name);
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    public static class OCLMemoryBase extends OCLRegister {
-
-        public final OCLMemorySpace memorySpace;
-
-        public OCLMemoryBase(int number, String name, OCLMemorySpace memorySpace, OCLKind kind) {
-            super(number, name, kind);
-            this.memorySpace = memorySpace;
-        }
-
-        @Override
-        public String getDeclaration() {
-            return String.format("%s %s *%s", memorySpace.name(), lirKind.toString(), name);
-        }
-
-    }
-
     public static final OCLMemoryBase globalSpace = new OCLMemoryBase(0, HEAP_REF_NAME, OCLMemorySpace.GLOBAL, OCLKind.UCHAR);
-    public static OCLRegister sp;
     public static final OCLMemoryBase constantSpace = new OCLMemoryBase(2, CONSTANT_REGION_NAME, OCLMemorySpace.CONSTANT, OCLKind.UCHAR);
     public static final OCLMemoryBase localSpace = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL, OCLKind.UCHAR);
     public static final OCLMemoryBase privateSpace = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.PRIVATE, OCLKind.UCHAR);
     public static final OCLMemoryBase atomicSpace = new OCLMemoryBase(5, ATOMICS_REGION_NAME, OCLMemorySpace.GLOBAL, OCLKind.INT);
-
+    public static OCLRegister stackPointer;
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
-        sp = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new OCLRegister[] { globalSpace, sp, constantSpace, localSpace, atomicSpace };
+        stackPointer = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
+        abiRegisters = new OCLRegister[] { globalSpace, stackPointer, constantSpace, localSpace, atomicSpace };
     }
 
     @Override
@@ -135,7 +95,6 @@ public class OCLArchitecture extends Architecture {
                 break;
             case Void:
             case Illegal:
-                oclKind = OCLKind.ILLEGAL;
                 break;
             default:
                 shouldNotReachHere("illegal java type for %s", javaKind.name());
@@ -145,13 +104,15 @@ public class OCLArchitecture extends Architecture {
     }
 
     /*
-    * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the return type of Architecture::getFeatures
-    * in JVMCI of JDK 17 is Set<? extends CPUFeatureName>. The method Architecture::getFeatures does not exist in the
-    * JVMCI of JDK 11, but the method getFeatures is implemented for each backend returning EnumSet<AMD64.CPUFeature>.
-    * In order to implement our own CPUFeature enum for each architecture, we would have to keep two different versions
-    * of the source code. One in which CPUFeature extends CPUFeatureName for JDK 17 and another in which it does not
-    * for JDK 11.
-    */
+     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the
+     * return type of Architecture::getFeatures in JVMCI of JDK 17 is Set<? extends
+     * CPUFeatureName>. The method Architecture::getFeatures does not exist in the
+     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend
+     * returning EnumSet<AMD64.CPUFeature>. In order to implement our own CPUFeature
+     * enum for each architecture, we would have to keep two different versions of
+     * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
+     * and another in which it does not for JDK 11.
+     */
     public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();
         return null;
@@ -192,5 +153,31 @@ public class OCLArchitecture extends Architecture {
             }
         }
         return sb.toString();
+    }
+
+    public static class OCLRegister extends ArchitectureRegister {
+        public OCLRegister(int number, String name, OCLKind lirKind) {
+            super(number, name, lirKind);
+        }
+    }
+
+    public static class OCLMemoryBase extends OCLRegister {
+
+        final OCLMemorySpace memorySpace;
+
+        public OCLMemoryBase(int number, String name, OCLMemorySpace memorySpace, OCLKind kind) {
+            super(number, name, kind);
+            this.memorySpace = memorySpace;
+        }
+
+        public OCLMemorySpace getMemorySpace() {
+            return memorySpace;
+        }
+
+        @Override
+        public String getDeclaration() {
+            return String.format("%s %s *%s", memorySpace.name(), lirKind.toString(), name);
+        }
+
     }
 }

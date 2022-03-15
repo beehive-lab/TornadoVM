@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,7 +79,7 @@ public class SPIRVHotSpotBackendFactory {
     private static final SPIRVCompilerConfiguration compilerConfiguration = new SPIRVCompilerConfiguration();
     private static final SPIRVAddressLowering addressLowering = new SPIRVAddressLowering();
 
-    public static SPIRVBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
+    public static SPIRVBackend createJITCompiler(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, SPIRVDevice device, SPIRVContext context) {
         JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
@@ -130,7 +130,7 @@ public class SPIRVHotSpotBackendFactory {
 
     /**
      * Create the Plugins and register the SPIRV Plugins
-     * 
+     *
      * @param metaAccess
      *            {@link HotSpotMetaAccessProvider}
      * @param replacements

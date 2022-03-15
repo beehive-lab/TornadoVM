@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +26,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEAP_ALLOCATION;
 
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +37,7 @@ import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
@@ -59,6 +61,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
@@ -87,11 +90,11 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final PTXDeviceContext deviceContext;
-    private boolean isInitialised;
     final PTXTargetDescription target;
     private final PTXArchitecture architecture;
     private final PTXCodeProvider codeCache;
     private final OptionValues options;
+    private boolean isInitialised;
 
     public PTXBackend(PTXProviders providers, PTXDeviceContext deviceContext, PTXTargetDescription target, PTXCodeProvider codeCache, OptionValues options) {
         super(providers);
@@ -106,17 +109,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     @Override
     public String decodeDeopt(long value) {
-        return null;
+        return BackendDeopt.decodeDeopt(value, getProviders());
     }
 
     @Override
     public SuitesProvider getSuites() {
         return null;
-    }
-
-    @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
-        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
     }
 
     @Override
@@ -130,6 +128,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return null;
     }
 
+    @Override
     public TornadoSuitesProvider getTornadoSuites() {
         return ((PTXProviders) getProviders()).getSuitesProvider();
     }
@@ -164,6 +163,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
      * It allocates the smallest of the requested heap size or the max global memory
      * size.
      */
+    @Override
     public void allocateHeapMemoryOnDevice() {
         long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
@@ -173,10 +173,12 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         deviceContext.getMemoryManager().allocateRegion(memorySize);
     }
 
+    @Override
     public PTXDeviceContext getDeviceContext() {
         return deviceContext;
     }
 
+    @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig nonNullRegisterConfig = (registerConfig == null) ? getCodeCache().getRegisterConfig() : registerConfig;
         return new PTXFrameMapBuilder(newFrameMap(nonNullRegisterConfig), getCodeCache(), registerConfig);
@@ -186,15 +188,17 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXFrameMap(getCodeCache(), registerConfig, this);
     }
 
+    @Override
     public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig) {
-
         return new PTXLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
+    @Override
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
         return new PTXLIRGenerator(getProviders(), lirGenRes);
     }
 
+    @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
         return new PTXNodeLIRBuilder(graph, lirGen, new PTXNodeMatchRules(lirGen));
     }
@@ -216,10 +220,13 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXAssembler(target, result);
     }
 
-    public void emitCode(PTXCompilationResultBuilder crb, PTXLIRGenerationResult lirGenRes, ResolvedJavaMethod method) {
+    @Override
+    public void emitCode(CompilationResultBuilder resultBuilder, LIR lir, ResolvedJavaMethod method) {
+        PTXCompilationResultBuilder crb = (PTXCompilationResultBuilder) resultBuilder;
         final PTXAssembler asm = crb.getAssembler();
+        PTXLIRGenerationResult lirGenRes = crb.getPTXLIRGenerationResult();
         emitPrologue(crb, asm, lirGenRes, method);
-        crb.emit(lirGenRes.getLIR());
+        crb.emit(lir);
         emitEpilogue(asm);
     }
 

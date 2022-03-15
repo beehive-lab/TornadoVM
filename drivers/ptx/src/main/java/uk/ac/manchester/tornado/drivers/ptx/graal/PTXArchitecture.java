@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -34,25 +34,22 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
-import org.graalvm.nativeimage.Platform;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
 
 public class PTXArchitecture extends Architecture {
 
-    private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
-    private static final int RETURN_ADDRESS_SIZE = 0;
-
     public static final RegisterCategory PTX_ABI = new RegisterCategory("abi");
-
     public static final PTXMemoryBase globalSpace = new PTXMemoryBase(PTXMemorySpace.GLOBAL);
     public static final PTXMemoryBase paramSpace = new PTXMemoryBase(PTXMemorySpace.PARAM);
     public static final PTXMemoryBase sharedSpace = new PTXMemoryBase(PTXMemorySpace.SHARED);
     public static final PTXMemoryBase localSpace = new PTXMemoryBase(PTXMemorySpace.LOCAL);
-
+    private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
+    private static final int RETURN_ADDRESS_SIZE = 0;
     public static PTXParam STACK_POINTER;
     public static PTXParam[] abiRegisters;
 
@@ -132,12 +129,14 @@ public class PTXArchitecture extends Architecture {
     }
 
     /*
-     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the return type of Architecture::getFeatures
-     * in JVMCI of JDK 17 is Set<? extends CPUFeatureName>. The method Architecture::getFeatures does not exist in the
-     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend returning EnumSet<AMD64.CPUFeature>.
-     * In order to implement our own CPUFeature enum for each architecture, we would have to keep two different versions
-     * of the source code. One in which CPUFeature extends CPUFeatureName for JDK 17 and another in which it does not
-     * for JDK 11.
+     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the
+     * return type of Architecture::getFeatures in JVMCI of JDK 17 is Set<? extends
+     * CPUFeatureName>. The method Architecture::getFeatures does not exist in the
+     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend
+     * returning EnumSet<AMD64.CPUFeature>. In order to implement our own CPUFeature
+     * enum for each architecture, we would have to keep two different versions of
+     * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
+     * and another in which it does not for JDK 11.
      */
     public Set<jdk.vm.ci.amd64.AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();
@@ -155,28 +154,25 @@ public class PTXArchitecture extends Architecture {
         return sb.toString();
     }
 
-    private abstract static class PTXRegister {
-        public final PTXKind ptxKind;
+    private abstract static class PTXRegister extends ArchitectureRegister {
 
-        public PTXRegister(PTXKind ptxKind) {
-            this.ptxKind = ptxKind;
+        // Constant to represent an unused value for this backend.
+        private static final int UNUSED_NUMBER = 0;
+
+        public PTXRegister(String name, PTXKind ptxKind) {
+            super(UNUSED_NUMBER, name, ptxKind);
         }
     }
 
     public static class PTXParam extends PTXRegister {
-        private final String name;
 
         public PTXParam(String name, PTXKind lirKind) {
-            super(lirKind);
-            this.name = name;
+            super(name, lirKind);
         }
 
+        @Override
         public String getDeclaration() {
-            return String.format(".param .%s %s", ptxKind.toString(), name);
-        }
-
-        public String getName() {
-            return name;
+            return String.format(".param .%s %s", getLirKind().toString(), name);
         }
     }
 
@@ -185,7 +181,7 @@ public class PTXArchitecture extends Architecture {
         public final PTXMemorySpace memorySpace;
 
         public PTXMemoryBase(PTXMemorySpace memorySpace) {
-            super(PTXKind.B64);
+            super(memorySpace.getName(), PTXKind.B64);
             this.memorySpace = memorySpace;
         }
     }

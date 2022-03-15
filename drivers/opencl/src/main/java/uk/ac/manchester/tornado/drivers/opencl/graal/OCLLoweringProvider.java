@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -105,8 +105,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
@@ -124,23 +122,37 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
+/**
+ * Lower IR from one representation to another (e.g., from TornadoVM High-IR to
+ * TornadoVM Mid-IR).
+ */
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
 
     private static final boolean USE_ATOMICS = false;
+    private static boolean gpuSnippet = false;
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
-    private static boolean gpuSnippet = false;
-
-    private ReduceGPUSnippets.Templates GPUReduceSnippets;
-    private ReduceCPUSnippets.Templates CPUReduceSnippets;
+    private ReduceGPUSnippets.Templates gpuReduceSnippets;
+    private ReduceCPUSnippets.Templates cpuReduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, PlatformConfigurationProvider platformConfig, MetaAccessExtensionProvider metaAccessExtensionProvider,
             ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, platformConfig, metaAccessExtensionProvider, target, false);
         this.vmConfig = vmConfig;
         this.constantReflection = constantReflection;
+    }
+
+    /**
+     * {@link OCLLoweringProvider#gpuSnippet} is set during the lowering phase.
+     * Therefore, this method must be called after a lowering phase in order to get
+     * the correct result.
+     *
+     * @return boolean
+     */
+    public static boolean isGPUSnippet() {
+        return gpuSnippet;
     }
 
     @Override
@@ -152,8 +164,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
             SnippetReflectionProvider snippetReflection) {
-        this.GPUReduceSnippets = new ReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
-        this.CPUReduceSnippets = new ReduceCPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+        this.gpuReduceSnippets = new ReduceGPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+        this.cpuReduceSnippets = new ReduceCPUSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
     }
 
     @Override
@@ -217,13 +229,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return false;
     }
 
-    public static boolean isGPUSnippet() {
-        // OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
-        // Therefore, this getter must be called after a lowering phase in order to get
-        // the correct result
-        return gpuSnippet;
-    }
-
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
         ValueNode startIndexNode = storeIndexed.getStartNode();
@@ -260,9 +265,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            CPUReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
+            cpuReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
-            GPUReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
+            gpuReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
 
         // We append this phase to move floating reads close to their actual usage and

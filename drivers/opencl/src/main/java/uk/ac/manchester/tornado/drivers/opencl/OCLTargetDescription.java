@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -38,21 +38,6 @@ public class OCLTargetDescription extends TargetDescription {
     private static final int STACK_ALIGNMENT = 8;
     private static final boolean INLINE_OBJECTS = true;
     private static final int IMPLICIT_NULL_CHECK_LIMIT = 4096;
-    private final boolean supportsFP64;
-    private final String extensions;
-    private final boolean supportsInt64Atomics;
-
-    public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
-        this(arch, false, STACK_ALIGNMENT, IMPLICIT_NULL_CHECK_LIMIT, INLINE_OBJECTS, supportsFP64, extensions);
-    }
-
-    protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
-        super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
-        this.supportsFP64 = supportsFP64;
-        this.extensions = extensions;
-        supportsInt64Atomics = extensions.contains("cl_khr_int64_base_atomics");
-    }
-
     //@formatter:off
     private static final OCLKind[][] VECTOR_LOOKUP_TABLE = new OCLKind[][] {
         {OCLKind.UCHAR2, OCLKind.UCHAR3, OCLKind.UCHAR4, OCLKind.UCHAR8, OCLKind.UCHAR16},
@@ -67,25 +52,22 @@ public class OCLTargetDescription extends TargetDescription {
         {OCLKind.FLOAT2, OCLKind.FLOAT3, OCLKind.FLOAT4, OCLKind.FLOAT8, OCLKind.FLOAT16},
         {OCLKind.DOUBLE2, OCLKind.DOUBLE3, OCLKind.DOUBLE4, OCLKind.DOUBLE8, OCLKind.DOUBLE16}
     };
+    private final boolean supportsFP64;
+    private final String extensions;
+    private final boolean supportsInt64Atomics;
+
+    public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
+        this(arch, false, STACK_ALIGNMENT, IMPLICIT_NULL_CHECK_LIMIT, INLINE_OBJECTS, supportsFP64, extensions);
+    }
+
+    protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
+        super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
+        this.supportsFP64 = supportsFP64;
+        this.extensions = extensions;
+        supportsInt64Atomics = extensions.contains("cl_khr_int64_base_atomics");
+    }
     //@formatter:on
 
-    public OCLArchitecture getArch() {
-        return (OCLArchitecture) arch;
-    }
-
-    public boolean supportsFP64() {
-        return supportsFP64;
-    }
-
-    public boolean supportsInt64Atomics() {
-        return supportsInt64Atomics;
-    }
-
-    public String getExtensions() {
-        return extensions;
-    }
-
-    // should use OCLKind.lookupLengthIndex instead
     private static int lookupLengthIndex(int vectorLength) {
         switch (vectorLength) {
             case 2:
@@ -101,35 +83,23 @@ public class OCLTargetDescription extends TargetDescription {
             default:
                 shouldNotReachHere();
         }
-
         return -1;
     }
 
-    public static int lookupTypeIndex(OCLKind kind) {
-        switch (kind) {
-            case UCHAR:
-                return 0;
-            case CHAR:
-                return 1;
-            case USHORT:
-                return 2;
-            case SHORT:
-                return 3;
-            case UINT:
-                return 4;
-            case INT:
-                return 5;
-            case ULONG:
-                return 6;
-            case LONG:
-                return 7;
-            case FLOAT:
-                return 8;
-            case DOUBLE:
-                return 9;
-            default:
-                return -1;
-        }
+    public OCLArchitecture getArch() {
+        return (OCLArchitecture) arch;
+    }
+
+    public boolean supportsFP64() {
+        return supportsFP64;
+    }
+
+    public boolean supportsInt64Atomics() {
+        return supportsInt64Atomics;
+    }
+
+    public String getExtensions() {
+        return extensions;
     }
 
     public OCLKind getOCLKind(JavaKind javaKind, int vectorLength) {

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,17 @@ public class TornadoOptions {
 
     public static final String FALSE = "FALSE";
     public static final String TRUE = "TRUE";
+
+    /**
+     * Option to set the device heap's size. It is set to 1GB by default.
+     */
+    public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "1GB"));
+
+    /**
+     * Option to enable exceptions for the OpenCL generated code. This is
+     * experimental.
+     */
+    public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", FALSE));
 
     /**
      * Option to print TornadoVM Internal Bytecodes.

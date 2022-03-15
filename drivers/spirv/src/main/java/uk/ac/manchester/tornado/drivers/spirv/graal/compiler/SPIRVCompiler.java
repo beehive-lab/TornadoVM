@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,7 +99,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 /**
  * SPIRV Compiler and Optimizer. It optimizes Graal IR for SPIRV devices and it
  * generates SPIRV code.
- *
  */
 public class SPIRVCompiler {
 
@@ -225,8 +224,9 @@ public class SPIRVCompiler {
             }
             RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
-            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig, graph, stub);
-            LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes, backend.getMethodIndex());
+            SPIRVLIRGenerationResult lirGenRes = (SPIRVLIRGenerationResult) backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
+            lirGenRes.setMethodIndex(backend.getMethodIndex());
+            LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
 
             // LIR generation

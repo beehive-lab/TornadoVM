@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@ public abstract class SPIRVCodeCache {
     protected final SPIRVDeviceContext deviceContext;
     protected final ConcurrentHashMap<String, SPIRVInstalledCode> cache;
 
-    public SPIRVCodeCache(SPIRVDeviceContext deviceContext) {
+    protected SPIRVCodeCache(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
     }

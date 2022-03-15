@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018-2022 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,30 +23,61 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.backend;
 
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.target.Backend;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.phases.util.Providers;
 
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public abstract class TornadoBackend<P extends Providers> extends Backend {
-
-    public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "1GB"));
-    public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", "False"));
 
     protected TornadoBackend(Providers providers) {
         super(providers);
     }
-
-    public abstract String decodeDeopt(long value);
 
     @Override
     public Providers getProviders() {
         return super.getProviders();
     }
 
+    @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
+        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
+    }
+
+    public abstract String decodeDeopt(long value);
+
+    public abstract TornadoSuitesProvider getTornadoSuites();
+
+    public abstract TornadoDeviceContext getDeviceContext();
+
     public abstract boolean isInitialised();
 
     public abstract void init();
 
     public abstract int getMethodIndex();
+
+    public abstract void allocateHeapMemoryOnDevice();
+
+    public abstract FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig);
+
+    public abstract LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig);
+
+    public abstract NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen);
+
+    public abstract LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes);
+
+    public abstract void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method);
+
 }

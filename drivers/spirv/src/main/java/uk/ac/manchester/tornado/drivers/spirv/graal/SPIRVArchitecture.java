@@ -1,8 +1,8 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
- * 
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ *
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -38,73 +38,34 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.common.architecture.ArchitectureRegister;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
 
 /**
  * It represents a SPIRV Architecture.
+ *
  * <p>
  * It contains information such as byte ordering, platform king, memory
  * alignment, etc.
+ * </p>
  *
  */
 public class SPIRVArchitecture extends Architecture {
 
-    private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
-    private static final int RETURN_ADDRESS_SIZE = 0;
-
     public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(3, HEAP_REF_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase privateSpace = new SPIRVMemoryBase(4, HEAP_REF_NAME, SPIRVMemorySpace.PRIVATE, SPIRVKind.OP_TYPE_INT_8);
-
+    private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
+    private static final int RETURN_ADDRESS_SIZE = 0;
+    public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
     private SPIRVRegister[] abiRegisters;
     private SPIRVRegister sp;
-
-    public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
 
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
         super(BACKEND_ARCHITECTURE, wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
         sp = new SPIRVRegister(1, FRAME_BASE_NAME, wordKind);
         abiRegisters = new SPIRVRegister[] { globalSpace, sp };
-    }
-
-    // FIXME <REFACTOR> ABSTRACT ALL Backends (AAB)
-    public static class SPIRVRegister {
-
-        public final int number;
-        public final String name;
-        public final SPIRVKind lirKind;
-
-        public SPIRVRegister(int number, String name, SPIRVKind lirKind) {
-            this.number = number;
-            this.name = name;
-            this.lirKind = lirKind;
-        }
-
-        public String getDeclaration() {
-            return String.format("%s %s", lirKind.toString(), name);
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    // FIXME <REFACTOR> (AAB)
-    public static class SPIRVMemoryBase extends SPIRVRegister {
-
-        public final SPIRVMemorySpace memorySpace;
-
-        public SPIRVMemoryBase(int number, String name, SPIRVMemorySpace memorySpace, SPIRVKind kind) {
-            super(number, name, kind);
-            this.memorySpace = memorySpace;
-        }
-
-        @Override
-        public String getDeclaration() {
-            return String.format("%s %s *%s", memorySpace.getName(), lirKind.toString(), name);
-        }
-
     }
 
     @Override
@@ -148,12 +109,14 @@ public class SPIRVArchitecture extends Architecture {
     }
 
     /*
-     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the return type of Architecture::getFeatures
-     * in JVMCI of JDK 17 is Set<? extends CPUFeatureName>. The method Architecture::getFeatures does not exist in the
-     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend returning EnumSet<AMD64.CPUFeature>.
-     * In order to implement our own CPUFeature enum for each architecture, we would have to keep two different versions
-     * of the source code. One in which CPUFeature extends CPUFeatureName for JDK 17 and another in which it does not
-     * for JDK 11.
+     * We use jdk.vm.ci.amd64.AMD64.CPUFeature as a type parameter because the
+     * return type of Architecture::getFeatures in JVMCI of JDK 17 is Set<? extends
+     * CPUFeatureName>. The method Architecture::getFeatures does not exist in the
+     * JVMCI of JDK 11, but the method getFeatures is implemented for each backend
+     * returning EnumSet<AMD64.CPUFeature>. In order to implement our own CPUFeature
+     * enum for each architecture, we would have to keep two different versions of
+     * the source code. One in which CPUFeature extends CPUFeatureName for JDK 17
+     * and another in which it does not for JDK 11.
      */
     public Set<AMD64.CPUFeature> getFeatures() {
         TornadoInternalError.unimplemented();
@@ -163,6 +126,30 @@ public class SPIRVArchitecture extends Architecture {
     @Override
     public int getReturnAddressSize() {
         return this.getWordSize();
+    }
+
+    public static class SPIRVRegister extends ArchitectureRegister {
+        public SPIRVRegister(int number, String name, SPIRVKind lirKind) {
+            super(number, name, lirKind);
+        }
+    }
+
+    public static class SPIRVMemoryBase extends SPIRVRegister {
+        final SPIRVMemorySpace memorySpace;
+
+        public SPIRVMemoryBase(int number, String name, SPIRVMemorySpace memorySpace, SPIRVKind kind) {
+            super(number, name, kind);
+            this.memorySpace = memorySpace;
+        }
+
+        public SPIRVMemorySpace getMemorySpace() {
+            return memorySpace;
+        }
+
+        @Override
+        public String getDeclaration() {
+            return String.format("%s %s *%s", memorySpace.getName(), lirKind.toString(), name);
+        }
     }
 
 }
