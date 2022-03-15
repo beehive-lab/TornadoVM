@@ -443,7 +443,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
         if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
             SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-            if (spirvKind.isVector() && indexedAccess.getMemoryRegion().memorySpace == SPIRVMemorySpace.PRIVATE) {
+            if (spirvKind.isVector() && indexedAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
                 Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
                 Value offset = getOffsetValue(spirvKind, indexedAccess);
                 getGen().append(new SPIRVLIRStmt.IndexedLoadMemCollectionAccess(indexedAccess, result, offset));
@@ -471,7 +471,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     private Value getOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
-        if (memoryAccess.getMemoryRegion().memorySpace == SPIRVMemorySpace.GLOBAL) {
+        if (memoryAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.GLOBAL) {
             return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
         } else {
             return getPrivateOffsetValue(spirvKind, memoryAccess);

@@ -438,7 +438,7 @@ public class SPIRVUnary {
                 throw new RuntimeException("Memory access not valid for a SPIRVOpInBoundsPtrAccessChain instruction");
             }
 
-            if (resultKind.isVector() && getMemoryRegion().memorySpace == SPIRVMemorySpace.PRIVATE) {
+            if (resultKind.isVector() && getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
                 // When we copy a collection from private to local, the index is set in the
                 // VLOAD intrinsic. Thus, as index, we choose 0 to comply with CLANG/LLVM
                 indexId = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);

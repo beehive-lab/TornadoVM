@@ -1394,7 +1394,7 @@ public class SPIRVLIRStmt {
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV,
-                    "emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().memorySpace.getName());
+                    "emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + address.getIndex() + "]  -- region: " + address.getMemoryRegion().getMemorySpace().getName());
 
             SPIRVKind spirvKind = (SPIRVKind) result.getPlatformKind();
 
