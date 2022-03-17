@@ -222,6 +222,11 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return NUM_ELEMENTS;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     /**
      * * Operations on Float8 vectors
      */

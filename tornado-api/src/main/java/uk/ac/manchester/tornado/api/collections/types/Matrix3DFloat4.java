@@ -192,4 +192,9 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public int size() {
         return numElements;
     }
+
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
 }

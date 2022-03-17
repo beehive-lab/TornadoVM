@@ -234,4 +234,9 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     public int size() {
         return numElements;
     }
+
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
 }

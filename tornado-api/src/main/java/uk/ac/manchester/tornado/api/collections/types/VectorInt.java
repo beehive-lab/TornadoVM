@@ -254,4 +254,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     public int size() {
         return numElements;
     }
+
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
 }

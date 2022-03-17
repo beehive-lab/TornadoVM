@@ -204,6 +204,11 @@ public class VectorInt8 implements PrimitiveStorage<DoubleBuffer> {
         return storage.length;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     public int getLength() {
         return numElements;
     }

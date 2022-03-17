@@ -206,6 +206,11 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         return NUM_ELEMENTS;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     public FloatingPointError calculateULP(Matrix4x4Float ref) {
         float maxULP = Float.MIN_VALUE;
         float minULP = Float.MAX_VALUE;

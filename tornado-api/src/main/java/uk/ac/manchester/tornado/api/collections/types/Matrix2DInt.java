@@ -246,4 +246,9 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
         return numElements;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
 }

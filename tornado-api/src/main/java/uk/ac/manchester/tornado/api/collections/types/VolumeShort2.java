@@ -173,4 +173,9 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
         return numElements;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
 }

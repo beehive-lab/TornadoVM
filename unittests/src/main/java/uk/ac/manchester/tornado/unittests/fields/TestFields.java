@@ -50,13 +50,13 @@ public class TestFields extends TornadoTestBase {
             });
         }
 
-        public void computeInit() {
+        public void computeInit(int[] output) {
             for (@Parallel int i = 0; i < output.length; i++) {
                 output[i] = 100;
             }
         }
 
-        public void computeAdd() {
+        public void computeAdd(int[] a, int[] b, int[] output) {
             for (@Parallel int i = 0; i < output.length; i++) {
                 output[i] = a[i] + b[i];
             }
@@ -72,7 +72,7 @@ public class TestFields extends TornadoTestBase {
             this.initValue = initValue;
         }
 
-        public void computeInit() {
+        public void computeInit(int[] output) {
             for (@Parallel int i = 0; i < output.length; i++) {
                 output[i] = initValue;
             }
@@ -87,8 +87,9 @@ public class TestFields extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.task("t0", foo::computeInit).execute();
-        s0.syncObject(foo.output);
+        s0.task("t0", foo::computeInit, foo.output)
+                .streamOut(foo.output)
+                .execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output[i]);
@@ -104,8 +105,9 @@ public class TestFields extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.task("t0", foo::computeAdd).execute();
-        s0.syncObject(foo.output);
+        s0.task("t0", foo::computeAdd, foo.a, foo.b, foo.output)
+                .streamOut(foo.output)
+                .execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
@@ -120,8 +122,9 @@ public class TestFields extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("Bar");
         assertNotNull(s0);
 
-        s0.task("init", bar::computeInit).execute();
-        s0.syncObject(bar.output);
+        s0.task("init", bar::computeInit, bar.output)
+                .streamOut(bar.output)
+                .execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);

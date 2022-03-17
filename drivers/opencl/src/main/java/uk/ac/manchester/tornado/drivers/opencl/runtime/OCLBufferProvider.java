@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.SortedSet;
@@ -40,27 +41,16 @@ public class OCLBufferProvider implements TornadoBufferProvider {
     }
 
     private final OCLDeviceContext deviceContext;
-    private final SortedSet<BufferInfo> freeBuffers;
-    private final HashSet<BufferInfo> usedBuffers;
+    private final ArrayList<BufferInfo> freeBuffers;
+    private final ArrayList<BufferInfo> usedBuffers;
     private long availableMemory;
 
     public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "1GB"));
 
     public OCLBufferProvider(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-        this.usedBuffers = new HashSet<>();
-        Comparator<BufferInfo> comparator = (o1, o2) -> {
-            if (o1.size > o2.size) {
-                return 1;
-            } else if (o1.size < o2.size) {
-                return -1;
-            }
-            if (o1.buffer != o2.buffer) {
-                return -1;
-            }
-            return 0;
-        };
-        this.freeBuffers = new TreeSet<>(comparator);
+        this.usedBuffers = new ArrayList<>();
+        this.freeBuffers = new ArrayList<>();
 
         // There is no way of querying the available memory on the device. For the moment, I use a user defined value.
         // availableMemory = deviceContext.getDevice().getDeviceGlobalMemorySize();
@@ -79,9 +69,8 @@ public class OCLBufferProvider implements TornadoBufferProvider {
         // Attempts to free buffers of given size.
         long remainingSize = size;
         while (!freeBuffers.isEmpty() && remainingSize > 0) {
-            BufferInfo bufferInfo = freeBuffers.first();
+            BufferInfo bufferInfo = freeBuffers.remove(0);
             TornadoInternalError.guarantee(!usedBuffers.contains(bufferInfo), "This buffer should not be used");
-            freeBuffers.remove(bufferInfo);
             remainingSize -= bufferInfo.size;
             availableMemory += bufferInfo.size;
             deviceContext.getMemoryManager().releaseBuffer(bufferInfo.buffer);
@@ -106,13 +95,15 @@ public class OCLBufferProvider implements TornadoBufferProvider {
             return allocate(size);
         } else if (size < targetDevice.getDeviceMaxAllocationSize()) {
             // First check if there is an available buffer of given size.
-            BufferInfo minBuffer = null;
-            for (BufferInfo bufferInfo : freeBuffers) {
-                if (bufferInfo.size >= size && (minBuffer == null || bufferInfo.size < minBuffer.size)) {
-                    minBuffer = bufferInfo;
+            int minBufferIndex = -1;
+            for (int i = 0; i < freeBuffers.size(); i++) {
+                BufferInfo bufferInfo = freeBuffers.get(i);
+                if (bufferInfo.size >= size && (minBufferIndex == -1 || bufferInfo.size < freeBuffers.get(minBufferIndex).size)) {
+                    minBufferIndex = i;
                 }
             }
-            if (minBuffer != null) {
+            if (minBufferIndex != -1) {
+                BufferInfo minBuffer = freeBuffers.get(minBufferIndex);
                 usedBuffers.add(minBuffer);
                 freeBuffers.remove(minBuffer);
                 return minBuffer.buffer;
@@ -133,10 +124,16 @@ public class OCLBufferProvider implements TornadoBufferProvider {
 
     @Override
     public void markBufferReleased(long buffer, long size) {
-        BufferInfo bufferInfo = new BufferInfo(buffer, size);
-        boolean contained = usedBuffers.remove(bufferInfo);
-        TornadoInternalError.guarantee(contained, "Expected the buffer to be allocated and used at this point.");
-        freeBuffers.add(bufferInfo);
+        int foundIndex = -1;
+        for (int i = 0; i < usedBuffers.size(); i++) {
+            if (usedBuffers.get(i).buffer == buffer) {
+                foundIndex = i;
+                break;
+            }
+        }
+        TornadoInternalError.guarantee(foundIndex != -1, "Expected the buffer to be allocated and used at this point.");
+        BufferInfo removedBuffer = usedBuffers.remove(foundIndex);
+        freeBuffers.add(removedBuffer);
     }
 
 }

@@ -202,6 +202,11 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     public void fill(double value) {
         for (int i = 0; i < storage.length; i++) {
             storage[i] = value;

@@ -86,8 +86,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public void reset() {
-        buffer.mark();
-        buffer.reset();
+        buffer.clear();
         callArguments.clear();
     }
 

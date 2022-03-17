@@ -202,6 +202,11 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return NUM_ELEMENTS;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     public void fill(float value) {
         for (int i = 0; i < storage.length; i++) {
             storage[i] = value;

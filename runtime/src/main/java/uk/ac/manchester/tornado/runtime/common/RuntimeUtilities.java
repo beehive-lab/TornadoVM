@@ -55,6 +55,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class RuntimeUtilities {
 
+    public static final String COLLECTION_TYPES_PACKAGE = "uk.ac.manchester.tornado.api.collections.types";
+
     public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
     public static final int ONE_KILOBYTE = 1 * 1024;

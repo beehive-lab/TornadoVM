@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.COLLECTION_TYPES_PACKAGE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
@@ -43,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -55,6 +57,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -244,6 +247,9 @@ public class TornadoVM extends TornadoLogger {
         DeviceObjectState[] objectStates = new DeviceObjectState[args.length];
         for (int i = 0; i < objects.length; i++) {
             objects[i] = this.objects.get(args[i]);
+            if (isTornadoType(objects[i])) {
+                objects[i] = ((PrimitiveStorage) objects[i]).getStorage();
+            }
             objectStates[i] = resolveObjectState(args[i], contextIndex);
         }
 
@@ -252,10 +258,14 @@ public class TornadoVM extends TornadoLogger {
 
     private int executeDeallocate(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        final Object object = objects.get(objectIndex);
+        Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
             return 0;
+        }
+
+        if (isTornadoType(object)) {
+            object = ((PrimitiveStorage) object).getStorage();
         }
 
         if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
@@ -265,6 +275,13 @@ public class TornadoVM extends TornadoLogger {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
         return device.deallocate(object, objectState);
+    }
+
+    private boolean isTornadoType(Object object) {
+        return object != null && !object.getClass().isArray()
+                && !object.getClass().isPrimitive()
+                && !object.getClass().isAnnotationPresent(Vector.class)
+                && COLLECTION_TYPES_PACKAGE.equals(object.getClass().getPackage().getName());
     }
 
     private boolean isObjectAtomic(Object object) {
@@ -277,10 +294,14 @@ public class TornadoVM extends TornadoLogger {
 
     private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        final Object object = objects.get(objectIndex);
+        Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
             return 0;
+        }
+
+        if (isTornadoType(object)) {
+            object = ((PrimitiveStorage) object).getStorage();
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -314,10 +335,14 @@ public class TornadoVM extends TornadoLogger {
     private int executeStreamIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
             final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        final Object object = objects.get(objectIndex);
+        Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
             return 0;
+        }
+
+        if (isTornadoType(object)) {
+            object = ((PrimitiveStorage) object).getStorage();
         }
 
         if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
@@ -351,10 +376,14 @@ public class TornadoVM extends TornadoLogger {
     private int executeStreamOut(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
             final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        final Object object = objects.get(objectIndex);
+        Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
             return 0;
+        }
+
+        if (isTornadoType(object)) {
+            object = ((PrimitiveStorage) object).getStorage();
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
@@ -388,10 +417,14 @@ public class TornadoVM extends TornadoLogger {
             final int[] waitList) {
 
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        final Object object = objects.get(objectIndex);
+        Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
             return;
+        }
+
+        if (isTornadoType(object)) {
+            object = ((PrimitiveStorage) object).getStorage();
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {

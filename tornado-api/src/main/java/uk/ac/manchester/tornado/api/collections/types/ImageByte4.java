@@ -261,4 +261,9 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
     public int size() {
         return numElements;
     }
+
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
 }

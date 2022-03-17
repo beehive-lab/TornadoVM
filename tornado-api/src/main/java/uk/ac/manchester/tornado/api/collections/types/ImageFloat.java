@@ -250,6 +250,11 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     public FloatingPointError calculateULP(ImageFloat ref) {
         float maxULP = Float.MIN_VALUE;
         float minULP = Float.MAX_VALUE;

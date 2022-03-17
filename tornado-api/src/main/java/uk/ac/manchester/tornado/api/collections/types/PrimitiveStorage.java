@@ -51,4 +51,6 @@ public interface PrimitiveStorage<T extends Buffer> extends Serializable {
     T asBuffer();
 
     int size();
+
+    Object getStorage();
 }

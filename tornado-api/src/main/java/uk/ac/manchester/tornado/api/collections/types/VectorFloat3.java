@@ -201,6 +201,11 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         return storage.length;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     public int getLength() {
         return numElements;
     }

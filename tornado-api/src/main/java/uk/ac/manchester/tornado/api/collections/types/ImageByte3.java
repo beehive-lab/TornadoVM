@@ -176,4 +176,9 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
         return numElements;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
 }

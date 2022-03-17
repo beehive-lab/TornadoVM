@@ -222,6 +222,11 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
+
     /**
      * * Operations on Double8 vectors
      */

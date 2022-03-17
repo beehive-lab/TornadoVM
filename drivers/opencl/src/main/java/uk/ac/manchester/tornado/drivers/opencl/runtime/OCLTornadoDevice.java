@@ -43,8 +43,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
@@ -52,6 +50,7 @@ import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -75,6 +74,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLLongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
@@ -504,7 +504,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             }
         } else if (!type.isPrimitive()) {
             if (object instanceof AtomicInteger) {
-                result = new AtomicsBuffer(new int[] {}, deviceContext);
+                result = new AtomicsBuffer(new int[]{}, deviceContext);
+            } else if (object.getClass().getAnnotation(Vector.class) != null) {
+                result = new OCLVectorWrapper(deviceContext, object, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object, batchSize);
             }

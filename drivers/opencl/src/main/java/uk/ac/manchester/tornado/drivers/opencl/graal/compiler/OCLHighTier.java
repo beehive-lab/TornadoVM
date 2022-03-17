@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocatio
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoVectorReplacement;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
@@ -91,6 +92,7 @@ public class OCLHighTier extends TornadoHighTier {
         }
 
         appendPhase(new TornadoTaskSpecialisation(canonicalizer));
+        appendPhase(new TornadoVectorReplacement());
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 

@@ -250,4 +250,9 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     public int size() {
         return numElements;
     }
+
+    @Override
+    public Object getStorage() {
+        return storage;
+    }
 }

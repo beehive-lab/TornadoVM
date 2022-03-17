@@ -221,6 +221,7 @@ public class TornadoGraphBuilder {
                 streamInNode.setValue((ObjectNode) objectNodes[i]);
                 graph.add(streamInNode);
                 context.addUse(streamInNode);
+                persist.addValue((ObjectNode) objectNodes[i]);
             }
         }
 
