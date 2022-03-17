@@ -86,7 +86,7 @@ public abstract class TornadoTestBase {
     }
 
     public void assertNotBackendOptimization(TornadoVMBackendType backend) {
-        if (!TornadoHelper.OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+        if (!TornadoHelper.OPTIMIZE_LOAD_STORE_SPIRV) {
             return;
         }
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();

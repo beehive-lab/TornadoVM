@@ -102,10 +102,10 @@ public class SPIRVBinary {
             return instructionToConvert;
         }
 
-        private SPIRVId genTypeUConversionIfNeeded(SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind convertionKind, SPIRVId instructionToConvert) {
-            if (convertionKind != null && convertionKind != spirvKind) {
+        private SPIRVId genTypeUConversionIfNeeded(SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind conversionKind, SPIRVId instructionToConvert) {
+            if (conversionKind != null && conversionKind != spirvKind) {
                 SPIRVId resultConversion = asm.module.getNextId();
-                SPIRVId idConversionType = asm.primitives.getTypePrimitive(convertionKind);
+                SPIRVId idConversionType = asm.primitives.getTypePrimitive(conversionKind);
                 asm.currentBlockScope().add(new SPIRVOpUConvert(idConversionType, resultConversion, instructionToConvert));
                 return resultConversion;
             }
@@ -123,6 +123,11 @@ public class SPIRVBinary {
                 }
 
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    // If the operand value corresponds to a PHI value, then we do not need to do
+                    // any conversion, just obtain the phi value from the table and return it.
+                    if (asm.isPhiAcrossBlocksPresent((AllocatableValue) inputValue)) {
+                        return asm.getPhiIdAcrossBlock((AllocatableValue) inputValue);
+                    }
                     return genTypeUConversionIfNeeded(asm, spirvKind, convertionKind, param);
                 }
 
