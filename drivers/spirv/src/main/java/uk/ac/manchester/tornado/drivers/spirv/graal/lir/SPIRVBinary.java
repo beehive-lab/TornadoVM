@@ -102,7 +102,7 @@ public class SPIRVBinary {
             return instructionToConvert;
         }
 
-        private SPIRVId genTypeUConversionIfNeeded(SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind conversionKind, SPIRVId instructionToConvert) {
+        private SPIRVId getParameterWithTypeConversionIfNeeded(SPIRVAssembler asm, SPIRVKind spirvKind, SPIRVKind conversionKind, SPIRVId instructionToConvert) {
             if (conversionKind != null && conversionKind != spirvKind) {
                 SPIRVId resultConversion = asm.module.getNextId();
                 SPIRVId idConversionType = asm.primitives.getTypePrimitive(conversionKind);
@@ -128,7 +128,7 @@ public class SPIRVBinary {
                     if (asm.isPhiAcrossBlocksPresent((AllocatableValue) inputValue)) {
                         return asm.getPhiIdAcrossBlock((AllocatableValue) inputValue);
                     }
-                    return genTypeUConversionIfNeeded(asm, spirvKind, convertionKind, param);
+                    return getParameterWithTypeConversionIfNeeded(asm, spirvKind, convertionKind, param);
                 }
 
                 // We need to perform a load first
