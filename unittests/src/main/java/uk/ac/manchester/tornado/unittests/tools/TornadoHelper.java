@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
 
 public class TornadoHelper {
 
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV_V2 = Boolean.parseBoolean(System.getProperty("tornado.spirv.loadstore", "False"));
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = Boolean.parseBoolean(System.getProperty("tornado.spirv.loadstore", "False"));
 
     private static void printResult(Result result) {
         System.out.printf("Test ran: %s, Failed: %s%n", result.getRunCount(), result.getFailureCount());
@@ -196,7 +196,7 @@ public class TornadoHelper {
                     continue;
                 }
 
-                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof SPIRVOptNotSupported)) && OPTIMIZE_LOAD_STORE_SPIRV_V2) {
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof SPIRVOptNotSupported)) && OPTIMIZE_LOAD_STORE_SPIRV) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [SPIRV OPTIMIZATION NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
