@@ -12,7 +12,7 @@ GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs 
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
 
-**Current Release:** TornadoVM 0.12 - 17/11/2021 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-0.12)
+**Current Release:** TornadoVM 0.13 - 21/03/2022 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-0.13)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
@@ -201,12 +201,12 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>0.12</version>
+    <version>0.13</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>0.12</version>
+    <version>0.13</version>
 </dependency>
 </dependencies>
 ```
