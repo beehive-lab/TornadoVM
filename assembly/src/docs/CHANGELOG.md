@@ -4,6 +4,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 ## TornadoVM 0.13
 
+21/03/2022
+
 - Integration with JDK 17 and Graal 21.3.0 
     - JDK 11 is the default version and the support for the JDK 8 has been deprecated
 - Support for extended intrinsics regarding math operations
