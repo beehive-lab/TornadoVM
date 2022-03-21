@@ -98,7 +98,6 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
-import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.LIRPhiVars;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
@@ -431,7 +430,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             }
             phi.setStamp(stamp);
         } else if (stamp instanceof ObjectStamp) {
-            SPIRVStamp oStamp = (SPIRVStamp) stamp;
+            ObjectStamp oStamp = (ObjectStamp) stamp;
             SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(oStamp.javaType(gen.getMetaAccess()));
             if (kind != SPIRVKind.ILLEGAL && kind.isVector()) {
                 stamp = SPIRVStampFactory.getStampFor(kind);
