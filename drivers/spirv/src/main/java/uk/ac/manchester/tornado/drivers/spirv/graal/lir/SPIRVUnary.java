@@ -975,10 +975,10 @@ public class SPIRVUnary {
 
         public Negate(LIRKind lirKind, Value inputVal) {
             super(null, lirKind, inputVal);
-            if (getSPIRVPlatformKind().isInteger() || (getSPIRVPlatformKind().isVector() && isVectorElementInteger())) {
+            if (getSPIRVPlatformKind().isInteger() || isVectorElementInteger()) {
                 isInteger = true;
                 nameDebugInstruction = "SPIRVOpSNegate";
-            } else if (getSPIRVPlatformKind().isFloatingPoint() || (getSPIRVPlatformKind().isVector() && isVectorElementFloat())) {
+            } else if (getSPIRVPlatformKind().isFloatingPoint() || isVectorElementFloat()) {
                 nameDebugInstruction = "SPIRVOpFNegate";
             } else {
                 throw new RuntimeException("Error - not valid type");
@@ -986,13 +986,19 @@ public class SPIRVUnary {
         }
 
         private boolean isVectorElementInteger() {
-            SPIRVKind kind = getSPIRVPlatformKind();
-            return (kind.getElementKind().isInteger());
+            if (getSPIRVPlatformKind().isVector()) {
+                SPIRVKind kind = getSPIRVPlatformKind();
+                return (kind.getElementKind().isInteger());
+            }
+            return false;
         }
 
         private boolean isVectorElementFloat() {
-            SPIRVKind kind = getSPIRVPlatformKind();
-            return (kind.getElementKind().isFloatingPoint());
+            if (getSPIRVPlatformKind().isVector()) {
+                SPIRVKind kind = getSPIRVPlatformKind();
+                return (kind.getElementKind().isFloatingPoint());
+            }
+            return false;
         }
 
 
