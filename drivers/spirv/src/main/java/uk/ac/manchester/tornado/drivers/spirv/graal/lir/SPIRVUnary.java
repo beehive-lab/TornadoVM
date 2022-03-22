@@ -975,15 +975,32 @@ public class SPIRVUnary {
 
         public Negate(LIRKind lirKind, Value inputVal) {
             super(null, lirKind, inputVal);
-            if (getSPIRVPlatformKind().isInteger()) {
+            if (getSPIRVPlatformKind().isInteger() || isVectorElementInteger()) {
                 isInteger = true;
                 nameDebugInstruction = "SPIRVOpSNegate";
-            } else if (getSPIRVPlatformKind().isFloatingPoint()) {
+            } else if (getSPIRVPlatformKind().isFloatingPoint() || isVectorElementFloat()) {
                 nameDebugInstruction = "SPIRVOpFNegate";
             } else {
                 throw new RuntimeException("Error - not valid type");
             }
         }
+
+        private boolean isVectorElementInteger() {
+            if (getSPIRVPlatformKind().isVector()) {
+                SPIRVKind kind = getSPIRVPlatformKind();
+                return (kind.getElementKind().isInteger());
+            }
+            return false;
+        }
+
+        private boolean isVectorElementFloat() {
+            if (getSPIRVPlatformKind().isVector()) {
+                SPIRVKind kind = getSPIRVPlatformKind();
+                return (kind.getElementKind().isFloatingPoint());
+            }
+            return false;
+        }
+
 
         protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
             if (inputValue instanceof ConstantValue) {

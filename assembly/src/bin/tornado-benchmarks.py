@@ -134,7 +134,7 @@ def composeAllOptions(args):
 		options = options + __ENABLE_PROFILER_SILENT_MODE__
 	if (args.jvmFlags != None):
 		options = options + args.jvmFlags
-	if (args.tornadoThreadScheduler == False):
+	if (args.tornadoThreadScheduler == True):
 		options = options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ 
 	if (args.spirvOptimizer):
 		options = options + __ENABLE_SPIRV_OPTIMIZER__
