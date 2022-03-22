@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -194,14 +194,14 @@ public class OpenCL {
 
         // Create stack
         final int numArgs = parameters.length;
-        CallStack stack = tornadoDevice.createStack(numArgs);
+        KernelCallWrapper stack = tornadoDevice.createStack(numArgs);
 
         // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        stack.setKernelContext(new HashMap<>());
 
         // Pass arguments to the call stack
         for (int i = 0; i < numArgs; i++) {
-            stack.push(parameters[i], states.get(i));
+            stack.addCallArgument(parameters[i]);
         }
 
         // Run the code

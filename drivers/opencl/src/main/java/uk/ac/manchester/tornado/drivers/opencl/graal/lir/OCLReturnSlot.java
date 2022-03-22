@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack.RETURN_VALUE_INDEX;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper.RETURN_VALUE_INDEX;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;

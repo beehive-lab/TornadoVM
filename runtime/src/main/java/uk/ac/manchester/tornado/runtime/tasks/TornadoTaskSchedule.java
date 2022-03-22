@@ -95,7 +95,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -440,12 +440,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public TornadoAcceleratorDevice getDeviceForTask(String id) {
         return executionContext.getDeviceForTask(id);
-    }
-
-    @Override
-    public long getReturnValue(String id) {
-        CallStack stack = executionContext.getFrame(id);
-        return stack.getReturnValue();
     }
 
     private void updateInner(int index, SchedulableTask task) {

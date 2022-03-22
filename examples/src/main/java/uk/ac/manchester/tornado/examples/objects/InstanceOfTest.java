@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.examples.objects;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class InstanceOfTest {
 
@@ -50,6 +51,8 @@ public class InstanceOfTest {
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", InstanceOfTest::instanceOf, foo);
         s0.warmup();
         s0.execute();
-        System.out.printf("return value = 0x%x\n", s0.getReturnValue("t0"));
+
+        TornadoInternalError.unimplemented();
+        // System.out.printf("return value = 0x%x\n", s0.getReturnValue("t0"));
     }
 }

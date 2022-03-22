@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 import java.nio.ByteBuffer;
@@ -35,7 +35,7 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPr
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
-public class PTXCallStack extends PTXByteBuffer implements CallStack {
+public class PTXCallStack extends PTXByteBuffer implements KernelCallWrapper {
 
     public static final int RESERVED_SLOTS = 3;
 

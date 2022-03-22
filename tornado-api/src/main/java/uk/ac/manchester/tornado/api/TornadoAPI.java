@@ -637,8 +637,6 @@ public interface TornadoAPI {
      */
     void warmup();
 
-    long getReturnValue(String id);
-
     void dumpEvents();
 
     void dumpTimes();

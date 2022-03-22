@@ -360,19 +360,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
-//            asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
             asm.emit("%s void %s(%s%s", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);
             asm.emitLine(")");
 
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
-            asm.eol();
-//            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-//                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
-            asm.emitStmt("%s ulong *%s = (%s ulong *) (%s + %s)", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
-            asm.eol();
 
             if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
                 emitDebugKernelArgs(asm, method);
@@ -395,7 +388,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 OCLKind returnOclKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getOCLKind(returnKind) : OCLKind.fromResolvedJavaType(returnType);
                 returnStr = returnOclKind.toString();
             }
-            // getTarget().getLIRKind(returnKind);
             asm.emit("%s %s(%s", returnStr, methodName, architecture.getABI());
 
             emitMethodParameters(asm, method, incomingArguments, false);

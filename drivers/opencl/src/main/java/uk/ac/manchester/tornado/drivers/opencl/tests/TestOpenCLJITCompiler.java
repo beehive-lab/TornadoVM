@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -139,14 +139,14 @@ public class TestOpenCLJITCompiler {
         tornadoDevice.allocate(c, 0, objectStateC);
 
         // Create stack
-        CallStack stack = tornadoDevice.createStack(3);
+        KernelCallWrapper stack = tornadoDevice.createStack(3);
 
         // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        stack.setKernelContext(new HashMap<>());
 
-        stack.push(a, objectStateA);
-        stack.push(b, objectStateB);
-        stack.push(c, objectStateC);
+        stack.addCallArgument(a);
+        stack.addCallArgument(b);
+        stack.addCallArgument(c);
 
         // Run the code
         openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);

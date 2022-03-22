@@ -43,6 +43,7 @@ public class OCLAssemblerConstants {
     public static final String ATOMICS_REGION_NAME = "_atomics";
     public static final String CONSTANT_REGION_NAME = "_constant_region";
 
+    public static final String KERNEL_CONTEXT = "_kernel_context";
     public static final String HEAP_REF_NAME = "_heap_base";
     public static final String FRAME_BASE_NAME = "_frame_base";
     public static final String FRAME_REF_NAME = "_frame";

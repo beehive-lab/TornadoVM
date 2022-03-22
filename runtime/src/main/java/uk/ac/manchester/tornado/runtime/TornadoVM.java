@@ -58,7 +58,7 @@ import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -95,7 +95,7 @@ public class TornadoVM extends TornadoLogger {
     private final List<Object> objects;
 
     private final GlobalObjectState[] globalStates;
-    private final CallStack[] stacks;
+    private final KernelCallWrapper[] stacks;
     private final int[][] events;
     private final int[] eventsIndexes;
     private final List<TornadoAcceleratorDevice> contexts;
@@ -197,7 +197,7 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoAcceleratorDevice device, boolean setNewDevice) {
+    private KernelCallWrapper resolveStack(int index, int numArgs, KernelCallWrapper[] stacks, TornadoAcceleratorDevice device, boolean setNewDevice) {
         if (graphContext.meta().isDebug() && setNewDevice) {
             debug("Recompiling task on device " + device);
         }
@@ -469,7 +469,7 @@ public class TornadoVM extends TornadoLogger {
 
         boolean redeployOnDevice = graphContext.redeployOnDevice();
 
-        final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
+        final KernelCallWrapper stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
@@ -525,7 +525,7 @@ public class TornadoVM extends TornadoLogger {
 
         final SchedulableTask task = tasks.get(taskIndex);
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        CallStack stack = info.stack;
+        KernelCallWrapper stack = info.stack;
         int[] waitList = info.waitList;
 
         if (installedCodes[taskIndex] == null) {
@@ -549,7 +549,6 @@ public class TornadoVM extends TornadoLogger {
 
         final Access[] accesses = task.getArgumentsAccess();
 
-        stack.reset();
         HashMap<Integer, Integer> map = new HashMap<>();
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             WorkerGrid workerGrid = gridScheduler.get(task.getId());
@@ -559,7 +558,8 @@ public class TornadoVM extends TornadoLogger {
                 map.put(i++, (int) maxThread);
             }
         }
-        stack.setHeader(map);
+        stack.reset();
+        stack.setKernelContext(map);
 
         ObjectBuffer bufferAtomics = null;
 
@@ -898,10 +898,10 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private static class ExecutionInfo {
-        CallStack stack;
+        KernelCallWrapper stack;
         int[] waitList;
 
-        public ExecutionInfo(CallStack stack, int[] waitList) {
+        public ExecutionInfo(KernelCallWrapper stack, int[] waitList) {
             this.stack = stack;
             this.waitList = waitList;
         }

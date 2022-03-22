@@ -25,6 +25,7 @@ import java.util.Random;
 import org.apache.lucene.util.FixedBitSet;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class FixedBitSetExample {
 
@@ -48,8 +49,9 @@ public class FixedBitSetExample {
 
         s0.execute();
 
-        long value = s0.getReturnValue("intersect");
-        System.out.printf("value = %d (%d)\n", value, FixedBitSet.intersectionCount(a, b));
+        TornadoInternalError.unimplemented();
+        // long value = s0.getReturnValue("intersect");
+        // System.out.printf("value = %d (%d)\n", value, FixedBitSet.intersectionCount(a, b));
 
     }
 

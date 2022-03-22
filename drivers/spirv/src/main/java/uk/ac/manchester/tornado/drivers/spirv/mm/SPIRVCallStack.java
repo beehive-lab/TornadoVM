@@ -30,12 +30,12 @@ import java.util.HashMap;
 
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 // FIXME <REFACTOR> THis class has similarities with the rest of the backends
-public class SPIRVCallStack extends SPIRVByteBuffer implements CallStack {
+public class SPIRVCallStack extends SPIRVByteBuffer implements KernelCallWrapper {
 
     public static final int RESERVED_SLOTS = 3;
 

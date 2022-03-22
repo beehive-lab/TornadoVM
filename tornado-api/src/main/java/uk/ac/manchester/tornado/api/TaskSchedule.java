@@ -326,11 +326,6 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public long getReturnValue(String id) {
-        return taskScheduleImpl.getReturnValue(id);
-    }
-
-    @Override
     public void dumpEvents() {
         taskScheduleImpl.dumpEvents();
     }

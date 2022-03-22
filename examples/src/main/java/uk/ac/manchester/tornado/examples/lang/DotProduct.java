@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.examples.lang;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class DotProduct {
 
@@ -32,6 +33,7 @@ public class DotProduct {
         s0.warmup();
         s0.schedule();
 
-        System.out.printf("result = 0x%x\n", s0.getReturnValue("t0"));
+        TornadoInternalError.unimplemented();
+        // System.out.printf("result = 0x%x\n", s0.getReturnValue("t0"));
     }
 }

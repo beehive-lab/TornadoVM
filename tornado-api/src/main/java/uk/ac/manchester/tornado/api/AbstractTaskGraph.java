@@ -60,8 +60,6 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     TornadoDevice getDeviceForTask(String id);
 
-    long getReturnValue(String id);
-
     void addInner(SchedulableTask task);
 
     boolean isLastDeviceListEmpty();

@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -111,7 +111,7 @@ public class PTX {
 
         // Create stack
         final int numArgs = parameters.length;
-        CallStack stack = tornadoDevice.createStack(numArgs);
+        KernelCallWrapper stack = tornadoDevice.createStack(numArgs);
 
         // Fill header of call stack with empty values
         stack.setHeader(new HashMap<>());

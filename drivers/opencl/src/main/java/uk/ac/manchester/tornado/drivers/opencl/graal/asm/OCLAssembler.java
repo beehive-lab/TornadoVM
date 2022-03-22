@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper;
 
 public final class OCLAssembler extends Assembler {
 
@@ -218,7 +218,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic GLOBAL_ID = new OCLUnaryIntrinsic("get_global_id");
         public static final OCLUnaryIntrinsic GLOBAL_SIZE = new OCLUnaryIntrinsic("get_global_size");
 
-        public static final OCLUnaryIntrinsic OCL_STACK_ACCESS = new OCLUnaryIntrinsic("_frame");
+        public static final OCLUnaryIntrinsic OCL_STACK_ACCESS = new OCLUnaryIntrinsic("_kernel_context");
 
         public static final OCLUnaryIntrinsic LOCAL_ID = new OCLUnaryIntrinsic("get_local_id");
         public static final OCLUnaryIntrinsic LOCAL_SIZE = new OCLUnaryIntrinsic("get_local_size");
@@ -1164,7 +1164,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void loadParam(Variable result, int index) {
-        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, OCLCallStack.RESERVED_SLOTS + index);
+        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, OCLKernelCallWrapper.RESERVED_SLOTS + index);
     }
 
     @Deprecated

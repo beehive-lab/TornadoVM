@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.examples.lang;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class DotProductBasic {
 
@@ -48,7 +49,8 @@ public class DotProductBasic {
         s0.warmup();
         s0.schedule();
 
-        System.out.printf("result = 0x%x\n", s0.getReturnValue("t0"));
+        TornadoInternalError.unimplemented();
+        // System.out.printf("result = 0x%x\n", s0.getReturnValue("t0"));
 
     }
 

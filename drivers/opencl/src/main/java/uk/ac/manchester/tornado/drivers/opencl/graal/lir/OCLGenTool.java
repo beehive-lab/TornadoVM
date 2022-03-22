@@ -62,7 +62,7 @@ public class OCLGenTool {
 
     protected OCLLIRGenerator gen;
 
-    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
+    private final HashMap<ParameterNode, Value> parameterToVariable = new HashMap<>();
 
     public OCLGenTool(OCLLIRGenerator gen) {
         this.gen = gen;
@@ -82,11 +82,8 @@ public class OCLGenTool {
         // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
-        OCLTargetDescription oclTarget = gen.target();
 
-        Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
-//        emitParameterLoad(result, index);
-        emitParameterLoad(result, locals[paramNode.index()].getName());
+        Value result = new OCLNullary.Parameter(locals[paramNode.index()].getName(), lirKind);
         parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {
@@ -146,16 +143,13 @@ public class OCLGenTool {
      *            Parameter index to be loaded.
      *
      */
-//    private void emitParameterLoad(AllocatableValue resultValue, int index) {
     private void emitParameterLoad(AllocatableValue resultValue, String paramName) {
         OCLKind oclKind = (OCLKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(oclKind);
-        final OCLUnaryOp op = getParameterLoadOp(oclKind);
-//        gen.append(new AssignStmt(resultValue, new OCLUnary.Expr(op, lirKind, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index + OCLAssemblerConstants.STACK_BASE_OFFSET)))));
         gen.append(new AssignStmt(resultValue, new OCLNullary.Parameter(paramName, lirKind)));
     }
 
-    public HashMap<ParameterNode, Variable> getParameterToVariable() {
+    public HashMap<ParameterNode, Value> getParameterToVariable() {
         return parameterToVariable;
     }
 }

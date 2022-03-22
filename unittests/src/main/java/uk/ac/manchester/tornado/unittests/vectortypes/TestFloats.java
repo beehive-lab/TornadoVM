@@ -147,19 +147,6 @@ public class TestFloats extends TornadoTestBase {
         assertEquals(120, output.get(0), 0.001f);
     }
 
-    // This is currently not supported
-    @Ignore
-    public void simpleDotProduct() {
-        Float3 a = new Float3(1f, 2f, 3f);
-        Float3 b = new Float3(3f, 2f, 1f);
-
-        // Another way to test simple dot product
-        TaskSchedule s1 = new TaskSchedule("s1").task("t1", Float3::dot, a, b);
-        s1.warmup();
-        s1.schedule();
-        assertEquals(10, s1.getReturnValue("t1"), 0.001);
-    }
-
     private static void testFloat3Add(Float3 a, Float3 b, VectorFloat3 results) {
         results.set(0, Float3.add(a, b));
     }

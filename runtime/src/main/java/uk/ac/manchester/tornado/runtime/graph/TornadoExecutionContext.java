@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -63,7 +63,7 @@ public class TornadoExecutionContext {
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
     private final List<TornadoAcceleratorDevice> devices;
-    private final CallStack[] stacks;
+    private final KernelCallWrapper[] stacks;
     private final int[] taskToDevice;
     private int nextTask;
 
@@ -83,7 +83,7 @@ public class TornadoExecutionContext {
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
-        stacks = new CallStack[MAX_TASKS];
+        stacks = new KernelCallWrapper[MAX_TASKS];
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
         nextTask = 0;
@@ -91,7 +91,7 @@ public class TornadoExecutionContext {
         this.profiler = profiler;
     }
 
-    public CallStack[] getFrames() {
+    public KernelCallWrapper[] getFrames() {
         return stacks;
     }
 
@@ -324,7 +324,7 @@ public class TornadoExecutionContext {
         return null;
     }
 
-    public CallStack getFrame(String id) {
+    public KernelCallWrapper getFrame(String id) {
         for (int i = 0; i < tasks.size(); i++) {
             final String canonicalisedId;
             if (id.startsWith(getId())) {

@@ -31,13 +31,10 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
-
-    private long callStackBufferId;
-    private final long callStackLimit;
-    private long callStackPosition;
 
     private final OCLDeviceContext deviceContext;
     private long constantPointer;
@@ -48,11 +45,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;
 
+    public OCLKernelCallWrapper oclKernelCallWrapper = null;
+
     public OCLMemoryManager(final OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-        this.callStackPosition = 0;
-        this.callStackLimit = OCL_CALL_STACK_LIMIT;
-        this.callStackBufferId = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, callStackLimit).getBuffer();
     }
 
     @Override
@@ -65,17 +61,12 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
-    public OCLCallStack createCallStack(final int maxArgs) {
-
-        OCLCallStack callStack = new OCLCallStack(callStackBufferId, callStackPosition, maxArgs, deviceContext);
-
-        if (callStackPosition + callStack.getSize() < callStackLimit) {
-            callStackPosition = align(callStackPosition + callStack.getSize(), STACK_ALIGNMENT_SIZE);
-        } else {
-            throw new TornadoRuntimeException("Out of call-stack memory !");
+    public OCLKernelCallWrapper createCallStack(final int maxArgs) {
+        if (this.oclKernelCallWrapper == null) {
+            long kernelCallBuffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, RESERVED_SLOTS * Long.BYTES).getBuffer();
+            this.oclKernelCallWrapper = new OCLKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);;
         }
-
-        return callStack;
+        return this.oclKernelCallWrapper;
     }
 
     public ObjectBuffer createAtomicsBuffer(final int[] arr) {
