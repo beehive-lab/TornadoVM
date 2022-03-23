@@ -450,7 +450,19 @@ public class SPIRVLIRStmt {
             AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
             asm.updatePhiMap(trace, newID);
 
-            SPIRVId phiResultId = asm.module.getNextId();
+            SPIRVId phiResultId;
+            if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap((Variable) lhs)) {
+                phiResultId = asm.getPhiId((Variable) lhs);
+                AllocatableValue v = lhs;
+                while (phiResultId == null) {
+                    AllocatableValue v2 = asm.getPhiTraceValue((Variable) v);
+                    phiResultId = asm.getPhiId((Variable) v2);
+                    v = v2;
+                }
+
+            } else {
+                phiResultId = asm.module.getNextId();
+            }
             SPIRVId typePrimitive = asm.primitives.getTypePrimitive((SPIRVKind) lhs.getPlatformKind());
             asm.currentBlockScope().add(new SPIRVOpPhi(typePrimitive, phiResultId, operands));
 
