@@ -35,23 +35,26 @@ import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Test to check functionality of benchmarks available in the compute-benchmark
  * package.
- * 
+ *
  * How to run?
- * 
+ *
  * <code>
  *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.compute.ComputeTests
  * </code>
- * 
+ *
  */
 public class ComputeTests extends TornadoTestBase {
 
     private static final float DELTA = 0.005f;
     private static final float ESP_SQR = 500.0f;
+    private static int NROWS = 1024;
+    private static int NCOLS = 1024;
 
     private static void nBody(int numBodies, float[] refPos, float[] refVel) {
         for (@Parallel int i = 0; i < numBodies; i++) {
@@ -88,6 +91,143 @@ public class ComputeTests extends TornadoTestBase {
         for (int i = 0; i < numBodies * 4; i++) {
             assertEquals(posSequential[i], posTornadoVM[i], 0.1f);
             assertEquals(velSequential[i], velTornadoVM[i], 0.1f);
+        }
+    }
+
+    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        int n = inreal.length;
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            float sumReal = 0;
+            float simImag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (float) ((2 * Math.PI * t * k) / n);
+                sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
+                simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+            }
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
+        }
+    }
+
+    public static void hilbertComputation(float[] output, int rows, int cols) {
+        for (@Parallel int i = 0; i < rows; i++) {
+            for (@Parallel int j = 0; j < cols; j++) {
+                output[i * rows + j] = (float) 1 / ((i + 1) + (j + 1) - 1);
+            }
+        }
+    }
+
+    private static float cnd(float X) {
+        final float c1 = 0.319381530f;
+        final float c2 = -0.356563782f;
+        final float c3 = 1.781477937f;
+        final float c4 = -1.821255978f;
+        final float c5 = 1.330274429f;
+        final float zero = 0.0f;
+        final float one = 1.0f;
+        final float two = 2.0f;
+        final float temp4 = 0.2316419f;
+        final float oneBySqrt2pi = 0.398942280f;
+        float absX = TornadoMath.abs(X);
+        float t = one / (one + temp4 * absX);
+        float y = one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5))));
+        return (X < zero) ? (one - y) : y;
+    }
+
+    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
+        for (@Parallel int idx = 0; idx < callResult.length; idx++) {
+            float rand = input[idx];
+            final float S_LOWER_LIMIT = 10.0f;
+            final float S_UPPER_LIMIT = 100.0f;
+            final float K_LOWER_LIMIT = 10.0f;
+            final float K_UPPER_LIMIT = 100.0f;
+            final float T_LOWER_LIMIT = 1.0f;
+            final float T_UPPER_LIMIT = 10.0f;
+            final float R_LOWER_LIMIT = 0.01f;
+            final float R_UPPER_LIMIT = 0.05f;
+            final float SIGMA_LOWER_LIMIT = 0.01f;
+            final float SIGMA_UPPER_LIMIT = 0.10f;
+            final float S = S_LOWER_LIMIT * rand + S_UPPER_LIMIT * (1.0f - rand);
+            final float K = K_LOWER_LIMIT * rand + K_UPPER_LIMIT * (1.0f - rand);
+            final float T = T_LOWER_LIMIT * rand + T_UPPER_LIMIT * (1.0f - rand);
+            final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
+            final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
+
+            float d1 = (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T);
+            float d2 = d1 - (v * TornadoMath.sqrt(T));
+            callResult[idx] = S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2);
+            putResult[idx] = K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1);
+        }
+    }
+
+    private static void checkBlackScholes(float[] call, float[] put, float[] callPrice, float[] putPrice) {
+        double delta = 1.8;
+        for (int i = 0; i < call.length; i++) {
+            assertEquals(call[i], callPrice[i], delta);
+            assertEquals(put[i], putPrice[i], delta);
+        }
+    }
+
+    private static void computeMontecarlo(float[] output, final int iterations) {
+        for (@Parallel int j = 0; j < iterations; j++) {
+            long seed = j;
+            // generate a pseudo random number (you do need it twice)
+            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+
+            // this generates a number between 0 and 1 (with an awful entropy)
+            float x = (seed & 0x0FFFFFFF) / 268435455f;
+
+            // repeat for y
+            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+            float y = (seed & 0x0FFFFFFF) / 268435455f;
+
+            float dist = (float) Math.sqrt(x * x + y * y);
+            if (dist <= 1.0f) {
+                output[j] = 1.0f;
+            } else {
+                output[j] = 0.0f;
+            }
+        }
+    }
+
+    /**
+     * Render track version found in KFusion SLAMBENCH
+     *
+     * @param output
+     * @param input
+     */
+    public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
+        for (@Parallel int y = 0; y < input.Y(); y++) {
+            for (@Parallel int x = 0; x < input.X(); x++) {
+                Byte3 pixel;
+                final int result = (int) input.get(x, y).getS2();
+                switch (result) {
+                    case 1: // ok GREY
+                        pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);
+                        break;
+                    case -1: // no input BLACK
+                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 0);
+                        break;
+                    case -2: // not in image RED
+                        pixel = new Byte3((byte) 255, (byte) 0, (byte) 0);
+                        break;
+                    case -3: // no correspondence GREEN
+                        pixel = new Byte3((byte) 0, (byte) 255, (byte) 0);
+                        break;
+                    case -4: // too far away BLUE
+                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 255);
+                        break;
+                    case -5: // wrong normal YELLOW
+                        pixel = new Byte3((byte) 255, (byte) 255, (byte) 0);
+                        break;
+                    default:
+                        pixel = new Byte3((byte) 255, (byte) 128, (byte) 128);
+                        break;
+                }
+                output.set(x, y, pixel);
+            }
         }
     }
 
@@ -191,21 +331,6 @@ public class ComputeTests extends TornadoTestBase {
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
     }
 
-    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
-        int n = inreal.length;
-        for (@Parallel int k = 0; k < n; k++) { // For each output element
-            float sumReal = 0;
-            float simImag = 0;
-            for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * Math.PI * t * k) / n);
-                sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
-                simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
-            }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
-        }
-    }
-
     private void validateDFT(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag) {
         float[] outRealSeq = new float[size];
         float[] outImagSeq = new float[size];
@@ -238,17 +363,6 @@ public class ComputeTests extends TornadoTestBase {
         validateDFT(size, inReal, inImag, outReal, outImag);
     }
 
-    private static int NROWS = 1024;
-    private static int NCOLS = 1024;
-
-    public static void hilbertComputation(float[] output, int rows, int cols) {
-        for (@Parallel int i = 0; i < rows; i++) {
-            for (@Parallel int j = 0; j < cols; j++) {
-                output[i * rows + j] = (float) 1 / ((i + 1) + (j + 1) - 1);
-            }
-        }
-    }
-
     @Test
     public void testHilbert() {
         float[] output = new float[NROWS * NCOLS];
@@ -262,57 +376,6 @@ public class ComputeTests extends TornadoTestBase {
             for (int j = 0; j < NCOLS; j++) {
                 assertEquals(seq[i * NROWS + j], output[i * NROWS + j], 0.1f);
             }
-        }
-    }
-
-    private static float cnd(float X) {
-        final float c1 = 0.319381530f;
-        final float c2 = -0.356563782f;
-        final float c3 = 1.781477937f;
-        final float c4 = -1.821255978f;
-        final float c5 = 1.330274429f;
-        final float zero = 0.0f;
-        final float one = 1.0f;
-        final float two = 2.0f;
-        final float temp4 = 0.2316419f;
-        final float oneBySqrt2pi = 0.398942280f;
-        float absX = TornadoMath.abs(X);
-        float t = one / (one + temp4 * absX);
-        float y = one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5))));
-        return (X < zero) ? (one - y) : y;
-    }
-
-    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
-        for (@Parallel int idx = 0; idx < callResult.length; idx++) {
-            float rand = input[idx];
-            final float S_LOWER_LIMIT = 10.0f;
-            final float S_UPPER_LIMIT = 100.0f;
-            final float K_LOWER_LIMIT = 10.0f;
-            final float K_UPPER_LIMIT = 100.0f;
-            final float T_LOWER_LIMIT = 1.0f;
-            final float T_UPPER_LIMIT = 10.0f;
-            final float R_LOWER_LIMIT = 0.01f;
-            final float R_UPPER_LIMIT = 0.05f;
-            final float SIGMA_LOWER_LIMIT = 0.01f;
-            final float SIGMA_UPPER_LIMIT = 0.10f;
-            final float S = S_LOWER_LIMIT * rand + S_UPPER_LIMIT * (1.0f - rand);
-            final float K = K_LOWER_LIMIT * rand + K_UPPER_LIMIT * (1.0f - rand);
-            final float T = T_LOWER_LIMIT * rand + T_UPPER_LIMIT * (1.0f - rand);
-            final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
-            final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
-
-            float d1 = (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T);
-            float d2 = d1 - (v * TornadoMath.sqrt(T));
-            callResult[idx] = S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2);
-            putResult[idx] = K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1);
-        }
-    }
-
-    private static void checkBlackScholes(float[] call, float[] put, float[] callPrice, float[] putPrice) {
-        double delta = 1.8;
-        for (int i = 0; i < call.length; i++) {
-            assertEquals(call[i], callPrice[i], delta);
-            assertEquals(put[i], putPrice[i], delta);
         }
     }
 
@@ -340,30 +403,6 @@ public class ComputeTests extends TornadoTestBase {
         blackScholesKernel(input, seqCall, seqPut);
 
         checkBlackScholes(seqCall, seqPut, callPrice, putPrice);
-    }
-
-    private static void computeMontecarlo(float[] output, final int iterations) {
-        for (@Parallel int j = 0; j < iterations; j++) {
-            long seed = j;
-            // generate a pseudo random number (you do need it twice)
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-
-            // this generates a number between 0 and 1 (with an awful entropy)
-            float x = (seed & 0x0FFFFFFF) / 268435455f;
-
-            // repeat for y
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-            float y = (seed & 0x0FFFFFFF) / 268435455f;
-
-            float dist = (float) Math.sqrt(x * x + y * y);
-            if (dist <= 1.0f) {
-                output[j] = 1.0f;
-            } else {
-                output[j] = 0.0f;
-            }
-        }
     }
 
     @Test
@@ -395,47 +434,9 @@ public class ComputeTests extends TornadoTestBase {
         assertEquals(sumSeq, sumTornado, 0.1);
     }
 
-    /**
-     * Render track version found in KFusion SLAMBENCH
-     * 
-     * @param output
-     * @param input
-     */
-    public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
-        for (@Parallel int y = 0; y < input.Y(); y++) {
-            for (@Parallel int x = 0; x < input.X(); x++) {
-                Byte3 pixel;
-                final int result = (int) input.get(x, y).getS2();
-                switch (result) {
-                    case 1: // ok GREY
-                        pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);
-                        break;
-                    case -1: // no input BLACK
-                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 0);
-                        break;
-                    case -2: // not in image RED
-                        pixel = new Byte3((byte) 255, (byte) 0, (byte) 0);
-                        break;
-                    case -3: // no correspondence GREEN
-                        pixel = new Byte3((byte) 0, (byte) 255, (byte) 0);
-                        break;
-                    case -4: // too far away BLUE
-                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 255);
-                        break;
-                    case -5: // wrong normal YELLOW
-                        pixel = new Byte3((byte) 255, (byte) 255, (byte) 0);
-                        break;
-                    default:
-                        pixel = new Byte3((byte) 255, (byte) 128, (byte) 128);
-                        break;
-                }
-                output.set(x, y, pixel);
-            }
-        }
-    }
-
     @Test
     public void testRenderTrack() {
+        assertNotBackend(TornadoVMBackendType.SPIRV);
         int n = 2048;
         int m = 2048;
 

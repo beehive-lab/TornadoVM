@@ -693,8 +693,10 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
+        // Emit label of the Loop
         append(new SPIRVControlFlow.LoopBeginLabel(block.toString()));
 
+        // Emit pending Phi values
         if (phiVars != null) {
             generateOpPhiInstruction(phiVars, dependentPhiValueBlock, predBlock);
         }

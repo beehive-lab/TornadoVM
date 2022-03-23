@@ -145,6 +145,7 @@ public final class SPIRVAssembler extends Assembler {
     private Map<AllocatableValue, SPIRVId> phiMap;
     private Map<AllocatableValue, SPIRVId> phiNamesAcrossBlocks;
     private Map<AllocatableValue, AllocatableValue> phiTrace;
+    private Map<AllocatableValue, SPIRVId> pendingIDs;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -162,6 +163,7 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVSymbolTable = new HashMap<>();
         opFunctionTable = new HashMap<>();
         phiNamesAcrossBlocks = new HashMap<>();
+        pendingIDs = new HashMap<>();
     }
 
     public SPIRVInstScope getFunctionScope() {
@@ -701,6 +703,19 @@ public final class SPIRVAssembler extends Assembler {
     public void printContentPhiTables() {
         System.out.println("PhiTable: " + phiMap);
         System.out.println("PhiTrace: " + phiTrace);
+        System.out.println("phiNamesAcrossBlocks: " + phiNamesAcrossBlocks);
+    }
+
+    public void updatePendingIDs(AllocatableValue trace, SPIRVId newID) {
+        this.pendingIDs.put(trace, newID);
+    }
+
+    public SPIRVId getPendingId(AllocatableValue trace) {
+        return this.pendingIDs.get(trace);
+    }
+
+    public boolean isPendingIDAvailable(AllocatableValue trace) {
+        return this.pendingIDs.containsKey(trace);
     }
 
     public AllocatableValue getPhiTraceValue(Variable result) {
@@ -731,6 +746,10 @@ public final class SPIRVAssembler extends Assembler {
         if (phiMap != null) {
             phiMap.clear();
             phiMap = null;
+        }
+        if (pendingIDs != null) {
+            pendingIDs.clear();
+            pendingIDs = null;
         }
     }
 

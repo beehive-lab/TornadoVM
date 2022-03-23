@@ -94,10 +94,12 @@ public class SPIRVUnary {
             SPIRVId operationId;
             if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
                 operationId = asm.getPhiId(result);
+                AllocatableValue v = result;
                 while (operationId == null) {
                     // Nested IF, We Keep Looking into the trace
-                    AllocatableValue v = asm.getPhiTraceValue(result);
-                    operationId = asm.getPhiId((Variable) v);
+                    AllocatableValue v2 = asm.getPhiTraceValue((Variable) v);
+                    operationId = asm.getPhiId((Variable) v2);
+                    v = v2;
                 }
             } else {
                 operationId = asm.module.getNextId();
