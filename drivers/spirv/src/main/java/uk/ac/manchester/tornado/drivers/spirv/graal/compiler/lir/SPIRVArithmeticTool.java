@@ -168,7 +168,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     public Value emitNegate(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNegate:  - %s", input);
         final Variable result = getGen().newVariable(LIRKind.combine(input));
-        SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), input);
+        SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), result, input);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, negateValue));
         return result;
     }
@@ -359,7 +359,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNarrow: %s, %d", inputVal, bits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(bits);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVUnary.SignNarrowValue signNarrowValue = new SPIRVUnary.SignNarrowValue(lirKind, inputVal, bits);
+        SPIRVUnary.SignNarrowValue signNarrowValue = new SPIRVUnary.SignNarrowValue(lirKind, result, inputVal, bits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, signNarrowValue));
         return result;
     }
@@ -369,7 +369,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "signExtend: %s , from %s to %s", inputVal, fromBits, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, inputVal, fromBits, toBits);
+        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, result, inputVal, fromBits, toBits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
         return result;
     }
@@ -392,7 +392,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = getGen().newVariable(toKind);
 
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
-        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, inputVal, fromBits, toBits);
+        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, result, inputVal, fromBits, toBits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
         return result;
     }

@@ -63,7 +63,7 @@ public class LocalThreadSizeNode extends FloatingNode implements LIRLowerable {
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.WORKGROUP_SIZE, lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.WORKGROUP_SIZE, result, lirKind, valueDimension)));
         generator.setResult(this, result);
     }
 

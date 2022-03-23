@@ -60,7 +60,7 @@ public class LocalThreadIdFixedNode extends FixedWithNextNode implements LIRLowe
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.LOCAL_THREAD_ID, lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.LOCAL_THREAD_ID, result, lirKind, valueDimension)));
         generator.setResult(this, result);
     }
 }
