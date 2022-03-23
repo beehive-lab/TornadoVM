@@ -33,25 +33,25 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestTornadoMathCollection extends TornadoTestBase {
     public static void testTornadoCos(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = TornadoMath.floatCos(a[i]);
+            a[i] = TornadoMath.cos(a[i]);
         }
     }
 
     public static void testTornadoSin(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = TornadoMath.floatSin(a[i]);
+            a[i] = TornadoMath.sin(a[i]);
         }
     }
 
     public static void testTornadoAcos(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (TornadoMath.floatAcos(a[i]));
+            a[i] = (TornadoMath.acos(a[i]));
         }
     }
 
     public static void testTornadoAsin(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (TornadoMath.floatAsin(a[i]));
+            a[i] = (TornadoMath.asin(a[i]));
         }
     }
 
@@ -75,25 +75,25 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
     public static void testTornadoAtan(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = TornadoMath.floatAtan(a[i]);
+            a[i] = TornadoMath.atan(a[i]);
         }
     }
 
     public static void testTornadoAtan2(float[] a, float[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = TornadoMath.floatAtan2(a[i], b[i]);
+            a[i] = TornadoMath.atan2(a[i], b[i]);
         }
     }
 
     public static void testTornadoTan(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = TornadoMath.floatTan(a[i]);
+            a[i] = TornadoMath.tan(a[i]);
         }
     }
 
     public static void testTornadoTanh(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = TornadoMath.floatTanh(a[i]);
+            a[i] = TornadoMath.tanh(a[i]);
         }
     }
 

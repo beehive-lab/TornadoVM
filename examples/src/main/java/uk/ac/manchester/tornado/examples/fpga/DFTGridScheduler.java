@@ -35,9 +35,9 @@ public class DFTGridScheduler {
             float sumreal = 0;
             float sumimag = 0;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = ((2 * TornadoMath.floatPI() * t * k) / (float) n);
-                sumreal += (inreal[t] * (TornadoMath.floatCos(angle)) + inimag[t] * (TornadoMath.floatSin(angle)));
-                sumimag += -(inreal[t] * (TornadoMath.floatSin(angle)) + inimag[t] * (TornadoMath.floatCos(angle)));
+                float angle = ((2 * TornadoMath.floatPI() * t * k) / n);
+                sumreal += (inreal[t] * (TornadoMath.cos(angle)) + inimag[t] * (TornadoMath.sin(angle)));
+                sumimag += -(inreal[t] * (TornadoMath.sin(angle)) + inimag[t] * (TornadoMath.cos(angle)));
             }
             outreal[k] = sumreal;
             outimag[k] = sumimag;
