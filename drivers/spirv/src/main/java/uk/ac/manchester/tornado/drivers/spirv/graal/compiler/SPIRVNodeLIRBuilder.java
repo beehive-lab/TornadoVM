@@ -592,18 +592,18 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(phi.valueAt(1));
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
-            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV && (phiTrace.containsKey(operand(phi.valueAt(1))))) {
+            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
                 // We look up of if the first phi-value is in the phiTrace table. In that case,
                 // we need to generate a new OpPhi instruction with a value that is forwarded to
                 // another basic block.
                 AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
-                Value forwardId = operand(phi.valueAt(1));
+                Value forwardId = operand(phi.valueAt(0));
                 phiTrace.put(result, null);
                 final Block block = (Block) gen.getCurrentBlock();
                 final Block predBlock = block.getFirstPredecessor();
                 Block dependentPhiValueBlock = block.getPredecessors()[1];
-                append(new SPIRVLIRStmt.OpPhiValueOptimization(result, src, dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, forwardId));
+                append(new SPIRVLIRStmt.OpPhiValueOptimization(result, src, predBlock.toString(), dependentPhiValueBlock.toString(), phiMap, phiTrace, forwardId, operand(phi.valueAt(1))));
             }
         }
     }
@@ -655,7 +655,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         // that means that we need to generate the OpPhi instruction.
         for (LIRPhiVars.PhiMeta meta : phiVars.getPhiVars()) {
             phiTrace.put(meta.getResultPhi(), null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null));
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null, null));
         }
     }
 

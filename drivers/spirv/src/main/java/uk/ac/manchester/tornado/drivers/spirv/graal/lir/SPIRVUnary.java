@@ -516,7 +516,7 @@ public class SPIRVUnary {
 
             SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
 
-            SPIRVId convertToPtrId = obtainPhiValueIdIfNeeded(asm);
+            SPIRVId convertToPtrId = asm.module.getNextId();
             asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, convertToPtrId, idLoad));
             asm.registerLIRInstructionValue(this, convertToPtrId);
         }
