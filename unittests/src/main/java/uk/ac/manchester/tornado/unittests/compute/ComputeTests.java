@@ -223,6 +223,31 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
+    private static void euler(int size, long[] five, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
+        for (@Parallel int e = 1; e < five.length; e++) {
+            long e5 = five[e];
+            for (@Parallel int a = 1; a < five.length; a++) {
+                long a5 = five[a];
+                for (int b = a; b < size; b++) {
+                    long b5 = five[b];
+                    for (int c = b; c < size; c++) {
+                        long c5 = five[c];
+                        for (int d = c; d < size; d++) {
+                            long d5 = five[d];
+                            if (a5 + b5 + c5 + d5 == e5) {
+                                outputA[e] = a;
+                                outputB[e] = b;
+                                outputC[e] = c;
+                                outputD[e] = d;
+                                outputE[e] = e;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Render track version found in KFusion SLAMBENCH
      *
@@ -488,6 +513,46 @@ public class ComputeTests extends TornadoTestBase {
         t0.execute();
 
         validateMandelbrot(size, output);
+    }
+
+    private long[] init(int size) {
+        long[] input = new long[size];
+        for (int i = 0; i < size; i++) {
+            input[i] = (long) i * i * i * i * i;
+        }
+        return input;
+    }
+
+    @Test
+    public void testEuler() {
+        final int size = 128;
+        long[] input = init(128);
+        long[] outputA = new long[size];
+        long[] outputB = new long[size];
+        long[] outputC = new long[size];
+        long[] outputD = new long[size];
+        long[] outputE = new long[size];
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .streamIn(input) //
+                .task("s0", ComputeTests::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
+                .streamOut(outputA, outputB, outputC, outputD, outputE);
+        ts.execute();
+
+        long[] outputAT = new long[size];
+        long[] outputBT = new long[size];
+        long[] outputCT = new long[size];
+        long[] outputDT = new long[size];
+        long[] outputET = new long[size];
+        euler(size, input, outputAT, outputBT, outputCT, outputDT, outputET);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(outputAT[i], outputA[i]);
+            assertEquals(outputBT[i], outputB[i]);
+            assertEquals(outputCT[i], outputC[i]);
+            assertEquals(outputDT[i], outputD[i]);
+            assertEquals(outputET[i], outputE[i]);
+        }
     }
 
     @Test
