@@ -611,10 +611,19 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
                 AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
-                Value forwardId = operand(phi.valueAt(0));
+                // Value forwardId = operand(phi.valueAt(0));
                 phiTrace.put(result, null);
 
-                append(new SPIRVLIRStmt.OpPhiValueOptimization(result, src, predBlock.toString(), dependentPhiValueBlock.toString(), phiMap, phiTrace, forwardId, operand(phi.valueAt(1)),
+                boolean forwardId = true;
+                boolean checkDuplicates = true;
+                append(new SPIRVLIRStmt.OpPhiValueOptimization(result, //
+                        src, //
+                        phiHolderList.get(0).block.toString(), //
+                        phiHolderList.get(1).block.toString(), //
+                        phiMap, //
+                        phiTrace, //
+                        forwardId, //
+                        checkDuplicates, //
                         phiHolderList));
             }
         }
@@ -667,7 +676,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         // that means that we need to generate the OpPhi instruction.
         for (LIRPhiVars.PhiMeta meta : phiVars.getPhiVars()) {
             phiTrace.put(meta.getResultPhi(), null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace, null, null, null));
+            append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace));
         }
     }
 

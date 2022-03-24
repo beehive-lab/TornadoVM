@@ -382,17 +382,24 @@ public class SPIRVLIRStmt {
         protected AllocatableValue lhs;
         @Use
         protected Value rhs;
-        @Use
-        protected Value fordwaredId;
+
+        // @Use
+        protected boolean fordwaredId;
 
         @Use
-        protected Value x;
+        protected boolean checkDuplicate;
+
         protected List<SPIRVNodeLIRBuilder.PhiHolder> phiHolders;
         String blockFirstSuccessor;
         String previousBlockName;
 
         public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
-                Map<AllocatableValue, AllocatableValue> phiTrace, Value forwardedId, Value x, List<SPIRVNodeLIRBuilder.PhiHolder> phiHolder) {
+                Map<AllocatableValue, AllocatableValue> phiTrace) {
+            this(lhs, previousValue, firstSuccessorBlockName, previousBlockName, phiMap, phiTrace, false, false, null);
+        }
+
+        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+                Map<AllocatableValue, AllocatableValue> phiTrace, boolean forwardedId, boolean checkDuplicate, List<SPIRVNodeLIRBuilder.PhiHolder> phiHolder) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = previousValue;
@@ -401,7 +408,7 @@ public class SPIRVLIRStmt {
             this.phiMap = phiMap;
             this.phiTrace = phiTrace;
             this.fordwaredId = forwardedId;
-            this.x = x;
+            this.checkDuplicate = checkDuplicate;
             this.phiHolders = phiHolder;
         }
 
@@ -432,12 +439,13 @@ public class SPIRVLIRStmt {
         }
 
         private SPIRVId getNewId(SPIRVAssembler asm) {
-            if (fordwaredId != null) {
-                if (fordwaredId instanceof ConstantValue) {
-                    ConstantValue constantValue = (ConstantValue) fordwaredId;
-                    return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) fordwaredId.getPlatformKind());
+            if (fordwaredId) {
+                Value forwardValue = phiHolders.get(0).getValue();
+                if (forwardValue instanceof ConstantValue) {
+                    ConstantValue constantValue = (ConstantValue) forwardValue;
+                    return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) forwardValue.getPlatformKind());
                 } else {
-                    return asm.lookUpLIRInstructions(fordwaredId);
+                    return asm.lookUpLIRInstructions(forwardValue);
                 }
             } else {
                 return asm.module.getNextId();
@@ -445,12 +453,16 @@ public class SPIRVLIRStmt {
         }
 
         private SPIRVId checkIdDoesNotCycle(SPIRVAssembler asm, SPIRVId previousID, SPIRVId newID) {
+            if (!checkDuplicate) {
+                return previousID;
+            }
             if (previousID.equals(newID)) {
-                if (x instanceof ConstantValue) {
-                    ConstantValue constantValue = (ConstantValue) x;
-                    return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) x.getPlatformKind());
+                Value valuePhiPos01 = phiHolders.get(1).value;
+                if (valuePhiPos01 instanceof ConstantValue) {
+                    ConstantValue constantValue = (ConstantValue) valuePhiPos01;
+                    return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) valuePhiPos01.getPlatformKind());
                 } else {
-                    return asm.lookUpLIRInstructions(x);
+                    return asm.lookUpLIRInstructions(valuePhiPos01);
                 }
             }
             return previousID;
@@ -463,6 +475,24 @@ public class SPIRVLIRStmt {
             return asm.module.getNextId();
         }
 
+        /**
+         * Usually we have two operands. However, when merging results from switch
+         * statements we might have muliple Phi Values to be merge. In this case, all
+         * branches (IDs) have been already generated, so they are expected to be found
+         * in the ASM lookup tables.
+         *
+         * @param asm
+         *            {@link SPIRVAssembler} Assembler
+         * @param previousID
+         *            {@link SPIRVId} Previous ID in SPIRVId format
+         * @param previousBranch
+         *            {@link SPIRVId} of the previous branch
+         * @param newID
+         *            {@link SPIRVId} of the new ID
+         * @param currentBranch
+         *            {@link SPIRVId} basic block of the new ID
+         * @return {@link SPIRVMultipleOperands<SPIRVPairIdRefIdRef>}
+         */
         private SPIRVMultipleOperands<SPIRVPairIdRefIdRef> composeOperands(SPIRVAssembler asm, SPIRVId previousID, SPIRVId previousBranch, SPIRVId newID, SPIRVId currentBranch) {
             SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands;
             if (phiHolders != null && phiHolders.size() > 2) {
@@ -513,7 +543,7 @@ public class SPIRVLIRStmt {
 
             asm.registerLIRInstructionValue(lhs, phiResultId);
 
-            if (fordwaredId == null) {
+            if (!fordwaredId) {
                 AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
                 asm.updatePhiMap(trace, newID);
 
