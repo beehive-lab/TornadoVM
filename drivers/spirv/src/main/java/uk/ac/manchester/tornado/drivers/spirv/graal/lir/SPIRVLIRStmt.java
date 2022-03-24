@@ -371,9 +371,9 @@ public class SPIRVLIRStmt {
     }
 
     @Opcode("PhiValueOptimization")
-    public static class OpPhiValueOptimization extends AbstractInstruction {
+    public static class OpPhiStmt extends AbstractInstruction {
 
-        public static final LIRInstructionClass<OpPhiValueOptimization> TYPE = LIRInstructionClass.create(OpPhiValueOptimization.class);
+        public static final LIRInstructionClass<OpPhiStmt> TYPE = LIRInstructionClass.create(OpPhiStmt.class);
 
         final Map<AllocatableValue, SPIRVId> phiMap;
         final Map<AllocatableValue, AllocatableValue> phiTrace;
@@ -393,12 +393,12 @@ public class SPIRVLIRStmt {
         String blockFirstSuccessor;
         String previousBlockName;
 
-        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+        public OpPhiStmt(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
                 Map<AllocatableValue, AllocatableValue> phiTrace) {
             this(lhs, previousValue, firstSuccessorBlockName, previousBlockName, phiMap, phiTrace, false, false, null);
         }
 
-        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+        public OpPhiStmt(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
                 Map<AllocatableValue, AllocatableValue> phiTrace, boolean forwardedId, boolean checkDuplicate, List<SPIRVNodeLIRBuilder.PhiHolder> phiHolder) {
             super(TYPE);
             this.lhs = lhs;

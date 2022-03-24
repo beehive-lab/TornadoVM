@@ -616,7 +616,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
                 boolean forwardId = true;
                 boolean checkDuplicates = true;
-                append(new SPIRVLIRStmt.OpPhiValueOptimization(result, //
+                append(new SPIRVLIRStmt.OpPhiStmt(result, //
                         src, //
                         phiHolderList.get(0).block.toString(), //
                         phiHolderList.get(1).block.toString(), //
@@ -676,7 +676,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         // that means that we need to generate the OpPhi instruction.
         for (LIRPhiVars.PhiMeta meta : phiVars.getPhiVars()) {
             phiTrace.put(meta.getResultPhi(), null);
-            append(new SPIRVLIRStmt.OpPhiValueOptimization(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace));
+            append(new SPIRVLIRStmt.OpPhiStmt(meta.getResultPhi(), meta.getValue(), dependentPhiValueBlock.toString(), predBlock.toString(), phiMap, phiTrace));
         }
     }
 
