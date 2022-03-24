@@ -216,7 +216,8 @@ public class ComputeTests extends TornadoTestBase {
                         ii = iterations;
                     }
                 }
-                short r = (short) ((y * 255) / iterations);
+                float temp = (y * 255) / (float) iterations;
+                short r = (short) temp;
                 output[i * size + j] = r;
             }
         }
@@ -472,7 +473,7 @@ public class ComputeTests extends TornadoTestBase {
 
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
-                assertEquals(result[i * size + j], output[i * size + j], 0.01);
+                assertEquals(result[i * size + j], output[i * size + j]);
     }
 
     @Test
