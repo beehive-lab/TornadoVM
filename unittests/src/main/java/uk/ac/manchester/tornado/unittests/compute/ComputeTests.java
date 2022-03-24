@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -102,6 +102,21 @@ public class ComputeTests extends TornadoTestBase {
                 float angle = (float) ((2 * Math.PI * t * k) / n);
                 sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
                 simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+            }
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
+        }
+    }
+
+    public static void computeDFTFloat(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        int n = inreal.length;
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            float sumReal = 0;
+            float simImag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
+                sumReal += inreal[t] * TornadoMath.cos(angle) + inimag[t] * TornadoMath.sin(angle);
+                simImag += -inreal[t] * TornadoMath.sin(angle) + inimag[t] * TornadoMath.cos(angle);
             }
             outreal[k] = sumReal;
             outimag[k] = simImag;
@@ -397,7 +412,7 @@ public class ComputeTests extends TornadoTestBase {
     }
 
     @Test
-    public void testDFT() {
+    public void testDFTDouble() {
         final int size = 4096;
         TaskSchedule graph;
         float[] inReal = new float[size];
@@ -412,6 +427,28 @@ public class ComputeTests extends TornadoTestBase {
 
         graph = new TaskSchedule("s0") //
                 .task("t0", ComputeTests::computeDFT, inReal, inImag, outReal, outImag) //
+                .streamOut(outReal, outImag);
+        graph.execute();
+
+        validateDFT(size, inReal, inImag, outReal, outImag);
+    }
+
+    @Test
+    public void testDFTFloat() {
+        final int size = 4096;
+        TaskSchedule graph;
+        float[] inReal = new float[size];
+        float[] inImag = new float[size];
+        float[] outReal = new float[size];
+        float[] outImag = new float[size];
+
+        for (int i = 0; i < size; i++) {
+            inReal[i] = 1 / (float) (i + 2);
+            inImag[i] = 1 / (float) (i + 2);
+        }
+
+        graph = new TaskSchedule("s0") //
+                .task("t0", ComputeTests::computeDFTFloat, inReal, inImag, outReal, outImag) //
                 .streamOut(outReal, outImag);
         graph.execute();
 

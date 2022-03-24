@@ -23,6 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.ATAN2;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.ACOS;
+import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.ASIN;
+
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
@@ -38,10 +42,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsi
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntTernaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntUnaryIntrinsicNode;
-
-import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode.SPIRVOperation.ATAN2;
-import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.ACOS;
-import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode.SPIRVUnaryOperation.ASIN;
 
 public class SPIRVMathPlugins {
 
@@ -119,7 +119,7 @@ public class SPIRVMathPlugins {
 
     private static void registerTrigonometric1Plugins(InvocationPlugins.Registration r, Class<?> type, JavaKind kind) {
 
-        r.register1("floatSin", type, new InvocationPlugin() {
+        r.register1("sin", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.SIN, kind)));
@@ -127,7 +127,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register1("floatCos", type, new InvocationPlugin() {
+        r.register1("cos", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.COS, kind)));
@@ -135,15 +135,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register1("floatSqrt", type, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.SQRT, kind)));
-                return true;
-            }
-        });
-
-        r.register1("floatAtan", type, new InvocationPlugin() {
+        r.register1("atan", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.ATAN, kind)));
@@ -151,7 +143,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register2("floatAtan2", type, type, new InvocationPlugin() {
+        r.register2("atan2", type, type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, ATAN2, kind)));
@@ -159,7 +151,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register1("floatAcos", type, new InvocationPlugin() {
+        r.register1("acos", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, ACOS, kind)));
@@ -167,7 +159,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register1("floatAsin", type, new InvocationPlugin() {
+        r.register1("asin", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, ASIN, kind)));
@@ -175,7 +167,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register1("floatTan", type, new InvocationPlugin() {
+        r.register1("tan", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.TAN, kind)));
@@ -183,7 +175,7 @@ public class SPIRVMathPlugins {
             }
         });
 
-        r.register1("floatTanh", type, new InvocationPlugin() {
+        r.register1("tanh", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.TANH, kind)));
@@ -250,5 +242,4 @@ public class SPIRVMathPlugins {
 
         });
     }
-
 }
