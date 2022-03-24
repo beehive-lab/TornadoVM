@@ -192,6 +192,36 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
+    public static void mandelbrotFractal(int size, short[] output) {
+        final int iterations = 10000;
+        float space = 2.0f / size;
+
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                float Zr = 0.0f;
+                float Zi = 0.0f;
+                float Cr = (1 * j * space - 1.5f);
+                float Ci = (1 * i * space - 1.0f);
+                float ZrN = 0;
+                float ZiN = 0;
+                int y = 0;
+                for (int ii = 0; ii < iterations; ii++) {
+                    if (ZiN + ZrN <= 4.0f) {
+                        Zi = 2.0f * Zr * Zi + Ci;
+                        Zr = 1 * ZrN - ZiN + Cr;
+                        ZiN = Zi * Zi;
+                        ZrN = Zr * Zr;
+                        y++;
+                    } else {
+                        ii = iterations;
+                    }
+                }
+                short r = (short) ((y * 255) / iterations);
+                output[i * size + j] = r;
+            }
+        }
+    }
+
     /**
      * Render track version found in KFusion SLAMBENCH
      *
@@ -432,6 +462,31 @@ public class ComputeTests extends TornadoTestBase {
         sumSeq *= 4;
 
         assertEquals(sumSeq, sumTornado, 0.1);
+    }
+
+    private void validateMandelbrot(int size, short[] output) {
+        short[] result = new short[size * size];
+
+        // Run sequential
+        mandelbrotFractal(size, result);
+
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                assertEquals(result[i * size + j], output[i * size + j], 0.01);
+    }
+
+    @Test
+    public void testMandelbrot() {
+        final int size = 512;
+        short[] output = new short[size * size];
+
+        TaskSchedule t0 = new TaskSchedule("s0") //
+                .task("t0", ComputeTests::mandelbrotFractal, size, output) //
+                .streamOut(output);
+
+        t0.execute();
+
+        validateMandelbrot(size, output);
     }
 
     @Test
